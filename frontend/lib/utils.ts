@@ -459,6 +459,37 @@ export function toDateOnlyISO(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+const DATE_LOCALE = 'es-CL'
+
+/**
+ * Locale-formatted date with custom Intl options (e.g. `{ day: 'numeric', month: 'short' }`).
+ * Date-only strings (`YYYY-MM-DD`, or ISO datetimes when only the day matters) are parsed as
+ * local dates, so the day never shifts with the timezone. Prefer `formatPlainDate` (dd/mm/yyyy)
+ * when no custom shape is needed. Returns `—` for missing/invalid input.
+ */
+export function formatDateWith(value: string | Date | null | undefined, options: Intl.DateTimeFormatOptions): string {
+  if (!value) return '—'
+  const date = typeof value === 'string' ? (/^\d{4}-\d{2}-\d{2}$/.test(value) ? parseDateOnly(value) : new Date(value)) : value
+  if (isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString(DATE_LOCALE, options)
+}
+
+/** Locale time of day (`HH:mm` by default) of a datetime, in the user's timezone. `—` if missing/invalid. */
+export function formatTimeWith(
+  value: string | Date | null | undefined,
+  options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' },
+): string {
+  if (!value) return '—'
+  const date = typeof value === 'string' ? new Date(value) : value
+  if (isNaN(date.getTime())) return '—'
+  return date.toLocaleTimeString(DATE_LOCALE, options)
+}
+
+/** Local calendar day (`YYYY-MM-DD`) of a datetime string — for comparing a timestamp with a date-only field. */
+export function localDayOf(datetime: string): string {
+  return toDateOnlyISO(new Date(datetime))
+}
+
 export function formatPlainDate(value: string | Date | null | undefined): string {
   if (!value) return '-'
 

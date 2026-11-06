@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 
-import { cn } from "@/lib/utils"
+import { cn, formatDateWith } from "@/lib/utils"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import {
@@ -239,7 +239,7 @@ export function DraftCartsClientView({
             if (mins < 60) return `Hace ${mins}m`
             const hrs = Math.floor(mins / 60)
             if (hrs < 24) return `Hace ${hrs}h`
-            return new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: '2-digit' }).format(new Date(dateString))
+            return formatDateWith(dateString, { day: '2-digit', month: '2-digit' })
         } catch { return dateString }
     }
 

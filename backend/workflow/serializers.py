@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from core.serializers import AttachmentSerializer, UserSerializer
@@ -12,6 +13,14 @@ from .models import (
     TaskEvent,
     WorkflowSettings,
 )
+
+
+class TaskUserSerializer(serializers.ModelSerializer):
+    """Minimal user embedded in task responses (`TaskUserData` in the frontend): no per-user queries."""
+
+    class Meta:
+        model = get_user_model()
+        fields = ["id", "username", "first_name", "last_name"]
 
 
 class TaskEventSerializer(serializers.ModelSerializer):
@@ -41,9 +50,9 @@ class TaskEventSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    assigned_to_data = UserSerializer(source="assigned_to", read_only=True)
-    created_by_data = UserSerializer(source="created_by", read_only=True)
-    completed_by_data = UserSerializer(source="completed_by", read_only=True)
+    assigned_to_data = TaskUserSerializer(source="assigned_to", read_only=True)
+    created_by_data = TaskUserSerializer(source="created_by", read_only=True)
+    completed_by_data = TaskUserSerializer(source="completed_by", read_only=True)
     attachments_data = AttachmentSerializer(source="attachments", many=True, read_only=True)
     events_data = TaskEventSerializer(source="events", many=True, read_only=True)
 

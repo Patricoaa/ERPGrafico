@@ -284,7 +284,7 @@ function ProductInsightsPanelInner({
     const priceLineData = useMemo((): LineChartConfig["data"] => {
         if (!data?.price_history?.length) return []
         const raw = [...data.price_history].reverse().map(e => ({
-            name: format(new Date(e.date), "dd/MMM", { locale: es }),
+            name: format(parseDateOnly(e.date.slice(0, 10)), "dd/MMM", { locale: es }),
             'Precio Venta c/IVA': e.sale_price * ivaRatio,
         }))
         return toLineSeries(raw, ['Precio Venta c/IVA'])
@@ -293,7 +293,7 @@ function ProductInsightsPanelInner({
     const costLineData = useMemo((): LineChartConfig["data"] => {
         if (!data?.price_history?.length) return []
         const raw = [...data.price_history].reverse().map(e => ({
-            name: format(new Date(e.date), "dd/MMM", { locale: es }),
+            name: format(parseDateOnly(e.date.slice(0, 10)), "dd/MMM", { locale: es }),
             'Costo': e.cost_price,
         }))
         return toLineSeries(raw, ['Costo'])

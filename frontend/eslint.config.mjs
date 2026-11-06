@@ -18,6 +18,7 @@ import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
 import noDirectDialogUsage from "./eslint-rules/no-direct-dialog-usage.mjs";
 import entityViewGuards from "./eslint-rules/entity-view-guards.mjs";
+import dateHandling from "./eslint-rules/date-handling.mjs";
 import { NO_UNSAFE_ALLOWLIST_FILES } from "./eslint-rules/no-unsafe-allowlist.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
@@ -461,6 +462,17 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
     "entity-view/no-adhoc-format": "error",
     "entity-view/no-adhoc-table": "error",
     "entity-view/no-deep-import": "error",
+  },
+},
+// Date handling guards — GOVERNANCE.md rule 47 (baseline 0 after remediation)
+{
+  files: ["**/*.ts", "**/*.tsx"],
+  plugins: {
+    dates: dateHandling,
+  },
+  rules: {
+    "dates/no-date-only-ctor": "error",
+    "dates/no-adhoc-date-format": "error",
   },
 }, ...storybook.configs["flat/recommended"]]);
 

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { ArrowDownLeft, ArrowRight, ArrowUpRight, ArrowLeftRight } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { parseDateOnly } from "@/lib/utils"
+import { formatDateWith } from "@/lib/utils"
 import type { BankOverviewRecentMovement } from "../hooks/useBankOverview"
 
 export type MovementItem = BankOverviewRecentMovement & { bankName?: string }
@@ -66,7 +66,7 @@ export function BankRecentActivity({ movements, bankId, maxItems = 3 }: BankRece
                         ? `${mov.from_account_name} → ${mov.to_account_name}`
                         : null
 
-                    const dateStr = parseDateOnly(mov.date).toLocaleDateString("es-CL", {
+                    const dateStr = formatDateWith(mov.date, {
                         day: "numeric",
                         month: "numeric",
                     })

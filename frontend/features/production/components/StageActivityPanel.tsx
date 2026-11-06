@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, History, MessageSquare, Paperclip, User, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DocumentAttachmentDropzone, EmptyState, LabeledCheckbox, LabeledInput, StatusBadge } from "@/components/shared"
-import { cn, formatPlainDate } from "@/lib/utils"
+import { cn, formatPlainDate, formatTimeWith } from "@/lib/utils"
 import type { WorkOrderHistoryEntry, WorkOrderTask } from "../types"
 import {
     assignee,
@@ -41,7 +41,7 @@ const time = (iso?: string | null) => {
     try {
         const d = new Date(iso)
         if (isNaN(d.getTime())) return iso
-        return `${formatPlainDate(iso.slice(0, 10))} ${d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`
+        return `${formatPlainDate(iso.slice(0, 10))} ${formatTimeWith(d)}`
     } catch {
         return iso ?? ""
     }

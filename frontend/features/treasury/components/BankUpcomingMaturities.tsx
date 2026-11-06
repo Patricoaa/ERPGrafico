@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { ArrowUpRight } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { parseDateOnly } from "@/lib/utils"
+import { formatDateWith } from "@/lib/utils"
 import type { BankOverviewMaturityItem } from "../hooks/useBankOverview"
 
 export type MaturityItem = BankOverviewMaturityItem & { bankId: number; bankName?: string }
@@ -22,9 +22,8 @@ const TYPE_HREF: Record<string, (bankId: number, entityId: number) => string> = 
 }
 
 export function DateBadge({ dateStr }: { dateStr: string }) {
-    const date = parseDateOnly(dateStr)
-    const day = date.toLocaleDateString("es-CL", { day: "2-digit" })
-    const month = date.toLocaleDateString("es-CL", { month: "short" }).replace(".", "").toUpperCase()
+    const day = formatDateWith(dateStr, { day: "2-digit" })
+    const month = formatDateWith(dateStr, { month: "short" }).replace(".", "").toUpperCase()
 
     return (
         <div className="flex flex-col items-center justify-center w-10 shrink-0 rounded-sm bg-muted/60 py-1.5">
@@ -60,7 +59,7 @@ export function BankUpcomingMaturitiesPanel({ maturities, globalBankId, maxItems
     const typesLegend = presentTypes.join(", ")
 
     const nextDate = maturities[0]?.due_date
-        ? parseDateOnly(maturities[0].due_date).toLocaleDateString("es-CL", {
+        ? formatDateWith(maturities[0].due_date, {
               day: "numeric",
               month: "long",
           })

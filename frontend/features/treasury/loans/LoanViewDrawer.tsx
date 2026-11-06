@@ -11,7 +11,7 @@ import { DocumentSheet, SHEET_LEFT } from '@/features/documents'
 import { Collection, useEntityCollection, formatMoneyValue, formatDate } from '@/components/entity-view'
 import { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from '../entity-view/loanInstallment.entity'
 import { useLoan } from '../hooks/useLoans'
-import { parseDateOnly } from '@/lib/utils'
+import { formatPlainDate } from '@/lib/utils'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 import { LoanInstallmentReadonlyModal } from './LoanInstallmentReadonlyModal'
 import { PrepayLoanModal } from './PrepayLoanModal'
@@ -200,9 +200,9 @@ export function LoanViewDrawer({ loanId, open, onOpenChange, onDisburse }: Props
                     ['Comisión de Apertura', formatLoanMoney(loan.opening_fee, loan.currency)],
                     ['Impuesto de Timbres', formatLoanMoney(loan.stamp_tax, loan.currency)],
                     ['Tasa de Mora', `${parseFloat(loan.penalty_rate).toFixed(2)}% mensual`],
-                    ['Fecha de Inicio', loan.start_date ? parseDateOnly(loan.start_date).toLocaleDateString('es-CL') : '—'],
-                    ['Primer Vencimiento', loan.first_due_date ? parseDateOnly(loan.first_due_date).toLocaleDateString('es-CL') : '—'],
-                    ['Próximo Vencimiento', loan.next_due_date ? parseDateOnly(loan.next_due_date).toLocaleDateString('es-CL') : '—'],
+                    ['Fecha de Inicio', loan.start_date ? formatPlainDate(loan.start_date) : '—'],
+                    ['Primer Vencimiento', loan.first_due_date ? formatPlainDate(loan.first_due_date) : '—'],
+                    ['Próximo Vencimiento', loan.next_due_date ? formatPlainDate(loan.next_due_date) : '—'],
                 ]} />
             ),
         },

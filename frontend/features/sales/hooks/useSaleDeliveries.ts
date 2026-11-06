@@ -101,7 +101,7 @@ export function useSaleFulfillment(filters?: Record<string, unknown>) {
     ]
 
     // Sort by date desc (newest first)
-    merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    merged.sort((a, b) => b.date.localeCompare(a.date))
 
     // Apply pagination manually on merged results (since we fetch full pages from both)
     const start = (page - 1) * pageSize

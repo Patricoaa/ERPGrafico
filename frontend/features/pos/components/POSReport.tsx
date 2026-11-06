@@ -3,7 +3,7 @@
 import { useRef } from "react"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
-import { cn } from "@/lib/utils"
+import { cn, formatDateWith, formatTimeWith } from "@/lib/utils"
 import { Printer, Download, Calculator, CreditCard, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
@@ -89,10 +89,10 @@ interface POSReportProps {
 function formatSessionTime(openedAt?: string, closedAt?: string): string {
     if (!openedAt) return ""
     const d = new Date(openedAt)
-    const datePart = d.toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" })
-    const timePart = d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false })
+    const datePart = formatDateWith(d, { day: "2-digit", month: "2-digit", year: "numeric" })
+    const timePart = formatTimeWith(d, { hour: "2-digit", minute: "2-digit", hour12: false })
     if (!closedAt) return `${datePart}  ${timePart}`
-    const endTime = new Date(closedAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false })
+    const endTime = formatTimeWith(closedAt, { hour: "2-digit", minute: "2-digit", hour12: false })
     return `${datePart}  ${timePart} - ${endTime}`
 }
 

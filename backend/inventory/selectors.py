@@ -38,6 +38,35 @@ def _current_stock():
     )
 
 
+def products_with_availability_data() -> QuerySet:
+    """
+    Products preloaded for read-only serialization of `qty_on_hand` and `get_manufacturable_quantity`.
+
+    Stock is a snapshot taken when the query runs and `boms` holds only active BOMs, so this is for
+    responses, never for write flows that validate stock or read the full BOM list.
+    """
+    from production.models import BillOfMaterials, BillOfMaterialsLine
+
+    components = Product.objects.annotate(annotated_current_stock=_current_stock()).select_related("uom")
+    active_boms = (
+        BillOfMaterials.objects.filter(active=True)
+        .order_by("id")
+        .prefetch_related(
+            Prefetch(
+                "lines",
+                queryset=BillOfMaterialsLine.objects.select_related("uom").prefetch_related(
+                    Prefetch("component", queryset=components)
+                ),
+            )
+        )
+    )
+    return (
+        Product.objects.annotate(annotated_current_stock=_current_stock())
+        .select_related("manufacturing_profile")
+        .prefetch_related(Prefetch("boms", queryset=active_boms))
+    )
+
+
 def list_products(*, user, params: dict) -> QuerySet:
     """
     Main product list queryset. Handles:
@@ -50,16 +79,9 @@ def list_products(*, user, params: dict) -> QuerySet:
     from production.models import BillOfMaterials, BillOfMaterialsLine
 
     queryset = (
-        Product.objects.select_related(
-            "category",
-            "uom",
-            "sale_uom",
-            "purchase_uom",
-            "parent_template",
-            "receiving_warehouse",
-            "preferred_supplier",
-            "subscription_supplier",
-        )
+        # Only the FKs `ProductListSerializer` reads beyond the id: each extra join here costs
+        # Postgres planning time (300 ms with all eight) on the most requested product query.
+        Product.objects.select_related("category", "uom", "sale_uom")
         .prefetch_related(
             "attribute_values",
             "attribute_values__attribute",

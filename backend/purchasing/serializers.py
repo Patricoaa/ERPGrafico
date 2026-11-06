@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from rest_framework import serializers
 
 from purchasing.selectors import PurchaseOrderSelector
@@ -164,9 +166,20 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         return base_total - self.get_total_paid(obj)
 
-    def get_serialized_payments(self, obj):
+    # One instance per response: DRF rebuilds a ModelSerializer's fields for every new instance,
+    # which per order costs far more than serializing the rows themselves.
+    @cached_property
+    def _payment_serializer(self):
         from treasury.serializers import TreasuryMovementSerializer
-        return TreasuryMovementSerializer(obj.payments.all(), many=True).data
+
+        return TreasuryMovementSerializer()
+
+    @cached_property
+    def _line_serializer(self):
+        return PurchaseLineSerializer()
+
+    def get_serialized_payments(self, obj):
+        return [self._payment_serializer.to_representation(payment) for payment in obj.payments.all()]
 
     def get_is_invoiced(self, obj):
         from billing.models import Invoice
@@ -208,7 +221,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def get_lines(self, obj):
         # Only include original lines (not those from notes)
         lines = [l for l in obj.lines.all() if getattr(l, "related_note_id", None) is None]
-        return PurchaseLineSerializer(lines, many=True).data
+        return [self._line_serializer.to_representation(line) for line in lines]
 
 
 class WritePurchaseOrderSerializer(serializers.ModelSerializer):

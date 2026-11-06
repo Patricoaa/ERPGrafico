@@ -1197,6 +1197,9 @@ class Product(models.Model):
         Calculates reserved quantity, optionally excluding a specific draft
         to avoid double-counting in real-time frontend validations.
         """
+        if not exclude_draft_id and hasattr(self, "annotated_qty_reserved"):
+            return self.annotated_qty_reserved
+
         from decimal import Decimal
 
         from production.models import WorkOrder, WorkOrderMaterial

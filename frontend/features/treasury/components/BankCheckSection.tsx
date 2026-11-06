@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { CalendarClock, FileCheck } from "lucide-react"
 import { CardRail, CardSurface, MoneyDisplay, SectionHeader } from "@/components/shared"
 import { useServerDate } from '@/hooks/useServerDate'
-import { cn, parseDateOnly } from "@/lib/utils"
+import { cn, parseDateOnly, formatDateWith } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
@@ -50,11 +50,11 @@ export function BankCheckSection({ data, bankId }: Props) {
 
                                 <div className="flex items-center gap-3 text-3xs text-muted-foreground">
                                     <span>
-                                        Emitido: {parseDateOnly(chk.issue_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
+                                        Emitido: {formatDateWith(chk.issue_date, { day: "numeric", month: "short" })}
                                     </span>
                                     <span className="text-border/60">·</span>
                                     <span className={cn(isOverdue && "text-warning font-semibold")}>
-                                        Vence: {parseDateOnly(chk.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
+                                        Vence: {formatDateWith(chk.due_date, { day: "numeric", month: "short" })}
                                     </span>
                                 </div>
 

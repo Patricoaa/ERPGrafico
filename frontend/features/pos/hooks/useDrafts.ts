@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { POS_KEYS } from './queryKeys'
+import { formatTimeWith } from '@/lib/utils'
 
 interface DraftResponse {
     id: number
@@ -297,7 +298,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     // Auto-save (optional, can be triggered manually)
     const autoSave = useCallback(async () => {
         if (items.length === 0) return
-        await saveDraft(`Auto-guardado ${new Date().toLocaleTimeString()}`)
+        await saveDraft(`Auto-guardado ${formatTimeWith(new Date())}`)
     }, [items, saveDraft])
 
     // Fetch drafts when session becomes available (and on mount)

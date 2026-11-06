@@ -85,7 +85,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 44. Every endpoint documented in `20-contracts/api-contracts.md`.
 45. Money fields: `DecimalField`. Transactional document totals use `decimal_places=0` (CLP has no minor unit — see ADR-0014). Canonical names: `total_net`, `total_tax`, `total`. Render only via `MoneyDisplay`. **No `_cents` integer convention.**
 46. IDs: integer auto-increment PK (no UUID — see ADR-0016 anti-goals). The business identifier is exposed as `number` / `display_id` and formatted via `ENTITY_REGISTRY` (`entity-identity.md`).
-47. Dates: ISO-8601 UTC (`Z` or `+00:00` — formato uniforme dentro de cada serializador) para datetimes; `YYYY-MM-DD` para date-only. Nunca datetimes naive (sin timezone). En frontend, prohibido usar `new Date("YYYY-MM-DD")` — parsear siempre con `new Date(y, m-1, d)` o `parseDateOnly`.
+47. Dates: ISO-8601 UTC (`Z` or `+00:00` — formato uniforme dentro de cada serializador) para datetimes; `YYYY-MM-DD` para date-only. Nunca datetimes naive (sin timezone). En frontend, prohibido usar `new Date("YYYY-MM-DD")` — parsear siempre con `new Date(y, m-1, d)` o `parseDateOnly`. Enforced by ESLint `dates/no-date-only-ctor` y `dates/no-adhoc-date-format` (`frontend/eslint-rules/date-handling.mjs`); helpers: `parseDateOnly`, `formatPlainDate`, `formatDateWith`, `formatTimeWith`, `localDayOf` (`@/lib/utils`).
 48. Breaking API change: ADR + parallel period. Versioning is unified SemVer across FE+BE (ADR-0012) — there is no per-URL `/api/vN/` versioning.
 
 ## 10. State

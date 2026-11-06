@@ -1,5 +1,5 @@
 
-import { cn, EMPTY_VALUE, FLEX_ALIGN_CLASS, formatPlainDate, isMissing, parseDateOnly } from "@/lib/utils"
+import { cn, EMPTY_VALUE, FLEX_ALIGN_CLASS, formatPlainDate, isMissing, parseDateOnly, formatTimeWith } from "@/lib/utils"
 import { ArrowRight, ArrowUpRight, ArrowDownLeft, History, ExternalLink, User, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
@@ -371,7 +371,7 @@ export const DataCell = {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
                         ? parseDateOnly(value)
                         : new Date(value)
-                    return <span className={cn("text-xs text-muted-foreground/60 ml-1.5", WEIGHT_MAP[timeWeight ?? 'normal'])}>{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                    return <span className={cn("text-xs text-muted-foreground/60 ml-1.5", WEIGHT_MAP[timeWeight ?? 'normal'])}>{formatTimeWith(date)}</span>
                 })()}
             </div>
         )
