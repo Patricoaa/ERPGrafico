@@ -1,49 +1,64 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { TrendingDown, TrendingUp, ArrowLeftRight, Receipt } from "lucide-react"
-import { EntityCard, MoneyDisplay, SectionHeader } from "@/components/shared"
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, ArrowLeftRight } from "lucide-react"
+import { MoneyDisplay } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { parseDateOnly } from "@/lib/utils"
-import type { BankOverviewData } from "../hooks/useBankOverview"
+import type { BankOverviewRecentMovement } from "../hooks/useBankOverview"
+
+export type MovementItem = BankOverviewRecentMovement & { bankName?: string }
 
 interface BankRecentActivityProps {
-    data: BankOverviewData
-    bankId: number
+    movements: MovementItem[]
+    bankId?: number
     maxItems?: number
 }
 
-export function BankRecentActivity({ data, bankId, maxItems = 8 }: BankRecentActivityProps) {
+export function BankRecentActivity({ movements, bankId, maxItems = 3 }: BankRecentActivityProps) {
     const router = useRouter()
-    const { recent_movements } = data
 
-    if (!recent_movements || recent_movements.length === 0) return null
+    if (!movements || movements.length === 0) return null
 
-    const displayItems = recent_movements.slice(0, maxItems)
-    const remaining = recent_movements.length - maxItems
+    const displayItems = movements.slice(0, maxItems)
 
     return (
-        <section>
-            <SectionHeader
-                icon={Receipt}
-                title="Movimientos Recientes"
-                count={recent_movements.length}
-                href={`/treasury/bank-center/${bankId}/movements`}
-                variant="list"
-            />
+        <section className="surface-panel rounded-sm p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold tracking-tight">Movimientos recientes</span>
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground tabular-nums">
+                        {movements.length}
+                    </span>
+                </div>
+                {bankId != null && (
+                    <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={() => router.push(`/treasury/bank-center/${bankId}/movements`)}
+                        className="h-auto p-0 text-3xs font-medium gap-0.5"
+                    >
+                        Ver todos <ArrowUpRight className="h-3 w-3" />
+                    </Button>
+                )}
+            </div>
 
-            <div className="space-y-2">
-                {displayItems.map(mov => {
+            <div className="flex items-center justify-between px-1 pb-1 border-b border-border/60">
+                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Concepto / Medio</span>
+                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Importe CLP</span>
+            </div>
+
+            <div className="space-y-1">
+                {displayItems.map((mov) => {
                     const isInbound = mov.movement_type === "INBOUND"
                     const isOutbound = mov.movement_type === "OUTBOUND"
-                    const DotIcon = isInbound ? TrendingDown : isOutbound ? TrendingUp : ArrowLeftRight
-                    const dotColor = isInbound
-                        ? "text-success"
-                        : isOutbound
-                        ? "text-destructive"
-                        : "text-muted-foreground"
 
-                    const counterparty = isInbound
+                    const Icon = isInbound ? ArrowDownLeft : isOutbound ? ArrowUpRight : ArrowLeftRight
+                    const iconColor = isInbound ? "text-success" : isOutbound ? "text-destructive" : "text-muted-foreground"
+                    const iconBg = isInbound ? "bg-success/10" : isOutbound ? "bg-destructive/10" : "bg-muted"
+
+                    const concept = isInbound
                         ? mov.from_account_name
                         : isOutbound
                         ? mov.to_account_name
@@ -51,32 +66,55 @@ export function BankRecentActivity({ data, bankId, maxItems = 8 }: BankRecentAct
                         ? `${mov.from_account_name} → ${mov.to_account_name}`
                         : null
 
-                    const dateStr = parseDateOnly(mov.date).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" })
+                    const dateStr = parseDateOnly(mov.date).toLocaleDateString("es-CL", {
+                        day: "numeric",
+                        month: "numeric",
+                    })
+
+                    const sublabel = [mov.bankName, mov.payment_method_display, dateStr].filter(Boolean).join(" · ")
 
                     return (
-                        <EntityCard.ListItem
+                        <Button
                             key={mov.id}
-                            icon={DotIcon}
-                            iconClassName={dotColor}
-                            label={counterparty || mov.movement_type_display}
-                            sublabel={`${mov.payment_method_display} · ${dateStr}`}
-                            value={<MoneyDisplay amount={mov.movement_type === "OUTBOUND" ? -Math.abs(mov.amount) : mov.amount} className="text-xs font-bold" />}
+                            type="button"
+                            variant="ghost"
                             onClick={() => router.push(`/treasury/operaciones/movements?selected=${mov.id}`)}
-                        />
+                            className="w-full h-auto flex items-center justify-start gap-2.5 rounded-sm px-1 py-1.5 hover:bg-muted/30 transition-colors focus-visible:ring-1 focus-visible:ring-primary/40 text-left whitespace-normal"
+                        >
+                            <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${iconBg} ${iconColor}`}>
+                                <Icon className="h-3.5 w-3.5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium truncate leading-tight">
+                                    {concept || mov.movement_type_display}
+                                </p>
+                                <p className="text-2xs text-muted-foreground truncate mt-0.5">{sublabel}</p>
+                            </div>
+                            <MoneyDisplay
+                                amount={isOutbound ? -Math.abs(mov.amount) : mov.amount}
+                                className="text-xs font-semibold tabular-nums shrink-0"
+                            />
+                        </Button>
                     )
                 })}
             </div>
 
-            {remaining > 0 && (
-                <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => router.push(`/treasury/bank-center/${bankId}/movements`)}
-                    className="text-2xs font-medium text-muted-foreground hover:text-foreground transition-colors mt-1.5 ml-[28px]"
-                >
-                    y {remaining} más →
-                </Button>
-            )}
+            <div className="flex items-center justify-between pt-1 border-t border-border/60 mt-auto">
+                <p className="text-2xs text-muted-foreground">
+                    Últimos {displayItems.length} movimientos registrados
+                </p>
+                {bankId != null && (
+                    <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={() => router.push(`/treasury/bank-center/${bankId}/movements`)}
+                        className="h-auto p-0 text-3xs font-medium gap-1"
+                    >
+                        Ir a tesorería <ArrowRight className="h-3 w-3" />
+                    </Button>
+                )}
+            </div>
         </section>
     )
 }

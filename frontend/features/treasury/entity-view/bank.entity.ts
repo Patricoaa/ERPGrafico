@@ -1,10 +1,10 @@
 import { Landmark } from "lucide-react"
 import { defineEntity } from "@/components/entity-view"
 import type { Bank } from "../types"
-import type { BankSummary } from "../hooks/useAllBanksOverview"
+import type { BankOverviewData } from "../hooks/useBankOverview"
 
 /** A bank plus the figures of its overview (`useAllBanksOverview`), joined by the bank center view. */
-export type BankRow = Bank & { summary: BankSummary["summary"] | null }
+export type BankRow = Bank & { summary: BankOverviewData["summary"] | null }
 
 /** Bank (ADR-0087 oleada A3). Replaces bankCenterFields.ts + renderCard with one accounts metric. */
 export const bankEntity = defineEntity<BankRow>()((f) => ({

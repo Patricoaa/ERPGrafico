@@ -88,6 +88,7 @@ const BANK_ROWS: BankRow[] = [
             issued_checks: 0,
             active_loan_count: 0,
             total_loan_debt: 0,
+            reconciliation: null,
         },
     },
     {

@@ -3,7 +3,9 @@ import { treasuryApi } from '../api/treasuryApi'
 import { BANKS_KEYS } from './queryKeys'
 import { useBanks } from './useMasterData'
 import { staleTime } from '@/lib/query-config'
+import type { BankOverviewData } from './useBankOverview'
 
+/** Kept for backward compat with bank.entity.ts (BankRow.summary). */
 export interface BankSummary {
     bank: { id: number; name: string; code: string | null }
     summary: {
@@ -18,7 +20,7 @@ export interface BankSummary {
 }
 
 /** Stable empty result: a fresh `[]` per render would invalidate every memo downstream. */
-const NO_OVERVIEWS: BankSummary[] = []
+const NO_OVERVIEWS: BankOverviewData[] = []
 
 export function useAllBanksOverview() {
     const { banks } = useBanks()
@@ -29,14 +31,13 @@ export function useAllBanksOverview() {
             const results = await Promise.all(
                 banks.filter(b => b.is_active).map(async (bank) => {
                     try {
-                        const overview = await treasuryApi.getBankOverview(bank.id)
-                        return overview as unknown as BankSummary
+                        return (await treasuryApi.getBankOverview(bank.id)) as unknown as BankOverviewData
                     } catch {
                         return null
                     }
                 })
             )
-            return results.filter((r): r is BankSummary => r !== null)
+            return results.filter((r): r is BankOverviewData => r !== null)
         },
         enabled: banks.length > 0,
         staleTime: staleTime.stable,
