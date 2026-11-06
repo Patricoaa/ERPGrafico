@@ -149,21 +149,21 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                             actions={(row) => {
                                 if (row.number === 0) {
                                     return (
-                                        <Button size="sm" variant="outline" onClick={() => setShowFeeDetail(true)} title="Ver detalle">
+                                        <Button size="sm" variant="ghost" onClick={() => setShowFeeDetail(true)} title="Ver detalle">
                                             <Eye className="h-3.5 w-3.5" />
                                         </Button>
                                     )
                                 }
                                 if (row.status === 'PENDING' || row.status === 'OVERDUE') {
                                     return (
-                                        <Button size="sm" variant="outline" onClick={() => setPayingInst(row)} title="Pagar">
+                                        <Button size="sm" variant="ghost" onClick={() => setPayingInst(row)} title="Pagar">
                                             <DollarSign className="h-3.5 w-3.5" />
                                         </Button>
                                     )
                                 }
                                 if (row.status === 'PAID') {
                                     return (
-                                        <Button size="sm" variant="outline" onClick={() => setViewingInst(row)} title="Ver detalle">
+                                        <Button size="sm" variant="ghost" onClick={() => setViewingInst(row)} title="Ver detalle">
                                             <Eye className="h-3.5 w-3.5" />
                                         </Button>
                                     )

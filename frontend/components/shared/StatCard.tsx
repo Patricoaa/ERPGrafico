@@ -199,7 +199,7 @@ export function StatCard({
       <div
         className={cn(
           valueSizeMap[valueSize],
-          "font-black  tracking-tighter",
+          "text-sm font-black  tracking-tighter",
           variant === "minimal" ? accentText[accent] : "text-foreground",
         )}
       >
@@ -232,7 +232,7 @@ export function StatCard({
   if (variant === "minimal") {
     inner = (
       <>
-        <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+        <p className="text-3xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
           {label}
         </p>
         {renderValue()}
@@ -264,7 +264,7 @@ export function StatCard({
             <Icon className="h-6 w-6" />
           </div>
         )}
-        <div className={cn(valueSizeMap[valueSize], "font-black  tracking-tighter text-center")}>
+        <div className={cn(valueSizeMap[valueSize], "text-sm font-black  tracking-tighter text-center")}>
           {value}
         </div>
         <p className="text-xs font-bold text-muted-foreground text-center leading-tight">
@@ -287,7 +287,7 @@ export function StatCard({
               </div>
             )}
             <div className="flex flex-col min-w-0">
-              <CardTitle className="text-base font-bold text-foreground">
+              <CardTitle className="text-sm font-bold text-foreground">
                 {label}
               </CardTitle>
               {subtext && (

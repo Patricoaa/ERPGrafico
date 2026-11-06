@@ -121,21 +121,21 @@ function AmortizationTab({ loan, onPayInst, onViewInst, onShowFeeDetail }: {
                 actions={(row) => {
                     if (row.number === 0) {
                         return (
-                            <Button size="sm" variant="outline" onClick={onShowFeeDetail} title="Ver detalle">
+                            <Button size="sm" variant="ghost" onClick={onShowFeeDetail} title="Ver detalle">
                                 <Eye className="h-3.5 w-3.5" />
                             </Button>
                         )
                     }
                     if (row.status === 'PENDING' || row.status === 'OVERDUE') {
                         return (
-                            <Button size="sm" variant="outline" onClick={() => onPayInst(row)} title="Pagar">
+                            <Button size="sm" variant="ghost" onClick={() => onPayInst(row)} title="Pagar">
                                 <DollarSign className="h-3.5 w-3.5" />
                             </Button>
                         )
                     }
                     if (row.status === 'PAID') {
                         return (
-                            <Button size="sm" variant="outline" onClick={() => onViewInst(row)} title="Ver detalle">
+                            <Button size="sm" variant="ghost" onClick={() => onViewInst(row)} title="Ver detalle">
                                 <Eye className="h-3.5 w-3.5" />
                             </Button>
                         )
