@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.71](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.70...v0.3.71) (2026-11-06)
+
+
+### 🐛 Bug Fixes
+
+* dashboard de bancos ([5edce71](https://github.com/Patricoaa/ERPGrafico/commit/5edce71eba53827303022b2250c16e47a2ff562c))
+
+
+### ✨ Features
+
+* **bancos:** relaciones de productos bancarios y drawer de crédito ([c5fc35f](https://github.com/Patricoaa/ERPGrafico/commit/c5fc35f0e6110f4bd5752d72524c587f288add68))
+
 ### [0.3.70](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.69...v0.3.70) (2026-11-06)
 
 
