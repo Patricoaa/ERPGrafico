@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { CheckCircle2, Download, Trash2 } from "lucide-react"
+import { Activity, CheckCircle2, Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useConfirmStatement } from "@/features/treasury"
 import { ActionConfirmModal, DocumentActionsMenu, Drawer, SkeletonShell, SubmitButton, type DocumentActionItem } from "@/components/shared"
@@ -98,6 +98,7 @@ export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }
             resizable={false}
             title={statementTitle(statement)}
             subtitle={statement?.treasury_account_name}
+            icon={Activity}
             headerActions={statement && <DocumentActionsMenu primary={null} actions={headerActions} />}
             footer={statement && (
                 <WorkbenchFooter

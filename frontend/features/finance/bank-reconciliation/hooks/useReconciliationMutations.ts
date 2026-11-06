@@ -54,6 +54,7 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
             invalidateCrossFeature(queryClient, [
                 [...reconciliationKeys.all, 'unreconciled-lines', statementId],
                 [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                [...reconciliationKeys.all, 'reconciled-lines', statementId],
                 reconciliationKeys.statement(statementId),
             ])
         }
@@ -104,6 +105,7 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
             invalidateCrossFeature(queryClient, [
                 [...reconciliationKeys.all, 'unreconciled-lines', statementId],
                 [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                [...reconciliationKeys.all, 'reconciled-lines', statementId],
                 reconciliationKeys.statement(statementId),
             ])
         }

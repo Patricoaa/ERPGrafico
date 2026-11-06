@@ -37,7 +37,6 @@ export const statementActions = createEntityActions<BankStatement, StatementActi
         action: 'delete',
         label: 'Eliminar',
         onClick: (e) => { e.stopPropagation(); ctx.onDelete(item) },
-        visible: item.state === 'DRAFT',
         disabled: !canDeleteStatement(item),
     },
 ])
