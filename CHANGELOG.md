@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.73](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.72...v0.3.73) (2026-11-06)
+
+
+### ✨ Features
+
+* **relaciones:** detalle de cuota y líneas de cartola en el tab de relaciones ([f291376](https://github.com/Patricoaa/ERPGrafico/commit/f2913764d9eae03380bc6acb2fdd510b0b5af97b))
+
 ### [0.3.72](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.71...v0.3.72) (2026-11-06)
 
 
