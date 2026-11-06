@@ -1,4 +1,5 @@
 from decimal import Decimal
+from functools import cached_property
 
 from rest_framework import serializers
 
@@ -316,6 +317,18 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     def get_deliveries(self, obj):
         return self._summary(obj)["deliveries"]
 
+    # One instance per response: DRF rebuilds a ModelSerializer's fields for every new instance,
+    # which per order costs far more than serializing the rows themselves.
+    @cached_property
+    def _line_serializer(self):
+        return SaleLineSerializer()
+
+    @cached_property
+    def _work_order_serializer(self):
+        from production.serializers import WorkOrderListSerializer
+
+        return WorkOrderListSerializer()
+
     def get_lines(self, obj):
         from core.strategies.totals import allocate_line_nets
 
@@ -324,7 +337,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         nets = allocate_line_nets(obj, all_lines)
         # Only include original lines (not those from notes)
         lines = [line for line in all_lines if getattr(line, "related_note_id", None) is None]
-        data = SaleLineSerializer(lines, many=True).data
+        data = [self._line_serializer.to_representation(line) for line in lines]
         for line, row in zip(lines, data):
             net = nets.get(line.pk, Decimal("0"))
             row["subtotal_net"] = str(net)
@@ -332,9 +345,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return data
 
     def get_work_orders(self, obj):
-        from production.serializers import WorkOrderListSerializer
         ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None]
-        return WorkOrderListSerializer(ots, many=True).data
+        return [self._work_order_serializer.to_representation(ot) for ot in ots]
 
     def get_has_pending_work_orders(self, obj):
         ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "FINISHED"]

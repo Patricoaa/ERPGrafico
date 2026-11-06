@@ -1,6 +1,7 @@
 """Regression for the N+1 seen in Sentry trace c681c24a… on GET /api/sales/orders/ (697 spans)."""
 
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -11,8 +12,10 @@ from rest_framework.test import APIClient
 from contacts.models import Contact
 from inventory.models import Product, ProductCategory, Stock, UoM, UoMCategory, Warehouse
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder
+from production.serializers import WorkOrderListSerializer
 from sales.models import SaleLine, SaleOrder
 from sales.selectors import SaleOrderSelector
+from sales.serializers import SaleLineSerializer
 
 User = get_user_model()
 
@@ -148,3 +151,22 @@ def test_write_flows_do_not_receive_the_stock_snapshot(catalog):
     for line in fetched.lines.all():
         assert not hasattr(line.product, "annotated_current_stock")
         assert not hasattr(line.product, "annotated_qty_reserved")
+
+
+def test_list_builds_each_nested_serializer_only_once(catalog):
+    """DRF rebuilds a ModelSerializer's fields per instance: doing it per order dominated the list's CPU time."""
+    client = _authenticated_client()
+    for index in range(3):
+        _make_order(index, catalog)
+
+    with (
+        patch.object(SaleLineSerializer, "get_fields", autospec=True, side_effect=SaleLineSerializer.get_fields) as lines,
+        patch.object(
+            WorkOrderListSerializer, "get_fields", autospec=True, side_effect=WorkOrderListSerializer.get_fields
+        ) as work_orders,
+    ):
+        response = client.get("/api/sales/orders/")
+
+    assert len(response.data["results"]) == 3
+    assert lines.call_count == 1
+    assert work_orders.call_count == 1
