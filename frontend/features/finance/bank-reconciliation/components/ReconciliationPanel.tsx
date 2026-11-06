@@ -533,15 +533,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             size: 40,
         },
         {
+            id: "line_number",
+            header: "L#",
+            cell: ({ row }) => (
+                <span className="font-mono font-black text-3xs text-muted-foreground tabular-nums">
+                    {row.original.line_number}
+                </span>
+            ),
+            size: 36,
+        },
+        {
             accessorKey: "transaction_date",
             header: "Fecha",
             cell: ({ row }) => (
-                <div className="flex flex-col justify-center h-full">
-                    <span className="font-mono font-bold text-xs">
-                        {format(parseDateOnly(row.original.transaction_date), 'dd MMM yy', { locale: es })}
-                    </span>
-                    <span className="text-3xs font-bold uppercase text-muted-foreground opacity-50"> {/* intentional: badge density */} L{row.original.line_number}</span>
-                </div>
+                <span className="font-mono font-bold text-xs">
+                    {format(parseDateOnly(row.original.transaction_date), 'dd MMM yy', { locale: es })}
+                </span>
             ),
             size: 80,
         },
@@ -631,19 +638,24 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             size: 40,
         },
         {
-            accessorKey: "date",
+            accessorKey: "display_id",
             header: "Documento",
             cell: ({ row }) => (
-                <div className="flex flex-col justify-center h-full">
-                    <span className="font-mono font-bold text-xs">
-                        {row.original.display_id || row.original.code || 'PEND'}
-                    </span>
-                    <span className="text-3xs font-medium text-muted-foreground"> {/* intentional: badge density */}
-                        {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
-                    </span>
-                </div>
+                <span className="font-mono font-bold text-xs">
+                    {row.original.display_id || row.original.code || 'PEND'}
+                </span>
             ),
-            size: 90,
+            size: 72,
+        },
+        {
+            accessorKey: "date",
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="font-mono text-xs text-muted-foreground">
+                    {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
+                </span>
+            ),
+            size: 72,
         },
         {
             accessorKey: "contact_name",
@@ -811,7 +823,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             Excluida
                         </span>
                     </div>
-                    <div className={cn("flex-1 min-h-0 flex gap-6 relative items-stretch", dockVisible ? "pb-24" : "pb-2")}>
+                    <div className="flex-1 min-h-0 flex gap-6 relative items-stretch pb-2">
                         {/* Tables Container */}
                         <div className="flex-1 h-full min-h-0 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
                             {/* ─── Grid with Section Headers ─── */}
@@ -881,16 +893,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-primary" />
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos de Tesorería</span>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10 hover:text-primary"
+                                            <span
+                                                role="button"
+                                                tabIndex={0}
+                                                className="inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-3xs font-semibold text-primary hover:bg-primary/10 hover:text-primary transition-colors"
                                                 onClick={() => setIsCreateMovementOpen(true)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsCreateMovementOpen(true) } }}
                                             >
                                                 <Plus className="h-3 w-3" />
                                                 Nuevo movimiento
-                                            </Button>
+                                            </span>
                                         </div>
                                         <span className="text-3xs font-mono tabular-nums text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
@@ -983,7 +995,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 <div key={groupItem.key} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-md overflow-hidden transition-all duration-300">
                                     <div className="flex">
                                         {/* Left Column: Bank Side (Can have multiple lines) */}
-                                        <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
+                                        <div className="w-[50%] p-6 flex flex-col justify-start border-r border-border/40 relative">
                                             {/* Connecting Visual Resource */}
                                             <div className="absolute top-1/2 -right-3 -translate-y-1/2 z-10">
                                                 <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-card group-hover/card:border-primary/40 transition-all">
@@ -991,9 +1003,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-4">
+                                            <div className="space-y-2">
                                                 <div className="flex items-center justify-between px-1">
-                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
+                                                    <span className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
                                                 </div>
 
                                                 <div className="space-y-2">
@@ -1002,14 +1014,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
 
                                                         return (
-                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-card">
+                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
                                                                         <FileText className="h-4 w-4" />
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
+                                                                        <h3 className="text-xs font-bold leading-tight text-foreground/90 max-w-[600px]">{line.description}</h3>
                                                                         <span className="text-4xs font-mono font-bold uppercase text-muted-foreground opacity-60">Línea: {line.line_number}</span>
-                                                                        <h3 className="text-xs font-bold leading-tight text-foreground/90 truncate max-w-[200px]">{line.description}</h3>
                                                                     </div>
                                                                 </div>
 
@@ -1034,7 +1046,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex-1 p-6">
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between px-1">
-                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">
+                                                    <span className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">
                                                         Movimientos de Tesorería ({movements.length + batches.length})
                                                     </span>
                                                 </div>
@@ -1508,13 +1520,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4 pt-2">
                             <p>¿Estás seguro de que deseas conciliar estos movimientos?</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
-                                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                                <div className="space-y-1">
-                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
-                                    <p className="text-3xs text-destructive/80 font-medium">Esta acción es permanente. Asegúrate de que los montos coincidan correctamente antes de continuar.</p>
-                                </div>
-                            </div>
+
                         </div>
                     }
                     variant="destructive"

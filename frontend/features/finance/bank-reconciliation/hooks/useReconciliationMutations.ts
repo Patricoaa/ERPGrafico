@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { financeApi } from '../../api/financeApi'
+import { generateUuidV4 } from '@/lib/uuid'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { reconciliationKeys } from './queryKeys'
@@ -16,7 +17,7 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
                     line_ids: [lineId],
                     batch_ids: [paymentId],
                     payment_ids: []
-                })
+                }, generateUuidV4())
             } else {
                 await financeApi.matchStatementLine(lineId, { payment_id: paymentId })
             }
@@ -67,7 +68,7 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
 
     const groupMatchMutation = useMutation({
         mutationFn: async ({ payload, confirmPayload, lineId }: { payload: { line_ids?: number[], payment_ids?: number[], batch_ids?: number[] }, confirmPayload?: Record<string, unknown>, lineId: number }) => {
-            await financeApi.groupMatchLines(payload)
+            await financeApi.groupMatchLines(payload, generateUuidV4())
             if (confirmPayload && Object.keys(confirmPayload).length > 0) {
                 await financeApi.confirmMatch(lineId, confirmPayload)
             }

@@ -183,8 +183,10 @@ export const financeApi = {
         api.post<unknown>(`/treasury/statement-lines/${lineId}/match/`, payload).then(r => r.data),
     confirmMatch: (lineId: number, payload: Record<string, unknown>) =>
         api.post<unknown>(`/treasury/statement-lines/${lineId}/confirm/`, payload).then(r => r.data),
-    groupMatchLines: (payload: Record<string, unknown>) =>
-        api.post<unknown>('/treasury/statement-lines/match_group/', payload).then(r => r.data),
+    groupMatchLines: (payload: Record<string, unknown>, idempotencyKey: string) =>
+        api.post<unknown>('/treasury/statement-lines/match_group/', payload, {
+            headers: { 'Idempotency-Key': idempotencyKey },
+        }).then(r => r.data),
     unmatchLine: (lineId: number) =>
         api.post<unknown>(`/treasury/statement-lines/${lineId}/unmatch/`).then(r => r.data),
     updateStatementLine: (lineId: number, payload: Record<string, unknown>) =>
