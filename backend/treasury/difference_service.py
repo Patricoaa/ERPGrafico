@@ -16,7 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 
-from .models import BankStatement, BankStatementLine
+from .models import BankStatement, BankStatementLine, ReconciliationMatch
 
 
 class DifferenceService:
@@ -59,14 +59,14 @@ class DifferenceService:
     @staticmethod
     @transaction.atomic
     def create_difference_adjustment(
-        line: BankStatementLine, difference_type: str, user, notes: str = "", accounting_date=None
+        group: ReconciliationMatch, difference_type: str, user, notes: str = "", accounting_date=None
     ) -> JournalEntry:
         """
-        Crea asiento contable de ajuste por diferencia.
+        Crea asiento contable de ajuste por diferencia del grupo de conciliación.
         """
-        difference = line.difference_amount
+        difference = group.difference_amount
         if abs(difference) == 0:
-            raise ValueError("No hay diferencia que ajustar en esta línea")
+            raise ValueError("No hay diferencia que ajustar en este grupo")
 
         # Validar tipo de diferencia
         valid_types = dict(DifferenceService.DIFFERENCE_CHOICES).keys()
@@ -103,71 +103,77 @@ class DifferenceService:
                 f"No se ha configurado la cuenta contable para '{label}'. Revise la configuración contable."
             )
 
-        treasury_account = line.statement.treasury_account.account
+        first_line = group.lines.select_related("statement__treasury_account__account").first()
+        if not first_line:
+            raise ValueError("El grupo de conciliación no tiene líneas asociadas")
+
+        treasury_account = first_line.statement.treasury_account.account
         if not treasury_account:
             raise ValueError("La cuenta de tesorería no tiene cuenta contable asociada")
 
+        statement = first_line.statement
         difference_label = dict(DifferenceService.DIFFERENCE_CHOICES)[difference_type]
         abs_diff = abs(difference)
 
         entry = JournalEntry.objects.create(
-            date=accounting_date or line.transaction_date,
-            reference=f"AJ-{line.statement.display_id}-{line.line_number}",
-            description=GlosaBuilder.build(GlosaBuilder.AJUSTE_BANCARIO, line.statement.display_id, "", abs_diff, extra=[difference_label, notes] if notes else [difference_label]),
+            date=accounting_date or first_line.transaction_date,
+            reference=f"AJ-GRP-{group.id}",
+            description=GlosaBuilder.build(GlosaBuilder.AJUSTE_BANCARIO, statement.display_id, "", abs_diff, extra=[difference_label, notes] if notes else [difference_label]),
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(BankStatement),
-            source_object_id=line.statement_id,
+            source_object_id=statement.id,
         )
 
         if difference > 0:
             if difference_type in [DifferenceService.INTEREST]:
                 JournalItem.objects.create(
                     entry=entry, account=treasury_account, debit=abs_diff, credit=0,
-                    label=GlosaBuilder.item(Roles.BANCO, "Ajuste interés", line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.BANCO, "Ajuste interés", statement.display_id),
                 )
                 JournalItem.objects.create(
                     entry=entry, account=difference_account, debit=0, credit=abs_diff,
-                    label=GlosaBuilder.item(Roles.INGRESO, "Ajuste interés", line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.INGRESO, "Ajuste interés", statement.display_id),
                 )
             else:
                 JournalItem.objects.create(
                     entry=entry, account=difference_account, debit=abs_diff, credit=0,
-                    label=GlosaBuilder.item(Roles.GASTO, difference_label, line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.GASTO, difference_label, statement.display_id),
                 )
                 JournalItem.objects.create(
                     entry=entry, account=treasury_account, debit=0, credit=abs_diff,
-                    label=GlosaBuilder.item(Roles.BANCO, difference_label, line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.BANCO, difference_label, statement.display_id),
                 )
         else:
             if difference_type in [DifferenceService.COMMISSION, DifferenceService.ERROR]:
                 JournalItem.objects.create(
                     entry=entry, account=difference_account, debit=abs_diff, credit=0,
-                    label=GlosaBuilder.item(Roles.GASTO, difference_label, line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.GASTO, difference_label, statement.display_id),
                 )
                 JournalItem.objects.create(
                     entry=entry, account=treasury_account, debit=0, credit=abs_diff,
-                    label=GlosaBuilder.item(Roles.BANCO, difference_label, line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.BANCO, difference_label, statement.display_id),
                 )
             else:
                 JournalItem.objects.create(
                     entry=entry, account=treasury_account, debit=abs_diff, credit=0,
-                    label=GlosaBuilder.item(Roles.BANCO, difference_label, line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.BANCO, difference_label, statement.display_id),
                 )
                 JournalItem.objects.create(
                     entry=entry, account=difference_account, debit=0, credit=abs_diff,
-                    label=GlosaBuilder.item(Roles.INGRESO, difference_label, line.statement.display_id),
+                    label=GlosaBuilder.item(Roles.INGRESO, difference_label, statement.display_id),
                 )
 
-        line.difference_journal_entry = entry
-        line.difference_reason = difference_type
-        line.save()
+        group.difference_journal_entry = entry
+        group.difference_reason = difference_type
+        group.save()
 
         return entry
 
     @staticmethod
-    def suggest_difference_type(line: BankStatementLine) -> str:
-        description = line.description.upper()
-        difference = abs(line.difference_amount)
+    def suggest_difference_type(group: ReconciliationMatch) -> str:
+        first_line = group.lines.first()
+        description = (first_line.description if first_line else "").upper()
+        difference = abs(group.difference_amount)
         commission_keywords = ["COMISION", "COMISIÓN", "CARGO", "MANTENCIÓN", "MANTENCION"]
         interest_keywords = ["INTERES", "INTERÉS", "ABONO", "RENDIMIENTO"]
         for keyword in commission_keywords:

@@ -202,8 +202,8 @@ export function StatementDetailPanel({
                             </div>
                             <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
                             <div className="mt-2 text-3xs text-muted-foreground flex justify-between">
-                                <span>{statement.reconciled_lines} líneas procesadas</span>
-                                <span>{statement.total_lines - statement.reconciled_lines} sin conciliar</span>
+                                <span>{statement.reconciled_lines} conciliadas · {statement.excluded_lines ?? 0} excluidas</span>
+                                <span>{statement.total_lines - statement.reconciled_lines - (statement.excluded_lines ?? 0)} sin conciliar</span>
                             </div>
                         </div>
                     </>

@@ -223,8 +223,10 @@ export const treasuryApi = {
         return toPage<TreasuryMovement>(response.data, pageIndex, pageSize)
     },
 
-    createMovement: async (payload: MovementCreatePayload): Promise<TreasuryMovement> => {
-        const { data } = await api.post<TreasuryMovement>('/treasury/movements/', payload)
+    createMovement: async (payload: MovementCreatePayload, idempotencyKey: string): Promise<TreasuryMovement> => {
+        const { data } = await api.post<TreasuryMovement>('/treasury/movements/', payload, {
+            headers: { 'Idempotency-Key': idempotencyKey },
+        })
         return data
     },
 

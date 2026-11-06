@@ -18,7 +18,7 @@ import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText, RotateCcw,
-    Sparkles, X, Wand2, Calculator, Brain, Plus
+    Sparkles, X, Wand2, Calculator, Brain, Plus, Undo2
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -50,7 +50,8 @@ import {
     useCreateAndMatchMutation,
     useRestoreMutation,
     useBulkRestoreMutation,
-    useCreateMovementMutation
+    useCreateMovementMutation,
+    useUnmatchMutation,
 } from "../hooks/useReconciliationMutations"
 
 import { useServerDate } from '@/hooks/useServerDate'
@@ -216,6 +217,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { exclude } = useExcludeMutation(statementId)
     const { bulkExclude } = useBulkExcludeMutation(statementId)
     const { restore } = useRestoreMutation(statementId)
+    const { unmatch: unmatchGroup, isUnmatching: isUnmatchingGroup } = useUnmatchMutation(statementId, treasuryAccountId)
+    const [unmatchGroupDialog, setUnmatchGroupDialog] = useState<{ open: boolean; lineId: number | null }>({ open: false, lineId: null })
     // El dock de acciones flota solo con selección: el espacio inferior se reserva únicamente entonces.
     const dockVisible = selectedLines.length > 0 || selectedPayments.length > 0
     const { mutateAsync: bulkRestore, isPending: restoringLines } = useBulkRestoreMutation(statementId)
@@ -530,15 +533,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             size: 40,
         },
         {
+            id: "line_number",
+            header: "Linea",
+            cell: ({ row }) => (
+                <span className="font-mono text-muted-foreground tabular-nums">
+                    {row.original.line_number}
+                </span>
+            ),
+            size: 36,
+        },
+        {
             accessorKey: "transaction_date",
             header: "Fecha",
             cell: ({ row }) => (
-                <div className="flex flex-col justify-center h-full">
-                    <span className="font-mono font-bold text-xs">
-                        {format(parseDateOnly(row.original.transaction_date), 'dd MMM yy', { locale: es })}
-                    </span>
-                    <span className="text-3xs font-bold uppercase text-muted-foreground opacity-50"> {/* intentional: badge density */} L{row.original.line_number}</span>
-                </div>
+                <span className="text-xs">
+                    {format(parseDateOnly(row.original.transaction_date), 'dd/mm', { locale: es })}
+                </span>
             ),
             size: 80,
         },
@@ -549,7 +559,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data.id === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
-                        <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
+                        <span className={cn("text-xs truncate", isSuggested && "text-warning")}>
                             {row.original.description}
                         </span>
                         {row.original.reconciliation_status === 'EXCLUDED' && (
@@ -628,19 +638,24 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             size: 40,
         },
         {
-            accessorKey: "date",
+            accessorKey: "display_id",
             header: "Documento",
             cell: ({ row }) => (
-                <div className="flex flex-col justify-center h-full">
-                    <span className="font-mono font-bold text-xs">
-                        {row.original.display_id || row.original.code || 'PEND'}
-                    </span>
-                    <span className="text-3xs font-medium text-muted-foreground"> {/* intentional: badge density */}
-                        {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
-                    </span>
-                </div>
+                <span className=" text-xs">
+                    {row.original.display_id || row.original.code || 'PEND'}
+                </span>
             ),
-            size: 90,
+            size: 72,
+        },
+        {
+            accessorKey: "date",
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className=" text-xs text-muted-foreground">
+                    {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
+                </span>
+            ),
+            size: 72,
         },
         {
             accessorKey: "contact_name",
@@ -678,7 +693,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     item.movement_type === 'INBOUND' ||
                     (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
                 )
-                let label = isDeposit ? "Ingreso" : "Egreso"
+                let label = isDeposit ? "Depósito" : "Retiro"
                 if (item.movement_type === 'TRANSFER') label = isDeposit ? "Transf. Entrante" : "Transf. Saliente"
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
 
@@ -702,9 +717,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
                         <span className={cn(
-                            "font-mono font-black text-sm tracking-tight group-hover:scale-105 transition-transform",
+                            "font-semibold text-xs tracking-tight group-hover:scale-105 transition-transform",
                             isDeposit ? "text-success" : "text-destructive"
                         )}>
+                            
                             {formatCurrency(Math.abs(parseFloat(item.amount)))}
                         </span>
                     </div>
@@ -808,7 +824,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             Excluida
                         </span>
                     </div>
-                    <div className={cn("flex-1 min-h-0 flex gap-6 relative items-stretch", dockVisible ? "pb-24" : "pb-2")}>
+                    <div className="flex-1 min-h-0 flex gap-6 relative items-stretch pb-2">
                         {/* Tables Container */}
                         <div className="flex-1 h-full min-h-0 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
                             {/* ─── Grid with Section Headers ─── */}
@@ -878,16 +894,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-primary" />
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos de Tesorería</span>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 gap-1 px-2 text-3xs font-semibold text-primary hover:bg-primary/10 hover:text-primary"
+                                            <span
+                                                role="button"
+                                                tabIndex={0}
+                                                className="inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-3xs font-semibold text-primary hover:bg-primary/10 hover:text-primary transition-colors"
                                                 onClick={() => setIsCreateMovementOpen(true)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsCreateMovementOpen(true) } }}
                                             >
                                                 <Plus className="h-3 w-3" />
                                                 Nuevo movimiento
-                                            </Button>
+                                            </span>
                                         </div>
                                         <span className="text-3xs font-mono tabular-nums text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
@@ -980,7 +996,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 <div key={groupItem.key} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-md overflow-hidden transition-all duration-300">
                                     <div className="flex">
                                         {/* Left Column: Bank Side (Can have multiple lines) */}
-                                        <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
+                                        <div className="w-[50%] p-6 flex flex-col justify-start border-r border-border/40 relative">
                                             {/* Connecting Visual Resource */}
                                             <div className="absolute top-1/2 -right-3 -translate-y-1/2 z-10">
                                                 <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-card group-hover/card:border-primary/40 transition-all">
@@ -988,9 +1004,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-4">
+                                            <div className="space-y-2">
                                                 <div className="flex items-center justify-between px-1">
-                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
+                                                    <span className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
                                                 </div>
 
                                                 <div className="space-y-2">
@@ -999,14 +1015,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
 
                                                         return (
-                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-card">
+                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
                                                                         <FileText className="h-4 w-4" />
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
+                                                                        <h3 className="text-xs font-bold leading-tight text-foreground/90 max-w-[600px]">{line.description}</h3>
                                                                         <span className="text-4xs font-mono font-bold uppercase text-muted-foreground opacity-60">Línea: {line.line_number}</span>
-                                                                        <h3 className="text-xs font-bold leading-tight text-foreground/90 truncate max-w-[200px]">{line.description}</h3>
                                                                     </div>
                                                                 </div>
 
@@ -1031,7 +1047,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex-1 p-6">
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between px-1">
-                                                    <span className="text-4xs font-bold uppercase text-muted-foreground tracking-widest">
+                                                    <span className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">
                                                         Movimientos de Tesorería ({movements.length + batches.length})
                                                     </span>
                                                 </div>
@@ -1106,6 +1122,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             </div>
                                         </div>
                                     </div>
+                                    {/* Footer: acción revertir (solo en DRAFT) */}
+                                    {statement?.state !== "CONFIRMED" && (
+                                        <div className="border-t border-border/40 px-6 py-2.5 flex justify-end bg-muted/10">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled={isUnmatchingGroup}
+                                                onClick={() => setUnmatchGroupDialog({ open: true, lineId: lines[0].id })}
+                                                className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 gap-1.5"
+                                            >
+                                                <Undo2 className="h-3 w-3" />
+                                                Revertir conciliación
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -1113,6 +1145,20 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 </TabsContent>
 
                 {/* ─── Modals ─── */}
+                <ActionConfirmModal
+                    open={unmatchGroupDialog.open}
+                    onOpenChange={(open) => !open && setUnmatchGroupDialog((prev) => ({ ...prev, open: false }))}
+                    onConfirm={async () => {
+                        if (!unmatchGroupDialog.lineId) return
+                        await unmatchGroup(unmatchGroupDialog.lineId)
+                        setUnmatchGroupDialog({ open: false, lineId: null })
+                    }}
+                    title="¿Revertir conciliación?"
+                    description='Se deshará la conciliación de este grupo, devolviendo todas las líneas bancarias y movimientos de tesorería al estado "No Conciliado".'
+                    variant="destructive"
+                    confirmText="Revertir"
+                />
+
                 <ExclusionModal
                     open={actionDialog.open && (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude')}
                     onOpenChange={(open) => !open && setActionDialog({ open: false, type: null })}
@@ -1201,13 +1247,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4">
                             <p>Existe una diferencia de <span className="font-bold text-primary">{formatCurrency(parseFloat(diffDialog.amount))}</span>. Selecciona cómo deseas procesarla.</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
-                                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                                <div className="space-y-1">
-                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
-                                    <p className="text-3xs text-destructive/80 font-medium">Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.</p>
-                                </div>
-                            </div>
+
                         </div>
                     }
                     footer={
@@ -1228,6 +1268,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     }
                 >
                     <div className="space-y-4 py-4">
+                        <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
+                                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
+                                    <p className="text-3xs text-destructive/80 font-medium">Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.</p>
+                                </div>
+                        </div>
                         <LabeledSelect
                             label="Motivo del Ajuste"
                             value={diffType}
@@ -1475,13 +1522,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4 pt-2">
                             <p>¿Estás seguro de que deseas conciliar estos movimientos?</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
-                                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                                <div className="space-y-1">
-                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
-                                    <p className="text-3xs text-destructive/80 font-medium">Esta acción es permanente. Asegúrate de que los montos coincidan correctamente antes de continuar.</p>
-                                </div>
-                            </div>
+
                         </div>
                     }
                     variant="destructive"
@@ -1515,7 +1556,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     contentClassName="p-0"
                 >
                     <div className="h-full overflow-y-auto p-4 custom-scrollbar">
-                        <ReconciliationIntelligencePanel />
+                        <ReconciliationIntelligencePanel accountId={treasuryAccountId} />
                     </div>
                 </Drawer>
             </Tabs>

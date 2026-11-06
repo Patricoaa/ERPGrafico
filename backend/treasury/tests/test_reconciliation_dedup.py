@@ -57,7 +57,7 @@ class TestReconciliationDedup:
                 user=self.user,
             )
 
-        assert "ya ha sido importado anteriormente" in str(excinfo.value)
+        assert "ya fue importado" in str(excinfo.value)
         assert BankStatement.objects.count() == 1
 
     def test_different_files_pass(self):

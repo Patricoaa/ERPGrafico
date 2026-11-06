@@ -10,6 +10,7 @@ export interface BankStatement {
     closing_balance: string
     total_lines: number
     reconciled_lines: number
+    excluded_lines: number
     reconciliation_progress: number
     state: 'DRAFT' | 'CONFIRMED' | 'CANCELLED'
     state_display: string

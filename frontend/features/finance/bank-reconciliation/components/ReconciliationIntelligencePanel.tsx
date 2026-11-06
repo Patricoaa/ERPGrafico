@@ -87,9 +87,9 @@ const ThresholdControl = ({ label, value, suffix, tooltip, onChange, min = 0, ma
     </div>
 )
 
-export function ReconciliationIntelligencePanel({ externalOpen }: { externalOpen?: boolean }) { // eslint-disable-line @typescript-eslint/no-unused-vars
-    const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery("global")
-    const { updateSettings } = useUpdateReconciliationSettingsMutation("global")
+export function ReconciliationIntelligencePanel({ accountId }: { accountId?: number }) {
+    const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery(accountId)
+    const { updateSettings } = useUpdateReconciliationSettingsMutation(accountId)
 
     const form = useForm<IntelligenceFormValues>({
         resolver: zodResolver(intelligenceSchema),

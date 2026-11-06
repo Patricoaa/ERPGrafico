@@ -1651,6 +1651,22 @@ class BankStatementService:
 
         statement.status = "CONFIRMED"
         statement.save(update_fields=["status"])
+
+        # Publish DRAFT difference adjustments for all groups linked to this statement
+        from accounting.models import JournalEntry
+        from .models import ReconciliationMatch
+        draft_matches = (
+            ReconciliationMatch.objects
+            .filter(lines__statement=statement, difference_journal_entry__isnull=False)
+            .select_related("difference_journal_entry")
+            .distinct()
+        )
+        for match in draft_matches:
+            entry = match.difference_journal_entry
+            if entry and entry.status == JournalEntry.State.DRAFT:
+                entry.status = JournalEntry.State.POSTED
+                entry.save(update_fields=["status"])
+
         return statement
 
     @staticmethod

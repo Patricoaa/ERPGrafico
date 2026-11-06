@@ -665,6 +665,10 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
         source="reconciled_by.username", read_only=True, allow_null=True
     )
     amount = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+    reconciliation_state = serializers.CharField(source="reconciliation_status", read_only=True)
+    reconciliation_state_display = serializers.CharField(
+        source="get_reconciliation_status_display", read_only=True
+    )
     reconciliation_group_data = serializers.SerializerMethodField()
 
     def get_reconciliation_group_data(self, obj):
@@ -680,9 +684,6 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
             "reconciliation_match",
             "reconciled_at",
             "reconciled_by",
-            "difference_amount",
-            "difference_reason",
-            "difference_journal_entry",
             "has_warning",
             "warning_message",
         ]
@@ -716,6 +717,7 @@ class BankStatementSerializer(serializers.ModelSerializer):
     has_file = serializers.SerializerMethodField()
     file_name = serializers.SerializerMethodField()
     reconciled_lines = serializers.IntegerField(read_only=True)
+    excluded_lines = serializers.IntegerField(read_only=True)
     lines = BankStatementLineSerializer(many=True, read_only=True)
 
     def get_has_file(self, obj: BankStatement) -> bool:
@@ -737,6 +739,7 @@ class BankStatementListSerializer(serializers.ModelSerializer):
     reconciliation_progress = serializers.FloatField(read_only=True)
     display_id = serializers.CharField(read_only=True)
     reconciled_lines = serializers.IntegerField(read_only=True)
+    excluded_lines = serializers.IntegerField(read_only=True)
     touched_lines = serializers.SerializerMethodField()
     has_file = serializers.SerializerMethodField()
     file_name = serializers.SerializerMethodField()
@@ -775,6 +778,7 @@ class BankStatementListSerializer(serializers.ModelSerializer):
             "file_name",
             "total_lines",
             "reconciled_lines",
+            "excluded_lines",
             "reconciliation_progress",
             "imported_at",
             "imported_by_name",

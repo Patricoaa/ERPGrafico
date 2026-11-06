@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { CheckCircle2, Download, Trash2 } from "lucide-react"
+import { Activity, CheckCircle2, Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useConfirmStatement } from "@/features/treasury"
 import { ActionConfirmModal, DocumentActionsMenu, Drawer, SkeletonShell, SubmitButton, type DocumentActionItem } from "@/components/shared"
@@ -98,6 +98,7 @@ export function ReconciliationWorkbenchTab({ statementId, onClose, onConfirmed }
             resizable={false}
             title={statementTitle(statement)}
             subtitle={statement?.treasury_account_name}
+            icon={Activity}
             headerActions={statement && <DocumentActionsMenu primary={null} actions={headerActions} />}
             footer={statement && (
                 <WorkbenchFooter
@@ -187,7 +188,7 @@ function WorkbenchHeader({ statement, loading }: { statement: BankStatement | un
                 <div className="ml-auto flex w-56 flex-col gap-1.5" aria-label="Avance de la conciliación">
                     <div className="flex items-baseline justify-between text-3xs">
                         <span className="text-muted-foreground">
-                            {statement.reconciled_lines} de {statement.total_lines} líneas
+                            {statement.reconciled_lines} de {statement.total_lines - (statement.excluded_lines ?? 0)} líneas
                         </span>
                         <span className="font-mono font-semibold tabular-nums text-foreground">{Math.round(progress)}%</span>
                     </div>

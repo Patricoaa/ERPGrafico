@@ -60,6 +60,25 @@ class ReconciliationMatch(models.Model):
 
     notes = models.TextField(_("Notas"), blank=True)
 
+    # Diferencia del grupo (ADR: diferencia vive en el grupo, no distribuida por línea)
+    difference_amount = models.DecimalField(
+        _("Diferencia"), max_digits=20, decimal_places=2, default=0
+    )
+    difference_reason = models.CharField(
+        _("Razón de Diferencia"),
+        max_length=50,
+        blank=True,
+        help_text=_("COMMISSION, INTEREST, ERROR, etc."),
+    )
+    difference_journal_entry = models.ForeignKey(
+        "accounting.JournalEntry",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reconciliation_match_adjustments",
+        verbose_name=_("Asiento de Ajuste"),
+    )
+
     # Tracking for transfers generated during reconciliation (e.g. cross-account match)
     transfer_journal_entries = models.ManyToManyField(
         "accounting.JournalEntry",
@@ -1353,6 +1372,10 @@ class BankStatement(models.Model):
     def reconciled_lines(self):
         return self.lines.filter(reconciliation_status="RECONCILED").count()
 
+    @property
+    def excluded_lines(self):
+        return self.lines.filter(reconciliation_status="EXCLUDED").count()
+
     file_hash = models.CharField(
         _("Hash del Archivo"),
         max_length=64,
@@ -1384,10 +1407,11 @@ class BankStatement(models.Model):
 
     @property
     def reconciliation_progress(self):
-        """Retorna porcentaje de reconciliación"""
-        if self.total_lines == 0:
-            return 0
-        return round((self.reconciled_lines / self.total_lines) * 100, 1)
+        """Porcentaje de reconciliación; las líneas excluidas no cuentan como pendientes."""
+        active = self.total_lines - self.excluded_lines
+        if active == 0:
+            return 100 if self.total_lines > 0 else 0
+        return round((self.reconciled_lines / active) * 100, 1)
 
 
 class BankStatementLine(models.Model):
@@ -1395,10 +1419,7 @@ class BankStatementLine(models.Model):
 
     # ADR-0091: matched/reconciled lines change only through match/unmatch actions.
     edit_policy = EditPolicy(
-        is_locked=lambda line: (
-            line.reconciliation_status in ("MATCHED", "RECONCILED")
-            or line.difference_journal_entry_id is not None
-        ),
+        is_locked=lambda line: line.reconciliation_status in ("MATCHED", "RECONCILED"),
         locked_message="La línea está conciliada; deshaga la conciliación antes de modificarla.",
     )
 
@@ -1461,25 +1482,6 @@ class BankStatementLine(models.Model):
         blank=True,
         related_name="reconciled_lines",
         verbose_name=_("Reconciliado Por"),
-    )
-
-    # Diferencias (para fase 2)
-    difference_amount = models.DecimalField(
-        _("Diferencia"), max_digits=20, decimal_places=2, default=0
-    )
-    difference_reason = models.CharField(
-        _("Razón de Diferencia"),
-        max_length=50,
-        blank=True,
-        help_text=_("COMMISSION, INTEREST, ERROR, etc."),
-    )
-    difference_journal_entry = models.ForeignKey(
-        "accounting.JournalEntry",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="reconciliation_adjustments",
-        verbose_name=_("Asiento de Ajuste"),
     )
 
     # Advertencias de importación
