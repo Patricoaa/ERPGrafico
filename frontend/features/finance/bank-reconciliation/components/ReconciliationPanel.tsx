@@ -534,9 +534,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         },
         {
             id: "line_number",
-            header: "L#",
+            header: "Linea",
             cell: ({ row }) => (
-                <span className="font-mono font-black text-3xs text-muted-foreground tabular-nums">
+                <span className="font-mono text-muted-foreground tabular-nums">
                     {row.original.line_number}
                 </span>
             ),
@@ -546,8 +546,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "transaction_date",
             header: "Fecha",
             cell: ({ row }) => (
-                <span className="font-mono font-bold text-xs">
-                    {format(parseDateOnly(row.original.transaction_date), 'dd MMM yy', { locale: es })}
+                <span className="text-xs">
+                    {format(parseDateOnly(row.original.transaction_date), 'dd/mm', { locale: es })}
                 </span>
             ),
             size: 80,
@@ -559,7 +559,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data.id === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
-                        <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
+                        <span className={cn("text-xs truncate", isSuggested && "text-warning")}>
                             {row.original.description}
                         </span>
                         {row.original.reconciliation_status === 'EXCLUDED' && (
@@ -641,7 +641,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "display_id",
             header: "Documento",
             cell: ({ row }) => (
-                <span className="font-mono font-bold text-xs">
+                <span className=" text-xs">
                     {row.original.display_id || row.original.code || 'PEND'}
                 </span>
             ),
@@ -651,7 +651,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "date",
             header: "Fecha",
             cell: ({ row }) => (
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className=" text-xs text-muted-foreground">
                     {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
                 </span>
             ),
@@ -693,7 +693,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     item.movement_type === 'INBOUND' ||
                     (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
                 )
-                let label = isDeposit ? "Ingreso" : "Egreso"
+                let label = isDeposit ? "Depósito" : "Retiro"
                 if (item.movement_type === 'TRANSFER') label = isDeposit ? "Transf. Entrante" : "Transf. Saliente"
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
 
@@ -717,9 +717,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
                         <span className={cn(
-                            "font-mono font-black text-sm tracking-tight group-hover:scale-105 transition-transform",
+                            "font-semibold text-xs tracking-tight group-hover:scale-105 transition-transform",
                             isDeposit ? "text-success" : "text-destructive"
                         )}>
+                            
                             {formatCurrency(Math.abs(parseFloat(item.amount)))}
                         </span>
                     </div>
@@ -1246,13 +1247,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4">
                             <p>Existe una diferencia de <span className="font-bold text-primary">{formatCurrency(parseFloat(diffDialog.amount))}</span>. Selecciona cómo deseas procesarla.</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
-                                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                                <div className="space-y-1">
-                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
-                                    <p className="text-3xs text-destructive/80 font-medium">Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.</p>
-                                </div>
-                            </div>
+
                         </div>
                     }
                     footer={
@@ -1273,6 +1268,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     }
                 >
                     <div className="space-y-4 py-4">
+                        <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
+                                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
+                                    <p className="text-3xs text-destructive/80 font-medium">Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.</p>
+                                </div>
+                        </div>
                         <LabeledSelect
                             label="Motivo del Ajuste"
                             value={diffType}
@@ -1554,7 +1556,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     contentClassName="p-0"
                 >
                     <div className="h-full overflow-y-auto p-4 custom-scrollbar">
-                        <ReconciliationIntelligencePanel />
+                        <ReconciliationIntelligencePanel accountId={treasuryAccountId} />
                     </div>
                 </Drawer>
             </Tabs>

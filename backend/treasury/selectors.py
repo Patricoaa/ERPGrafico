@@ -1055,6 +1055,9 @@ class TreasuryMovementSelector:
         if treasury_account:
             qs = qs.filter(Q(from_account_id=treasury_account) | Q(to_account_id=treasury_account))
 
+        if (is_rec := params.get("is_reconciled")) is not None and is_rec != "":
+            qs = qs.filter(is_reconciled=str(is_rec).lower() not in ("false", "0", "no"))
+
         if date := params.get("date"): qs = qs.filter(date=date)
         if df := params.get("date_from"): qs = qs.filter(date__gte=df)
         if dt := params.get("date_to"): qs = qs.filter(date__lte=dt)
@@ -1219,8 +1222,8 @@ class ReconciliationMatchSelector:
             "id": match.id,
             "movements": TreasuryMovementSerializer(standalone_movements, many=True).data,
             "batches": TerminalBatchSerializer(batches, many=True).data,
-            "difference_amount": float(obj.difference_amount),
-            "difference_type": obj.difference_reason,
-            "difference_type_display": obj.difference_reason,
-            "difference_journal_entry": obj.difference_journal_entry_id,
+            "difference_amount": float(match.difference_amount),
+            "difference_type": match.difference_reason,
+            "difference_type_display": match.difference_reason,
+            "difference_journal_entry": match.difference_journal_entry_id,
         }

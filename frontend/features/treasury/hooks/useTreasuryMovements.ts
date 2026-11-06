@@ -3,6 +3,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
+import { generateUuidV4 } from '@/lib/uuid'
 import { treasuryApi } from '../api/treasuryApi'
 import { MOVEMENTS_KEYS } from './queryKeys'
 import type { MovementCreatePayload, TreasuryMovement, TreasuryMovementFilters } from '../types'
@@ -42,7 +43,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     })
 
     const createMovement = useMutation({
-        mutationFn: (payload: MovementCreatePayload) => treasuryApi.createMovement(payload),
+        mutationFn: (payload: MovementCreatePayload) => treasuryApi.createMovement(payload, generateUuidV4()),
         onSuccess: () => {
             markLocalMutation()
             invalidateCrossFeature(queryClient, [MOVEMENTS_KEYS.all])

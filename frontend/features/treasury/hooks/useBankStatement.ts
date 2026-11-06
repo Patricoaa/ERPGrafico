@@ -16,6 +16,7 @@ export interface BankStatementData {
     notes?: string
     total_lines: number
     reconciled_lines: number
+    excluded_lines: number
     touched_lines?: number
     reconciliation_progress: number
     has_file: boolean

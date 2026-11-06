@@ -7,7 +7,7 @@ import type { BankStatement } from "../types"
 declare module "@/components/entity-view/core/value-kinds" {
     interface ValueKinds {
         statementLines: {
-            value: { total_lines: number; reconciled_lines: number } | null
+            value: { total_lines: number; reconciled_lines: number; excluded_lines: number } | null
             options: Record<never, never>
         }
     }
@@ -20,7 +20,6 @@ registerValueKind("statementLines", {
         value ? (
             <div className="flex flex-col items-center justify-center w-full">
                 <span className="font-semibold text-xs">{value.total_lines} total</span>
-                
             </div>
         ) : (
             <DataCell.Empty />
@@ -45,12 +44,12 @@ export const statementEntity = defineEntity<BankStatement>()((f) => ({
         closingBalance: f.money("closing_balance", { label: "Cierre" }),
         lines: f.value(
             "statementLines",
-            (e) => ({ total_lines: e.total_lines, reconciled_lines: e.reconciled_lines }),
+            (e) => ({ total_lines: e.total_lines, reconciled_lines: e.reconciled_lines, excluded_lines: e.excluded_lines ?? 0 }),
             { label: "Líneas" },
         ),
         progress: f.value(
             "progress",
-            (e) => ({ done: e.reconciled_lines, total: e.total_lines }),
+            (e) => ({ done: e.reconciled_lines, total: e.total_lines - (e.excluded_lines ?? 0) }),
             { label: "Progreso" },
         ),
         state: f.status(

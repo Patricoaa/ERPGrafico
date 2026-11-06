@@ -155,13 +155,6 @@ class BankStatementLineAdmin(admin.ModelAdmin):
         ),
         ("Montos", {"fields": ("debit", "credit", "balance", "amount")}),
         ("Reconciliación", {"fields": ("reconciliation_status", "reconciled_at", "reconciled_by")}),
-        (
-            "Diferencias",
-            {
-                "fields": ("difference_amount", "difference_reason", "difference_journal_entry"),
-                "classes": ("collapse",),
-            },
-        ),
         ("Notas", {"fields": ("notes",), "classes": ("collapse",)}),
     )
 

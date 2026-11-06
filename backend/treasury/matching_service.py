@@ -45,9 +45,10 @@ class MatchingService:
     @classmethod
     def confirm_match_from_request(cls, request, line):
         dt = request.data.get('difference_type')
-        if dt and line.difference_amount != 0:
+        group = line.reconciliation_match
+        if dt and group and group.difference_amount != 0:
             from .difference_service import DifferenceService
-            DifferenceService.create_difference_adjustment(line, dt, request.user, request.data.get('notes', ''), request.data.get('accounting_date'))
+            DifferenceService.create_difference_adjustment(group, dt, request.user, request.data.get('notes', ''), request.data.get('accounting_date'))
         return cls.confirm_match(line.id, request.user)
 
     """
@@ -524,43 +525,14 @@ class MatchingService:
             b.save()
             total_payments_amount += b.net_amount
 
-        # Calculate Difference and distribute proportionally
+        # Calculate Difference — stored at group level (not distributed per line)
         difference = total_lines_amount - total_payments_amount
-
-        if lines and total_lines_amount > 0:
-            remaining_diff = difference
-            distribution_log = []
-
-            for i, line in enumerate(lines):
-                # If it's the last line, assign the remaining difference to avoid rounding issues
-                if i == len(lines) - 1:
-                    line_diff = remaining_diff
-                else:
-                    line_abs = abs(line.credit - line.debit)
-                    proportion = line_abs / total_lines_amount
-                    line_diff = (difference * proportion).quantize(Decimal("0.01"))
-                    remaining_diff -= line_diff
-
-                line.difference_amount = line_diff
-                if difference_reason:
-                    line.difference_reason = difference_reason
-                line.save()
-
-                if line_diff != 0:
-                    distribution_log.append(f"L{line.line_number}: {line_diff}")
-
-            # Document distribution in group notes
-            if distribution_log:
-                dist_str = ", ".join(distribution_log)
-                notes_prefix = f"{notes}\n" if notes else ""
-                group.notes = f"{notes_prefix}[Reparto proporcional: {dist_str}]"
-                group.save()
-        elif lines:
-            # Fallback if total_lines_amount is 0
-            lines[0].difference_amount = difference
-            if difference_reason:
-                lines[0].difference_reason = difference_reason
-            lines[0].save()
+        group.difference_amount = difference
+        if difference_reason:
+            group.difference_reason = difference_reason
+        if notes:
+            group.notes = notes
+        group.save()
 
         from core.cache import invalidate_report_cache
 
@@ -729,16 +701,27 @@ class MatchingService:
             p.bank_statement_line = None
             p.save()
 
-        # 2. Lines — S2.2: bulk_update, S2.3 Fase 1: sin escribir reconciled_lines
+        # 2. Delete DRAFT difference journal entry at group level; block on POSTED
+        if group.difference_journal_entry_id:
+            from accounting.models import JournalEntry
+            entry = group.difference_journal_entry
+            if entry:
+                if entry.status != JournalEntry.State.DRAFT:
+                    raise ValueError(
+                        f"No se puede revertir esta conciliación porque el asiento de ajuste "
+                        f"'{entry.reference}' ya fue publicado. Revierta el asiento primero."
+                    )
+                entry.delete()  # JournalItems cascade
+
+        # 3. Lines — S2.2: bulk_update, S2.3 Fase 1: sin escribir reconciled_lines
         lines_to_reset = list(group.lines.all())
         for line in lines_to_reset:
             line.reconciliation_match = None
             line.reconciliation_status = "UNRECONCILED"
             line.reconciled_at = None
-            line.difference_amount = Decimal(0)
         BankStatementLine.objects.bulk_update(
             lines_to_reset,
-            ["reconciliation_match", "reconciliation_status", "reconciled_at", "difference_amount"],
+            ["reconciliation_match", "reconciliation_status", "reconciled_at"],
         )
 
         # 3. TerminalBatches

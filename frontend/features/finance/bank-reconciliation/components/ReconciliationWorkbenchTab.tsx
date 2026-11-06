@@ -188,7 +188,7 @@ function WorkbenchHeader({ statement, loading }: { statement: BankStatement | un
                 <div className="ml-auto flex w-56 flex-col gap-1.5" aria-label="Avance de la conciliación">
                     <div className="flex items-baseline justify-between text-3xs">
                         <span className="text-muted-foreground">
-                            {statement.reconciled_lines} de {statement.total_lines} líneas
+                            {statement.reconciled_lines} de {statement.total_lines - (statement.excluded_lines ?? 0)} líneas
                         </span>
                         <span className="font-mono font-semibold tabular-nums text-foreground">{Math.round(progress)}%</span>
                     </div>

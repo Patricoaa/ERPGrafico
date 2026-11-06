@@ -9,6 +9,10 @@ import { useRealtime } from '@/features/realtime'
 
 export function useMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const linesPrefix = [...reconciliationKeys.all, 'unreconciled-lines', statementId] as const
+    const paymentsPrefix = [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] as const
 
     const matchMutation = useMutation({
         mutationFn: async ({ lineId, paymentId, isBatch, confirmData }: { lineId: number; paymentId: number; isBatch?: boolean; confirmData?: Record<string, unknown> }) => {
@@ -18,38 +22,46 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
                     batch_ids: [paymentId],
                     payment_ids: []
                 }, generateUuidV4())
+                await financeApi.confirmMatch(lineId, confirmData ?? {})
             } else {
                 await financeApi.matchStatementLine(lineId, { payment_id: paymentId })
-            }
-            if (confirmData) {
-                await financeApi.confirmMatch(lineId, confirmData)
+                if (confirmData) {
+                    await financeApi.confirmMatch(lineId, confirmData)
+                }
             }
             return { lineId, paymentId, isBatch }
         },
         onMutate: async ({ lineId, paymentId }) => {
-            const linesKey = reconciliationKeys.unreconciledLines(statementId)
-            const paymentsKey = reconciliationKeys.unreconciledPayments(treasuryAccountId)
+            const previousLinesEntries = queryClient.getQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>({ queryKey: linesPrefix })
+            const previousPaymentsEntries = queryClient.getQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>({ queryKey: paymentsPrefix })
 
-            await queryClient.cancelQueries({ queryKey: linesKey })
-            await queryClient.cancelQueries({ queryKey: paymentsKey })
+            queryClient.setQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>(
+                { queryKey: linesPrefix },
+                (old) => {
+                    if (!old) return old
+                    if ('results' in old) return { ...old, results: old.results?.filter(l => l.id !== lineId) }
+                    return (old as {id: number}[]).filter(l => l.id !== lineId)
+                }
+            )
+            queryClient.setQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>(
+                { queryKey: paymentsPrefix },
+                (old) => {
+                    if (!old) return old
+                    if ('results' in old) return { ...old, results: old.results?.filter(p => p.id !== paymentId) }
+                    return (old as {id: number}[]).filter(p => p.id !== paymentId)
+                }
+            )
 
-            const previousLines = queryClient.getQueryData(linesKey)
-            const previousPayments = queryClient.getQueryData(paymentsKey)
-
-            queryClient.setQueryData(linesKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(l => l.id !== lineId))
-            queryClient.setQueryData(paymentsKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(p => p.id !== paymentId))
-
-            return { previousLines, previousPayments, linesKey, paymentsKey }
+            return { previousLinesEntries, previousPaymentsEntries }
         },
         onError: (err: Error, variables, context: unknown) => {
             showApiError(err, 'Error al realizar match')
-            const ctx = context as { previousLines?: unknown; previousPayments?: unknown; linesKey: readonly unknown[]; paymentsKey: readonly unknown[] } | undefined
-            if (ctx?.previousLines) {
-                queryClient.setQueryData(ctx.linesKey, ctx.previousLines)
-            }
-            if (ctx?.previousPayments) {
-                queryClient.setQueryData(ctx.paymentsKey, ctx.previousPayments)
-            }
+            const ctx = context as { previousLinesEntries?: [readonly unknown[], unknown][]; previousPaymentsEntries?: [readonly unknown[], unknown][] } | undefined
+            ctx?.previousLinesEntries?.forEach(([key, data]) => queryClient.setQueryData(key, data))
+            ctx?.previousPaymentsEntries?.forEach(([key, data]) => queryClient.setQueryData(key, data))
+        },
+        onSuccess: () => {
+            markLocalMutation()
         },
         onSettled: () => {
             invalidateCrossFeature(queryClient, [
@@ -65,42 +77,51 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
 
 export function useGroupMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const linesPrefix = [...reconciliationKeys.all, 'unreconciled-lines', statementId] as const
+    const paymentsPrefix = [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] as const
 
     const groupMatchMutation = useMutation({
         mutationFn: async ({ payload, confirmPayload, lineId }: { payload: { line_ids?: number[], payment_ids?: number[], batch_ids?: number[] }, confirmPayload?: Record<string, unknown>, lineId: number }) => {
             await financeApi.groupMatchLines(payload, generateUuidV4())
-            if (confirmPayload && Object.keys(confirmPayload).length > 0) {
-                await financeApi.confirmMatch(lineId, confirmPayload)
-            }
+            await financeApi.confirmMatch(lineId, confirmPayload ?? {})
             return payload
         },
         onMutate: async ({ payload }) => {
-            const linesKey = reconciliationKeys.unreconciledLines(statementId)
-            const paymentsKey = reconciliationKeys.unreconciledPayments(treasuryAccountId)
+            const previousLinesEntries = queryClient.getQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>({ queryKey: linesPrefix })
+            const previousPaymentsEntries = queryClient.getQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>({ queryKey: paymentsPrefix })
 
-            await queryClient.cancelQueries({ queryKey: linesKey })
-            await queryClient.cancelQueries({ queryKey: paymentsKey })
+            const lineIds = payload.line_ids ?? []
+            const paymentIds = [...(payload.payment_ids ?? []), ...(payload.batch_ids ?? [])]
 
-            const previousLines = queryClient.getQueryData(linesKey)
-            const previousPayments = queryClient.getQueryData(paymentsKey)
+            queryClient.setQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>(
+                { queryKey: linesPrefix },
+                (old) => {
+                    if (!old) return old
+                    if ('results' in old) return { ...old, results: old.results?.filter(l => !lineIds.includes(l.id)) }
+                    return (old as {id: number}[]).filter(l => !lineIds.includes(l.id))
+                }
+            )
+            queryClient.setQueriesData<{ results?: {id: number}[]; count?: number } | {id: number}[]>(
+                { queryKey: paymentsPrefix },
+                (old) => {
+                    if (!old) return old
+                    if ('results' in old) return { ...old, results: old.results?.filter(p => !paymentIds.includes(p.id)) }
+                    return (old as {id: number}[]).filter(p => p.id !== undefined && !paymentIds.includes(p.id))
+                }
+            )
 
-            const lineIds = payload.line_ids || []
-            const paymentIds = [...(payload.payment_ids || []), ...(payload.batch_ids || [])]
-
-            queryClient.setQueryData(linesKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(l => !lineIds.includes(l.id)))
-            queryClient.setQueryData(paymentsKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(p => !paymentIds.includes(p.id)))
-
-            return { previousLines, previousPayments, linesKey, paymentsKey }
+            return { previousLinesEntries, previousPaymentsEntries }
         },
         onError: (err: Error, variables, context: unknown) => {
             showApiError(err, 'Error creando grupo')
-            const ctx = context as { previousLines?: unknown; previousPayments?: unknown; linesKey: readonly unknown[]; paymentsKey: readonly unknown[] } | undefined
-            if (ctx?.previousLines) {
-                queryClient.setQueryData(ctx.linesKey, ctx.previousLines)
-            }
-            if (ctx?.previousPayments) {
-                queryClient.setQueryData(ctx.paymentsKey, ctx.previousPayments)
-            }
+            const ctx = context as { previousLinesEntries?: [readonly unknown[], unknown][]; previousPaymentsEntries?: [readonly unknown[], unknown][] } | undefined
+            ctx?.previousLinesEntries?.forEach(([key, data]) => queryClient.setQueryData(key, data))
+            ctx?.previousPaymentsEntries?.forEach(([key, data]) => queryClient.setQueryData(key, data))
+        },
+        onSuccess: () => {
+            markLocalMutation()
         },
         onSettled: () => {
             invalidateCrossFeature(queryClient, [
@@ -265,7 +286,7 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
 
     const createAndMatchMutation = useMutation({
         mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: Record<string, unknown> }) => {
-            const movement = await financeApi.createMovement(movementData) as Record<string, unknown>
+            const movement = await financeApi.createMovement(movementData, generateUuidV4()) as Record<string, unknown>
             const paymentId = movement.id as number
             await financeApi.matchStatementLine(lineId, { payment_id: paymentId })
             return { lineId, paymentId }
@@ -355,7 +376,7 @@ export function useCreateMovementMutation(treasuryAccountId: number) {
 
     const createMovementMutation = useMutation({
         mutationFn: async (movementData: Record<string, unknown>) => {
-            return financeApi.createMovement(movementData)
+            return financeApi.createMovement(movementData, generateUuidV4())
         },
         onSuccess: () => {
             markLocalMutation()

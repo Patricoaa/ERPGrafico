@@ -153,7 +153,7 @@ def test_get_group_data_prefetched_zero_queries(django_assert_num_queries):
         data = ReconciliationMatchSelector.get_group_data(fetched)
 
     assert data["id"] == match.id
-    assert data["difference_amount"] == float(fetched.difference_amount)
+    assert data["difference_amount"] == float(fetched.reconciliation_match.difference_amount)
     assert {m["id"] for m in data["movements"]} == {m1.id}
     assert [b["id"] for b in data["batches"]] == [batch.id]
 

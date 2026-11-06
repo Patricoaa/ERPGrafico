@@ -197,8 +197,10 @@ export const financeApi = {
         api.post<unknown>('/treasury/statement-lines/bulk_restore/', { line_ids: lineIds }).then(r => r.data),
     allocateMovement: (movementId: number, payload: Record<string, unknown>) =>
         api.post<unknown>(`/treasury/movements/${movementId}/allocate/`, payload).then(r => r.data),
-    createMovement: (payload: Record<string, unknown>) =>
-        api.post<unknown>('/treasury/movements/', payload).then(r => r.data),
+    createMovement: (payload: Record<string, unknown>, idempotencyKey: string) =>
+        api.post<unknown>('/treasury/movements/', payload, {
+            headers: { 'Idempotency-Key': idempotencyKey },
+        }).then(r => r.data),
 
     // ── Bank Reconciliation: Journals ──
     createJournal: (payload: Record<string, unknown>) =>

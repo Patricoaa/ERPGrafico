@@ -727,7 +727,7 @@ class BankStatementLineViewSet(EditPolicyMixin, viewsets.ModelViewSet):
     }
 
     queryset = BankStatementLine.objects.all().select_related(
-        "statement", "reconciled_by", "reconciliation_match", "difference_journal_entry"
+        "statement", "reconciled_by", "reconciliation_match", "reconciliation_match__difference_journal_entry"
     ).prefetch_related(
         "reconciliation_match__movements__terminal_batch",
         "reconciliation_match__movements__contact",
