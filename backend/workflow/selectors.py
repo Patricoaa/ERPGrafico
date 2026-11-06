@@ -16,7 +16,9 @@ class TaskSelectorExt:
         from django.db.models import Q
 
         from .models import Task
-        qs = Task.objects.all()
+        qs = Task.objects.select_related(
+            "assigned_to", "assigned_group", "created_by", "completed_by"
+        ).prefetch_related("attachments__user", "events__user")
         if user.is_superuser:
             return qs
         q = (

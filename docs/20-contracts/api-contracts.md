@@ -1133,7 +1133,7 @@ Response key fields:
   "status": "PENDING|IN_PROGRESS|COMPLETED|REJECTED|CANCELLED",
   "assigned_to": "number | null",
   "assigned_group": "number | null",
-  "assigned_to_data": "object (UserSerializer)",
+  "assigned_to_data": "object {id, username, first_name, last_name} | null (ADR-0117)",
   "assigned_group_name": "string | null",
   "due_date": "YYYY-MM-DD | null",
   "priority": "string",

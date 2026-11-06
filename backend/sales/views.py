@@ -136,7 +136,20 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
+        if self.action in {"list", "retrieve"}:
+            return SaleOrderSelector.get_read_queryset()
         return SaleOrderSelector.get_base_queryset()
+
+    def list(self, request, *args, **kwargs):
+        page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
+        SaleOrderSelector.preload_reserved_stock(page)
+        return self.get_paginated_response(self.get_serializer(page, many=True).data)
+
+    def retrieve(self, request, *args, **kwargs):
+        order = self.get_object()
+        SaleOrderSelector.preload_reserved_stock([order])
+        return Response(self.get_serializer(order).data)
+
     permission_classes = [StandardizedModelPermissions]
     filter_backends = [DjangoFilterBackend, DistinctSearchFilter, filters.OrderingFilter]
     filterset_class = SaleOrderFilterSet

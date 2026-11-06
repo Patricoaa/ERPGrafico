@@ -181,5 +181,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0114](0114-remove-contacts-customers-suppliers-endpoints.md) | Remove unbounded contacts customers and suppliers endpoints | Accepted |
 | [0115](0115-materialized-account-posted-totals.md) | Materialized posted totals on accounting accounts | Accepted |
 | [0116](0116-config-catalog-manage-only.md) | Taxonomía de acceso a entidades de configuración y datos maestros — settings singleton y datos maestros requieren `{app}.manage` para escritura y `{app}.read` para lectura | Accepted |
+| [0117](0117-minimal-user-in-task-responses.md) | Usuario mínimo embebido en las respuestas de tareas — `assigned_to_data`, `created_by_data` y `completed_by_data` exponen solo `id`, `username`, `first_name` y `last_name` | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

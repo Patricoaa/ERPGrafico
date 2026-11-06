@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.utils import timezone
 
 from tax.services import AccountingPeriodService, TaxPeriodService
@@ -23,6 +24,51 @@ class SaleOrderSelector:
             "payment_allocations__treasury_movement",
             "work_orders",
         ).order_by("-date", "-id")
+
+    @staticmethod
+    def get_read_queryset():
+        """
+        Orders for list/retrieve responses: everything `SaleOrderSerializer` reads, preloaded.
+        Line products carry a stock snapshot, so write actions must keep `get_base_queryset`.
+        Pair it with `preload_reserved_stock`, which needs the fetched orders.
+        """
+        from inventory.selectors import products_with_availability_data
+        from production.models import WorkOrder
+
+        from .models import SaleLine, SaleOrder
+
+        lines = SaleLine.objects.select_related("uom").prefetch_related(
+            Prefetch("product", queryset=products_with_availability_data()),
+            "work_orders",
+        )
+        work_orders = WorkOrder.objects.select_related(
+            "sale_line__product__manufacturing_profile",
+            "sale_line__uom",
+            "product__manufacturing_profile",
+            "related_contact",
+        ).prefetch_related("consumptions", "materials")
+        return SaleOrder.objects.select_related(
+            "customer", "credit_approval_task__completed_by", "pos_session"
+        ).prefetch_related(
+            Prefetch("lines", queryset=lines),
+            Prefetch("work_orders", queryset=work_orders),
+            "invoices",
+            "deliveries",
+            "payments",
+            "payment_allocations__treasury_movement",
+        ).order_by("-date", "-id")
+
+    @staticmethod
+    def preload_reserved_stock(orders) -> None:
+        """Bulk-computes the reserved stock that `SaleLineSerializer.available_stock` reads."""
+        from inventory.services import ProductService
+
+        ProductService.bulk_annotate_reserved_qty([
+            line.product
+            for order in orders
+            for line in order.lines.all()
+            if line.product and line.product.product_type == "STORABLE"
+        ])
 
     @staticmethod
     def get_analytics_queryset():
