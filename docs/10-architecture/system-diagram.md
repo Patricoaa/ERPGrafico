@@ -3,7 +3,7 @@ layer: 10-architecture
 doc: system-diagram
 status: active
 owner: core-team
-last_review: 2026-05-21
+last_review: 2026-11-06
 ---
 
 # System Diagram
@@ -93,10 +93,10 @@ All components run as Docker containers on a single host. The actual scaling str
 | Unit | Contenedor | Estrategia de escalado (v1) | Si presión sostenida |
 |------|-----------|-----------------------------|----------------------|
 | Next.js | Sí | Single instance | Subir RAM del host; ya hace SSR cacheado |
-| Django | Sí (gunicorn N workers) | Subir workers/threads del proceso | Considerar Cloudflare en frente |
+| Django | Sí (Daphne, un solo proceso ASGI) | Separar la API en varios workers y dejar Daphne para WebSockets (pendiente de medir con carga) | Considerar Cloudflare en frente |
 | Celery worker | Sí | Single contenedor con concurrencia configurable | Separar queues (sales / billing / heavy) |
 | Celery beat | Sí | Singleton (no se replica por diseño) | — |
-| Postgres | Sí | Single instance + `CONN_MAX_AGE` + tuning vía PgTune | Migrar a managed (Supabase / Neon free tier) antes que replicación on-prem |
+| Postgres | Sí | Single instance + tuning vía PgTune; revisar `CONN_MAX_AGE` bajo ASGI (la documentación de Django recomienda no usar conexiones persistentes ahí) | Migrar a managed (Supabase / Neon free tier) antes que replicación on-prem |
 | Redis | Sí | Single instance, AOF persistence opcional | — |
 | MinIO | Sí (local) | Single node; media de baja frecuencia delegada a Cloudflare R2 | R2 ya cubre HA de archivos críticos |
 

@@ -120,10 +120,13 @@ jobs:
       - name: Check Migrations
         run: python manage.py makemigrations --check --dry-run
       
-      - name: Run Tests
+      - name: Invariants and query-count gate (blocking, ADR-0118)
+        run: pytest -m ci_gate -q
+
+      - name: Full test suite (non-blocking)
         run: |
-          # NOTE: backend suite is currently red (124 not passing). Non-blocking
-          # until the test-isolation work lands; do not add new failures.
+          # Known failures are listed in docs/40-quality/testing.md. Non-blocking until
+          # they are resolved; do not add new failures.
           pytest --cov=. --cov-report=xml || echo "Backend tests failing (non-blocking — tracked debt)"
 
   security:

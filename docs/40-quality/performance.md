@@ -3,7 +3,7 @@ layer: 40-quality
 doc: performance
 status: active
 owner: platform-team
-last_review: 2026-04-21
+last_review: 2026-11-06
 ---
 
 # Performance
@@ -22,7 +22,7 @@ Budget-driven. If a change exceeds budget, it must be justified or optimized bef
 | Hydration CPU | <150ms on target device |
 | Bundle total | <1 MB gzipped |
 
-Enforced via `next build` output + Lighthouse CI per PR.
+Revisión manual con la salida de `next build`. Lighthouse CI aún no está configurado.
 
 ### Backend
 
@@ -31,7 +31,7 @@ Enforced via `next build` output + Lighthouse CI per PR.
 | p50 `/api/*` | <100ms |
 | p95 `/api/*` | <300ms |
 | p99 `/api/*` | <1s |
-| DB query per request | ≤10 |
+| Queries por petición | Constante respecto de las filas (obligatorio); revisar sobre 20 (ADR-0118) |
 | Celery task p95 | task-specific, documented |
 
 ## Frontend techniques
@@ -61,12 +61,14 @@ Enforced via `next build` output + Lighthouse CI per PR.
 - `select_related` for FK traversal.
 - `prefetch_related` for reverse + M2M.
 - Use selectors to centralize optimization.
-- Integration test asserts `assertNumQueries(<=N)` on list endpoints.
+- Test con marca `ci_gate`: 1 fila contra N, con relaciones pobladas ([zero-n-plus-one-policy.md](../90-governance/zero-n-plus-one-policy.md)).
+- `select_related` solo para lo que se lee: cada join de más añade tiempo de planificación.
+- Un serializer anidado por respuesta, nunca por fila.
 
 ### Indexes
 - Every FK: indexed (Django default).
 - Frequent filter/order fields: explicit `db_index=True` or composite `Meta.indexes`.
-- Verify with `EXPLAIN ANALYZE` before adding.
+- Verify with `EXPLAIN ANALYZE` before adding. Above 5 joins, check `Planning Time` as well as execution.
 
 ### Caching
 - Redis for hot reads (rate tables, role tree).
@@ -85,8 +87,8 @@ Enforced via `next build` output + Lighthouse CI per PR.
 
 | Tool | Use |
 |------|-----|
-| `django-debug-toolbar` | Local N+1 detection |
-| `silk` | Local request profiling |
+| `django-debug-toolbar` | Local N+1 detection (no instalado; agregar bajo demanda) |
+| `silk` | Local request profiling (no instalado; agregar bajo demanda) |
 | `py-spy` | Prod flame graphs (sampled) |
 | Chrome DevTools → Performance | Frontend CPU |
 | Lighthouse | Route-level audit |
@@ -94,15 +96,15 @@ Enforced via `next build` output + Lighthouse CI per PR.
 
 ## Regression detection
 
-- Lighthouse CI per PR → fail if LCP regresses >10%.
-- k6 load test nightly on staging for top 5 endpoints.
-- Prod p95 latency alert per endpoint.
+- **Activo:** ninguno automático por ahora. La latencia se revisa a mano en Sentry ([observability.md](observability.md)).
+- **Listo, sin efecto hasta reactivar el CI:** tests con marca `ci_gate` ([ci-cd.md](ci-cd.md)).
+- **Planificado, sin configurar:** Lighthouse CI por PR, carga con k6 (no existe staging) y alerta de p95 por endpoint (no existe producción).
 
 ## Checklist per PR
 
 - [ ] New query path: `EXPLAIN ANALYZE` reviewed.
 - [ ] Indexes adequate.
-- [ ] No N+1 (integration test asserts query count).
+- [ ] No N+1 (test `ci_gate`: 1 fila contra N con relaciones pobladas).
 - [ ] Bundle size delta reported.
 - [ ] No new sync work >300ms in request path.
-- [ ] Views ≤20 lines per action (enforced by `flake8-function-length` in CI).
+- [ ] Views ≤20 lines per action (enforced by `test_views_under_20_lines`, marca `ci_gate`).

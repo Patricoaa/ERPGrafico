@@ -165,7 +165,7 @@ docker compose logs --tail=100 backend
 | Síntoma | Fix |
 |---------|-----|
 | `OperationalError: connection to server failed` | §C — la DB está caída o satura conexiones. Si saturación: subir `CONN_MAX_AGE`, revisar `max_connections` de Postgres |
-| `MemoryError` | El gunicorn pidió más RAM de la disponible. Bajar workers (`WORKERS=2` en lugar de 4), o el container exceedeó su límite — revisar `docker stats` |
+| `MemoryError` | Django pidió más RAM de la disponible, o el container excedió su límite — revisar `docker stats` y el límite de `memory` del servicio |
 | `Sentry` no llega | Revisar `SENTRY_DSN` en env; sin Sentry seguís ciego, prioridad |
 
 ## §F. Nginx / SSL

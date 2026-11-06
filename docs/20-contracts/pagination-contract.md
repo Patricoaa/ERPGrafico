@@ -4,7 +4,7 @@ doc: pagination-contract
 status: active
 owner: frontend-team + backend-team
 created: 2026-05-23
-last_review: 2026-05-28
+last_review: 2026-11-06
 stability: contract-changes-require-ADR
 depends_on:
   - api-contracts.md
@@ -404,7 +404,7 @@ Lista completa de viewsets clasificados durante la auditoría 2026-06-25. Los ma
 
 > **ADR-0112:** `AccountViewSet`, `TreasuryAccountViewSet` y `EmployeeViewSet` tienen paginación opt-in (`OptionalPaginationMixin`). Devuelven `T[]` por defecto y paginan solo con `page` o `page_size`.
 
-### Master data (22 viewsets — sin paginación)
+### Master data (23 viewsets — sin paginación)
 
 | App | ViewSet | Endpoint |
 |-----|---------|----------|
@@ -430,6 +430,7 @@ Lista completa de viewsets clasificados durante la auditoría 2026-06-25. Los ma
 | core | `GroupViewSet` | `GET /api/groups/` |
 | workflow | `NotificationRuleViewSet` | `GET /api/workflow/notification-rules/` |
 | workflow | `TaskAssignmentRuleViewSet` | `GET /api/workflow/assignment-rules/` |
+| workflow | `ApprovalPolicyViewSet` | `GET /api/workflow/approval-policies/` |
 
 ### Transactional (mantienen paginación)
 

@@ -3,7 +3,7 @@ layer: 90-governance
 doc: governance
 status: active
 owner: core-team
-last_review: 2026-05-28
+last_review: 2026-11-06
 ---
 
 # GOVERNANCE — Project constitution
@@ -74,11 +74,11 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 ## 8. Backend layering
 
 38. Views ≤20 lines per action. Business logic in `services.py`.
-39. Complex reads in `services.py` or `ViewSet.get_queryset()`.
+39. Complex reads in `selectors.py`, called from `ViewSet.get_queryset()` or read actions.
 40. Permission class declared on every viewset.
 41. Multi-table writes wrapped in `transaction.atomic()`.
 42. Async side effects via Celery — never synchronous in request path when >300ms.
-43. **Zero N+1** — No ORM queries (`.objects.filter/get/create`) inside any `Serializer` or `SerializerMethodField`. All related data MUST be preloaded via `select_related` / `prefetch_related` in the ViewSet. Creation of object graphs belongs in `services.py` with `@transaction.atomic`. Enforced by `assertNumQueries` tests on every list endpoint. See [zero-n-plus-one-policy.md](./zero-n-plus-one-policy.md).
+43. **Zero N+1** — A list endpoint's query count does not grow with its rows, whatever the path (serializer, model property, manager chain). No ORM queries inside any `Serializer` or `SerializerMethodField`. A selector preloads only what the response reads, and write actions do not use its computed values. Creation of object graphs belongs in `services.py` under `@transaction.atomic`. See [zero-n-plus-one-policy.md](zero-n-plus-one-policy.md) (ADR-0118).
 
 ## 9. API contracts
 

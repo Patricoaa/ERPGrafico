@@ -18,7 +18,7 @@ forbidden:
   - Skipping validate_file_size and validate_file_extension
 status: active
 owner: core-team
-last_review: 2026-04-22
+last_review: 2026-11-06
 ---
 
 # Playbook — Add file upload
@@ -245,6 +245,8 @@ class MyModelViewSet(viewsets.ModelViewSet):
 ```
 
 ### 3. Include attachments in list serializer
+
+The selector must prefetch `attachments__user`, because `AttachmentSerializer` reads `user.username`. Without it the list makes one query per attachment.
 
 ```python
 class MyModelSerializer(serializers.ModelSerializer):

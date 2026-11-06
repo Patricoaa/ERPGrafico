@@ -3,9 +3,12 @@ Test de arquitectura: verifica que todo modelo de negocio hereda de TimeStampedM
 
 Actualizar EXEMPT_MODELS al agregar excepciones documentadas via ADR.
 """
+import pytest
 from django.apps import apps
 
 from core.models.abstracts import TimeStampedModel
+
+pytestmark = pytest.mark.ci_gate
 
 # Modelos explícitamente exentos con su justificación
 EXEMPT_MODELS = {
@@ -40,6 +43,7 @@ EXEMPT_MODELS = {
     "core.UserPreference",
     "finances.FinancesPermissions",  # permission-holder unmanaged model
     "workflow.TaskEvent",  # append-only immutable audit log (ADR-0102)
+    "workflow.CommentMention",  # fila de unión de Comment, sin ciclo de vida propio (ADR-0118)
     # Proyecto — excepciones con ADR
     # (vaciar esta lista es el objetivo; cada entrada requerirá ADR-ref a menos que se migre)
     # Resto de los eximidos

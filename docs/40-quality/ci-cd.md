@@ -3,12 +3,12 @@ layer: 40-quality
 doc: ci-cd
 status: active
 owner: platform-team
-last_review: 2026-10-14
+last_review: 2026-11-06
 ---
 
 # CI / CD
 
-> **Estado actual:** el pipeline corre lint / type-check / test / build / security scan en GitHub Actions.
+> **Estado actual:** `CI Pipeline` está **deshabilitado manualmente** desde abril de 2026 y `master` **no tiene protección de rama**. Hoy nada bloquea un merge. Este documento describe lo que hace el pipeline cuando está activo; ver [Activar el gate](#activar-el-gate).
 > **No existe entorno de producción ni staging.** El único entorno activo es el dev server (`pato@192.168.1.86`).
 
 ## Pipeline actual (`.github/workflows/pipeline.yml`)
@@ -17,7 +17,7 @@ last_review: 2026-10-14
 [push/PR] → frontend job → backend job → security job
 ```
 
-Todos los jobs deben pasar para mergear. Los jobs de backend y lint son no-bloqueantes mientras se cierra la deuda técnica existente (ver notas en el YAML).
+Bloquean el job de backend `manage.py check`, las migraciones, el ratchet de Ruff y el gate `ci_gate`. El resto de la suite y varios pasos de lint y seguridad no bloquean.
 
 ### Frontend job
 
@@ -36,7 +36,8 @@ Todos los jobs deben pasar para mergear. Los jobs de backend y lint son no-bloqu
 - python manage.py check
 - python manage.py makemigrations --check --dry-run
 - ruff check .          # ratchet: falla si introduce más de 284 errores existentes
-- pytest --cov=.        # non-blocking (124 tests fallando — deuda rastreada)
+- pytest -m ci_gate     # hard gate: invariantes y conteo de queries (ADR-0118)
+- pytest --cov=.        # non-blocking; fallos conocidos en testing.md
 ```
 
 ### Security job
@@ -48,9 +49,22 @@ Todos los jobs deben pasar para mergear. Los jobs de backend y lint son no-bloqu
 
 ## Branch strategy
 
-- `master` — protected. CI verde requerido para mergear.
+- `master` — sin protección de rama hoy. Objetivo: CI verde requerido para mergear.
 - Feature branches: `feat/…`, `fix/…`, `refactor/…`.
-- PR requiere: CI verde, 1 approval (2 si toca `20-contracts/`), sin comentarios sin resolver.
+- Objetivo para los PR: CI verde, 1 approval (2 si toca `20-contracts/`), sin comentarios sin resolver.
+
+## Activar el gate
+
+Son dos pasos manuales. Antes de exigir el check, confirmar que `Automated Versioning` puede seguir empujando a `master`, porque publica ahí sus commits de versión.
+
+1. Reactivar el pipeline: `gh workflow enable pipeline.yml`.
+2. Exigir el check de backend en `master`, desde *Settings → Branches* o con la API de protección de ramas.
+
+Mientras tanto, el gate se puede correr a mano:
+
+```bash
+cd backend && CACHE_BACKEND=locmem CHANNEL_BACKEND=locmem venv/bin/python -m pytest -m ci_gate -q
+```
 
 ## Release flow
 

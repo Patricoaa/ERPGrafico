@@ -3,7 +3,7 @@ layer: 90-governance
 doc: pr-review-checklist
 status: active
 owner: core-team
-last_review: 2026-06-25
+last_review: 2026-11-06
 ---
 
 # PR Review Checklist
@@ -70,11 +70,11 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 
 Ver contrato completo: [zero-n-plus-one-policy.md](zero-n-plus-one-policy.md)
 
-- [ ] Ningún `serializers.py` contiene llamadas `.objects.filter()` / `.objects.get()` / `.objects.create()`.
-- [ ] El `ViewSet` del endpoint modificado tiene `select_related` y `prefetch_related` declarados para todas las relaciones que el serializer consume.
+- [ ] El número de queries del listado no crece con las filas, tampoco por propiedades del modelo ni cadenas sobre managers; ningún `serializers.py` ejecuta queries ORM.
+- [ ] El selector del endpoint precarga lo que el serializer lee y nada más; las escrituras no usan sus valores calculados.
 - [ ] La creación de grafos de objetos (cabecera + líneas + relaciones) está en `services.py` con `@transaction.atomic`, no en `Serializer.create()`.
-- [ ] Test `assertNumQueries` existe para el endpoint de lista y pasa — el número de queries es constante independientemente del tamaño del resultado.
-- [ ] No new N+1 (assert query count test).
+- [ ] Un test con marca `ci_gate` compara 1 fila contra N con relaciones pobladas, y ningún serializer anidado se instancia por fila.
+- [ ] Respuestas nuevas con usuarios o documentos embebidos declaran sus campos, sin reutilizar un serializer completo por defecto.
 - [ ] Indexes on new filter/sort fields.
 - [ ] Bundle delta <target; dynamic import if heavy.
 - [ ] Nothing >300ms sync in request path.

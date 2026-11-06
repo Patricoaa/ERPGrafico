@@ -3,6 +3,8 @@ import pytest
 from inventory.selectors import get_stock_report_data
 from inventory.services import ProductService
 
+pytestmark = pytest.mark.ci_gate
+
 
 @pytest.fixture
 def stock_report_setup(db):

@@ -18,7 +18,7 @@ forbidden:
   - skipping permission class
 status: active
 owner: backend-team
-last_review: 2026-04-23
+last_review: 2026-11-06
 ---
 
 # Playbook — Add REST endpoint
@@ -52,7 +52,7 @@ Then migration — see [add-migration.md](add-migration.md).
 ### 3. Serializer
 
 - Separate read vs write serializers if shapes differ.
-- Nest related entities via `source=` or custom `SerializerMethodField`.
+- Nest related entities via `source=` or a `SerializerMethodField` that reads preloaded data. Instantiate nested serializers once per response, and declare the fields you embed ([zero-n-plus-one-policy.md](../90-governance/zero-n-plus-one-policy.md)).
 - Document fields — feeds OpenAPI.
 
 ### 4. Service (business logic)
@@ -117,6 +117,8 @@ class FooViewSet(ModelViewSet):
 ```
 
 ### 9. Tests
+
+List endpoints also need a query-count test marked `ci_gate`: 1 row against N, with populated relations ([policy, rule 5](../90-governance/zero-n-plus-one-policy.md)).
 
 ```python
 # apps/[app]/tests/test_views.py

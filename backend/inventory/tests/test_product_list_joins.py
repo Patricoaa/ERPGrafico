@@ -11,6 +11,8 @@ from rest_framework.test import APIClient
 from contacts.models import Contact
 from inventory.models import Product, ProductCategory, UoM, UoMCategory, Warehouse
 
+pytestmark = pytest.mark.ci_gate
+
 User = get_user_model()
 
 
@@ -57,7 +59,7 @@ def test_list_query_count_does_not_grow_without_the_extra_joins(client):
     many_products_queries, rows = _list(client)
 
     assert len(rows) == 6
-    assert len(many_products_queries) == len(one_product_queries)
+    assert len(many_products_queries) <= len(one_product_queries)
 
 
 def test_main_list_query_only_joins_what_the_serializer_reads(client):

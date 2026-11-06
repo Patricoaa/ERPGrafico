@@ -4,6 +4,8 @@ from rest_framework.test import APIClient
 from contacts.models import Contact
 from purchasing.models import PurchaseOrder
 
+pytestmark = pytest.mark.ci_gate
+
 
 @pytest.fixture
 def api_client():

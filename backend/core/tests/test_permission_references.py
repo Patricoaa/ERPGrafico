@@ -3,10 +3,13 @@
 import re
 from pathlib import Path
 
+import pytest
 from django.apps import apps
 from django.conf import settings
 
 from core.rbac.catalog import permission_catalog
+
+pytestmark = pytest.mark.ci_gate
 
 BACKEND_DIR = Path(settings.BASE_DIR)
 FRONTEND_DIR = Path(settings.BASE_DIR).parent / "frontend"
@@ -59,7 +62,13 @@ def test_frontend_permission_literals_exist():
         if not base.exists():
             continue
         for ext in ("ts", "tsx"):
-            files.extend(p for p in base.rglob(f"*.{ext}") if "node_modules" not in p.parts)
+            files.extend(
+                p
+                for p in base.rglob(f"*.{ext}")
+                if not {"node_modules", "__tests__"} & set(p.parts)
+                and ".test." not in p.name
+                and ".stories." not in p.name
+            )
     used = _scan(FRONTEND_PERM_RE, files)
     # Solo cadenas cuyo app_label es una app instalada (descarta p. ej. nombres de campos).
     labels = {c.label for c in apps.get_app_configs()}

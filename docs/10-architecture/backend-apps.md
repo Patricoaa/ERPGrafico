@@ -3,7 +3,7 @@ layer: 10-architecture
 doc: backend-apps
 status: active
 owner: backend-team
-last_review: 2026-04-23
+last_review: 2026-11-06
 ---
 
 # Backend — Django Apps
@@ -72,7 +72,7 @@ Rules:
 - Selector functions use **keyword-only args** (`*`).
 - `get_queryset()` must call a selector — inline query logic forbidden.
 - Selectors that return computed data (not QuerySet) return a plain `dict`.
-- Never import a selector from a different app — use `workflow/` or pass data as args.
+- Selectors from another app may be imported only to preload reads (a queryset or relation list for `Prefetch`/`select_related`), with the import inside the function (ADR-0118). For anything else use `workflow/`, an adapter, or pass data as args.
 
 ```python
 # ✅ correct
@@ -122,7 +122,7 @@ Serializers from different apps must NOT import each other directly at the top l
 
 | Pattern | When | Example |
 |---------|------|---------|
-| **Lazy import inside method** | Read-only, small field subset | `InvoiceSerializer` imports `TreasuryMovementSerializer` inside `get_serialized_payments()` |
+| **Lazy import inside method** | Read-only, small field subset. Instantiate once per response, and preload what it reads ([policy, rule 7](../90-governance/zero-n-plus-one-policy.md)) | `PurchaseOrderSerializer` builds `TreasuryMovementSerializer` once in a `cached_property` |
 | **Adapter function** | Computed data from another domain | `accounting/adapters.py` exposes `get_settings_fields()` consumed by `sales/views.py` instead of direct model access |
 | **Interface / protocol class** | Multiple apps consume the same foreign domain data | Create `production/adapters.py` with `BomData` protocol used by `inventory` and `sales` |
 | **Move to workflow/** | Orchestration across ≥3 apps | Create a workflow action that calls each domain's service |

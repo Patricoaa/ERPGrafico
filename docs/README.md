@@ -115,7 +115,7 @@ last_review: 2026-06-19
 11. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
 13. **Entity collections are declared once and composed per surface** — fields live in `defineEntity<T>()` (`features/*/entity-view/*.entity.ts`) and every table, card grid, embedded list and batch-edit table is rendered with `@/components/entity-view`. Specific needs are feature value kinds or typed card sections, never opaque escapes (`computed`, `renderCard`, inline JSX columns, `as unknown as`). The legacy system (`*Fields.ts`, `toColumns()`, `AutoEntityCard`, `DataTable`) is frozen until its last consumer migrates. See [component-entity-view.md](20-contracts/component-entity-view.md) (ADR-0087).
-14. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM. Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Creación de grafos en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md).
+14. **Zero N+1** — El número de queries de un listado no crece con sus filas, sea cual sea el camino (serializer, propiedad del modelo, cadena de managers). Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM; un selector precarga solo lo que la respuesta lee; los grafos de objetos se crean en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md) (ADR-0118).
 
 ## Agentic model instructions
 

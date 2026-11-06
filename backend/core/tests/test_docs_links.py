@@ -19,7 +19,10 @@ import re
 import urllib.parse
 from pathlib import Path
 
+import pytest
 from django.conf import settings
+
+pytestmark = pytest.mark.ci_gate
 
 REPO_ROOT = Path(settings.BASE_DIR).parent
 DOCS = REPO_ROOT / "docs"

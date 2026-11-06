@@ -13,6 +13,8 @@ from accounting.models import (
 from accounting.services import AccountingService
 from finances.services import FinanceService
 
+pytestmark = pytest.mark.ci_gate
+
 
 @pytest.fixture
 def fin_data(db):
