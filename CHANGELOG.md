@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.72](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.71...v0.3.72) (2026-11-06)
+
+
+### 🐛 Bug Fixes
+
+* **treasury:** sincroniza campos de diferencia en historial de conciliación ([30dc41c](https://github.com/Patricoaa/ERPGrafico/commit/30dc41c662385502c61bde96cace4573eec1acc8))
+
+
+### 💅 Styling
+
+* **bancos:** ajusta tamaños de StatCard y botones de cuotas ([e62526d](https://github.com/Patricoaa/ERPGrafico/commit/e62526dd602f9784dc26c02282f1e2df70558973))
+
 ### [0.3.71](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.70...v0.3.71) (2026-11-06)
 
 
