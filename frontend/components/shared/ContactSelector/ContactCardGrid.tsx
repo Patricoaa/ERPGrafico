@@ -5,7 +5,7 @@
 // Blobatar on the media strip, kind chip, RUT in mono, name, and the credit position pinned at the bottom.
 
 import { useState } from "react"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
 import { useDeviceContext } from "@/hooks/useDeviceContext"
@@ -24,7 +24,7 @@ type ContactKind = 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'NONE'
 /** Supplier cards read `last_purchase_date`, which the contact search returns but `Contact` does not declare yet. */
 type ContactWithPurchases = Contact & { last_purchase_date?: string | null }
 
-const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleDateString('es-CL') : '—')
+const formatDate = (value?: string | null) => (formatPlainDate(value))
 
 function ContactFooter({ contact, contactType }: { contact: ContactWithPurchases; contactType?: ContactKind }) {
     const isSupplier = contactType === 'SUPPLIER'

@@ -17,7 +17,7 @@ import { GenericWizard, Numpad, Chip, FadeIn, SelectorTrigger, type WizardStep }
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
-import { cn } from "@/lib/utils"
+import { cn, formatTimeWith } from "@/lib/utils"
 import type { POSSession, POSTerminal, AccountingSettings, TreasuryAccount } from "@/types/pos"
 import { DEFICIT_OPTIONS, SURPLUS_OPTIONS } from "@/features/pos/utils/reasons"
 
@@ -555,7 +555,7 @@ export function SessionOpenModal({
                                     <span>{session.treasury_account_name}</span>
                                     <Chip size="xs" intent="neutral" className="ml-auto">{session.user_name}</Chip>
                                 </div>
-                            <div className="text-xs opacity-70 mt-1">Abierta: {new Date(session.opened_at).toLocaleTimeString()}</div>
+                            <div className="text-xs opacity-70 mt-1">Abierta: {formatTimeWith(session.opened_at)}</div>
                         </div>
                     </Button>
                 ))}

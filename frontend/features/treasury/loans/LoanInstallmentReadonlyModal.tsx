@@ -6,7 +6,7 @@ import {
     BaseModal, FormFooter, CancelButton, MoneyDisplay, StatusBadge,
 } from '@/components/shared'
 import type { LoanInstallment, BankLoanCurrency } from './types'
-import { parseDateOnly } from '@/lib/utils'
+import { formatPlainDate } from '@/lib/utils'
 
 interface Props {
     installment: LoanInstallment
@@ -29,7 +29,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
                     <div className="flex flex-col">
                         <span>Cuota #{installment.number} · {installment.status_display}</span>
                         <span className="text-xs text-muted-foreground font-normal">
-                            {loanDisplayId} · Vence {installment.due_date ? parseDateOnly(installment.due_date).toLocaleDateString('es-CL') : '—'}
+                            {loanDisplayId} · Vence {installment.due_date ? formatPlainDate(installment.due_date) : '—'}
                         </span>
                     </div>
                 </div>
@@ -83,7 +83,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
                         <div className="grid grid-cols-2 gap-3 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Fecha de pago</span>
-                                <span>{parseDateOnly(installment.paid_at).toLocaleDateString('es-CL')}</span>
+                                <span>{formatPlainDate(installment.paid_at)}</span>
                             </div>
                             {installment.uf_value_used && (
                                 <div className="flex justify-between">

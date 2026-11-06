@@ -6,7 +6,7 @@ import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
 import { FileText, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn, parseDateOnly } from "@/lib/utils";
+import { cn, formatPlainDate } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales";
 import { resolveMediaUrl } from "@/lib/media-url";
@@ -211,7 +211,7 @@ export function SaleOrderProductStep({
                   </h3>
                   {orderDate && (
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {parseDateOnly(orderDate).toLocaleDateString('es-CL')}
+                      {formatPlainDate(orderDate)}
                     </span>
                   )}
                 </div>
@@ -349,7 +349,7 @@ export function SaleOrderProductStep({
                             OV #{order.number}
                           </h3>
                           <span className="text-xs text-muted-foreground shrink-0">
-                            {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
+                            {order.date ? formatPlainDate(order.date) : "—"}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-1">

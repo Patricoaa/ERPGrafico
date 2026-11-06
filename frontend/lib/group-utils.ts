@@ -1,3 +1,5 @@
+import { formatDateWith } from '@/lib/utils'
+
 export interface Group<T> {
   key: string
   rawKey: unknown
@@ -31,13 +33,11 @@ export function getDateLabelAndSublabel(
   yesterdayKey: string,
 ): { label: string; sublabel: string } {
   const date = new Date(dateKey + "T12:00:00")
-  const formatted = date
-    .toLocaleDateString("es-CL", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    })
-    .replace(/\./g, "")
+  const formatted = formatDateWith(date, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).replace(/\./g, "")
 
   if (dateKey === nowKey) return { label: "Hoy", sublabel: formatted }
   if (dateKey === yesterdayKey) return { label: "Ayer", sublabel: formatted }

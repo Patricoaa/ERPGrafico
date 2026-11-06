@@ -20,12 +20,12 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
         const lines = (data?.lines ?? data?.items ?? []) as TransactionLine[]
         const customerName = data?.customer?.name ?? data?.customer?.full_name ?? data?.partner?.name ?? data?.partner?.full_name ?? data?.partner_name ?? data?.customer_name ?? subTitle
         const displayId = data?.display_id ?? data?.number?.toString() ?? data?.transaction_number ?? "—"
-        const date = data?.created_at ?? data?.date ?? data?.document_date ?? ""
-        const formattedDate = date
-            ? (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
-                ? formatPlainDate(date)
+        const stamp = data?.created_at ?? data?.date ?? data?.document_date ?? ""
+        const formattedDate = stamp
+            ? (typeof stamp === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(stamp)
+                ? formatPlainDate(stamp)
                 // eslint-disable-next-line no-restricted-syntax -- date/time formatting, not currency or quantity
-                : new Date(date).toLocaleString("es-CL"))
+                : new Date(stamp).toLocaleString("es-CL"))
             : ""
         const terminalName = data?.terminal_name ?? data?.pos_session?.terminal_name ?? data?.session?.terminal_name ?? ""
 

@@ -344,7 +344,7 @@ function PersonalTab({
             payroll_display_id: p.payroll_display_id || null,
             statusKey: p.status === 'CANCELLED' ? 'CANCELLED' : 'PAID'
         }))
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [advances, payments])
+    ].sort((a, b) => b.date.localeCompare(a.date)), [advances, payments])
 
     const payrollCollection = useEntityCollection(payrollEntity, { rows: payrolls }, { pagination: { mode: "client", pageSize: 10 } })
     const paymentCollection = useEntityCollection(unifiedPaymentEntity, { rows: unifiedPayments }, { pagination: { mode: "client", pageSize: 10 } })

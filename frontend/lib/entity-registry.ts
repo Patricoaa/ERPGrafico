@@ -1200,9 +1200,8 @@ function formatTemplateDate(value: string): string {
     const [, year, month, day] = matches;
     return `${day}/${month}/${year}`;
   }
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return value;
-  return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  // Not a recognizable ISO date: show the raw value rather than guess a timezone.
+  return value;
 }
 
 function templateFromData(template: string, data: Record<string, unknown>): string {

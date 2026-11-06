@@ -21,6 +21,7 @@ import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { statementLineEntity, statementLineViews } from "@/features/finance"
 import type { BankStatementLine, BankStatement } from "../types"
+import { parseDateOnly } from '@/lib/utils'
 
 interface StatementDetailPanelProps {
     statementId: number
@@ -148,7 +149,7 @@ export function StatementDetailPanel({
                                     <div className="text-xl font-bold font-mono">{formatCurrency(statement.opening_balance)}</div>
                                     <p className="text-3xs text-muted-foreground mt-0.5 flex items-center gap-1">
                                         <Calendar className="h-2.5 w-2.5" />
-                                        {format(new Date(statement.statement_date), "dd MMMM yyyy", { locale: es })}
+                                        {format(parseDateOnly(statement.statement_date.slice(0, 10)), "dd MMMM yyyy", { locale: es })}
                                     </p>
                                 </CardContent>
                             </Card>

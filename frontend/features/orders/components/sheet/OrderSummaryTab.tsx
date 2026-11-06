@@ -5,6 +5,7 @@ import { DataCell, DocumentFieldGrid, FormSection } from "@/components/shared"
 import { DocumentLinesTable } from "./DocumentLinesTable"
 import { DocumentTotalsBox } from "./DocumentTotalsBox"
 import type { Order, OrderLine } from "../../types"
+import { localDayOf } from '@/lib/utils'
 
 interface OrderSummaryTabProps {
     order: Order
@@ -28,7 +29,7 @@ const LEFT = "w-auto justify-start text-left"
 function documentDateTime(order: Order): { value: string; showTime: boolean } | null {
     const created = typeof order.created_at === "string" ? order.created_at : null
     if (!order.date) return created ? { value: created, showTime: true } : null
-    if (created && new Date(created).toLocaleDateString("sv-SE") === order.date) return { value: created, showTime: true }
+    if (created && localDayOf(created) === order.date) return { value: created, showTime: true }
     return { value: order.date, showTime: false }
 }
 

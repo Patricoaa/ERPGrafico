@@ -7,7 +7,7 @@ import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountS
 import { useServerDate } from '@/hooks/useServerDate'
 import { useLoanMutations } from '../hooks/useLoans'
 import type { BankLoanCurrency, LoanInstallment } from './types'
-import { parseDateOnly } from '@/lib/utils'
+import { parseDateOnly, formatPlainDate } from '@/lib/utils'
 
 interface Props {
     installment: LoanInstallment
@@ -76,7 +76,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     <span>Pagar Cuota #{installment.number}</span>
                 </div>
             }
-            subtitle={`${installment.loan_display_id} · Vence ${installment.due_date ? parseDateOnly(installment.due_date).toLocaleDateString('es-CL') : '—'}`}
+            subtitle={`${installment.loan_display_id} · Vence ${installment.due_date ? formatPlainDate(installment.due_date) : '—'}`}
             footer={
                 <FormFooter
                     actions={

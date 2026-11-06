@@ -111,7 +111,7 @@ export function WorkOrderBasicStep({
         const total = (activeBom.estimated_prepress_min ?? 0) + (activeBom.estimated_press_min ?? 0) + (activeBom.estimated_postpress_min ?? 0)
         if (total <= 0) return
         const startDate = form.getValues('start_date') ?? new Date()
-        const suggested = new Date(startDate)
+        const suggested = new Date(startDate.getTime())
         suggested.setMinutes(suggested.getMinutes() + total)
         if (!form.getValues('due_date')) {
             form.setValue('due_date', suggested)

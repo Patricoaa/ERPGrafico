@@ -3,6 +3,7 @@ import type { PendingChargeRow, UpcomingInstallment, UnbilledForecast } from "..
 import { assignChartColors } from "@/lib/chart-colors"
 import { groupBy, formatMonth, granularityKey, granularitySortValue } from "@/lib/analytics-helpers"
 import type { Granularity } from "@/lib/analytics-helpers"
+import { formatDateWith, parseDateOnly } from '@/lib/utils'
 
 // ── Public types ────────────────────────────────────────────────
 
@@ -161,7 +162,7 @@ export function useUnbilledAnalyticsData(
                 .map(([key, val]) => {
                     const d = new Date(key + "-02")
                     return {
-                        month: d.toLocaleDateString("es-CL", { month: "short", year: "2-digit" }),
+                        month: formatDateWith(d, { month: "short", year: "2-digit" }),
                         total: parseFloat(val.total),
                         count: val.count,
                     }
@@ -197,14 +198,14 @@ export function useUnbilledAnalyticsData(
 
         // ── Trends (period-over-period) ────────────────────────
         function periodKey(itemDate: string): number {
-            if (g === "year") return new Date(itemDate).getFullYear()
-            if (g === "day") return Math.floor(new Date(itemDate).getTime() / 86_400_000)
-            const d = new Date(itemDate)
+            const d = parseDateOnly(itemDate.slice(0, 10))
+            if (g === "year") return d.getFullYear()
+            if (g === "day") return dayNumber(d)
             return d.getMonth() + d.getFullYear() * 12
         }
 
         const _now = new Date()
-        const currPeriod = g === "year" ? _now.getFullYear() : g === "day" ? Math.floor(_now.getTime() / 86_400_000) : _now.getMonth() + _now.getFullYear() * 12
+        const currPeriod = g === "year" ? _now.getFullYear() : g === "day" ? dayNumber(_now) : _now.getMonth() + _now.getFullYear() * 12
         const prevPeriod = currPeriod - 1
 
         function isInPeriod(dateStr: string | undefined, period: number): boolean {
@@ -248,4 +249,9 @@ export function useUnbilledAnalyticsData(
             upcomingInstallments: filteredInstallments,
         }
     }, [charges, upcomingInstallments, forecast, summary, dateRange, granularity])
+}
+
+/** Calendar-day index (local date → UTC day count), stable across timezones. */
+function dayNumber(d: Date): number {
+    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000)
 }

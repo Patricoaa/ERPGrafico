@@ -111,7 +111,7 @@ export function BillChargesModal({
             periodMonth: String(serverDate ? serverDate.getMonth() + 1 : new Date().getMonth() + 1),
             cutOffDate: dateString || new Date().toISOString().split('T')[0],
             dueDate: (() => {
-                const date = serverDate ? new Date(serverDate) : new Date()
+                const date = serverDate ? new Date(serverDate.getTime()) : new Date()
                 date.setMonth(date.getMonth() + 1)
                 return date.toISOString().split('T')[0]
             })(),

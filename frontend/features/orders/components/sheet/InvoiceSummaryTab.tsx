@@ -6,6 +6,7 @@ import { DocumentRefLink } from "@/features/documents"
 import type { Order, OrderLine } from "../../types"
 import { DocumentTotalsBox, toNumber } from "./DocumentTotalsBox"
 import { DocumentLinesTable } from "./DocumentLinesTable"
+import { localDayOf } from '@/lib/utils'
 
 /** Las celdas DataCell se centran por defecto; en la ficha van a la izquierda. */
 const LEFT = "w-auto justify-start text-left"
@@ -27,7 +28,7 @@ function originTitle(invoice: Order): string {
 function dateTime(invoice: Order): { value: string; showTime: boolean } | null {
     const created = typeof invoice.created_at === "string" ? invoice.created_at : null
     if (!invoice.date) return created ? { value: created, showTime: true } : null
-    if (created && new Date(created).toLocaleDateString("sv-SE") === invoice.date) return { value: created, showTime: true }
+    if (created && localDayOf(created) === invoice.date) return { value: created, showTime: true }
     return { value: invoice.date, showTime: false }
 }
 
