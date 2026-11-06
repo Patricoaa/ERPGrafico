@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, type KeyboardEvent, useState } from "react"
+import { type ReactNode, type KeyboardEvent, useState, useRef, useEffect } from "react"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -56,6 +56,15 @@ export function SearchablePopover<TItem>({
     className,
 }: SearchablePopoverProps<TItem>) {
     const [searchFocused, setSearchFocused] = useState(false)
+    const listRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const el = listRef.current
+        if (!el) return
+        const stop = (e: WheelEvent) => e.stopPropagation()
+        el.addEventListener('wheel', stop, { capture: true, passive: true })
+        return () => el.removeEventListener('wheel', stop, { capture: true })
+    }, [])
 
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
@@ -101,7 +110,7 @@ export function SearchablePopover<TItem>({
                         </div>
                     )}
 
-                    <div className="max-h-[300px] overflow-y-auto space-y-1">
+                    <div ref={listRef} className="max-h-[300px] overflow-y-auto space-y-1">
                         {isLoading ? (
                             <CardSkeleton count={loadingCount} variant="compact" />
                         ) : items.length === 0 ? (

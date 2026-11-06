@@ -255,7 +255,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
             }
         >
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 pb-4 pt-4">
                     <FormSection title="Entidad" icon={Banknote} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
@@ -287,7 +287,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                     </div>
 
                     <FormSection title="Condiciones" icon={Banknote} />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <FormField
                             control={form.control}
                             name="currency"
@@ -396,9 +396,6 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                     </div>
 
                     <FormSection title="Cargos del Contrato (opcional)" icon={Banknote} />
-                    <p className="text-xs text-muted-foreground -mt-2">
-                        Valores pactados. Podrás editarlos al momento de desembolsar.
-                    </p>
                     <div className="grid grid-cols-3 gap-4">
                         <FormField
                             control={form.control}
@@ -441,7 +438,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                         />
                     </div>
 
-                    <FormSection title="Fechas" icon={Banknote} />
+                    <FormSection title="Fechas y cuentas" icon={Banknote} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
@@ -469,10 +466,6 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                                 />
                             )}
                         />
-                    </div>
-
-                    <FormSection title="Cuentas" icon={Banknote} />
-                    <div className="space-y-4">
                         <FormField
                             control={form.control}
                             name="disbursement_account"
@@ -506,23 +499,6 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                             )}
                         />
                     </div>
-
-                    <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                            <div className="space-y-2">
-                                <Label htmlFor="loan-notes">Notas</Label>
-                                <Textarea
-                                    id="loan-notes"
-                                    placeholder="Información adicional sobre el crédito…"
-                                    rows={3}
-                                    value={field.value ?? ''}
-                                    onChange={field.onChange}
-                                />
-                            </div>
-                        )}
-                    />
                 </form>
             </Form>
 

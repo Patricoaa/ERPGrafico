@@ -44,6 +44,37 @@ def treasury_movement_extra_relations(movement):
     if movement.payroll_id:
         yield Link("settlement", "outgoing", "payroll", movement.payroll, amount=movement.amount)
 
+    # Préstamos bancarios: cuotas, desembolsos y prepagos.
+    installment = related_or_none(movement, "installment_payment")
+    if installment is not None:
+        yield Link("settlement", "incoming", "bank_loan", installment.loan, amount=movement.amount)
+    loan_disb = related_or_none(movement, "loan_disbursement")
+    if loan_disb is not None:
+        yield Link("association", "incoming", "bank_loan", loan_disb, is_dependency=False)
+    loan_prepay = related_or_none(movement, "loan_prepayment")
+    if loan_prepay is not None:
+        yield Link("settlement", "incoming", "bank_loan", loan_prepay, amount=movement.amount)
+
+    # Tarjeta de crédito — compras en cuotas.
+    if movement.card_purchase_group_id:
+        semantic = "association" if movement.is_installment_interest else "settlement"
+        yield Link(semantic, "incoming", "card_purchase_group", movement.card_purchase_group, amount=movement.amount, is_dependency=False)
+
+    # Tarjeta de crédito — pagos y cargos de estado de cuenta.
+    if movement.from_card_statement_id:
+        yield Link("settlement", "outgoing", "card_statement", movement.from_card_statement, amount=movement.amount)
+    card_charges = related_or_none(movement, "card_statement_charges")
+    if card_charges is not None:
+        yield Link("posting", "incoming", "card_statement", card_charges, is_dependency=False)
+
+    # Línea de crédito — disposiciones y pagos.
+    if movement.credit_line_id:
+        yield Link("association", "incoming", "credit_line", movement.credit_line, is_dependency=False)
+
+    # Conciliación bancaria — cartola conciliada.
+    if movement.bank_statement_line_id and movement.bank_statement_line.statement_id:
+        yield Link("association", "incoming", "bank_statement", movement.bank_statement_line.statement, is_dependency=False)
+
 
 @relation_provider("treasury.check")
 def check_relations(check):
@@ -67,10 +98,93 @@ def terminal_batch_relations(batch):
         yield Link("posting", "outgoing", "journal_entry", batch.settlement_journal_entry)
 
 
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.bankloan",
+    canonical_url=lambda loan: f"/treasury/bank-center/{loan.lender_id}/loans?selected={loan.id}",
+    amount_field="principal",
+    status_field="status",
+))
+
+
+@relation_provider("treasury.bankloan")
+def bank_loan_relations(loan):
+    if loan.disbursement_movement_id:
+        yield Link(
+            "association", "outgoing", "disbursement",
+            loan.disbursement_movement,
+            amount=loan.disbursement_movement.amount,
+            is_dependency=False,
+        )
+    for installment in loan.installments.select_related("payment_movement").filter(
+        payment_movement__isnull=False
+    ):
+        yield Link(
+            "settlement", "outgoing", "installment_payment",
+            installment.payment_movement,
+            amount=installment.payment_movement.amount,
+        )
+    if loan.prepay_movement_id:
+        yield Link(
+            "settlement", "outgoing", "prepay",
+            loan.prepay_movement,
+            amount=loan.prepay_movement.amount,
+        )
+
+
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.creditcardstatement",
+    canonical_url="/treasury/bank-center?selected={id}",
+    amount_field="billed_amount",
+    status_field="status",
+))
+
+
+@relation_provider("treasury.creditcardstatement")
+def card_statement_relations(stmt):
+    if stmt.charges_movement_id:
+        yield Link("posting", "outgoing", "charges_movement", stmt.charges_movement, amount=stmt.charges_movement.amount)
+    for m in stmt.payment_movements.all():
+        yield Link("settlement", "outgoing", "payment", m, amount=m.amount)
+
+
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.cardpurchasegroup",
+    canonical_url="/treasury/bank-center?selected={id}",
+    amount_field="total_amount",
+))
+
+
+@relation_provider("treasury.cardpurchasegroup")
+def card_purchase_group_relations(group):
+    for m in group.movements.all():
+        semantic = "association" if m.is_installment_interest else "settlement"
+        yield Link(semantic, "outgoing", "installment_payment", m, amount=m.amount, is_dependency=False)
+
+
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.creditline",
+    canonical_url="/treasury/bank-center?selected={id}",
+    amount_field="credit_limit",
+    status_field="status",
+))
+
+
+@relation_provider("treasury.creditline")
+def credit_line_relations(line):
+    for m in line.movements.order_by("-date")[:50]:
+        yield Link("association", "outgoing", "movement", m, amount=m.amount, is_dependency=False)
+
+
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.bankstatement",
+    canonical_url="/treasury/bank-center/reconciliation?selected={id}",
+    status_field="status",
+))
+
 # Tipos del centro bancario sin ficha propia: se abren en su vista (lista)
 for _label in (
-    "treasury.bankloan", "treasury.cardpurchasegroup", "treasury.cardpurchaseinstallment",
-    "treasury.creditcardstatement", "treasury.creditline", "treasury.loaninstallment",
+    "treasury.cardpurchaseinstallment",
+    "treasury.loaninstallment",
 ):
     DocumentTypeRegistry.register(DocumentType(label=_label, canonical_url="/treasury/bank-center"))
 DocumentTypeRegistry.register(DocumentType(

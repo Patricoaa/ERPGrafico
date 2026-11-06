@@ -64,6 +64,7 @@ export type RowActionKey =
     | "post"
     | "reopen"
     | "disburse"
+    | "prepay"
     | "split"
     | "annul"
     | "delete"
@@ -106,6 +107,7 @@ export const ROW_ACTIONS: Record<RowActionKey, RowActionDef> = {
     post:         { icon: CheckCircle,   label: "Confirmar",            intent: "write" },
     reopen:       { icon: LockOpen,      label: "Reabrir",              intent: "write" },
     disburse:     { icon: Send,          label: "Desembolsar",          intent: "write" },
+    prepay:       { icon: Banknote,      label: "Prepago total",        intent: "write" },
     split:        { icon: SplitSquareHorizontal, label: "Distribuir",   intent: "write" },
     annul:     { icon: Ban,              label: "Anular",               intent: "destructive", iconColorClass: "text-destructive" },
     delete:    { icon: Trash2,           label: "Eliminar",             intent: "destructive", iconColorClass: "text-destructive" },

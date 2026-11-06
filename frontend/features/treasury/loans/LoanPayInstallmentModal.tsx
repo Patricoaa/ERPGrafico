@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react'
 import { Banknote, ArrowRight, Coins, AlertTriangle } from 'lucide-react'
-import { BaseModal, FormFooter, CancelButton, SubmitButton, LabeledSelect, MoneyDisplay, LabeledInput } from "@/components/shared"
+import { BaseModal, FormFooter, CancelButton, SubmitButton, MoneyDisplay, LabeledInput } from "@/components/shared"
+import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountSelector'
 import { useServerDate } from '@/hooks/useServerDate'
-import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from '../hooks/useLoans'
 import type { BankLoanCurrency, LoanInstallment } from './types'
 import { parseDateOnly } from '@/lib/utils'
@@ -18,7 +18,6 @@ interface Props {
 }
 
 export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate, open, onOpenChange }: Props) {
-    const { accounts } = useTreasuryAccounts()
     const { payInstallment, isPaying } = useLoanMutations()
     const { dateString } = useServerDate()
 
@@ -30,10 +29,6 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
     const [taxAmount, setTaxAmount] = useState('0')
     const [penaltyAmount, setPenaltyAmount] = useState('0')
 
-    const disbursementAccounts = (accounts ?? []).filter(
-        (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
-    )
-
     const principalEdit = parseFloat(principalAmount) || 0
     const interestEdit = parseFloat(interestAmount) || 0
     const insuranceEdit = parseFloat(insuranceAmount) || 0
@@ -44,8 +39,6 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
     const isUF = loanCurrency === 'UF'
     const hasUfInfo = installment.uf_value_used != null
 
-    // Mora estimada (solo cuotas vencidas). Replica el cálculo del backend:
-    // cuota_total × tasa/100 × días_atraso/30.
     const penaltyRateNum = parseFloat(penaltyRate || '0')
     const daysLate = Math.max(0, Math.floor(
         (parseDateOnly(payDate).getTime() - parseDateOnly(installment.due_date).getTime()) / 86_400_000,
@@ -55,10 +48,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
         : 0
 
     const handlePay = async () => {
-        if (!paymentAccount) {
-            window.alert('Selecciona la cuenta de pago.')
-            return
-        }
+        if (!paymentAccount) return
         await payInstallment({
             id: installment.id,
             payload: {
@@ -105,45 +95,17 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
             }
         >
             <div className="space-y-5">
-                {/* Desglose editable de la cuota */}
                 <div className="rounded-md border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
                         Desglose de la cuota
                     </h3>
                     <div className="space-y-3">
-                        <LabeledInput
-                            label="Capital"
-                            type="number"
-                            value={principalAmount}
-                            onChange={(e) => setPrincipalAmount(e.target.value)}
-                        />
-                        <LabeledInput
-                            label="Interés"
-                            type="number"
-                            value={interestAmount}
-                            onChange={(e) => setInterestAmount(e.target.value)}
-                        />
-                        <LabeledInput
-                            label="Seguro"
-                            type="number"
-                            value={insuranceAmount}
-                            onChange={(e) => setInsuranceAmount(e.target.value)}
-                        />
-                        <LabeledInput
-                            label="Impuestos"
-                            type="number"
-                            value={taxAmount}
-                            onChange={(e) => setTaxAmount(e.target.value)}
-                            placeholder="0"
-                        />
-                        <LabeledInput
-                            label="Multa por mora"
-                            type="number"
-                            value={penaltyAmount}
-                            onChange={(e) => setPenaltyAmount(e.target.value)}
-                            placeholder="0"
-                        />
+                        <LabeledInput label="Capital" type="number" value={principalAmount} onChange={(e) => setPrincipalAmount(e.target.value)} />
+                        <LabeledInput label="Interés" type="number" value={interestAmount} onChange={(e) => setInterestAmount(e.target.value)} />
+                        <LabeledInput label="Seguro" type="number" value={insuranceAmount} onChange={(e) => setInsuranceAmount(e.target.value)} />
+                        <LabeledInput label="Impuestos" type="number" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} placeholder="0" />
+                        <LabeledInput label="Multa por mora" type="number" value={penaltyAmount} onChange={(e) => setPenaltyAmount(e.target.value)} placeholder="0" />
                         <div className="flex justify-between font-bold border-t border-border pt-2 text-sm">
                             <span>Total {isUF ? '(UF)' : ''}</span>
                             <MoneyDisplay amount={totalPayment} />
@@ -151,7 +113,6 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     </div>
                 </div>
 
-                {/* Mora estimada (cuota vencida) */}
                 {estimatedPenalty > 0 && penaltyEdit === 0 && (
                     <div className="rounded-md border border-warning/30 bg-warning/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-warning">
@@ -175,7 +136,6 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     </div>
                 )}
 
-                {/* Conversión UF → CLP */}
                 {isUF && (
                     <div className="rounded-md border border-info/30 bg-info/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-info">
@@ -190,10 +150,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">CLP a pagar</span>
-                                    <MoneyDisplay
-                                        amount={parseFloat(installment.clp_amount_paid ?? '0')}
-                                        className="font-bold"
-                                    />
+                                    <MoneyDisplay amount={parseFloat(installment.clp_amount_paid ?? '0')} className="font-bold" />
                                 </div>
                             </div>
                         ) : (
@@ -206,16 +163,13 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     </div>
                 )}
 
-                {/* Form */}
                 <div className="space-y-3">
-                    <LabeledSelect
+                    <TreasuryAccountSelector
                         label="Pagar desde cuenta"
                         required
-                        options={disbursementAccounts.map((a) => ({
-                            value: String(a.id), label: `${a.name} (${a.code})`,
-                        }))}
                         value={paymentAccount}
-                        onChange={setPaymentAccount}
+                        onChange={(v) => setPaymentAccount(v ?? '')}
+                        accountTypes={['CHECKING', 'CASH']}
                     />
                     <LabeledInput
                         label="Fecha de Pago"

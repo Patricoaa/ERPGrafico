@@ -15,7 +15,6 @@ import { useBanks } from '../hooks/useMasterData'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
 import { LoanViewDrawer } from './LoanViewDrawer'
 import { LoanDisburseDrawer } from './LoanDisburseDrawer'
-import { LoanDetailModal } from './LoanDetailModal'
 import { loanActions, type LoanActionsCtx } from './loanActions'
 import { bankLoanEntity, bankLoanViews } from '../entity-view/bankLoan.entity'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
@@ -87,19 +86,12 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     )
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
-    const action = searchParams.get("action")
     const { openAction } = useEntityRouteActions()
 
-    // Una misma ruta, cuatro superficies: registrar (`?modal=new`), detalle, desembolso y cronograma (`?action=`).
+    // Una misma ruta, tres superficies: registrar (`?modal=new`), detalle y desembolso.
     const registerPanel = useEntityPanelRoute({ actions: [] })
     const viewPanel = useEntityPanelRoute({ actions: [null, 'detail'], create: false })
     const disbursePanel = useEntityPanelRoute({ actions: ['disburse'], create: false })
-    const isAmortizationOpen = !!selectedId && action === "amortization"
-
-    const selectedLoan = useMemo(
-        () => selectedId ? filteredLoans.find(l => l.id === selectedId) ?? null : null,
-        [selectedId, filteredLoans],
-    )
 
     const handleReset = useCallback(() => {
         search.clearAll()
@@ -122,8 +114,9 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
 
     const actionsCtx: LoanActionsCtx = {
         onViewDetail: (id) => openLoan(id, "detail"),
-        onAmortization: (id) => openLoan(id, "amortization"),
         onDisburse: (loan) => openLoan(loan.id, "disburse"),
+        onPayNext: (id) => openLoan(id, "detail"),
+        onPrepay: (id) => openLoan(id, "detail"),
     }
 
     return (
@@ -170,6 +163,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                         loanId={selectedId}
                         open={open}
                         onOpenChange={(open) => { if (!open) viewPanel.close() }}
+                        onDisburse={(loan) => openLoan(loan.id, "disburse")}
                     />
                 )}
             </EntityPanelTab>
@@ -178,15 +172,10 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                     <LoanDisburseDrawer
                         open={open}
                         onOpenChange={(open) => { if (!open) disbursePanel.close() }}
-                        loan={selectedLoan}
+                        loan={filteredLoans.find(l => l.id === selectedId) ?? null}
                     />
                 )}
             </EntityPanelTab>
-            <LoanDetailModal
-                loanId={selectedId}
-                open={isAmortizationOpen}
-                onOpenChange={(open) => { if (!open) viewPanel.close() }}
-            />
         </div>
     )
 }

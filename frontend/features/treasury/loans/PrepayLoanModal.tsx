@@ -2,9 +2,9 @@
 
 import React, { useState, useMemo } from 'react'
 import { Banknote, ArrowRight, Coins, Calculator } from 'lucide-react'
-import { BaseModal, FormFooter, CancelButton, DangerButton, LabeledSelect, MoneyDisplay, LabeledInput } from "@/components/shared"
+import { BaseModal, FormFooter, CancelButton, DangerButton, MoneyDisplay, LabeledInput } from "@/components/shared"
+import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountSelector'
 import { useServerDate } from '@/hooks/useServerDate'
-import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from '../hooks/useLoans'
 import type { BankLoan } from './types'
 
@@ -15,7 +15,6 @@ interface Props {
 }
 
 export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
-    const { accounts } = useTreasuryAccounts()
     const { prepay, isPrepaying } = useLoanMutations()
     const { dateString } = useServerDate()
 
@@ -24,10 +23,6 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
     const [insuranceAmount, setInsuranceAmount] = useState('0')
     const [taxAmount, setTaxAmount] = useState('0')
     const [penaltyAmount, setPenaltyAmount] = useState('0')
-
-    const disbursementAccounts = (accounts ?? []).filter(
-        (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
-    )
 
     const pendingInstallments = useMemo(() =>
         loan.installments.filter((inst) =>
@@ -54,10 +49,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
     const isUF = loan.currency === 'UF'
 
     const handlePrepay = async () => {
-        if (!paymentAccount) {
-            window.alert('Selecciona la cuenta de pago.')
-            return
-        }
+        if (!paymentAccount) return
         await prepay({
             id: loan.id,
             payload: {
@@ -103,7 +95,6 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
             }
         >
             <div className="space-y-5">
-                {/* Resumen del saldo insoluto */}
                 <div className="rounded-md border border-border p-4 space-y-2">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
@@ -128,7 +119,6 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                     </p>
                 </div>
 
-                {/* Desglose editable */}
                 <div className="rounded-md border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Calculator className="h-4 w-4" />
@@ -145,27 +135,9 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                                 <MoneyDisplay amount={totalInterest} />
                             </div>
                         </div>
-                        <LabeledInput
-                            label="Seguro (editable)"
-                            type="number"
-                            value={insuranceAmount}
-                            onChange={(e) => setInsuranceAmount(e.target.value)}
-                            placeholder="0"
-                        />
-                        <LabeledInput
-                            label="Impuestos (editable)"
-                            type="number"
-                            value={taxAmount}
-                            onChange={(e) => setTaxAmount(e.target.value)}
-                            placeholder="0"
-                        />
-                        <LabeledInput
-                            label="Multa por mora (editable)"
-                            type="number"
-                            value={penaltyAmount}
-                            onChange={(e) => setPenaltyAmount(e.target.value)}
-                            placeholder="0"
-                        />
+                        <LabeledInput label="Seguro (editable)" type="number" value={insuranceAmount} onChange={(e) => setInsuranceAmount(e.target.value)} placeholder="0" />
+                        <LabeledInput label="Impuestos (editable)" type="number" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} placeholder="0" />
+                        <LabeledInput label="Multa por mora (editable)" type="number" value={penaltyAmount} onChange={(e) => setPenaltyAmount(e.target.value)} placeholder="0" />
                         <div className="flex justify-between font-bold border-t border-border pt-2 text-sm">
                             <span>Total a pagar {isUF ? '(UF)' : ''}</span>
                             <MoneyDisplay amount={totalWithPenalty} />
@@ -173,7 +145,6 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                     </div>
                 </div>
 
-                {/* Conversión UF → CLP */}
                 {isUF && (
                     <div className="rounded-md border border-info/30 bg-info/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-info">
@@ -188,16 +159,13 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                     </div>
                 )}
 
-                {/* Form */}
                 <div className="space-y-3">
-                    <LabeledSelect
+                    <TreasuryAccountSelector
                         label="Pagar desde cuenta"
                         required
-                        options={disbursementAccounts.map((a) => ({
-                            value: String(a.id), label: `${a.name} (${a.code})`,
-                        }))}
                         value={paymentAccount}
-                        onChange={setPaymentAccount}
+                        onChange={(v) => setPaymentAccount(v ?? '')}
+                        accountTypes={['CHECKING', 'CASH']}
                     />
                     <LabeledInput
                         label="Fecha de Pago"

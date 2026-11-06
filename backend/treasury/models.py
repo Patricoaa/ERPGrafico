@@ -3125,6 +3125,23 @@ class BankLoan(models.Model):
         help_text=_("Descripción libre de garantías. Modelo dedicado queda fuera del MVP."),
     )
 
+    disbursement_movement = models.OneToOneField(
+        "TreasuryMovement",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="loan_disbursement",
+        verbose_name=_("Movimiento de Desembolso"),
+    )
+    prepay_movement = models.OneToOneField(
+        "TreasuryMovement",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="loan_prepayment",
+        verbose_name=_("Movimiento de Prepago Total"),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(

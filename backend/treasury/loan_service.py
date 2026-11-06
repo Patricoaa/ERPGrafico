@@ -470,7 +470,8 @@ class LoanService:
         )
 
         loan.status = BankLoan.Status.ACTIVE
-        loan.save(update_fields=["status", "updated_at"])
+        loan.disbursement_movement = movement
+        loan.save(update_fields=["status", "disbursement_movement", "updated_at"])
         return loan
 
     @staticmethod
@@ -848,7 +849,8 @@ class LoanService:
         # Cancelar cuotas pendientes.
         pending.update(status=LoanInstallment.Status.CANCELED)
         loan.status = BankLoan.Status.PAID
-        loan.save(update_fields=["status", "updated_at"])
+        loan.prepay_movement = movement
+        loan.save(update_fields=["status", "prepay_movement", "updated_at"])
         return loan
 
 
@@ -936,7 +938,9 @@ def _build_disbursement_entry(
     )
     JournalEntryService.post_entry(entry)
     movement.journal_entry = entry
-    movement.save(update_fields=["journal_entry"])
+    movement.status = movement.MovementStatus.POSTED
+    movement.is_pending_registration = False
+    movement.save(update_fields=["journal_entry", "status", "is_pending_registration"])
 
 
 def _build_installment_entry(
@@ -1057,4 +1061,6 @@ def _build_installment_entry(
 
     JournalEntryService.post_entry(entry)
     movement.journal_entry = entry
-    movement.save(update_fields=["journal_entry"])
+    movement.status = movement.MovementStatus.POSTED
+    movement.is_pending_registration = False
+    movement.save(update_fields=["journal_entry", "status", "is_pending_registration"])
