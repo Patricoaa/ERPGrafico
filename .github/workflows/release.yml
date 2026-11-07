@@ -11,6 +11,11 @@ on:
       - 'backend/VERSION'
       - 'docs/90-governance/versioning-policy.md'
 
+# One at a time: merges seconds apart used to race, and a rejected commit left its tag behind.
+concurrency:
+  group: automated-versioning
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Bump Version & Tag
@@ -23,6 +28,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }} # Latest commit: an earlier run may have added its version bump
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
@@ -44,4 +50,4 @@ jobs:
           standard-version
           
           # Push changes and tags
-          git push origin HEAD:${{ github.ref_name }} --follow-tags
+          git push --atomic origin HEAD:${{ github.ref_name }} --follow-tags
