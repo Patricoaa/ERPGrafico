@@ -95,7 +95,6 @@ Estos tests fallan hoy, quedan fuera del gate y no deben aumentar. Requieren inv
 
 | Test | Síntoma |
 |------|---------|
-| `treasury/tests/test_card_pay_validations.py` (2), `test_card_reverse.py` (2), `test_card_service.py` (4) | `Saldo insuficiente` al pagar o revertir estados de cuenta de tarjeta |
 | `production/tests/test_p26_stock_context.py::test_manufacturable_uses_prefetched_context` | 6 queries donde se esperan 0 |
 | `workflow/tests/test_workflow_config_permissions.py::test_workflow_settings_current_get_open_write_guarded` | 403 donde se espera 200 |
 | `core/tests/test_permission_registry.py::test_post_migrate_sync_is_additive` | El grupo administrador no conserva el permiso de prueba |

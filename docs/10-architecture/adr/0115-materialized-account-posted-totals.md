@@ -25,9 +25,10 @@ author: fullstack-team
 ## Consequences
 
 - Lectura O(1) por cuenta. Escritura: un `UPDATE` extra por publicación o anulación de asiento.
-- Supuesto: los ítems de un asiento que afecta saldo no cambian sin pasar por las señales. La edición de asientos publicados está bloqueada (ADR-0091). Los ítems creados con `bulk_create` no disparan señales; hoy eso ocurre solo en la generación de asientos de apertura, que nacen en `DRAFT`.
+- Supuesto: los ítems de un asiento que afecta saldo no cambian sin pasar por las señales. La edición de asientos publicados está bloqueada (ADR-0091). Los ítems creados con `bulk_create` no disparan señales: si el asiento ya está publicado, hay que llamar a `refresh_accounts_of_entry`, como hace `InventoryService.confirmar_documento`. Los asientos de apertura y cierre nacen en `DRAFT` y se recalculan al publicarlos.
 - `has_posted_items` ahora usa los estados que afectan saldo (antes solo `POSTED`), igual que la lista.
 - Los saldos materializados no son fuente de verdad contable: el libro mayor sigue siendo `JournalItem`.
+- Una instancia ya cargada no ve publicaciones posteriores. Las validaciones que mueven dinero usan `TreasuryAccount.fresh_balance()`; `current_balance` queda para lecturas.
 
 ## Verification
 

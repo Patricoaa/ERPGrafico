@@ -1144,6 +1144,17 @@ class TreasuryAccount(models.Model):
             return self.account.balance
         return 0
 
+    def fresh_balance(self) -> Decimal:
+        """
+        Stored balance, ignoring totals cached on this instance.
+
+        `current_balance` reads the account loaded with the instance, which misses postings made
+        since (ADR-0115). Validations that move money must use this one.
+        """
+        if not self.account_id:
+            return Decimal("0")
+        return Account.objects.get(pk=self.account_id).balance
+
     @property
     def available_liquidity(self) -> Decimal:
         """

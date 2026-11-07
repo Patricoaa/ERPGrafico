@@ -191,6 +191,7 @@ def test_reverse_statement_with_charges_and_payment():
     )
     CardService.pay_statement(stmt, payment_account=env["bank_ta"])
 
+    env["bank_ta"].refresh_from_db()
     bank_before = env["bank_ta"].current_balance
     # Total: 130k billed + 15k interest + 5k fees = 150k.
     assert bank_before == Decimal("1000000") - Decimal("150000")
