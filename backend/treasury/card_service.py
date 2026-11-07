@@ -648,12 +648,13 @@ class CardService:
         # Validación de fondos. Permite pagar aunque no haya saldo
         # si `amount == 0` (statement vacío) — caso que ya no llega
         # acá por el check anterior.
-        if amount > payment_account.current_balance:
+        available_balance = payment_account.fresh_balance()
+        if amount > available_balance:
             raise ValidationError(
                 _t("Saldo insuficiente en %(acc)s. Disponible: $%(avail)s, a pagar: $%(amt)s.")
                 % {
                     "acc": payment_account.name,
-                    "avail": f"{payment_account.current_balance:,.0f}",
+                    "avail": f"{available_balance:,.0f}",
                     "amt": f"{amount:,.0f}",
                 }
             )

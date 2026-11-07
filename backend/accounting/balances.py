@@ -7,6 +7,10 @@ cuando se modifica un ítem de un asiento que ya afecta saldo.
 
 Supuesto: los ítems de un asiento que afecta saldo no cambian sin pasar por estas señales
 (la edición de asientos publicados está bloqueada por la política de edición, ADR-0091).
+Quien use `bulk_create` sobre un asiento ya publicado debe llamar a `refresh_accounts_of_entry`.
+
+Una instancia de `Account` ya cargada no ve publicaciones posteriores: las validaciones que
+mueven dinero leen el saldo guardado (`TreasuryAccount.fresh_balance`).
 """
 
 from decimal import Decimal

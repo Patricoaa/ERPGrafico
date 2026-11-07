@@ -363,7 +363,7 @@ def _apply_opening_fund_adjustment(
 ) -> None:
     """Creates a movement to justify the difference between declared opening balance and the cash account book balance."""
     pos_treasury = _get_session_treasury(session)
-    book_balance = pos_treasury.current_balance
+    book_balance = pos_treasury.fresh_balance()
     diff = opening_balance - book_balance
 
     if diff == 0:

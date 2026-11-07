@@ -262,6 +262,10 @@ class InventoryService:
                 for item in items:
                     item.entry = entry
                 JournalItem.objects.bulk_create(items)
+                # bulk_create fires no signals and the entry is already POSTED (ADR-0115).
+                from accounting.balances import refresh_accounts_of_entry
+
+                refresh_accounts_of_entry(entry.pk)
 
                 # Update moves with the generated entry
                 for move in generated_moves:

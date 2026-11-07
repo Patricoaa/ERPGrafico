@@ -151,16 +151,18 @@ class TreasuryService:
         # ── Auto-draw desde línea de crédito (CHECKING accounts) ─────────
         credit_line_draw_amount = Decimal("0")
         credit_line = None
-        if (
-            from_account
+        funds_balance = (
+            from_account.fresh_balance()
+            if from_account
             and from_account.account_type == TreasuryAccount.Type.CHECKING
             and movement_type in (TreasuryMovement.Type.OUTBOUND, TreasuryMovement.Type.TRANSFER)
-            and amount > from_account.current_balance
-        ):
+            else None
+        )
+        if funds_balance is not None and amount > funds_balance:
             try:
                 cl = from_account.credit_line
                 if cl and cl.status == CreditLine.Status.ACTIVE:
-                    excess = amount - from_account.current_balance
+                    excess = amount - funds_balance
                     if excess > cl.available_amount:
                         raise ValidationError(
                             _(
@@ -170,7 +172,7 @@ class TreasuryService:
                             )
                             % {
                                 "amount": amount,
-                                "balance": from_account.current_balance,
+                                "balance": funds_balance,
                                 "available": cl.available_amount,
                             }
                         )
