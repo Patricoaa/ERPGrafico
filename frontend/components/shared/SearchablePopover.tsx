@@ -1,13 +1,15 @@
 "use client"
 
 import { type ReactNode, type KeyboardEvent, useState, useRef, useEffect } from "react"
-import { Search } from "lucide-react"
+import { Search, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { CardSkeleton, EmptyState } from '@/components/shared'
 
 export interface SearchablePopoverProps<TItem> {
@@ -17,8 +19,12 @@ export interface SearchablePopoverProps<TItem> {
     searchPlaceholder?: string
     searchValue: string
     onSearchChange: (value: string) => void
-    /** Element rendered to the right of the search input (e.g. a create button) */
+    /** Custom element rendered to the right of the search input */
     searchRightAction?: ReactNode
+    /** Standard create button — renders a + icon to the right of the search */
+    onCreate?: () => void
+    /** Tooltip label for the create button. Default: "Nuevo…" */
+    createLabel?: string
     items: TItem[]
     isLoading?: boolean
     loadingCount?: number
@@ -42,6 +48,8 @@ export function SearchablePopover<TItem>({
     searchValue,
     onSearchChange,
     searchRightAction,
+    onCreate,
+    createLabel,
     items,
     isLoading = false,
     loadingCount = 3,
@@ -99,7 +107,24 @@ export function SearchablePopover<TItem>({
                                 autoFocus
                             />
                         </div>
-                        {searchRightAction}
+                        {searchRightAction ?? (onCreate ? (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                            onClick={onCreate}
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>{createLabel ?? "Nuevo…"}</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        ) : null)}
                     </div>
 
                     {children}

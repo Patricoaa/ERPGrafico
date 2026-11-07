@@ -1,13 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Check } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
-import { ChevronDown } from "lucide-react"
 
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUserSearch, useSingleUser } from "@/features/users/hooks/useUserSearch"
-import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
+import { LabeledContainer, SearchablePopover, SelectorItem, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import type { AppUser } from "@/types/entities"
 
 const UserIcon = getEntityIcon('core.user')
@@ -21,9 +19,20 @@ interface UserSelectorProps {
     error?: string
     required?: boolean
     className?: string
+    variant?: 'standalone' | 'inline'
 }
 
-export function UserSelector({ value, onChange, placeholder = "Seleccionar...", disabled = false, label, error, required, className }: UserSelectorProps) {
+export function UserSelector({
+    value,
+    onChange,
+    placeholder = "Seleccionar...",
+    disabled = false,
+    label,
+    error,
+    required,
+    className,
+    variant = 'standalone'
+}: UserSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
@@ -48,44 +57,47 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar...", 
         setSearchTerm("")
     }, [onChange])
 
+    const popover = (
+        <SearchablePopover
+            open={open}
+            onOpenChange={setOpen}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar usuario..."
+            items={users}
+            isLoading={searchLoading}
+            selectedId={value}
+            getId={(u) => u.id}
+            onSelect={handleSelect}
+            renderItem={(user) => (
+                <SelectorItem
+                    icon={<UserIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+                    title={user.username}
+                    subtitle={user.email}
+                    selected={selectedUser?.id === user.id}
+                />
+            )}
+            trigger={
+                <SelectorTrigger
+                    hasValue={!!selectedUser}
+                    placeholder={placeholder}
+                    variant={variant}
+                    icon={<UserIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                    open={open}
+                    disabled={disabled}
+                >
+                    <span className={`${SELECTOR_VALUE_CLASS} truncate`}>{selectedUser?.username}</span>
+                    <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">{selectedUser?.email}</span>
+                </SelectorTrigger>
+            }
+        />
+    )
+
+    if (variant === 'inline') return popover
+
     return (
         <LabeledContainer label={label} error={error} disabled={disabled} required={required} containerClassName={className}>
-            <SearchablePopover
-                open={open}
-                onOpenChange={setOpen}
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
-                searchPlaceholder="Buscar usuario..."
-                items={users}
-                isLoading={searchLoading}
-                selectedId={value}
-                getId={(u) => u.id}
-                onSelect={handleSelect}
-                renderItem={(user) => (
-                    <>
-                        <div className="flex flex-col flex-1 min-w-0">
-                            <span className="font-medium">{user.username}</span>
-                            <span className="text-3xs text-muted-foreground">{user.email}</span>
-                        </div>
-                        {selectedUser?.id === user.id && (
-                            <Check className="ml-auto h-4 w-4 shrink-0 opacity-100" />
-                        )}
-                    </>
-                )}
-                trigger={
-                    <SelectorTrigger
-                        hasValue={!!selectedUser}
-                        placeholder={placeholder}
-                        icon={<UserIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                        open={open}
-                        disabled={disabled}
-                        chevronClassName="ml-2 h-4 w-4 shrink-0 opacity-50"
-                    >
-                        <span className={`${SELECTOR_VALUE_CLASS} truncate`}>{selectedUser?.username}</span>
-                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">{selectedUser?.email}</span>
-                    </SelectorTrigger>
-                }
-            />
+            {popover}
         </LabeledContainer>
     )
 }

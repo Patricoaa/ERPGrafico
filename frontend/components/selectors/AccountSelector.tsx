@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Check } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 
-import { BaseModal, LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
+import { BaseModal, LabeledContainer, SearchablePopover, SelectorItem, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { selectorAccountEntity, selectorAccountViews } from "./entity-view/selectorAccount.entity"
 import { Input } from "@/components/ui/input"
@@ -117,16 +116,12 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar...
             onSelect={handleSelect}
             emptyTitle="No se encontraron cuentas"
             renderItem={(account) => (
-                <>
-                    <Check
-                        className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
-                        )}
-                    />
-                    <span className="font-mono text-xs font-semibold text-primary shrink-0 mr-2">{account.code}</span>
-                    <span className="text-sm truncate">{account.name}</span>
-                </>
+                <SelectorItem
+                    icon={<AccountIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+                    prefix={<span className="font-mono text-xs font-semibold text-primary">{account.code}</span>}
+                    title={account.name}
+                    selected={selectedAccount?.id === account.id}
+                />
             )}
             trigger={
                 <SelectorTrigger

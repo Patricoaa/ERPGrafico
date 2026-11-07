@@ -156,6 +156,8 @@ export * from './FormLineItemsTable';
 export * from './EntityCard'
 export * from './SelectorTrigger'
 export type { SelectorTriggerProps } from './SelectorTrigger'
+export * from './SelectorItem'
+export type { SelectorItemProps } from './SelectorItem'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './emptyStateResolver';

@@ -5,7 +5,7 @@ import { Check, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import { useWarehouses } from "@/features/inventory/hooks/useWarehouses"
-import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
+import { LabeledContainer, SearchablePopover, SelectorItem, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import { type Warehouse } from "@/types/entities"
 
 interface WarehouseSelectorProps {
@@ -91,18 +91,12 @@ export function WarehouseSelector({
                 </Button>
             ) : undefined}
             renderItem={(warehouse) => (
-                <>
-                    <Home className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
-                    <div className="flex flex-col flex-1 min-w-0">
-                        <span className="font-medium">{warehouse.name}</span>
-                        {warehouse.code && (
-                            <span className="text-3xs text-muted-foreground font-mono">{warehouse.code}</span>
-                        )}
-                    </div>
-                    {selectedWarehouse?.id === warehouse.id && (
-                        <Check className="ml-auto h-4 w-4 shrink-0 opacity-100" />
-                    )}
-                </>
+                <SelectorItem
+                    icon={<Home className="h-3.5 w-3.5 text-muted-foreground" />}
+                    title={warehouse.name}
+                    subtitle={warehouse.code}
+                    selected={selectedWarehouse?.id === warehouse.id}
+                />
             )}
             trigger={
                 <SelectorTrigger

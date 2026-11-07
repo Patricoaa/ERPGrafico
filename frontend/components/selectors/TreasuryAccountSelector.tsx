@@ -3,10 +3,10 @@
 import { formatCurrency } from "@/lib/money"
 
 import { useState } from "react"
-import { Check, Loader2, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
+import { Loader2, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTreasuryAccounts, type PaymentContext, type TreasuryAccount } from "@/hooks/useTreasuryAccounts"
-import { LabeledContainer, SearchablePopover, MoneyDisplay, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
+import { LabeledContainer, SearchablePopover, MoneyDisplay, SelectorItem, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
 import type { TreasuryAccountType } from "@/features/treasury/types"
 
 interface TreasuryAccountSelectorProps {
@@ -131,27 +131,15 @@ export function TreasuryAccountSelector({
             onSelect={handleSelect}
             emptyTitle="No hay cuentas disponibles"
             renderItem={(account) => (
-                <>
-                    <Check
-                        className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
-                        )}
-                    />
-                    <div className="flex flex-col flex-1">
-                        <div className="flex items-center justify-between">
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">
-                                {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
-                            </span>
-                        </div>
-                        {account.current_balance !== undefined && account.current_balance !== null && (
-                            <span className="text-xs text-muted-foreground">
-                                Disponible: <MoneyDisplay amount={account.current_balance} inline className="text-xs" />
-                            </span>
-                        )}
-                    </div>
-                </>
+                <SelectorItem
+                    icon={<span className="text-muted-foreground">{getIcon(account.account_type)}</span>}
+                    title={account.name}
+                    badge={ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
+                    subtitle={account.current_balance !== undefined && account.current_balance !== null
+                        ? <span>Disponible: <MoneyDisplay amount={account.current_balance} inline className="text-xs" /></span>
+                        : undefined}
+                    selected={selectedAccount?.id === account.id}
+                />
             )}
             trigger={
                 <SelectorTrigger

@@ -2,9 +2,9 @@
 import { formatEntityDisplay, getEntityIcon, getDomainConceptTitle } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, X } from "lucide-react"
+import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DataCell, SelectorTrigger } from "@/components/shared"
+import { DataCell, SelectorItem, SelectorTrigger } from "@/components/shared"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 import { WorkOrderWizard } from "@/features/production"
@@ -105,33 +105,20 @@ export function AdvancedWorkOrderSelector({
             onSelect={handleSelect}
             emptyTitle={searchTerm ? "No se encontraron órdenes" : "Escriba para buscar"}
             renderItem={(order) => (
-                <div className="flex items-center gap-3 w-full overflow-hidden">
-                    <div className="flex-shrink-0 p-2 bg-muted rounded-md">
-                        <WorkOrderIcon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex flex-col overflow-hidden flex-1">
-                        <div className="flex items-center justify-between">
-                            <span className="truncate font-bold text-xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</span>
-                            <span className="text-4xs font-mono text-muted-foreground">
-                                {format(new Date(order.created_at), "dd/MM/yyyy")}
-                            </span>
-                        </div>
-                        <span className="text-3xs text-muted-foreground uppercase font-bold truncate">
-                            {order.product_name}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
+                <SelectorItem
+                    icon={<WorkOrderIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+                    title={formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}
+                    subtitle={order.product_name}
+                    badge={format(new Date(order.created_at), "dd/MM/yyyy")}
+                    trailing={
                         <DataCell.Action
                             action="detail"
                             onClick={(e) => openPreview(e, order.id)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                         />
-                        {selectedOrder?.id === order.id && (
-                            <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                        )}
-                    </div>
-                </div>
+                    }
+                    selected={selectedOrder?.id === order.id}
+                />
             )}
             trigger={
                 <SelectorTrigger

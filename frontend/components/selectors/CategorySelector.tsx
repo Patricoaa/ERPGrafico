@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { Check, Tag, Plus } from "lucide-react"
+import { Check, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 
-import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared"
+import { LabeledContainer, SearchablePopover, SelectorItem, SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared"
 import { type ProductCategory } from "@/types/entities"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { CategoryDrawer } from "@/features/inventory/components/CategoryDrawer"
@@ -87,14 +86,14 @@ export function CategorySelector({
             selectedId={value && value !== "none" && value !== "__none__" ? value.toString() : null}
             getId={(c) => c.id}
             onSelect={handleSelect}
+            onCreate={showPlusButton ? () => { setOpen(false); setIsCreateModalOpen(true) } : undefined}
+            createLabel="Nueva categoría"
             renderItem={(cat) => (
-                <>
-                    <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
-                    <span className="font-medium flex-1">{cat.name}</span>
-                    {selectedCategory?.id === cat.id && (
-                        <Check className="ml-auto h-4 w-4 shrink-0 opacity-100" />
-                    )}
-                </>
+                <SelectorItem
+                    icon={<Tag className="h-3.5 w-3.5 text-muted-foreground" />}
+                    title={cat.name}
+                    selected={selectedCategory?.id === cat.id}
+                />
             )}
             trigger={
                 <SelectorTrigger
@@ -127,29 +126,6 @@ export function CategorySelector({
                         <Check className="ml-auto h-4 w-4 shrink-0" />
                     )}
                 </Button>
-            ) : undefined}
-            searchRightAction={showPlusButton ? (
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
-                                onClick={() => {
-                                    setOpen(false)
-                                    setIsCreateModalOpen(true)
-                                }}
-                            >
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Nueva categoría</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
             ) : undefined}
         />
     )

@@ -1,10 +1,10 @@
 "use client"
 import { useState } from "react"
-import { Check, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
 
-import { DynamicIcon, LabeledContainer, SearchablePopover, SelectorTrigger } from '@/components/shared'
+import { DynamicIcon, LabeledContainer, SearchablePopover, SelectorItem, SelectorTrigger } from '@/components/shared'
 import { hasEntityDrawer } from "@/lib/entity-drawers"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import type { SearchResult } from "@/features/search/api/searchApi"
@@ -81,29 +81,13 @@ export function SourceDocumentSelector({
             onSelect={handleSelect}
             emptyTitle={searchTerm ? "Sin resultados" : "Escriba para buscar"}
             renderItem={(result) => (
-                <div className="flex items-center gap-3 w-full overflow-hidden">
-                    <div className="flex-shrink-0 p-2 bg-muted rounded-md">
-                        {result.icon && (
-                            <DynamicIcon name={result.icon} className="h-4 w-4 text-primary" />
-                        )}
-                    </div>
-                    <div className="flex flex-col overflow-hidden flex-1">
-                        <div className="flex items-center justify-between">
-                            <span className="truncate font-medium">{result.display}</span>
-                            <span className="text-3xs text-muted-foreground ml-2">
-                                {result.title}
-                            </span>
-                        </div>
-                        {result.subtitle && (
-                            <span className="text-3xs text-muted-foreground truncate">
-                                {result.subtitle}
-                            </span>
-                        )}
-                    </div>
-                    {value?.content_type_id === result.content_type_id && value?.object_id === result.id && (
-                        <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                    )}
-                </div>
+                <SelectorItem
+                    icon={result.icon ? <DynamicIcon name={result.icon} className="h-3.5 w-3.5 text-muted-foreground" /> : undefined}
+                    title={result.display}
+                    subtitle={result.subtitle ?? undefined}
+                    badge={result.title}
+                    selected={value?.content_type_id === result.content_type_id && value?.object_id === result.id}
+                />
             )}
             trigger={
                 <SelectorTrigger
