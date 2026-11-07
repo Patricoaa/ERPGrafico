@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.79](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.78...v0.3.79) (2026-11-07)
+
+
+### ✨ Features
+
+* **selectors:** introduce SelectorItem y centraliza botón de creación en SearchablePopover ([19788f1](https://github.com/Patricoaa/ERPGrafico/commit/19788f1e3746c827ed8ce84be9fb72f86c11028e))
+* **selectors:** unifica sistema notched — FieldLegend, variante inline y gaps de props ([8194940](https://github.com/Patricoaa/ERPGrafico/commit/8194940597922f3b9ffb0c1856ff39d8bb2cb391))
+
+
+### ⚙️ Refactors
+
+* **drawers:** estandariza contrato de drawer en todos los módulos ([56e1891](https://github.com/Patricoaa/ERPGrafico/commit/56e1891d3f183c95c99b703f2a43465cdd1e8a5e))
+* **inventory:** migra stockReportFilters a selectores inline registrados ([93e49e0](https://github.com/Patricoaa/ERPGrafico/commit/93e49e0fd2cb276fa4c14d57fc7311949604acbd))
+
 ### [0.3.78](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.77...v0.3.78) (2026-11-07)
 
 
