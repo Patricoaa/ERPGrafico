@@ -36,14 +36,14 @@ export interface CompositionSaveResult {
 
 export const rbacApi = {
     getBundles: (): Promise<RbacBundle[]> =>
-        api.get("/core/permissions/bundles/").then((r) => r.data),
+        api.get<RbacBundle[]>("/core/permissions/bundles/").then((r) => r.data),
     getCatalog: (): Promise<CatalogApp[]> =>
-        api.get("/core/permissions/catalog/").then((r) => r.data),
+        api.get<CatalogApp[]>("/core/permissions/catalog/").then((r) => r.data),
     getComposition: (groupId: number): Promise<Composition> =>
-        api.get(`/core/groups/${groupId}/composition/`).then((r) => r.data),
+        api.get<Composition>(`/core/groups/${groupId}/composition/`).then((r) => r.data),
     setComposition: (
         groupId: number,
         data: Omit<Composition, "effective_permissions">
     ): Promise<CompositionSaveResult> =>
-        api.put(`/core/groups/${groupId}/composition/`, data).then((r) => r.data),
+        api.put<CompositionSaveResult>(`/core/groups/${groupId}/composition/`, data).then((r) => r.data),
 }

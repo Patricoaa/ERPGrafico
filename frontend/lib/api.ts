@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { setClientToken, removeClientTokens } from './client-token';
 import { POS_EXTERNAL_REASON_CHALLENGE_HEADER, preparePosExternalReasonRetry } from './pos-external-reason';
 export { resolveMediaUrl } from './media-url';
@@ -17,6 +17,9 @@ const api = axios.create({
 /** Evento que cruza la barrera Axios (no-React) → AuthContext (React). */
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized' as const;
 export const AUTH_FORBIDDEN_EVENT = 'auth:forbidden' as const;
+
+/** Request flag that stops the 401 refresh from retrying the same request twice. */
+type RetriableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
@@ -57,9 +60,9 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
     (response) => response,
-    async (error) => {
-        const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retry) {
+    async (error: AxiosError) => {
+        const originalRequest: RetriableRequestConfig | undefined = error.config;
+        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
             if (isRefreshing) {
                 return new Promise<string>((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -82,7 +85,7 @@ api.interceptors.response.use(
 
             try {
                 if (refreshToken) {
-                    const response = await axios.post(`${baseURL}token/refresh/`, {
+                    const response = await axios.post<{ access: string }>(`${baseURL}token/refresh/`, {
                         refresh: refreshToken
                     });
                     if (response.status === 200) {
@@ -144,7 +147,7 @@ export async function pollTask<T = unknown>(
             try {
                 // Remove the extra slash if endpoint already ends with it
                 const cleanEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
-                const response = await api.get(`${cleanEndpoint}${taskId}/`);
+                const response = await api.get<{ status: string; data?: unknown; error?: string }>(`${cleanEndpoint}${taskId}/`);
                 
                 if (response.data.status === 'SUCCESS') {
                     resolve(response.data.data as T);

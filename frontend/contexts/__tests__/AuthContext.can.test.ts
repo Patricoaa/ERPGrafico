@@ -20,7 +20,7 @@ import { AuthProvider, useAuth } from "../AuthContext"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("next-themes", () => ({ useTheme: () => ({ setTheme: vi.fn(), theme: "system" }) }))
-vi.mock("@/lib/api", () => ({ default: { get: vi.fn(), post: vi.fn(), interceptors: { response: { use: vi.fn() }, request: { use: vi.fn() } } }, AUTH_UNAUTHORIZED_EVENT: "auth:unauthorized" }))
+vi.mock("@/lib/api", () => ({ AUTH_FORBIDDEN_EVENT: "auth:forbidden", default: { get: vi.fn(), post: vi.fn(), interceptors: { response: { use: vi.fn() }, request: { use: vi.fn() } } }, AUTH_UNAUTHORIZED_EVENT: "auth:unauthorized" }))
 vi.mock("@/lib/client-token", () => ({ getClientToken: vi.fn(() => null), setClientToken: vi.fn(), removeClientTokens: vi.fn() }))
 vi.mock("@/features/auth/api/authApi", () => ({ authApi: { getCurrentUser: vi.fn(), logout: vi.fn() } }))
 

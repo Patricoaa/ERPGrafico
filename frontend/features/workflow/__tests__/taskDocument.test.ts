@@ -14,7 +14,8 @@ describe("documentForTask", () => {
         expect(documentForTask(task("NC_FOLIO"))).toEqual({ label: "billing.invoice", id: 5 })
         expect(documentForTask(task("OC_APPROVAL"))).toEqual({ label: "purchasing.purchaseorder", id: 5 })
         expect(documentForTask(task("OT_STAGE"))).toEqual({ label: "production.workorder", id: 5 })
-        expect(documentForTask(task("OT_CREATION", { sale_order_id: 9 }))).toEqual({ label: "sales.saleorder", id: 9 })
+        // The task points at the work order: material assignment happens there, even if it has a sale order.
+        expect(documentForTask(task("OT_CREATION", { sale_order_id: 9 }))).toEqual({ label: "production.workorder", id: 5 })
         expect(documentForTask(task("OT_CREATION"))).toEqual({ label: "production.workorder", id: 5 })
     })
 
