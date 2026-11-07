@@ -47,6 +47,24 @@ function setupHook(opts?: {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 describe('useAutoSaveForm', () => {
+    it('schedules no timer when the save flushed on unmount finishes afterwards', async () => {
+        const syncedDurationMs = 54_321
+        const { result, unmount, onSave } = setupHook({ debounceMs: 10_000, syncedDurationMs })
+        act(() => {
+            result.current.form.setValue('name', 'changed', { shouldDirty: true })
+        })
+        await waitFor(() => expect(result.current.auto.status).toBe('dirty'))
+        const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+
+        unmount()
+        await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1))
+        await wait(0)
+
+        const delays = setTimeoutSpy.mock.calls.map(([, delay]) => delay)
+        setTimeoutSpy.mockRestore()
+        expect(delays).not.toContain(syncedDurationMs)
+    })
+
     it('starts in idle status with a clean form', () => {
         const { result } = setupHook()
         expect(result.current.auto.status).toBe('idle')

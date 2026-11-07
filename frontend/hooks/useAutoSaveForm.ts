@@ -59,6 +59,7 @@ export function useAutoSaveForm<T extends FieldValues>(
     const isSavingRef = useRef(false)
     const isResettingRef = useRef(false)
     const hasPendingChangesRef = useRef(false)
+    const isUnmountedRef = useRef(false)
 
     useEffect(() => {
         onSaveRef.current = onSave
@@ -104,6 +105,8 @@ export function useAutoSaveForm<T extends FieldValues>(
             })
             isResettingRef.current = false
             hasPendingChangesRef.current = false
+            // The save flushed on unmount ends after cleanup: nothing left to show or to schedule.
+            if (isUnmountedRef.current) return
             setLastSavedAt(new Date())
             setStatus("synced")
             clearSyncedTimer()
@@ -112,7 +115,7 @@ export function useAutoSaveForm<T extends FieldValues>(
                 syncedTimerRef.current = null
             }, syncedDurationMs)
         } catch {
-            setStatus("error")
+            if (!isUnmountedRef.current) setStatus("error")
         } finally {
             isSavingRef.current = false
         }
@@ -148,7 +151,9 @@ export function useAutoSaveForm<T extends FieldValues>(
     }, [form, scheduleSave])
 
     useEffect(() => {
+        isUnmountedRef.current = false
         return () => {
+            isUnmountedRef.current = true
             clearDebounce()
             clearSyncedTimer()
             if (hasPendingChangesRef.current && !isSavingRef.current) {
