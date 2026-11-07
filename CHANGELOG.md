@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.77](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.75...v0.3.77) (2026-11-07)
+
+
+### ✨ Features
+
+* **socios:** protecciones del pago de dividendos (ADR-0119) ([0c088ce](https://github.com/Patricoaa/ERPGrafico/commit/0c088cebd573e0e8223da766f25daea0fec089e3))
+* **tesoreria:** bloquea la edición de créditos después del desembolso ([d757a85](https://github.com/Patricoaa/ERPGrafico/commit/d757a8510a9bf132989448f7c38c1ada25be90c3))
+
+
+### 🐛 Bug Fixes
+
+* **ci:** evita que dos releases simultáneos dejen un tag huérfano ([35fe418](https://github.com/Patricoaa/ERPGrafico/commit/35fe4189b1830c3307bc9bf58c519521672ab739))
+* **contabilidad:** saldos materializados en inventario y validación de fondos ([6e82e4b](https://github.com/Patricoaa/ERPGrafico/commit/6e82e4bd464ac87c3b9121f17ce8bbf3c832fd26))
+* **frontend:** deja en verde los tests del pipeline ([d297770](https://github.com/Patricoaa/ERPGrafico/commit/d29777016f17cadf646443fd7e665269dc427fa5))
+* **frontend:** useAutoSaveForm no programa temporizadores tras desmontar ([14523fd](https://github.com/Patricoaa/ERPGrafico/commit/14523fd534c3ade7fd4d5f9cbba0ade26b79eb0e))
+* **socios:** repara el pago masivo de dividendos ([44df46a](https://github.com/Patricoaa/ERPGrafico/commit/44df46a906dfc6af29b4518182953577515ac23b))
+
 ### [0.3.75](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.74...v0.3.75) (2026-11-07)
 
 
