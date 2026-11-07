@@ -369,11 +369,13 @@ class PartnerService:
 
         treasury_account = None
         cash_account = None
+        is_bank = False
         if treasury_account_id:
             from treasury.models import TreasuryAccount
 
             treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
             cash_account = treasury_account.account
+            is_bank = treasury_account.account_type != TreasuryAccount.Type.CASH
         else:
             cash_account = settings.default_receivable_account
 

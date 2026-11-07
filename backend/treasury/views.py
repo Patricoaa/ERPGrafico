@@ -10,8 +10,8 @@ from django.http import FileResponse, HttpResponse
 logger = logging.getLogger(__name__)
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import filters as drf_filters
-from rest_framework import serializers as drf_serializers
 from rest_framework import mixins, status, viewsets
+from rest_framework import serializers as drf_serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -19,8 +19,8 @@ from rest_framework.response import Response
 
 from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagination
 from core.api.permissions import require_perms
-from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
+from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, EditPolicyMixin
 
 from .deletion_service import BankDeletionService
@@ -538,6 +538,9 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
 
         try:
             from treasury.allocation_service import AllocationService
+
+            from .serializers import PaymentAllocationSerializer
+
             created = AllocationService.allocate_from_request(request, movement)
             return Response(
                 PaymentAllocationSerializer(created, many=True).data, status=status.HTTP_201_CREATED
@@ -553,6 +556,8 @@ class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHisto
         """S5.2: Get allocations for a payment"""
         try:
             from treasury.allocation_service import AllocationService
+
+            from .serializers import PaymentAllocationSerializer
 
             allocs = AllocationService.get_allocations(pk)
             return Response(PaymentAllocationSerializer(allocs, many=True).data)

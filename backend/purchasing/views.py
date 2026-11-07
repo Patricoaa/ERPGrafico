@@ -191,8 +191,6 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelV
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response(PurchaseReceiptSerializer(receipts, many=True).data)
-
     @action(detail=True, methods=["post"])
     def partial_return(self, request, pk=None):
         order = self.get_object()

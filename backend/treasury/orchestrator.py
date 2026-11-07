@@ -19,6 +19,7 @@ from .models import TreasuryMovement
 
 if TYPE_CHECKING:
     from billing.models import Invoice
+    from purchasing.models import PurchaseOrder
     from sales.models import SaleOrder
 
     from .models import Check, PaymentMethod, POSSession

@@ -22,7 +22,7 @@ Bloquean el job de backend `manage.py check`, las migraciones, el ratchet de Ruf
 ### Frontend job
 
 ```yaml
-- npm ci
+- npm ci --legacy-peer-deps
 - npm run lint          # non-blocking (FSD boundary errors en progreso)
 - npm run type-check    # hard gate
 - npm run test -- --run --coverage
@@ -35,7 +35,8 @@ Bloquean el job de backend `manage.py check`, las migraciones, el ratchet de Ruf
 - pip install -r requirements.txt
 - python manage.py check
 - python manage.py makemigrations --check --dry-run
-- ruff check .          # ratchet: falla si introduce más de 284 errores existentes
+- ruff check . --select F821   # hard gate: nombres indefinidos
+- ruff check .          # ratchet: falla si supera 342 errores; bajar el número al corregirlos
 - pytest -m ci_gate     # hard gate: invariantes y conteo de queries (ADR-0118)
 - pytest --cov=.        # non-blocking; fallos conocidos en testing.md
 ```

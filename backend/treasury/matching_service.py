@@ -7,7 +7,7 @@ Servicio para matching automático y manual de líneas de cartola con pagos.
 
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from django.db import transaction
 from django.db.models import Q
@@ -20,6 +20,9 @@ from .models import (
     TerminalBatch,
     TreasuryMovement,
 )
+
+if TYPE_CHECKING:
+    from .models import TreasuryAccount
 
 # from .rule_service import RuleService
 
@@ -867,7 +870,6 @@ class MatchingService:
                         else None,
                     }
                 )
-                payment_sense[p.id] = is_inbound
 
             settings_data = {
                 "amountWeight": float(settings.amount_weight),

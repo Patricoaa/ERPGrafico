@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -14,6 +15,9 @@ from inventory.services import StockService
 from treasury.models import TreasuryAccount, TreasuryMovement
 
 from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
+
+if TYPE_CHECKING:
+    from billing.models import Invoice
 
 
 class PurchasingService:

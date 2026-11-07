@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
+from typing import TYPE_CHECKING
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.contenttypes.models import ContentType
@@ -16,7 +17,17 @@ from accounting.services import JournalEntryService
 from core.prefix_registry import EntityPrefix
 
 from .check_service import CheckService
-from .models import BankStatement, CreditLine, PaymentMethod, TerminalBatch, TreasuryAccount, TreasuryMovement
+from .models import (
+    BankStatement,
+    CreditLine,
+    PaymentMethod,
+    TerminalBatch,
+    TreasuryAccount,
+    TreasuryMovement,
+)
+
+if TYPE_CHECKING:
+    from .models import CardPurchaseGroup
 
 logger = logging.getLogger(__name__)
 
@@ -1654,6 +1665,7 @@ class BankStatementService:
 
         # Publish DRAFT difference adjustments for all groups linked to this statement
         from accounting.models import JournalEntry
+
         from .models import ReconciliationMatch
         draft_matches = (
             ReconciliationMatch.objects
