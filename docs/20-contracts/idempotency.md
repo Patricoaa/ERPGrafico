@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: idempotency
 status: active
 owner: backend-team
-last_review: 2026-05-21
+last_review: 2026-11-06
 stability: contract-changes-require-ADR
 ---
 
@@ -58,6 +58,7 @@ La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el c�
 | `treasury.allocation.create` | `POST /api/treasury/movements/{id}/allocate/` | Asignación de movimiento a cuenta/conciliación |
 | `treasury.reconciliation.match` | `POST /api/treasury/statement-lines/match_group/` | Matching automático de un grupo de líneas |
 | `treasury.transfer.register` | `POST /api/treasury/dashboard/register_transfer/` | Transferencia entre cuentas — dos asientos |
+| `contacts.dividend.mass_payment` | `POST /api/contacts/profit-distributions/{id}/mass_payment/` | Pago masivo de dividendos — salida de dinero, un doble envío de un pago parcial se aplicaría dos veces (ADR-0119) |
 
 > Nota: `TreasuryMovementViewSet` está registrado bajo dos rutas (`movements` y `payments`, [treasury/urls.py:26-27](../../backend/treasury/urls.py#L26)) — los decorators de ese viewset aplican a ambas.
 >
@@ -97,6 +98,7 @@ if (!idempotencyKeyRef.current) idempotencyKeyRef.current = crypto.randomUUID()
 ```
 
 **Reglas frontend:**
+- El backend guarda también los rechazos: reintentar con la misma clave repite el error. Tras una respuesta se genera otra clave; sin respuesta o con 425 se conserva, porque la operación pudo aplicarse (`shouldKeepIdempotencyKey`, `lib/idempotency.ts`).
 - El UUID se genera en el handler que origina la acción (normalmente `crypto.randomUUID()` guardado en un `ref`), **no** dentro del mutation function de TanStack (que puede ser invocado N veces).
 - Si la mutation se retry con el mismo `variables`, el `Idempotency-Key` debe ser el mismo. Esto se logra anteponiendo el UUID a `variables` (`{ data, idempotencyKey }`).
 - Si el backend no soporta el endpoint (sin `@idempotent_endpoint`), el key simplemente se omite (`idempotencyKey ? { … } : undefined`).

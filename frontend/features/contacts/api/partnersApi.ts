@@ -117,8 +117,17 @@ export const partnersApi = {
         return response.data
     },
 
-    massPaymentProfitDistribution: async (id: number, treasuryAccountId: number, paymentsData: { partner_id: number, amount: number }[]) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/mass_payment/`, { treasury_account_id: treasuryAccountId, payments_data: paymentsData })
+    massPaymentProfitDistribution: async (
+        id: number,
+        treasuryAccountId: number,
+        paymentsData: { partner_id: number, amount: number }[],
+        idempotencyKey: string,
+    ) => {
+        const response = await api.post(
+            `/contacts/profit-distributions/${id}/mass_payment/`,
+            { treasury_account_id: treasuryAccountId, payments_data: paymentsData },
+            { headers: { 'Idempotency-Key': idempotencyKey } },
+        )
         return response.data
     },
 

@@ -350,6 +350,9 @@ class PartnerService:
         """
         PartnerService._validate_partner(partner)
         PartnerService._validate_amount(amount)
+        from tax.services import validate_period_open
+
+        validate_period_open(date, action="registrar el pago")
         settings = PartnerService._get_settings()
 
         dividend_balance = partner.partner_dividends_payable_balance
@@ -373,7 +376,8 @@ class PartnerService:
         if treasury_account_id:
             from treasury.models import TreasuryAccount
 
-            treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+            treasury_account = TreasuryAccount.objects.select_for_update().get(id=treasury_account_id)
+            PartnerService._assert_sufficient_funds(treasury_account, amount)
             cash_account = treasury_account.account
             is_bank = treasury_account.account_type != TreasuryAccount.Type.CASH
         else:
@@ -1279,6 +1283,16 @@ class PartnerService:
         child_account.save()
 
         return child_account
+
+    @staticmethod
+    def _assert_sufficient_funds(treasury_account, amount: Decimal) -> None:
+        """These payments create the movement directly: a credit line is not drawn, so it does not count."""
+        available = treasury_account.fresh_balance()
+        if amount > available:
+            raise ValidationError(
+                f"Saldo insuficiente en {treasury_account.name}. "
+                f"Disponible: ${available:,.0f}, a pagar: ${amount:,.0f}."
+            )
 
     @staticmethod
     def _validate_partner(partner: Contact):

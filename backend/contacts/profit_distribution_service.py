@@ -547,12 +547,16 @@ class ProfitDistributionService:
         from treasury.models import TreasuryAccount, TreasuryMovement
 
         try:
-            treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+            treasury_account = TreasuryAccount.objects.select_for_update().get(id=treasury_account_id)
         except TreasuryAccount.DoesNotExist:
             raise ValidationError("Cuenta de tesorería no válida.")
 
+        PartnerService._assert_sufficient_funds(treasury_account, total_payment)
         is_bank = treasury_account.account_type != TreasuryAccount.Type.CASH
         payment_date = timezone.localdate()
+        from tax.services import validate_period_open
+
+        validate_period_open(payment_date, action="pagar los dividendos")
 
         # Create Journal Entry
         entry = JournalEntry.objects.create(
