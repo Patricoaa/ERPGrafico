@@ -272,7 +272,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                     <FormSelectionGroup
                                                         mode="single"
                                                         label="Preferencias Comerciales"
-                                                        icon={<Scale className="h-4 w-4" />}
                                                         columns={2}
                                                         disabled={isView}
                                                         value={commercialValue === "none" ? null : commercialValue}
