@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.78](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.77...v0.3.78) (2026-11-07)
+
+
+### 🧪 Testing
+
+* **e2e:** actualiza el inicio de sesión de las pruebas ([176b985](https://github.com/Patricoaa/ERPGrafico/commit/176b98535b24b543d7c3cbe9f073b680d359ca72))
+
 ### [0.3.77](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.75...v0.3.77) (2026-11-07)
 
 
