@@ -7,6 +7,8 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from core.api.pagination import StandardResultsSetPagination
 
+pytestmark = pytest.mark.ci_gate
+
 
 @pytest.mark.django_db
 def test_all_list_viewsets_have_pagination():
@@ -30,6 +32,7 @@ def test_all_list_viewsets_have_pagination():
         # Master data viewsets — see pagination-contract.md §8
         "AccountingPeriodViewSet",
         "AFPViewSet",
+        "ApprovalPolicyViewSet",
         "BankViewSet",
         "CategoryViewSet",
         "FiscalYearViewSet",

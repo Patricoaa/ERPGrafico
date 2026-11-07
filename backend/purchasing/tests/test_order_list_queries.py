@@ -18,6 +18,8 @@ from purchasing.serializers import PurchaseLineSerializer
 from treasury.models import TreasuryAccount, TreasuryMovement
 from treasury.serializers import TreasuryMovementSerializer
 
+pytestmark = pytest.mark.ci_gate
+
 User = get_user_model()
 
 
@@ -82,7 +84,7 @@ def test_list_query_count_does_not_grow_with_rows(client, uom):
     many_orders_queries, rows = _list(client)
 
     assert len(rows) == 6
-    assert many_orders_queries == one_order_queries
+    assert many_orders_queries <= one_order_queries
 
 
 def test_list_builds_each_nested_serializer_only_once(client, uom):

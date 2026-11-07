@@ -4,7 +4,7 @@ doc: zero-n-plus-one-policy
 status: active
 owner: backend-team
 created: 2026-06-25
-last_review: 2026-06-25
+last_review: 2026-11-06
 stability: contract-changes-require-ADR
 ---
 
@@ -22,7 +22,9 @@ Cuando un endpoint de lista devuelve **P** objetos y el serializador ejecuta **Q
 
 ## Regla 1 — Los Serializadores son "Tontos" (MUST)
 
-> **Un `Serializer` o `SerializerMethodField` NUNCA ejecuta queries ORM.**
+> **El número de queries de un listado no crece con sus filas, sea cual sea el camino que las genere** (ADR-0118). Un `Serializer` o `SerializerMethodField` tampoco ejecuta queries ORM.
+
+Cumplir la lista de abajo no basta: también cuentan las propiedades del modelo que consultan (`product.qty_available`) y las cadenas sobre managers que descartan la precarga (`user.groups.select_related("profile").all()`). Una propiedad que consulta debe leer primero su valor precalculado (`annotated_*`).
 
 Queda **prohibido** usar cualquiera de los siguientes patrones dentro de `serializers.py`:
 
@@ -50,7 +52,9 @@ def create(self, validated_data):
 
 ## Regla 2 — El ViewSet es Responsable de Precargar (MUST)
 
-Toda relación que el serializador necesite para construir la respuesta **MUST** precargarse en la propiedad `queryset` del ViewSet o en su método `get_queryset()`.
+Toda relación que el serializador necesite para construir la respuesta **MUST** precargarse en un selector usado por `get_queryset()`.
+
+**Precargar solo lo que se lee (MUST).** `select_related` cubre únicamente las relaciones de las que la respuesta lee algo más que el id; un campo que solo expone el id no necesita join. Cada join de más cuesta tiempo de planificación: el listado de productos con 8 relaciones tardaba ~300 ms en planificarse y ~5 ms en ejecutarse. Sobre 5 joins, revisar también `Planning Time` con `EXPLAIN (ANALYZE)`.
 
 ```python
 # ✅ CORRECTO — ViewSet precarga todo lo necesario
@@ -135,21 +139,55 @@ class InventoryService:
 
 ## Regla 5 — Test Obligatorio de Conteo de Queries (MUST para listas)
 
-Todo endpoint de lista expuesto en un nuevo ViewSet **MUST** incluir un test con `assertNumQueries` que verifique que la cantidad de queries **no crece con el número de registros** (O(1) con respecto a N).
+Todo endpoint de lista que se cree o modifique **MUST** tener un test con la marca `ci_gate` que compare el conteo con 1 fila y con N filas, con **cada relación que el serializador lee poblada**.
 
 ```python
-# backend/<app>/tests/test_views.py
-class InvoiceQueryCountTest(TestCase):
-    def test_list_invoice_query_count_is_constant(self):
-        """Verifica O(1): serializar 1 o 20 facturas usa el mismo N de queries."""
-        InvoiceFactory.create_batch(20)
+pytestmark = pytest.mark.ci_gate
 
-        with self.assertNumQueries(4):   # ajustar al número real tras fijar prefetches
-            response = self.client.get('/api/billing/invoices/')
-        self.assertEqual(response.status_code, 200)
+def test_list_query_count_does_not_grow_with_rows(client):
+    make_invoice_with_lines_and_payments()  # relaciones pobladas, no filas vacías
+    with CaptureQueriesContext(connection) as one_row:
+        client.get("/api/billing/invoices/")
+
+    for _ in range(5):
+        make_invoice_with_lines_and_payments()
+    with CaptureQueriesContext(connection) as many_rows:
+        client.get("/api/billing/invoices/")
+
+    assert len(many_rows) <= len(one_row)
 ```
 
-> **Nota:** El número exacto de queries (ej. `4`) depende del viewset. Lo importante es que ese número sea **fijo e independiente del tamaño del batch**. Si agregas 100 registros más y el test falla, hay un N+1.
+Se usa `<=` porque la primera petición de un proceso puede hacer alguna query de caché; con `==` el test depende del orden y del motor de base de datos.
+
+> **Un máximo absoluto sobre filas vacías no prueba nada:** `sales/tests/test_performance.py` listaba órdenes sin líneas con un máximo de 15 queries y pasaba mientras los datos reales hacían 199.
+
+---
+
+## Regla 6 — Lectura y Escritura No Comparten una Foto (MUST)
+
+Un queryset con valores calculados (`annotated_*`) o `Prefetch` filtrados se usa solo en respuestas (`list`, `retrieve`). Las acciones de escritura usan el queryset base: si validaran stock contra un valor precalculado al inicio de la petición, podrían aprobar con datos desactualizados.
+
+```python
+def get_queryset(self):
+    if self.action in {"list", "retrieve"}:
+        return SaleOrderSelector.get_read_queryset()
+    return SaleOrderSelector.get_base_queryset()
+```
+
+---
+
+## Regla 7 — Un Serializer Anidado por Respuesta (MUST)
+
+DRF reconstruye los campos de un `ModelSerializer` en cada instancia. Dentro de un `SerializerMethodField`, instanciar uno por fila cuesta más que serializar los datos (`lines`: ~189 ms, sus campos: ~12 ms). Se instancia una vez y se reutiliza:
+
+```python
+@cached_property
+def _line_serializer(self):
+    return SaleLineSerializer()
+
+def get_lines(self, obj):
+    return [self._line_serializer.to_representation(line) for line in obj.lines.all()]
+```
 
 ---
 
@@ -170,19 +208,20 @@ class InvoiceQueryCountTest(TestCase):
 
 | Mecanismo | Estado | Severidad |
 |-----------|--------|-----------|
-| `assertNumQueries` en tests de lista | 🔴 Pendiente (deuda técnica) | `error` — test falla en CI |
-| Grep en CI: `objects\.(filter\|get\|create)` dentro de `serializers.py` | 🔴 Pendiente | `warning` (propuesto) |
+| Tests con marca `ci_gate` (`pytest -m ci_gate`) | ⚠️ Listos; sin efecto mientras `CI Pipeline` siga deshabilitado (ver [ci-cd.md](../40-quality/ci-cd.md)) | Bloqueante una vez activo |
 | Review manual (checklist del PR) | ✅ Activo desde 2026-06-25 | Bloqueante para merge |
 
 ---
 
 ## Review checklist
 
-- [ ] No hay llamadas `.objects.filter()` / `.get()` / `.create()` dentro de ningún `serializers.py`.
-- [ ] El ViewSet que sirve el endpoint tiene `select_related` y `prefetch_related` declarados.
-- [ ] Las relaciones iteradas en el serializador están en la lista de prefetches.
+- [ ] El número de queries no crece con las filas, tampoco por propiedades del modelo ni cadenas sobre managers.
+- [ ] No hay llamadas ORM de consulta o escritura dentro de ningún `serializers.py`.
+- [ ] `select_related` cubre solo las relaciones de las que se lee algo más que el id; sobre 5 joins se revisó `Planning Time`.
+- [ ] Los valores calculados y `Prefetch` filtrados se usan solo en `list` y `retrieve`.
+- [ ] Ningún serializer anidado se instancia por fila.
 - [ ] Toda creación de grafo de objetos está en `services.py` con `@transaction.atomic`.
-- [ ] El test de conteo de queries existe y pasa (`assertNumQueries`).
+- [ ] El test compara 1 fila contra N, con relaciones pobladas y marca `ci_gate`.
 
 ---
 
@@ -190,5 +229,6 @@ class InvoiceQueryCountTest(TestCase):
 
 - Contrato global de performance: [docs/40-quality/performance.md](../40-quality/performance.md)
 - Contrato de API (regla inline): [docs/20-contracts/api-contracts.md §Serializer Integrity](../20-contracts/api-contracts.md#serializer-integrity--performance-zero-n1)
+- Decisión: [ADR-0118](../10-architecture/adr/0118-zero-n-plus-one-by-behavior-and-ci-gate.md)
 - Playbook de selectores: [docs/30-playbooks/add-selector.md](../30-playbooks/add-selector.md)
 - Auditoría de deuda técnica: `docs/50-audit/n-plus-one-backlog.md` _(a crear)_

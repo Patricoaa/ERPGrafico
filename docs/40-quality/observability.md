@@ -3,7 +3,7 @@ layer: 40-quality
 doc: observability
 status: active
 owner: platform-team
-last_review: 2026-05-21
+last_review: 2026-11-06
 ---
 
 # Observability
@@ -59,7 +59,7 @@ Never log: password, JWT, full email (mask), phone, card numbers. Redaction filt
 
 ### Stack PYME — sin Prometheus/Grafana
 
-- **Sentry Performance** (free tier — 10k transactions/mes) captura latencia HTTP y Celery automáticamente vía SDK. Sustituye Prometheus para el caso single-node.
+- **Sentry Performance** (free tier — 5 M de spans, según la página de precios en 2026-11; un listado pesado puede generar cientos de spans por petición, así que ajustar `SENTRY_TRACES_SAMPLE_RATE` según el consumo) captura latencia HTTP y Celery automáticamente vía SDK. Sustituye Prometheus para el caso single-node.
 - **Endpoint `/api/healthz/`** (Django) devuelve `{"status":"ok"}` si DB + Redis + MinIO responden. *(Planificado: pinguearlo con Healthchecks.io/UptimeRobot desde fuera del host cuando exista producción.)*
 - **Logs estructurados (sección anterior)** llevan el `event` field — sirven como métricas low-volume vía grep/Loki-self-hosted si en el futuro se necesita.
 
@@ -71,7 +71,7 @@ Las metas siguen siendo válidas y deben tenerse en mente; el chequeo es semanal
 
 | Service | SLI | Target | Verificación |
 |---------|-----|--------|--------------|
-| API | p95 latency `/api/*` | <400ms | Sentry → Performance → group by transaction |
+| API | p95 latency `/api/*` | <300ms ([performance.md](performance.md)) | Sentry → Performance → group by transaction |
 | API | error rate 5xx | <0.5% | Sentry → Issues → últimos 7 días |
 | Celery | task success | >99% | Sentry → Performance → tasks |
 | Frontend | TTFB | <300ms | Sentry Browser SDK Web Vitals |

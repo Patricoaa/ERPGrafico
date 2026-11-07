@@ -169,9 +169,9 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0102](0102-work-order-stage-graph-owned-by-server.md) | Work order stage graph owned by the server — applicable stages, cancellation through annulment, merged stage_data | Proposed |
 | [0103](0103-mobile-navigation-sheet-exception.md) | Mobile navigation sheet is an authorized SheetContent exception | Proposed |
 | [0104](0104-rbac-action-permissions-roles-teams.md) | RBAC — action_permissions dict, bundle taxonomy, GroupProfile (puestos y equipos) | Proposed |
-| [0105](0105-labeled-switch-transparent-container-presets.md) | LabeledSwitch presets use transparent container backgrounds and tinted rings in both states | Proposed |
-| [0106](0106-notched-field-legends-over-rings.md) | Notched field legends stay above rings with an opaque surface-matched backing | Proposed |
-| [0107](0107-product-create-and-continue.md) | Product creation continues into optional setup | Proposed |
+| [0104](0104-labeled-switch-transparent-container-presets.md) | LabeledSwitch presets use transparent container backgrounds and tinted rings in both states | Proposed |
+| [0105](0105-notched-field-legends-over-rings.md) | Notched field legends stay above rings with an opaque surface-matched backing | Proposed |
+| [0106](0106-product-create-and-continue.md) | Product creation continues into optional setup | Proposed |
 | [0108](0108-workflow-approval-decisions.md) | Workflow approval decisions are server-owned | Proposed |
 | [0109](0109-pos-cash-ledger-expected-cash.md) | POS cash ledger — expected cash derived from treasury account movements | Proposed |
 | [0110](0110-crud-form-selection-group.md) | Unified card selection for CRUD forms | Proposed |
@@ -182,5 +182,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0115](0115-materialized-account-posted-totals.md) | Materialized posted totals on accounting accounts | Accepted |
 | [0116](0116-config-catalog-manage-only.md) | Taxonomía de acceso a entidades de configuración y datos maestros — settings singleton y datos maestros requieren `{app}.manage` para escritura y `{app}.read` para lectura | Accepted |
 | [0117](0117-minimal-user-in-task-responses.md) | Usuario mínimo embebido en las respuestas de tareas — `assigned_to_data`, `created_by_data` y `completed_by_data` exponen solo `id`, `username`, `first_name` y `last_name` | Accepted |
+| [0118](0118-zero-n-plus-one-by-behavior-and-ci-gate.md) | Zero N+1 por comportamiento, precarga acotada y gate de CI — el conteo de queries no crece con las filas, se precarga solo lo que se lee, lectura y escritura no comparten valores calculados, y `ci_gate` bloquea el CI | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -5,7 +5,7 @@ task: "Usar el servidor de desarrollo remoto (SSH + Mutagen)"
 triggers: ["dev server", "servidor remoto", "servidor de desarrollo", "ssh", "mutagen", "correr tests", "qa local", "levantar entorno", "192.168.1.86", "logs del servidor"]
 status: active
 owner: core-team
-last_review: 2026-10-22
+last_review: 2026-11-06
 kind: environment-contract
 preconditions:
   - Acceso SSH con llave a pato@192.168.1.86
@@ -59,7 +59,7 @@ cd ERPGrafico                  # equivale a /home/pato/ERPGrafico
 |------------|-------------|-------|
 | `erpgrafico-nginx-1` | `80` | reverse proxy (frontend + `/api`) |
 | `erpgrafico-frontend-1` | `3000` | Next.js (App Router) |
-| `erpgrafico-backend-1` | `8100` | Django + DRF (gunicorn) |
+| `erpgrafico-backend-1` | `8100` | Django + DRF (Daphne) |
 | `erpgrafico-db-1` | `5433` → 5432 | PostgreSQL |
 | `erpgrafico-redis-1` | `6379` | cache + broker Celery |
 | `erpgrafico-celery-worker-1` | interno | tareas async |

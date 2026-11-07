@@ -3,7 +3,7 @@ layer: 40-quality
 doc: complexity-map
 status: active
 owner: platform-team
-last_review: 2026-08-14
+last_review: 2026-11-06
 ---
 
 # Mapa de complejidad (Big O)
@@ -21,7 +21,7 @@ Auditoría estática exhaustiva de complejidad asintótica por entry point, gene
 - **Bounded-ness** (espina del mapa): `bounded-por-página` (O(1) efectivo, cap 200) | `bounded-por-dataset-sin-cap` (`COUNT(*)`/`ORDER BY`/filtros sobre dataset completo, Θ(total rows)) | `unbounded real` (sin paginar / recorre todo el dataset). Etiqueta compuesta `page+dataset` para endpoints duales (columna = categoría dominante).
 - **Límite duro**: restricción **antes** del trabajo (SQL LIMIT/paginación). Un slice Python posterior al trabajo no cuenta (`contacts/selectors.py:205`).
 - **Límite de n**: bucles anidados sobre subconjuntos por nodo son **lineales en la suma** (ej: aging = Θ(C+O), no multiplicativo). Solo es multiplicativo el producto de conjuntos independientes.
-- **Umbral de veredicto**: **p95 < 300ms** (decisión del usuario 2026-08-13; tensión con los 400ms de `performance.md` y el baseline search `superseded_by: ADR-0018` documentada en §4).
+- **Umbral de veredicto**: **p95 < 300ms** (decisión del usuario 2026-08-13; presupuesto único en `performance.md`, ADR-0118; tensión con el baseline search `superseded_by: ADR-0018` documentada en §4).
 - **Cap de paginación**: `page_size=50` / `max_page_size=200` (`backend/core/api/pagination.py:19-22`). **Todos los flags bounded asumen cap=200** (nota de sensibilidad; subir el cap = ADR, invariant 12).
 - **Premisa 2**: requests interactivas O(1)/O(log n)/O(n paginado) en queries; Θ(n) o peor **solo** en batch (Celery) o con límite duro. Por decisión del usuario, aging y árbol de cuentas se mantienen **por request síncrona** → no exonerados, riesgo alto.
 

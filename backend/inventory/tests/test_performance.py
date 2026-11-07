@@ -1,6 +1,8 @@
 import pytest
 from rest_framework.test import APIClient
 
+pytestmark = pytest.mark.ci_gate
+
 
 @pytest.fixture
 def api_client():

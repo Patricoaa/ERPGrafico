@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: api-contracts
 status: active
 owner: backend-team
-last_review: 2026-08-04
+last_review: 2026-11-06
 stability: contract-changes-require-ADR
 ---
 
@@ -24,11 +24,12 @@ Backend REST surface under `/api/`. Every endpoint has request schema, response 
 
 ## Serializer Integrity & Performance (Zero N+1)
 
-Queda estrictamente **PROHIBIDO** ejecutar consultas a la base de datos (uso del ORM como `.objects.filter()`, `.objects.get()`, `.create()`, `.all()`) dentro de los métodos de cualquier `serializers.Serializer` o `SerializerMethodField`.
+El contrato completo es [zero-n-plus-one-policy.md](../90-governance/zero-n-plus-one-policy.md) (ADR-0118). Lo esencial para quien expone un endpoint:
 
-*   **Delegación de precarga:** Si un Serializador requiere datos de modelos relacionados, es responsabilidad exclusiva del `ViewSet` precargar esos datos en memoria utilizando `select_related()` o `prefetch_related()` en su queryset.
-*   **Iteración en memoria:** Todo método del serializador debe trabajar leyendo la caché en memoria RAM. Ejemplo: En lugar de `Payment.objects.filter(invoice=obj)`, se debe usar `[p for p in obj.payments.all()]` (sabiendo que `payments` fue prefetcheado en el ViewSet).
-*   **Motivo:** Ejecutar queries dentro del serializador genera un comportamiento N+1 catastrófico cuando el endpoint retorna listados paginados de 50 o más elementos.
+*   **Comportamiento:** el número de queries de un listado no crece con sus filas, sea cual sea el camino. Un serializer no ejecuta queries ORM y las propiedades del modelo que consultan también cuentan.
+*   **Precarga:** un selector precarga lo que la respuesta lee, y nada más. Los valores calculados (`annotated_*`) y los `Prefetch` filtrados son solo para respuestas, no para escrituras.
+*   **Datos embebidos:** declarar los campos que se exponen. Un `object (XSerializer)` en este documento describe el estado actual, no una recomendación: reutilizar un serializer completo arrastra sus queries y su payload (ADR-0117).
+*   **Serializers anidados:** una instancia por respuesta, nunca por fila.
 
 ## Status codes
 

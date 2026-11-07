@@ -3,7 +3,7 @@ layer: 40-quality
 doc: testing
 status: active
 owner: qa-team
-last_review: 2026-04-23
+last_review: 2026-11-06
 ---
 
 # Testing
@@ -86,6 +86,22 @@ it('shows empty state when no orders', () => {
 | `test_views.py` | HTTP contract: status codes, auth, permission, validation |
 | `test_tasks.py` | Idempotency, retry behavior |
 | `test_permissions.py` | Role matrix |
+
+### Gate de CI (`ci_gate`) y cuarentena
+
+La marca `ci_gate` reúne los tests de invariantes y de conteo de queries (ADR-0118). Bloquean el CI y **no admiten tests en rojo**: `pytest -m ci_gate`.
+
+Estos tests fallan hoy, quedan fuera del gate y no deben aumentar. Requieren investigación propia. La suite local usa SQLite y el CI usa Postgres, por eso algunos fallan solo en uno de los dos (medido el 2026-11-06):
+
+| Test | Síntoma |
+|------|---------|
+| `treasury/tests/test_card_pay_validations.py` (2), `test_card_reverse.py` (2), `test_card_service.py` (4) | `Saldo insuficiente` al pagar o revertir estados de cuenta de tarjeta |
+| `production/tests/test_p26_stock_context.py::test_manufacturable_uses_prefetched_context` | 6 queries donde se esperan 0 |
+| `workflow/tests/test_workflow_config_permissions.py::test_workflow_settings_current_get_open_write_guarded` | 403 donde se espera 200 |
+| `core/tests/test_permission_registry.py::test_post_migrate_sync_is_additive` | El grupo administrador no conserva el permiso de prueba |
+| `sales/tests/test_pos_consumer_authz.py::test_pos_session_with_view_draftcart_connects_successfully` | Falla en la suite completa y pasa aislado; parece depender del orden |
+| `accounting/tests/test_dte_settings.py::test_accounting_settings_updates_emit_and_receive_dte_lists` | Solo Postgres: falla en la suite completa y pasa aislado; parece depender del orden |
+| `core/tests/test_search_postgres.py::test_universal_search_runs_full_text_on_postgres` | Solo Postgres: la búsqueda de texto completo no devuelve resultados |
 
 ### Fixtures — factory_boy
 

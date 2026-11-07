@@ -16,7 +16,7 @@ forbidden:
   - Raw SQL unless aggregation is impossible in ORM (requires ADR)
 status: active
 owner: backend-team
-last_review: 2026-04-22
+last_review: 2026-11-06
 ---
 
 # Playbook — Add selector (complex queryset)
@@ -33,7 +33,7 @@ ERPGrafico uses dedicated `selectors.py` files for complex read queries. See the
 | `service.py` function | Query needed for business logic (not directly for API response) |
 | `@action` method | Custom endpoint with aggregations or complex filtering |
 
-Rule: views ≤20 lines. Extract to service when query logic exceeds 10 lines. Extract to `selectors.py` when the query involves `select_related`, `prefetch_related`, `annotate`, or `aggregate`.
+Rule: views ≤20 lines. Reads go in `selectors.py` when the query involves `select_related`, `prefetch_related`, `annotate`, or `aggregate`, or exceeds 10 lines.
 
 ---
 
@@ -59,7 +59,7 @@ reset_queries()
 
 # ... run the view ...
 
-print(len(connection.queries))  # should be < 10 for a list view
+print(len(connection.queries))  # must not grow with the rows (ADR-0118)
 for q in connection.queries:
     print(q['sql'][:120])
 ```
@@ -80,7 +80,7 @@ def get_queryset(self):
     )
 ```
 
-Rule: list every FK path that the serializer (or action) accesses. One missed FK = one extra query per row.
+Rule: list every FK path from which the serializer (or action) reads more than the id, and no others. One missed FK = one extra query per row; one extra FK = more planning time for every request. Fields that only expose the id need no join.
 
 ---
 
@@ -184,10 +184,10 @@ for item in period_qs:
 
 ---
 
-## Step 6 — Extract to service when view exceeds 20 lines
+## Step 6 — Extract to a selector when the view exceeds 20 lines
 
 ```python
-# backend/[app]/services.py
+# backend/[app]/selectors.py
 def get_orders_with_totals(filters: dict) -> QuerySet:
     qs = SaleOrder.objects.select_related('customer', 'created_by').prefetch_related(
         Prefetch('lines', queryset=OrderLine.objects.select_related('product'))
@@ -265,17 +265,19 @@ pytest backend/[app]/tests -v
 python manage.py shell
 >>> from django.test.utils import override_settings
 >>> from django.db import reset_queries, connection
->>> # run view logic and check len(connection.queries) < 10
+>>> # run view logic with 1 row and with N rows: len(connection.queries) must not grow
 ```
 
 ## Definition of done
 
-- [ ] Query count for list endpoint ≤ 5 (no N+1).
-- [ ] `select_related` covers every FK/OneToOne accessed in serializer.
+- [ ] Query count for list endpoint does not grow with rows, tested with populated relations and the `ci_gate` mark. Budget: [performance.md](../40-quality/performance.md).
+- [ ] `select_related` covers every FK/OneToOne the serializer reads beyond the id, and no others.
 - [ ] `prefetch_related` covers every reverse FK / M2M accessed in serializer.
 - [ ] No ORM calls inside `SerializerMethodField`.
-- [ ] Complex queryset (>10 lines) extracted to service function.
+- [ ] Complex queryset (>10 lines) extracted to `selectors.py`.
+- [ ] Querysets with computed values or filtered `Prefetch` are used only in `list` and `retrieve`, not in write actions.
+- [ ] Nested serializers are instantiated once per response, not per row.
 - [ ] Annotations used in serializer as read-only fields, not recomputed per instance.
-- [ ] EXPLAIN ANALYZE confirms no unexpected Seq Scan on large tables.
+- [ ] `EXPLAIN (ANALYZE)` confirms no unexpected Seq Scan on large tables and, above 5 joins, an acceptable `Planning Time`.
 - [ ] Index added if query filters on non-indexed column.
 - [ ] Tests assert correctness of returned data (not just HTTP 200).

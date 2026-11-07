@@ -17,6 +17,8 @@ from sales.models import SaleLine, SaleOrder
 from sales.selectors import SaleOrderSelector
 from sales.serializers import SaleLineSerializer
 
+pytestmark = pytest.mark.ci_gate
+
 User = get_user_model()
 
 
@@ -91,7 +93,7 @@ def test_order_list_query_count_does_not_grow_with_rows(catalog):
     many_orders_queries, data = _count(client, "/api/sales/orders/")
 
     assert len(data["results"]) == 6
-    assert many_orders_queries == one_order_queries
+    assert many_orders_queries <= one_order_queries
 
 
 def test_order_detail_query_count_does_not_grow_with_lines(catalog):
@@ -105,7 +107,7 @@ def test_order_detail_query_count_does_not_grow_with_lines(catalog):
     many_lines_queries, data = _count(client, f"/api/sales/orders/{order.pk}/")
 
     assert len(data["lines"]) == 12
-    assert many_lines_queries == few_lines_queries
+    assert many_lines_queries <= few_lines_queries
 
 
 def test_order_list_figures_match_the_product_model(catalog):

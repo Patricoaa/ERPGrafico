@@ -11,6 +11,8 @@ from rest_framework.test import APIClient
 from core.models import Attachment
 from workflow.models import Task, TaskEvent
 
+pytestmark = pytest.mark.ci_gate
+
 User = get_user_model()
 
 
@@ -59,7 +61,7 @@ def test_task_list_query_count_does_not_grow_with_rows():
     many_tasks_queries, data = _count_list_queries(client)
 
     assert len(data["results"]) == 6
-    assert many_tasks_queries == one_task_queries
+    assert many_tasks_queries <= one_task_queries
 
 
 @pytest.mark.django_db
