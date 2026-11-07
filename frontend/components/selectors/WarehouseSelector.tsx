@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { Check, Home } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 import { useWarehouses } from "@/features/inventory/hooks/useWarehouses"
 import { LabeledContainer, SearchablePopover, SelectorTrigger, SELECTOR_VALUE_CLASS } from '@/components/shared'
@@ -18,6 +19,8 @@ interface WarehouseSelectorProps {
     className?: string
     icon?: React.ReactNode
     variant?: 'standalone' | 'inline'
+    allowNone?: boolean
+    noneLabel?: string
 }
 
 export function WarehouseSelector({
@@ -30,7 +33,9 @@ export function WarehouseSelector({
     required,
     className,
     icon,
-    variant = 'standalone'
+    variant = 'standalone',
+    allowNone = false,
+    noneLabel = "Ninguna"
 }: WarehouseSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -69,6 +74,22 @@ export function WarehouseSelector({
             selectedId={value ? value.toString() : null}
             getId={(w) => w.id}
             onSelect={handleSelect}
+            beforeItems={allowNone ? (
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-sm hover:bg-muted"
+                    onClick={() => {
+                        onChange(null)
+                        setOpen(false)
+                        setSearchTerm("")
+                    }}
+                >
+                    <span className="text-muted-foreground">{noneLabel}</span>
+                    {!value && (
+                        <Check className="ml-auto h-4 w-4 shrink-0" />
+                    )}
+                </Button>
+            ) : undefined}
             renderItem={(warehouse) => (
                 <>
                     <Home className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
