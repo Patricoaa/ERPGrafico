@@ -26,12 +26,13 @@ export function PayrollDetailDrawer({ payrollId, open, onOpenChange, onUpdate, v
 
     return (
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
                 boundary="embedded"
                 defaultSize={formDrawerWidth("master", false)}
-                contentClassName="p-0 flex flex-col overflow-hidden"
+                contentClassName="p-0"
                 title={headerData.title}
                 subtitle={headerData.subtitle}
                 icon={headerData.icon || getEntityIcon('hr.payroll')}

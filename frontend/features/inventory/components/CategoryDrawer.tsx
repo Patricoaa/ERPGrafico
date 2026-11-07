@@ -24,7 +24,7 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { EntitySidebar } from "@/features/comments"
 
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const ICON_OPTIONS = [
     // Imprenta y Diseño
@@ -185,8 +185,7 @@ export function CategoryDrawer({
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const isView = (modeProp ?? (initialData ? "edit" : "create")) === "view"
-    const mode: DrawerMode = modeProp ?? (initialData ? "edit" : "create")
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
 
     const { saveCategory } = useCategoryMutations()
     const [loading, setLoading] = useState(false)
@@ -275,13 +274,14 @@ export function CategoryDrawer({
 
     const formContent = (
         <FormSplitLayout
+            className="space-y-6 p-6"
             collapsible
             collapseStorageKey="erpgrafico.drawer.sidebar.category"
             showSidebar={!!initialData?.id}
             sidebar={initialData?.id ? <EntitySidebar entityId={initialData.id} entityType="category" /> : sidebar}
         >
             <Form {...form}>
-                <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                <form id="category-form" onSubmit={form.handleSubmit(onSubmit)}>
                     <fieldset disabled={isView} className="contents">
 
                         <div className="space-y-4">
@@ -451,6 +451,7 @@ export function CategoryDrawer({
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

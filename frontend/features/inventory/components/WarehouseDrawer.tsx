@@ -18,7 +18,7 @@ import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
 import { SubmitButton } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -43,8 +43,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const { saveWarehouse } = useWarehouseMutations()
@@ -93,6 +92,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
 
     const formContent = (
         <FormSplitLayout
+            className="space-y-6 p-6"
             collapsible
             collapseStorageKey="erpgrafico.drawer.sidebar.warehouse"
             sidebar={initialData?.id ? (
@@ -107,7 +107,6 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 <form
                     id="warehouse-form"
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-6 px-6 pb-6 pt-6"
                 >
                     <fieldset disabled={isView} className="contents">
                         <div className="space-y-6">
@@ -196,6 +195,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

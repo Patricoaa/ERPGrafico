@@ -23,7 +23,7 @@ import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -51,9 +51,8 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
     const frozen = frozenFieldsOf(initialData)
-    const isView = mode === 'view'
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const { categories, isLoading: isCategoriesLoading, saveUoM, isSaving, refetch } = useUoMs()
@@ -156,6 +155,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
@@ -179,6 +179,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 )}
             >
                 <FormSplitLayout
+                    className="space-y-6 p-6"
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.uom"
                     sidebar={initialData?.id ? (
@@ -194,7 +195,6 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                             <form
                                 id="uom-form"
                                 onSubmit={form.handleSubmit(onSubmit)}
-                                className="space-y-6 px-6 pb-6 pt-6"
                             >
                                 <fieldset disabled={isView} className="contents">
                                     <div className="space-y-6">

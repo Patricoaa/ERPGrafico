@@ -23,7 +23,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useServerDate } from "@/hooks/useServerDate"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -81,8 +81,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
     const { saveEmployee, isSaving: saving } = useEmployeeMutations()
     const { printRef, handlePrint } = usePrintableDrawer()
 
-    const mode: DrawerMode = modeProp ?? (employee ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: employee })
     const { dateString } = useServerDate()
 
     const [activeTab, setActiveTab] = useState("contratacion")
@@ -280,8 +279,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                 headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!employee)}
-                className="h-[90vh]"
-                contentClassName="p-0 flex flex-col overflow-hidden bg-card"
+                contentClassName="p-0 flex flex-col overflow-hidden"
                 mode={mode}
                 footer={footer}
                 side="left"

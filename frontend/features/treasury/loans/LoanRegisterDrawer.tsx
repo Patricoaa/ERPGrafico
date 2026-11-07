@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import { Form, FormField } from '@/components/ui/form'
-import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, CancelButton, SubmitButton, FormSplitLayout } from "@/components/shared"
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Banknote, Calculator } from 'lucide-react'
@@ -225,6 +225,8 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
 
     return (
         <Drawer
+            fillContent
+            contentClassName="p-0"
             open={open}
             onOpenChange={onOpenChange}
             side="left"
@@ -254,8 +256,9 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                 />
             }
         >
+            <FormSplitLayout className="space-y-4 p-6">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 pb-4 pt-4">
+                <form onSubmit={form.handleSubmit(onSubmit)}>
                     <FormSection title="Entidad" icon={Banknote} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
@@ -517,6 +520,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                     </Collection.Root>
                 </div>
             )}
+            </FormSplitLayout>
         </Drawer>
     )
 }

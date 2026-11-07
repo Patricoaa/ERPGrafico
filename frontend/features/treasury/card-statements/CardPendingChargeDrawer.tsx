@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {DollarSign, Tag, Trash2} from "lucide-react"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { useServerDate } from "@/hooks/useServerDate"
 import { toDateOnlyISO } from "@/lib/utils"
 import { Form, FormField } from "@/components/ui/form"
@@ -61,8 +61,7 @@ export function CardPendingChargeDrawer({
     mode: modeProp,
 }: CardPendingChargeDrawerProps) {
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
-    const mode: DrawerMode = modeProp ?? (charge ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: charge })
     const [loading, setLoading] = useState(false)
 
     const form = useForm<ChargeFormValues>({
@@ -146,7 +145,8 @@ export function CardPendingChargeDrawer({
 
     return (
         <Drawer
-                fillContent
+            fillContent
+            contentClassName="p-0"
             open={open}
             onOpenChange={onOpenChange}
             side="left"
@@ -185,9 +185,9 @@ export function CardPendingChargeDrawer({
             )}
         >
             <SkeletonShell isLoading={isServerDateLoading} ariaLabel="Cargando formulario">
-                <FormSplitLayout>
+                <FormSplitLayout className="space-y-6 p-6">
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
                                 <div className="space-y-4">
                                     <FormSection title="Detalles del Cargo" icon={Tag} />

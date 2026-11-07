@@ -11,7 +11,7 @@ import { EntitySidebar } from "@/features/comments"
 import { Form, FormField } from "@/components/ui/form"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { type AppGroup } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -78,8 +78,7 @@ export function GroupDrawer({
         },
     })
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
     const overrideTitle = mode === 'create' ? undefined
         : mode === 'view'
             ? (initialData?.name || 'Grupo')
@@ -140,6 +139,7 @@ export function GroupDrawer({
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={isOpen}
                 onOpenChange={setOpen}
                 side="left"
@@ -163,6 +163,7 @@ export function GroupDrawer({
                 )}
             >
                 <FormSplitLayout
+                    className="space-y-6 p-6"
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.group"
                     sidebar={initialData?.id ? (
@@ -171,7 +172,7 @@ export function GroupDrawer({
                     showSidebar={!!initialData?.id}
                 >
                     <Form {...form}>
-                        <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <form id="group-form" onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
                                 <FormField
                                     control={form.control}

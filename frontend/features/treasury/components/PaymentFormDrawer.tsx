@@ -20,7 +20,7 @@ import { Landmark, ArrowRightLeft, Hash, Wallet, ClipboardList, CreditCard } fro
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, SkeletonShell, FormSplitLayout, StatusBadge } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useBillingInvoices } from "@/features/finance"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
 import { ActivitySidebar } from "@/features/audit"
 import { usePayment } from "@/features/treasury/hooks/usePayment"
@@ -74,8 +74,7 @@ export function PaymentFormDrawer({
     const setOpen = onOpenChange || setOpenState
 
     const entityId = paymentId ?? initialData?.id ?? null
-    const mode: DrawerMode = modeProp ?? (entityId ? 'edit' : 'create')
-    const isViewMode = mode === 'view'
+    const { mode, isView: isViewMode } = useDrawerMode({ mode: modeProp, initialData: entityId ? { id: entityId } : undefined })
     const { data: paymentData, isLoading: isViewLoading } = usePayment(isViewMode ? entityId : null)
     const { printRef, handlePrint } = usePrintableDrawer()
 
@@ -183,9 +182,9 @@ export function PaymentFormDrawer({
 
     const formContent = (
         <SkeletonShell isLoading={false} ariaLabel="Cargando pago" className="flex-1 flex flex-col">
-            <FormSplitLayout sidebar={undefined} showSidebar={false}>
+            <FormSplitLayout className="space-y-6 p-6" sidebar={undefined} showSidebar={false}>
                 <Form {...form}>
-                    <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-4">
+                    <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)}>
                         <fieldset disabled={loading} className="space-y-6 group">
                             <div className="space-y-4 transition-opacity">
                                 {mode === 'create' && (

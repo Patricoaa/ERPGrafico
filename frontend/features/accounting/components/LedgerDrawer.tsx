@@ -154,6 +154,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 icon={identity.icon}

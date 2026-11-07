@@ -22,7 +22,7 @@ import { toast } from "sonner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
 import { Chip, Drawer, LabeledInput, LabeledContainer, CancelButton, IconButton, PeriodValidationDateInput, SubmitButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths";
@@ -84,8 +84,7 @@ export function JournalEntryFormDrawer({
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isViewMode = mode === 'view'
+    const { mode, isView: isViewMode } = useDrawerMode({ mode: modeProp, initialData })
     const entityId = journalEntryId ?? initialData?.id
     const { printRef, handlePrint } = usePrintableDrawer()
     const { setEntityDisplay } = useGlobalModalActions()
@@ -244,7 +243,7 @@ export function JournalEntryFormDrawer({
 
     const journalFormFields = (
         <Form {...form}>
-            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)}>
                 <fieldset disabled={isViewMode} className="contents">
                     <div className="grid grid-cols-12 gap-4 ">
                         <div className="col-span-3">
@@ -312,6 +311,7 @@ export function JournalEntryFormDrawer({
     const formContent = (
         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando asiento contable" className="flex-1 flex flex-col">
             <FormSplitLayout
+                className="space-y-6 p-6"
                 collapsible
                 collapseStorageKey="erpgrafico.drawer.sidebar.journal_entry"
                 sidebar={entityId ? (
@@ -382,6 +382,7 @@ export function JournalEntryFormDrawer({
             <Trigger />
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

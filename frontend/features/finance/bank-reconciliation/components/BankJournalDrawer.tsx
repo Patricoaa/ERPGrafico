@@ -14,7 +14,7 @@ import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, FormSplitLayout } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const journalSchema = z.object({
@@ -40,8 +40,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const [loading, setLoading] = useState(false)
@@ -131,6 +130,8 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
@@ -154,6 +155,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 )}
             >
                 <FormSplitLayout
+                    className="space-y-6 p-6"
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.bankjournal"
                     showSidebar={!!initialData?.id}
@@ -167,11 +169,9 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                             )
                         ) : undefined
                     }
-                    className="h-full overflow-hidden p-0"
                 >
-                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                    <Form {...form}>
+                        <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)}>
                                 <fieldset disabled={isView} className="contents">
                                     <FormField
                                         control={form.control}
@@ -234,7 +234,6 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                 </fieldset>
                             </form>
                         </Form>
-                    </div>
                 </FormSplitLayout>
             </Drawer>
         </>

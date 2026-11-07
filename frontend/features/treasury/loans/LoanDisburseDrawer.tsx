@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import { Form, FormField } from '@/components/ui/form'
-import { Drawer, LabeledInput, FormSection, FormFooter, CancelButton, SubmitButton, MoneyDisplay } from "@/components/shared"
+import { Drawer, LabeledInput, FormSection, FormFooter, CancelButton, SubmitButton, MoneyDisplay, FormSplitLayout } from "@/components/shared"
 import { Send, AlertCircle, Settings } from 'lucide-react'
 import { useLoanMutations } from '../hooks/useLoans'
 import { showApiError } from '@/lib/errors'
@@ -109,6 +109,8 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
 
     return (
         <Drawer
+            fillContent
+            contentClassName="p-0"
             open={open}
             onOpenChange={onOpenChange}
             side="right"
@@ -153,8 +155,9 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                 />
             }
         >
+            <FormSplitLayout className="space-y-6 p-6">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                <form onSubmit={form.handleSubmit(onSubmit)}>
                     <FormSection title="Datos del Desembolso" icon={Send} />
                     <div className="grid grid-cols-1 gap-4">
                         <FormField
@@ -265,6 +268,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                     )}
                 </form>
             </Form>
+            </FormSplitLayout>
         </Drawer>
     )
 }

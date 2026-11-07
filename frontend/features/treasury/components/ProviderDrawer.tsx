@@ -12,7 +12,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Form, FormField } from "@/components/ui/form"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, CancelButton, SubmitButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -40,8 +40,7 @@ interface ProviderDrawerProps {
 
 export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: modeProp }: ProviderDrawerProps) {
     const { createProvider, updateProvider } = useTerminalProviders()
-    const mode: DrawerMode = modeProp ?? (provider ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: provider })
     const { printRef, handlePrint } = usePrintableDrawer()
     const [loading, setLoading] = useState(false)
 
@@ -149,6 +148,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -172,8 +172,8 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 )}
             >
                 <Form {...form}>
-                    <FormSplitLayout>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                    <FormSplitLayout className="space-y-6 p-6">
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
                                 <FormSection title="Información General" icon={Building2} />
                                 <div className="space-y-4">

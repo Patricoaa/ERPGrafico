@@ -20,7 +20,7 @@ import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitBu
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { useLedger } from "@/features/accounting/hooks/useLedger"
 import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSummaryPanel"
 import { ledgerMovementEntity, ledgerMovementDrawerViews } from "@/features/accounting"
@@ -74,8 +74,7 @@ export function AccountDrawer({
     onLoadingChange,
     mode: modeProp,
 }: AccountDrawerProps) {
-    const mode = modeProp ?? (initialData?.id ? 'view' : 'create')
-    const isViewMode = mode === 'view'
+    const { mode, isView: isViewMode } = useDrawerMode({ mode: modeProp, initialData })
     const { printRef, handlePrint } = usePrintableDrawer()
     const [internalOpen, setInternalOpen] = useState(false)
     const open = openProp !== undefined ? openProp : internalOpen
@@ -100,7 +99,7 @@ export function AccountDrawer({
         },
     })
 
-    const width = formDrawerWidth("medium", !!initialData?.id)
+    const width = formDrawerWidth("complex", !!initialData?.id)
 
     const isEditMode = !!initialData?.id
     const init = initialData as Record<string, unknown> | undefined
@@ -176,7 +175,7 @@ export function AccountDrawer({
 
     const formFields = (
         <Form {...form}>
-            <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+            <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                     control={form.control}
                     name="code"
@@ -425,7 +424,7 @@ export function AccountDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0 flex flex-col overflow-hidden bg-card"
+                contentClassName="p-0 flex flex-col overflow-hidden"
                 icon={identity.icon}
                 title={identity.title}
                 headerActions={identity.headerActions}
@@ -464,6 +463,7 @@ export function AccountDrawer({
                             value: "ledger",
                             label: "Libro Mayor",
                             icon: Book,
+                            hidden: !accountId,
                             badge: filteredMovements.length ? filteredMovements.length : undefined,
                             noPadding: true,
                             hideRightRail: true,

@@ -10,7 +10,7 @@ import { showApiError } from "@/lib/errors"
 
 import { Landmark, CreditCard, Lock, ScrollText, Plus, Pencil, Archive } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { EntitySidebar } from "@/features/comments"
 import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
@@ -71,8 +71,8 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const isSubmitting = isCreating || isUpdating
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
     const frozen = frozenFieldsOf(entityData)
-    const mode: DrawerMode = modeProp ?? (accountId ? 'edit' : 'create')
-    const isView = mode === 'view' || isSystemManaged
+    const { mode, isView: isViewMode } = useDrawerMode({ mode: modeProp, initialData: accountId ? { id: accountId } : null })
+    const isView = isViewMode || isSystemManaged
     const { printRef, handlePrint } = usePrintableDrawer()
 
     useInitializeDrawerForm({
@@ -208,6 +208,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -246,6 +247,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 )}
             >
                 <FormSplitLayout
+                    className="space-y-6 p-6"
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.treasuryaccount"
                     showSidebar={!!accountId}
@@ -261,7 +263,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 >
                     <SkeletonShell isLoading={open && loading} ariaLabel="Cargando formulario de cuenta de tesorería">
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                            <form onSubmit={form.handleSubmit(onSubmit)}>
                                 <fieldset disabled={isView} className="contents">
                                     {isSystemManaged && (
                                         <div className="flex items-start gap-3 p-3 rounded-md border border-warning/20 bg-warning/5 text-xs text-warning">

@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 import { ArrowLeftRight, DollarSign } from "lucide-react"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -42,8 +42,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     const { accounts, isLoading: isAccountsLoading } = useTreasuryAccounts()
     const { createTransfer, isCreating } = useTransfer()
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
-    const mode: DrawerMode = modeProp ?? 'create'
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: null })
 
     const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
     const [isDateValid, setIsDateValid] = useState(true)
@@ -115,6 +114,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
         <>
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -142,9 +142,9 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                 )}
             >
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de traspaso">
-                    <FormSplitLayout>
+                    <FormSplitLayout className="space-y-6 p-6">
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                            <form onSubmit={form.handleSubmit(onSubmit)}>
                                 <fieldset disabled={isView} className="contents">
                                     {/* Section 1: Accounts */}
                                     <div className="space-y-4">

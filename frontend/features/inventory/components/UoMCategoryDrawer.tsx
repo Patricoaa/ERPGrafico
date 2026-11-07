@@ -16,7 +16,7 @@ import { EntitySidebar } from "@/features/comments"
 import { useUoMMutations } from "../hooks/useUoMMutations"
 import { FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import type { UoMCategory } from "../hooks/useUoMs"
 
 export type { UoMCategory }
@@ -40,8 +40,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const { saveUoMCategory } = useUoMMutations()
@@ -90,7 +89,6 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
             <form
                 id="uom-category-form"
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6 px-6 pb-6 pt-6"
             >
                 <fieldset disabled={isView} className="contents">
                     <div className="space-y-6">
@@ -138,6 +136,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
@@ -160,23 +159,20 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                     />
                 )}
             >
-                {initialData?.id ? (
-                    <FormSplitLayout
-                        collapsible
-                        collapseStorageKey="erpgrafico.drawer.sidebar.uom_category"
-                        sidebar={
-                            <EntitySidebar
-                                entityId={initialData.id}
-                                entityType="uom_category"
-                            />
-                        }
-                        showSidebar={true}
-                    >
-                        {formContent}
-                    </FormSplitLayout>
-                ) : (
-                    formContent
-                )}
+                <FormSplitLayout
+                    className="space-y-6 p-6"
+                    collapsible
+                    collapseStorageKey="erpgrafico.drawer.sidebar.uom_category"
+                    sidebar={initialData?.id ? (
+                        <EntitySidebar
+                            entityId={initialData.id}
+                            entityType="uom_category"
+                        />
+                    ) : undefined}
+                    showSidebar={!!initialData?.id}
+                >
+                    {formContent}
+                </FormSplitLayout>
             </Drawer>
         </>
     )

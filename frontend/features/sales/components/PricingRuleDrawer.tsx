@@ -23,7 +23,7 @@ import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { useSingleProduct } from "@/features/inventory"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -73,8 +73,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     const { product: loadedProduct } = useSingleProduct(productId ?? null)
     const effectiveProduct = selectedProductObj || loadedProduct || null
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const form = useForm<FormValues>({
@@ -450,6 +449,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -473,11 +473,11 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 )}
             >
                 <FormSplitLayout
+                    className="space-y-6 p-6"
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.pricing_rule"
                     showSidebar={!!initialData?.id}
                     sidebar={auditSidebar}
-                    className="px-4 pb-4 pt-0"
                 >
                     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de regla de precio" className="flex-1 flex flex-col">
                         <Form {...form}>

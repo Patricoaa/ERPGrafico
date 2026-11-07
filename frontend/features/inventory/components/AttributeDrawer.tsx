@@ -12,7 +12,7 @@ import { EntitySidebar } from "@/features/comments"
 import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
 import { useSuggestions } from "@/hooks/useSuggestions"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { MultiTagInput } from "@/components/shared"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 
@@ -36,8 +36,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
 
     const { saveAttribute, createAttributeValue, isSaving } = useAttributes()
 
@@ -105,6 +104,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
     return (
         <Drawer
             fillContent
+            contentClassName="p-0"
             open={open}
             onOpenChange={setOpen}
             side="left"
@@ -128,6 +128,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
             )}
         >
             <FormSplitLayout
+                className="space-y-6 p-6"
                 collapsible
                 collapseStorageKey="erpgrafico.drawer.sidebar.attribute"
                 sidebar={initialData?.id ? (
@@ -142,7 +143,6 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                     <form
                         id="attribute-form"
                         onSubmit={form.handleSubmit(onSubmit)}
-                        className="space-y-6 px-6 pb-6 pt-6"
                     >
                         <fieldset disabled={isView} className="contents">
                             <div className="space-y-6">

@@ -10,7 +10,7 @@ import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import type { Absence, Employee } from "@/types/hr"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -39,8 +39,7 @@ export interface AbsenceDrawerProps {
 export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, mode: modeProp }: AbsenceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
-    const mode: DrawerMode = modeProp ?? (absence ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: absence })
     const { printRef, handlePrint } = usePrintableDrawer()
     const { saveAbsence, isSaving: saving } = useAbsenceMutations()
 
@@ -132,6 +131,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -145,14 +145,15 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
             >
                 {absence ? (
                     <FormSplitLayout
+                        className="space-y-6 p-6"
                         collapsible
                         collapseStorageKey="erpgrafico.drawer.sidebar.absence"
                         showSidebar={true}
                         sidebar={<EntitySidebar entityType="absence" entityId={absence.id} />}
                     >
-                        
+
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                                <form onSubmit={form.handleSubmit(onSubmit)}>
 
                                     <fieldset disabled={isView} className="contents">
                                         <div className="space-y-6">
@@ -244,10 +245,9 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                         
                     </FormSplitLayout>
                 ) : (
-                    <FormSplitLayout>
-                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                    <FormSplitLayout className="space-y-6 p-6">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)}>
                                     <fieldset disabled={isView} className="contents">
                                         <div className="space-y-6">
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
@@ -334,7 +334,6 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                     </fieldset>
                                 </form>
                             </Form>
-                        </div>
                     </FormSplitLayout>
                 )}
             </Drawer >

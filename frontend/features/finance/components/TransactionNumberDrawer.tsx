@@ -13,7 +13,7 @@ import {
 import { showApiError } from "@/lib/errors"
 import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, FormFooter, FormSplitLayout, CancelButton, SubmitButton } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -41,8 +41,7 @@ export function TransactionNumberDrawer({
     onSuccess,
     mode: modeProp
 }: TransactionNumberDrawerProps) {
-    const mode: DrawerMode = modeProp ?? 'edit'
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: paymentId ? { id: paymentId } : null })
     const { printRef, handlePrint } = usePrintableDrawer()
     const [loading, setLoading] = useState(false)
 
@@ -107,6 +106,7 @@ export function TransactionNumberDrawer({
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -130,6 +130,7 @@ export function TransactionNumberDrawer({
                 )}
             >
                 <FormSplitLayout
+                    className="space-y-6 p-6"
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.payment"
                     sidebar={paymentId ? (
@@ -141,7 +142,7 @@ export function TransactionNumberDrawer({
                     showSidebar={!!paymentId}
                 >
                     <Form {...form}>
-                        <form id="transaction-number-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <form id="transaction-number-form" onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
                                 <FormField
                                     control={form.control}

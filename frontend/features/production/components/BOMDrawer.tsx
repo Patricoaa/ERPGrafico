@@ -12,7 +12,7 @@ import {
 
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -23,7 +23,7 @@ import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import type { Product } from "@/types/entities"
-import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
+import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, FormSplitLayout, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatQuantity } from "@/lib/money"
@@ -104,8 +104,7 @@ export function BOMDrawer({
     const { multiplier: vatMultiplier } = useVatRate()
     const [, setLoading] = useState(false)
 
-    const mode: DrawerMode = modeProp ?? (bomToEdit ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: bomToEdit })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
@@ -347,6 +346,8 @@ export function BOMDrawer({
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -394,8 +395,8 @@ export function BOMDrawer({
                     />
                 )}
             >
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel={`Cargando formulario de ${getDomainConceptTitle('ldm').toLowerCase()}`} className="flex-1 flex flex-col">
-                    <div className="px-1">
+                <FormSplitLayout className="p-6">
+                    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel={`Cargando formulario de ${getDomainConceptTitle('ldm').toLowerCase()}`} className="flex-1 flex flex-col">
                         <Form {...form}>
                             <form id="bom-form"
                                 onSubmit={(e) => {
@@ -404,7 +405,6 @@ export function BOMDrawer({
                                         toast.error("Por favor, verifique los campos marcados en rojo")
                                     })(e)
                                 }}
-                                className="px-6 pb-6 pt-6"
                             >
                                 <fieldset disabled={isView} className="flex min-w-0 flex-col gap-8">
                                     {/* 📋 HEADER: IDENTIFICACIÓN Y CONFIGURACIÓN */}
@@ -990,8 +990,8 @@ if (p.has_variants) fetchLineVariants(p.id)
                                 </fieldset>
                             </form>
                         </Form>
-                    </div>
-                </SkeletonShell>
+                    </SkeletonShell>
+                </FormSplitLayout>
             </Drawer>
         </>
     )

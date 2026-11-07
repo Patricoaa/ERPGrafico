@@ -19,7 +19,7 @@ import { CancelButton, LabeledInput, LabeledSelect, FormSelectionGroup, FormSect
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { EntitySidebar } from "@/features/comments"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 export interface Terminal {
     id: number
@@ -73,8 +73,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
     const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
 
-    const mode: DrawerMode = modeProp ?? (terminal ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: terminal })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const form = useForm<FormValues>({
@@ -212,6 +211,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -236,6 +236,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
             >
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de caja POS" className="flex-1 flex flex-col">
                     <FormSplitLayout
+                        className="space-y-6 p-6"
                         collapsible
                         collapseStorageKey="erpgrafico.drawer.sidebar.terminal"
                         showSidebar={!!terminal?.id}
@@ -249,7 +250,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                         }
                     >
                         <Form {...form}>
-                            <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                            <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)}>
                                 <fieldset disabled={isView} className="contents">
                                     {/* Section 1: Device Identity */}
                                     <div className="space-y-4">

@@ -23,7 +23,7 @@ import {
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
 import { type RbacBundle } from "../api/rbacApi"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { useAuth } from "@/contexts/AuthContext"
 import { userSchema, type UserFormValues } from "../schema"
 
@@ -148,8 +148,7 @@ export function UserDrawer({
     const [activeTab, setActiveTab] = useState("general")
     const [pendingSuperuserGrant, setPendingSuperuserGrant] = useState(false)
     const { user: currentUser } = useAuth()
-    const mode: DrawerMode = modeProp ?? (initialData ? "edit" : "create")
-    const isView = mode === "view"
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     // Bundle metadata for role detail tooltips (cached 5 min)
@@ -328,7 +327,7 @@ export function UserDrawer({
                 headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 defaultSize="100%"
-                contentClassName="p-0 flex flex-col overflow-hidden bg-card"
+                contentClassName="p-0"
                 mode={mode}
                 icon={identity.icon}
                 side="left"

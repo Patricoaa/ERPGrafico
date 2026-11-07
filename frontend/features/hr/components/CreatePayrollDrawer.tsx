@@ -14,7 +14,7 @@ import type { Employee, Payroll } from "@/types/hr"
 import { Form, FormField } from "@/components/ui/form"
 import { FileText } from "lucide-react"
 import { useDrawerIdentity } from "@/features/_shared"
-import { CancelButton, Drawer, FormFooter, LabeledInput, LabeledSelect, SkeletonShell, SubmitButton } from '@/components/shared'
+import { CancelButton, Drawer, FormFooter, FormSplitLayout, LabeledInput, LabeledSelect, SkeletonShell, SubmitButton } from '@/components/shared'
 import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -105,6 +105,8 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
 
     return (
         <Drawer
+            fillContent
+            contentClassName="p-0"
             open={open}
             onOpenChange={guardedOpenChange}
             side="left"
@@ -130,12 +132,12 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
                 />
             }
         >
-            <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de liquidación">
+            <FormSplitLayout className="space-y-6 p-6">
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de liquidación">
                 <Form {...form}>
                     <form
                         id="create-payroll-form"
-                        onSubmit={form.handleSubmit(onSubmit)}
-                        className="space-y-6 px-6 pb-6 pt-6">
+                        onSubmit={form.handleSubmit(onSubmit)}>
 
                         <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                             <LabeledSelect
@@ -187,7 +189,8 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
                         )} />
                     </form>
                 </Form>
-            </SkeletonShell>
+                </SkeletonShell>
+            </FormSplitLayout>
         </Drawer>
     )
 }

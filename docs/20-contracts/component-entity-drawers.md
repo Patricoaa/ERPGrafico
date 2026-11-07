@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-entity-drawers
 status: active
 owner: frontend-team
-last_review: 2026-10-09
+last_review: 2026-11-07
 stability: contract-changes-require-ADR
 preconditions:
   - component-drawer.md
@@ -215,15 +215,135 @@ Todos los drawers deben adherirse a esta estructura unificada:
 
 - [ ] Usa `useDrawerMode({ mode: modeProp, initialData })` (no resolución inline de modo)
 - [ ] Usa `useDrawerIdentity` para título, subtítulo e icono
-- [ ] Usa `formDrawerWidth(complexity, !!initialData?.id)` para el ancho
+- [ ] Usa `formDrawerWidth(complexity, !!initialData?.id)` con la complejidad correcta (ver §4.1 tabla)
 - [ ] Reset de form: `useInitializeDrawerForm` (layout effect con reset key `open` + id; sin `form.reset()` durante render ni `useEffect` después del paint) — ver [component-state-sync.md](./component-state-sync.md)
 - [ ] Mutaciones: usa hook dedicado `use*Mutations()` (ej. `useCategoryMutations`) que invoca `markLocalMutation()` e `invalidateCrossFeature()`. Cero `api.*()` directos en el componente.
-- [ ] `FormSplitLayout` + `ActivitySidebar` con `showSidebar={!!initialData?.id}` (solo para edición)
+- [ ] Layout: `FormSplitLayout` para drawers sin tabs; `DrawerLayout` con `tabs` para drawers con historial / analytics / libros (ver §4.1)
+- [ ] `contentDisabled={isView}` en `DrawerLayout` o `FormSplitLayout` para deshabilitar en modo vista (no per-campo) — ver nota importante en §4.1
+- [ ] Tabs de historial/analytics/libros con `hidden: !entityId` — no visibles en modo `create`
+- [ ] `<form>` aísla solo el contenido del tab de edición; `DrawerLayout` va **fuera** del `<form>`
+- [ ] No poner padding en el elemento `<form>` — el layout ya aplica `p-6` (ver §4.1)
 - [ ] `FormFooter` canónico (o ausente si drawer read-only)
-- [ ] `contentClassName="p-0"` cuando usa `FormSplitLayout`
+- [ ] `<Drawer fillContent contentClassName="p-0">` cuando usa `FormSplitLayout` o `DrawerLayout`
+- [ ] Sin `className="h-[90vh]"` ni alturas fijas en `<Drawer>`
+- [ ] Sin `bg-card` en `contentClassName` del `<Drawer>` — `DrawerLayout` lo aplica internamente
+- [ ] Sidebar de actividad: `EntitySidebar` de `@/features/comments` (no `ActivitySidebar`, obsoleto)
 - [ ] Callbacks estandarizados: Usa `onSuccess` (no `onSaved`, no `onUpdate`)
 - [ ] Cierre tras guardar **dentro** del callback de `form.handleSubmit` (`await` de la mutación → `onSuccess` → cerrar). Un guardado que pide confirmación vuelve a entrar con `form.handleSubmit(save)()` desde el modal (ver §5, guarda)
 - [ ] Registrado en `ENTITY_DRAWERS` si necesita apertura global desde link
+
+---
+
+## 4.1 Directrices de layout visual unificado
+
+> Estas reglas aplican a **todos** los drawers CRUD del sistema. Su objetivo es garantizar consistencia visual cuando un drawer se abre como overlay (desde `openEntity`, desde otro drawer, o en modo `embedded`). Cuando el drawer se abre vía `EntityPanelTab` (el camino canónico desde lista), `EntityPanelTab` lo renderiza a tamaño completo independientemente de `defaultSize`.
+
+### Los dos patrones de layout
+
+`DrawerLayout` es el único componente de layout dentro de un drawer. `FormSplitLayout` es un **shim de compatibilidad** que delega a `DrawerLayout` sin tabs y con `noPadding`. Código nuevo puede usar cualquiera de los dos según la tabla:
+
+| Caso | Componente | Notas |
+|---|---|---|
+| Sin tabs, con/sin sidebar de comentarios | `FormSplitLayout` | Interfaz más concisa; compat con código existente |
+| Con tabs (historial, libro mayor, etc.) | `DrawerLayout` con `tabs` | Control completo por tab |
+| Sin tabs, sin sidebar (casos excepcionales) | `DrawerLayout` directamente | `children` sin prop `tabs` |
+
+> **`FormSplitLayout` pasa `noPadding` a `DrawerLayout`** — desactiva el `p-6` automático. El padding del área de contenido debe venir del `className` prop de `FormSplitLayout`, no del elemento `<form>`.
+
+### Padding automático
+
+`DrawerLayout` aplica `p-6` automáticamente al área de contenido (con o sin tabs) salvo que se indique `noPadding`. Esto significa:
+
+- **`DrawerLayout` con tabs** — cada tab recibe `p-6` por defecto; usar `noPadding: true` en el tab para contenido full-bleed (tablas, libros). No poner padding en `<form>`.
+- **`DrawerLayout` sin tabs** — el área `children` recibe `p-6` por defecto. No poner padding en el hijo.
+- **`FormSplitLayout`** — `noPadding` activado; controlar padding vía `className` en el propio `<FormSplitLayout>`, **no en `<form>`**.
+
+```tsx
+// ✅ FormSplitLayout — padding en el componente
+<FormSplitLayout
+    className="space-y-6 p-6"
+    sidebar={<EntitySidebar entityId={id} entityType="warehouse" />}
+    showSidebar={!!id}
+    collapsible
+    collapseStorageKey="erpgrafico.drawer.sidebar.warehouse"
+>
+    <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)}>
+        {/* campos — sin padding aquí */}
+    </form>
+</FormSplitLayout>
+
+// ✅ DrawerLayout con tabs — padding automático por tab
+const formContent = (
+    <form id="entity-form" onSubmit={form.handleSubmit(onSubmit)}>
+        {/* campos — sin padding aquí */}
+    </form>
+)
+
+<DrawerLayout
+    contentDisabled={isView}
+    tabs={[
+        { value: "form",    label: "Ficha",    icon: Book,         content: formContent },
+        { value: "history", label: "Historial", icon: ShoppingCart, content: historyTable, noPadding: true, hidden: !entityId },
+    ]}
+    rightRail={entityId ? <EntitySidebar entityId={entityId} entityType="product" /> : undefined}
+    rightRailCollapsible
+    rightRailStorageKey="erpgrafico.drawer.sidebar.product"
+/>
+
+// ❌ Incorrecto — form envuelve el DrawerLayout
+<form onSubmit={...}>
+    <DrawerLayout tabs={[...]} />
+</form>
+
+// ❌ Incorrecto — padding en el form (FormSplitLayout path)
+<FormSplitLayout sidebar={...} showSidebar={...}>
+    <form className="space-y-6 px-6 pb-6 pt-6">{/* ... */}</form>
+</FormSplitLayout>
+```
+
+### Deshabilitar en modo vista
+
+Usar `contentDisabled={isView}` en `DrawerLayout` o `FormSplitLayout`. Esto envuelve el workspace central en `<fieldset disabled>` sin afectar los rails (sidebar de comentarios sigue activo en modo vista, ADR-0111). El `disabled` per-campo solo aplica como override para campos editables en modo vista (caso excepcional).
+
+> **No usar `<fieldset disabled>` manualmente** alrededor del contenido — eso afectaría al sidebar de comentarios que debe permanecer interactivo.
+
+### Visibilidad de tabs en modo creación
+
+Los tabs que requieren una entidad existente deben ocultarse en modo `create`:
+
+```ts
+{ value: "sales",   hidden: !entityId, ... }
+{ value: "ledger",  hidden: !entityId, ... }
+{ value: "credit",  hidden: !entityId, ... }
+```
+
+El tab del formulario principal es siempre visible.
+
+### Tamaño (`formDrawerWidth`)
+
+> Aplica cuando el drawer se abre como overlay. `EntityPanelTab` ignora `defaultSize` y lo muestra a tamaño completo.
+
+| Tipo de drawer | `complexity` | Base / Con sidebar |
+|---|---|---|
+| Ficha maestra con múltiples tabs de historial (Contacto, Proveedor) | `"master"` | 75% / 90% |
+| Formulario con tabs auxiliares (Cuenta Contable, Producto) | `"complex"` | 50% / 65% |
+| Formulario con sidebar de comentarios | `"medium"` | 40% / 55% |
+| Formulario simple sin sidebar | `"simple"` | 30% / 45% |
+
+Un drawer con tabs de historial o libro mayor merece al menos `"complex"` — no usar `"medium"` para drawers que necesitan espacio para tablas.
+
+### `<Drawer>` props de contenedor
+
+```tsx
+<Drawer
+    fillContent                                            // siempre con DrawerLayout/FormSplitLayout
+    contentClassName="p-0"                                 // siempre — quita el padding por defecto del Sheet
+    // Sin className="h-[90vh]" — height la gestiona Sheet via maxSize
+    // Sin bg-card en contentClassName — DrawerLayout lo aplica internamente
+>
+    <FormSplitLayout ...> / <DrawerLayout ...>
+</Drawer>
+```
 
 ---
 
@@ -325,6 +445,14 @@ son las que lo hacen operar como un detalle real (DET-02):
 | Adaptador con aliases: `<Drawer accountId={id} onSaved={onSuccess} />` | Estandarizar props en el Drawer a `id` y `onSuccess` |
 | Cerrar tras guardar con `setTimeout(() => onOpenChange(false), …)` o en `mutate(…, { onSuccess })` sin `await` | `await` de la mutación y cerrar dentro del callback de `handleSubmit` |
 | Modal de confirmación que llama `save(pendingValues)` directo | `onConfirm={() => void form.handleSubmit(save)()}` |
+| `className="h-[90vh]"` u otras alturas fijas en `<Drawer>` | Omitir; `Sheet`/`fillContent` gestionan el alto — afecta EmployeeDrawer, ContactDrawer, ProductDrawer (§4.1) |
+| `<form>` envolviendo todo el `DrawerLayout` con sus tabs | `<form>` solo en el tab de edición; `DrawerLayout` fuera del form — afecta EmployeeDrawer, ContactDrawer, ProductDrawer (§4.1) |
+| `disabled={isViewMode}` campo a campo para modo vista | `contentDisabled={isView}` en `DrawerLayout`/`FormSplitLayout`; no usar `<fieldset>` manual que rompe sidebar (§4.1) |
+| Tabs de historial/analytics visibles durante `create` (sin entidad) | `hidden: !entityId` en cada tab que requiere entidad existente (§4.1) |
+| `bg-card` en `contentClassName` del `<Drawer>` | Omitir; `DrawerLayout` aplica `bg-card` internamente — afecta AccountDrawer, UserDrawer, EmployeeDrawer (§4.1) |
+| Padding (`px-6 pb-6 pt-6`) en el elemento `<form>` dentro de `FormSplitLayout` | Padding en `className` de `FormSplitLayout`, no en `<form>` — `FormSplitLayout` desactiva el auto-padding (§4.1) |
+| `formDrawerWidth("medium", ...)` en un drawer con tabs de historial/libro mayor | Usar `"complex"` o `"master"` según la tabla de tamaños — afecta AccountDrawer (§4.1) |
+| `ActivitySidebar` (componente obsoleto) | `EntitySidebar` de `@/features/comments` |
 
 ---
 
@@ -333,6 +461,19 @@ son las que lo hacen operar como un detalle real (DET-02):
 - ADR de la decisión: [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md); pila, "volver" y OV/OC → Hub: [ADR-0080](../10-architecture/adr/0080-document-model-relations-and-navigation.md)
 - Documentos relacionados y URL canónica: [document-relations.md](./document-relations.md)
 - Primitiva `Drawer` (API, tamaños): [component-drawer.md](./component-drawer.md)
+- `DrawerLayout` (layout interno de drawers, tabs, rails, `contentDisabled`): `frontend/components/shared/DrawerLayout.tsx`
+- `FormSplitLayout` (shim tabless de `DrawerLayout`): `frontend/components/shared/FormSplitLayout.tsx`
+- Sidebar de comentarios: [component-entity-comments.md](./component-entity-comments.md) — `EntitySidebar` de `@/features/comments`
 - Identidad de entidad / labels: [entity-identity.md](./entity-identity.md)
 - Edición deep-linkeable desde lista: [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)
 - Superficie modal vs drawer: [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md)
+
+### Drawers con desvíos conocidos (pendiente de ajustar al código)
+
+| Drawer | Desvíos |
+|--------|---------|
+| `ContactDrawer` | `h-[90vh]`, `<form>` envuelve `DrawerLayout`, tabs de historial visibles en create |
+| `EmployeeDrawer` | `h-[90vh]`, `bg-card` en `contentClassName`, `<form>` envuelve `DrawerLayout` |
+| `ProductDrawer` | `h-[90vh]`, `<form>` envuelve `DrawerLayout` |
+| `AccountDrawer` | `bg-card` en `contentClassName`, `formDrawerWidth("medium")` con tab de libro mayor, padding en `<form>` |
+| Drawers con `FormSplitLayout` (CategoryDrawer, TreasuryAccountDrawer, JournalEntryFormDrawer, PosTerminalDrawer, …) | Padding en `<form>` en lugar de en `className` de `FormSplitLayout` |

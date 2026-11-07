@@ -8,7 +8,7 @@ import * as z from "zod"
 import { Smartphone } from "lucide-react"
 import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalDevice } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -36,8 +36,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
     const { createDevice, updateDevice } = useTerminalDevices()
     const { providers: fetchedProviders } = useTerminalProviders()
     const providers = providersProp ?? fetchedProviders
-    const mode: DrawerMode = modeProp ?? (device ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: device })
     const { printRef, handlePrint } = usePrintableDrawer()
     const [loading, setLoading] = useState(false)
 
@@ -124,6 +123,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -147,8 +147,8 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 )}
             >
                 <Form {...form}>
-                    <FormSplitLayout>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                    <FormSplitLayout className="space-y-6 p-6">
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
                                 <FormSection title="Información General" icon={Smartphone} />
                                 <div className="space-y-4">

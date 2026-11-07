@@ -14,7 +14,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, FormSelectionGroup, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { EntitySidebar } from "@/features/comments"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const terminalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -36,8 +36,7 @@ interface PosTerminalDrawerProps {
 }
 
 export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: modeProp }: PosTerminalDrawerProps) {
-    const mode: DrawerMode = modeProp ?? (terminal ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: terminal })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -212,6 +211,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -235,6 +235,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 )}
             >
                 <FormSplitLayout
+                    className="space-y-6 p-6"
                     collapsible
                     collapseStorageKey="erpgrafico.drawer.sidebar.terminal_pos"
                     showSidebar={!!terminal?.id}
@@ -248,7 +249,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                     ) : undefined}
                 >
                     <Form {...form}>
-                        <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField

@@ -119,6 +119,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             )}
             <Drawer
                 fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -143,14 +144,14 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             >
                 {advance ? (
                     <FormSplitLayout
+                        className="space-y-6 p-6"
                         collapsible
                         collapseStorageKey="erpgrafico.drawer.sidebar.salaryadvance"
                         showSidebar={true}
                         sidebar={<EntitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
                     >
-                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
-                            <Form {...form}>
-                                <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <Form {...form}>
+                            <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)}>
                                     <fieldset disabled={isView} className="contents">
                                         <div className="space-y-6">
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
@@ -214,13 +215,11 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
 
                                 </form>
                             </Form>
-                        </div>
                     </FormSplitLayout>
                 ) : (
-                    <FormSplitLayout>
-                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
-                            <Form {...form}>
-                                <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                    <FormSplitLayout className="space-y-6 p-6">
+                        <Form {...form}>
+                            <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)}>
                                     <fieldset disabled={isView} className="contents">
                                         <div className="space-y-6">
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
@@ -275,7 +274,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                     </fieldset>
                                 </form>
                             </Form>
-                        </div>
                     </FormSplitLayout>
                 )}
             </Drawer >

@@ -8,11 +8,11 @@ import { useDirtyGuard } from "@/hooks/useDirtyGuard"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { Drawer, CancelButton, FormFooter, LabeledCheckbox, SubmitButton } from "@/components/shared"
+import { Drawer, CancelButton, FormFooter, FormSplitLayout, LabeledCheckbox, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import {Form, FormField} from "@/components/ui/form"
 
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { partnersApi } from "@/features/contacts"
 import type { Contact } from "@/types/entities"
 
@@ -31,8 +31,7 @@ interface PartnerEditDrawerProps {
 }
 
 export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode: modeProp }: PartnerEditDrawerProps) {
-    const mode: DrawerMode = modeProp ?? (contact ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: contact })
     const { printRef, handlePrint } = usePrintableDrawer()
     const [submitting, setSubmitting] = useState(false)
 
@@ -96,6 +95,8 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
+                contentClassName="p-0"
                 open={open}
                 onOpenChange={guardedOpenChange}
                 side="left"
@@ -118,8 +119,9 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                     />
                 )}
             >
+                <FormSplitLayout className="space-y-6 p-6">
                 <Form {...form}>
-                    <form id="partner-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                    <form id="partner-edit-form" onSubmit={form.handleSubmit(onSubmit)}>
                         <fieldset disabled={isView} className="contents">
 
                         <FormField
@@ -138,6 +140,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                         </fieldset>
                     </form>
                 </Form>
+                </FormSplitLayout>
             </Drawer>
         </>
     )
