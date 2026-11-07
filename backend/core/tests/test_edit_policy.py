@@ -27,7 +27,6 @@ PROJECT_APPS = {
 # Models with journal-entry derivatives still lacking an edit_policy.
 # Remove the entry in the same PR that adds the policy. Never add new ones.
 UNPROTECTED_BASELINE: dict[str, str] = {
-    "treasury.BankLoan": "deuda: falta decidir su EditPolicy (ADR-0118)",
     "treasury.ReconciliationMatch": "deuda: falta decidir su EditPolicy (ADR-0118)",
 }
 

@@ -1260,7 +1260,7 @@ class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryM
 # ── F2.11: Créditos bancarios (BankLoan + LoanInstallment) ──────────────────
 
 
-class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class BankLoanViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     """CRUD + acciones de lifecycle para créditos bancarios (Fase 2).
 
@@ -1325,7 +1325,7 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from django.core.exceptions import ValidationError as DjangoValidationError
 
         try:
-            serializer.save()
+            super().perform_update(serializer)
         except DjangoValidationError as e:
             raise drf_serializers.ValidationError(
                 e.message_dict if hasattr(e, "message_dict") else e.messages
