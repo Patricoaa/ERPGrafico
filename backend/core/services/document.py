@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
+
+if TYPE_CHECKING:
+    from accounting.models import JournalEntry
 
 
 def lock_document(instance):

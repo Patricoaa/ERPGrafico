@@ -1,11 +1,15 @@
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
-from rest_framework.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from core.permissions import Roles
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import Group
 
 
 class SequenceService:
@@ -234,8 +238,9 @@ class GroupService:
         The post_save signal on Group auto-creates a TEAM GroupProfile.
         We update that profile (or create one if missing) to the requested kind/description.
         """
-        from django.db import transaction
         from django.contrib.auth.models import Group
+        from django.db import transaction
+
         from core.models import GroupProfile
 
         with transaction.atomic():

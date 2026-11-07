@@ -8,6 +8,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from accounting.glosa_builder import GlosaBuilder, Roles
@@ -524,7 +525,7 @@ class ProfitDistributionService:
             # Find already paid
             already_paid = ProfitDistributionPayment.objects.filter(
                 resolution=resolution, partner_id=partner_id
-            ).aggregate(models.Sum("amount"))["amount__sum"] or Decimal("0")
+            ).aggregate(Sum("amount"))["amount__sum"] or Decimal("0")
 
             remaining = total_payable - already_paid
             if amount > remaining:

@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from django.db import transaction
 from django.utils import timezone
@@ -14,6 +15,9 @@ from workflow.models import (
     TaskEvent,
     Transition,
 )
+
+if TYPE_CHECKING:
+    from .models import Comment
 
 _sod_log = logging.getLogger("workflow.sod")
 

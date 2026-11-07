@@ -747,10 +747,14 @@ class SubscriptionSelector:
 
     @staticmethod
     def get_stats():
-        from django.db.models import Count, Sum
+        from datetime import timedelta
 
-        now = timezone.now()
-        threshold_30 = now.date() + timezone.timedelta(days=30)
+        from django.db.models import Count, Sum
+        from django.utils import timezone
+
+        from .models import Subscription
+
+        threshold_30 = timezone.localdate() + timedelta(days=30)
 
         agg = Subscription.objects.aggregate(
             active_count=Count("pk", filter=Q(status=Subscription.Status.ACTIVE)),

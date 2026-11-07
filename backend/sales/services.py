@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -13,6 +14,9 @@ from core.services import BaseNoteService
 from inventory.models import Warehouse
 
 from .models import SaleDelivery, SaleDeliveryLine, SaleLine, SaleOrder
+
+if TYPE_CHECKING:
+    from billing.models import Invoice
 
 logger = logging.getLogger(__name__)
 

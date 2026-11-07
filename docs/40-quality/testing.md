@@ -102,6 +102,7 @@ Estos tests fallan hoy, quedan fuera del gate y no deben aumentar. Requieren inv
 | `sales/tests/test_pos_consumer_authz.py::test_pos_session_with_view_draftcart_connects_successfully` | Falla en la suite completa y pasa aislado; parece depender del orden |
 | `accounting/tests/test_dte_settings.py::test_accounting_settings_updates_emit_and_receive_dte_lists` | Solo Postgres: falla en la suite completa y pasa aislado; parece depender del orden |
 | `core/tests/test_search_postgres.py::test_universal_search_runs_full_text_on_postgres` | Solo Postgres: la búsqueda de texto completo no devuelve resultados |
+| `contacts/tests/test_credit_ledger.py::test_credit_ledger_write_off_only_with_include_all`, `production/tests/test_notify_overdue_batched.py` (2) | Solo cuando el día local y el UTC difieren (de noche en Chile); parece mezcla de fechas locales y UTC |
 
 ### Fixtures — factory_boy
 
