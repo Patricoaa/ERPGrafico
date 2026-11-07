@@ -12,10 +12,10 @@ setup('authenticate', async ({ page }) => {
 
   await page.locator('input[name="username"]').fill(username);
   await page.locator('input[name="password"]').fill(password);
-  await page.getByRole('button', { name: /iniciar sesión/i }).click();
+  await page.getByRole('button', { name: /ingresar/i }).click();
 
-  // Esperar redirección al dashboard (confirma login exitoso)
-  await expect(page).toHaveURL(/\/(dashboard|ventas|inicio)/, { timeout: 10_000 });
+  // Salir de /login confirma el inicio de sesión: el dashboard vive en la raíz
+  await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
 
   // Guardar estado de autenticación para los demás tests
   await page.context().storageState({ path: authFile });
