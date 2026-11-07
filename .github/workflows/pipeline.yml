@@ -9,7 +9,8 @@ on:
 jobs:
   frontend:
     name: Frontend
-    runs-on: ubuntu-latest
+    # Playwright has no Chromium build for ubuntu-latest (26.04) yet.
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ./frontend
@@ -32,6 +33,9 @@ jobs:
 
       - name: Type Check
         run: npm run type-check
+
+      - name: Install Chromium for Storybook tests
+        run: npx playwright install --with-deps chromium
 
       - name: Test
         run: npm run test -- --run --coverage

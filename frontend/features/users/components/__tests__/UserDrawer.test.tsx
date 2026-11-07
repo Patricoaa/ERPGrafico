@@ -49,6 +49,10 @@ vi.mock("@/features/_shared", () => ({
 
 vi.mock("@/features/comments", () => ({ EntitySidebar: () => null }))
 
+vi.mock("@/contexts/AuthContext", () => ({
+    useAuth: () => ({ user: { id: 99, is_superuser: true } }),
+}))
+
 vi.mock("@/hooks/useInitializeDrawerForm", () => ({
     useInitializeDrawerForm: () => undefined,
 }))
@@ -160,11 +164,12 @@ describe("UserDrawer — kind-based groups (Task 8 TDD)", () => {
             teams: [],
             contact: 1,
             is_active: true,
+            is_superuser: false,
         })
         expect(emptyRoles.success).toBe(false)
         if (!emptyRoles.success) {
             const rolesIssue = emptyRoles.error.issues.find((i) => i.path[0] === "roles")
-            expect(rolesIssue?.message).toBe("Debe seleccionar al menos un puesto")
+            expect(rolesIssue?.message).toBe("Debe seleccionar al menos un rol")
         }
 
         // One role → should pass
@@ -174,6 +179,7 @@ describe("UserDrawer — kind-based groups (Task 8 TDD)", () => {
             teams: [],
             contact: 1,
             is_active: true,
+            is_superuser: false,
         })
         expect(oneRole.success).toBe(true)
     })

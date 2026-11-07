@@ -20,8 +20,8 @@ const mockUseSaveComposition = vi.fn(() => ({
 }))
 
 vi.mock("../../hooks/useRbac", () => ({
-    useBundles: () => mockUseBundles(),
-    useComposition: (_id: number) => mockUseComposition(),
+    useBundles: (): unknown => mockUseBundles(),
+    useComposition: (_id: number): unknown => mockUseComposition(),
     useSaveComposition: () => mockUseSaveComposition(),
 }))
 

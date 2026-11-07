@@ -30,9 +30,9 @@ function TreasuryAccountLink({ endpoint }: { endpoint: Extract<MovementEndpoint,
                 e.stopPropagation()
                 openEntity("treasury.treasuryaccount", endpoint.id)
             }}
-            className="group h-auto min-w-0 max-w-full justify-start gap-1 border-none bg-transparent p-0 text-xs font-medium text-foreground shadow-none hover:bg-transparent hover:text-cyan hover:underline"
+            className="group h-auto min-w-0 max-w-full justify-start gap-1 border-none bg-transparent p-0 text-xs font-medium text-foreground shadow-none hover:bg-transparent hover:text-primary hover:underline"
         >
-            <Landmark className="h-3 w-3 flex-shrink-0 text-cyan/50 transition-colors group-hover:text-cyan" aria-hidden />
+            <Landmark className="h-3 w-3 flex-shrink-0 text-primary/50 transition-colors group-hover:text-primary" aria-hidden />
             <span className="truncate">{endpoint.name}</span>
         </Button>
     )

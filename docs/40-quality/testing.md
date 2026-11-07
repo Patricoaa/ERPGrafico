@@ -61,7 +61,7 @@ it('shows empty state when no orders', () => {
 
 ### Coverage thresholds
 
-- Global: 70% lines, 60% branches.
+- Global: objetivo de 70% lines, 60% branches. El mínimo que hace cumplir el CI es el real (22% lines, 14% branches, `vitest.config.ts`) y solo debe subir.
 - Shared components: 90% lines.
 - Hooks: 85% lines.
 - Enforced in CI.
