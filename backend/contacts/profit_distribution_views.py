@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -114,6 +115,7 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
             ProfitDistributionService.execute_mass_payment(
                 resolution, treasury_account_id, payments_data, request.user
             )
-            return Response(self.get_serializer(resolution).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except DjangoValidationError as e:
+            return Response({"error": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        # Reload: the instance above holds its payments as prefetched before this one.
+        return Response(self.get_serializer(self.get_object()).data)
