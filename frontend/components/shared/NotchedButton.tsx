@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { type ButtonHTMLAttributes, forwardRef } from "react"
 import { cn } from "@/lib/utils"
+import { FieldLegend } from "./FieldLegend"
 
 interface NotchedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /** Optional label rendered as a notched legend */
@@ -29,11 +30,7 @@ export const NotchedButton = forwardRef<HTMLButtonElement, NotchedButtonProps>(
                 )}
                 data-disabled={disabled || undefined}
             >
-                {label && (
-                    <legend className="px-1.5 text-3xs font-bold uppercase tracking-loose text-muted-foreground">
-                        {label}
-                    </legend>
-                )}
+                {label && <FieldLegend label={label} />}
                 <Button
                     variant="ghost"
                     ref={ref}

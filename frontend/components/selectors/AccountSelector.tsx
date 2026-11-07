@@ -27,9 +27,10 @@ interface AccountSelectorProps {
     label?: string
     error?: string
     className?: string
+    variant?: 'standalone' | 'inline'
 }
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className, variant = 'standalone' }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -102,6 +103,96 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar...
         setSearchTerm(val)
     }
 
+    const popover = (
+        <SearchablePopover
+            open={open}
+            onOpenChange={setOpen}
+            searchValue={searchTerm}
+            onSearchChange={searchAccounts}
+            searchPlaceholder="Buscar código o nombre..."
+            items={filteredAccounts.slice(0, 20)}
+            isLoading={accountsLoading}
+            selectedId={value ? value.toString() : null}
+            getId={(a) => a.id}
+            onSelect={handleSelect}
+            emptyTitle="No se encontraron cuentas"
+            renderItem={(account) => (
+                <>
+                    <Check
+                        className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
+                        )}
+                    />
+                    <span className="font-mono text-xs font-semibold text-primary shrink-0 mr-2">{account.code}</span>
+                    <span className="text-sm truncate">{account.name}</span>
+                </>
+            )}
+            trigger={
+                <SelectorTrigger
+                    hasValue={!!selectedAccount}
+                    placeholder={placeholder}
+                    variant={variant}
+                    icon={<AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                    open={open}
+                    disabled={disabled}
+                >
+                    <span className="text-xs font-semibold text-primary shrink-0">{selectedAccount?.code}</span>
+                    <span className={cn(SELECTOR_VALUE_CLASS, "truncate")}>{selectedAccount?.name}</span>
+                </SelectorTrigger>
+            }
+        >
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                    setOpen(false)
+                    setModalOpen(true)
+                }}
+                className="w-full mb-1 text-xs text-center text-primary hover:underline"
+            >
+                Búsqueda avanzada…
+            </Button>
+        </SearchablePopover>
+    )
+
+    const modal = (
+        <BaseModal
+            asDialog
+            open={modalOpen}
+            onOpenChange={setModalOpen}
+            size="md"
+            title="Búsqueda Avanzada de Cuentas"
+            description="Seleccione una cuenta del plan contable."
+        >
+            <div className="space-y-4 pt-4">
+                <Input
+                    value={searchTerm}
+                    onChange={(e) => searchAccounts(e.target.value)}
+                />
+                <Collection.Root
+                    collection={accountCollection}
+                    label="Búsqueda de cuentas"
+                    onOpen={handleSelect}
+                >
+                    <Collection.View
+                        table={selectorAccountViews.table}
+                        emptyTitle="No se encontraron resultados"
+                    />
+                </Collection.Root>
+            </div>
+        </BaseModal>
+    )
+
+    if (variant === 'inline') {
+        return (
+            <>
+                {popover}
+                {modal}
+            </>
+        )
+    }
+
     return (
         <LabeledContainer
             label={label}
@@ -110,81 +201,8 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar...
             disabled={disabled}
             className={className}
         >
-            <SearchablePopover
-                open={open}
-                onOpenChange={setOpen}
-                searchValue={searchTerm}
-                onSearchChange={searchAccounts}
-                searchPlaceholder="Buscar código o nombre..."
-                items={filteredAccounts.slice(0, 20)}
-                isLoading={accountsLoading}
-                selectedId={value ? value.toString() : null}
-                getId={(a) => a.id}
-                onSelect={handleSelect}
-                emptyTitle="No se encontraron cuentas"
-                renderItem={(account) => (
-                    <>
-                        <Check
-                            className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
-                            )}
-                        />
-                        <span className="font-mono text-xs font-semibold text-primary shrink-0 mr-2">{account.code}</span>
-                        <span className="text-sm truncate">{account.name}</span>
-                    </>
-                )}
-                trigger={
-                    <SelectorTrigger
-                        hasValue={!!selectedAccount}
-                        placeholder={placeholder}
-                        icon={<AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                        open={open}
-                        disabled={disabled}
-                    >
-                        <span className="text-xs font-semibold text-primary shrink-0">{selectedAccount?.code}</span>
-                        <span className={cn(SELECTOR_VALUE_CLASS, "truncate")}>{selectedAccount?.name}</span>
-                    </SelectorTrigger>
-                }
-            >
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                        setOpen(false)
-                        setModalOpen(true)
-                    }}
-                    className="w-full mb-1 text-xs text-center text-primary hover:underline"
-                >
-                    Búsqueda avanzada…
-                </Button>
-            </SearchablePopover>
-
-            <BaseModal
-                asDialog
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-                size="md"
-                title="Búsqueda Avanzada de Cuentas"
-                description="Seleccione una cuenta del plan contable."
-            >
-                <div className="space-y-4 pt-4">
-                    <Input
-                        value={searchTerm}
-                        onChange={(e) => searchAccounts(e.target.value)}
-                    />
-                    <Collection.Root
-                        collection={accountCollection}
-                        label="Búsqueda de cuentas"
-                        onOpen={handleSelect}
-                    >
-                        <Collection.View
-                            table={selectorAccountViews.table}
-                            emptyTitle="No se encontraron resultados"
-                        />
-                    </Collection.Root>
-                </div>
-            </BaseModal>
+            {popover}
+            {modal}
         </LabeledContainer>
     )
 }

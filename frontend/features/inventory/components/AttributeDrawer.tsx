@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Drawer, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Drawer, CancelButton, FormFooter, FormSplitLayout, LabeledInput } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { SubmitButton } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
@@ -150,23 +150,13 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                                     control={form.control}
                                     name="name"
                                     render={({ field, fieldState }) => (
-                                        <div className="space-y-1">
-                                            <label className="text-3xs font-bold uppercase tracking-loose text-muted-foreground px-1">
-                                                Nombre del Atributo
-                                                <span className="text-destructive ml-0.5">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="w-full h-9 px-3 rounded-md border bg-transparent text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-                                                placeholder="Ej: Color, Talla"
-                                                {...field}
-                                            />
-                                            {fieldState.error && (
-                                                <p className="text-3xs font-medium text-destructive pl-1">
-                                                    {fieldState.error.message}
-                                                </p>
-                                            )}
-                                        </div>
+                                        <LabeledInput
+                                            label="Nombre del Atributo"
+                                            required
+                                            placeholder="Ej: Color, Talla"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     )}
                                 />
 

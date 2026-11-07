@@ -14,6 +14,7 @@ interface TreasuryAccountSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     disabled?: boolean
+    variant?: 'standalone' | 'inline'
 
     // Filtering options
     context?: PaymentContext
@@ -41,6 +42,7 @@ interface TreasuryAccountSelectorProps {
     label?: string
     error?: string
     required?: boolean
+    className?: string
 }
 
 function getIcon(accountType: string) {
@@ -68,6 +70,7 @@ export function TreasuryAccountSelector({
     onChange,
     placeholder = "Seleccionar...",
     disabled,
+    variant = 'standalone',
     context = 'GENERAL',
     terminalId,
     paymentMethod,
@@ -78,7 +81,8 @@ export function TreasuryAccountSelector({
     onSelect,
     label,
     error,
-    required
+    required,
+    className
 }: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [search, setSearch] = useState("")
@@ -113,63 +117,71 @@ export function TreasuryAccountSelector({
         setOpen(false)
     }
 
+    const popover = (
+        <SearchablePopover
+            open={open}
+            onOpenChange={setOpen}
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Buscar cuenta..."
+            items={filteredAccounts}
+            isLoading={loading}
+            selectedId={value ? value.toString() : null}
+            getId={(a) => a.id}
+            onSelect={handleSelect}
+            emptyTitle="No hay cuentas disponibles"
+            renderItem={(account) => (
+                <>
+                    <Check
+                        className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
+                        )}
+                    />
+                    <div className="flex flex-col flex-1">
+                        <div className="flex items-center justify-between">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                                {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
+                            </span>
+                        </div>
+                        {account.current_balance !== undefined && account.current_balance !== null && (
+                            <span className="text-xs text-muted-foreground">
+                                Disponible: <MoneyDisplay amount={account.current_balance} inline className="text-xs" />
+                            </span>
+                        )}
+                    </div>
+                </>
+            )}
+            trigger={
+                <SelectorTrigger
+                    hasValue={!!selectedAccount}
+                    placeholder={placeholder}
+                    variant={variant}
+                    icon={selectedAccount ? <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span> : undefined}
+                    open={open}
+                    disabled={disabled}
+                >
+                    <span className={`${SELECTOR_VALUE_CLASS} truncate`}>{selectedAccount?.name}</span>
+                    <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
+                        • {formatCurrency(selectedAccount?.current_balance || 0)}
+                    </span>
+                </SelectorTrigger>
+            }
+        />
+    )
+
+    if (variant === 'inline') return popover
+
     return (
         <LabeledContainer
             label={label}
             required={required}
             error={error}
             disabled={disabled}
+            containerClassName={className}
         >
-            <SearchablePopover
-                open={open}
-                onOpenChange={setOpen}
-                searchValue={search}
-                onSearchChange={setSearch}
-                searchPlaceholder="Buscar cuenta..."
-                items={filteredAccounts}
-                isLoading={loading}
-                selectedId={value ? value.toString() : null}
-                getId={(a) => a.id}
-                onSelect={handleSelect}
-                emptyTitle="No hay cuentas disponibles"
-                renderItem={(account) => (
-                    <>
-                        <Check
-                            className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
-                            )}
-                        />
-                        <div className="flex flex-col flex-1">
-                            <div className="flex items-center justify-between">
-                                <span className="font-medium">{account.name}</span>
-                                <span className="text-xs text-muted-foreground ml-2">
-                                    {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
-                                </span>
-                            </div>
-                            {account.current_balance !== undefined && account.current_balance !== null && (
-                                <span className="text-xs text-muted-foreground">
-                                    Disponible: <MoneyDisplay amount={account.current_balance} inline className="text-xs" />
-                                </span>
-                            )}
-                        </div>
-                    </>
-                )}
-                trigger={
-                    <SelectorTrigger
-                        hasValue={!!selectedAccount}
-                        placeholder={placeholder}
-                        icon={selectedAccount ? <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span> : undefined}
-                        open={open}
-                        disabled={disabled}
-                    >
-                        <span className={`${SELECTOR_VALUE_CLASS} truncate`}>{selectedAccount?.name}</span>
-                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
-                            • {formatCurrency(selectedAccount?.current_balance || 0)}
-                        </span>
-                    </SelectorTrigger>
-                }
-            />
+            {popover}
         </LabeledContainer>
     )
 }

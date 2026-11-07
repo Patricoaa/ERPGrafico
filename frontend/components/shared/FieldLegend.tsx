@@ -46,11 +46,9 @@ export function FieldLegend({
         "px-1.5 text-2xs font-bold uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
         hasError
             ? "text-destructive"
-            : disabled
-                ? "text-muted-foreground/40"
-                : isFocused
-                    ? "text-primary"
-                    : "text-muted-foreground group-focus-within:text-primary",
+            : isFocused
+                ? "text-primary"
+                : "text-muted-foreground group-focus-within:text-primary",
         className
     )
 
@@ -104,9 +102,7 @@ export const fieldLegendClasses = (
     `px-1.5 text-2xs font-bold uppercase tracking-widest transition-colors duration-200 ${
         hasError
             ? "text-destructive"
-            : disabled
-                ? "text-muted-foreground/40"
-                : isFocused
-                    ? "text-primary"
-                    : "text-muted-foreground group-focus-within:text-primary"
+            : isFocused
+                ? "text-primary"
+                : "text-muted-foreground group-focus-within:text-primary"
     }`

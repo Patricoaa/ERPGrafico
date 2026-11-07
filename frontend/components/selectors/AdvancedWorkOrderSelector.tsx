@@ -24,6 +24,7 @@ interface AdvancedWorkOrderSelectorProps {
     placeholder?: string
     className?: string
     hint?: string
+    variant?: 'standalone' | 'inline'
 }
 
 export function AdvancedWorkOrderSelector({
@@ -35,7 +36,8 @@ export function AdvancedWorkOrderSelector({
     error,
     required,
     className,
-    hint
+    hint,
+    variant = 'standalone'
 }: AdvancedWorkOrderSelectorProps) {
     const { orders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useWorkOrderSearch()
     const [open, setOpen] = useState(false)
@@ -89,6 +91,91 @@ export function AdvancedWorkOrderSelector({
         onChange(null)
     }
 
+    const popover = (
+        <SearchablePopover
+            open={open}
+            onOpenChange={setOpen}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar por N° OT o Producto..."
+            items={orders}
+            isLoading={searchLoading}
+            selectedId={selectedOrder ? selectedOrder.id.toString() : null}
+            getId={(o) => o.id}
+            onSelect={handleSelect}
+            emptyTitle={searchTerm ? "No se encontraron órdenes" : "Escriba para buscar"}
+            renderItem={(order) => (
+                <div className="flex items-center gap-3 w-full overflow-hidden">
+                    <div className="flex-shrink-0 p-2 bg-muted rounded-md">
+                        <WorkOrderIcon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex flex-col overflow-hidden flex-1">
+                        <div className="flex items-center justify-between">
+                            <span className="truncate font-bold text-xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</span>
+                            <span className="text-4xs font-mono text-muted-foreground">
+                                {format(new Date(order.created_at), "dd/MM/yyyy")}
+                            </span>
+                        </div>
+                        <span className="text-3xs text-muted-foreground uppercase font-bold truncate">
+                            {order.product_name}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        <DataCell.Action
+                            action="detail"
+                            onClick={(e) => openPreview(e, order.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        />
+                        {selectedOrder?.id === order.id && (
+                            <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                        )}
+                    </div>
+                </div>
+            )}
+            trigger={
+                <SelectorTrigger
+                    hasValue={!!selectedOrder}
+                    placeholder={placeholder}
+                    variant={variant}
+                    open={open}
+                    disabled={disabled}
+                    className={cn(disabled && "opacity-50 cursor-not-allowed")}
+                    chevronClassName="h-4 w-4 opacity-40"
+                    trailing={selectedOrder ? (
+                        <div
+                            className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
+                            onClick={clearSelection}
+                        >
+                            <X className="h-3 w-3" />
+                        </div>
+                    ) : undefined}
+                >
+                    <WorkOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="text-sm text-primary shrink-0">{selectedOrder ? formatEntityDisplay('production.workorder', selectedOrder) : null}</span>
+                    <span className="text-sm text-muted-foreground truncate">{selectedOrder?.product_name}</span>
+                </SelectorTrigger>
+            }
+        />
+    )
+
+    const wizard = previewId ? (
+        <WorkOrderWizard
+            mode={{ kind: 'manage', orderId: previewId }}
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+        />
+    ) : null
+
+    if (variant === 'inline') {
+        return (
+            <>
+                {popover}
+                {wizard}
+            </>
+        )
+    }
+
     return (
         <LabeledContainer
             label={label}
@@ -103,79 +190,9 @@ export function AdvancedWorkOrderSelector({
             containerClassName={className}
         >
             <div className="flex items-center w-full">
-                <SearchablePopover
-                    open={open}
-                    onOpenChange={setOpen}
-                    searchValue={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    searchPlaceholder="Buscar por N° OT o Producto..."
-                    items={orders}
-                    isLoading={searchLoading}
-                    selectedId={selectedOrder ? selectedOrder.id.toString() : null}
-                    getId={(o) => o.id}
-                    onSelect={handleSelect}
-                    emptyTitle={searchTerm ? "No se encontraron órdenes" : "Escriba para buscar"}
-                    renderItem={(order) => (
-                        <div className="flex items-center gap-3 w-full overflow-hidden">
-                            <div className="flex-shrink-0 p-2 bg-muted rounded-md">
-                                <WorkOrderIcon className="h-4 w-4 text-primary" />
-                            </div>
-                            <div className="flex flex-col overflow-hidden flex-1">
-                                <div className="flex items-center justify-between">
-                                    <span className="truncate font-bold text-xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</span>
-                                    <span className="text-4xs font-mono text-muted-foreground">
-                                        {format(new Date(order.created_at), "dd/MM/yyyy")}
-                                    </span>
-                                </div>
-                                <span className="text-3xs text-muted-foreground uppercase font-bold truncate">
-                                    {order.product_name}
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                                <DataCell.Action
-                                    action="detail"
-                                    onClick={(e) => openPreview(e, order.id)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                />
-                                {selectedOrder?.id === order.id && (
-                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                )}
-                            </div>
-                        </div>
-                    )}
-                    trigger={
-                        <SelectorTrigger
-                            hasValue={!!selectedOrder}
-                            placeholder={placeholder}
-                            open={open}
-                            disabled={disabled}
-                            className={cn(disabled && "opacity-50 cursor-not-allowed")}
-                            chevronClassName="h-4 w-4 opacity-40"
-                            trailing={selectedOrder ? (
-                                <div
-                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                    onClick={clearSelection}
-                                >
-                                    <X className="h-3 w-3" />
-                                </div>
-                            ) : undefined}
-                        >
-                            <WorkOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                            <span className="text-sm text-primary shrink-0">{selectedOrder ? formatEntityDisplay('production.workorder', selectedOrder) : null}</span>
-                            <span className="text-sm text-muted-foreground truncate">{selectedOrder?.product_name}</span>
-                        </SelectorTrigger>
-                    }
-                />
+                {popover}
             </div>
-
-            {previewId && (
-                <WorkOrderWizard
-                    mode={{ kind: 'manage', orderId: previewId }}
-                    open={previewOpen}
-                    onOpenChange={setPreviewOpen}
-                />
-            )}
+            {wizard}
         </LabeledContainer>
     )
 }

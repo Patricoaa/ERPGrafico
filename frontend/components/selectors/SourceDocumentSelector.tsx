@@ -23,10 +23,12 @@ interface SourceDocumentSelectorProps {
     disabled?: boolean
     label?: string
     error?: string
+    required?: boolean
     className?: string
     allowedLabels?: string[]
     /** Placeholder when no value is selected. Default: "Seleccionar..." */
     placeholder?: string
+    variant?: 'standalone' | 'inline'
 }
 
 export function SourceDocumentSelector({
@@ -35,9 +37,11 @@ export function SourceDocumentSelector({
     disabled = false,
     label,
     error,
+    required,
     className,
     allowedLabels,
-    placeholder = "Seleccionar..."
+    placeholder = "Seleccionar...",
+    variant = 'standalone'
 }: SourceDocumentSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -63,82 +67,90 @@ export function SourceDocumentSelector({
         onChange(null)
     }
 
+    const popover = (
+        <SearchablePopover
+            open={open}
+            onOpenChange={setOpen}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar factura, OC, despacho..."
+            items={filteredResults}
+            isLoading={isLoading}
+            selectedId={value ? `${value.label}-${value.object_id}` : null}
+            getId={(result) => `${result.label}-${result.id}`}
+            onSelect={handleSelect}
+            emptyTitle={searchTerm ? "Sin resultados" : "Escriba para buscar"}
+            renderItem={(result) => (
+                <div className="flex items-center gap-3 w-full overflow-hidden">
+                    <div className="flex-shrink-0 p-2 bg-muted rounded-md">
+                        {result.icon && (
+                            <DynamicIcon name={result.icon} className="h-4 w-4 text-primary" />
+                        )}
+                    </div>
+                    <div className="flex flex-col overflow-hidden flex-1">
+                        <div className="flex items-center justify-between">
+                            <span className="truncate font-medium">{result.display}</span>
+                            <span className="text-3xs text-muted-foreground ml-2">
+                                {result.title}
+                            </span>
+                        </div>
+                        {result.subtitle && (
+                            <span className="text-3xs text-muted-foreground truncate">
+                                {result.subtitle}
+                            </span>
+                        )}
+                    </div>
+                    {value?.content_type_id === result.content_type_id && value?.object_id === result.id && (
+                        <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    )}
+                </div>
+            )}
+            trigger={
+                <SelectorTrigger
+                    hasValue={!!value}
+                    placeholder={placeholder}
+                    variant={variant}
+                    open={open}
+                    disabled={disabled}
+                    trailing={value ? (
+                        <X
+                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={handleClear}
+                        />
+                    ) : undefined}
+                >
+                    {value?.icon && (
+                        <DynamicIcon name={value.icon} className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    )}
+                    {value && hasEntityDrawer(value.label) ? (
+                        <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => { e.stopPropagation(); openEntity(value.label, value.object_id, value) }}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openEntity(value.label, value.object_id, value) } }}
+                            className="text-sm text-primary underline truncate hover:text-primary/80 cursor-pointer"
+                        >
+                            {value.display || `Documento #${value.object_id}`}
+                        </span>
+                    ) : (
+                        <span className="text-sm text-foreground truncate">{value?.display || (value ? `Documento #${value.object_id}` : "")}</span>
+                    )}
+                </SelectorTrigger>
+            }
+        />
+    )
+
+    if (variant === 'inline') return popover
+
     return (
         <LabeledContainer
             label={label}
+            required={required}
             error={error}
             disabled={disabled}
-            className={className}
+            containerClassName={className}
         >
-            <SearchablePopover
-                open={open}
-                onOpenChange={setOpen}
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
-                searchPlaceholder="Buscar factura, OC, despacho..."
-                items={filteredResults}
-                isLoading={isLoading}
-                selectedId={value ? `${value.label}-${value.object_id}` : null}
-                getId={(result) => `${result.label}-${result.id}`}
-                onSelect={handleSelect}
-                emptyTitle={searchTerm ? "Sin resultados" : "Escriba para buscar"}
-                renderItem={(result) => (
-                    <div className="flex items-center gap-3 w-full overflow-hidden">
-                        <div className="flex-shrink-0 p-2 bg-muted rounded-md">
-                            {result.icon && (
-                                <DynamicIcon name={result.icon} className="h-4 w-4 text-primary" />
-                            )}
-                        </div>
-                        <div className="flex flex-col overflow-hidden flex-1">
-                            <div className="flex items-center justify-between">
-                                <span className="truncate font-medium">{result.display}</span>
-                                <span className="text-3xs text-muted-foreground ml-2">
-                                    {result.title}
-                                </span>
-                            </div>
-                            {result.subtitle && (
-                                <span className="text-3xs text-muted-foreground truncate">
-                                    {result.subtitle}
-                                </span>
-                            )}
-                        </div>
-                        {value?.content_type_id === result.content_type_id && value?.object_id === result.id && (
-                            <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                        )}
-                    </div>
-                )}
-                trigger={
-                    <SelectorTrigger
-                        hasValue={!!value}
-                        placeholder={placeholder}
-                        open={open}
-                        disabled={disabled}
-                        trailing={value ? (
-                            <X
-                                className="h-3.5 w-3.5 shrink-0 text-muted-foreground hover:text-destructive"
-                                onClick={handleClear}
-                            />
-                        ) : undefined}
-                    >
-                        {value?.icon && (
-                            <DynamicIcon name={value.icon} className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        )}
-                        {value && hasEntityDrawer(value.label) ? (
-                            <span
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => { e.stopPropagation(); openEntity(value.label, value.object_id, value) }}
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openEntity(value.label, value.object_id, value) } }}
-                                className="text-sm text-primary underline truncate hover:text-primary/80 cursor-pointer"
-                            >
-                                {value.display || `Documento #${value.object_id}`}
-                            </span>
-                        ) : (
-                            <span className="text-sm text-foreground truncate">{value?.display || (value ? `Documento #${value.object_id}` : "")}</span>
-                        )}
-                    </SelectorTrigger>
-                }
-            />
+            {popover}
         </LabeledContainer>
     )
 }

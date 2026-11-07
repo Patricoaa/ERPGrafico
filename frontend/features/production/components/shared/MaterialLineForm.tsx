@@ -9,8 +9,7 @@
  */
 
 import { Button } from '@/components/ui/button'
-import { LabeledInput, Skeleton } from '@/components/shared'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LabeledInput, LabeledSelect, Skeleton } from '@/components/shared'
 import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
 import type { Product } from '@/types/entities'
@@ -74,26 +73,23 @@ export function MaterialLineForm({ value, onChange, onSave, onCancel, saving = f
             }}
           />
           {value.productObj?.has_variants && (
-            <Select
-              value={value.productId ?? ''}
-              onValueChange={(val) => {
-                const v = variants.find((vr) => vr.id.toString() === val)
-                set({ productId: val, uomId: v?.uom ? v.uom.toString() : value.uomId })
-              }}
-            >
-              <SelectTrigger className="h-9 w-full bg-primary/5 border-primary/20 rounded-md">
-                <SelectValue placeholder="Seleccione variante requerida..." />
-              </SelectTrigger>
-              <SelectContent>
-                {variants.length > 0 ? variants.map((v) => (
-                  <SelectItem key={v.id} value={v.id.toString()}>{v.variant_display_name ?? v.name}</SelectItem>
-                )) : isVariantsLoading ? (
-                  <div className="p-2 space-y-2"><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-full" /></div>
-                ) : (
-                  <div className="p-2 text-xs text-center italic">Sin variantes disponibles</div>
-                )}
-              </SelectContent>
-            </Select>
+            isVariantsLoading ? (
+              <Skeleton className="h-notched-field w-full" />
+            ) : (
+              <LabeledSelect
+                label="Variante"
+                placeholder="Seleccione variante requerida..."
+                value={value.productId ?? ''}
+                onChange={(val) => {
+                  const v = variants.find((vr) => vr.id.toString() === val)
+                  set({ productId: val, uomId: v?.uom ? v.uom.toString() : value.uomId })
+                }}
+                options={variants.length > 0
+                  ? variants.map((v) => ({ value: v.id.toString(), label: v.variant_display_name ?? v.name }))
+                  : [{ value: '__none__', label: <span className="italic text-muted-foreground">Sin variantes disponibles</span> }]
+                }
+              />
+            )
           )}
         </div>
         <div className="w-full md:w-32">

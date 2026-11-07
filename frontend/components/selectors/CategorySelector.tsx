@@ -24,6 +24,7 @@ interface CategorySelectorProps {
     allowNone?: boolean
     noneLabel?: string
     icon?: React.ReactNode
+    variant?: 'standalone' | 'inline'
 }
 
 export function CategorySelector({
@@ -39,7 +40,8 @@ export function CategorySelector({
     excludeId,
     allowNone = false,
     noneLabel = "Ninguno",
-    icon
+    icon,
+    variant = 'standalone'
 }: CategorySelectorProps) {
     const [open, setOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -73,6 +75,98 @@ export function CategorySelector({
         setIsCreateModalOpen(false)
     }, [handleSelect])
 
+    const popover = (
+        <SearchablePopover
+            open={open}
+            onOpenChange={setOpen}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar categoría..."
+            items={filteredCategories}
+            isLoading={isLoading}
+            selectedId={value && value !== "none" && value !== "__none__" ? value.toString() : null}
+            getId={(c) => c.id}
+            onSelect={handleSelect}
+            renderItem={(cat) => (
+                <>
+                    <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
+                    <span className="font-medium flex-1">{cat.name}</span>
+                    {selectedCategory?.id === cat.id && (
+                        <Check className="ml-auto h-4 w-4 shrink-0 opacity-100" />
+                    )}
+                </>
+            )}
+            trigger={
+                <SelectorTrigger
+                    hasValue={!!selectedCategory}
+                    placeholder={placeholder}
+                    variant={variant}
+                    icon={icon}
+                    open={open}
+                    disabled={disabled}
+                    showChevron={!disabled}
+                    chevronClassName="h-3 w-3 opacity-30"
+                    className={variant === 'standalone' ? "h-full! min-h-0! px-2" : undefined}
+                >
+                    {!icon && <Tag className="h-3 w-3 shrink-0 text-primary" />}
+                    <span className={`${SELECTOR_VALUE_CLASS} truncate leading-none`}>{selectedCategory?.name}</span>
+                </SelectorTrigger>
+            }
+            beforeItems={allowNone ? (
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-sm hover:bg-muted"
+                    onClick={() => {
+                        onChange(null)
+                        setOpen(false)
+                        setSearchTerm("")
+                    }}
+                >
+                    <span className="text-muted-foreground">{noneLabel}</span>
+                    {(!value || value === "none" || value === "__none__") && (
+                        <Check className="ml-auto h-4 w-4 shrink-0" />
+                    )}
+                </Button>
+            ) : undefined}
+            searchRightAction={showPlusButton ? (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                onClick={() => {
+                                    setOpen(false)
+                                    setIsCreateModalOpen(true)
+                                }}
+                            >
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Nueva categoría</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            ) : undefined}
+        />
+    )
+
+    if (variant === 'inline') {
+        return (
+            <>
+                {popover}
+                <CategoryDrawer
+                    open={isCreateModalOpen}
+                    onOpenChange={setIsCreateModalOpen}
+                    onSuccess={handleCreateSuccess}
+                />
+            </>
+        )
+    }
+
     return (
         <LabeledContainer
             label={label}
@@ -81,82 +175,7 @@ export function CategorySelector({
             disabled={disabled}
             className={className}
         >
-            <SearchablePopover
-                open={open}
-                onOpenChange={setOpen}
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
-                searchPlaceholder="Buscar categoría..."
-                items={filteredCategories}
-                isLoading={isLoading}
-                selectedId={value && value !== "none" && value !== "__none__" ? value.toString() : null}
-                getId={(c) => c.id}
-                onSelect={handleSelect}
-                renderItem={(cat) => (
-                    <>
-                        <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />
-                        <span className="font-medium flex-1">{cat.name}</span>
-                        {selectedCategory?.id === cat.id && (
-                            <Check className="ml-auto h-4 w-4 shrink-0 opacity-100" />
-                        )}
-                    </>
-                )}
-                trigger={
-                    <SelectorTrigger
-                        hasValue={!!selectedCategory}
-                        placeholder={placeholder}
-                        icon={icon}
-                        open={open}
-                        disabled={disabled}
-                        showChevron={!disabled}
-                        chevronClassName="h-3 w-3 opacity-30"
-                        className="h-full! min-h-0! px-2"
-                    >
-                        {!icon && <Tag className="h-3 w-3 shrink-0 text-primary" />}
-                        <span className={`${SELECTOR_VALUE_CLASS} truncate leading-none`}>{selectedCategory?.name}</span>
-                    </SelectorTrigger>
-                }
-                beforeItems={allowNone ? (
-                    <Button
-                        variant="ghost"
-                        className="w-full justify-start text-sm hover:bg-muted"
-                        onClick={() => {
-                            onChange(null)
-                            setOpen(false)
-                            setSearchTerm("")
-                        }}
-                    >
-                        <span className="text-muted-foreground">{noneLabel}</span>
-                        {(!value || value === "none" || value === "__none__") && (
-                            <Check className="ml-auto h-4 w-4 shrink-0" />
-                        )}
-                    </Button>
-                ) : undefined}
-                searchRightAction={showPlusButton ? (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
-                                    onClick={() => {
-                                        setOpen(false)
-                                        setIsCreateModalOpen(true)
-                                    }}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Nueva categoría</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                ) : undefined}
-            />
-
+            {popover}
             <CategoryDrawer
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}

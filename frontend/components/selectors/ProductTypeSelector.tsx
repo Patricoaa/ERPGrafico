@@ -16,6 +16,8 @@ interface ProductTypeSelectorProps {
     lockedType?: string
     /** Placeholder when no value is selected. Default: "Seleccionar..." */
     placeholder?: string
+    variant?: 'standalone' | 'inline'
+    className?: string
 }
 
 const PRODUCT_TYPES = [
@@ -34,11 +36,56 @@ export function ProductTypeSelector({
     required,
     error,
     lockedType,
-    placeholder = "Seleccionar..."
+    placeholder = "Seleccionar...",
+    variant = 'standalone',
+    className
 }: ProductTypeSelectorProps) {
     const [, setOpen] = useState(false)
     const selectedType = PRODUCT_TYPES.find(t => t.id === value)
     const isDisabled = disabled || !!lockedType
+
+    const select = (
+        <Select
+            disabled={isDisabled}
+            onValueChange={onChange}
+            value={value || undefined}
+            onOpenChange={setOpen}
+        >
+            <SelectTrigger
+                role="combobox"
+                size="sm"
+                className={cn(
+                    SELECTOR_TRIGGER_BASE,
+                    variant === 'standalone'
+                        ? "h-6! min-h-0! py-0 px-2 border-none bg-transparent hover:bg-transparent"
+                        : cn("h-9 py-0 px-2 bg-background hover:bg-primary/[0.02]", className)
+                )}
+            >
+                <div className="flex items-center gap-2 flex-1 min-w-0 h-full">
+                    {selectedType ? (
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1 h-full">
+                            <selectedType.icon className={cn("h-3 w-3 shrink-0", selectedType.color)} />
+                            <span className="text-sm text-foreground truncate leading-none">{selectedType.label}</span>
+                        </div>
+                    ) : (
+                        <span className={cn(SELECTOR_PLACEHOLDER_CLASS, "leading-none")}>{placeholder}</span>
+                    )}
+                </div>
+            </SelectTrigger>
+            <SelectContent position="popper" sideOffset={4} className="w-[var(--radix-select-trigger-width)]">
+                {PRODUCT_TYPES.map((t) => (
+                    <SelectItem key={t.id} value={t.id} className="cursor-pointer">
+                        <div className="flex items-center gap-2">
+                            <t.icon className={cn("h-3.5 w-3.5", t.color)} />
+                            <span className="text-xs font-medium">{t.label}</span>
+                        </div>
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    )
+
+    if (variant === 'inline') return select
 
     return (
         <LabeledContainer
@@ -46,44 +93,9 @@ export function ProductTypeSelector({
             required={required}
             error={error}
             disabled={isDisabled}
-            containerClassName="w-full"
+            containerClassName={cn("w-full", className)}
         >
-            <Select
-                disabled={isDisabled}
-                onValueChange={onChange}
-                value={value || undefined}
-                onOpenChange={setOpen}
-            >
-                <SelectTrigger
-                    role="combobox"
-                    size="sm"
-                    className={cn(
-                        SELECTOR_TRIGGER_BASE,
-                        "h-6! min-h-0! py-0 px-2 border-none bg-transparent hover:bg-transparent"
-                    )}
-                >
-                    <div className="flex items-center gap-2 flex-1 min-w-0 h-full">
-                        {selectedType ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1 h-full">
-                                <selectedType.icon className={cn("h-3 w-3 shrink-0", selectedType.color)} />
-                                <span className="text-sm text-foreground truncate leading-none">{selectedType.label}</span>
-                            </div>
-                        ) : (
-                            <span className={cn(SELECTOR_PLACEHOLDER_CLASS, "leading-none")}>{placeholder}</span>
-                        )}
-                    </div>
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4} className="w-[var(--radix-select-trigger-width)]">
-                    {PRODUCT_TYPES.map((t) => (
-                        <SelectItem key={t.id} value={t.id} className="cursor-pointer">
-                            <div className="flex items-center gap-2">
-                                <t.icon className={cn("h-3.5 w-3.5", t.color)} />
-                                <span className="text-xs font-medium">{t.label}</span>
-                            </div>
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            {select}
         </LabeledContainer>
     )
 }

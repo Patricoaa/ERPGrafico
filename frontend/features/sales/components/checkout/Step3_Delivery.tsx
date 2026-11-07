@@ -4,13 +4,7 @@ import { useState } from "react"
 import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, InfoBlock} from "@/components/shared"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { LabeledSelect } from "@/components/shared"
 import {
     Table,
     TableBody,
@@ -24,25 +18,19 @@ import { useTouchMode } from "@/hooks/useTouchMode"
 
 import { type CheckoutDeliveryData, type SaleOrderLine } from "../../types"
 
-function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
+function UoMCell({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
     const prodId = line.product && typeof line.product === 'object' ? line.product.id : line.product
     const { data: allowedUoms = [] } = useAllowedUoMs((prodId ?? line.id) ?? null, 'sale')
 
     if (allowedUoms.length <= 1) return <span>{line.uom_name || line.uom}</span>
 
     return (
-        <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
-            <SelectTrigger className="h-7 text-xs w-24">
-                <SelectValue placeholder="Seleccionar..." />
-            </SelectTrigger>
-            <SelectContent>
-                {allowedUoms.map((u: {id: number, name: string}) => (
-                    <SelectItem key={u.id} value={u.id.toString()} className="text-xs">
-                        {u.name}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        <LabeledSelect
+            variant="inline"
+            value={currentUom?.toString() ?? ''}
+            onChange={(val) => onUomChange(parseInt(val))}
+            options={allowedUoms.map((u: { id: number; name: string }) => ({ value: u.id.toString(), label: u.name }))}
+        />
     )
 }
 
@@ -222,7 +210,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                 />
                                             </TableCell>
                                             <TableCell className="text-sm text-muted-foreground font-medium">
-                                                <UoMSelector
+                                                <UoMCell
                                                     line={line}
                                                     currentUom={(deliveryData.partialQuantities || []).find((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.uom || line.uom}
                                                     onUomChange={(uomId) => {

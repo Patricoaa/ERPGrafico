@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
-import { DataTable, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTable, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, LabeledSelect } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useForm, Controller } from "react-hook-form"
@@ -249,26 +249,20 @@ export function MappingConfigDrawer({
                                     {(!fieldValue || fieldValue === "none") && (
                                         <AlertCircle className="h-3.5 w-3.5 text-warning shrink-0" />
                                     )}
-                                    <Select
+                                    <LabeledSelect
+                                        variant="inline"
                                         value={currentValue}
-                                        onValueChange={field.onChange}
-                                    >
-                                        <SelectTrigger className={cn(
+                                        onChange={field.onChange}
+                                        className={cn(
                                             "h-8 text-2xs font-medium w-[200px]",
                                             isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
                                             (!fieldValue || fieldValue === "none") && !isModified && "text-warning border-warning/30 bg-warning/5"
-                                        )}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                            <SelectItem value="none" className="text-muted-foreground italic">Sin mapeo</SelectItem>
-                                            {getCategories().map(cat => (
-                                                <SelectItem key={cat.value} value={cat.value}>
-                                                    {cat.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        )}
+                                        options={[
+                                            { value: "none", label: <span className="text-muted-foreground italic">Sin mapeo</span> },
+                                            ...getCategories().map(cat => ({ value: cat.value, label: cat.label }))
+                                        ]}
+                                    />
                                 </div>
                             )
                         }}

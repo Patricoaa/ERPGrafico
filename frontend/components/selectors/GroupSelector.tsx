@@ -16,9 +16,11 @@ interface GroupSelectorProps {
     disabled?: boolean
     label?: string
     error?: string
+    required?: boolean
+    className?: string
 }
 
-export function GroupSelector({ value, onChange, valueMode = "name", placeholder = "Seleccionar...", disabled = false, label, error }: GroupSelectorProps) {
+export function GroupSelector({ value, onChange, valueMode = "name", placeholder = "Seleccionar...", disabled = false, label, error, required, className }: GroupSelectorProps) {
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
@@ -59,7 +61,7 @@ export function GroupSelector({ value, onChange, valueMode = "name", placeholder
     }, [onChange, valueMode])
 
     return (
-        <LabeledContainer label={label} error={error} disabled={disabled}>
+        <LabeledContainer label={label} error={error} disabled={disabled} required={required} containerClassName={className}>
             <SearchablePopover
                 open={open}
                 onOpenChange={setOpen}
