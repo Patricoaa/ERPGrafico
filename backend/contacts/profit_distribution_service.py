@@ -497,6 +497,9 @@ class ProfitDistributionService:
         if not treasury_account_id:
             raise ValidationError("Falta seleccionar la cuenta de tesorería (treasury_account_id).")
 
+        # Serializes concurrent payments of a resolution, so the pending amounts below stay valid.
+        resolution = ProfitDistributionResolution.objects.select_for_update().get(pk=resolution.pk)
+
         if resolution.status != ProfitDistributionResolution.Status.EXECUTED:
             raise ValidationError(
                 "La resolución debe estar ejecutada contablemente para realizar pagos."
@@ -505,15 +508,17 @@ class ProfitDistributionService:
         settings = ProfitDistributionService._get_settings()
         from .partner_models import ProfitDistributionLineDestination, ProfitDistributionPayment
 
+        amounts_by_partner: dict = {}
+        for p_data in payments_data:
+            amount = Decimal(str(p_data.get("amount", 0)))
+            if amount > 0:
+                partner_id = p_data.get("partner_id")
+                amounts_by_partner[partner_id] = amounts_by_partner.get(partner_id, Decimal("0")) + amount
+
         # Verify and Aggregate total payment
         total_payment = Decimal("0")
         valid_payments = []
-        for p_data in payments_data:
-            partner_id = p_data.get("partner_id")
-            amount = Decimal(str(p_data.get("amount", 0)))
-            if amount <= 0:
-                continue
-
+        for partner_id, amount in amounts_by_partner.items():
             # Find the total dividend payable for this partner
             destinations = ProfitDistributionLineDestination.objects.filter(
                 line__resolution=resolution,
@@ -547,18 +552,19 @@ class ProfitDistributionService:
             raise ValidationError("Cuenta de tesorería no válida.")
 
         is_bank = treasury_account.account_type != TreasuryAccount.Type.CASH
+        payment_date = timezone.localdate()
 
         # Create Journal Entry
         entry = JournalEntry.objects.create(
             description=GlosaBuilder.build(GlosaBuilder.PAGO_DIVIDENDOS, resolution.display_id, "", total_payment, extra=[f"Acta: {resolution.acta_number}"]),
-            date=timezone.now().date(),
+            date=payment_date,
             status=JournalEntry.Status.POSTED,
             source_content_type=ContentType.objects.get_for_model(ProfitDistributionResolution),
             source_object_id=resolution.id,
         )
 
         # 1. Credit Treasury Account
-        bank_account = treasury_account.accounting_account
+        bank_account = treasury_account.account
         if not bank_account:
             raise ValidationError(
                 "La cuenta de tesorería seleccionada no tiene cuenta contable asociada."
@@ -567,7 +573,9 @@ class ProfitDistributionService:
         JournalItem.objects.create(
             entry=entry,
             account=bank_account,
-            label=GlosaBuilder.item(Roles.DIVIDENDO_PAGAR, f"Ej. {resolution.fiscal_year}", resolution.display_id),
+            label=GlosaBuilder.item(
+                Roles.BANCO if is_bank else Roles.EFECTIVO, f"Ej. {resolution.fiscal_year}", resolution.display_id
+            ),
             debit=0,
             credit=total_payment,
         )
@@ -588,7 +596,8 @@ class ProfitDistributionService:
             JournalItem.objects.create(
                 entry=entry,
                 account=p_div_account,
-                label=GlosaBuilder.item(Roles.BANCO if is_bank else Roles.EFECTIVO, p_obj.name, resolution.display_id),
+                partner=p_obj,
+                label=GlosaBuilder.item(Roles.DIVIDENDO_PAGAR, p_obj.name, resolution.display_id),
                 debit=p_amount,
                 credit=0,
             )
@@ -597,13 +606,17 @@ class ProfitDistributionService:
 
         # 3. Create Treasury Movement
         movement = TreasuryMovement.objects.create(
-            account=treasury_account,
-            movement_type=TreasuryMovement.MovementType.OUTFLOW,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=(
+                TreasuryMovement.Method.TRANSFER if is_bank else TreasuryMovement.Method.CASH
+            ),
             amount=total_payment,
-            date=timezone.now().date(),
-            description=f"Pago Dividendos - Ej. {resolution.fiscal_year}",
+            from_account=treasury_account,
+            date=payment_date,
+            notes=f"Pago Dividendos - Ej. {resolution.fiscal_year}",
             journal_entry=entry,
-            is_reconciled=False,
+            justify_reason=TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL,
+            is_pending_registration=False,
             created_by=executed_by,
         )
 
@@ -617,7 +630,7 @@ class ProfitDistributionService:
                 partner_id=partner_id,
                 transaction_type=PartnerTransaction.Type.DIVIDEND_PAYMENT,
                 amount=amount,
-                date=timezone.now().date(),
+                date=payment_date,
                 description=f"Pago Efectivo Dividendo Ej. {resolution.fiscal_year}",
                 journal_entry=entry,
                 treasury_movement=movement,
