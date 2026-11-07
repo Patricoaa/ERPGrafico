@@ -1,0 +1,18 @@
+# Overrides for the E2E workflow: isolates CI from the real services configured in .env.dev.
+services:
+  backend: &isolated
+    environment:
+      DB_HOST: db
+      USE_S3: "False"
+      SENTRY_DSN: ""
+      HEALTHCHECK_PING_URL: ""
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend,nginx
+      CSRF_TRUSTED_ORIGINS: http://localhost
+      CORS_ALLOWED_ORIGINS: http://localhost,http://localhost:3000
+  celery-worker: *isolated
+  celery-beat: *isolated
+  frontend:
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost/api
+      NEXT_PUBLIC_SENTRY_DSN: ""
+      SENTRY_AUTH_TOKEN: ""

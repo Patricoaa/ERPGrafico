@@ -5,7 +5,6 @@ import { PageHeader } from "@/components/shared"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   ACCOUNTING_TABS,
-  ACCOUNTING_CONFIG_SUB_TABS,
   getAccountingTab,
   getAccountingConfigSubTab,
 } from "@/features/accounting/navigation"

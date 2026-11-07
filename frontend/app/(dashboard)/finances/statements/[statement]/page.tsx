@@ -8,7 +8,6 @@ import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
 const STATEMENTS_CONFIG = FINANCES_STATEMENTS_SUB_TABS
 
-type StatementKey = "bs" | "pl" | "cf"
 
 export function generateStaticParams() {
   return STATEMENTS_CONFIG.map((s) => ({ statement: s.value }))

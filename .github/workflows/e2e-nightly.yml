@@ -8,11 +8,11 @@ on:
 jobs:
   e2e:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v5
       with:
         node-version: 20
         cache: 'npm'
@@ -20,20 +20,51 @@ jobs:
         
     - name: Install dependencies
       working-directory: frontend
-      run: npm ci
-      
+      run: npm ci --legacy-peer-deps
+
     - name: Install Playwright Browsers
       working-directory: frontend
-      run: npx playwright install --with-deps
-      
-    - name: Set up backend/services (Docker)
-      run: docker compose -f docker-compose.yml up -d
-      
+      run: npx playwright install --with-deps chromium
+
+    - name: Start services
+      run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build
+
+    - name: Wait for backend
+      run: |
+        for i in $(seq 1 60); do
+          # Django answers 405 to GET on this route; nginx answers 502 until it is up.
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/api/token/ || true)
+          [ "$code" = "405" ] && exit 0
+          sleep 5
+        done
+        docker compose logs --tail=80 backend
+        exit 1
+
+    - name: Load demo data
+      run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml exec -T backend python manage.py setup_demo_data
+
+    - name: Wait for frontend
+      run: |
+        for i in $(seq 1 60); do
+          curl -fs -o /dev/null http://localhost:3000/login && exit 0
+          sleep 5
+        done
+        docker compose logs --tail=80 frontend
+        exit 1
+
     - name: Run E2E tests
       working-directory: frontend
+      env:
+        BASE_URL: http://localhost:3000
+        E2E_USERNAME: admin
+        E2E_PASSWORD: "111111" # Demo user from setup_demo_data, local to this job
       run: npx playwright test
-      
-    - uses: actions/upload-artifact@v4
+
+    - name: Service logs
+      if: failure()
+      run: docker compose logs --tail=100 backend frontend
+
+    - uses: actions/upload-artifact@v6
       if: always()
       with:
         name: playwright-report

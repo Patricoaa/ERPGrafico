@@ -3,7 +3,6 @@ import { PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { PartnersSettingsView } from "@/features/settings"
 import {
   FINANCES_TABS,
-  FINANCES_PARTNERS_SUB_TABS,
   getFinancesTab,
   getFinancesPartnersSubTab,
 } from "@/features/finances/navigation"

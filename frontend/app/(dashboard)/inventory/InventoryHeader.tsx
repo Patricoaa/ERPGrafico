@@ -5,8 +5,6 @@ import { PageHeader } from "@/components/shared"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   INVENTORY_TABS,
-  INVENTORY_PRODUCTS_SUB_TABS,
-  INVENTORY_OPERATIONS_SUB_TABS,
   INVENTORY_CONFIG_SUB_TABS,
   getInventoryTab,
   getInventoryProductsSubTab,

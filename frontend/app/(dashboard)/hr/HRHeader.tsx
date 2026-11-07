@@ -5,7 +5,6 @@ import { PageHeader } from "@/components/shared"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   HR_TABS,
-  HR_CONFIG_SUB_TABS,
   getHRTab,
   getHRConfigSubTab,
 } from "@/features/hr/navigation"
