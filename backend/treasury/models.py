@@ -2991,6 +2991,17 @@ class BankLoan(models.Model):
     Ver `docs/50-audit/bancos/fase-2-creditos-bancarios.md` (F2.2).
     """
 
+    # ADR-0091: editable only in DRAFT. Once disbursed it changes through its lifecycle actions.
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        mutable_when_locked=frozenset({"notes", "collateral_notes"}),
+        deletable=True,
+        locked_message=(
+            "El crédito ya fue desembolsado y no se puede modificar ni eliminar. "
+            "Use prepago o refinanciamiento."
+        ),
+    )
+
     class Status(models.TextChoices):
         DRAFT = "DRAFT", _("Borrador")
         ACTIVE = "ACTIVE", _("Vigente")

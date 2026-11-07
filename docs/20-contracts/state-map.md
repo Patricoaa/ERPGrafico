@@ -368,6 +368,8 @@ Lifecycle gobernado por `treasury.loan_service.LoanService` (ADR-0033).
 | `REFINANCED` | `info` | — (terminal) | `refinance()` (cuotas pendientes → CANCELED) |
 | `DEFAULTED` | `destructive` | — (terminal) | Marca manual (futuro) |
 
+**Edición (ADR-0091):** todos los campos son editables en `DRAFT`. Desde `ACTIVE` solo `notes` y `collateral_notes`; los cambios financieros pasan por `prepay()` o `refinance()`. Solo se elimina en `DRAFT`.
+
 **Contabilidad:**
 - `disburse()`: `TreasuryMovement` INBOUND a `disbursement_account` con origen
   contable = `liability_account` (crédito al pasivo). Idempotente.
