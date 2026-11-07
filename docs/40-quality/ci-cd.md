@@ -23,7 +23,7 @@ Bloquean el job de backend `manage.py check`, las migraciones, el ratchet de Ruf
 
 ```yaml
 - npm ci --legacy-peer-deps
-- npm run lint          # non-blocking (FSD boundary errors en progreso)
+- npm run lint -- --quiet   # hard gate: solo errores; los warnings los controlan los ratchets
 - npm run type-check    # hard gate
 - npx playwright install --with-deps chromium   # stories de Storybook
 - npm run test -- --run --coverage

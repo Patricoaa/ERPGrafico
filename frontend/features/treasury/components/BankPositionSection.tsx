@@ -49,7 +49,7 @@ export function CheckingAccountCard({ account, bankName, onClick }: { account: B
                 </div>
             </div>
             <div>
-                <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Saldo de la cuenta</p>
+                <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Saldo de la cuenta</p>
                 <MoneyDisplay amount={account.current_balance} className="text-2xl font-black tracking-tighter tabular-nums" />
             </div>
             {disponible != null && (
@@ -88,16 +88,16 @@ export function LoanCard({ loan, bankName, onClick }: { loan: BankOverviewLoanIt
                 </span>
             </div>
             <div>
-                <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Saldo insoluto</p>
+                <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Saldo insoluto</p>
                 <MoneyDisplay amount={loan.outstanding_balance} className="text-2xl font-black tracking-tighter tabular-nums" />
             </div>
             <div className="grid grid-cols-2 gap-x-3">
                 <div>
-                    <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Capital</p>
+                    <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">Capital</p>
                     <MoneyDisplay amount={loan.principal} className="text-xs font-medium tabular-nums" />
                 </div>
                 <div>
-                    <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Cuotas pagadas</p>
+                    <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">Cuotas pagadas</p>
                     <p className="text-xs font-medium">
                         {loan.paid_installments_count} de {loan.installments_count}
                     </p>
@@ -132,12 +132,12 @@ export function CreditCardCard({ account, bankName, onClick }: { account: BankAc
                 </div>
             </div>
             <div>
-                <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Disponible de la tarjeta</p>
+                <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Disponible de la tarjeta</p>
                 <MoneyDisplay amount={available ?? 0} className="text-2xl font-black tracking-tighter tabular-nums" />
             </div>
             <div className="flex items-end justify-between gap-2">
                 <div>
-                    <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Cupo total</p>
+                    <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">Cupo total</p>
                     <MoneyDisplay amount={account.credit_limit ?? 0} className="text-xs font-medium tabular-nums" />
                 </div>
                 {network && (

@@ -9,16 +9,16 @@ on:
 jobs:
   frontend:
     name: Frontend
-    # Playwright has no Chromium build for ubuntu-latest (26.04) yet.
+    # Pinned: Playwright has no Chromium build for ubuntu-latest (26.04) yet.
     runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
@@ -29,7 +29,9 @@ jobs:
         run: npm ci --legacy-peer-deps
       
       - name: Lint
-        run: npm run lint || echo "Lint violations found (boundaries/FSD errors to fix incrementally)"
+        # Errors block. Warnings are tracked by ratchets (no-unsafe.contract.test.ts) and GitHub would
+        # only show the first 10 of ~600 as annotations.
+        run: npm run lint -- --quiet
 
       - name: Type Check
         run: npm run type-check
@@ -45,7 +47,7 @@ jobs:
 
   backend:
     name: Backend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:15
@@ -79,10 +81,10 @@ jobs:
       ALLOWED_HOSTS: "localhost,127.0.0.1"
       REDIS_URL: "redis://localhost:6379"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -139,12 +141,12 @@ jobs:
 
   security:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       

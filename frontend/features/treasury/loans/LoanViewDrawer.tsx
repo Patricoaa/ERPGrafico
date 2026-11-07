@@ -8,7 +8,7 @@ import {
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { DocumentSheet, SHEET_LEFT } from '@/features/documents'
-import { Collection, useEntityCollection, formatMoneyValue, formatDate } from '@/components/entity-view'
+import { Collection, useEntityCollection, formatMoneyValue, formatNumber, formatDate } from '@/components/entity-view'
 import { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from '../entity-view/loanInstallment.entity'
 import { useLoan } from '../hooks/useLoans'
 import { formatPlainDate } from '@/lib/utils'
@@ -25,14 +25,9 @@ interface Props {
 }
 
 function formatLoanMoney(value: string, currency: string) {
-    const n = parseFloat(value || '0')
-    if (currency === 'UF') {
-        return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} UF`
-    }
-    return new Intl.NumberFormat('es-CL', {
-        style: 'currency', currency: 'CLP',
-        minimumFractionDigits: 0, maximumFractionDigits: 0,
-    }).format(n)
+    const amount = value || '0'
+    // UF is not an ISO currency: Intl cannot format it as one.
+    return currency === 'UF' ? formatNumber(amount, 2, 'UF') : formatMoneyValue(amount, 'CLP')
 }
 
 function getLoanLifecycle(loan: BankLoan): LifecycleStep[] {

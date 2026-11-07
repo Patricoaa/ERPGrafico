@@ -122,6 +122,14 @@ export function PurchaseCheckoutWizard({
         }
     }, [order])
 
+    const [dteData, setDteData] = useState<DTEData>({
+        type: 'FACTURA',
+        number: '',
+        date: '',
+        attachment: null,
+        isPending: false
+    })
+
     // Fetch order if orderId is provided and no order prop
     useEffect(() => {
         if (open && orderId && !order) {
@@ -188,13 +196,6 @@ export function PurchaseCheckoutWizard({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally initialize once on opening
     }, [open])
 
-    const [dteData, setDteData] = useState<DTEData>({
-        type: 'FACTURA',
-        number: '',
-        date: '',
-        attachment: null,
-        isPending: false
-    })
     const [isFolioValid, setIsFolioValid] = useState(true)
 
     const [isPeriodValid, setIsPeriodValid] = useState(true)

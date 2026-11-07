@@ -5,10 +5,6 @@ import { PageHeader } from "@/components/shared"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   FINANCES_TABS,
-  FINANCES_STATEMENTS_SUB_TABS,
-  FINANCES_ANALYSIS_SUB_TABS,
-  FINANCES_BUDGETS_SUB_TABS,
-  FINANCES_PARTNERS_SUB_TABS,
   getFinancesTab,
   getFinancesStatementsSubTab,
   getFinancesAnalysisSubTab,
