@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.75](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.74...v0.3.75) (2026-11-07)
+
+
+### 📚 Documentation
+
+* **gobernanza:** Zero N+1 por comportamiento y gate de CI (ADR-0118) ([aa155d6](https://github.com/Patricoaa/ERPGrafico/commit/aa155d6697fc24848b78b6c9328468595058daaf)), closes [#209](https://github.com/Patricoaa/ERPGrafico/issues/209)
+
 ### [0.3.74](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.73...v0.3.74) (2026-11-06)
 
 
