@@ -1,5 +1,6 @@
 """POST /api/contacts/profit-distributions/{id}/mass_payment/ (MassPaymentWizard), end to end."""
 
+import uuid
 from datetime import date
 from decimal import Decimal
 
@@ -42,13 +43,15 @@ def bank_account():
         code=Account.CASH_GROUP_CODE, defaults={"name": "Efectivo y Equivalentes", "account_type": AccountType.ASSET}
     )
     ledger = Account.objects.create(name="Cta Cte", code="1.1.01.980", account_type=AccountType.ASSET)
-    return TreasuryAccount.objects.create(
+    account = TreasuryAccount.objects.create(
         name="Cta Cte",
         account=ledger,
         account_type=TreasuryAccount.Type.CHECKING,
         bank=Bank.objects.create(name="Banco", code="BCO"),
         account_number="1",
     )
+    _fund(account, Decimal("5000"))
+    return account
 
 
 @pytest.fixture
@@ -63,6 +66,15 @@ def client():
     api_client = APIClient()
     api_client.force_authenticate(user=User.objects.create_superuser(username="tesorero", password="x"))
     return api_client
+
+
+def _fund(account, amount):
+    capital = Account.objects.create(
+        name="Capital", code=f"3.1.01.{account.pk}", account_type=AccountType.EQUITY
+    )
+    entry = JournalEntry.objects.create(date=date(2026, 1, 1), description="Aporte", status=JournalEntry.Status.POSTED)
+    entry.items.create(account=account.account, debit=amount, credit=Decimal("0"))
+    entry.items.create(account=capital, debit=Decimal("0"), credit=amount)
 
 
 def _partner(resolution, name, tax_id, dividend):
@@ -85,7 +97,7 @@ def _partner(resolution, name, tax_id, dividend):
     return partner
 
 
-def _pay(client, resolution, bank_account, *payments):
+def _pay(client, resolution, bank_account, *payments, key=None):
     return client.post(
         f"/api/contacts/profit-distributions/{resolution.pk}/mass_payment/",
         {
@@ -93,6 +105,7 @@ def _pay(client, resolution, bank_account, *payments):
             "payments_data": [{"partner_id": partner.pk, "amount": amount} for partner, amount in payments],
         },
         format="json",
+        headers={"Idempotency-Key": key or str(uuid.uuid4())},
     )
 
 
@@ -113,7 +126,7 @@ def test_pays_several_partners_with_one_movement_and_entry(client, resolution, b
 
     bank_account.refresh_from_db()
     dividends_account.refresh_from_db()
-    assert bank_account.current_balance == Decimal("-750")
+    assert bank_account.current_balance == Decimal("4250")
     assert dividends_account.balance == Decimal("-750")
 
 
@@ -172,9 +185,10 @@ def test_missing_dividends_account_writes_nothing(client, resolution, bank_accou
     settings = AccountingSettings.get_solo()
     settings.partner_dividends_payable_account = None
     settings.save()
+    entries_before = JournalEntry.objects.count()
 
     assert _pay(client, resolution, bank_account, (ana, 100)).status_code == 400
-    assert not JournalEntry.objects.exists()
+    assert JournalEntry.objects.count() == entries_before
     assert not TreasuryMovement.objects.exists()
 
 
@@ -219,3 +233,66 @@ def test_full_flow_from_draft_to_payment(client, bank_account, dividends_account
     assert partner.partner_dividends_payable_balance == Decimal("0")
     dividends_account.refresh_from_db()
     assert dividends_account.balance == Decimal("0")
+
+
+def test_same_key_applies_the_payment_once(client, resolution, bank_account):
+    ana = _partner(resolution, "Ana", "11111111-1", Decimal("600"))
+    key = str(uuid.uuid4())
+
+    first = _pay(client, resolution, bank_account, (ana, 100), key=key)
+    second = _pay(client, resolution, bank_account, (ana, 100), key=key)
+
+    assert first.status_code == second.status_code == 200
+    # The stored response renders decimals as text: same value, different JSON type.
+    assert Decimal(str(second.json()["lines"][0]["paid_dividend_amount"])) == Decimal("100")
+    assert ProfitDistributionPayment.objects.filter(resolution=resolution).count() == 1
+    assert ana.partner_dividends_payable_balance == Decimal("500")
+
+
+def test_different_keys_are_different_payments(client, resolution, bank_account):
+    ana = _partner(resolution, "Ana", "11111111-1", Decimal("600"))
+
+    _pay(client, resolution, bank_account, (ana, 100))
+    _pay(client, resolution, bank_account, (ana, 100))
+
+    assert ana.partner_dividends_payable_balance == Decimal("400")
+
+
+def test_key_is_required(client, resolution, bank_account):
+    ana = _partner(resolution, "Ana", "11111111-1", Decimal("600"))
+
+    response = client.post(
+        f"/api/contacts/profit-distributions/{resolution.pk}/mass_payment/",
+        {"treasury_account_id": bank_account.pk, "payments_data": [{"partner_id": ana.pk, "amount": 100}]},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert not TreasuryMovement.objects.exists()
+
+
+def test_rejects_payment_above_the_account_balance(client, resolution, bank_account):
+    ana = _partner(resolution, "Ana", "11111111-1", Decimal("6000"))
+
+    response = _pay(client, resolution, bank_account, (ana, 5001))
+
+    assert response.status_code == 400
+    assert "Saldo insuficiente" in response.json()["error"]
+    assert not TreasuryMovement.objects.exists()
+
+
+def test_accepts_payment_of_the_exact_balance(client, resolution, bank_account):
+    ana = _partner(resolution, "Ana", "11111111-1", Decimal("6000"))
+
+    assert _pay(client, resolution, bank_account, (ana, 5000)).status_code == 200
+
+
+def test_rejects_payment_in_a_closed_period(client, resolution, bank_account, monkeypatch):
+    ana = _partner(resolution, "Ana", "11111111-1", Decimal("600"))
+    monkeypatch.setattr("tax.services.AccountingPeriodService.is_period_closed", lambda _date: True)
+
+    response = _pay(client, resolution, bank_account, (ana, 100))
+
+    assert response.status_code == 400
+    assert "cerrado" in response.json()["error"]
+    assert not TreasuryMovement.objects.exists()

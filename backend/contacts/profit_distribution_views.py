@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, EditPolicyMixin
 
 from .partner_models import ProfitDistributionResolution
@@ -105,6 +106,7 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().destroy(request, *args, **kwargs)
 
+    @idempotent_endpoint(scope="contacts.dividend.mass_payment")
     @action(detail=True, methods=["post"])
     def mass_payment(self, request, pk=None):
         resolution = self.get_object()

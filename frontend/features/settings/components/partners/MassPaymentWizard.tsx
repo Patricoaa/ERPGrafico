@@ -1,7 +1,9 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import React, { useState, useEffect, useMemo } from "react"
+import { shouldKeepIdempotencyKey } from "@/lib/idempotency"
+import { generateUuidV4 } from "@/lib/uuid"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTreasuryAccounts } from "../../hooks"
 import { LabeledSelect, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
@@ -26,6 +28,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
     const [loading, setLoading] = useState(false)
     const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [payments, setPayments] = useState<Record<number, number>>({})
+    const idempotencyKeyRef = useRef<string>(generateUuidV4())
 
     const pendingLines = useMemo(() => {
         if (!resolution?.lines) return [];
@@ -65,11 +68,18 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                 amount: payments[parseInt(pId)]
             })).filter(p => p.amount > 0)
 
-            await partnersApi.massPaymentProfitDistribution(resolution.id, parseInt(selectedAccountId), paymentsData)
+            await partnersApi.massPaymentProfitDistribution(
+                resolution.id,
+                parseInt(selectedAccountId),
+                paymentsData,
+                idempotencyKeyRef.current,
+            )
+            idempotencyKeyRef.current = generateUuidV4()
             toast.success("Pagos procesados correctamente.")
             onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
+            if (!shouldKeepIdempotencyKey(error)) idempotencyKeyRef.current = generateUuidV4()
             showApiError(error, "Error al procesar pagos")
         } finally {
             setLoading(false)

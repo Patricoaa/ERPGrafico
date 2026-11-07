@@ -183,5 +183,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0116](0116-config-catalog-manage-only.md) | Taxonomía de acceso a entidades de configuración y datos maestros — settings singleton y datos maestros requieren `{app}.manage` para escritura y `{app}.read` para lectura | Accepted |
 | [0117](0117-minimal-user-in-task-responses.md) | Usuario mínimo embebido en las respuestas de tareas — `assigned_to_data`, `created_by_data` y `completed_by_data` exponen solo `id`, `username`, `first_name` y `last_name` | Accepted |
 | [0118](0118-zero-n-plus-one-by-behavior-and-ci-gate.md) | Zero N+1 por comportamiento, precarga acotada y gate de CI — el conteo de queries no crece con las filas, se precarga solo lo que se lee, lectura y escritura no comparten valores calculados, y `ci_gate` bloquea el CI | Accepted |
+| [0119](0119-dividend-payment-safeguards.md) | Protecciones del pago de dividendos — idempotencia en el pago masivo, y fondos y período abierto en el pago masivo y el individual | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
