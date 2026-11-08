@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.81](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.80...v0.3.81) (2026-11-08)
+
+
+### 🐛 Bug Fixes
+
+* **lint:** regla fsd/no-cross-feature-internals corrige Invariante [#3](https://github.com/Patricoaa/ERPGrafico/issues/3) en .tsx (Fixes [#176](https://github.com/Patricoaa/ERPGrafico/issues/176)) ([#221](https://github.com/Patricoaa/ERPGrafico/issues/221)) ([324ee91](https://github.com/Patricoaa/ERPGrafico/commit/324ee911b360d97612603b5024a9fe791a478dc2))
+
 ### [0.3.80](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.79...v0.3.80) (2026-11-08)
 
 
