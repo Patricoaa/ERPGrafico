@@ -6,7 +6,7 @@ import { FadeIn, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner, typ
 import { PageContainer } from "@/components/shared"
 import { LedgerDrawer } from "@/features/accounting"
 import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
-import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
+import { MappingConfigModal } from "@/features/finance/components/MappingConfigModal"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
 import type { BalanceSheetData, PLData } from "@/features/finance/types"
 import { type DateRange } from "react-day-picker"
@@ -306,7 +306,7 @@ compPeriodLabel={compPeriodLabel}
                 </FadeIn>
             </div>
 
-            <MappingConfigDrawer
+            <MappingConfigModal
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
                 mappingType={resolvedMappingType}

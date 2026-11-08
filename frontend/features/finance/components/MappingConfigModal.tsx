@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
-import { DataTable, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, LabeledSelect } from '@/components/shared'
+import { DataTable, ActionDock, Chip, DataCell, BaseModal, AutoSaveStatusBadge, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, LabeledSelect } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useForm, Controller } from "react-hook-form"
@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
-interface MappingConfigDrawerProps {
+interface MappingConfigModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     mappingType: MappingType
@@ -34,12 +34,12 @@ interface MappingConfigDrawerProps {
 const mappingSchema = z.record(z.string(), z.string().nullable())
 type MappingValues = z.infer<typeof mappingSchema>
 
-export function MappingConfigDrawer({
+export function MappingConfigModal({
     open,
     onOpenChange,
     mappingType,
     onSaveSuccess
-}: MappingConfigDrawerProps) {
+}: MappingConfigModalProps) {
     const {
         accounts,
         isLoading,
@@ -85,8 +85,8 @@ export function MappingConfigDrawer({
         let result = accounts
         const searchTerm = search.paramValues.search?.toLowerCase()
         if (searchTerm) {
-            result = result.filter(a => 
-                a.code.toLowerCase().includes(searchTerm) || 
+            result = result.filter(a =>
+                a.code.toLowerCase().includes(searchTerm) ||
                 a.name.toLowerCase().includes(searchTerm)
             )
         }
@@ -117,7 +117,6 @@ export function MappingConfigDrawer({
         }
     }
 
-    // Central onSave handler for the autosave hook
     const onSave = useCallback(async (values: MappingValues) => {
         const updates: { id: number; field: string; value: string | null }[] = []
         accounts.forEach(a => {
@@ -147,7 +146,6 @@ export function MappingConfigDrawer({
 
     useUnsavedChangesGuard(status)
 
-    // Flush any pending changes immediately when drawer is closing
     const handleOpenChange = useCallback((newOpen: boolean) => {
         if (!newOpen) {
             void flush()
@@ -273,16 +271,14 @@ export function MappingConfigDrawer({
     ]
 
     return (
-        <Drawer
+        <BaseModal
             open={open}
             onOpenChange={handleOpenChange}
-            side="bottom"
-            boundary="embedded"
-            resizable={false}
-            defaultSize="100%"
+            size="xl"
             title={getTitle()}
-            subtitle={getSubtitle()}
+            description={getSubtitle()}
             icon={SlidersHorizontal}
+            hideScrollArea
             contentClassName="flex flex-col min-h-0 px-8 pb-8"
             headerActions={
                 <div className="flex items-center gap-3">
@@ -296,49 +292,48 @@ export function MappingConfigDrawer({
             }
         >
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando mapeo de cuentas">
-            <div className="flex-1 flex flex-col min-h-0">
-                <DataTable
-                    columns={columns}
-                    data={filteredAccounts}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    unifiedSearch={
-                        <UnifiedSearchBar 
-                            config={searchConfig} 
-                            chips={search.chips} 
-                            isFiltered={search.isFiltered} 
-                            inputValue={search.inputValue} 
-                            onInputChange={search.setInputValue} 
-                            onApply={search.applyFilter} 
-                            onRemove={search.removeFilter} 
-                            onClearAll={search.clearAll} 
-                            groupBy={search.groupBy} 
-                            onGroupBySelect={search.setGroupBy} 
-                            paramValues={search.paramValues} 
-                        />
-                    }
-                    bulkDock={(items, clear) => (
-                        <ActionDock.Actions>
-                            <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
-                                <SelectTrigger className="h-9 rounded-sm border-border/40 bg-muted/30 text-xs font-bold uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
-                                    <Tag className="mr-2 h-3.5 w-3.5" />
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                    <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
-                                    {getCategories().map(cat => (
-                                        <SelectItem key={cat.value} value={cat.value}>
-                                            {cat.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </ActionDock.Actions>
-                    )}
-                />
-            </div>
+                <div className="flex-1 flex flex-col min-h-0 max-h-[65vh] overflow-hidden">
+                    <DataTable
+                        columns={columns}
+                        data={filteredAccounts}
+                        isLoading={isLoading}
+                        variant="embedded"
+                        unifiedSearch={
+                            <UnifiedSearchBar
+                                config={searchConfig}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                            />
+                        }
+                        bulkDock={(items, clear) => (
+                            <ActionDock.Actions>
+                                <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
+                                    <SelectTrigger className="h-9 rounded-sm border-border/40 bg-muted/30 text-xs font-bold uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
+                                        <Tag className="mr-2 h-3.5 w-3.5" />
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                                        <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
+                                        {getCategories().map(cat => (
+                                            <SelectItem key={cat.value} value={cat.value}>
+                                                {cat.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </ActionDock.Actions>
+                        )}
+                    />
+                </div>
             </SkeletonShell>
-        </Drawer>
+        </BaseModal>
     )
 }
-

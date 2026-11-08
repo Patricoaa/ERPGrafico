@@ -31,5 +31,6 @@ export const journalEntryLineSheetViews = journalEntryLineEntity.views({
     table: {
         columns: ["account_code", "account_name", "label", "debit", "credit"],
         primary: "account_code",
+        footer: { sum: ["debit", "credit"] },
     },
 })

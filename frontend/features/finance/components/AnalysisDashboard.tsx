@@ -6,7 +6,7 @@ import type { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { CardSkeleton } from "@/components/shared"
-import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
+import { MappingConfigModal } from "@/features/finance/components/MappingConfigModal"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
 import { PageContainer, FadeIn, ReportToolbar } from "@/components/shared"
 
@@ -83,7 +83,7 @@ export function AnalysisDashboard({ activeTab }: AnalysisDashboardProps) {
                 </FadeIn>
             </div>
             
-            <MappingConfigDrawer
+            <MappingConfigModal
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
                 mappingType={resolvedMappingType} // Defaulting to Balance Sheet mappings for Ratios

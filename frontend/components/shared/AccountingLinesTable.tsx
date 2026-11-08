@@ -17,25 +17,30 @@ import { cn } from "@/lib/utils"
 const tableInputClass = "h-8 w-full bg-background border border-border/80 rounded-md px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
 // ─────────────────────────────────────────────────────────
-// Balance footer
+// Totals footer row (tfoot)
 // ─────────────────────────────────────────────────────────
 
-const TotalBalance = ({ control, name }: { control: Control<FieldValues>; name: string }) => {
+const TotalsFooter = ({ control, name, disabled }: { control: Control<FieldValues>; name: string; disabled?: boolean }) => {
     const items = useWatch({ control, name }) as Array<Record<string, unknown>> | undefined
 
-    const totalDebit = items?.reduce((sum: number, item) => sum + (Number((item as Record<string, unknown>).debit) || 0), 0) || 0
-    const totalCredit = items?.reduce((sum: number, item) => sum + (Number((item as Record<string, unknown>).credit) || 0), 0) || 0
-    const diff = totalDebit - totalCredit
-    const isBalanced = Math.abs(diff) < 0.01
+    const totalDebit = items?.reduce((sum: number, item) => sum + (Number(item.debit) || 0), 0) ?? 0
+    const totalCredit = items?.reduce((sum: number, item) => sum + (Number(item.credit) || 0), 0) ?? 0
+    const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01
 
     return (
-        <div className={cn("flex flex-col items-end text-sm font-medium", isBalanced ? "text-success" : "text-destructive")}>
-            <span>Total Debe: <MoneyDisplay amount={totalDebit} inline /></span>
-            <span>Total Haber: <MoneyDisplay amount={totalCredit} inline /></span>
-            {!isBalanced && (
-                <span>Diferencia: <MoneyDisplay amount={diff} inline /></span>
-            )}
-        </div>
+        <tfoot className="border-t bg-muted/30">
+            <tr>
+                <td className="px-3 py-2 text-3xs font-bold uppercase tracking-widest text-muted-foreground">Total</td>
+                <td />
+                <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success" : "text-destructive")}>
+                    <MoneyDisplay amount={totalDebit} inline />
+                </td>
+                <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success" : "text-destructive")}>
+                    <MoneyDisplay amount={totalCredit} inline />
+                </td>
+                {!disabled && <td />}
+            </tr>
+        </tfoot>
     )
 }
 
@@ -91,7 +96,6 @@ export function AccountingLinesTable({ control, name, isLoading, disabled }: Acc
             columns={columns}
             onAdd={() => append({ account: "", label: "", debit: 0, credit: 0 })}
             addButtonText="Agregar Línea"
-            footer={<TotalBalance control={control} name={name} />}
             isLoading={isLoading}
             hideAddButton={disabled}
         >
@@ -188,6 +192,7 @@ export function AccountingLinesTable({ control, name, isLoading, disabled }: Acc
                     </TableRow>
                 ))}
             </TableBody>
+            <TotalsFooter control={control} name={name} disabled={disabled} />
         </FormLineItemsTable>
     )
 }

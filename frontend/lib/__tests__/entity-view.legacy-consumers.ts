@@ -19,6 +19,6 @@ export const LEGACY_CONSUMERS: readonly string[] = []
 export const EXEMPT_CONSUMERS: readonly string[] = [
     "features/finance/bank-reconciliation/components/ReconciliationPanel.tsx",
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
-    "features/finance/components/MappingConfigDrawer.tsx",
+    "features/finance/components/MappingConfigModal.tsx",
     "features/pos/components/DraftCartsClientView.tsx",
 ]
