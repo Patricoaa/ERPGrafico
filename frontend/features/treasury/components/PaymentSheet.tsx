@@ -18,16 +18,20 @@ import {
 } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
-import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRelations"
-import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
-import { DocumentRelationsTab } from "@/features/documents/components/DocumentRelationsTab"
+import {
+    DocumentRelationsTab,
+    resolveRegistryActions,
+    useDocumentRelations,
+    useInvalidateDocuments,
+    type DocumentDomain,
+    type DocumentLink,
+    type ResolvedDocumentAction,
+} from "@/features/documents"
 import { formatCurrency } from "@/lib/money"
 import { format } from "date-fns"
 import { toDate } from "@/lib/utils"
-import { financeApi } from "@/features/finance/api/financeApi"
+import { financeApi } from "@/features/finance"
 import { usePayment } from "@/features/treasury/hooks/usePayment"
-import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
-import { resolveRegistryActions, type ResolvedDocumentAction } from "@/features/documents/utils/actions"
 import { paymentActions } from "@/features/treasury/paymentActions"
 import { useCancelPayment, useCancelInvoice } from "@/features/orders"
 import { AnnulPaymentModal } from "@/features/orders"

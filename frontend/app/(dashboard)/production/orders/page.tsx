@@ -1,5 +1,5 @@
 import { serverFetch } from "@/lib/server-fetch"
-import type { WorkOrder } from "@/features/production/types"
+import type { WorkOrder } from "@/features/production"
 import WorkOrdersPageClient from "./WorkOrdersPageClient"
 
 const FILTER_PARAMS = new Set(['search', 'status', 'date_from', 'date_to'])

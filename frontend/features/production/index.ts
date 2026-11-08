@@ -51,7 +51,7 @@ export type {
   CorrectionResult,
 } from './hooks'
 
-export type { WorkOrder, BOM, ProductMinimal } from './types'
+export type { WorkOrder, BOM, ProductMinimal, WizardMode, StageId } from './types'
 
 export { bomUnifiedSearchDef, workOrderUnifiedSearchDef } from './unifiedSearchDef'
 export { workOrderActions } from './workOrderActions'

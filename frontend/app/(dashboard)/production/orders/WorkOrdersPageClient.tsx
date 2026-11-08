@@ -22,9 +22,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { workOrderUnifiedSearchDef } from "@/features/production"
 import { toast } from "sonner"
 import { Collection, useEntityCollection, type CollectionViewMode } from "@/components/entity-view"
-import { workOrderEntity, workOrderViews, type WorkOrder } from "@/features/production"
-
-import type { WizardMode, StageId } from "@/features/production/types"
+import { workOrderEntity, workOrderViews, type WorkOrder, type WizardMode, type StageId } from "@/features/production"
 
 interface WorkOrdersPageClientProps {
     initialOrders?: WorkOrder[]

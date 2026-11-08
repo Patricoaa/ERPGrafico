@@ -25,14 +25,16 @@ import {
     useDownloadStatementFile,
 } from "@/features/finance"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
-import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRelations"
-import type { DocumentDomain } from "@/features/documents/types"
-import { DocumentRelationsTab } from "@/features/documents/components/DocumentRelationsTab"
+import {
+    DocumentRelationsTab,
+    useDocumentRelations,
+    useInvalidateDocuments,
+    type DocumentDomain,
+} from "@/features/documents"
 import { formatCurrency } from "@/lib/money"
 import { format } from "date-fns"
 import { toDate } from "@/lib/utils"
 import { useBankStatement, type BankStatementData } from "@/features/treasury/hooks/useBankStatement"
-import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
 
 const LABEL = "treasury.bankstatement"
 const AUDIT_TYPE = "bankstatement" as const

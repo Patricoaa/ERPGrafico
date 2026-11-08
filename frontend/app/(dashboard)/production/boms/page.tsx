@@ -1,5 +1,5 @@
 import { serverFetch } from "@/lib/server-fetch"
-import type { BOM } from "@/features/production/types"
+import type { BOM } from "@/features/production"
 import BOMsPageClient from "./BOMsPageClient"
 
 const FILTER_PARAMS = new Set(['search', 'active'])
