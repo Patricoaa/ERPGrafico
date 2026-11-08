@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.80](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.79...v0.3.80) (2026-11-08)
+
+
+### ⚙️ Refactors
+
+* **contabilidad:** unifica JournalEntryDrawer y convierte MappingConfig en modal ([8d50dab](https://github.com/Patricoaa/ERPGrafico/commit/8d50dab6a0708b99f93c0a499531261318af27bc))
+
+
+### ✨ Features
+
+* **selectores:** crea productos desde ProductSelector en compras y BOM ([924fe94](https://github.com/Patricoaa/ERPGrafico/commit/924fe944b922361bb563462cdf6a6d87257de538))
+
 ### [0.3.79](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.78...v0.3.79) (2026-11-07)
 
 
