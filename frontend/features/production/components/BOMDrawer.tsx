@@ -31,11 +31,11 @@ import { formatQuantity } from "@/lib/money"
 const tableInputClass = "h-9 w-full bg-card border border-border/80 rounded-sm px-2 text-sm font-normal text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
 function MaterialSelector(props: React.ComponentProps<typeof ProductSelector>) {
-    return <ProductSelector productTypes={['STORABLE']} shouldResolveVariants={false} context="purchase" {...props} />
+    return <ProductSelector productTypes={['STORABLE']} shouldResolveVariants={false} context="purchase" creatable {...props} />
 }
 
 function ServiceSelector(props: React.ComponentProps<typeof ProductSelector>) {
-    return <ProductSelector productTypes={['SERVICE']} canBePurchased shouldResolveVariants={false} context="purchase" {...props} />
+    return <ProductSelector productTypes={['SERVICE']} canBePurchased shouldResolveVariants={false} context="purchase" creatable {...props} />
 }
 
 // Schema for material lines (stock components)

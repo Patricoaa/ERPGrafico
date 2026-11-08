@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, Search, Loader2 } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Check, Search, Loader2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { PricingUtils } from '@/lib/pricing-utils'
+import { Button } from "@/components/ui/button"
 import {
     Tooltip,
     TooltipContent,
@@ -21,9 +23,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
 import { type Product, type ProductType, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
+import type { ProductInitialData } from "@/types/forms"
 import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay, Chip, SelectorTrigger } from '@/components/shared'
 
 const ProductIcon = getEntityIcon('inventory.product')
+
+// Lazy + direct import (not the feature barrel) to keep the selector free of
+// the inventory feature graph until the user actually creates a product.
+const ProductCreateDrawer = dynamic(
+    () => import("@/features/inventory/components/ProductDrawer").then((m) => m.ProductDrawer),
+    { ssr: false }
+)
 
 interface ProductSelectorProps {
     value?: string | number | null
@@ -47,6 +57,14 @@ interface ProductSelectorProps {
     variant?: 'standalone' | 'inline'
     /** Price shown in trigger and list: 'sale' = sale price incl. IVA, 'purchase' = net cost price. */
     context?: 'sale' | 'purchase'
+    /** Shows a "+" button in the popover that opens the product create drawer. */
+    creatable?: boolean
+    /** Tooltip/aria label for the create button. Default: "Nuevo producto". */
+    createLabel?: string
+    /** Locks the product type in the create drawer. Defaults to the single entry of productTypes. */
+    createType?: ProductType
+    /** Fired after a product is created from this selector (in addition to onChange/onSelect). */
+    onCreated?: (product: Product) => void
 }
 
 export function ProductSelector({
@@ -69,13 +87,19 @@ export function ProductSelector({
     error,
     required = false,
     variant = 'standalone',
-    context = 'sale'
+    context = 'sale',
+    creatable = false,
+    createLabel = "Nuevo producto",
+    createType,
+    onCreated
 }: ProductSelectorProps) {
     const showCost = context === 'purchase'
     const listPrice = (product: Product) => showCost
         ? Number(product.cost_price) || 0
         : Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))
+    const resolvedCreateType = createType ?? (productTypes?.length === 1 ? productTypes[0] : undefined)
     const [open, setOpen] = useState(false)
+    const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [displayLimit, setDisplayLimit] = useState(20)
@@ -192,6 +216,15 @@ export function ProductSelector({
         if (onSelect) onSelect(variant as unknown as Product)
     }
 
+    const handleCreated = (product: ProductInitialData) => {
+        if (!product?.id) return
+        const created = product as Product
+        setSelectedProduct(created)
+        onSelect?.(created)
+        onCreated?.(created)
+        onChange(created.id.toString())
+    }
+
     const selectButton = (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -216,11 +249,11 @@ export function ProductSelector({
                 </SelectorTrigger>
             </PopoverTrigger>
             <PopoverContent className="w-[max(var(--radix-popover-trigger-width),22rem)] p-0 rounded-sm" align="start">
-                <div className="p-2">
-                    <div className="flex items-center px-3 border rounded-sm relative">
+                <div className="p-2 flex items-center gap-2">
+                    <div className="flex items-center px-3 border rounded-sm relative flex-1 min-w-0">
                         <Search className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                         <input
-                            className="flex h-9 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-9 w-full bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50"
                             placeholder="Buscar por nombre o código..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -229,6 +262,29 @@ export function ProductSelector({
                             <Loader2 className="h-4 w-4 animate-spin shrink-0 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         )}
                     </div>
+                    {creatable && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        aria-label={createLabel}
+                                        className="h-9 w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary"
+                                        onClick={() => {
+                                            setOpen(false)
+                                            setIsCreateOpen(true)
+                                        }}
+                                        disabled={disabled}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{createLabel}</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
                 </div>
 
                 <div
@@ -243,12 +299,20 @@ export function ProductSelector({
                         <EmptyState context="inventory" variant="compact" title="No se encontraron productos" />
                     ) : (
                         filteredProducts.slice(0, displayLimit).map((product) => {
+                            const hasStockChips = ['STORABLE', 'MANUFACTURABLE'].includes(product.product_type)
+                            const hasMfgChip = !!(
+                                product.requires_advanced_manufacturing ||
+                                product.mfg_auto_finalize ||
+                                product.has_bom ||
+                                product.product_type === 'MANUFACTURABLE'
+                            )
+                            const hasMetaChips = hasStockChips || hasMfgChip
                             return (
                                 <div
                                     key={product.id}
                                     data-disabled={isStockRestricted(product) || isCustomDisabled(product)}
                                     className={cn(
-                                        "relative mx-1 flex cursor-default select-none items-start rounded-sm px-2 py-2 outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+                                        "relative mx-1 flex cursor-default select-none items-start rounded-sm px-2 py-1.5 outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
                                         selectedProduct?.id === product.id && "bg-accent"
                                     )}
                                     onClick={() => handleSelect(product)}
@@ -267,66 +331,63 @@ export function ProductSelector({
                                     ) : null}
                                     <Check
                                         className={cn(
-                                            "absolute left-2 top-2.5 h-3.5 w-3.5 text-primary opacity-0",
+                                            "absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-primary opacity-0",
                                             selectedProduct?.id === product.id && "opacity-100"
                                         )}
                                     />
-                                    <div className="flex flex-col gap-1.5 w-full min-w-0 ml-5">
+                                    <div className="flex flex-col gap-1 w-full min-w-0 ml-5">
                                         <div className="flex items-baseline justify-between gap-3 w-full min-w-0">
-                                            <span className="text-sm font-medium text-foreground truncate text-left">
+                                            <span className="text-xs font-medium text-foreground truncate text-left">
                                                 {product.name}
                                             </span>
                                             {product.is_dynamic_pricing && !showCost ? (
-                                                <Chip intent="warning" size="xs">Precio Dinámico</Chip>
+                                                <Chip intent="warning" size="xs" className="text-3xs h-4 px-1.5">Precio Dinámico</Chip>
                                             ) : (
                                                 <span className="flex items-baseline gap-1 whitespace-nowrap">
-                                                    <MoneyDisplay amount={listPrice(product)} inline showColor={false} className="text-xs tabular-nums" />
+                                                    <MoneyDisplay amount={listPrice(product)} inline showColor={false} className="text-2xs tabular-nums" />
                                                     <span className="text-3xs text-muted-foreground">{showCost ? "costo neto" : "IVA inc."}</span>
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex gap-1 flex-wrap">
-                                            {(product.internal_code || product.code) && (
-                                                <span className="text-xs font-mono text-muted-foreground mr-1">
-                                                    {product.internal_code || product.code}
-                                                </span>
-                                            )}
-                                            {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
-                                                <>
-                                                    <Chip intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs">
-                                                        Stock: {product.current_stock || 0}
-                                                    </Chip>
-                                                    <Chip intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs">
-                                                        Disp: {product.qty_available || 0}
-                                                    </Chip>
-                                                </>
-                                            )}
+                                        {hasMetaChips && (
+                                            <div className="flex gap-1 flex-wrap">
+                                                {hasStockChips && (
+                                                    <>
+                                                        <Chip intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs" className="text-3xs h-4 px-1.5">
+                                                            Stock: {product.current_stock || 0}
+                                                        </Chip>
+                                                        <Chip intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs" className="text-3xs h-4 px-1.5">
+                                                            Disp: {product.qty_available || 0}
+                                                        </Chip>
+                                                    </>
+                                                )}
 
-                                            {product.requires_advanced_manufacturing ? (
-                                                <Chip intent="primary" size="xs">
-                                                    Fab: Avanzada
-                                                </Chip>
-                                            ) : product.mfg_auto_finalize ? (
-                                                <Chip intent="warning" size="xs">
-                                                    Fab: Express
-                                                </Chip>
-                                            ) : product.has_bom ? (
-                                                <Chip intent={(product.manufacturable_quantity ?? 0) <= 0 ? "destructive" : "primary"} size="xs">
-                                                    Fab: {product.manufacturable_quantity ?? 'N/A'}
-                                                </Chip>
-                                            ) : product.product_type === 'MANUFACTURABLE' ? (
-                                                <Chip intent="neutral" size="xs">
-                                                    Sin LdM
-                                                </Chip>
-                                            ) : null}
-                                        </div>
+                                                {product.requires_advanced_manufacturing ? (
+                                                    <Chip intent="primary" size="xs" className="text-3xs h-4 px-1.5">
+                                                        Fab: Avanzada
+                                                    </Chip>
+                                                ) : product.mfg_auto_finalize ? (
+                                                    <Chip intent="warning" size="xs" className="text-3xs h-4 px-1.5">
+                                                        Fab: Express
+                                                    </Chip>
+                                                ) : product.has_bom ? (
+                                                    <Chip intent={(product.manufacturable_quantity ?? 0) <= 0 ? "destructive" : "primary"} size="xs" className="text-3xs h-4 px-1.5">
+                                                        Fab: {product.manufacturable_quantity ?? 'N/A'}
+                                                    </Chip>
+                                                ) : product.product_type === 'MANUFACTURABLE' ? (
+                                                    <Chip intent="neutral" size="xs" className="text-3xs h-4 px-1.5">
+                                                        Sin LdM
+                                                    </Chip>
+                                                ) : null}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )
                         })
                     )}
                     {displayLimit < filteredProducts.length && (
-                        <div className="p-2 text-xs text-center text-muted-foreground border-t">
+                        <div className="p-2 text-3xs text-center text-muted-foreground border-t">
                             Mostrando {displayLimit} de {filteredProducts.length} productos. Scroll para ver más...
                         </div>
                     )}
@@ -349,6 +410,17 @@ export function ProductSelector({
                 </LabeledContainer>
             ) : (
                 selectButton
+            )}
+
+            {creatable && isCreateOpen && (
+                <ProductCreateDrawer
+                    mode="create"
+                    open={isCreateOpen}
+                    onOpenChange={setIsCreateOpen}
+                    lockedType={resolvedCreateType}
+                    onCreated={handleCreated}
+                    onSuccess={() => {}}
+                />
             )}
 
             <BaseModal

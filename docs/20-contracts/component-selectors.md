@@ -99,14 +99,14 @@ Feature hook: `useAccountSearch` from `features/accounting`.
 
 ## ProductSelector 🟡
 
-Combobox for inventory products. Popover + advanced modal. Shows price and stock status.
+Combobox for inventory products. Popover with search, price, stock and manufacturing status. Supports creating a product inline from the popover.
 
 ```tsx
 <ProductSelector
   value={productId}
   onChange={setProductId}
-  context="sale"
-  restrictStock
+  context="purchase"
+  creatable
   label="Producto"
 />
 ```
@@ -116,17 +116,29 @@ Combobox for inventory products. Popover + advanced modal. Shows price and stock
 | `value` | `string \| number \| null` | ❌ | — | Product `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
 | `placeholder` | `string` | ❌ | `'Seleccionar...'` | Default canónico (R6) |
-| `productType` | `string` | ❌ | — | Filter by `product_type` |
-| `allowedTypes` | `string[]` | ❌ | — | Multiple type filter |
+| `productTypes` | `ProductType[]` | ❌ | — | Filter by `product_type` (single or `__in`) |
 | `disabled` | `boolean` | ❌ | `false` | |
-| `restrictStock` | `boolean` | ❌ | `false` | Warn when item has no stock |
-| `excludeIds` | `(string \| number)[]` | ❌ | — | Exclude specific products |
+| `restrictStock` | `boolean` | ❌ | `false` | Disables rows without stock / manufacturable qty |
+| `excludeIds` | `(string \| number)[]` | ❌ | `[]` | Exclude specific products |
+| `canBePurchased` | `boolean` | ❌ | `false` | Server filter `can_be_purchased=true` |
+| `canBeSold` | `boolean` | ❌ | `false` | Server filter `can_be_sold=true` |
 | `context` | `'sale' \| 'purchase'` | ❌ | `'sale'` | Price shown in trigger and list: `sale` = sale price incl. IVA; `purchase` = net `cost_price` (BOM components, purchases) |
 | `excludeVariantTemplates` | `boolean` | ❌ | `false` | Hide variant parent templates |
-| `onSelect` | `(product: Product) => void` | ❌ | — | Full product object on select (for price auto-fill) |
+| `shouldResolveVariants` | `boolean` | ❌ | `true` | Opens the variant modal when the selected product has variants |
+| `onSelect` | `(product: Product) => void` | ❌ | — | Full product object on select (for price/uom auto-fill) |
 | `customFilter` | `(product: Product) => boolean` | ❌ | — | Additional client-side filter |
-| `label` | `string` | ❌ | — | |
-| `error` | `string` | ❌ | — | |
+| `customDisabled` | `(product: Product) => boolean` | ❌ | — | Disables a row without hiding it |
+| `className` | `string` | ❌ | — | Applied to the trigger (inline) or `LabeledContainer` (standalone) |
+| `label` | `string` | ❌ | — | Standalone only |
+| `error` | `string` | ❌ | — | Standalone only |
+| `required` | `boolean` | ❌ | `false` | Standalone only |
+| `variant` | `'standalone' \| 'inline'` | ❌ | `'standalone'` | Inline skips `LabeledContainer` |
+| `creatable` | `boolean` | ❌ | `false` | Renders a `+` button in the popover that opens `ProductDrawer` in create mode |
+| `createLabel` | `string` | ❌ | `'Nuevo producto'` | Tooltip / aria-label of the create button |
+| `createType` | `ProductType` | ❌ | — | Locks the create type; defaults to the single entry of `productTypes` |
+| `onCreated` | `(product: Product) => void` | ❌ | — | Fired after an inline create, in addition to `onChange`/`onSelect` |
+
+Popover content: name, price (`text-2xs`, sale with “IVA inc.” / purchase with “costo neto”), and compact chips (`text-3xs`) for `Stock`, `Disp` and manufacturing status. **The product code is not displayed**; search still matches name and code. On create, the new product is auto-selected as soon as it is persisted.
 
 Feature hook: `useProductSearch` from `features/inventory`.
 

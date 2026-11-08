@@ -126,6 +126,39 @@ describe("ProductSelector client-side behavior", () => {
     })
 })
 
+describe("ProductSelector popover presentation", () => {
+    it("does not render the product code", async () => {
+        renderSelector({ onChange: vi.fn() })
+        await openSelector([storable], "Materia Prima")
+        expect(screen.queryByText("S1")).not.toBeInTheDocument()
+    })
+
+    it("shows net cost in purchase context and sale price incl. IVA in sale context", async () => {
+        const withCost: Product = { ...storable, cost_price: 40 }
+
+        const purchase = renderSelector({ onChange: vi.fn(), context: "purchase" })
+        await openSelector([withCost], "Materia Prima")
+        expect(screen.getByText("costo neto")).toBeInTheDocument()
+        purchase.unmount()
+
+        renderSelector({ onChange: vi.fn(), context: "sale" })
+        await openSelector([withCost], "Materia Prima")
+        expect(screen.getByText("IVA inc.")).toBeInTheDocument()
+    })
+
+    it("hides the create button by default", async () => {
+        renderSelector({ onChange: vi.fn() })
+        await openSelector([storable], "Materia Prima")
+        expect(screen.queryByRole("button", { name: "Nuevo producto" })).not.toBeInTheDocument()
+    })
+
+    it("renders the create button when creatable", async () => {
+        renderSelector({ onChange: vi.fn(), creatable: true })
+        await openSelector([storable], "Materia Prima")
+        expect(screen.getByRole("button", { name: "Nuevo producto" })).toBeInTheDocument()
+    })
+})
+
 describe("ProductSelector BOM material regression", () => {
     it("requests ONLY STORABLE for BOM materials and renders only that set", async () => {
         renderSelector({ onChange: vi.fn(), productTypes: ["STORABLE"] })

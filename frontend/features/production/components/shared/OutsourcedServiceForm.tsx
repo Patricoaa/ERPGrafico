@@ -140,6 +140,7 @@ export function OutsourcedServiceForm({
             }}
             disabled={productLocked}
             productTypes={['SERVICE']}
+            context="purchase"
             canBePurchased
           />
         </div>

@@ -63,6 +63,7 @@ export function MaterialLineForm({ value, onChange, onSave, onCancel, saving = f
             }}
             disabled={isEditing}
             shouldResolveVariants={false}
+            context="purchase"
             productTypes={['STORABLE', 'MANUFACTURABLE']}
             customFilter={(p: Product) => {
               if (excludeProductId && p.id.toString() === excludeProductId.toString()) return false

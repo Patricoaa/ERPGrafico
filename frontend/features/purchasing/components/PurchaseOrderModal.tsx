@@ -279,6 +279,8 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                             value={field.value}
                                                                             canBePurchased
                                                                             excludeVariantTemplates={true}
+                                                                            context="purchase"
+                                                                            creatable
                                                                             onChange={(val) => {
                                                                                 field.onChange(val)
                                                                                 if (val) {
@@ -436,6 +438,8 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                         value={field.value}
                                                                         canBePurchased
                                                                         excludeVariantTemplates={true}
+                                                                        context="purchase"
+                                                                        creatable
                                                                         onChange={(val) => {
                                                                             field.onChange(val)
                                                                             if (val) {

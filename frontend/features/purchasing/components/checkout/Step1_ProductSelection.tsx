@@ -234,6 +234,8 @@ export function Step1_ProductSelection({
                                     canBePurchased
                                     onChange={(val) => handleProductChange(index, val)}
                                     variant="inline"
+                                    context="purchase"
+                                    creatable
                                     placeholder="Seleccionar..."
                                     className="border border-input rounded-sm h-8"
                                 />

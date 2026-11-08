@@ -52,6 +52,8 @@ interface ProductDrawerProps {
     onOpenChange: (open: boolean) => void
     initialData?: ProductInitialData
     onSuccess: () => void
+    /** Fired as soon as the create is persisted (before the "Producto creado" prompt). */
+    onCreated?: (product: ProductInitialData) => void
     lockedType?: string
     variantMode?: boolean
     inline?: boolean
@@ -79,7 +81,7 @@ function toProductInitialData(product: InventoryProduct): ProductInitialData {
     }
 }
 
-export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
+export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCreated, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
     const modals = useOptionalGlobalModalActions()
     const [createdProduct, setCreatedProduct] = useState<ProductInitialData | undefined>()
     const [postCreatePromptOpen, setPostCreatePromptOpen] = useState(false)
@@ -130,6 +132,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         name: "",
         category: "",
         product_type: lockedType || "STORABLE",
+        can_be_sold: true,
+        can_be_purchased: true,
         sale_price: 0,
         sale_price_gross: 0,
         is_dynamic_pricing: false,
@@ -608,6 +612,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     })
                 }
                 setCreatedProduct(productToContinue)
+                onCreated?.(productToContinue)
                 setPostCreatePromptOpen(true)
             } else {
                 onSuccess()
