@@ -21,11 +21,15 @@ import { Collection, useEntityCollection } from "@/components/entity-view"
 import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { useLedger } from "@/features/accounting/hooks/useLedger"
-import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSummaryPanel"
-import { ledgerMovementEntity, ledgerMovementDrawerViews } from "@/features/accounting"
-import { ledgerMovementActions, type LedgerMovementActionsCtx } from "@/features/accounting/components/ledgerMovementActions"
-import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
+import {
+    JournalEntryDrawer,
+    LedgerSummaryPanel,
+    ledgerMovementActions,
+    ledgerMovementDrawerViews,
+    ledgerMovementEntity,
+    useLedger,
+    type LedgerMovementActionsCtx,
+} from "@/features/accounting"
 import { format } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 

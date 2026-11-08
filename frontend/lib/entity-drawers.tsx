@@ -6,8 +6,7 @@ import { SkeletonShell } from "@/components/shared"
 import type { ProductCategory, AppGroup } from "@/types/entities"
 import type { Contact } from "@/features/contacts"
 import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice } from "@/features/treasury"
-import type { UoM } from "@/features/inventory/hooks/useUoMs"
-import type { Attribute } from "@/features/inventory/hooks/useAttributes"
+import type { UoM, Attribute } from "@/features/inventory"
 import type {
     ProductInitialData,
     WarehouseInitialData,

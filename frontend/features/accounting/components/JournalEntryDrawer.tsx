@@ -53,9 +53,15 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { EntitySidebar } from "@/features/comments"
 import { DocumentRefLink, DocumentRelationsButton, type DocumentRef } from "@/features/documents"
 import { useGlobalModals, useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { useDocumentRelations } from "@/features/documents/hooks/useDocumentRelations"
-import type { DocumentDomain, DocumentLink } from "@/features/documents/types"
-import { DocumentRelationsTab } from "@/features/documents/components/DocumentRelationsTab"
+import {
+    DocumentRelationsTab,
+    resolveRegistryActions,
+    useDocumentRelations,
+    useInvalidateDocuments,
+    type DocumentDomain,
+    type DocumentLink,
+    type ResolvedDocumentAction,
+} from "@/features/documents"
 import {
     useJournalEntry,
     usePostJournalEntry,
@@ -63,10 +69,8 @@ import {
     useDeleteJournalEntry,
     type JournalEntry,
 } from "@/features/accounting/hooks/useJournalEntries"
-import { useInvalidateDocuments } from "@/features/documents/hooks/useInvalidateDocuments"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { journalEntryLineEntity, journalEntryLineSheetViews } from "@/features/accounting"
-import { resolveRegistryActions, type ResolvedDocumentAction } from "@/features/documents/utils/actions"
 import { journalEntryActions } from "@/features/accounting/journalEntryActions"
 
 // ---------------------------------------------------------------------------

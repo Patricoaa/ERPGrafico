@@ -1,7 +1,6 @@
 "use client"
 
-import { BOMClientView } from "@/features/production"
-import type { BOM } from "@/features/production/types"
+import { BOMClientView, type BOM } from "@/features/production"
 
 interface BOMsPageClientProps {
     initialBoms?: BOM[]

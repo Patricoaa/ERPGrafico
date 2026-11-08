@@ -11,7 +11,7 @@ import {
     markAllNotificationsRead,
     type Notification,
 } from "@/features/workflow"
-import { useNotifications, type NotificationPayload } from "@/features/notifications/hooks/useNotifications"
+import { useNotifications, type NotificationPayload } from "@/features/notifications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Blobatar } from "@/components/ui/blobatar"

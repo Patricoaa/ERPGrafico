@@ -19,6 +19,7 @@ import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
 import noDirectDialogUsage from "./eslint-rules/no-direct-dialog-usage.mjs";
 import entityViewGuards from "./eslint-rules/entity-view-guards.mjs";
 import dateHandling from "./eslint-rules/date-handling.mjs";
+import fsdNoCrossFeatureInternals from "./eslint-rules/fsd-no-cross-feature-internals.mjs";
 import { NO_UNSAFE_ALLOWLIST_FILES } from "./eslint-rules/no-unsafe-allowlist.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
@@ -156,11 +157,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       }],
     }],
   },
-}, // Cross-feature internal import guard via no-restricted-imports
-// boundaries/dependencies can't do per-feature captures in v6 without complex setup.
-// This blocks features/A from importing features/B internals (components, hooks, api, types).
-
-// Barrel import enforcement for shared components
+}, // Barrel import enforcement for shared components
 {
   files: ["**/*.ts", "**/*.tsx"],
   rules: {
@@ -173,51 +170,12 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       ]
     }]
   }
-}, // Cross-feature internal import guard for hooks/ and shared/
-// This block applies to hooks/ and shared/ where the features block below doesn't reach
-// (the features block takes precedence for features/ files since it comes later).
+}, // Skeleton restriction for features/ (non-tsx) and app/
+// Cross-feature internal imports are enforced by `fsd/no-cross-feature-internals`
+// below: no-restricted-imports cannot merge across flat-config blocks and its
+// static patterns cannot distinguish the owner feature from a foreign one.
 {
-  files: ["hooks/**/*.ts", "hooks/**/*.tsx", "components/shared/**/*.ts", "components/shared/**/*.tsx"],
-  rules: {
-    "no-restricted-imports": ["error", {
-      patterns: [
-        {
-          group: ["@/features/*/components/*", "@/features/*/components/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/hooks/*", "@/features/*/hooks/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/api/*", "@/features/*/api/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/types/*", "@/features/*/types/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/utils/*", "@/features/*/utils/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
-        },
-        {
-          group: ["@/features/*/entity-view/*", "@/features/*/entity-view/**"],
-          message: "Cross-feature: import entity-view extensions (e.g. docRef) from the owning feature barrel (ADR-0087 A1).",
-        },
-        {
-          group: ["@/features/*/actions", "@/features/*/actions/*",
-                   "@/features/*/contexts/*", "@/features/*/contexts/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internal file.",
-        },
-      ],
-    }],
-  },
-}, // Cross-feature internal import guard + skeleton restriction for features/ and app/
-// NOTE: this block OVERRIDES the previous block for features/ files (flat config last-wins).
-// That's intentional — the previous block only applies to hooks/ and shared/.
-{
-  files: ["features/**/*.ts", "features/**/*.tsx", "app/**/*.ts", "app/**/*.tsx"],
+  files: ["features/**/*.ts", "app/**/*.ts", "app/**/*.tsx"],
   ignores: ["features/**/skeletons/**"],
   rules: {
     "no-restricted-imports": ["error", {
@@ -225,37 +183,6 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
         name: "@/components/ui/skeleton",
         message: "Import skeleton components from @/components/shared barrel, not @/components/ui/skeleton directly.",
       }],
-      patterns: [
-        {
-          group: ["@/features/*/components/*", "@/features/*/components/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/hooks/*", "@/features/*/hooks/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/api/*", "@/features/*/api/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/types/*", "@/features/*/types/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
-        },
-        {
-          group: ["@/features/*/utils/*", "@/features/*/utils/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
-        },
-        {
-          group: ["@/features/*/entity-view/*", "@/features/*/entity-view/**"],
-          message: "Cross-feature: import entity-view extensions (e.g. docRef) from the owning feature barrel (ADR-0087 A1).",
-        },
-        {
-          group: ["@/features/*/actions", "@/features/*/actions/*",
-                   "@/features/*/contexts/*", "@/features/*/contexts/**"],
-          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internal file.",
-        },
-      ],
     }],
   },
 }, // Layering: `features/notes` is a reusable wizard layer consumed by
@@ -280,17 +207,34 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       ],
     }],
   },
-}, // FSD invariant #5 — components must not import @/lib/api directly.
-// Lives in a custom rule (not no-restricted-imports) because flat-config does
-// not merge no-restricted-imports across blocks: layering a second block here
-// would clobber the tanstack restriction below. Severity is `warn` during the
-// FSD data-layer migration (docs/50-audit/fsddata/fsd-data-layer-refactor-plan.md);
-// bump to `error` when the global violation count reaches 0.
+}, // FSD invariants #3 and #5 — both live in custom rules because flat-config
+// does not merge no-restricted-imports across blocks (a second block would
+// clobber the TanStack restriction below, issue #176).
+// #3: features/app/hooks/shared must not import another feature's internals.
+// #5: components must not import @/lib/api directly (severity is `warn` during
+// the FSD data-layer migration; bump to `error` when the count reaches 0).
+{
+  files: [
+    "features/**/*.ts", "features/**/*.tsx",
+    "app/**/*.ts", "app/**/*.tsx",
+    "hooks/**/*.ts", "hooks/**/*.tsx",
+    "components/shared/**/*.ts", "components/shared/**/*.tsx",
+  ],
+  plugins: {
+    fsd: {
+      rules: {
+        "no-api-in-component": fsdNoApiInComponent,
+        "no-cross-feature-internals": fsdNoCrossFeatureInternals,
+      },
+    },
+  },
+  rules: {
+    "fsd/no-cross-feature-internals": "error",
+    "fsd/no-api-in-component": "off",
+  },
+},
 {
   files: ["features/*/components/**/*.ts", "features/*/components/**/*.tsx"],
-  plugins: {
-    fsd: { rules: { "no-api-in-component": fsdNoApiInComponent } },
-  },
   rules: {
     "fsd/no-api-in-component": "warn",
   },
@@ -327,17 +271,18 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
     "pagination/datatable-needs-rowcount": "error",
   },
 },
-// UI component data fetching and formatting restrictions
+// UI component data fetching and formatting restrictions for shared/ui components
 {
-  files: ["components/**/*.tsx", "features/**/*.tsx"],
-  ignores: ["features/**/hooks/**", "features/**/api/**", "features/**/__tests__/**"],
+  files: ["components/**/*.tsx"],
   rules: {
     "no-restricted-imports": ["error", {
-      paths: [{
-        name: "@tanstack/react-query",
-        importNames: ["useQuery", "useMutation", "useSuspenseQuery"],
-        message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
-      }]
+      paths: [
+        {
+          name: "@tanstack/react-query",
+          importNames: ["useQuery", "useMutation", "useSuspenseQuery"],
+          message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
+        },
+      ]
     }],
     "no-restricted-syntax": ["warn",
       {
@@ -361,6 +306,63 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
         message: "Row/card action anti-pattern. Use <DataCell.Action action=\"<key>\" /> (table) or <CardActions.Item action=\"<key>\" /> (card/kanban) from @/components/shared. See docs/20-contracts/component-row-actions.md (ROW_ACTIONS registry)."
       }
     ]
+  }
+},
+// UI component data fetching, formatting, and skeleton restrictions for feature components
+{
+  files: ["features/**/*.tsx"],
+  ignores: ["features/**/hooks/**", "features/**/api/**", "features/**/__tests__/**"],
+  rules: {
+    "no-restricted-imports": ["error", {
+      paths: [
+        {
+          name: "@tanstack/react-query",
+          importNames: ["useQuery", "useMutation", "useSuspenseQuery"],
+          message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
+        },
+        {
+          name: "@/components/ui/skeleton",
+          message: "Import skeleton components from @/components/shared barrel, not @/components/ui/skeleton directly.",
+        },
+      ]
+    }],
+    "no-restricted-syntax": ["warn",
+      {
+        selector: "CallExpression[callee.property.name='toLocaleString']",
+        message: "Do not use .toLocaleString() for currency or quantities. Use <MoneyDisplay> or <QuantityDisplay> instead to ensure consistent UI across the app."
+      },
+      {
+        selector: "JSXElement > JSXOpeningElement[name.name='button']",
+        message: "Do not use native <button> elements. Use Shadcn <Button> or the <ActionButtons> primitives (SubmitButton, CancelButton, etc.) from @/components/shared instead."
+      },
+      {
+        selector: "JSXElement[openingElement.name.name='Button'] JSXElement[openingElement.name.name='Loader2']",
+        message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> (o <DangerButton loading={...}> para acciones destructivas)."
+      },
+      {
+        // Row/card action anti-pattern: <Button>...<RegistryIcon/>...</Button>.
+        // Matches when a Button has a child JSX whose name matches a ROW_ACTIONS icon (or known drift alias).
+        // Legit icon buttons (Bell, X, Plus, ChevronLeft, Settings, etc.) are NOT flagged.
+        // Internal renderers (DataCell.Action / IconButton) use a dynamic <Icon> child, so they are not matched.
+        selector: "JSXElement[openingElement.name.name='Button']:has(JSXAttribute[name.name='size'][value.value='icon']) > JSXElement[openingElement.name.name=/^(Pencil|Edit|Edit2|Edit3|SquarePen|Trash|Trash2|Eye|FileText|Copy|Archive|ArchiveRestore|Banknote|DollarSign|Wallet|CreditCard|Truck|PackageCheck|Package|Ban|Lock|Unlock|LayoutDashboard|Share2|Printer|Download)$/]",
+        message: "Row/card action anti-pattern. Use <DataCell.Action action=\"<key>\" /> (table) or <CardActions.Item action=\"<key>\" /> (card/kanban) from @/components/shared. See docs/20-contracts/component-row-actions.md (ROW_ACTIONS registry)."
+      }
+    ]
+  }
+},
+// Exception for features/**/skeletons/**: may use @/components/ui/skeleton directly
+{
+  files: ["features/**/skeletons/**/*.tsx"],
+  rules: {
+    "no-restricted-imports": ["error", {
+      paths: [
+        {
+          name: "@tanstack/react-query",
+          importNames: ["useQuery", "useMutation", "useSuspenseQuery"],
+          message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
+        },
+      ]
+    }],
   }
 },
 // Row/card action lint extended to top-level app/ pages, which may embed inline actions

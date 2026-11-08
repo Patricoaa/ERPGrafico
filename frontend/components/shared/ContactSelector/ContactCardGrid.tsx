@@ -7,7 +7,7 @@
 import { useState } from "react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
-import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
+import { useContactSearch } from "@/features/contacts"
 import { useDeviceContext } from "@/hooks/useDeviceContext"
 import { EmptyState, CardSkeleton, ChoiceCard, ChoiceGroup } from "@/components/shared"
 import { SearchBar } from "@/components/selectors/ProductGridPicker"
