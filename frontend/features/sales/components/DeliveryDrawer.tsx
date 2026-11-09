@@ -59,6 +59,7 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess, filterType
             onOpenChange={guardedOpenChange}
             size="xl"
             icon={Package}
+            asDialog
             title={isServiceMode ? "Confirmar Entrega de Servicios" : "Despachar Orden"}
             description={isServiceMode ? "Confirme la entrega de los servicios." : "Ingrese los productos a despachar."}
             footer={
