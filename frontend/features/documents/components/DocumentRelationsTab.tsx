@@ -59,7 +59,7 @@ function DomainFilterBar({
                 variant="ghost"
                 onClick={() => onDomainChange(null)}
                 className={cn(
-                    "h-7 shrink-0 rounded-sm px-2.5 text-xs font-medium",
+                    "h-7 shrink-0 rounded-sm px-2.5 text-xs font-medium cursor-pointer",
                     !activeDomain
                         ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-secondary hover:text-secondary-foreground",
@@ -78,7 +78,7 @@ function DomainFilterBar({
                         variant="ghost"
                         onClick={() => onDomainChange(isActive ? null : group.domain)}
                         className={cn(
-                            "h-7 shrink-0 gap-1.5 rounded px-2.5 text-xs font-medium",
+                            "h-7 shrink-0 gap-1.5 rounded px-2.5 text-xs font-medium cursor-pointer",
                             isActive
                                 ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                                 : "bg-muted text-muted-foreground hover:bg-secondary hover:text-secondary-foreground",
@@ -144,7 +144,10 @@ function SectionActionButton({ action }: { action: DocumentActionItem }) {
         <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs font-normal border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            className={cn(
+                "h-7 text-xs font-normal border-primary text-primary hover:bg-primary hover:text-primary-foreground",
+                !action.disabled && "cursor-pointer",
+            )}
             onClick={action.onClick}
             disabled={action.disabled}
             title={action.disabled ? action.disabledReason : undefined}
