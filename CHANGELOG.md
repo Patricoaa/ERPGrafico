@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.82](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.81...v0.3.82) (2026-11-09)
+
+
+### ⚙️ Refactors
+
+* **sales:** convierte DeliveryDrawer en DeliveryModal (BaseModal) ([ac03f91](https://github.com/Patricoaa/ERPGrafico/commit/ac03f91916a919ff2950e2d24bccceebb9bb6010))
+
 ### [0.3.81](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.80...v0.3.81) (2026-11-08)
 
 
