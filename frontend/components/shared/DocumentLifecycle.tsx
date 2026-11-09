@@ -46,9 +46,9 @@ export function DocumentLifecycle({ steps, onStepClick, activeStepId, className 
 
     return (
         <TooltipProvider delayDuration={150}>
-            <div className={className}>
+            <div className={cn("w-full", className)}>
                 {visible.length > 0 && (
-                    <ol className="flex items-start" aria-label="Ciclo del documento">
+                    <ol className="flex w-full items-start" aria-label="Ciclo del documento">
                         {visible.map((step, index) => {
                             const isActive = activeStepId === step.id
                             // Ring completo cuando el paso está completado
