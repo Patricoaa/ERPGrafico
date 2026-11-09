@@ -243,12 +243,17 @@ export function DocumentRelationsTab({
         <div className={cn("space-y-4", className)}>
             <DomainFilterBar groups={groups} activeDomain={activeDomain} onDomainChange={handleDomainChange} />
 
-            {shown.map((group) => (
+            {shown.map((group) => {
+                // Incluir el selfLink en el conteo si pertenece a este grupo
+                const hasSelf = selfLink?.target.domain === group.domain
+                const count = group.links.length + (hasSelf ? 1 : 0)
+
+                return (
                 <section key={group.domain} aria-label={DOCUMENT_DOMAIN_META[group.domain].label}>
                     <div className="rounded-sm border overflow-hidden">
                         <RelationsSectionHead
                             domain={group.domain}
-                            count={group.links.length}
+                            count={count}
                             actions={group.actions}
                         />
                         {group.links.length > 0 || selfLink?.target.domain === group.domain ? (
@@ -280,7 +285,8 @@ export function DocumentRelationsTab({
                         )}
                     </div>
                 </section>
-            ))}
+            )
+            })}
 
             {(data?.unresolved.length ?? 0) > 0 && (
                 <p className="text-xs text-warning">

@@ -192,26 +192,37 @@ export function RelatedDocumentRow({ item, onOpen, actions, hidePartner, isSelf 
     const dateStr = target.date ? formatRowDate(target.date) : null
     const title = [target.display_id, typeLabel, meta, target.date].filter(Boolean).join(" · ")
 
-    // Segunda línea: detalle contextual · fecha · importe
+    // Datos secundarios: fecha primero, luego contacto (partner + detail), luego importe/cantidad
     const secondaryParts: string[] = []
-    if (meta) secondaryParts.push(meta)
     if (dateStr) secondaryParts.push(dateStr)
+    if (partner) secondaryParts.push(partner)
+    if (target.detail) secondaryParts.push(target.detail)
     if (amount != null) secondaryParts.push(formatCurrency(Number(amount)))
     else if (item.quantity != null) secondaryParts.push(String(item.quantity))
 
     const rowContent = (
-        <div className="flex flex-1 min-w-0 flex-col gap-0.5">
-            <div className="flex min-w-0 items-baseline gap-2">
-                <span className="shrink-0 font-mono text-xs font-medium">
-                    {target.accessible ? target.display_id : `${target.display_id} · sin acceso`}
+        <div className="flex flex-1 min-w-0 gap-3">
+            {/* Código centrado ocupando 2 filas */}
+            <div className="flex items-center justify-center shrink-0 w-16">
+                <span className="font-mono text-xs font-medium text-center leading-tight">
+                    {target.accessible ? target.display_id : `${target.display_id}\nsin acceso`}
                 </span>
-                <span className="shrink-0 text-xs text-foreground/80">{typeLabel}</span>
             </div>
-            {secondaryParts.length > 0 && (
-                <span className="truncate text-xs tabular-nums text-muted-foreground/70">
-                    {secondaryParts.join(" · ")}
-                </span>
-            )}
+
+            {/* Datos primarios y secundarios en subsecciones */}
+            <div className="flex flex-1 min-w-0 flex-col gap-0.5">
+                {/* Primarios: tipo (meta va en secundarios para contactos) */}
+                <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="shrink-0 text-xs text-foreground/80">{typeLabel}</span>
+                    {!showDetail && meta && <span className="truncate text-xs text-muted-foreground/80">{meta}</span>}
+                </div>
+                {/* Secundarios: fecha, importe/cantidad */}
+                {secondaryParts.length > 0 && (
+                    <span className="truncate text-xs tabular-nums text-muted-foreground/70">
+                        {secondaryParts.join(" · ")}
+                    </span>
+                )}
+            </div>
         </div>
     )
 
@@ -219,20 +230,23 @@ export function RelatedDocumentRow({ item, onOpen, actions, hidePartner, isSelf 
         return (
             <li className={cn("flex items-center bg-muted/30", target.status === "CANCELLED" && "opacity-60")}>
                 <div className="flex flex-1 min-w-0 items-center gap-3 px-3 py-2.5">
+                    {/* Código centrado ocupando 2 filas */}
+                    <div className="flex items-center justify-center shrink-0 w-16">
+                        <span className="font-mono text-xs font-medium text-center leading-tight">{target.display_id}</span>
+                    </div>
+
+                    {/* Datos primarios y secundarios */}
                     <div className="flex flex-1 min-w-0 flex-col gap-0.5">
                         <div className="flex min-w-0 items-baseline gap-2">
-                            <span className="shrink-0 font-mono text-xs font-medium">{target.display_id}</span>
                             <span className="shrink-0 text-xs text-foreground/80">{typeLabel}</span>
                         </div>
                         {dateStr && (
                             <span className="truncate text-xs text-muted-foreground/70">{dateStr}</span>
                         )}
                     </div>
+
                     <div className="flex shrink-0 items-center gap-2">
                         {target.status && <StatusBadge status={target.status} variant="badge" />}
-                        <span className="rounded-full bg-primary/10 px-1.5 text-3xs leading-5 font-medium text-primary">
-                            Actual
-                        </span>
                     </div>
                 </div>
             </li>
