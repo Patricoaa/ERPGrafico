@@ -3,15 +3,20 @@
 import { useState, useEffect } from "react"
 import { settingsApi } from "../api/settingsApi"
 
+export type AuditCategory = "business" | "security" | "technical" | "config"
+
 export interface GlobalAuditLog {
     date: string
     user_name: string | null
     entity_label: string | null
+    entity_type: string | null
+    entity_id: number | null
     history_type: "+" | "~" | "-" | null
     source: "action_log" | "history"
     action_type: string | null
     type_label: string | null
     description: string
+    category: AuditCategory
 }
 
 export function useAuditLogs(initialLogs?: GlobalAuditLog[]) {
@@ -23,8 +28,8 @@ export function useAuditLogs(initialLogs?: GlobalAuditLog[]) {
         let cancelled = false;
         (async () => {
             try {
-                const data = await settingsApi.getAuditLogs()
-                if (!cancelled) setLogs(data as unknown as GlobalAuditLog[])
+                const data = await settingsApi.getAuditLogs(200)
+                if (!cancelled) setLogs(data)
             } catch {
                 if (!cancelled) console.error("Error fetching audit logs")
             } finally {

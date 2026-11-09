@@ -136,7 +136,7 @@ class BaseNoteService:
 
 class ActionLoggingService:
     @staticmethod
-    def log_action(user, action_type, description, request=None, metadata=None):
+    def log_action(user, action_type, description, request=None, metadata=None, entity_type="", entity_id=None):
         from core.models import ActionLog
 
         ip_address = None
@@ -153,6 +153,8 @@ class ActionLoggingService:
             description=description,
             ip_address=ip_address,
             metadata=metadata or {},
+            entity_type=entity_type or "",
+            entity_id=entity_id,
         )
 
     @staticmethod

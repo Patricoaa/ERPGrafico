@@ -1630,7 +1630,7 @@ class FiscalYearAccountMapping(models.Model):
 # --- Budgeting Models ---
 
 
-class Budget(TimeStampedModel):
+class Budget(AuditedModel):
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     # Budget ya tenía created_at manual — migrado a TimeStampedModel; se añade updated_at.
     name = models.CharField(_("Nombre del Presupuesto"), max_length=255)

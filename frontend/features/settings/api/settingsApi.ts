@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import type { GlobalAuditLog } from '../hooks/useAuditLogs'
 import type {
     SalesSettings,
     SalesSettingsUpdatePayload,
@@ -311,8 +312,8 @@ export const settingsApi = {
 
      // ========== Audit Logs ==========
 
-     getAuditLogs: async (): Promise<Record<string, unknown>[]> => {
-         const { data } = await api.get('/core/audit/global/')
+     getAuditLogs: async (limit = 100): Promise<GlobalAuditLog[]> => {
+         const { data } = await api.get<GlobalAuditLog[]>('/core/audit/global/', { params: { limit } })
          return data
      },
 

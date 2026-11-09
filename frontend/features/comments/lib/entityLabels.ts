@@ -50,4 +50,7 @@ export const COMMENT_LABEL_BY_AUDIT_TYPE: Partial<Record<AuditEntityType, string
     inventory_count: "inventory.inventorycount",
     bank_loan: "treasury.bankloan",
     bankstatement: "treasury.bankstatement",
+    payroll: "hr.payroll",
+    budget: "accounting.budget",
+    accounting_period: "tax.accountingperiod",
 }

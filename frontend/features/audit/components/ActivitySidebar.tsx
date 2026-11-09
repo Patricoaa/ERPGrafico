@@ -19,7 +19,7 @@ import {
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bankstatement' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bankstatement' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan' | 'payroll' | 'budget' | 'accounting_period'
     className?: string
     title?: string
     /** Estado inicial de la sección. En rails de drawer (EntitySidebar) arranca cerrada. */
@@ -71,6 +71,9 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
     bank_loan: 'el préstamo bancario',
     bankstatement: 'la cartola bancaria',
     absence: 'la ausencia',
+    payroll: 'la liquidación de sueldo',
+    budget: 'el presupuesto',
+    accounting_period: 'el período contable',
 }
 
 const PLACEHOLDER_RECORDS: HistoricalRecord[] = [

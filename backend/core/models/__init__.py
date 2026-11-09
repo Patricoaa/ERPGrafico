@@ -162,13 +162,23 @@ class CompanySettings(models.Model):
 
 class ActionLog(models.Model):
     class Type(models.TextChoices):
-        LOGIN = "LOGIN", _("Inicio de Sesión")
-        LOGOUT = "LOGOUT", _("Cierre de Sesión")
+        # Negocio
+        BUSINESS = "BUSINESS", _("Negocio")
         EXPORT = "EXPORT", _("Exportación de Datos")
         PRINT = "PRINT", _("Impresión de Documento")
-        SETTINGS_CHANGE = "SETTINGS_CHANGE", _("Cambio de Configuración")
+        # Seguridad
+        LOGIN = "LOGIN", _("Inicio de Sesión")
+        LOGOUT = "LOGOUT", _("Cierre de Sesión")
         SECURITY = "SECURITY", _("Seguridad/Permisos")
+        # Técnico / Sistema
+        TECHNICAL = "TECHNICAL", _("Técnico/Sistema")
+        SETTINGS_CHANGE = "SETTINGS_CHANGE", _("Cambio de Configuración")
         OTHER = "OTHER", _("Otro")
+
+    # Category constants (computed, not stored)
+    SECURITY_TYPES: "frozenset[str]" = frozenset({"LOGIN", "LOGOUT", "SECURITY"})
+    TECHNICAL_TYPES: "frozenset[str]" = frozenset({"OTHER", "TECHNICAL"})
+    BUSINESS_TYPES: "frozenset[str]" = frozenset({"EXPORT", "PRINT", "BUSINESS"})
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="action_logs")
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -176,6 +186,8 @@ class ActionLog(models.Model):
     description = models.TextField()
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
+    entity_type = models.CharField(max_length=100, blank=True, default="")
+    entity_id = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = _("Log de Acción")

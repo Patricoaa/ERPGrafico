@@ -107,3 +107,46 @@ class AuditMiddleware(MiddlewareMixin):
             print(f"Audit Middleware Error: {e}")
 
         return response
+
+
+class SecurityAuditMiddleware(MiddlewareMixin):
+    """
+    Security Audit Log — registra accesos denegados (403) por usuario autenticado.
+
+    Solo registra cuando hay usuario autenticado (anónimos → 403 genérico sin valor
+    de trazabilidad). Excluye paths de health-check y assets estáticos para evitar ruido.
+    No bloquea la respuesta ante cualquier fallo de escritura.
+    """
+
+    # Prefijos que nunca generan audit de 403 (ruido sin valor)
+    IGNORED_PREFIXES = ["/healthz", "/static/", "/media/", "/favicon"]
+
+    def process_response(self, request, response):
+        if response.status_code != 403:
+            return response
+
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated:
+            return response
+
+        path = request.path
+        if any(path.startswith(p) for p in self.IGNORED_PREFIXES):
+            return response
+
+        try:
+            ActionLoggingService.log_action(
+                user=user,
+                action_type=ActionLog.Type.SECURITY,
+                description=f"Acceso denegado (403) {request.method} {path}",
+                request=request,
+                metadata={
+                    "method": request.method,
+                    "path": path,
+                    "status_code": 403,
+                },
+            )
+        except Exception:
+            # Nunca bloquear la respuesta por fallo de logging
+            pass
+
+        return response

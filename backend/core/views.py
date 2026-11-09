@@ -389,16 +389,30 @@ class GlobalAuditLogView(APIView):
     def get(self, request):
         from .services import CoreSelector
         try:
-            limit = int(request.query_params.get('limit', 50))
+            limit = int(request.query_params.get('limit', 100))
         except (TypeError, ValueError):
-            limit = 50
+            limit = 100
         limit = min(max(limit, 1), GLOBAL_AUDIT_LOG_MAX_LIMIT)
-        return Response(CoreSelector.get_global_audit_log(limit))
+        category = request.query_params.get('category') or None
+        VALID_CATEGORIES = {"business", "security", "technical", "config"}
+        if category and category not in VALID_CATEGORIES:
+            category = None
+        return Response(CoreSelector.get_global_audit_log(limit, category=category))
 
 
 @api_view(["POST"])
 def logout_view(request):
-    """Clear the HttpOnly access_token cookie."""
+    """Clear the HttpOnly access_token cookie and register the logout event."""
+    if request.user and request.user.is_authenticated:
+        from .models import ActionLog
+        from .services import ActionLoggingService
+
+        ActionLoggingService.log_action(
+            user=request.user,
+            action_type=ActionLog.Type.LOGOUT,
+            description=f"Logout {request.user.username}",
+            request=request,
+        )
     response = Response({"detail": "Sesión cerrada."})
     response.delete_cookie("access_token", path="/")
     return response

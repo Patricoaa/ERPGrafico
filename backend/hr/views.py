@@ -216,7 +216,7 @@ class PayrollFilter(django_filters.FilterSet):
         fields = ["employee", "period_year", "period_month", "status", "date_from", "date_to"]
 
 
-class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet):
+class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
     pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return (

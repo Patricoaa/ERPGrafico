@@ -146,6 +146,7 @@ MIDDLEWARE = [
     "simple_history.middleware.HistoryRequestMiddleware",
     "core.middleware.CurrentUserMiddleware",
     "core.middleware.AuditMiddleware",
+    "core.middleware.SecurityAuditMiddleware",
     "treasury.pos_external_guard.POSExternalReasonMiddleware",
 ]
 

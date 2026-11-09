@@ -10,65 +10,65 @@ interface AuditPageClientProps {
     initialLogs?: GlobalAuditLog[]
 }
 
+const CATEGORY_OPTIONS = [
+    { label: "Negocio", value: "business" },
+    { label: "Seguridad", value: "security" },
+    { label: "Técnico", value: "technical" },
+    { label: "Config", value: "config" },
+]
+
 export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
     const { logs, loading } = useAuditLogs(initialLogs);
 
     const entityLabelOptions = useMemo(() =>
         Array.from(new Set(logs.map(l => l.entity_label).filter(Boolean)))
+            .sort()
             .map(val => ({ label: val as string, value: val as string })),
-        [logs]
-    )
-
-    const actionTypeOptions = useMemo(() =>
-        Array.from(new Set(logs.map(l => {
-            if (l.source === 'action_log') return l.action_type || 'Unknown';
-            if (l.history_type === '+') return 'Creación';
-            if (l.history_type === '~') return 'Edición';
-            if (l.history_type === '-') return 'Eliminación';
-            return 'Cambio';
-        }))).filter(Boolean).map(val => ({
-            label: (val === 'LOGIN' ? 'Inicio de Sesión' :
-                val === 'LOGOUT' ? 'Cierre de Sesión' :
-                val === 'SETTINGS_CHANGE' ? 'Configuración' :
-                val === 'SECURITY' ? 'Seguridad' :
-                val === 'EXPORT' ? 'Exportación' :
-                val === 'PRINT' ? 'Impresión' : val) as string,
-            value: val as string
-        })),
         [logs]
     )
 
     const auditSearchConfig: UnifiedSearchConfig = useMemo(() => ({
         filters: [
-            { key: 'source', label: 'Origen', type: 'multi', serverParam: 'source', options: [{ label: "Sistema", value: "action_log" }, { label: "Datos", value: "history" }] },
-            { key: 'entity_label', label: 'Entidad', type: 'multi', serverParam: 'entity_label', options: entityLabelOptions },
-            { key: 'action_type_label', label: 'Acción', type: 'multi', serverParam: 'action_type_label', options: actionTypeOptions },
+            {
+                key: 'category',
+                label: 'Categoría',
+                type: 'multi',
+                serverParam: 'category',
+                options: CATEGORY_OPTIONS,
+            },
+            {
+                key: 'entity_label',
+                label: 'Entidad',
+                type: 'multi',
+                serverParam: 'entity_label',
+                options: entityLabelOptions,
+            },
+            {
+                key: 'source',
+                label: 'Origen',
+                type: 'multi',
+                serverParam: 'source',
+                options: [
+                    { label: "Sistema", value: "action_log" },
+                    { label: "Datos", value: "history" },
+                ],
+            },
         ],
         searchFields: [],
         groupBy: [
-            { key: 'source', label: 'Origen', field: 'source' },
+            { key: 'category', label: 'Categoría', field: 'category' },
             { key: 'entity_label', label: 'Entidad', field: 'entity_label' },
         ],
-    }), [actionTypeOptions, entityLabelOptions])
+    }), [entityLabelOptions])
 
     const auditSearch = useUnifiedSearch(auditSearchConfig)
 
     const filteredLogs = useMemo(() => {
         let result = logs as GlobalAuditLog[]
-        const { source, entity_label, action_type_label } = auditSearch.paramValues
-        if (source) result = result.filter(l => l.source === source)
+        const { category, entity_label, source } = auditSearch.paramValues
+        if (category) result = result.filter(l => l.category === category)
         if (entity_label) result = result.filter(l => (l.entity_label ?? '') === entity_label)
-        if (action_type_label) {
-            result = result.filter(l => {
-                const computed = l.source === 'action_log'
-                    ? (l.action_type || 'Unknown')
-                    : l.history_type === '+' ? 'Creación'
-                    : l.history_type === '~' ? 'Edición'
-                    : l.history_type === '-' ? 'Eliminación'
-                    : 'Cambio'
-                return computed === action_type_label
-            })
-        }
+        if (source) result = result.filter(l => l.source === source)
         return result
     }, [logs, auditSearch.paramValues])
 

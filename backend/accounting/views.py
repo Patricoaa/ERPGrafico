@@ -232,7 +232,7 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
 # --- Budgeting ViewSets ---
 
 
-class BudgetViewSet(viewsets.ModelViewSet):
+class BudgetViewSet(viewsets.ModelViewSet, AuditHistory):
     pagination_class = StandardResultsSetPagination
     action_permissions = {
         # Edit via POST → change_*
@@ -325,7 +325,7 @@ class BudgetItemViewSet(viewsets.ModelViewSet):
     serializer_class = BudgetItemSerializer
 
 
-class FiscalYearViewSet(EditPolicyMixin, viewsets.ModelViewSet):
+class FiscalYearViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
     """
     CRUD + custom actions for Fiscal Year management and annual closing.
     """

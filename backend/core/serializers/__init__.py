@@ -259,6 +259,8 @@ class ActionLogSerializer(serializers.ModelSerializer):
             "description",
             "ip_address",
             "metadata",
+            "entity_type",
+            "entity_id",
         ]
 
 

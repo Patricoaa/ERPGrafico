@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
-from core.mixins import EditPolicyMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin
 
 from .models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
 from .serializers import (
@@ -29,7 +29,7 @@ from .services import (
 )
 
 
-class TaxPeriodViewSet(viewsets.ModelViewSet):
+class TaxPeriodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = TaxPeriod.objects.select_related("closed_by").all()
     serializer_class = TaxPeriodSerializer
@@ -84,7 +84,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=400)
 
 
-class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet):
+class F29DeclarationViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = F29Declaration.objects.select_related("tax_period").all()
     serializer_class = F29DeclarationSerializer
@@ -214,7 +214,7 @@ class F29PaymentViewSet(EditPolicyMixin, viewsets.ModelViewSet):
         return Response(self.get_serializer(payment).data)
 
 
-class AccountingPeriodViewSet(viewsets.ModelViewSet):
+class AccountingPeriodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = AccountingPeriod.objects.select_related("closed_by", "tax_period").all()
     serializer_class = AccountingPeriodSerializer
     pagination_class = None  # Master data

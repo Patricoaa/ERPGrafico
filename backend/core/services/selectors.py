@@ -12,7 +12,7 @@ class CoreSelector:
         return qs
 
     @staticmethod
-    def get_global_audit_log(limit):
+    def get_global_audit_log(limit, category=None):
         # --- contacts ---
         from contacts.models import Contact
 
@@ -68,16 +68,20 @@ class CoreSelector:
 
         from core.serializers import ActionLogSerializer, HistoricalRecordSerializer
 
+        _SECURITY_TYPES = frozenset({"LOGIN", "LOGOUT", "SECURITY"})
+        _TECHNICAL_TYPES = frozenset({"OTHER", "TECHNICAL"})
+        _BUSINESS_TYPES = frozenset({"EXPORT", "PRINT", "BUSINESS"})
+
+        def _action_category(action_type):
+            if action_type in _SECURITY_TYPES:
+                return "security"
+            if action_type in _TECHNICAL_TYPES:
+                return "technical"
+            if action_type in _BUSINESS_TYPES:
+                return "business"
+            return "config"
+
         logs = ActionLogSerializer(ActionLog.objects.all()[:limit], many=True).data
-        for log in logs:
-            log.update(
-                {
-                    "source": "action_log",
-                    "entity_type": "system",
-                    "date": log["timestamp"],
-                    "type_label": log["action_type_display"],
-                }
-            )
 
         models = [
             # contacts
@@ -127,6 +131,28 @@ class CoreSelector:
             (F29Declaration, "f29_declaration", "Declaración F29"),
         ]
 
+        # Build a slug → human label map from the models list (used to enrich action_logs)
+        _entity_label_map: dict[str, str] = {t_slug: t_lbl for _, t_slug, t_lbl in models}
+        # Fallback labels for system-level entity types
+        _entity_label_map.update({"system": None, "user": "Usuario", "group": "Rol/Grupo"})
+
+        # Enrich action_log entries with category and entity_label
+        for log in logs:
+            cat = _action_category(log["action_type"])
+            e_type = log.get("entity_type") or "system"
+            e_label = _entity_label_map.get(e_type)  # None for "system"
+            log.update(
+                {
+                    "source": "action_log",
+                    "entity_type": e_type,
+                    "entity_id": log.get("entity_id"),
+                    "entity_label": e_label,
+                    "date": log["timestamp"],
+                    "type_label": log["action_type_display"],
+                    "category": cat,
+                }
+            )
+
         # Identifier fields tried in order to build a human-readable description
         _id_fields = ["number", "name", "code", "year", "internal_code", "display_id", "id"]
 
@@ -150,13 +176,17 @@ class CoreSelector:
                         "source": "history",
                         "entity_type": t_slug,
                         "entity_label": t_lbl,
+                        "entity_id": r.get("id"),
                         "date": r["history_date"],
                         "description": f"{verb.capitalize()} {t_lbl.lower()} {obj_name}".strip(),
                         "user_name": r["history_user_username"],
+                        "category": "business",
                     }
                 )
                 all_hist.append(r)
 
         combined = logs + all_hist
         combined.sort(key=lambda x: x["date"], reverse=True)
+        if category:
+            combined = [e for e in combined if e.get("category") == category]
         return combined[:limit]

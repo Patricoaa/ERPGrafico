@@ -1,23 +1,15 @@
 import { serverFetch } from "@/lib/server-fetch"
+import type { GlobalAuditLog } from "@/features/settings"
 import AuditPageClient from "./AuditPageClient"
-
-interface GlobalAuditLog {
-    date: string;
-    user_name: string | null;
-    entity_label: string | null;
-    history_type: '+' | '~' | '-' | null;
-    source: 'action_log' | 'history';
-    action_type: string | null;
-    type_label: string | null;
-    description: string;
-}
 
 export default async function AuditHubPage() {
     let initialLogs: GlobalAuditLog[] | undefined
     try {
-        initialLogs = (await serverFetch<{ results: GlobalAuditLog[] }>('core/audit/global/', {
+        const raw = await serverFetch<GlobalAuditLog[] | { results: GlobalAuditLog[] }>('core/audit/global/', {
             revalidate: 30,
-        })).results
+            params: { limit: "200" },
+        })
+        initialLogs = Array.isArray(raw) ? raw : raw.results
     } catch {
         // Client-side fetch handles fallback
     }
