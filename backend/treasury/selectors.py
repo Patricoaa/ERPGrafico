@@ -1085,6 +1085,16 @@ class TreasuryMovementSelector:
         if pm := params.get("payment_method_new"):
             qs = qs.filter(payment_method_new_id=pm)
 
+        if mt_raw := params.get("movement_type"):
+            mt_values = [v.strip() for v in mt_raw.split(",") if v.strip()]
+            if mt_values:
+                qs = qs.filter(movement_type__in=mt_values)
+
+        if pm_raw := params.get("payment_method"):
+            pm_values = [v.strip() for v in pm_raw.split(",") if v.strip()]
+            if pm_values:
+                qs = qs.filter(payment_method_new__method_type__in=pm_values)
+
         if (direction := params.get("direction")) and treasury_account:
             if direction == "IN":
                 qs = qs.filter(

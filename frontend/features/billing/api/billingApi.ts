@@ -34,10 +34,10 @@ export const billingApi = {
         if (filters?.date_to)      params.append('date_to', filters.date_to)
         if (filters?.total_min)    params.append('total_min', filters.total_min)
         if (filters?.total_max)    params.append('total_max', filters.total_max)
-        if (filters?.number)       params.append('number', filters.number)
-        // partner_name no tiene campo directo en filterset → usar search=
-        if (filters?.partner_name) params.append('search', filters.partner_name)
-        if (filters?.search) params.append('search', filters.search)
+        if (filters?.number)         params.append('number', filters.number)
+        if (filters?.partner_name)   params.append('partner_name', filters.partner_name)
+        if (filters?.search)         params.append('search', filters.search)
+        if (filters?.payment_status) params.append('payment_status', filters.payment_status)
 
         const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
         return data.results

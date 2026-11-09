@@ -56,6 +56,7 @@ export interface InvoiceFilters {
     partner_name?: string
     search?: string
     status?: string
+    payment_status?: string
     dte_type?: string
     mode?: 'sale' | 'purchase'
     date_from?: string
