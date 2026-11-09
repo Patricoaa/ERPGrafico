@@ -67,6 +67,7 @@ class SaleOrderFilterSet(django_filters.FilterSet):
     billing_status = django_filters.CharFilter(method="filter_billing_status")
     payment_status = django_filters.CharFilter(method="filter_payment_status")
     production_status = django_filters.CharFilter(method="filter_production_status")
+    pos_session = django_filters.NumberFilter(field_name="pos_session_id")
 
     class Meta:
         model = SaleOrder
@@ -83,6 +84,7 @@ class SaleOrderFilterSet(django_filters.FilterSet):
             "billing_status",
             "payment_status",
             "production_status",
+            "pos_session",
         ]
 
     def filter_product_name(self, queryset, name, value):

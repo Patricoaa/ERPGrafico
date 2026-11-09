@@ -211,7 +211,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     origin_document = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
     pos_session = serializers.IntegerField(
-        source="sale_order.pos_session", read_only=True, allow_null=True
+        source="sale_order.pos_session_id", read_only=True, allow_null=True
     )
     sale_order_detail = serializers.SerializerMethodField()
     is_sale_document = serializers.ReadOnlyField()

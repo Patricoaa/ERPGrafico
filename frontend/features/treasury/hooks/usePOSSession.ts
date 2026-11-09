@@ -3,7 +3,7 @@ import { treasuryApi } from '../api/treasuryApi'
 import { staleTime } from '@/lib/query-config'
 
 export function usePOSSession(id: number | null) {
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, isError, refetch } = useQuery({
         queryKey: ['pos-session', id],
         queryFn: () => treasuryApi.getPOSSession(id as number),
         staleTime: staleTime.volatile,
@@ -13,5 +13,7 @@ export function usePOSSession(id: number | null) {
     return {
         session: data ?? null,
         isLoading,
+        isError,
+        refetch,
     }
 }

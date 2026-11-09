@@ -1,4 +1,4 @@
-import { Banknote, BookOpen, ClipboardList, FileText, Package, Shapes, TrendingUp, Users, type LucideIcon } from "lucide-react"
+import { Banknote, BookOpen, Factory, FileText, Package, Shapes, TrendingUp, Users, type LucideIcon } from "lucide-react"
 import type { DocumentDomain } from "../types"
 
 /**
@@ -8,7 +8,7 @@ import type { DocumentDomain } from "../types"
 export const DOCUMENT_DOMAIN_META: Record<DocumentDomain, { label: string; icon: LucideIcon; order: number }> = {
     origin: { label: "Origen", icon: TrendingUp, order: 0 },
     billing: { label: "Facturación", icon: FileText, order: 1 },
-    production: { label: "Manufactura", icon: ClipboardList, order: 2 },
+    production: { label: "Manufactura", icon: Factory, order: 2 },
     logistics: { label: "Logística", icon: Package, order: 3 },
     treasury: { label: "Tesorería", icon: Banknote, order: 4 },
     accounting: { label: "Contabilidad", icon: BookOpen, order: 5 },

@@ -268,7 +268,7 @@ export const purchaseOrderActions: ActionRegistry<ActionDoc> = {
         actions: [
             {
                 id: 'create-credit-note',
-                label: 'Crear Nota de Crédito',
+                label: 'Registrar Nota de Crédito',
                 icon: MinusCircle,
                 requiredPermissions: ['billing.add_invoice'],
                 excludedStatus: ['CANCELLED'],
@@ -295,7 +295,7 @@ export const purchaseOrderActions: ActionRegistry<ActionDoc> = {
             },
             {
                 id: 'create-debit-note',
-                label: 'Crear Nota de Débito',
+                label: 'Registrar Nota de Débito',
                 icon: PlusCircle,
                 requiredPermissions: ['billing.add_invoice'],
                 excludedStatus: ['CANCELLED'],

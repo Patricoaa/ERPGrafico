@@ -38,12 +38,16 @@ def sale_order_relations(order):
         yield Link("derivation", "outgoing", "work_order", work_order)
     for sale_return in order.returns.all():
         yield Link("correction", "outgoing", "return", sale_return)
-    for payment in order.payments.all():
+    for payment in order.payments.select_related("terminal_batch").all():
         yield Link("settlement", "incoming", "payment", payment, amount=payment.amount)
+        if payment.terminal_batch_id:
+            yield Link("association", "incoming", "terminal_batch", payment.terminal_batch, is_dependency=False)
     for allocation in order.payment_allocations.select_related("treasury_movement"):
         yield Link("settlement", "incoming", "payment", allocation.treasury_movement, amount=allocation.amount)
     if order.journal_entry_id:
         yield Link("posting", "outgoing", "journal_entry", order.journal_entry)
+    if order.pos_session_id:
+        yield Link("derivation", "incoming", "pos_session", order.pos_session, is_dependency=False)
 
 
 @relation_provider("sales.saledelivery")

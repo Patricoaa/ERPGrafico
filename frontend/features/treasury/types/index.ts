@@ -435,10 +435,34 @@ export interface POSSession {
     id: number
     terminal: number | null
     terminal_name?: string
+    terminal_details?: {
+        id: number
+        name: string
+        code: string
+        location: string | null
+    }
+    user: number
+    user_name: string
     opened_at: string
-    closed_at?: string
+    closed_at: string | null
+    closed_by_name: string | null
+    status: 'OPEN' | 'CLOSED'
+    status_display: string
     is_active: boolean
     cash_balance: number
+    treasury_account: number | null
+    treasury_account_name: string | null
+    opening_balance: number
+    total_cash_sales: number
+    total_card_sales: number
+    total_transfer_sales: number
+    total_credit_sales: number
+    total_check_sales: number
+    total_other_cash_inflow: number
+    total_other_cash_outflow: number
+    expected_cash: number
+    notes: string
+    cash_movements: TreasuryMovement[]
 }
 
 export interface TransferPayload {

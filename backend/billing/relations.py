@@ -33,8 +33,10 @@ def invoice_relations(invoice):
         yield Link("correction", "outgoing", "corrected_invoice", invoice.corrected_invoice)
     for note in invoice.adjustments.all():
         yield Link("correction", "incoming", NOTE_ROLES.get(note.dte_type, "note"), note)
-    for payment in invoice.payments.all():
+    for payment in invoice.payments.select_related("terminal_batch").all():
         yield Link("settlement", "incoming", "payment", payment, amount=payment.amount)
+        if payment.terminal_batch_id:
+            yield Link("association", "incoming", "terminal_batch", payment.terminal_batch, is_dependency=False)
     for allocation in invoice.payment_allocations.select_related("treasury_movement"):
         yield Link("settlement", "incoming", "payment", allocation.treasury_movement, amount=allocation.amount)
     if invoice.journal_entry_id:

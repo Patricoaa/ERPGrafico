@@ -1,7 +1,6 @@
 "use client"
 
-import { createElement } from "react"
-import { Link2Off, MoreHorizontal } from "lucide-react"
+import { ChevronRight, Link2Off, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -10,10 +9,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { DocumentActionItem } from "./DocumentActionsMenu"
-import { cn } from "@/lib/utils"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { cn, parseDateOnly } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/errors"
-import { DataCell } from "./DataTableCells"
+import { formatCurrency } from "@/lib/money"
 import { EmptyState } from "./EmptyState"
 import { SkeletonShell } from "./SkeletonShell"
 import { StatusBadge } from "./StatusBadge"
@@ -67,6 +65,18 @@ const SEMANTIC_GROUPS: Array<{ semantic: string[]; title: string }> = [
     { semantic: ["reference", "association"], title: "Otros" },
 ]
 
+const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"] as const
+
+function formatRowDate(isoDate: string): string {
+    // Extract date part to handle both "YYYY-MM-DD" and "YYYY-MM-DDTHH:mm:ssZ" safely
+    const d = parseDateOnly(isoDate.slice(0, 10))
+    if (Number.isNaN(d.getTime())) return ""
+    const day = d.getDate()
+    const month = MONTHS[d.getMonth()]
+    const year = d.getFullYear()
+    return year === new Date().getFullYear() ? `${day} ${month}` : `${day} ${month} ${year}`
+}
+
 export const RELATED_ROLE_LABELS: Record<string, string> = {
     sale_order: "Orden de venta",
     purchase_order: "Orden de compra",
@@ -89,6 +99,17 @@ export const RELATED_ROLE_LABELS: Record<string, string> = {
     customer: "Cliente",
     supplier: "Proveedor",
     contact: "Contacto",
+    // POS (vinculados al dominio origen cuando la venta viene de TPV)
+    pos_session: "Sesión POS",
+    pos_box: "Caja POS",
+    pos_sale: "Venta POS",
+    // Tesorería extendida
+    bank_reconciliation: "Conciliación bancaria",
+    collection_batch: "Lote de recaudación",
+    loan: "Préstamo",
+    loan_payment: "Cuota de préstamo",
+    bank_statement: "Extracto bancario",
+    bank_transaction: "Movimiento bancario",
 }
 
 export function RelatedDocumentsTable({
@@ -151,88 +172,121 @@ export interface RelatedDocumentRowProps {
     actions?: DocumentActionItem[]
     /** Contraparte del documento de la ficha: si coincide, no se repite en la fila. */
     hidePartner?: string | null
+    /** El documento relacionado es el mismo documento que el que muestra el tab; no es clickeable. */
+    isSelf?: boolean
 }
 
 /**
- * Fila de un documento relacionado (ADR-0083). Una sola línea y toda la fila es el enlace a la
- * ficha: icono de la entidad (ENTITY_REGISTRY) · código · tipo · importe · estado. Solo
- * contactos y tesorería muestran además su detalle (truncado); el resto se ve en la ficha.
- * Las acciones "⋯" quedan fuera del enlace.
+ * Fila de un documento relacionado (ADR-0083). Dos líneas: código + tipo en la primera;
+ * info secundaria (detalle · fecha · importe) en la segunda, más liviana. Estado y chevron
+ * (o kebab cuando hay acciones de fila) al extremo derecho.
  */
-export function RelatedDocumentRow({ item, onOpen, actions, hidePartner }: RelatedDocumentRowProps) {
+export function RelatedDocumentRow({ item, onOpen, actions, hidePartner, isSelf }: RelatedDocumentRowProps) {
     const { target } = item
-    const amount = item.amount ?? target.amount
-    // Detalle solo donde el código no basta para entenderlo: contactos (nombre, RUT) y
-    // tesorería (medio de pago, referencia). El resto se ve entrando a su ficha.
+    const amount = isSelf ? null : (item.amount ?? target.amount)
+    const hasActions = !isSelf && !!actions && actions.length > 0
     const showDetail = target.domain === "contacts" || target.domain === "treasury"
     const partner = showDetail && target.partner_name && target.partner_name !== hidePartner ? target.partner_name : null
     const meta = showDetail ? [target.detail, partner].filter(Boolean).join(" · ") : ""
     const typeLabel = RELATED_ROLE_LABELS[item.role] ?? target.title
+    const dateStr = target.date ? formatRowDate(target.date) : null
+    const title = [target.display_id, typeLabel, meta, target.date].filter(Boolean).join(" · ")
 
-    const content = (
-        <>
-            {createElement(getEntityIcon(target.label), {
-                "aria-hidden": true,
-                className: "h-4 w-4 shrink-0 text-muted-foreground group-hover/row:text-foreground",
-            })}
-            <span className="flex min-w-0 items-baseline gap-2">
+    // Segunda línea: detalle contextual · fecha · importe
+    const secondaryParts: string[] = []
+    if (meta) secondaryParts.push(meta)
+    if (dateStr) secondaryParts.push(dateStr)
+    if (amount != null) secondaryParts.push(formatCurrency(Number(amount)))
+    else if (item.quantity != null) secondaryParts.push(String(item.quantity))
+
+    const rowContent = (
+        <div className="flex flex-1 min-w-0 flex-col gap-0.5">
+            <div className="flex min-w-0 items-baseline gap-2">
                 <span className="shrink-0 font-mono text-xs font-medium">
                     {target.accessible ? target.display_id : `${target.display_id} · sin acceso`}
                 </span>
-                <span className="shrink-0 text-xs text-muted-foreground">{typeLabel}</span>
-                {meta && <span className="min-w-0 truncate text-xs text-muted-foreground">{meta}</span>}
-            </span>
-            <span className="flex shrink-0 items-center gap-3">
-                {amount != null && <DataCell.Currency value={amount} size="xs" className="w-auto tabular-nums" />}
-                {amount == null && item.quantity != null && (
-                    <DataCell.Number value={item.quantity} decimals={2} size="xs" className="w-auto" />
-                )}
-                {target.status && <StatusBadge status={target.status} variant="badge" />}
-            </span>
-        </>
+                <span className="shrink-0 text-xs text-foreground/80">{typeLabel}</span>
+            </div>
+            {secondaryParts.length > 0 && (
+                <span className="truncate text-xs tabular-nums text-muted-foreground/70">
+                    {secondaryParts.join(" · ")}
+                </span>
+            )}
+        </div>
     )
-    const rowClass = "group/row grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left"
-    const title = [target.display_id, typeLabel, meta, target.date].filter(Boolean).join(" · ")
+
+    if (isSelf) {
+        return (
+            <li className={cn("flex items-center bg-muted/30", target.status === "CANCELLED" && "opacity-60")}>
+                <div className="flex flex-1 min-w-0 items-center gap-3 px-3 py-2.5">
+                    <div className="flex flex-1 min-w-0 flex-col gap-0.5">
+                        <div className="flex min-w-0 items-baseline gap-2">
+                            <span className="shrink-0 font-mono text-xs font-medium">{target.display_id}</span>
+                            <span className="shrink-0 text-xs text-foreground/80">{typeLabel}</span>
+                        </div>
+                        {dateStr && (
+                            <span className="truncate text-xs text-muted-foreground/70">{dateStr}</span>
+                        )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                        {target.status && <StatusBadge status={target.status} variant="badge" />}
+                        <span className="rounded-full bg-primary/10 px-1.5 text-3xs leading-5 font-medium text-primary">
+                            Actual
+                        </span>
+                    </div>
+                </div>
+            </li>
+        )
+    }
 
     return (
-        <li className={cn("flex items-center", target.status === "CANCELLED" && "opacity-60")}>
+        <li className={cn("group flex items-stretch", target.status === "CANCELLED" && "opacity-60")}>
             {target.accessible ? (
                 <button
                     type="button"
                     onClick={() => onOpen(item)}
                     title={title}
-                    className={cn(rowClass, "transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring")}
+                    className="flex flex-1 min-w-0 cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
-                    {content}
+                    {rowContent}
+                    <div className="flex shrink-0 items-center gap-2">
+                        {target.status && <StatusBadge status={target.status} variant="badge" />}
+                        {!hasActions && <ChevronRight className="h-4 w-4 text-muted-foreground/30" />}
+                    </div>
                 </button>
             ) : (
-                <div className={rowClass} title="Sin permiso para ver este documento">{content}</div>
+                <div className="flex flex-1 min-w-0 items-center gap-3 px-3 py-2.5" title="Sin permiso para ver este documento">
+                    {rowContent}
+                    {target.status && <StatusBadge status={target.status} variant="badge" className="shrink-0" />}
+                </div>
             )}
-            {actions && actions.length > 0 && (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm" className="mr-1 size-7 shrink-0" aria-label={`Acciones de ${target.display_id}`}>
-                            <MoreHorizontal />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-lg border-sidebar-border">
-                        {actions.map((action) => {
-                            const ActionIcon = action.icon
-                            return (
-                                <DropdownMenuItem
-                                    key={action.id}
-                                    onClick={action.onClick}
-                                    disabled={action.disabled}
-                                    variant={action.destructive ? "destructive" : "default"}
-                                    className="text-xs font-semibold uppercase tracking-widest rounded-sm cursor-pointer"
-                                >
-                                    {ActionIcon && <ActionIcon className="h-3.5 w-3.5" />}
-                                    {action.label}
-                                </DropdownMenuItem>
-                            )
-                        })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+            {hasActions && (
+                <div className="flex items-center pr-2 transition-colors group-hover:bg-muted/60">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon-sm" className="size-7 shrink-0" aria-label={`Acciones de ${target.display_id}`}>
+                                <MoreHorizontal />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-sm border-sidebar-border">
+                            {actions.map((action) => {
+                                const ActionIcon = action.icon
+                                return (
+                                    <DropdownMenuItem
+                                        key={action.id}
+                                        onClick={action.onClick}
+                                        disabled={action.disabled}
+                                        variant={action.destructive ? "destructive" : "default"}
+                                        className="text-xs cursor-pointer"
+                                    >
+                                        {ActionIcon && <ActionIcon className="h-3.5 w-3.5" />}
+                                        {action.label}
+                                    </DropdownMenuItem>
+                                )
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             )}
         </li>
     )

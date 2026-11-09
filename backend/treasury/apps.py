@@ -44,6 +44,8 @@ class TreasuryConfig(AppConfig):
                 CreditLine,
                 LoanInstallment,
                 PaymentMethod,
+                POSSession,
+                POSTerminal,
                 TreasuryAccount,
                 TreasuryMovement,
             )
@@ -237,6 +239,40 @@ class TreasuryConfig(AppConfig):
                     list_url="/treasury/bank-center",
                     detail_url_pattern="/treasury/bank-center",
                     permission="treasury.view_creditline",
+                )
+            )
+            UniversalRegistry.register(
+                SearchableEntity(
+                    model=POSSession,
+                    label="treasury.possession",
+                    title_singular="Sesión POS",
+                    title_plural="Sesiones POS",
+                    icon="monitor",
+                    search_fields=("id", "terminal__name", "terminal__code", "user__username"),
+                    short_display_template=f"{EntityPrefix.POS_SESSION}-{{id}}",
+                    display_template=f"{EntityPrefix.POS_SESSION}-{{id}}",
+                    subtitle_template="{terminal.name}",
+                    extra_info_template="{status}",
+                    list_url="/sales/sessions",
+                    detail_url_pattern="/treasury/sessions/{id}",
+                    permission="treasury.view_possession",
+                )
+            )
+            UniversalRegistry.register(
+                SearchableEntity(
+                    model=POSTerminal,
+                    label="treasury.posterminal",
+                    title_singular="Caja POS",
+                    title_plural="Cajas POS",
+                    icon="monitor",
+                    search_fields=("name", "code"),
+                    short_display_template=f"{EntityPrefix.POS_TERMINAL}-{{code}}",
+                    display_template=f"{EntityPrefix.POS_TERMINAL}-{{code}}",
+                    subtitle_template="{name}",
+                    extra_info_template="{location}",
+                    list_url="/treasury/operaciones/pos",
+                    detail_url_pattern="/treasury/operaciones/pos?terminal={id}",
+                    permission="treasury.view_posterminal",
                 )
             )
         except Exception:

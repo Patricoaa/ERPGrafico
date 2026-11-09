@@ -41,6 +41,33 @@ def treasury_movement_relations(movement):
 DocumentTypeRegistry.register(DocumentType(label="treasury.check"))
 DocumentTypeRegistry.register(DocumentType(label="treasury.terminalbatch"))
 
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.possession",
+    canonical_url="/treasury/sessions/{id}",
+    domain="origin",
+    status_field="status",
+    date_field="opened_at",
+    amount_field=None,
+    detail=lambda s: join(
+        getattr(getattr(s, "terminal", None), "name", None),
+        getattr(getattr(s, "user", None), "get_full_name", lambda: None)(),
+    ),
+))
+
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.posterminal",
+    domain="origin",
+    status_field=None,
+    amount_field=None,
+    detail=lambda t: join(t.code, t.location if t.location else None),
+))
+
+
+@relation_provider("treasury.possession")
+def pos_session_relations(session):
+    for order in session.sale_orders.all():
+        yield Link("derivation", "outgoing", "pos_sale", order, is_dependency=False)
+
 
 @relation_provider("treasury.treasurymovement")
 def treasury_movement_extra_relations(movement):

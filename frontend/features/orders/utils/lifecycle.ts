@@ -1,4 +1,4 @@
-import { Banknote, ClipboardList, FileText, Package, TrendingUp } from "lucide-react"
+import { Banknote, Factory, FileText, Package, TrendingUp } from "lucide-react"
 import type { LifecycleStep, LifecycleStepStatus } from "@/components/shared"
 import { getHubStatuses, getInvoiceHubStatuses, getNoteHubStatuses } from "@/lib/workflow-status"
 import type { Order, OrderLine } from "../types"
@@ -48,7 +48,7 @@ export function getOrderLifecycle(order: Order, kind: "sale" | "purchase"): Life
             progress: billingPct, detail: billingDetail,
         },
         {
-            id: "production", label: "Manufactura", icon: ClipboardList,
+            id: "production", label: "Manufactura", icon: Factory,
             status: kind === "sale" && !isCancelled ? (hub.production as LifecycleStepStatus) : "not_applicable",
             progress: hub.production === "warning" ? 100 : productionPct,
             detail: hub.production === "warning" ? "Falta crear OT" : `${workOrders.length} OT · ${productionPct}%`,

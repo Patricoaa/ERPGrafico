@@ -90,7 +90,7 @@ class EntityPrefix(StrEnum):
     USER = "USR"
 
     # ── POS ────────────────────────────────────────────────────────────
-    POS_SESSION = "POS"
+    POS_SESSION = "SES"
     POS_TERMINAL = "POS-C"
 
     # ── Tax ────────────────────────────────────────────────────────────

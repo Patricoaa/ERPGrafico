@@ -322,7 +322,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                 </div>
 
 
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
 
                                     <div className="space-y-6">

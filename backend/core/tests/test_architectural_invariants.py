@@ -35,6 +35,7 @@ DRAWER_ENTITIES: set[str] = {
     "treasury.loaninstallment",  # tab del hub /treasury/bank-center/[bankId]
     "treasury.creditline",  # tab del hub /treasury/bank-center/[bankId]
     "hr.payrollconcept",  # tab en /hr/settings/concepts
+    "treasury.posterminal",  # configuración de cajas POS, sin ficha documental propia
 }
 
 DRAWER_DETAIL_ENTITIES: set[str] = {

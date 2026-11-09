@@ -935,7 +935,11 @@ class BillingService:
 
             # Use provided channel or default to POS
             channel = order_data.get("channel", "POS")
-            order = order_serializer.save(channel=channel)
+            pos_session = None
+            if pos_session_id:
+                from treasury.models import POSSession
+                pos_session = POSSession.objects.filter(id=pos_session_id, status="OPEN").first()
+            order = order_serializer.save(channel=channel, pos_session=pos_session)
 
             # Enforce tax rate on created lines (Safety net against serializer dropping it)
             # This logic mirrors the existing order update logic

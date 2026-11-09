@@ -231,6 +231,11 @@ const BankStatementDrawer = dynamic(
     { ssr: false, loading: () => skeleton("cartola bancaria") }
 )
 
+const POSSessionDrawer = dynamic(
+    () => import("@/features/treasury/components/POSSessionDrawer").then((m) => m.POSSessionDrawer),
+    { ssr: false, loading: () => skeleton("sesión POS") }
+)
+
 const F29DeclarationDrawer = dynamic(
     () => import("@/features/tax/components/F29DeclarationDrawer").then((m) => m.F29DeclarationDrawer),
     { ssr: false, loading: () => skeleton("declaración F29") }
@@ -533,6 +538,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     "treasury.bankstatement": ({ id, open, onOpenChange }) => (
         <BankStatementDrawer
             statementId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "treasury.possession": ({ id, open, onOpenChange }) => (
+        <POSSessionDrawer
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />

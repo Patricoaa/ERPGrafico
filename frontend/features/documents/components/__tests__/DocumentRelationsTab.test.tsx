@@ -64,7 +64,7 @@ describe("DocumentRelationsTab", () => {
 
         await waitFor(() => expect(screen.getByText("sales.saledelivery-4")).toBeInTheDocument())
         expect(getMock).toHaveBeenCalledWith("/core/documents/sales.saleorder/9/relations/", expect.anything())
-        expect(screen.getByText("Sin documentos de tesorería")).toBeInTheDocument()
+        expect(screen.getByText("Sin documentos de tesorería aún")).toBeInTheDocument()
 
         fireEvent.click(screen.getByText("sales.saledelivery-4"))
         expect(openEntityMock).toHaveBeenCalledWith("sales.saledelivery", 4, undefined, undefined, { display: "sales.saledelivery-4" })
@@ -95,7 +95,8 @@ describe("DocumentRelationsTab", () => {
 
         await waitFor(() => expect(screen.getByText("billing.invoice-5")).toBeInTheDocument())
         expect(screen.queryByText("sales.saledelivery-4")).not.toBeInTheDocument()
-        fireEvent.click(screen.getByText("Ver todas las áreas"))
+        // "Todas" chip clears the domain filter
+        fireEvent.click(screen.getByRole("button", { name: "Todas" }))
         expect(onDomainChange).toHaveBeenCalledWith(null)
     })
 
@@ -109,9 +110,10 @@ describe("DocumentRelationsTab", () => {
 
         wrap(<DocumentRelationsTab label="sales.saleorder" id={9} />)
 
-        await waitFor(() => expect(screen.getByText("Ingreso · Transferencia")).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByText(/Ingreso · Transferencia/)).toBeInTheDocument())
         expect(screen.getAllByText(/3\.570/).length).toBeGreaterThan(0)
-        expect(screen.getByText("Contactos")).toBeInTheDocument()
+        // "Contactos" aparece en los chips de filtro y en el header de sección
+        expect(screen.getAllByText("Contactos").length).toBeGreaterThan(0)
         expect(screen.getByText("Cliente")).toBeInTheDocument()
         expect(screen.queryByText("Ingreso · Transferencia · Imprenta Norte")).not.toBeInTheDocument()
     })
