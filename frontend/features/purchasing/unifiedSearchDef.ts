@@ -14,9 +14,9 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Origen',
       serverParam: 'origin_status',
       options: [
-        { label: 'Borrador', value: 'neutral' },
-        { label: 'Completado', value: 'success' },
-        { label: 'Anulado', value: 'destructive' },
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Completado', value: 'ACTIVE' },
+        { label: 'Anulado', value: 'CANCELLED' },
       ],
     },
     {
@@ -36,8 +36,8 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Facturación',
       serverParam: 'billing_status',
       options: [
-        { label: 'Pendiente', value: 'neutral' },
-        { label: 'Facturado', value: 'success' },
+        { label: 'Pendiente', value: 'PENDING' },
+        { label: 'Facturado', value: 'INVOICED' },
       ],
     },
     {
@@ -46,9 +46,9 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Tesorería',
       serverParam: 'treasury_status',
       options: [
-        { label: 'Pendiente', value: 'neutral' },
-        { label: 'Parcial', value: 'active' },
-        { label: 'Pagado', value: 'success' },
+        { label: 'Pendiente', value: 'UNPAID' },
+        { label: 'Parcial', value: 'PARTIAL' },
+        { label: 'Pagado', value: 'PAID' },
       ],
     },
     {
@@ -71,7 +71,7 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
     {
       type: 'date',
       key: 'receipt_date',
-      label: 'Fecha Entrega',
+      label: 'Entrega esperada',
       options: periodPresets('receipt_date_after', 'receipt_date_before'),
     },
   ],

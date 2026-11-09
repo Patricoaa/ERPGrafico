@@ -67,31 +67,24 @@ class PurchaseOrderFilterSet(FilterSet):
         return queryset.filter(lines__product__name__icontains=value).distinct()
 
     def filter_origin_status(self, queryset, name, value):
-        if value == "success":
+        # ADR-0120: domain values (DRAFT/ACTIVE/CANCELLED); legacy tone-tokens kept for compat
+        if value in ("ACTIVE", "success"):
             return queryset.exclude(status__in=["DRAFT", "CANCELLED"])
-        elif value == "neutral":
+        elif value in ("DRAFT", "neutral"):
             return queryset.filter(status="DRAFT")
-        elif value == "destructive":
+        elif value in ("CANCELLED", "destructive"):
             return queryset.filter(status="CANCELLED")
         return queryset
 
     def filter_billing_status(self, queryset, name, value):
-        if value == "success":
-            return (
-                queryset.filter(
-                    invoices__status="POSTED",
-                )
-                .exclude(invoices__number="")
-                .distinct()
-            )
-        elif value == "neutral":
-            return queryset.exclude(
-                id__in=queryset.filter(
-                    invoices__status="POSTED",
-                )
-                .exclude(invoices__number="")
-                .values("id")
-            ).distinct()
+        # ADR-0120: domain values (INVOICED/PENDING); legacy tone-tokens kept for compat
+        invoiced = (
+            queryset.filter(invoices__status="POSTED").exclude(invoices__number="").distinct()
+        )
+        if value in ("INVOICED", "success"):
+            return invoiced
+        elif value in ("PENDING", "neutral"):
+            return queryset.exclude(id__in=invoiced.values("id")).distinct()
         return queryset
 
     def filter_treasury_status(self, queryset, name, value):

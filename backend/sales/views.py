@@ -99,11 +99,12 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         if not values:
             return queryset
         result = queryset.none()
-        if "success" in values:
+        # ADR-0120: domain values (DRAFT/ACTIVE/CANCELLED); legacy tone-tokens kept for compat
+        if "ACTIVE" in values or "success" in values:
             result = result | queryset.exclude(status__in=["DRAFT", "CANCELLED"])
-        if "neutral" in values:
+        if "DRAFT" in values or "neutral" in values:
             result = result | queryset.filter(status="DRAFT")
-        if "destructive" in values:
+        if "CANCELLED" in values or "destructive" in values:
             result = result | queryset.filter(status="CANCELLED")
         return result.distinct()
 
@@ -116,9 +117,10 @@ class SaleOrderFilterSet(django_filters.FilterSet):
             id__in=invoiced.values("id")
         ).distinct()
 
-        if "success" in values and "pending" not in values:
+        # ADR-0120: domain values (INVOICED/PENDING); legacy tone-tokens kept for compat
+        if ("INVOICED" in values or "success" in values) and not any(v in values for v in ("PENDING", "pending")):
             return invoiced
-        if "pending" in values and "success" not in values:
+        if ("PENDING" in values or "pending" in values) and not any(v in values for v in ("INVOICED", "success")):
             return not_invoiced
         return queryset
 
