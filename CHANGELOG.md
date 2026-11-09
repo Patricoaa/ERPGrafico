@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.85](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.84...v0.3.85) (2026-11-09)
+
+
+### ⚙️ Refactors
+
+* **related-documents:** mejorar estructura y conteo de relaciones ([9a925d4](https://github.com/Patricoaa/ERPGrafico/commit/9a925d46332bca4e525067a10ecc09e93b979fc1))
+
 ### [0.3.84](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.83...v0.3.84) (2026-11-09)
 
 
