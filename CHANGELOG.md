@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.83](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.82...v0.3.83) (2026-11-09)
+
+
+### 🐛 Bug Fixes
+
+* audit log ([2335ef3](https://github.com/Patricoaa/ERPGrafico/commit/2335ef37e4a399cc95d6dd9068d13fbd33d56c82))
+* **sales:** fuerza asDialog en DeliveryModal para evitar PersistentPanel ([a54c015](https://github.com/Patricoaa/ERPGrafico/commit/a54c01525e29de0b2ff799b5c44939ea64d5a5bc))
+
 ### [0.3.82](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.81...v0.3.82) (2026-11-09)
 
 
