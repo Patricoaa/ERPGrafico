@@ -227,16 +227,38 @@ export function useUnifiedSearch(
     <T>(data: T[]): T[] => {
       if (Object.keys(filters).length === 0) return data
 
+      // Build lookup maps for single and multi filters once per render
+      const singleParams = new Map<string, string>()
+      const multiParams = new Map<string, Set<string>>()
+      for (const filter of config.filters ?? []) {
+        if (filter.type === 'single') {
+          const f = filter as SingleSelectFilterDef
+          const val = filters[f.serverParam]
+          if (val) singleParams.set(f.serverParam, val)
+        } else if (filter.type === 'multi') {
+          const f = filter as MultiSelectFilterDef
+          const val = filters[f.serverParam]
+          if (val) {
+            const vals = val.split(',').filter(Boolean)
+            if (vals.length > 0) multiParams.set(f.serverParam, new Set(vals))
+          }
+        }
+      }
+
       return data.filter((row) => {
         const r = row as Record<string, unknown>
+
+        // Global text search — skip nested objects to avoid "[object Object]" matches
         if (filters.search) {
           const searchVal = filters.search.toLowerCase()
-          const matchesGlobal = Object.values(r).some((val) =>
-            String(val ?? '').toLowerCase().includes(searchVal)
-          )
+          const matchesGlobal = Object.values(r).some((val) => {
+            if (val === null || val === undefined || typeof val === 'object') return false
+            return String(val).toLowerCase().includes(searchVal)
+          })
           if (!matchesGlobal) return false
         }
 
+        // Per-field text searches
         for (const field of config.searchFields) {
           if (field.serverParam === 'search') continue
           const filterVal = filters[field.serverParam]
@@ -252,10 +274,20 @@ export function useUnifiedSearch(
           if (!matches) return false
         }
 
+        // Single-select filters: exact match (string-coerced, so booleans work)
+        for (const [param, expected] of singleParams) {
+          if (String(r[param] ?? '') !== expected) return false
+        }
+
+        // Multi-select filters: row value must be in the allowed set
+        for (const [param, allowed] of multiParams) {
+          if (!allowed.has(String(r[param] ?? ''))) return false
+        }
+
         return true
       })
     },
-    [filters, config.searchFields],
+    [filters, config.searchFields, config.filters],
   )
 
   return {
