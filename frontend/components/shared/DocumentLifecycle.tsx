@@ -51,6 +51,8 @@ export function DocumentLifecycle({ steps, onStepClick, activeStepId, className 
                     <ol className="flex items-start" aria-label="Ciclo del documento">
                         {visible.map((step, index) => {
                             const isActive = activeStepId === step.id
+                            // Ring completo cuando el paso está completado
+                            const progress = step.status === "success" ? 100 : step.progress
                             const content = (
                                 <>
                                     <StatusBadge
@@ -59,7 +61,7 @@ export function DocumentLifecycle({ steps, onStepClick, activeStepId, className 
                                         icon={step.icon}
                                         status={step.status}
                                         intent={stageIntent(step.status)}
-                                        progress={step.progress}
+                                        progress={progress}
                                         tooltip={`${step.label}: ${step.detail ?? STEP_LABEL[step.status]}`}
                                     />
                                     <span className="min-w-0 text-left">
@@ -83,7 +85,7 @@ export function DocumentLifecycle({ steps, onStepClick, activeStepId, className 
                                             onClick={() => onStepClick(step.id)}
                                             aria-pressed={isActive}
                                             className={cn(
-                                                "flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors",
+                                                "flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 transition-colors",
                                                 "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                                 isActive && "bg-muted",
                                             )}
