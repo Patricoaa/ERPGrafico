@@ -22,11 +22,11 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
     const query = useQuery({
         queryKey: INVOICES_KEYS.list(filters),
         queryFn: () => billingApi.getInvoices(filters),
-        staleTime: staleTime.standard, // 2 min — TODO Fase 2: eliminar client-side filter
+        staleTime: staleTime.standard,
         placeholderData: (prev) => prev,
     })
 
-    const invoices = query.data ?? []
+    const invoices = query.data?.results ?? []
     const showSkeleton = query.isLoading && !invoices.length
     const isRefetching = query.isFetching && !showSkeleton
     const refetch = query.refetch
@@ -86,6 +86,7 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
     })
 
     return {
+        page: query.data,
         invoices,
         isLoading: showSkeleton,
         isRefetching,

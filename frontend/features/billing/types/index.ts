@@ -64,6 +64,9 @@ export interface InvoiceFilters {
     total_min?: string
     total_max?: string
     number?: string
+    page?: number
+    page_size?: number
+    ordering?: string
 }
 
 export interface AnnulInvoicePayload {

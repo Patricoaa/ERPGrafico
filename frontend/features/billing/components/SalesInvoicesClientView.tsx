@@ -1,6 +1,7 @@
 "use client"
 
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { useState } from "react"
+import { Collection, GROUP_ROW_LIMIT, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId } from "@/components/entity-view"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type InvoiceFilters } from "@/features/billing/types"
@@ -11,18 +12,30 @@ import { salesInvoiceEntity, salesInvoiceViews } from "../entity-view/salesInvoi
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
 const INVOICE_GROUPS: Record<string, FieldId<typeof salesInvoiceEntity.fields>> = { date: "date", status: "hub", dte_type: "dteType" }
 
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
+
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
-    const { invoices, isLoading, isRefetching, isError, refetch } = useInvoices({ filters: { ...search.filters, mode: 'sale' } as InvoiceFilters })
     // ?selected abre la ficha documental de la factura (ADR-0083)
     const sheet = useDocumentSheetRoute("billing.invoice")
     const groupBy = search.groupBy ? INVOICE_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
+    const filters = { ...search.filters, mode: 'sale' } as InvoiceFilters
+    const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
+
+    const { page, invoices, isLoading, isRefetching, isError, refetch } = useInvoices({
+        filters: {
+            ...filters,
+            page: groupBy ? 1 : pageState.pageIndex + 1,
+            page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        },
+    })
+
     const collection = useEntityCollection(
         salesInvoiceEntity,
-        { rows: invoices, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { rows: invoices, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
     )
 
     return (
