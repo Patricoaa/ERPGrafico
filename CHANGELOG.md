@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.86](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.85...v0.3.86) (2026-11-09)
+
+
+### ⚙️ Refactors
+
+* agregar cursor-pointer a botones del header de relaciones ([3ea7728](https://github.com/Patricoaa/ERPGrafico/commit/3ea77288d62461f8c61c74b524fe9423a1106380))
+
 ### [0.3.85](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.84...v0.3.85) (2026-11-09)
 
 
