@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.87](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.86...v0.3.87) (2026-11-09)
+
+
+### ⚙️ Refactors
+
+* mejorar UX del ciclo de documento ([730feed](https://github.com/Patricoaa/ERPGrafico/commit/730feeddf702a6527e3d71d5077d52012da899d3))
+
 ### [0.3.86](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.85...v0.3.86) (2026-11-09)
 
 
