@@ -735,13 +735,14 @@ class SubscriptionSelector:
             except (ValueError, TypeError):
                 pass
 
+        from django.utils.dateparse import parse_date
         date_from = params.get("date_from")
-        if date_from:
-            queryset = queryset.filter(start_date__gte=date_from)
+        if date_from and (d := parse_date(date_from)):
+            queryset = queryset.filter(start_date__gte=d)
 
         date_to = params.get("date_to")
-        if date_to:
-            queryset = queryset.filter(start_date__lte=date_to)
+        if date_to and (d := parse_date(date_to)):
+            queryset = queryset.filter(start_date__lte=d)
 
         return queryset
 

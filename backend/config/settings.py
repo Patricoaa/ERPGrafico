@@ -67,7 +67,7 @@ GIT_HASH = get_git_hash()
 # SECURITY WARNING: keep the secret key used in production secret!
 # In production (DEBUG=False), SECRET_KEY MUST be set via environment variable.
 # Default DEBUG=1 for local dev convenience; production deployments MUST set DEBUG=0.
-DEBUG = os.environ.get("DEBUG", "1") == "1"
+DEBUG = os.environ.get("DEBUG", "0") == "1"
 
 _secret_key = os.environ.get("SECRET_KEY", "")
 if not _secret_key:

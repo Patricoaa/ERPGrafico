@@ -1128,8 +1128,9 @@ class BankStatementSelector:
         if st := params.get('statement'): qs = qs.filter(statement_id=st)
         if rs := (params.get('reconciliation_status') or params.get('reconciliation_state')):
             qs = qs.filter(reconciliation_status__in=rs.split(',')) if ',' in rs else qs.filter(reconciliation_status=rs)
-        if df := params.get('date_from'): qs = qs.filter(transaction_date__gte=df)
-        if dt := params.get('date_to'): qs = qs.filter(transaction_date__lte=dt)
+        from django.utils.dateparse import parse_date
+        if (df := params.get('date_from')) and (d := parse_date(df)): qs = qs.filter(transaction_date__gte=d)
+        if (dt := params.get('date_to')) and (d := parse_date(dt)): qs = qs.filter(transaction_date__lte=d)
         if search := params.get('search'):
             from django.db.models import Q
             qs = qs.filter(Q(description__icontains=search) | Q(reference__icontains=search))

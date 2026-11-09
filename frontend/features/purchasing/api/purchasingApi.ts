@@ -161,7 +161,13 @@ export const purchasingApi = {
 
     /** Credit/debit notes of purchase orders; `filters` are the `/billing/invoices/` params of the search bar. */
     getNotes: async ({ filters, page = 1, page_size = 50 }: { filters?: Record<string, string> } & PageParams = {}): Promise<Page<Invoice>> => {
-        const params = new URLSearchParams(filters)
+        const params = new URLSearchParams()
+        const allowed = ['search', 'number', 'status', 'payment_status', 'total_min', 'total_max', 'date_from', 'date_to', 'partner_name']
+        if (filters) {
+            for (const key of allowed) {
+                if (filters[key]) params.append(key, filters[key])
+            }
+        }
         params.append('page', String(page))
         params.append('page_size', String(page_size))
         params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
