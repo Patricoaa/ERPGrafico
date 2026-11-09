@@ -16,7 +16,7 @@ import type { Order, OrderLine } from "../types"
 
 // Modales lazy (PERF-01): solo se cargan al ejecutar su acción.
 const DocumentCompletionModal = dynamic(() => import("@/components/shared/DocumentCompletionModal").then(m => m.DocumentCompletionModal))
-const DeliveryDrawer = dynamic(() => import("@/features/sales").then(m => m.DeliveryDrawer))
+const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
 const ReceiptModal = dynamic(() => import("@/features/purchasing/components/ReceiptModal").then(m => m.ReceiptModal))
 const PaymentHistoryModal = dynamic(() => import("../components/PaymentHistoryModal").then(m => m.PaymentHistoryModal))
 const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
@@ -251,7 +251,7 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
                     order.dte_type ? (
                         <NoteLogisticsModal open onOpenChange={closeModal} invoice={order} onSuccess={done} />
                     ) : isSale ? (
-                        <DeliveryDrawer
+                        <DeliveryModal
                             open
                             onOpenChange={closeModal}
                             orderId={order.id}

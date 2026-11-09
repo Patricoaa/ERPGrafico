@@ -7,7 +7,7 @@ import { useGuardedOpenChange } from "@/hooks/useGuardedOpenChange"
 import { useDirtyGuard } from "@/hooks/useDirtyGuard"
 import { zodResolver } from "@hookform/resolvers/zod"
 
-import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput, StatusBadge } from "@/components/shared"
+import { SubmitButton, CancelButton, BaseModal, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput, StatusBadge } from "@/components/shared"
 import { EditableCollection, editableErrorsFromForm, focusFirstEditableError, initialEditableValues } from "@/components/entity-view"
 import { deliveryLinesEditable, hasPartialLines, matchesLineType, serviceDeliveryLinesEditable, toLineQuantities, type LineTypeFilter } from "@/features/orders"
 import type { Warehouse } from "@/features/inventory"
@@ -19,7 +19,6 @@ import { Loader2, Package, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { useServerDate } from "@/hooks/useServerDate"
-import { formDrawerWidth } from "@/lib/form-widths"
 
 export interface DeliveryFormProps {
     orderId: number
@@ -31,43 +30,37 @@ export interface DeliveryFormProps {
     filterType?: LineTypeFilter
 }
 
-export interface DeliveryDrawerProps extends Omit<DeliveryFormProps, "id" | "onLoadingChange" | "order" | "warehouses"> {
+export interface DeliveryModalProps extends Omit<DeliveryFormProps, "id" | "onLoadingChange" | "order" | "warehouses"> {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-export function DeliveryDrawer(props: DeliveryDrawerProps) {
+/** @deprecated Use DeliveryModal */
+export type DeliveryDrawerProps = DeliveryModalProps
+
+export function DeliveryModal(props: DeliveryModalProps) {
     if (!props.open || !props.orderId) return null
-    return <DeliveryDrawerInner {...props} />
+    return <DeliveryModalInner {...props} />
 }
 
-function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterType = 'ALL' }: DeliveryDrawerProps) {
+/** @deprecated Use DeliveryModal */
+export const DeliveryDrawer = DeliveryModal
+
+function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess, filterType = 'ALL' }: DeliveryModalProps) {
     const [loading, setLoading] = useState(false)
     const guardedOpenChange = useGuardedOpenChange(onOpenChange)
     const formId = "modal-delivery-form"
     const { order, warehouses, isLoading } = useDeliveryData(orderId)
-
-    if (isLoading || !order) {
-        return (
-            <Drawer open={open} onOpenChange={onOpenChange} side="right" defaultSize={formDrawerWidth("master", false)} title="Cargando despacho..." contentClassName="p-0">
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            </Drawer>
-        )
-    }
-
     const isServiceMode = filterType === 'SERVICE'
 
     return (
-        <Drawer
+        <BaseModal
             open={open}
             onOpenChange={guardedOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("master", false)}
-            contentClassName="p-0"
+            size="xl"
+            icon={Package}
             title={isServiceMode ? "Confirmar Entrega de Servicios" : "Despachar Orden"}
-            subtitle={isServiceMode ? "Confirme la entrega de los servicios." : "Ingrese los productos a despachar."}
+            description={isServiceMode ? "Confirme la entrega de los servicios." : "Ingrese los productos a despachar."}
             footer={
                 <FormFooter
                     actions={
@@ -85,8 +78,14 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
                 />
             }
         >
-            <DeliveryForm id={formId} orderId={orderId} order={order} warehouses={warehouses} onSuccess={() => { onOpenChange(false); if (onSuccess) onSuccess(); }} onLoadingChange={setLoading} filterType={filterType} />
-        </Drawer>
+            {(isLoading || !order) ? (
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <DeliveryForm id={formId} orderId={orderId} order={order} warehouses={warehouses} onSuccess={() => { onOpenChange(false); if (onSuccess) onSuccess(); }} onLoadingChange={setLoading} filterType={filterType} />
+            )}
+        </BaseModal>
     )
 }
 
@@ -245,4 +244,4 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
     )
 }
 
-export default DeliveryDrawer
+export default DeliveryModal

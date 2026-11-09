@@ -12,7 +12,7 @@ import { amount, lineQty, linePending, nameOf, orderLineEntity, uomOf } from "./
 const step = (l: OrderLine) => (l.uom_name === "Unidad" ? 1 : 0.01)
 const unit = (l: OrderLine) => uomOf(l) ?? undefined
 
-// ─── Dispatch (DeliveryDrawer) ───────────────────────────────────────────────
+// ─── Dispatch (DeliveryModal) ────────────────────────────────────────────────
 /** Both dispatch modes share one input shape, so a form picks either without a union of literal types. */
 type DeliveryInputs = { toDeliver: EditableInput<OrderLine> }
 
@@ -57,7 +57,7 @@ const rowStatus = (complete: string, partial: string) => (l: OrderLine, v: { toD
         : { status: "partial", label: partial, intent: "warning" as const }
 }
 
-/** P1 "quantity to dispatch" of `DeliveryDrawer` (lote 3a). The rows carry `available_stock` of the chosen warehouse. */
+/** P1 "quantity to dispatch" of `DeliveryModal` (lote 3a). The rows carry `available_stock` of the chosen warehouse. */
 export const deliveryLinesEditable = defineEditable<OrderLine, typeof orderLineEntity.fields, DeliveryInputs>(orderLineEntity, {
     rowKey: (l) => l.id,
     context: ["description", "pending", "availability"],

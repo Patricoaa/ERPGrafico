@@ -14,7 +14,7 @@ const SALES_ORDER_LIST_KEYS = [[...SALES_KEYS.all, 'orders']] as const
 
 // Lazy load heavy components
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
-const DeliveryDrawer = lazy(() => import("./DeliveryDrawer"))
+const DeliveryModal = lazy(() => import("./DeliveryDrawer"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
 const UnifiedNoteWizard = lazy(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
 const Step2_ManufacturingDetails = lazy(() =>
@@ -92,7 +92,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
 
              {dispatchingOrder && (
                  <SkeletonShell isLoading={true} ariaLabel="Cargando modal de entrega">
-                     <DeliveryDrawer
+                     <DeliveryModal
                          open={!!dispatchingOrder}
                          onOpenChange={(open: boolean) => !open && setDispatchingOrder(null)}
                          orderId={dispatchingOrder}

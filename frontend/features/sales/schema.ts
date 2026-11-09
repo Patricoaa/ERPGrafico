@@ -2,7 +2,7 @@ import { z } from "zod"
 import { editableSchema } from "@/components/entity-view"
 import { deliveryLinesEditable, serviceDeliveryLinesEditable, type OrderLine } from "@/features/orders"
 
-/** Dispatch form of `DeliveryDrawer`: header + line quantities in one resolver (invariant #9). */
+/** Dispatch form of `DeliveryModal`: header + line quantities in one resolver (invariant #9). */
 export function deliveryFormSchema(isService: boolean, lines: readonly OrderLine[]) {
     return z.object({
         // Services leave from the first warehouse: no choice to validate.
