@@ -1062,9 +1062,13 @@ class TreasuryMovementSelector:
         if (is_rec := params.get("is_reconciled")) is not None and is_rec != "":
             qs = qs.filter(is_reconciled=str(is_rec).lower() not in ("false", "0", "no"))
 
-        if date := params.get("date"): qs = qs.filter(date=date)
-        if df := params.get("date_from"): qs = qs.filter(date__gte=df)
-        if dt := params.get("date_to"): qs = qs.filter(date__lte=dt)
+        from django.utils.dateparse import parse_date
+        if raw := params.get("date"):
+            if d := parse_date(raw): qs = qs.filter(date=d)
+        if raw := params.get("date_from"):
+            if d := parse_date(raw): qs = qs.filter(date__gte=d)
+        if raw := params.get("date_to"):
+            if d := parse_date(raw): qs = qs.filter(date__lte=d)
         if amin := params.get("amount_min"): qs = qs.filter(amount__gte=amin)
         if amax := params.get("amount_max"): qs = qs.filter(amount__lte=amax)
 

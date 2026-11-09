@@ -11,7 +11,6 @@ export const posSessionUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'status',
       options: [
         { label: 'Abierta', value: 'OPEN' },
-        { label: 'En cierre', value: 'CLOSING' },
         { label: 'Cerrada', value: 'CLOSED' },
       ],
     },

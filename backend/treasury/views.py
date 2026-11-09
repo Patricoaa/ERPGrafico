@@ -928,12 +928,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
         # ADR-0109: expected_cash sin consultas por fila (arqueo o neto anotado)
         qs = annotate_ledger_cash_net(super().get_queryset().select_related("audit"))
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
-        if date_from:
-            qs = qs.filter(opened_at__date__gte=date_from)
-        if date_to:
-            qs = qs.filter(opened_at__date__lte=date_to)
+        from django.utils.dateparse import parse_date
+        if raw := self.request.query_params.get("date_from"):
+            if d := parse_date(raw): qs = qs.filter(opened_at__date__gte=d)
+        if raw := self.request.query_params.get("date_to"):
+            if d := parse_date(raw): qs = qs.filter(opened_at__date__lte=d)
         return qs
 
     @action(detail=False, methods=["get"])
@@ -1030,7 +1029,7 @@ class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     }
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = CheckFilter
-    search_fields = ["check_number", "drawer_name", "counterparty__name", "bank__name", "amount"]
+    search_fields = ["check_number", "drawer_name", "counterparty__name", "bank__name"]
 
     def get_queryset(self):
         from .models import Check as CheckModel
@@ -1219,15 +1218,11 @@ class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryM
     def get_queryset(self):
         qs = super().get_queryset()
 
-        # Date range filtering
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
-
-        if date_from:
-            qs = qs.filter(sales_date__gte=date_from)
-        if date_to:
-            qs = qs.filter(sales_date__lte=date_to)
-
+        from django.utils.dateparse import parse_date
+        if raw := self.request.query_params.get("date_from"):
+            if d := parse_date(raw): qs = qs.filter(sales_date__gte=d)
+        if raw := self.request.query_params.get("date_to"):
+            if d := parse_date(raw): qs = qs.filter(sales_date__lte=d)
         return qs
 
     def create(self, request, *args, **kwargs):
