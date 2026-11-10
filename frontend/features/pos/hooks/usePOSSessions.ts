@@ -5,6 +5,8 @@ import { staleTime } from '@/lib/query-config'
 
 export interface POSSession {
     id: number
+    /** Id del usuario que abrió la sesión de POS. */
+    user: number
     id_display: string
     user_name: string
     treasury_account: number | null

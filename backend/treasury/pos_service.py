@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 
 from core.prefix_registry import EntityPrefix
 
@@ -117,6 +118,8 @@ class POSService:
         """
         Closes a POS session with a cash audit (arqueo de caja).
 
+        Only the session opener or a superuser may close it (PermissionDenied otherwise).
+
         Steps:
         1. Create POSSessionAudit.
         2. If there is a cash difference, create an adjustment movement.
@@ -129,6 +132,13 @@ class POSService:
         """
         if session.status == "CLOSED":
             raise ValidationError("Esta sesión ya está cerrada.")
+
+        # Solo quien abrió la sesión de POS o un superusuario puede cerrarla;
+        # quien se une a una sesión compartida opera, pero no la cierra.
+        if user.pk != session.user_id and not user.is_superuser:
+            raise PermissionDenied(
+                "Solo quien abrió la sesión de POS o un superusuario puede cerrarla."
+            )
 
         # Clear any partial audit from a failed previous close attempt
         if hasattr(session, "audit"):

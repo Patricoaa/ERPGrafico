@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { useAuth } from "@/contexts/AuthContext"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -15,6 +16,8 @@ import { fetchPOSSessionSummary } from "@/features/pos"
 
 export interface POSSession {
     id: number
+    /** Id del usuario que abrió la sesión de POS. */
+    user: number
     id_display: string
     user_name: string
     treasury_account: number | null
@@ -89,7 +92,11 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
         }
     }
 
+    const { user: authUser } = useAuth()
+
     const actionsCtx: POSSessionActionsCtx = {
+        // #233: solo quien abrió la sesión de POS o un superusuario puede cerrarla.
+        canClose: (session) => !!authUser && (authUser.is_superuser || authUser.id === session.user),
         onReport: (session) => {
             const params = new URLSearchParams(searchParams.toString())
             params.set('selected', String(session.id))

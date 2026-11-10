@@ -37,6 +37,7 @@ Definitive vocabulary. When a term appears in code or docs, use this meaning —
 | **Lote de terminal de cobro** | Daily settlement batch reported by the provider | `treasury.TerminalBatch` |
 | **Tarjeta (terminal de cobro)** | Payment method type for card sales through a terminal de cobro | `PaymentMethod.Type.CARD_TERMINAL` |
 | **Caja POS** | Point-of-sale register (cash drawer + allowed payment methods). NOT a terminal de cobro | `treasury.POSTerminal` |
+| **Sesión de POS** | Open/close period of a Caja POS (apertura, cierre, arqueo). Use "sesión de POS" in wizards, toasts and errors — never bare "Cerrar sesión" (reads as logout) nor "sesión de caja". Only the opener or a superuser can close it | `treasury.POSSession` |
 
 Inside the "Terminal de cobro" section, sub-tab labels may be shortened ("Proveedores", "Terminales", "Lotes") because the section header gives the context.
 
