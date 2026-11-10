@@ -208,12 +208,13 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     useEffect(() => {
         const hasTotalChanged = prevTotalRef.current !== currentTotal
         if (hasTotalChanged) {
-            if (paymentData.amount === prevTotalRef.current || paymentData.amount === 0) {
+            // amount 0 con método elegido es crédito total confirmado por el usuario: no se pisa.
+            if (paymentData.amount === prevTotalRef.current || (paymentData.amount === 0 && !paymentData.method)) {
                 setPaymentData((prev: CheckoutPaymentData) => ({ ...prev, amount: currentTotal }))
             }
             prevTotalRef.current = currentTotal
         }
-    }, [currentTotal, paymentData.amount])
+    }, [currentTotal, paymentData.amount, paymentData.method])
 
     const [isWaitingApproval, setIsWaitingApproval] = useState(initialIsWaitingApproval || false)
     const [approvalTaskId, setApprovalTaskId] = useState<number | null>(initialApprovalTaskId || null)
