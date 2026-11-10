@@ -68,6 +68,7 @@ def test_operators_lists_only_active_sellers(api, multi_session):
     assert set(ids) == {seller.id, boss.id}
     first = next(o for o in r.json() if o["id"] == seller.id)
     assert first["full_name"] == "Ana Prueba" and first["initials"] == "AP"
+    assert first["username"] == "ana"  # el blobatar se genera a partir del usuario
 
 
 def test_operators_includes_ventas_group(api, multi_session):

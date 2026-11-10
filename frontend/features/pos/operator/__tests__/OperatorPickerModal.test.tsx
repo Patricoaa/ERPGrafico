@@ -3,8 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { OperatorPickerModal } from "../OperatorPickerModal"
 import type { PosOperator } from "../../types"
 
-const ana: PosOperator = { id: 1, full_name: "Ana Pérez", initials: "AP" }
-const beto: PosOperator = { id: 2, full_name: "Beto Soto", initials: "BS" }
+const ana: PosOperator = { id: 1, username: "ana", full_name: "Ana Pérez", initials: "AP" }
+const beto: PosOperator = { id: 2, username: "beto", full_name: "Beto Soto", initials: "BS" }
 
 function setup(overrides: Partial<React.ComponentProps<typeof OperatorPickerModal>> = {}) {
     const props = {
@@ -22,6 +22,12 @@ function setup(overrides: Partial<React.ComponentProps<typeof OperatorPickerModa
 }
 
 describe("OperatorPickerModal", () => {
+    it("no se rompe si un operador llega sin username (respuesta de un backend sin actualizar)", () => {
+        const legacy = { id: 3, full_name: "Carla Díaz", initials: "CD" } as unknown as PosOperator
+        setup({ operators: [legacy] })
+        expect(screen.getByRole("button", { name: /Carla Díaz/ })).toBeTruthy()
+    })
+
     it("lista los operadores y devuelve el elegido", () => {
         const props = setup()
         expect(screen.getByText("¿Quién opera?")).toBeTruthy()
@@ -57,7 +63,7 @@ describe("OperatorPickerModal", () => {
         setup()
         expect(screen.queryByPlaceholderText("Buscar operador…")).toBeNull()
         const many: PosOperator[] = Array.from({ length: 13 }, (_, i) => ({
-            id: 100 + i, full_name: i === 7 ? "Zoila Rara" : `Persona ${i}`, initials: "PX",
+            id: 100 + i, username: `p${i}`, full_name: i === 7 ? "Zoila Rara" : `Persona ${i}`, initials: "PX",
         }))
         setup({ operators: many })
         const search = screen.getByPlaceholderText("Buscar operador…")

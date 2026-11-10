@@ -5,7 +5,6 @@ import { getPosOperatorHeaders, runPosOperatorChallenge, setPosOperatorChallenge
 import { OperatorGateProvider } from "../OperatorGateProvider"
 import { operatorStore } from "../operatorStore"
 import { useOperatorGate } from "../useOperatorGate"
-import { OperatorChip } from "../OperatorChip"
 
 type Session = { id: number; mode: "SINGLE" | "MULTI" } | null
 let session: Session = { id: 5, mode: "MULTI" }
@@ -19,7 +18,7 @@ vi.mock("../../hooks/useDraftSync", () => ({ getBrowserSessionKey: () => "tab-1"
 vi.mock("../../api/posApi", () => ({ posApi: { releaseOperator: (...a: unknown[]): unknown => releaseOperator(...a) } }))
 vi.mock("../useOperators", () => ({
     useOperators: () => ({
-        data: [{ id: 1, full_name: "Ana Pérez", initials: "AP" }, { id: 2, full_name: "Beto Soto", initials: "BS" }],
+        data: [{ id: 1, username: "ana", full_name: "Ana Pérez", initials: "AP" }, { id: 2, username: "beto", full_name: "Beto Soto", initials: "BS" }],
         isLoading: false, isError: false, refetch: vi.fn(),
     }),
     useIdentifyOperator: () => ({ mutateAsync: (...a: unknown[]): unknown => identify(...a), isPending: false }),
@@ -194,22 +193,5 @@ describe("useOperatorGate", () => {
         rerender()
         await waitFor(() => expect(result.current.activePass).toBeNull())
         expect(getPosOperatorHeaders()).toEqual({})
-    })
-})
-
-describe("OperatorChip", () => {
-    it("no se renderiza en SINGLE", () => {
-        session = { id: 5, mode: "SINGLE" }
-        const { container } = render(<OperatorChip />, { wrapper })
-        expect(container.textContent).toBe("")
-    })
-
-    it("muestra el operador activo en MULTI", async () => {
-        const { result } = renderHook(() => useOperatorGate(), { wrapper })
-        render(<OperatorChip />, { wrapper })
-        expect(screen.queryByText(/Operador:/)).toBeNull()
-        operatorStore.setPass({ token: "t", operator: { id: 1, full_name: "Ana Pérez" }, purpose: "DRAFT", targetId: null })
-        expect(await screen.findByText("Operador: Ana Pérez")).toBeTruthy()
-        expect(result.current).toBeTruthy()
     })
 })

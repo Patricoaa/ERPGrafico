@@ -252,6 +252,8 @@ export interface PosDraftFilters {
 /** Operador elegible para una caja multiusuario. */
 export interface PosOperator {
     id: number
+    /** Usuario: de él se genera el blobatar, igual que en el menú de usuario. */
+    username: string
     full_name: string
     initials: string
 }
