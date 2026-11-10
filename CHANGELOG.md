@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.89](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.88...v0.3.89) (2026-11-10)
+
+
+### 🐛 Bug Fixes
+
+* **pos:** monto 0 en el numpad asigna el total como crédito ([#231](https://github.com/Patricoaa/ERPGrafico/issues/231)) ([#234](https://github.com/Patricoaa/ERPGrafico/issues/234)) ([7dae7ba](https://github.com/Patricoaa/ERPGrafico/commit/7dae7ba05ae40156849151451a575d9f5ba3ef8f))
+
 ### [0.3.88](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.87...v0.3.88) (2026-11-09)
 
 
