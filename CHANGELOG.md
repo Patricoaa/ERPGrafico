@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.95](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.94...v0.3.95) (2026-11-10)
+
+
+### ✨ Features
+
+* **pos:** el modo de caja es del dispositivo, no de la sesión; el panel de ventas lista todas las ventas ([e9e4795](https://github.com/Patricoaa/ERPGrafico/commit/e9e4795abae2c929f1dc4f1b9d12e730bf6ef653))
+
 ### [0.3.94](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.93...v0.3.94) (2026-11-10)
 
 
