@@ -147,6 +147,7 @@ MIDDLEWARE = [
     "core.middleware.CurrentUserMiddleware",
     "core.middleware.AuditMiddleware",
     "core.middleware.SecurityAuditMiddleware",
+    "core.pos_document_context.POSDocumentContextMiddleware",
     "treasury.pos_external_guard.POSExternalReasonMiddleware",
 ]
 

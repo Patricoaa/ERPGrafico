@@ -110,10 +110,18 @@ class SaleTrackingService:
 
     @staticmethod
     def record_document_edit(
-        *, actor, pos_session, entity_type: str, entity_id: int | None, detail: str, sale_order=None
+        *,
+        actor,
+        pos_session,
+        entity_type: str,
+        entity_id: int | None,
+        detail: str,
+        sale_order=None,
+        sale_order_id: int | None = None,
     ) -> None:
         SaleTrackingEvent.objects.create(
             sale_order=sale_order,
+            sale_order_id=sale_order_id if sale_order is None else None,
             pos_session=pos_session,
             step=Step.DOCUMENT_EDIT,
             operator=actor.operator,
