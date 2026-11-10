@@ -517,3 +517,26 @@ class SaleReturnSerializer(serializers.ModelSerializer):
 
         user = getattr(self.context.get("request"), "user", None)
         return build_ref(obj.sale_order, user, "sales.saleorder", navigational=True)
+
+
+class SaleTrackingEventSerializer(serializers.ModelSerializer):
+    """Fila del seguimiento de una venta (operador y cuenta del dispositivo)."""
+
+    step_display = serializers.CharField(source="get_step_display", read_only=True)
+    operator_name = serializers.SerializerMethodField()
+    device_user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import SaleTrackingEvent
+
+        model = SaleTrackingEvent
+        fields = [
+            "step", "step_display", "operator_name", "device_user_name",
+            "entity_type", "entity_id", "detail", "occurred_at",
+        ]
+
+    def get_operator_name(self, obj):
+        return obj.operator.get_full_name() or obj.operator.username
+
+    def get_device_user_name(self, obj):
+        return obj.device_user.get_full_name() or obj.device_user.username

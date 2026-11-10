@@ -47,25 +47,58 @@ class SalesService:
         return order
 
     @staticmethod
-    @transaction.atomic
-    def create_sale_order_from_pos(user, data, files, serializer):
-        """
-        Validates the POS session, then saves the serializer and confirms the sale.
-        """
-        pos_session_id = data.get("pos_session_id")
+    def _resolve_pos_session(user, pos_session_id):
         from treasury.models import POSSession
 
-        session = None
         if pos_session_id:
             session = POSSession.objects.filter(id=pos_session_id, status="OPEN").first()
             if not session:
                 raise ValidationError("La sesión de caja especificada no es válida o está cerrada.")
-        else:
-            session = POSSession.objects.filter(user=user, status="OPEN").last()
-            if not session:
-                raise ValidationError("Debe tener una sesión de caja activa para crear ventas (o seleccionar una compartida).")
+            return session
+        session = POSSession.objects.filter(user=user, status="OPEN").last()
+        if not session:
+            raise ValidationError("Debe tener una sesión de caja activa para crear ventas (o seleccionar una compartida).")
+        return session
 
-        salesperson = user
+    @staticmethod
+    def checkout_actor_from_request(request):
+        """
+        Actor del cobro POS. En cajas MULTI exige el pase del borrador que se cobra
+        (``draft_id``) y que su pestaña siga bloqueándolo; en SINGLE es la cuenta logueada.
+        """
+        from sales.draft_cart_service import DraftCartService
+        from sales.models import DraftCart
+        from treasury.pos_operator_service import Actor, POSOperatorService
+
+        session = SalesService._resolve_pos_session(request.user, request.data.get("pos_session_id"))
+        if not session.is_multi_user:
+            return Actor(request.user, request.user, None)
+        draft_id = request.data.get("draft_id")
+        if not draft_id:
+            raise ValidationError("Se requiere el borrador (draft_id) para cobrar en una caja multiusuario.")
+        draft_id = int(draft_id)
+        actor = POSOperatorService.actor_from_request(request, session, "DRAFT", target_id=draft_id)
+        draft = DraftCart.objects.filter(id=draft_id, pos_session_id=session.id).first()
+        if draft is None:
+            raise ValidationError("El borrador ya no existe.")
+        DraftCartService.ensure_operator_holds_lock(draft, actor, actor.operator_pass.tab_key)
+        return actor
+
+    @staticmethod
+    @transaction.atomic
+    def create_sale_order_from_pos(actor, data, files, serializer):
+        """
+        Valida la sesión POS, guarda el serializer y confirma la venta.
+
+        ``actor`` (operador + cuenta del dispositivo): el operador queda como vendedor;
+        el seguimiento del borrador (``draft_id``) pasa a la orden y el pase se consume.
+        """
+        from sales.tracking_service import SaleTrackingService
+        from treasury.models import POSOperatorPass
+        from treasury.pos_operator_service import POSOperatorService
+
+        session = SalesService._resolve_pos_session(actor.device_user, data.get("pos_session_id"))
+        salesperson = actor.operator
 
         serializer.is_valid(raise_exception=True)
         order = serializer.save(pos_session=session, salesperson=salesperson)
@@ -88,6 +121,13 @@ class SalesService:
                         continue
 
         SalesService.confirm_sale(order, line_files=line_files)
+
+        draft_id = data.get("draft_id")
+        SaleTrackingService.transfer_to_order(
+            draft_id=int(draft_id) if draft_id else None, order=order, actor=actor
+        )
+        if actor.operator_pass is not None:
+            POSOperatorService.end(actor.operator_pass, POSOperatorPass.EndReason.CONSUMED)
         return order
 
     @staticmethod

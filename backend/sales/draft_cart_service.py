@@ -49,6 +49,18 @@ class DraftCartService:
         )
 
     @staticmethod
+    def ensure_operator_holds_lock(draft: DraftCart, actor: Actor, session_key: str) -> None:
+        """MULTI: el pase solo vale mientras su pestaña conserva el bloqueo del borrador.
+
+        Si el bloqueo venció, el pase muere con él y se pide identificar de nuevo:
+        nunca se atribuye en silencio a quien dejó la pestaña abierta.
+        """
+        if DraftCartService._holds_live_lock(draft, actor.operator, session_key):
+            return
+        POSOperatorService.end(actor.operator_pass, POSOperatorPass.EndReason.EXPIRED)
+        raise POSOperatorRequired("DRAFT")
+
+    @staticmethod
     def _tab_operator(request, pos_session_id, draft_id: int, session_key: str):
         """(operador, pase) de la pestaña en cajas MULTI; (request.user, None) si no aplica."""
         session = POSSession.objects.filter(id=pos_session_id).first()
@@ -81,10 +93,8 @@ class DraftCartService:
                 raise POSOperatorRequired("DRAFT")  # un pase ligado no crea otro borrador
             if draft_id is not None:
                 current = DraftCart.objects.filter(id=draft_id, pos_session_id=session.id).first()
-                if current and not DraftCartService._holds_live_lock(current, actor.operator, session_key):
-                    # El bloqueo venció: el pase muere con él, nunca se atribuye en silencio.
-                    POSOperatorService.end(op_pass, POSOperatorPass.EndReason.EXPIRED)
-                    raise POSOperatorRequired("DRAFT")
+                if current:
+                    DraftCartService.ensure_operator_holds_lock(current, actor, session_key)
 
         with transaction.atomic():
             draft = DraftCartService.save_draft(
@@ -127,13 +137,16 @@ class DraftCartService:
         DraftCartService.validate_pos_session_id(pos_session_id)
         if not session_key:
             raise ValueError("Se requiere session_key")
-        operator, _ = DraftCartService._tab_operator(request, int(pos_session_id), draft_id, session_key)
-        return DraftCartService.refresh_lock(
+        operator, op_pass = DraftCartService._tab_operator(request, int(pos_session_id), draft_id, session_key)
+        refreshed = DraftCartService.refresh_lock(
             draft_id=draft_id,
             pos_session_id=int(pos_session_id),
             user=operator,
             session_key=session_key,
         )
+        if op_pass is not None and not refreshed:  # bloqueo perdido: el pase no sobrevive
+            POSOperatorService.end(op_pass, POSOperatorPass.EndReason.EXPIRED)
+        return refreshed
 
     @staticmethod
     def release_lock_from_request(request, draft_id: int) -> bool:

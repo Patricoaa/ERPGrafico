@@ -20,6 +20,7 @@ from .serializers import (
     SaleOrderSerializer,
     SaleReturnSerializer,
     SalesSettingsSerializer,
+    SaleTrackingEventSerializer,
 )
 from .services import SalesService
 
@@ -189,6 +190,7 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
         "register_note": "billing.add_invoice",
         # Read-like POST → view_* (commenting reads the document)
         "comments": "sales.view_saleorder",
+        "tracking": "sales.view_saleorder",
     }
     # Server ordering of the list (ADR-0087 lote 2b): `?ordering=<key>,id`. Without it, the
     # selector's "-date,-id" order is kept.
@@ -215,8 +217,9 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
         serializer = self.get_serializer(data=request.data)
         from django.core.exceptions import ValidationError
         try:
+            actor = SalesService.checkout_actor_from_request(request)
             order = SalesService.create_sale_order_from_pos(
-                user=request.user,
+                actor=actor,
                 data=request.data,
                 files=request.FILES,
                 serializer=serializer
@@ -225,6 +228,12 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, "messages") and e.messages else str(e)
             return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["get"])
+    def tracking(self, request, pk=None):
+        """Quién tocó cada paso de la venta (spec 2026-11-10 §5.6)."""
+        events = SaleOrderSelector.get_tracking_events(self.get_object())
+        return Response(SaleTrackingEventSerializer(events, many=True).data)
 
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
