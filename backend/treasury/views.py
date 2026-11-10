@@ -13,7 +13,7 @@ from rest_framework import filters as drf_filters
 from rest_framework import mixins, status, viewsets
 from rest_framework import serializers as drf_serializers
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -894,7 +894,7 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
 class POSSessionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-    """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
+    """ViewSet for POS Session Management (apertura/cierre de sesión de POS)"""
     action_permissions = {
         "close_session": "treasury.close_possession",
         # Creation → None (add_* by method is correct)
@@ -960,7 +960,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         try:
             from .pos_service import POSService
             session, audit = POSService.close_session_from_request(request, self.get_object())
-            return Response({'session': POSSessionSerializer(session).data, 'audit': POSSessionAuditSerializer(audit).data, 'message': 'Caja cerrada correctamente'})
+            return Response({'session': POSSessionSerializer(session).data, 'audit': POSSessionAuditSerializer(audit).data, 'message': 'Sesión de POS cerrada correctamente'})
+        except PermissionDenied:
+            raise
         except ValidationError as e:
             return Response({'error': str(getattr(e, 'message', e))}, status=400)
         except Exception as e:

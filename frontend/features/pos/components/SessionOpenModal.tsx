@@ -97,7 +97,7 @@ export function SessionOpenModal({
             setAvailableSessions(results)
         } catch (error) {
             console.error("Error fetching available sessions:", error)
-            toast.error("Error al cargar sesiones activas")
+            toast.error("Error al cargar las sesiones de POS activas")
         }
     }
 
@@ -220,7 +220,7 @@ export function SessionOpenModal({
             onSuccess?.(sessionData, 'open')
             onOpenChange(false)
         } catch (error: unknown) {
-            showApiError(error, "Error al iniciar sesión")
+            showApiError(error, "Error al abrir la sesión de POS")
         } finally {
             setSubmitting(false)
         }
@@ -228,7 +228,7 @@ export function SessionOpenModal({
 
     const handleJoinSession = async () => {
         if (!selectedSharedSessionId) {
-            toast.error("Debe seleccionar una sesión")
+            toast.error("Debe seleccionar una sesión de POS")
             return
         }
 
@@ -539,8 +539,8 @@ export function SessionOpenModal({
     const joinStepContent = (
         <FadeIn className="space-y-4">
             <div className="text-center mb-4">
-                <h3 className="font-bold">Unirse a una sesión existente</h3>
-                <p className="text-sm text-muted-foreground">Seleccione una sesión activa para operar</p>
+                <h3 className="font-bold">Unirse a una sesión de POS existente</h3>
+                <p className="text-sm text-muted-foreground">Seleccione una sesión de POS activa para operar</p>
             </div>
             <div className="grid gap-2">
                 {availableSessions.map((session) => (
@@ -573,7 +573,7 @@ export function SessionOpenModal({
         ...(mode === 'join'
             ? [{
                 id: 'join',
-                title: 'Unirse a Sesión',
+                title: 'Unirse a sesión de POS',
                 component: joinStepContent,
                 isValid: !!selectedSharedSessionId
             } as WizardStep]
@@ -620,7 +620,7 @@ export function SessionOpenModal({
                 if (!val) onClose?.()
                 onOpenChange(val)
             }}
-            title="Apertura de Sesión"
+            title="Apertura de sesión de POS"
             steps={steps}
             initialStep={stepIndex}
             onComplete={mode === 'join' ? handleJoinSession : handleOpenSession}

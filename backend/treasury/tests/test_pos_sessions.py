@@ -165,3 +165,68 @@ def test_serializer_prefers_snapshot_over_terminal_default(
 
     data = POSSessionSerializer(session).data
     assert data["treasury_account_name"] == other_treasury.name
+
+
+# ---------------------------------------------------------------------------
+# Cierre de sesión de POS: solo quien abrió o un superusuario (#233)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def open_session(cashier, terminal):
+    return POSService.open_session(
+        user=cashier, terminal_id=terminal.id, opening_balance=Decimal("0")
+    )
+
+
+@pytest.fixture
+def joiner(db):
+    return User.objects.create_user(username="joiner", password="x")
+
+
+def _close(session, user):
+    return POSService.close_session(
+        session=session, actual_cash=Decimal("0"), user=user
+    )
+
+
+@pytest.mark.django_db
+def test_close_session_denied_to_user_who_only_joined(open_session, joiner):
+    from rest_framework.exceptions import PermissionDenied
+
+    with pytest.raises(PermissionDenied):
+        _close(open_session, joiner)
+    open_session.refresh_from_db()
+    assert open_session.status == "OPEN"
+
+
+@pytest.mark.django_db
+def test_close_session_allowed_to_opener(open_session, cashier):
+    session, _ = _close(open_session, cashier)
+    assert session.status == "CLOSED"
+
+
+@pytest.mark.django_db
+def test_close_session_allowed_to_superuser(open_session):
+    admin = User.objects.create_superuser(username="root", password="x")
+    session, _ = _close(open_session, admin)
+    assert session.status == "CLOSED"
+
+
+@pytest.mark.django_db
+def test_close_session_endpoint_returns_403_for_joiner_with_permission(open_session, joiner):
+    """Aunque tenga treasury.close_possession, quien solo se unió no puede cerrar."""
+    from django.contrib.auth.models import Permission
+    from rest_framework.test import APIClient
+
+    joiner.user_permissions.add(Permission.objects.get(codename="close_possession"))
+    client = APIClient()
+    client.force_authenticate(user=joiner)
+    response = client.post(
+        f"/api/treasury/pos-sessions/{open_session.id}/close_session/",
+        {"actual_cash": "0"},
+        format="json",
+    )
+    assert response.status_code == 403
+    open_session.refresh_from_db()
+    assert open_session.status == "OPEN"

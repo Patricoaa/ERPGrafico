@@ -399,7 +399,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                                 name="default_treasury_account"
                                                 render={({ field, fieldState }) => (
                                                     <LabeledSelect
-                                                        label="Cuenta Predeterminada (Apertura de Sesión)"
+                                                        label="Cuenta Predeterminada (apertura de sesión de POS)"
                                                         error={fieldState.error?.message}
                                                         onChange={field.onChange}
                                                         value={field.value || ""}

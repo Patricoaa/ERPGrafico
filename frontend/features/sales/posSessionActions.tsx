@@ -5,6 +5,7 @@ import { FileText, Lock } from "lucide-react"
 export interface POSSessionActionsCtx {
     onReport: (session: POSSession, type: 'X' | 'Z') => void
     onCloseRegister: (session: POSSession) => void
+    canClose: (session: POSSession) => boolean
 }
 
 export const posSessionActions = createEntityActions<
@@ -25,10 +26,10 @@ export const posSessionActions = createEntityActions<
         {
             action: "lock",
             icon: Lock,
-            label: "Cerrar Sesión",
+            label: "Cerrar sesión de POS",
             className: "text-destructive",
             onClick: () => ctx.onCloseRegister(item),
-            visible: isOpen,
+            visible: isOpen && ctx.canClose(item),
         },
         {
             action: "report",
