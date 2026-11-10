@@ -954,7 +954,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'error': str(getattr(e, 'message', e))}, status=400)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
-    @action(detail=True, methods=["post"])
     @action(detail=True, methods=['post'])
     def close_session(self, request, pk=None):
         try:
@@ -1004,7 +1003,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             logger.exception("Error generating POS report PDF")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=["post"])
     @action(detail=True, methods=['post'])
     def register_manual_movement(self, request, pk=None):
         try:
