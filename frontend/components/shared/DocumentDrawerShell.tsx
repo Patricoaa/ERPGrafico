@@ -1,7 +1,9 @@
 "use client"
 
-import { isValidElement, useState, type ComponentType, type ReactNode } from "react"
-import type { LucideIcon } from "lucide-react"
+import { createContext, isValidElement, useContext, useState, type ComponentType, type ReactNode } from "react"
+import { createPortal } from "react-dom"
+import { ArrowLeft, type LucideIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { getErrorMessage } from "@/lib/errors"
 import { cn } from "@/lib/utils"
@@ -59,8 +61,44 @@ export interface DocumentDrawerShellProps {
     footer?: ReactNode
 }
 
+/** Botón «Volver» para el header de una ficha hija: vuelve al drawer que la abrió. */
+export function DocumentBackAction({ label = "Volver", onClick }: { label?: string; onClick: () => void }) {
+    return (
+        <Button variant="ghost" size="sm" onClick={onClick} className="h-10 gap-1.5 px-3 text-sm font-semibold">
+            <ArrowLeft className="size-4 shrink-0" aria-hidden />
+            <span>{label}</span>
+        </Button>
+    )
+}
+
+/**
+ * Nodos del header de un drawer contenedor (p. ej. el drawer del POS). Si la ficha embebida los recibe,
+ * pinta su título, subtítulo y acciones dentro de estos nodos en lugar de su propia barra: la ficha reutiliza
+ * el encabezado principal y solo ocupa el cuerpo. Los nodos son estables (`null` hasta montarse).
+ */
+export interface DocumentHeaderSlots {
+    title: HTMLElement | null
+    subtitle: HTMLElement | null
+    actions: HTMLElement | null
+}
+
+export const DocumentHeaderSlotContext = createContext<DocumentHeaderSlots | null>(null)
+
 export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
     const { open, onOpenChange, title, subtitle, icon, headerActions, embedded, tabs, side, footer } = props
+    const slots = useContext(DocumentHeaderSlotContext)
+
+    if (embedded && slots) {
+        // Encabezado del contenedor: título, subtítulo y acciones se portan a sus nodos; solo queda el cuerpo.
+        return (
+            <div className="flex h-full min-h-0 flex-col">
+                {slots.title && title !== undefined && createPortal(title, slots.title)}
+                {slots.subtitle && subtitle !== undefined && createPortal(subtitle, slots.subtitle)}
+                {slots.actions && headerActions && createPortal(headerActions, slots.actions)}
+                <DocumentSheetBody {...props} />
+            </div>
+        )
+    }
 
     if (embedded) {
         return (
@@ -83,7 +121,6 @@ export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
             open={open}
             onOpenChange={onOpenChange}
             side={side ?? "left"}
-            boundary="embedded"
             defaultSize={formDrawerWidth("master", true)}
             title={title}
             subtitle={subtitle}

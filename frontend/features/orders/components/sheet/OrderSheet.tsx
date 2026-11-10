@@ -8,6 +8,7 @@ import {
     ActionConfirmModal,
     DocumentActionsMenu,
     DocumentDrawerShell,
+    DocumentBackAction,
     DocumentLifecycle,
     type DocumentActionItem,
     type DocumentSheetTab,
@@ -47,6 +48,8 @@ export interface OrderSheetProps {
     /** Pagos registrados desde el POS quedan en su sesión. */
     posSessionId?: number | null
     onActionSuccess?: () => void
+    /** Muestra «Volver» en el header y lo invoca (POS: vuelve a la lista del mismo drawer). */
+    onBack?: () => void
 }
 
 const LABEL = { sale: "sales.saleorder", purchase: "purchasing.purchaseorder" } as const
@@ -58,7 +61,7 @@ const LIFECYCLE_DOMAINS = new Set<string>(["origin", "billing", "production", "l
  * viven dentro de la ficha. Cabecera con menú único de acciones (incluye imprimir), franja de
  * ciclo y tabs Resumen (contexto + productos) · Relaciones. Referencia para las demás fichas.
  */
-export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, posSessionId = null, onActionSuccess }: OrderSheetProps) {
+export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, posSessionId = null, onActionSuccess, onBack }: OrderSheetProps) {
     const label = LABEL[kind]
     const isSale = kind === "sale"
 
@@ -228,12 +231,17 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
                 title={identity.title}
                 subtitle={identity.subtitle}
                 icon={identity.icon}
-                headerActions={order && (
-                    <DocumentActionsMenu
-                        primary={plan.primary ? toItem(plan.primary) : null}
-                        actions={[...plan.secondary.map(toItem), ...plan.overflow.map(toItem), ...managementActions]}
-                        onPrint={handlePrint}
-                    />
+                headerActions={(
+                    <>
+                        {onBack && <DocumentBackAction label="Volver a la lista" onClick={onBack} />}
+                        {order && (
+                            <DocumentActionsMenu
+                                primary={plan.primary ? toItem(plan.primary) : null}
+                                actions={[...plan.secondary.map(toItem), ...plan.overflow.map(toItem), ...managementActions]}
+                                onPrint={handlePrint}
+                            />
+                        )}
+                    </>
                 )}
                 footer={draftPurchaseFooter}
                 isLoading={loading || (!order && !isError)}

@@ -6,6 +6,7 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import {
     DocumentActionsMenu,
     DocumentDrawerShell,
+    DocumentBackAction,
     DocumentLifecycle,
     type DocumentActionItem,
     type DocumentSheetTab,
@@ -40,6 +41,8 @@ export interface InvoiceSheetProps {
     embedded?: boolean
     posSessionId?: number | null
     onActionSuccess?: () => void
+    /** Muestra «Volver» en el header y lo invoca (POS: vuelve a la lista del mismo drawer). */
+    onBack?: () => void
 }
 
 const LABEL = "billing.invoice"
@@ -60,7 +63,7 @@ const NOTE_ACTIONS = new Set([
  * InvoiceDrawer: ciclo (origen, emisión/folio, logística, pago), acciones en la cabecera
  * y tabs Resumen · Relaciones.
  */
-export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSessionId = null, onActionSuccess }: InvoiceSheetProps) {
+export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSessionId = null, onActionSuccess, onBack }: InvoiceSheetProps) {
     const { invoice, permissions, isLoading: loading, isError, refetch: fetchOrderDetails } = useInvoiceDocument(id, open || embedded)
     const isSale = invoice ? (invoice.is_sale_document === true || !!invoice.sale_order) : true
     const isNote = invoice?.dte_type === "NOTA_CREDITO" || invoice?.dte_type === "NOTA_DEBITO"
@@ -183,12 +186,17 @@ export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSess
                 title={identity.title}
                 subtitle={identity.subtitle}
                 icon={identity.icon}
-                headerActions={invoice && (
-                    <DocumentActionsMenu
-                        primary={primary ? toItem(primary) : null}
-                        actions={[...resolved.map(toItem), ...related.invoiceActions({ id: invoice.id, status: invoice.status })]}
-                        onPrint={handlePrint}
-                    />
+                headerActions={(
+                    <>
+                        {onBack && <DocumentBackAction label="Volver a la lista" onClick={onBack} />}
+                        {invoice && (
+                            <DocumentActionsMenu
+                                primary={primary ? toItem(primary) : null}
+                                actions={[...resolved.map(toItem), ...related.invoiceActions({ id: invoice.id, status: invoice.status })]}
+                                onPrint={handlePrint}
+                            />
+                        )}
+                    </>
                 )}
                 isLoading={loading || (!invoice && !isError)}
                 error={isError ? new Error("No se pudo cargar la factura") : undefined}

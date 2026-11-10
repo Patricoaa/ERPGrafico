@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useCallback, useId, useSyncExternalStore } from "react"
+import React, { useState, useRef, useEffect, useCallback, useContext, useId, useSyncExternalStore } from "react"
 import {
     Sheet,
     SheetContent,
@@ -65,6 +65,22 @@ export interface DrawerProps extends PanelBaseProps {
     fillContent?: boolean
 }
 
+/**
+ * Ámbito de drawers: los drawers montados dentro de un subárbol heredan `boundary` y clases (p. ej. el
+ * panel del POS: se anclan a `body` y su movimiento propio). Un `boundary` explícito en el drawer gana.
+ */
+export interface DrawerScopeValue {
+    boundary?: "screen" | "embedded"
+    className?: string
+}
+
+export const DrawerScopeContext = React.createContext<DrawerScopeValue>({})
+
+/** `value` debe ser una constante de módulo (no se memoiza aquí). */
+export function DrawerScope({ value, children }: { value: DrawerScopeValue; children: React.ReactNode }) {
+    return <DrawerScopeContext.Provider value={value}>{children}</DrawerScopeContext.Provider>
+}
+
 export function Drawer({
     open,
     onOpenChange,
@@ -75,7 +91,7 @@ export function Drawer({
     children,
     footer,
     side = "bottom",
-    boundary = "embedded",
+    boundary: boundaryProp,
     resizable: resizableProp = false,
     showOverlay,
     mode,
@@ -92,6 +108,8 @@ export function Drawer({
     fillContent = false
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
+    const scope = useContext(DrawerScopeContext)
+    const boundary = boundaryProp ?? scope.boundary ?? "embedded"
     // ADR-0101: el panel de una pestaña ocupa siempre todo el área bajo la barra (la lista de origen queda
     // inoperable) y persiste hasta cerrarlo: un clic fuera no lo descarta y no se redimensiona.
     const persistent = usePersistentPanel()
@@ -229,7 +247,7 @@ export function Drawer({
                 side={side}
                 hideOverlay={!finalShowOverlay}
                 isPlainOverlay={!finalModal}
-                overlayClassName={boundary === "embedded" ? "absolute! inset-0!" : "fixed! inset-0!"}
+                overlayClassName={cn(boundary === "embedded" ? "absolute! inset-0!" : "fixed! inset-0!", scope.className)}
                 hideCloseButton={true}
                 container={containerElement || undefined}
                 style={{
@@ -256,6 +274,7 @@ export function Drawer({
                 }}
                 className={cn(
                     "p-0 flex flex-col overflow-hidden text-foreground rounded-none!",
+                    scope.className,
                     // Drawer surface = main content background (bg-card, ADR-0074)
                     boundary === "embedded"
                         ? "absolute! border border-border/40 bg-card"

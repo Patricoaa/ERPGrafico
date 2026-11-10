@@ -76,6 +76,8 @@ Document lists open the sheet with `useDocumentSheetRoute(label)` (`@/hooks`): `
 
 `DocumentDrawerShell embedded` renders a compact header + body without `Drawer` and without the activity sidebar. Used by the POS (`OrderSheet embedded posSessionId`). The embedded sheet owns its action engine.
 
+**POS (ADR-0121):** the sales drawer is the only drawer of the POS. Rows open their document embedded in that same drawer (`embedded`), replacing the list, with «Volver a la lista» (`onBack`). The embedded sheet does not draw its own header: title, subtitle and actions are portaled into the container header through `DocumentHeaderSlotContext`. Opening another document replaces it. At most one nested drawer (product, contact, work order) may sit above it, replacing any previous one; the sales drawer wraps its subtree in `EntityNavigationScope` and `DrawerScope { boundary: "screen", className: "pos-motion" }` (`components/shared/Drawer.tsx`). Motion is ease-in (`--ease-pos-enter`, globals.css).
+
 ## 7. Anti-patterns
 
 - Opening a document in a surface other than its sheet (Hub, ad-hoc modal).

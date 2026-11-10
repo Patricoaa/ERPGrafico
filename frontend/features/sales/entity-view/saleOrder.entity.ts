@@ -22,7 +22,7 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
 }))
 
 export const saleOrderViews = saleOrderEntity.views({
-    table: { columns: ["folio", "customer", "date", "channel", "hub", "total", "pending"] },
+    table: { columns: ["folio", "customer", "date", "channel", "hub", "total"] },
     card: {
         title: "folio",
         subtitle: ["customer", "date"],

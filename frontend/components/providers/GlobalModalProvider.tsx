@@ -4,12 +4,12 @@ import React, { createContext, useContext, useState, type ReactNode, useCallback
 import { ArrowLeftRight, Calculator, type LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
-import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
+import { formatEntityDisplay, getEntityMetadata, type EntityLabel } from "@/lib/entity-registry"
 import { usePathname, useRouter } from "next/navigation"
 import { getModuleIdFromPath, getEntityModule } from "@/lib/module-registry"
 import { ErrorBoundary, PersistentPanelContext, UnsavedChangesDialog } from "@/components/shared"
 import { EntityViewBridge } from "./EntityViewBridge"
-import type { RecentSave, SavedRecord } from "./EntityOpenerContext"
+import { EntityViewProvider, type RecentSave, type SavedRecord } from "./EntityOpenerContext"
 import { DirtyRegistry, type DirtyEntry } from "./dirtyGuardRegistry"
 
 interface OpenEntityState {
@@ -681,6 +681,37 @@ export function useGlobalModalActions() {
 }
 
 /** Como `useGlobalModalActions` pero devuelve `undefined` fuera del provider (hooks compartidos, stories). */
+/**
+ * Ámbito de navegación: dentro de `children`, `openEntity` (y el opener de las colecciones) usan
+ * `open` en lugar de la pila global de pestañas. El resto de acciones se heredan tal cual. Lo usa el
+ * POS para apilar documentos en su propio panel (los documentos abiertos desde él no salen a la app).
+ */
+export function EntityNavigationScope({
+    open,
+    children,
+}: {
+    open: (label: string, id: number, data?: unknown, options?: OpenEntityOptions) => void
+    children: ReactNode
+}) {
+    const actions = useOptionalGlobalModalActions()
+    const scopedActions = useMemo(
+        () => (actions ? { ...actions, openEntity: (label: string, id: number, data?: unknown, _segmenter?: ReactNode, options?: OpenEntityOptions) => open(label, id, data, options) } : undefined),
+        [actions, open],
+    )
+    const opener = useMemo(
+        () => ({
+            open: (label: EntityLabel, id: number, row: unknown) => open(label, id, row, undefined),
+            labelOf: (label: EntityLabel) => getEntityMetadata(label)?.titlePlural,
+        }),
+        [open],
+    )
+    return (
+        <GlobalModalActionsContext.Provider value={scopedActions}>
+            <EntityViewProvider opener={opener}>{children}</EntityViewProvider>
+        </GlobalModalActionsContext.Provider>
+    )
+}
+
 export function useOptionalGlobalModalActions() {
     return useContext(GlobalModalActionsContext)
 }
