@@ -1,3 +1,5 @@
+"use client"
+
 import { createContext } from 'react'
 import type { OperatorPurpose } from '@/lib/pos-operator'
 import type { OperatorTarget } from './operatorStore'

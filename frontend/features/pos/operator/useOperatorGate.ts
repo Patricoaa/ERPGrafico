@@ -1,3 +1,5 @@
+"use client"
+
 import { useContext, useSyncExternalStore } from 'react'
 import { OperatorGateContext, type OperatorGateContextValue } from './operatorGateContext'
 import { operatorStore, type ActiveOperatorPass } from './operatorStore'
