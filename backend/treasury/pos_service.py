@@ -44,7 +44,7 @@ class POSService:
         """
         Opens a POS session.
 
-        - `mode` (SINGLE | MULTI) queda fijo durante toda la sesión.
+        - `mode` (SINGLE | MULTI) es el modo de caja de este dispositivo (la cuenta que abre).
 
         - Requires a terminal_id; the session treasury account is snapshotted
           from terminal.default_treasury_account at open time.
@@ -91,8 +91,8 @@ class POSService:
             user=user,
             opening_balance=opening_balance,
             status="OPEN",
-            mode=mode,
         )
+        session.set_device_mode(user, mode)
 
         _apply_opening_fund_adjustment(
             session=session,
@@ -229,6 +229,16 @@ class POSService:
             notes=request.data.get("notes", ""),
             mode=request.data.get("mode") or POSSession.Mode.SINGLE,
         )
+
+    @staticmethod
+    def join_session(*, session: POSSession, user, mode: str) -> POSSession:
+        """Registra el modo de caja con el que ``user`` se une a una sesión abierta."""
+        if mode not in POSSession.Mode.values:
+            raise ValidationError("Modo de caja inválido.")
+        if session.status != POSSession.Status.OPEN:
+            raise ValidationError("La sesión de caja está cerrada.")
+        session.set_device_mode(user, mode)
+        return session
 
     @staticmethod
     def close_session_from_request(request, session: POSSession):

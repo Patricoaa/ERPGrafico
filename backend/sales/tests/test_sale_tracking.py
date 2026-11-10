@@ -7,7 +7,7 @@ from contacts.models import Contact
 from sales.draft_cart_service import DraftCartService
 from sales.models import DraftCart, SaleOrder, SaleTrackingEvent
 from sales.tracking_service import SaleTrackingService
-from treasury.models import POSSession
+from treasury.tests.helpers import make_pos_session
 from treasury.pos_operator_service import Actor
 
 User = get_user_model()
@@ -32,7 +32,7 @@ def beto(db):
 
 @pytest.fixture
 def session(cashier):
-    return POSSession.objects.create(user=cashier, mode="MULTI")
+    return make_pos_session(cashier, "MULTI")
 
 
 @pytest.fixture
@@ -169,7 +169,7 @@ def test_document_edit_always_inserts(session, cashier, ana, customer):
 
 def test_transfer_ignores_draft_rows_of_another_session(session, cashier, ana, customer):
     """Un draft_id enviado por el cliente no puede adoptar el seguimiento de otra sesión."""
-    other = POSSession.objects.create(user=ana, mode="SINGLE")
+    other = make_pos_session(ana, "SINGLE")
     foreign = _save(other, _actor(ana, ana))
     order = SaleOrder.objects.create(customer=customer, pos_session=session)
     SaleTrackingService.transfer_to_order(draft_id=foreign.id, order=order, actor=_actor(ana, cashier))

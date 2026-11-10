@@ -158,12 +158,13 @@ export interface POSTerminal {
     allowed_payment_methods: string[]
 }
 
-/** Modo de caja (fijo durante toda la sesión): SINGLE opera la cuenta logueada; MULTI identifica al operador por transacción. */
+/** Modo de caja del dispositivo (no de la sesión): SINGLE opera la cuenta logueada; MULTI identifica al operador por transacción. */
 export type POSSessionMode = 'SINGLE' | 'MULTI'
 
 export interface POSSession {
     id: number
-    mode: POSSessionMode
+    /** Modo de caja de ESTE dispositivo en la sesión; cada dispositivo elige el suyo al abrirla o unirse. */
+    my_mode: POSSessionMode
     terminal: number
     terminal_name?: string
     terminal_details?: {

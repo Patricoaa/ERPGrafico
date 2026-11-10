@@ -35,7 +35,7 @@ class DraftCartService:
     def _actor_for(request, pos_session_id, *, target_id: Optional[int] = None) -> Actor:
         """Actor de la acción: el operador del pase en cajas MULTI, la cuenta logueada si no."""
         session = POSSession.objects.filter(id=pos_session_id).first()
-        if session is None or not session.is_multi_user:
+        if session is None or not session.is_multi_user_for(request.user):
             return Actor(request.user, request.user, None)
         return POSOperatorService.actor_from_request(request, session, "DRAFT", target_id=target_id)
 
@@ -68,7 +68,7 @@ class DraftCartService:
     @staticmethod
     def _tab_operator_for(user, pos_session_id, draft_id: int, session_key: str):
         session = POSSession.objects.filter(id=pos_session_id).first()
-        if session is None or not session.is_multi_user:
+        if session is None or not session.is_multi_user_for(user):
             return user, None
         op_pass = POSOperatorService.live_pass_for_tab(
             session=session, device_user=user, tab_key=session_key,

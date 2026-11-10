@@ -105,7 +105,7 @@ class POSDocumentContextMiddleware:
         user = _authenticate(request)
         if user is None:
             return None
-        if not session.is_multi_user:
+        if not session.is_multi_user_for(user):
             return _Context(session, Actor(user, user, None))
         actor = POSOperatorService.resolve_actor(
             session=session, device_user=user,

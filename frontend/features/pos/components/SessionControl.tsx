@@ -266,7 +266,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     (Titular: {session.user_name})
                                 </span>
                             )}
-                            {session.mode === "MULTI" && (
+                            {session.my_mode === "MULTI" && (
                                 <Chip size="xs" intent="neutral">Multiusuario</Chip>
                             )}
                         </div>

@@ -626,13 +626,23 @@ class POSSessionSerializer(serializers.ModelSerializer):
         source="closed_by.username", read_only=True, allow_null=True
     )
     cash_movements = TreasuryMovementSerializer(source="movements", many=True, read_only=True)
+    my_mode = serializers.SerializerMethodField()
 
     class Meta:
         from .models import POSSession
 
         model = POSSession
         fields = "__all__"
-        read_only_fields = ["mode"]
+
+    def get_my_mode(self, obj):
+        """Modo de caja del dispositivo que consulta (cada dispositivo tiene el suyo)."""
+        user = getattr(self.context.get("request"), "user", None)
+        if user is None or not user.is_authenticated:
+            return None
+        cached = getattr(obj, "my_devices", None)  # precargado por la vista (sin consulta por fila)
+        if cached is not None:
+            return cached[0].mode if cached else obj.Mode.SINGLE
+        return obj.mode_for(user)
 
     def get_user_name(self, obj):
         return obj.user.get_full_name() or obj.user.username

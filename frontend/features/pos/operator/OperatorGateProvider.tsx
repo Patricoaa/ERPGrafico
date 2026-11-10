@@ -48,7 +48,7 @@ export function OperatorGateProvider({ children }: { children: ReactNode }) {
     const currentDraftIdRef = useRef(currentDraftId)
     useEffect(() => { currentDraftIdRef.current = currentDraftId }, [currentDraftId])
     const sessionId = currentSession?.id ?? null
-    const isMultiUser = currentSession?.mode === "MULTI"
+    const isMultiUser = currentSession?.my_mode === "MULTI"
 
     const [pending, setPending] = useState<PendingRequest | null>(null)
     const pendingRef = useRef<PendingRequest | null>(null)

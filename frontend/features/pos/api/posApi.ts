@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { IdentifyOperatorPayload, OperatorPassResponse, PosOperator } from '../types'
+import type { IdentifyOperatorPayload, OperatorPassResponse, PosOperator, POSSession, POSSessionMode } from '../types'
 
 export const posApi = {
     // ── Drafts ──
@@ -80,6 +80,10 @@ export const posApi = {
         api.post(`/treasury/pos-sessions/${id}/close_session/`, payload).then(r => r.data),
     registerManualMovement: (id: number, payload: Record<string, unknown>) =>
         api.post(`/treasury/pos-sessions/${id}/register_manual_movement/`, payload).then(r => r.data),
+
+    /** El dispositivo se une a una sesión abierta con su propio modo de caja. */
+    joinSession: (sessionId: number, mode: POSSessionMode) =>
+        api.post<POSSession>(`/treasury/pos-sessions/${sessionId}/join_session/`, { mode }).then(r => r.data),
 
     // ── Operador de caja multiusuario ──
     listOperators: (sessionId: number) =>

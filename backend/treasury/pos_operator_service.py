@@ -79,8 +79,8 @@ class POSOperatorService:
     ) -> tuple[POSOperatorPass, str]:
         if session.status != POSSession.Status.OPEN:
             raise ValidationError("La sesión de caja está cerrada.")
-        if not session.is_multi_user:
-            raise ValidationError("La sesión no es multiusuario.")
+        if not session.is_multi_user_for(device_user):
+            raise ValidationError("Este dispositivo no opera la sesión en modo multiusuario.")
         if purpose not in POSOperatorPass.Purpose.values:
             raise ValidationError("Propósito de identificación inválido.")
         from .selectors import POSSelector
@@ -124,7 +124,7 @@ class POSOperatorService:
         purpose: str,
         target_id: int | None = None,
     ) -> Actor:
-        if not session.is_multi_user:
+        if not session.is_multi_user_for(device_user):
             return Actor(device_user, device_user, None)
         if not raw_token:
             raise POSOperatorRequired(purpose)
