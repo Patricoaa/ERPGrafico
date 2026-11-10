@@ -82,7 +82,7 @@ export function OperatorPickerModal({
                                 style={{ minHeight: MIN_TOUCH_TARGET + 20 }}
                                 onClick={() => onSelect(operator)}
                             >
-                                <Blobatar name={operator.username} className="size-10 shrink-0 rounded-full" />
+                                <Blobatar name={operator.username || operator.full_name} className="size-10 shrink-0 rounded-full" />
                                 <span className="truncate text-left font-medium">{operator.full_name}</span>
                             </Button>
                         ))}

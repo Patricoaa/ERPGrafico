@@ -22,6 +22,12 @@ function setup(overrides: Partial<React.ComponentProps<typeof OperatorPickerModa
 }
 
 describe("OperatorPickerModal", () => {
+    it("no se rompe si un operador llega sin username (respuesta de un backend sin actualizar)", () => {
+        const legacy = { id: 3, full_name: "Carla Díaz", initials: "CD" } as unknown as PosOperator
+        setup({ operators: [legacy] })
+        expect(screen.getByRole("button", { name: /Carla Díaz/ })).toBeTruthy()
+    })
+
     it("lista los operadores y devuelve el elegido", () => {
         const props = setup()
         expect(screen.getByText("¿Quién opera?")).toBeTruthy()
