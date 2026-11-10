@@ -270,6 +270,8 @@ cuenta de tesorería. Un movimiento que toca una caja con sesión abierta desde 
 exige el header `X-POS-External-Reason` (desafío `X-POS-External-Reason-Required`) y guarda el
 motivo en `TreasuryMovement.pos_external_reason`.
 
+**Modo de caja (ADR-0125):** `mode` ∈ `SINGLE` | `MULTI` (defecto `SINGLE`), se fija al abrir y es **inmutable** mientras la sesión esté abierta (solo lectura en la API). En `MULTI` las transacciones inicializadoras exigen un pase de operador (`POSOperatorPass`); cerrar la sesión vence todos sus pases vivos.
+
 **Edit policy (ADR-0091):** `POSSessionAudit` (arqueo) es inmutable una vez contabilizado; sin escritura por API.
 
 ## TerminalBatch
