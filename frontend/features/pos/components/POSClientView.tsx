@@ -151,7 +151,7 @@ export function POSClientView() {
         }
     })
 
-    const { forget: forgetOperatorPass, isMultiUser, activePass } = useOperatorGate()
+    const { forget: forgetOperatorPass, release: releaseOperatorPass, ensureOperator, isMultiUser, activePass } = useOperatorGate()
     // En caja multiusuario el menú refleja a quien opera ahora; sin operador, a la cuenta del dispositivo.
     const menuUsername = (isMultiUser && activePass?.operator.username) || user?.username || 'Usuario'
     const { saveDraft, loadDraft, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
@@ -341,6 +341,14 @@ export function POSClientView() {
         setWizardState({ step: 1, isQuickSale: false }); setPosMode('CHECKOUT')
     }
 
+    // El retiro de socio es una transacción propia: en caja multiusuario pide operador antes de abrirse.
+    const handleWithdrawClick = async () => {
+        const identified = currentDraftId
+            ? await ensureOperator('PARTNER_WITHDRAWAL', { type: 'sales.draftcart', id: currentDraftId })
+            : true
+        if (identified) setWithdrawDialogOpen(true)
+    }
+
     const handleWithdraw = async () => {
         if (!currentDraftId) {
             toast.error("Guarde el carrito como borrador primero o espere a la sincronización automática.")
@@ -364,6 +372,7 @@ export function POSClientView() {
             setSelectedPartnerName("")
 
             // Cleanup POS state
+            forgetOperatorPass() // el retiro consumió su pase en el backend
             await releaseCurrentLock()
             setCurrentDraftId(null)
             setWizardState(null)
@@ -692,7 +701,7 @@ export function POSClientView() {
                         onItemRemove={removeFromCart}
                         onOpenNumpad={handleOpenNumpad}
                         onQuickSale={handleQuickSale}
-                        onWithdrawClick={() => setWithdrawDialogOpen(true)}
+                        onWithdrawClick={() => { void handleWithdrawClick() }}
                         onConfirmSale={handleConfirmSale}
                         totalDiscountAmount={totalDiscountAmount}
                         onTotalDiscountChange={setTotalDiscountAmount}
@@ -787,6 +796,7 @@ export function POSClientView() {
                 onOpenChange={(open) => {
                     setWithdrawDialogOpen(open)
                     if (!open) {
+                        void releaseOperatorPass('PARTNER_WITHDRAWAL') // cancelado: el pase no queda vivo
                         setSelectedPartnerId(null)
                         setSelectedPartnerName("")
                     }

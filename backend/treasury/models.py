@@ -2466,6 +2466,7 @@ class POSOperatorPass(models.Model):
         DRAFT = "DRAFT", _("Borrador / venta")
         CASH_MOVEMENT = "CASH_MOVEMENT", _("Movimiento de caja")
         SESSION_CLOSE = "SESSION_CLOSE", _("Cierre de sesión")
+        PARTNER_WITHDRAWAL = "PARTNER_WITHDRAWAL", _("Retiro de socio")
         DOCUMENT_EDIT = "DOCUMENT_EDIT", _("Edición de documento")
 
     class EndReason(models.TextChoices):

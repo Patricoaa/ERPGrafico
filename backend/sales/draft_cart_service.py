@@ -32,12 +32,12 @@ class DraftCartService:
     # ── Actor (operador en cajas MULTI) ──────────────────────────────
 
     @staticmethod
-    def _actor_for(request, pos_session_id, *, target_id: Optional[int] = None) -> Actor:
+    def _actor_for(request, pos_session_id, *, target_id: Optional[int] = None, purpose: str = "DRAFT") -> Actor:
         """Actor de la acción: el operador del pase en cajas MULTI, la cuenta logueada si no."""
         session = POSSession.objects.filter(id=pos_session_id).first()
         if session is None or not session.is_multi_user_for(request.user):
             return Actor(request.user, request.user, None)
-        return POSOperatorService.actor_from_request(request, session, "DRAFT", target_id=target_id)
+        return POSOperatorService.actor_from_request(request, session, purpose, target_id=target_id)
 
     @staticmethod
     def _holds_live_lock(draft: DraftCart, operator, session_key: str) -> bool:
@@ -184,7 +184,10 @@ class DraftCartService:
         data = request.data
         pos_session_id = data.get("pos_session_id")
         DraftCartService.validate_pos_session_id(pos_session_id)
-        actor = DraftCartService._actor_for(request, int(pos_session_id), target_id=draft_id)
+        # El retiro de socio es una transacción propia: pide su operador (no basta el pase del carrito).
+        actor = DraftCartService._actor_for(
+            request, int(pos_session_id), target_id=draft_id, purpose="PARTNER_WITHDRAWAL"
+        )
         result = DraftCartService.process_withdrawal(
             draft_id=draft_id,
             pos_session_id=int(pos_session_id),

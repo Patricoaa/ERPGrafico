@@ -10,7 +10,7 @@ import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } 
 import { posSessionEntity, posSessionViews } from "../entity-view/posSession.entity"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { POSReport, type POSReportData } from "@/features/pos"
-import { SessionCloseModal } from "@/features/pos"
+import { GatedSessionCloseModal } from "@/features/pos"
 import type { POSSession as POSSessionModal } from "@/features/pos"
 import { fetchPOSSessionSummary } from "@/features/pos"
 
@@ -153,7 +153,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                 </div>
             )}
 
-            {selectedSession && <SessionCloseModal open={closeDialogOpen} onOpenChange={setCloseDialogOpen} session={selectedSession as unknown as POSSessionModal} onSuccess={handleCloseSuccess} />}
+            {selectedSession && <GatedSessionCloseModal open={closeDialogOpen} onOpenChange={setCloseDialogOpen} session={selectedSession as unknown as POSSessionModal} onSuccess={handleCloseSuccess} />}
         </div>
     )
 }

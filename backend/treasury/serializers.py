@@ -677,7 +677,7 @@ class POSOperatorSerializer(serializers.Serializer):
 class IdentifyOperatorSerializer(serializers.Serializer):
     operator_id = serializers.IntegerField()
     tab_key = serializers.CharField(max_length=64)
-    purpose = serializers.ChoiceField(choices=["DRAFT", "CASH_MOVEMENT", "SESSION_CLOSE", "DOCUMENT_EDIT"])
+    purpose = serializers.ChoiceField(choices=["DRAFT", "CASH_MOVEMENT", "SESSION_CLOSE", "PARTNER_WITHDRAWAL", "DOCUMENT_EDIT"])
     target_type = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
     target_id = serializers.IntegerField(required=False, allow_null=True, default=None)
     # Primera edición: se acepta y se ignora. PIN/tarjeta se validan en una edición posterior.

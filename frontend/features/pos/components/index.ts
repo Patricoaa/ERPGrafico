@@ -10,6 +10,7 @@ export { POSVariantSelectorModal } from './POSVariantSelectorModal'
 export { SalesOrdersDrawer } from './SalesOrdersDrawer'
 export { ScannerFeedback } from './ScannerFeedback'
 export { SessionCloseModal } from './SessionCloseModal'
+export { GatedSessionCloseModal } from './GatedSessionCloseModal'
 export { SessionControl } from './SessionControl'
 export { POSCartItemsSkeleton, POSGridSkeleton, POSLayoutSkeleton, POSSearchSkeleton } from './skeletons/POSLayoutSkeleton'
 
