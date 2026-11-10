@@ -211,11 +211,18 @@ class DraftCartService:
         Llamado desde el endpoint de sync para mantener locks limpios.
         """
         cutoff = timezone.now() - timedelta(seconds=LOCK_TIMEOUT_SECONDS)
-        stale = DraftCart.objects.filter(
+        # save() por fila (no QuerySet.update): update() no dispara post_save y los
+        # demás terminales no verían el borrador desbloqueado en vivo.
+        count = 0
+        for draft in DraftCart.objects.select_related("created_by", "last_modified_by").filter(
             locked_by__isnull=False,
             locked_at__lt=cutoff,
-        )
-        count = stale.update(locked_by=None, locked_at=None, lock_session_key="")
+        ):
+            draft.locked_by = None
+            draft.locked_at = None
+            draft.lock_session_key = ""
+            draft.save(update_fields=["locked_by", "locked_at", "lock_session_key"])
+            count += 1
         return count
 
     # ── Sync ─────────────────────────────────────────────────────────
@@ -475,18 +482,22 @@ class DraftCartService:
         """
         from workflow.models import Task
 
-        stale_ids = [
-            d.id
-            for d in DraftCart.objects.filter(has_pending_approval=True)
+        stale = [
+            d
+            for d in DraftCart.objects.select_related(
+                "locked_by", "created_by", "last_modified_by"
+            ).filter(has_pending_approval=True)
             if not Task.objects.filter(
                 task_type="CREDIT_POS_REQUEST",
                 status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
                 data__draft_id=d.id,
             ).exists()
         ]
-        if stale_ids:
-            return DraftCart.objects.filter(id__in=stale_ids).update(has_pending_approval=False)
-        return 0
+        # save() por fila para emitir el broadcast WS (update() no dispara signals).
+        for draft in stale:
+            draft.has_pending_approval = False
+            draft.save(update_fields=["has_pending_approval"])
+        return len(stale)
 
     @staticmethod
     def cleanup_old_drafts(days: int = 1) -> int:
