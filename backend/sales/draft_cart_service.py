@@ -63,14 +63,18 @@ class DraftCartService:
     @staticmethod
     def _tab_operator(request, pos_session_id, draft_id: int, session_key: str):
         """(operador, pase) de la pestaña en cajas MULTI; (request.user, None) si no aplica."""
+        return DraftCartService._tab_operator_for(request.user, pos_session_id, draft_id, session_key)
+
+    @staticmethod
+    def _tab_operator_for(user, pos_session_id, draft_id: int, session_key: str):
         session = POSSession.objects.filter(id=pos_session_id).first()
         if session is None or not session.is_multi_user:
-            return request.user, None
+            return user, None
         op_pass = POSOperatorService.live_pass_for_tab(
-            session=session, device_user=request.user, tab_key=session_key,
+            session=session, device_user=user, tab_key=session_key,
             purpose="DRAFT", target_id=draft_id,
         )
-        return (op_pass.operator, op_pass) if op_pass else (request.user, None)
+        return (op_pass.operator, op_pass) if op_pass else (user, None)
 
     @staticmethod
     def save_draft_from_request(request, draft_id: Optional[int] = None) -> DraftCart:
@@ -137,12 +141,25 @@ class DraftCartService:
         DraftCartService.validate_pos_session_id(pos_session_id)
         if not session_key:
             raise ValueError("Se requiere session_key")
-        operator, op_pass = DraftCartService._tab_operator(request, int(pos_session_id), draft_id, session_key)
+        return DraftCartService.heartbeat(
+            draft_id=draft_id, pos_session_id=int(pos_session_id), user=request.user, session_key=session_key
+        )
+
+    @staticmethod
+    def heartbeat(draft_id: int, pos_session_id: int, user, session_key: str) -> bool:
+        """Heartbeat de la pestaña (HTTP y WebSocket); ``user`` es la cuenta del dispositivo.
+
+        En cajas MULTI renueva el bloqueo del operador del pase. Un bloqueo ya vencido no se
+        revive: el pase termina y la siguiente operación pide identificar de nuevo.
+        """
+        operator, op_pass = DraftCartService._tab_operator_for(user, pos_session_id, draft_id, session_key)
+        if op_pass is not None:
+            draft = DraftCart.objects.filter(id=draft_id, pos_session_id=pos_session_id).first()
+            if draft is None or not DraftCartService._holds_live_lock(draft, operator, session_key):
+                POSOperatorService.end(op_pass, POSOperatorPass.EndReason.EXPIRED)
+                return False
         refreshed = DraftCartService.refresh_lock(
-            draft_id=draft_id,
-            pos_session_id=int(pos_session_id),
-            user=operator,
-            session_key=session_key,
+            draft_id=draft_id, pos_session_id=pos_session_id, user=operator, session_key=session_key
         )
         if op_pass is not None and not refreshed:  # bloqueo perdido: el pase no sobrevive
             POSOperatorService.end(op_pass, POSOperatorPass.EndReason.EXPIRED)

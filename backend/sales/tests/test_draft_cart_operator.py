@@ -214,3 +214,28 @@ def test_multi_withdraw_without_pass_403(api, multi, ana):
     r = api.post(f"/api/sales/pos-drafts/{d_id}/withdraw/", {"pos_session_id": multi.id}, format="json")
     assert r.status_code == 403 and _code(r)["code"] == "pos_operator_required"
     assert DraftCart.objects.filter(pk=d_id).exists()
+
+
+# ── Revisión final: heartbeat por WebSocket y bloqueo vencido ──────────────────
+
+def test_multi_ws_heartbeat_refreshes_operator_lock(api, multi, ana, cashier):
+    """El heartbeat del WebSocket llega con la cuenta del dispositivo: debe renovar el bloqueo del operador."""
+    from sales.draft_cart_service import DraftCartService
+
+    p = _identify(api, multi, ana)
+    d_id = _create(api, multi, token=p["token"]).json()["id"]
+    DraftCart.objects.filter(pk=d_id).update(locked_at=timezone.now() - timedelta(seconds=10))
+    assert DraftCartService.heartbeat(draft_id=d_id, pos_session_id=multi.id, user=cashier, session_key="tab1") is True
+    assert (timezone.now() - DraftCart.objects.get(pk=d_id).locked_at).total_seconds() < 5
+
+
+def test_multi_heartbeat_on_expired_lock_ends_pass_and_requires_identification(api, multi, ana, cashier):
+    from sales.draft_cart_service import DraftCartService
+
+    p = _identify(api, multi, ana)
+    d_id = _create(api, multi, token=p["token"]).json()["id"]
+    DraftCart.objects.filter(pk=d_id).update(locked_at=timezone.now() - timedelta(seconds=600))
+    assert DraftCartService.heartbeat(draft_id=d_id, pos_session_id=multi.id, user=cashier, session_key="tab1") is False
+    assert POSOperatorPass.objects.get(pk=p["pass_id"]).end_reason == "EXPIRED"
+    r = _update(api, multi, d_id, token=p["token"])
+    assert r.status_code == 403

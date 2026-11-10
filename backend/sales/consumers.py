@@ -49,7 +49,7 @@ class POSDraftConsumer(AsyncWebsocketConsumer):
 
                 if draft_id and session_key and user and user.is_authenticated:
                     # Renovar el lock en la base de datos
-                    success = await sync_to_async(DraftCartService.refresh_lock)(
+                    success = await sync_to_async(DraftCartService.heartbeat)(
                         draft_id=int(draft_id),
                         pos_session_id=int(self.session_id),
                         user=user,

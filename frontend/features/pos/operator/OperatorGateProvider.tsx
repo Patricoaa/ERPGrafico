@@ -25,10 +25,16 @@ interface PendingRequest {
     resolve: (identified: boolean) => void
 }
 
-function targetFromChallenge(purpose: OperatorPurpose, request: PosOperatorChallengeRequest): OperatorTarget | undefined {
+function targetFromChallenge(
+    purpose: OperatorPurpose,
+    request: PosOperatorChallengeRequest,
+    currentDraftId: number | null,
+): OperatorTarget | undefined {
     if (purpose === "DRAFT") {
         const match = request.url?.match(DRAFT_URL)
         if (match) return { type: DRAFT_TYPE, id: Number(match[1]) }
+        // El cobro (`POST sales/orders/`) no lleva el borrador en la url: es el que está en curso.
+        if (currentDraftId !== null) return { type: DRAFT_TYPE, id: currentDraftId }
     }
     return operatorStore.getState().challengeTargets[purpose]
 }
@@ -38,7 +44,9 @@ function targetFromChallenge(purpose: OperatorPurpose, request: PosOperatorChall
  * Va dentro de `POSProvider`. En sesiones de un solo usuario no hace nada visible.
  */
 export function OperatorGateProvider({ children }: { children: ReactNode }) {
-    const { currentSession } = usePOS()
+    const { currentSession, currentDraftId } = usePOS()
+    const currentDraftIdRef = useRef(currentDraftId)
+    useEffect(() => { currentDraftIdRef.current = currentDraftId }, [currentDraftId])
     const sessionId = currentSession?.id ?? null
     const isMultiUser = currentSession?.mode === "MULTI"
 
@@ -121,7 +129,7 @@ export function OperatorGateProvider({ children }: { children: ReactNode }) {
         if (!isMultiUser) return
         setPosOperatorChallengeHandler((purpose, request) => {
             operatorStore.setPass(null)
-            return ensureOperator(purpose, targetFromChallenge(purpose, request))
+            return ensureOperator(purpose, targetFromChallenge(purpose, request, currentDraftIdRef.current))
         })
         return () => setPosOperatorChallengeHandler(null)
     }, [isMultiUser, ensureOperator])

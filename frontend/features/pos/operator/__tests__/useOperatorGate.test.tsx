@@ -9,11 +9,12 @@ import { OperatorChip } from "../OperatorChip"
 
 type Session = { id: number; mode: "SINGLE" | "MULTI" } | null
 let session: Session = { id: 5, mode: "MULTI" }
+let currentDraftId: number | null = null
 
 const identify = vi.fn()
 const releaseOperator = vi.fn()
 
-vi.mock("../../contexts/POSProvider", () => ({ usePOS: () => ({ currentSession: session }) }))
+vi.mock("../../contexts/POSProvider", () => ({ usePOS: () => ({ currentSession: session, currentDraftId }) }))
 vi.mock("../../hooks/useDraftSync", () => ({ getBrowserSessionKey: () => "tab-1" }))
 vi.mock("../../api/posApi", () => ({ posApi: { releaseOperator: (...a: unknown[]): unknown => releaseOperator(...a) } }))
 vi.mock("../useOperators", () => ({
@@ -38,6 +39,7 @@ async function choose(name: RegExp) {
 
 beforeEach(() => {
     session = { id: 5, mode: "MULTI" }
+    currentDraftId = null
     identify.mockReset()
     releaseOperator.mockReset().mockResolvedValue(undefined)
     identify.mockImplementation(async ({ payload }: { payload: { operator_id: number; purpose: string; target_id?: number } }) =>
@@ -138,6 +140,16 @@ describe("useOperatorGate", () => {
         await choose(/Beto/)
         await expect(p).resolves.toBe(true)
         expect((identify.mock.calls[0]![0] as { payload: unknown }).payload).toMatchObject({ operator_id: 2, purpose: "DRAFT", target_type: "sales.draftcart", target_id: 12 })
+    })
+
+    it("el desafío del cobro (url sin borrador) liga el pase al borrador en curso", async () => {
+        currentDraftId = 12
+        renderHook(() => useOperatorGate(), { wrapper })
+        let p!: Promise<boolean>
+        act(() => { p = runPosOperatorChallenge("DRAFT", { url: "sales/orders/" }) })
+        await choose(/Beto/)
+        await expect(p).resolves.toBe(true)
+        expect((identify.mock.calls[0]![0] as { payload: unknown }).payload).toMatchObject({ purpose: "DRAFT", target_type: "sales.draftcart", target_id: 12 })
     })
 
     it("el desafío descarta el pase muerto antes de pedir otro", async () => {

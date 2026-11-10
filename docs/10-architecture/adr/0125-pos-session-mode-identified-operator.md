@@ -31,6 +31,8 @@ El POS atribuye todo a `request.user`, la cuenta que inició sesión en el dispo
 - En `MULTI` la exigencia vive en el backend: llamar a la API sin pase falla aunque se salte la pantalla.
 - Riesgo asumido: en `MULTI` solo un operador igual a la cuenta que abrió la sesión (o un superusuario) puede cerrarla.
 - Cerrar una sesión `MULTI` desde el listado de sesiones (fuera de la pantalla del POS) no tiene selector y devuelve el 403; se cierra desde el POS.
+- Límite conocido: la exigencia de operador al modificar documentos (`DOCUMENT_EDIT`) depende de que el cliente envíe `X-POS-Document-Context`; son endpoints generales del ERP, así que llamar a la API sin ese header no pide pase. El destino del pase tampoco se contrasta con el documento de la URL.
+- `SaleTrackingEvent` y `POSOperatorPass` son registros de auditoría con sus propias fechas; están exentos de `TimeStampedModel`.
 - Tras un pase superado por otra identificación en la misma pestaña, la siguiente modificación vuelve a pedir operador; el carrito en pantalla no se pierde.
 
 ## Alternativas

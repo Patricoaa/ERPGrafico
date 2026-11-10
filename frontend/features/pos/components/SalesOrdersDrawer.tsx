@@ -33,13 +33,13 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
     const overlayEntry = overlayEntryOf(state.entries)
     const rootEntry = state.entries[0] ?? null
 
-    // Caja multiusuario: mientras hay un documento abierto, sus modificaciones piden operador
-    // (DOCUMENT_EDIT) y quedan en el seguimiento. Salir del documento termina ese pase.
-    const { isMultiUser, release, setChallengeTarget } = useOperatorGate()
+    // Mientras hay un documento abierto sus modificaciones quedan en el seguimiento (ambos modos);
+    // en caja multiusuario además piden operador (DOCUMENT_EDIT). Salir del documento termina ese pase.
+    const { release, setChallengeTarget } = useOperatorGate()
     const documentLabel = documentEntry?.label ?? null
     const documentId = documentEntry?.id ?? null
     useEffect(() => {
-        if (!isMultiUser || !posSessionId || documentLabel === null || documentId === null) return
+        if (!posSessionId || documentLabel === null || documentId === null) return
         setPosOperatorHeaders({ documentContext: posSessionId })
         setChallengeTarget('DOCUMENT_EDIT', { type: documentLabel, id: documentId })
         return () => {
@@ -47,7 +47,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
             setChallengeTarget('DOCUMENT_EDIT', null)
             void release('DOCUMENT_EDIT')
         }
-    }, [isMultiUser, documentLabel, documentId, posSessionId, release, setChallengeTarget])
+    }, [documentLabel, documentId, posSessionId, release, setChallengeTarget])
 
     // Nodos del header de este drawer: cuando hay un documento, su identidad y acciones se portan aquí.
     const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null)
