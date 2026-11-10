@@ -8,6 +8,10 @@ from .models import SaleOrder
 
 class SaleOrderSelector:
     @staticmethod
+    def get_tracking_events(order):
+        return order.tracking_events.select_related("operator", "device_user").order_by("occurred_at", "id")
+
+    @staticmethod
     def get_base_queryset():
         from .models import SaleOrder
 

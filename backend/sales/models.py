@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from core.edit_policy import DRAFT_ONLY_DOCUMENT
@@ -981,3 +982,57 @@ class DraftCart(models.Model):
 
     def __str__(self):
         return f"Borrador #{self.session_local_id} - Sesión {self.pos_session_id} ({self.updated_at.strftime('%d/%m/%Y %H:%M')})"
+
+
+class SaleTrackingEvent(models.Model):
+    """
+    Seguimiento de quién tocó cada paso de una venta POS (spec 2026-11-10 §5.6).
+
+    Etapa borrador: una fila por (borrador, paso) que se actualiza con el último
+    operador. Al cobrar, las filas pasan a la orden (``sale_order``) y se agrega
+    CHECKOUT. Después de la venta cada edición desde los drawers agrega una fila.
+    ``draft_ref`` no es FK: el borrador se borra con la sesión y la traza no.
+    """
+
+    class Step(models.TextChoices):
+        CART = "CART", _("Carrito")
+        CUSTOMER = "CUSTOMER", _("Cliente")
+        DTE = "DTE", _("Documento tributario")
+        MANUFACTURING = "MANUFACTURING", _("Detalles de fabricación")
+        PAYMENT = "PAYMENT", _("Pago")
+        DELIVERY = "DELIVERY", _("Entrega")
+        CHECKOUT = "CHECKOUT", _("Cobro")
+        DOCUMENT_EDIT = "DOCUMENT_EDIT", _("Edición de documento")
+
+    draft_ref = models.PositiveIntegerField(_("Borrador (id)"), null=True, blank=True, db_index=True)
+    sale_order = models.ForeignKey(
+        SaleOrder, on_delete=models.CASCADE, null=True, blank=True, related_name="tracking_events"
+    )
+    pos_session = models.ForeignKey(
+        "treasury.POSSession", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    step = models.CharField(_("Paso"), max_length=20, choices=Step.choices)
+    operator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    device_user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    operator_pass = models.ForeignKey(
+        "treasury.POSOperatorPass", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    entity_type = models.CharField(max_length=100, blank=True, default="")
+    entity_id = models.PositiveIntegerField(null=True, blank=True)
+    detail = models.CharField(max_length=255, blank=True, default="")
+    occurred_at = models.DateTimeField(_("Fecha"), default=timezone.now)
+
+    class Meta:
+        verbose_name = _("Evento de seguimiento de venta")
+        verbose_name_plural = _("Eventos de seguimiento de venta")
+        ordering = ["occurred_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["draft_ref", "step"],
+                condition=models.Q(sale_order__isnull=True, draft_ref__isnull=False),
+                name="uniq_sale_tracking_open_draft_step",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.step} · {self.operator_id} · {self.occurred_at:%d/%m/%Y %H:%M}"

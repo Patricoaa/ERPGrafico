@@ -816,10 +816,16 @@ GET/POST/PATCH/DELETE   /api/treasury/pos-terminals/            terminales POS
 GET/POST/PATCH/DELETE   /api/treasury/terminal-batches/         lotes de terminal
 GET/POST/PATCH/DELETE   /api/treasury/terminal-providers/       proveedores de terminal
 GET/POST/PATCH/DELETE   /api/treasury/terminal-devices/         dispositivos de terminal
-GET/POST/PATCH/DELETE   /api/treasury/pos-sessions/             sesiones POS
+GET/POST/PATCH/DELETE   /api/treasury/pos-sessions/             sesiones POS (campo `mode`: SINGLE|MULTI, solo lectura; `open_session` acepta `mode`)
+GET                     /api/treasury/pos-sessions/{id}/operators/          operadores elegibles (ADR-0125)
+POST                    /api/treasury/pos-sessions/{id}/identify_operator/  emite el pase {operator_id, tab_key, purpose, target_type?, target_id?}
+POST                    /api/treasury/pos-sessions/{id}/release_operator/   termina el pase vivo de la pestaña
+GET                     /api/sales/orders/{id}/tracking/                    seguimiento POS de la orden
 GET/POST/PATCH/DELETE   /api/treasury/reconciliation-settings/  settings de conciliación
 GET                     /api/treasury/dashboard/                dashboard agregado
 ```
+
+**Operador de caja multiusuario (ADR-0125).** En sesiones `MULTI` los endpoints de creación/guardado/bloqueo de borradores (`pos-drafts/`), checkout POS (`POST sales/orders/` con `draft_id`), `register_manual_movement`, `close_session` y las modificaciones hechas desde el panel de ventas exigen el header `X-POS-Operator-Pass` (token devuelto por `identify_operator`). Las modificaciones de documentos además envían `X-POS-Document-Context: <id de sesión>`. En `MULTI`, `pos-drafts/` create/update exigen `session_key` y el checkout exige `draft_id`. Sin pase vigente, del propósito correcto, de la sesión y pestaña: **403** con el código en `error.details.code = "pos_operator_required"` y `error.details.purpose` (`DRAFT` | `CASH_MOVEMENT` | `SESSION_CLOSE` | `DOCUMENT_EDIT`); el cuerpo no lleva el código en la raíz.
 
 ---
 

@@ -13,12 +13,14 @@ from rest_framework.exceptions import PermissionDenied
 from core.prefix_registry import EntityPrefix
 
 from .models import (
+    POSOperatorPass,
     POSSession,
     POSSessionAudit,
     POSTerminal,
     TreasuryAccount,
     TreasuryMovement,
 )
+from .pos_operator_service import POSOperatorService
 from .services import TreasuryService
 
 
@@ -37,9 +39,12 @@ class POSService:
         justify_reason: str | None = None,
         justify_target_id: int | None = None,
         notes: str = "",
+        mode: str = POSSession.Mode.SINGLE,
     ) -> POSSession:
         """
         Opens a POS session.
+
+        - `mode` (SINGLE | MULTI) queda fijo durante toda la sesión.
 
         - Requires a terminal_id; the session treasury account is snapshotted
           from terminal.default_treasury_account at open time.
@@ -52,6 +57,9 @@ class POSService:
 
         Raises ValidationError on any business rule violation.
         """
+        if mode not in POSSession.Mode.values:
+            raise ValidationError("Modo de caja inválido.")
+
         if POSSession.objects.filter(user=user, status="OPEN").exists():
             raise ValidationError("Ya tiene una sesión abierta.")
 
@@ -83,6 +91,7 @@ class POSService:
             user=user,
             opening_balance=opening_balance,
             status="OPEN",
+            mode=mode,
         )
 
         _apply_opening_fund_adjustment(
@@ -198,6 +207,11 @@ class POSService:
         session.closed_by = user
         session.save()
 
+        # Cerrada la sesión, ningún pase de operador sigue vigente.
+        POSOperatorPass.objects.filter(session=session, ended_at__isnull=True).update(
+            ended_at=timezone.now(), end_reason=POSOperatorPass.EndReason.EXPIRED
+        )
+
         return session, audit
 
     # ------------------------------------------------------------------ #
@@ -213,20 +227,28 @@ class POSService:
             justify_reason=request.data.get("justify_reason"),
             justify_target_id=request.data.get("justify_target_id"),
             notes=request.data.get("notes", ""),
+            mode=request.data.get("mode") or POSSession.Mode.SINGLE,
         )
 
     @staticmethod
     def close_session_from_request(request, session: POSSession):
-        return POSService.close_session(
-            session=session,
-            actual_cash=Decimal(str(request.data.get("actual_cash", "0"))),
-            notes=request.data.get("notes", ""),
-            justify_reason=request.data.get("justify_reason", "UNKNOWN"),
-            justify_target_id=request.data.get("justify_target_id"),
-            withdrawal_amount=Decimal(str(request.data.get("withdrawal_amount", "0"))),
-            cash_destination_id=request.data.get("cash_destination_id"),
-            user=request.user,
-        )
+        if session.status == "CLOSED":
+            raise ValidationError("Esta sesión ya está cerrada.")
+        actor = POSOperatorService.actor_from_request(request, session, "SESSION_CLOSE")
+        # El pase se consume junto con el cierre: si el cierre falla, vuelve a estar vigente.
+        with transaction.atomic():
+            if actor.operator_pass:
+                POSOperatorService.end(actor.operator_pass, POSOperatorPass.EndReason.CONSUMED)
+            return POSService.close_session(
+                session=session,
+                actual_cash=Decimal(str(request.data.get("actual_cash", "0"))),
+                notes=request.data.get("notes", ""),
+                justify_reason=request.data.get("justify_reason", "UNKNOWN"),
+                justify_target_id=request.data.get("justify_target_id"),
+                withdrawal_amount=Decimal(str(request.data.get("withdrawal_amount", "0"))),
+                cash_destination_id=request.data.get("cash_destination_id"),
+                user=actor.operator,
+            )
 
     # ------------------------------------------------------------------ #
     # Manual Movement                                                      #
@@ -240,15 +262,22 @@ class POSService:
         else:
             is_inflow = bool(is_inflow)
 
-        return POSService.register_manual_movement(
-            session=session,
-            move_type=request.data.get("type"),
-            amount=Decimal(str(request.data.get("amount", "0"))),
-            is_inflow=is_inflow,
-            notes=request.data.get("notes", ""),
-            target_account_id=request.data.get("target_account_id"),
-            user=request.user,
-        )
+        if session.status != "OPEN":
+            raise ValidationError("La sesión no está abierta")
+        actor = POSOperatorService.actor_from_request(request, session, "CASH_MOVEMENT")
+        with transaction.atomic():
+            movement = POSService.register_manual_movement(
+                session=session,
+                move_type=request.data.get("type"),
+                amount=Decimal(str(request.data.get("amount", "0"))),
+                is_inflow=is_inflow,
+                notes=request.data.get("notes", ""),
+                target_account_id=request.data.get("target_account_id"),
+                user=actor.operator,
+            )
+            if actor.operator_pass:
+                POSOperatorService.end(actor.operator_pass, POSOperatorPass.EndReason.CONSUMED)
+        return movement
 
     @staticmethod
     @transaction.atomic

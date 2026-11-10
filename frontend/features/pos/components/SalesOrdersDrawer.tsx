@@ -9,6 +9,8 @@ import { TabBar, Drawer, DrawerScope, SkeletonShell, DocumentHeaderSlotContext, 
 import { EntityNavigationScope } from "@/components/providers/GlobalModalProvider"
 import { InvoiceSheet, OrderSheet } from "@/features/orders"
 import { usePosDocumentStack } from "../hooks/usePosDocumentStack"
+import { setPosOperatorHeaders } from "@/lib/pos-operator"
+import { useOperatorGate } from "../operator"
 import { overlayEntryOf, paneEntryOf } from "../utils/documentStack"
 
 interface SalesOrdersDrawerProps {
@@ -30,6 +32,22 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
     const documentEntry = paneEntryOf(state.entries)
     const overlayEntry = overlayEntryOf(state.entries)
     const rootEntry = state.entries[0] ?? null
+
+    // Mientras hay un documento abierto sus modificaciones quedan en el seguimiento (ambos modos);
+    // en caja multiusuario además piden operador (DOCUMENT_EDIT). Salir del documento termina ese pase.
+    const { release, setChallengeTarget } = useOperatorGate()
+    const documentLabel = documentEntry?.label ?? null
+    const documentId = documentEntry?.id ?? null
+    useEffect(() => {
+        if (!posSessionId || documentLabel === null || documentId === null) return
+        setPosOperatorHeaders({ documentContext: posSessionId })
+        setChallengeTarget('DOCUMENT_EDIT', { type: documentLabel, id: documentId })
+        return () => {
+            setPosOperatorHeaders({ documentContext: undefined })
+            setChallengeTarget('DOCUMENT_EDIT', null)
+            void release('DOCUMENT_EDIT')
+        }
+    }, [documentLabel, documentId, posSessionId, release, setChallengeTarget])
 
     // Nodos del header de este drawer: cuando hay un documento, su identidad y acciones se portan aquí.
     const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null)

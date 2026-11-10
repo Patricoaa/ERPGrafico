@@ -8,3 +8,5 @@ export { Cart, CartItem, DraftCartsClientView, POSApprovalCard, POSCartItemsSkel
 export { POSProvider, usePOS } from './contexts/POSProvider'
 export { usePOSSessions, usePOSSessionSummary, fetchPOSSessionSummary } from './hooks/usePOSSessions'
 export type { POSReportData } from './components/POSReport'
+export { OperatorChip, OperatorGateProvider, OperatorPickerModal, useOperatorGate } from './operator'
+export type { ActiveOperatorPass, OperatorTarget, UseOperatorGateResult } from './operator'

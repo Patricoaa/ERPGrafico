@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
@@ -46,7 +47,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         try:
-            draft = DraftCartService.save_draft_from_request(request.data, user=request.user)
+            draft = DraftCartService.save_draft_from_request(request)
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(draft)
@@ -54,7 +55,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     def update(self, request, pk=None):
         try:
-            draft = DraftCartService.save_draft_from_request({**request.data, "draft_id": int(pk)}, user=request.user)
+            draft = DraftCartService.save_draft_from_request(request, draft_id=int(pk))
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except DjangoValidationError as e:
@@ -130,7 +131,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def lock(self, request, pk=None):
         try:
-            result = DraftCartService.acquire_lock_from_request(int(pk), request.data, user=request.user)
+            result = DraftCartService.acquire_lock_from_request(request, int(pk))
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         if result.get("acquired"):
@@ -149,27 +150,16 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def unlock(self, request, pk=None):
-        pos_session_id = request.data.get("pos_session_id")
-        session_key = request.data.get("session_key", "")
-
         try:
-            DraftCartService.validate_pos_session_id(pos_session_id)
+            success = DraftCartService.release_lock_from_request(request, int(pk))
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        success = DraftCartService.release_lock(
-            draft_id=int(pk),
-            pos_session_id=int(pos_session_id),
-            user=request.user,
-            session_key=session_key,
-        )
-
         return Response({"unlocked": success})
 
     @action(detail=True, methods=["post"])
     def heartbeat(self, request, pk=None):
         try:
-            success = DraftCartService.refresh_lock_from_request(int(pk), request.data, user=request.user)
+            success = DraftCartService.refresh_lock_from_request(request, int(pk))
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         if success:
@@ -182,9 +172,11 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def withdraw(self, request, pk=None):
         try:
-            result = DraftCartService.process_withdrawal_from_request(int(pk), request.data, user=request.user)
+            result = DraftCartService.process_withdrawal_from_request(request, int(pk))
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except APIException:
+            raise
         except Exception as e:
             import traceback
 

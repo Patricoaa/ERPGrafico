@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import type { IdentifyOperatorPayload, OperatorPassResponse, PosOperator } from '../types'
 
 export const posApi = {
     // ── Drafts ──
@@ -79,6 +80,14 @@ export const posApi = {
         api.post(`/treasury/pos-sessions/${id}/close_session/`, payload).then(r => r.data),
     registerManualMovement: (id: number, payload: Record<string, unknown>) =>
         api.post(`/treasury/pos-sessions/${id}/register_manual_movement/`, payload).then(r => r.data),
+
+    // ── Operador de caja multiusuario ──
+    listOperators: (sessionId: number) =>
+        api.get<PosOperator[]>(`/treasury/pos-sessions/${sessionId}/operators/`).then(r => r.data),
+    identifyOperator: (sessionId: number, payload: IdentifyOperatorPayload) =>
+        api.post<OperatorPassResponse>(`/treasury/pos-sessions/${sessionId}/identify_operator/`, payload).then(r => r.data),
+    releaseOperator: (sessionId: number) =>
+        api.post(`/treasury/pos-sessions/${sessionId}/release_operator/`).then(() => undefined),
 
     // ── Terminals ──
     getTerminals: () =>

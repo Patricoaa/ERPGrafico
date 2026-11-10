@@ -14,6 +14,7 @@ from contacts.models import Contact
 from sales.models import SaleOrder
 from sales.services import SalesService
 from treasury.models import POSSession
+from treasury.pos_operator_service import Actor
 
 User = get_user_model()
 
@@ -67,7 +68,7 @@ def test_rollback_on_confirm_failure(env):
     with patch.object(SalesService, "confirm_sale", side_effect=ValidationError("Error simulado")):
         with pytest.raises(ValidationError):
             SalesService.create_sale_order_from_pos(
-                user=env["buyer"],
+                actor=Actor(env["buyer"], env["buyer"], None),
                 data=data,
                 files={},
                 serializer=serializer,
@@ -91,7 +92,7 @@ def test_rollback_on_permission_denied(env):
     with patch.object(SalesService, "confirm_sale", side_effect=PermissionDenied("Error simulado")):
         with pytest.raises(PermissionDenied):
             SalesService.create_sale_order_from_pos(
-                user=env["buyer"],
+                actor=Actor(env["buyer"], env["buyer"], None),
                 data=data,
                 files={},
                 serializer=serializer,
@@ -115,7 +116,7 @@ def test_rollback_on_confirm_generic_exception(env):
     with patch.object(SalesService, "confirm_sale", side_effect=RuntimeError("Fallo interno")):
         with pytest.raises(RuntimeError):
             SalesService.create_sale_order_from_pos(
-                user=env["buyer"],
+                actor=Actor(env["buyer"], env["buyer"], None),
                 data=data,
                 files={},
                 serializer=serializer,
@@ -135,7 +136,7 @@ def test_happy_path(env):
 
     with patch.object(SalesService, "confirm_sale", return_value=None) as mock_confirm:
         order = SalesService.create_sale_order_from_pos(
-            user=env["buyer"],
+            actor=Actor(env["buyer"], env["buyer"], None),
             data=data,
             files={},
             serializer=serializer,
@@ -157,7 +158,7 @@ def test_invalid_session_raises(env):
 
     with pytest.raises(ValidationError, match="no es válida"):
         SalesService.create_sale_order_from_pos(
-            user=env["buyer"],
+            actor=Actor(env["buyer"], env["buyer"], None),
             data=data,
             files={},
             serializer=serializer,
@@ -174,7 +175,7 @@ def test_session_host_can_sell_without_extra_authorization(env):
 
     with patch.object(SalesService, "confirm_sale", return_value=None):
         order = SalesService.create_sale_order_from_pos(
-            user=env["cashier"],
+            actor=Actor(env["cashier"], env["cashier"], None),
             data=data,
             files={},
             serializer=serializer,

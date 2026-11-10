@@ -10,6 +10,7 @@ import * as Validation from '../utils/validation'
 import * as StockCalculator from '../utils/stock-calculator'
 import * as BOMResolver from '../utils/bom-resolver'
 import { posApi } from '../api/posApi'
+import { useOperatorGate } from '../operator'
 
 export function useCart() {
     const {
@@ -24,8 +25,10 @@ export function useCart() {
         bomCache,
         componentCache,
         updateBomCache,
-        updateComponentCache
+        updateComponentCache,
+        currentDraftId
     } = usePOS()
+    const { ensureOperator } = useOperatorGate()
 
     // Fetch BOM wrapper
     const fetchBOM = useCallback(async (productId: number) => {
@@ -88,6 +91,9 @@ export function useCart() {
 
     // Add product to cart
     const addProductToCart = useCallback(async (product: Product, manufacturingData?: Record<string, unknown>) => {
+        // Caja multiusuario: el primer ítem de un carrito sin borrador inicia la transacción.
+        if (!currentDraftId && !(await ensureOperator('DRAFT'))) return
+
         // Check if can add
         const canAdd = CartUtils.canAddToCart(product)
         if (!canAdd.canAdd) {
@@ -162,7 +168,7 @@ export function useCart() {
             addItem(newItem)
             toast.success(`Agregado al carrito: ${product.name}`)
         }
-    }, [items, fetchBOM, validateStock, fetchEffectivePrice, addItem, updateItem, uoms])
+    }, [items, fetchBOM, validateStock, fetchEffectivePrice, addItem, updateItem, uoms, currentDraftId, ensureOperator])
 
     // Update quantity
     const updateQuantity = useCallback(async (cartItemId: string, qty: number | string) => {

@@ -37,6 +37,10 @@ EXEMPT_MODELS = {
     "core.CompanySettings",
     "core.GlobalSearchIndex",
     "core.GroupProfile",  # RBAC metadata — not a business transaction model
+    # ADR-0125: registros de auditoría del operador de caja; llevan sus propias fechas
+    # (occurred_at / issued_at / ended_at) y no se editan como un documento.
+    "sales.SaleTrackingEvent",
+    "treasury.POSOperatorPass",
     "core.IdempotencyRecord",
     "core.PeriodReopenLog",
     "core.User",

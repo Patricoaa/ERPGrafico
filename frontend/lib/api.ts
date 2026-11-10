@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { setClientToken, removeClientTokens } from './client-token';
 import { POS_EXTERNAL_REASON_CHALLENGE_HEADER, preparePosExternalReasonRetry } from './pos-external-reason';
+import { getPosOperatorHeaders, parsePosOperatorRequired, preparePosOperatorRetry } from './pos-operator';
 export { resolveMediaUrl } from './media-url';
 
 const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -50,6 +51,10 @@ api.interceptors.request.use(
         }
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+        }
+        // Pase de operador y contexto de documento del POS (cajas multiusuario).
+        for (const [name, value] of Object.entries(getPosOperatorHeaders())) {
+            config.headers.set(name, value);
         }
         return config;
     },
@@ -113,6 +118,12 @@ api.interceptors.response.use(
             }
         }
         if (axios.isAxiosError(error)) {
+            // Falta identificar al operador (caja multiusuario): no es un problema de permisos.
+            const operatorPurpose = parsePosOperatorRequired(error);
+            if (operatorPurpose) {
+                const retryConfig = await preparePosOperatorRetry(error.config, operatorPurpose);
+                return retryConfig ? api(retryConfig) : Promise.reject(error);
+            }
             const posReasonHeader: unknown = error.response?.headers?.[POS_EXTERNAL_REASON_CHALLENGE_HEADER];
             if (posReasonHeader) {
                 const retryConfig = await preparePosExternalReasonRetry(error.config, posReasonHeader);

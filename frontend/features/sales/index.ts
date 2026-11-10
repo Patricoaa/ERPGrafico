@@ -43,3 +43,5 @@ export type {
     DeliveryStatus,
 } from './types'
 
+export { SaleOrderTrackingPanel } from './components/SaleOrderTrackingPanel'
+export { useSaleOrderTracking } from './hooks/useSaleOrderTracking'

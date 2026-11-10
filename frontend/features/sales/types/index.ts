@@ -198,3 +198,15 @@ export interface CreditApprovalTask {
     reason: string
     created_at: string
 }
+
+/** Fila del seguimiento de una venta POS: quién tocó cada paso (spec 2026-11-10 §5.6). */
+export interface SaleTrackingEvent {
+    step: 'CART' | 'CUSTOMER' | 'DTE' | 'MANUFACTURING' | 'PAYMENT' | 'DELIVERY' | 'CHECKOUT' | 'DOCUMENT_EDIT'
+    step_display: string
+    operator_name: string
+    device_user_name: string
+    entity_type: string
+    entity_id: number | null
+    detail: string
+    occurred_at: string
+}

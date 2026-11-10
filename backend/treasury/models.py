@@ -2274,6 +2274,10 @@ class POSSession(models.Model):
         OPEN = "OPEN", _("Abierta")
         CLOSED = "CLOSED", _("Cerrada")
 
+    class Mode(models.TextChoices):
+        SINGLE = "SINGLE", _("Un solo usuario")
+        MULTI = "MULTI", _("Multiusuario")
+
     # New: Terminal reference (replaces direct treasury_account)
     terminal = models.ForeignKey(
         "POSTerminal",
@@ -2311,6 +2315,16 @@ class POSSession(models.Model):
 
     status = models.CharField(
         _("Estado"), max_length=10, choices=Status.choices, default=Status.OPEN
+    )
+
+    # Modo de caja: fijo durante toda la sesión (se elige al abrir).
+    # MULTI exige identificar al operador en cada transacción inicializadora.
+    mode = models.CharField(
+        _("Modo de caja"),
+        max_length=10,
+        choices=Mode.choices,
+        default=Mode.SINGLE,
+        help_text=_("SINGLE: opera quien inició sesión. MULTI: se identifica al operador por transacción."),
     )
 
     # Opening
@@ -2378,6 +2392,10 @@ class POSSession(models.Model):
         return f"Sesión #{self.id} - {self.user.get_full_name() or self.user.username} ({self.get_status_display()})"
 
     @property
+    def is_multi_user(self) -> bool:
+        return self.mode == self.Mode.MULTI
+
+    @property
     def uses_cash_ledger(self) -> bool:
         return self.ledger_baseline_at is not None
 
@@ -2408,6 +2426,64 @@ class POSSession(models.Model):
 
             net = ledger_net(self)
         return self.opening_balance + net
+
+
+class POSOperatorPass(models.Model):
+    """
+    Pase de operador (spec 2026-11-10): credencial de corta vida y, a la vez,
+    registro de cada identificación en una sesión de caja MULTI.
+
+    El token en claro solo existe en la respuesta de ``identify``; aquí se guarda
+    su hash. Emitir un pase nuevo termina el vigente de la misma pestaña.
+    """
+
+    class Purpose(models.TextChoices):
+        DRAFT = "DRAFT", _("Borrador / venta")
+        CASH_MOVEMENT = "CASH_MOVEMENT", _("Movimiento de caja")
+        SESSION_CLOSE = "SESSION_CLOSE", _("Cierre de sesión")
+        DOCUMENT_EDIT = "DOCUMENT_EDIT", _("Edición de documento")
+
+    class EndReason(models.TextChoices):
+        CONSUMED = "CONSUMED", _("Consumido")
+        SUPERSEDED = "SUPERSEDED", _("Reemplazado")
+        RELEASED = "RELEASED", _("Liberado")
+        EXPIRED = "EXPIRED", _("Vencido")
+
+    session = models.ForeignKey(
+        POSSession, on_delete=models.PROTECT, related_name="operator_passes", verbose_name=_("Sesión")
+    )
+    operator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="pos_operator_passes",
+        verbose_name=_("Operador"),
+    )
+    device_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="pos_device_passes",
+        verbose_name=_("Cuenta del dispositivo"),
+    )
+    tab_key = models.CharField(_("Pestaña"), max_length=64)
+    purpose = models.CharField(_("Propósito"), max_length=20, choices=Purpose.choices)
+    target_type = models.CharField(_("Tipo de destino"), max_length=100, blank=True, default="")
+    target_id = models.PositiveIntegerField(_("Id de destino"), null=True, blank=True)
+    token_hash = models.CharField(_("Hash del token"), max_length=64, unique=True)
+    issued_at = models.DateTimeField(_("Emitido el"), auto_now_add=True)
+    expires_at = models.DateTimeField(_("Vence el"), null=True, blank=True)
+    ended_at = models.DateTimeField(_("Terminado el"), null=True, blank=True)
+    end_reason = models.CharField(
+        _("Motivo de término"), max_length=12, choices=EndReason.choices, blank=True, default=""
+    )
+
+    class Meta:
+        verbose_name = _("Pase de operador POS")
+        verbose_name_plural = _("Pases de operador POS")
+        ordering = ["-issued_at"]
+        indexes = [models.Index(fields=["session", "tab_key", "ended_at"])]
+
+    def __str__(self):
+        return f"Pase #{self.pk} {self.purpose} sesión {self.session_id}"
 
 
 class POSSessionAudit(models.Model):

@@ -6,6 +6,7 @@ import { getDteLabel } from "@/lib/entity-registry"
 import {Check, ChevronRight, ShoppingCart, User, Factory, Truck, Wallet as WalletIcon, FileWarning} from "lucide-react"
 import type { WizardState } from "@/types/pos"
 import * as Validation from "../utils/validation"
+import { OperatorChip } from "../operator"
 
 const methodLabels: Record<string, string> = {
     CASH: 'Efectivo',
@@ -123,6 +124,7 @@ export function POSCheckoutHeader() {
                     </div>
                 )
             })}
+            <OperatorChip />
         </div>
     )
 }

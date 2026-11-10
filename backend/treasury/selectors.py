@@ -1,6 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
+from django.contrib.auth.models import Permission
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
@@ -519,6 +520,25 @@ class POSSelector:
     def get_current_session(user):
         session = POSSession.objects.filter(user=user, status="OPEN").first()
         return session
+
+    @staticmethod
+    def list_operators():
+        """Usuarios que pueden operar una caja MULTI: activos y con permiso de
+        crear ventas (directo o por grupo), o superusuarios. Una sola consulta."""
+        from django.contrib.auth import get_user_model
+
+        perm = {"codename": "add_saleorder", "content_type__app_label": "sales"}
+        return (
+            get_user_model()
+            .objects.filter(is_active=True)
+            .filter(
+                Q(is_superuser=True)
+                | Q(user_permissions__in=Permission.objects.filter(**perm))
+                | Q(groups__permissions__in=Permission.objects.filter(**perm))
+            )
+            .distinct()
+            .order_by("first_name", "last_name", "username")
+        )
 
     @staticmethod
     def get_summary(session) -> dict:

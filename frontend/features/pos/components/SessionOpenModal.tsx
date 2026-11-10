@@ -18,7 +18,8 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { useTouchMode } from "@/hooks/useTouchMode"
 
 import { cn, formatTimeWith } from "@/lib/utils"
-import type { POSSession, POSTerminal, AccountingSettings, TreasuryAccount } from "@/types/pos"
+import type { POSSession, POSSessionMode, POSTerminal, AccountingSettings, TreasuryAccount } from "@/types/pos"
+import { CashModeChoice } from "./CashModeChoice"
 import { DEFICIT_OPTIONS, SURPLUS_OPTIONS } from "@/features/pos/utils/reasons"
 
 interface SessionOpenModalProps {
@@ -49,6 +50,7 @@ export function SessionOpenModal({
     // Open session form state
     const [selectedTerminalId, setSelectedTerminalId] = useState<string>("")
     const [openingBalance, setOpeningBalance] = useState<string>("0")
+    const [cashMode, setCashMode] = useState<POSSessionMode>("SINGLE")
     const [fundSourceId, setFundSourceId] = useState<string | null>(null)
     const [openingJustifyReason, setOpeningJustifyReason] = useState<string>("")
     const [openingJustifyTargetId, setOpeningJustifyTargetId] = useState<string | null>(null)
@@ -117,6 +119,7 @@ export function SessionOpenModal({
             setCurrentStepIndex(0)
             setSelectedTerminalId("")
             setOpeningBalance("0")
+            setCashMode("SINGLE")
             setFundSourceId(null)
             setOpeningJustifyReason("")
             setOpeningJustifyTargetId(null)
@@ -213,6 +216,7 @@ export function SessionOpenModal({
             const sessionData = await posApi.openSession({
                 terminal_id: parseInt(selectedTerminalId),
                 opening_balance: parseFloat(openingBalance),
+                mode: cashMode,
                 justify_reason: openingJustifyReason,
                 justify_target_id: openingJustifyTargetId ? parseInt(openingJustifyTargetId) : null
             })
@@ -423,6 +427,11 @@ export function SessionOpenModal({
                     <span>Fondo Contado:</span>
                     <span className="text-primary">{formatCurrency(actualBalance)}</span>
                 </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label className="text-xs">Modo de caja</Label>
+                <CashModeChoice value={cashMode} onChange={setCashMode} />
             </div>
 
             {(() => {

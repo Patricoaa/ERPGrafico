@@ -13,7 +13,7 @@ from rest_framework import filters as drf_filters
 from rest_framework import mixins, status, viewsets
 from rest_framework import serializers as drf_serializers
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import APIException, NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -931,6 +931,10 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         # Creation → None (add_* by method is correct)
         "open_session": None,
         "register_manual_movement": None,
+        # Solo autenticación: identificar al operador no es una operación de tesorería.
+        "operators": None,
+        "identify_operator": None,
+        "release_operator": None,
     }
 
     def get_permissions(self):
@@ -976,6 +980,37 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response(POSSessionSerializer(session).data)
         return Response({"session": None})
 
+    @action(detail=True, methods=["get"])
+    def operators(self, request, pk=None):
+        from .selectors import POSSelector
+        from .serializers import POSOperatorSerializer
+
+        self.get_object()
+        return Response(POSOperatorSerializer(POSSelector.list_operators(), many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def identify_operator(self, request, pk=None):
+        from .pos_operator_service import POSOperatorService
+        from .serializers import IdentifyOperatorSerializer, operator_pass_payload
+
+        session = self.get_object()
+        ser = IdentifyOperatorSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        try:
+            op_pass, token = POSOperatorService.identify(
+                session=session, device_user=request.user, **ser.validated_data
+            )
+        except ValidationError as e:
+            return Response({"error": "; ".join(e.messages)}, status=400)
+        return Response(operator_pass_payload(op_pass, token), status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def release_operator(self, request, pk=None):
+        from .pos_operator_service import POSOperatorService
+
+        POSOperatorService.release_from_request(request, self.get_object())
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=False, methods=["post"])
     def open_session(self, request):
         try:
@@ -992,7 +1027,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             from .pos_service import POSService
             session, audit = POSService.close_session_from_request(request, self.get_object())
             return Response({'session': POSSessionSerializer(session).data, 'audit': POSSessionAuditSerializer(audit).data, 'message': 'Sesión de POS cerrada correctamente'})
-        except PermissionDenied:
+        except APIException:
             raise
         except ValidationError as e:
             return Response({'error': str(getattr(e, 'message', e))}, status=400)
@@ -1042,6 +1077,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             session = self.get_object()
             POSService.register_manual_movement_from_request(request, session)
             return Response({'session': POSSessionSerializer(session).data, 'message': 'Movimiento registrado correctamente'})
+        except APIException:
+            raise
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):

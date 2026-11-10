@@ -632,6 +632,7 @@ class POSSessionSerializer(serializers.ModelSerializer):
 
         model = POSSession
         fields = "__all__"
+        read_only_fields = ["mode"]
 
     def get_user_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
@@ -641,6 +642,46 @@ class POSSessionSerializer(serializers.ModelSerializer):
 
         treasury = _get_session_treasury(obj)
         return treasury.name if treasury else None
+
+
+def _operator_full_name(user) -> str:
+    return user.get_full_name() or user.username
+
+
+class POSOperatorSerializer(serializers.Serializer):
+    """Operador elegible para una caja multiusuario (solo lectura)."""
+
+    id = serializers.IntegerField()
+    full_name = serializers.SerializerMethodField()
+    initials = serializers.SerializerMethodField()
+
+    def get_full_name(self, obj):
+        return _operator_full_name(obj)
+
+    def get_initials(self, obj):
+        letters = [p[0] for p in (obj.first_name, obj.last_name) if p]
+        return ("".join(letters) or obj.username[:2]).upper()
+
+
+class IdentifyOperatorSerializer(serializers.Serializer):
+    operator_id = serializers.IntegerField()
+    tab_key = serializers.CharField(max_length=64)
+    purpose = serializers.ChoiceField(choices=["DRAFT", "CASH_MOVEMENT", "SESSION_CLOSE", "DOCUMENT_EDIT"])
+    target_type = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
+    target_id = serializers.IntegerField(required=False, allow_null=True, default=None)
+    # Primera edición: se acepta y se ignora. PIN/tarjeta se validan en una edición posterior.
+    credential = serializers.DictField(required=False, allow_null=True, default=None)
+
+
+def operator_pass_payload(op_pass, token: str) -> dict:
+    """Respuesta de identify: el token en claro solo se entrega aquí."""
+    return {
+        "token": token,
+        "pass_id": op_pass.pk,
+        "operator": {"id": op_pass.operator_id, "full_name": _operator_full_name(op_pass.operator)},
+        "purpose": op_pass.purpose,
+        "expires_at": op_pass.expires_at.isoformat() if op_pass.expires_at else None,
+    }
 
 
 class POSSessionAuditSerializer(serializers.ModelSerializer):

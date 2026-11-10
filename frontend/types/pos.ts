@@ -158,8 +158,12 @@ export interface POSTerminal {
     allowed_payment_methods: string[]
 }
 
+/** Modo de caja (fijo durante toda la sesión): SINGLE opera la cuenta logueada; MULTI identifica al operador por transacción. */
+export type POSSessionMode = 'SINGLE' | 'MULTI'
+
 export interface POSSession {
     id: number
+    mode: POSSessionMode
     terminal: number
     terminal_name?: string
     terminal_details?: {

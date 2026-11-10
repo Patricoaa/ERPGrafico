@@ -5,6 +5,8 @@ import { staleTime } from '@/lib/query-config'
 
 export interface POSSession {
     id: number
+    /** Modo de caja de la sesión (SINGLE | MULTI). */
+    mode: 'SINGLE' | 'MULTI'
     /** Id del usuario que abrió la sesión de POS. */
     user: number
     id_display: string
