@@ -190,9 +190,20 @@ export function PaymentMethodSelector({
         setIsAmountModalOpen(false)
 
         if (editingIndex !== null) {
-            updatePaymentAtIndex(editingIndex, { amount: finalAmount })
+            if (finalAmount <= 0) {
+                removePayment(editingIndex)
+            } else {
+                updatePaymentAtIndex(editingIndex, { amount: finalAmount })
+            }
             setEditingIndex(null)
         } else if (isMultiPayment) {
+            // Un monto 0 no es un pago: el saldo queda como crédito asignado.
+            if (finalAmount <= 0) {
+                setPendingMethod(null)
+                setPendingPaymentMethodId(null)
+                setPendingTreasuryAccountId(null)
+                return
+            }
             commitPayment({
                 method: pendingMethod || 'CASH',
                 amount: finalAmount,
@@ -448,7 +459,7 @@ export function PaymentMethodSelector({
 
                         {methods.map((m) => {
                             const isSelected = paymentData.method === m.id
-                            const showAmount = isSelected && paymentData.amount > 0
+                            const showAmount = isSelected
 
                             return (
                                 <ChoiceCard
@@ -492,7 +503,7 @@ export function PaymentMethodSelector({
                     </ChoiceGroup>
 
                     {/* Crédito Asignado — delta no cubierto en single mode — solo ventas */}
-                    {operation !== 'purchases' && paymentData.amount > 0 && paymentData.amount < total && renderAssignedCredit(total - paymentData.amount)}
+                    {operation !== 'purchases' && paymentData.method !== null && paymentData.amount < total && renderAssignedCredit(total - paymentData.amount)}
                 </>
             )
         }
