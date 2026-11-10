@@ -167,37 +167,19 @@ def test_invalid_session_raises(env):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_same_user_requires_pin(env):
-    """Si user == session.user y no hay pos_pin → PermissionDenied."""
-    order_count_before = SaleOrder.objects.count()
+def test_session_host_can_sell_without_extra_authorization(env):
+    """El dueño de la sesión vende directamente; queda como vendedor."""
     data = _build_data(env)
     serializer = _make_serializer(SaleOrder(customer=env["customer"]))
 
-    with pytest.raises(PermissionDenied, match="PIN"):
-        SalesService.create_sale_order_from_pos(
+    with patch.object(SalesService, "confirm_sale", return_value=None):
+        order = SalesService.create_sale_order_from_pos(
             user=env["cashier"],
             data=data,
             files={},
             serializer=serializer,
         )
 
-    assert SaleOrder.objects.count() == order_count_before
-
-
-@pytest.mark.django_db(transaction=True)
-def test_pos_pin_bypasses_same_user_check(env):
-    """Si user == session.user pero se provee un PIN → pasa la validación."""
-    data = _build_data(env, pos_pin="1234")
-    serializer = _make_serializer(SaleOrder(customer=env["customer"]))
-
-    with patch.object(SalesService, "confirm_sale", return_value=None):
-        with patch("core.services.PINService.validate_pin", return_value=env["cashier"]):
-            order = SalesService.create_sale_order_from_pos(
-                user=env["cashier"],
-                data=data,
-                files={},
-                serializer=serializer,
-            )
-
     assert order.pk is not None
     assert order.salesperson == env["cashier"]
+    assert order.pos_session == env["session"]

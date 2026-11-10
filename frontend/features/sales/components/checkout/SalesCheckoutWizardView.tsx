@@ -26,7 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 import { generateUuidV4 } from "@/lib/uuid"
 
-import { PINPadModal, POSApprovalCard } from "@/features/pos"
+import { POSApprovalCard } from "@/features/pos"
 import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse} from "../../types"
 import { canEditManufacturing, cleanManufacturingData, designFilesOf, existingOrderPayload } from "./checkoutPayload"
 import { type Contact } from "@/features/contacts"
@@ -72,7 +72,6 @@ export interface SalesCheckoutWizardViewProps {
     initialDraftId?: number | null
     onStateChange?: (state: CheckoutWizardState) => void
     isInline?: boolean
-    isSessionHost?: boolean
     touchMode?: boolean
 }
 
@@ -108,7 +107,6 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     initialDraftId,
     onStateChange,
     isInline = false,
-    isSessionHost = false,
     touchMode = false
 }: SalesCheckoutWizardViewProps, ref) {
     const { dateString } = useServerDate()
@@ -165,8 +163,6 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
         date: null,
     })
     const [isFolioValid, setIsFolioValid] = useState(true)
-
-    const [pinModalOpen, setPinModalOpen] = useState(false)
 
     const [isPeriodValid, setIsPeriodValid] = useState(true)
     const [stepError, setStepError] = useState<string | null>(null)
@@ -532,7 +528,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     }
 
     // Checkout handlers
-    const executeCheckout = async (pin?: string) => {
+    const executeCheckout = async () => {
         setLoading(true)
         const idempotencyKey = idempotencyKeyRef.current
         try {
@@ -612,10 +608,6 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 formData.append('draft_id', initialDraftId.toString())
             }
 
-            if (pin) {
-                formData.append('pos_pin', pin)
-            }
-
             let retries = 0
             const MAX_RETRIES = 5
             while (true) {
@@ -686,21 +678,13 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
         }
 
         // Flujo directo: sin terminal o factura sin tarjeta
-        if (isSessionHost) {
-            setPinModalOpen(true)
-        } else {
-            executeCheckout()
-        }
+        executeCheckout()
     }
 
     const handleManualTerminalConfirm = () => {
         setManualTerminalReason(null)
         setManualTerminalFailureReason(null)
-        if (isSessionHost) {
-            setPinModalOpen(true)
-        } else {
-            executeCheckout()
-        }
+        executeCheckout()
     }
 
     const handleManualTerminalCancel = () => {
@@ -938,15 +922,6 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 </div>
             )}
 
-            <PINPadModal
-                open={pinModalOpen}
-                onOpenChange={setPinModalOpen}
-                onConfirm={(pin) => {
-                    setPinModalOpen(false)
-                    executeCheckout(pin)
-                }}
-            />
-
             <BaseModal
                 open={!!manualTerminalReason}
                 onOpenChange={handleManualTerminalCancel}
@@ -996,11 +971,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                             className="w-full h-12 font-black uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
-                                if (isSessionHost) {
-                                    setPinModalOpen(true)
-                                } else {
-                                    executeCheckout()
-                                }
+                                executeCheckout()
                             }}
                         >
                             <CheckCircle2 className="mr-2 h-4 w-4" />

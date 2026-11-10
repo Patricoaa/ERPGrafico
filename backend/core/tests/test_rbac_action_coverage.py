@@ -18,7 +18,6 @@ AUTHENTICATED_ONLY_VIEWS: frozenset[str] = frozenset({
     # --- ViewSet-based personal/read-only views ---
     "core.views.BackgroundJobViewSet",
     "core.views.ChangePasswordView",
-    "core.views.ChangePinView",
     "core.views.CurrentUserView",
     "core.views.GlobalAuditLogView",
     "core.views.MyProfilePayrollPreviewView",

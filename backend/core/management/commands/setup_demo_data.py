@@ -4,7 +4,6 @@
 import random
 from decimal import Decimal
 
-from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -1641,7 +1640,6 @@ class Command(BaseCommand):
                     "contact": contact,
                     "is_staff": True,
                     "is_superuser": (role_name == Roles.SYSTEM_ADMIN),
-                    "pos_pin": make_password("1234"),
                 },
             )
 
@@ -1684,9 +1682,8 @@ class Command(BaseCommand):
                 ]:
                     user.groups.add(Group.objects.get(name=gname))
 
-            # Set static password and PIN
+            # Set static password
             user.set_password("111111")
-            user.pos_pin = make_password("1234")
             user.save()
 
             status = "created" if created else "updated"

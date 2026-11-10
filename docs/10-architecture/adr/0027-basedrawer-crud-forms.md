@@ -38,7 +38,7 @@ This ADR covers **only CRUD forms** (create/edit/detail of entities). Explicitly
 - **Wizards** (`GenericWizard`, `PurchaseCheckoutWizard`, `WorkOrderWizard`, `SalesCheckoutWizard`, `NoteCheckoutWizard`, etc.) — remain in `BaseModal`
 - **Read-only data viewers** (ledgers, histories, document lists) — remain in `BaseDrawer` or migrate optionally
 - **Confirmation dialogs** (`ActionConfirmModal`) — remain in `BaseModal`
-- **Tools and utilities** (`NumpadModal`, `CostCalculatorModal`, `PINPadModal`) — remain in current surface
+- **Tools and utilities** (`NumpadModal`, `CostCalculatorModal`; `PINPadModal` eliminado por ADR-0122) — remain in current surface
 
 ## Decision
 

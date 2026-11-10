@@ -38,22 +38,6 @@ __all__ = [
 
 
 class User(AbstractUser):
-    pos_pin = models.CharField(
-        max_length=128, blank=True, null=True, help_text=_("PIN para Punto de Venta (hasheado)")
-    )
-
-    def set_pos_pin(self, raw_pin):
-        from django.contrib.auth.hashers import make_password
-
-        self.pos_pin = make_password(raw_pin)
-
-    def check_pos_pin(self, raw_pin):
-        if not self.pos_pin:
-            return False
-        from django.contrib.auth.hashers import check_password
-
-        return check_password(raw_pin, self.pos_pin)
-
     contact = models.OneToOneField(
         "contacts.Contact",
         on_delete=models.SET_NULL,
@@ -78,7 +62,6 @@ class User(AbstractUser):
 
     class FormMeta:
         exclude_fields = [
-            "pos_pin",
             "password",
             "last_login",
             "is_superuser",
