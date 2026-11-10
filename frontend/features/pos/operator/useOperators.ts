@@ -1,3 +1,5 @@
+"use client"
+
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { posApi } from '../api/posApi'
 import type { IdentifyOperatorPayload, OperatorPassResponse, PosOperator } from '../types'
