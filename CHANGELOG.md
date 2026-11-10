@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.93](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.92...v0.3.93) (2026-11-10)
+
+
+### 🐛 Bug Fixes
+
+* **pos:** marcar como cliente los módulos de contexto y hooks del operador ([12c6422](https://github.com/Patricoaa/ERPGrafico/commit/12c642206c7d62c94974f31a0a21df5ca576f1d9))
+
 ### [0.3.92](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.91...v0.3.92) (2026-11-10)
 
 
