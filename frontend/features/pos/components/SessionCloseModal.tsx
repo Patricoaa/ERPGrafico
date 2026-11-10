@@ -166,9 +166,9 @@ export function SessionCloseModal({
 
             if (difference !== 0) {
                 const diffType = difference > 0 ? "sobrante" : "faltante"
-                toast.warning(`Sesión cerrada con ${diffType} de ${formatCurrency(Math.abs(difference))}`)
+                toast.warning(`Sesión de POS cerrada con ${diffType} de ${formatCurrency(Math.abs(difference))}`)
             } else {
-                toast.success("Sesión cerrada correctamente - Cuadra perfecto!")
+                toast.success("Sesión de POS cerrada correctamente - Cuadra perfecto!")
             }
 
             // Call success callback
@@ -183,7 +183,7 @@ export function SessionCloseModal({
 
             return true
         } catch (error: unknown) {
-            showApiError(error, "Error al cerrar sesión")
+            showApiError(error, "Error al cerrar la sesión de POS")
             return false
         } finally {
             setSubmitting(false)
@@ -442,7 +442,7 @@ export function SessionCloseModal({
                     disabled={submitting}
                 >
                     <span className="font-medium text-success">No, cerrar sin retirar</span>
-                    <span className="text-xs text-muted-foreground">Finaliza la sesión ahora</span>
+                    <span className="text-xs text-muted-foreground">Finaliza la sesión de POS ahora</span>
                     </Button>
                 </div>
         </FadeIn>
@@ -489,7 +489,7 @@ export function SessionCloseModal({
     const steps: WizardStep[] = [
         {
             id: 'count',
-            title: 'Cierre de Sesión y Conteo',
+            title: 'Cierre de sesión de POS y conteo',
             component: countStepContent,
             isValid: true
         },
@@ -524,7 +524,7 @@ export function SessionCloseModal({
                     onOpenChange(val)
                 }
             }}
-            title="Cierre de Sesión"
+            title="Cierre de sesión de POS"
             steps={steps}
             initialStep={stepIndex}
             onComplete={handleComplete}

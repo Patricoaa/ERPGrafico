@@ -113,6 +113,8 @@ export function POSClientView() {
     const { dateString } = useServerDate()
 
     const { user } = useAuth()
+    // #233: solo quien abrió la sesión de POS o un superusuario puede cerrarla (el backend lo exige igual).
+    const canCloseSession = !!user && (user.is_superuser || user.id === currentSession?.user)
 
     // Stable onStateChange for the wizard to break feedback loops
     const handleWizardStateChange = useCallback((state: CheckoutWizardState) => {
@@ -566,11 +568,15 @@ export function POSClientView() {
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Fondo</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte de la Sesión</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
-                                <Lock className="mr-2 h-4 w-4" />
-                                Cerrar Sesión
-                            </DropdownMenuItem>
+                            {canCloseSession && (
+                                <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
+                                        <Lock className="mr-2 h-4 w-4" />
+                                        Cerrar sesión de POS
+                                    </DropdownMenuItem>
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                     </TooltipProvider>

@@ -56,7 +56,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             if (session) {
                 handleShowXReport()
             } else {
-                toast.error("No hay una sesión activa para generar el reporte")
+                toast.error("No hay una sesión de POS activa para generar el reporte")
             }
         },
         refreshSession: async () => {
@@ -117,7 +117,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             }
         } catch (error) {
             console.error("Error fetching current session:", error)
-            toast.error("Error al verificar sesión activa")
+            toast.error("Error al verificar la sesión de POS activa")
         } finally {
             setLoading(false)
         }
@@ -131,11 +131,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         if (mode === 'join') {
             localStorage.setItem('shared_pos_session_id', sessionData.id.toString())
             setIsSharedSession(true)
-            toast.success(`Unido a la sesión de ${sessionData.user_name}`)
+            toast.success(`Unido a la sesión de POS de ${sessionData.user_name}`)
         } else {
             localStorage.removeItem('shared_pos_session_id')
             setIsSharedSession(false)
-            toast.success("Sesión iniciada correctamente")
+            toast.success("Sesión de POS abierta correctamente")
         }
     }
 
@@ -143,7 +143,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         localStorage.removeItem('shared_pos_session_id')
         onSessionChange?.(null)
         setIsSharedSession(false)
-        toast.info("Desconectado de la sesión compartida")
+        toast.info("Desconectado de la sesión de POS compartida")
         setLoading(true)
         fetchCurrentSession()
     }
@@ -164,7 +164,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             setReportDialogOpen(true)
         } catch (error) {
             console.error("Error fetching Z report:", error)
-            toast.error("Sesión cerrada correctamente, pero no se pudo cargar el reporte Z")
+            toast.error("Sesión de POS cerrada correctamente, pero no se pudo cargar el reporte Z")
         }
     }
 
@@ -245,7 +245,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
                         )}>
                             <div className={cn("h-2 w-2 rounded-full animate-pulse motion-reduce:animate-none", isSharedSession ? 'bg-primary' : 'bg-success')} />
-                            {isSharedSession ? "Sesión Compartida" : "Sesión Abierta"}
+                            {isSharedSession ? "Sesión de POS compartida" : "Sesión de POS abierta"}
                         </span>
 
                         <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mr-2">

@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.90](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.89...v0.3.90) (2026-11-10)
+
+
+### 🐛 Bug Fixes
+
+* **pos:** solo quien abrió la sesión de POS o un superusuario puede cerrarla ([#233](https://github.com/Patricoaa/ERPGrafico/issues/233)) ([#236](https://github.com/Patricoaa/ERPGrafico/issues/236)) ([d0f2e86](https://github.com/Patricoaa/ERPGrafico/commit/d0f2e8671440f4b675f6ac183a7d56e89deaea10))
+
+### [0.3.89](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.88...v0.3.89) (2026-11-10)
+
+
+### 🐛 Bug Fixes
+
+* **pos:** monto 0 en el numpad asigna el total como crédito ([#231](https://github.com/Patricoaa/ERPGrafico/issues/231)) ([#234](https://github.com/Patricoaa/ERPGrafico/issues/234)) ([7dae7ba](https://github.com/Patricoaa/ERPGrafico/commit/7dae7ba05ae40156849151451a575d9f5ba3ef8f))
+
+### [0.3.88](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.87...v0.3.88) (2026-11-09)
+
+
+### 🐛 Bug Fixes
+
+* DocumentLifecycle ocupa todo el ancho disponible ([1dcb634](https://github.com/Patricoaa/ERPGrafico/commit/1dcb634efe7ad18fd3f88ea4753346141b76b23c))
+
 ### [0.3.87](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.86...v0.3.87) (2026-11-09)
 
 
