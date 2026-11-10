@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.96](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.95...v0.3.96) (2026-11-10)
+
+
+### ✨ Features
+
+* **pos:** el retiro de socio y el cierre desde la lista de sesiones piden operador ([e924c01](https://github.com/Patricoaa/ERPGrafico/commit/e924c010b8adbabd9f8b178063e2c81e6edec6d8)), closes [#243](https://github.com/Patricoaa/ERPGrafico/issues/243)
+
 ### [0.3.95](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.94...v0.3.95) (2026-11-10)
 
 
