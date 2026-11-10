@@ -1,4 +1,4 @@
-export { OperatorGateProvider } from './OperatorGateProvider'
+export { OperatorGateProvider, SessionOperatorGate } from './OperatorGateProvider'
 export { OperatorPickerModal } from './OperatorPickerModal'
 export { useOperatorGate } from './useOperatorGate'
 export type { UseOperatorGateResult } from './useOperatorGate'

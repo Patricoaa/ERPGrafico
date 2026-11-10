@@ -30,6 +30,7 @@ UNBOUND_DRAFT_TTL = timedelta(minutes=30)
 _ONE_SHOT_PURPOSES = (
     POSOperatorPass.Purpose.CASH_MOVEMENT,
     POSOperatorPass.Purpose.SESSION_CLOSE,
+    POSOperatorPass.Purpose.PARTNER_WITHDRAWAL,
 )
 
 

@@ -45,10 +45,47 @@ function targetFromChallenge(
  */
 export function OperatorGateProvider({ children }: { children: ReactNode }) {
     const { currentSession, currentDraftId } = usePOS()
+    return (
+        <OperatorGate
+            sessionId={currentSession?.id ?? null}
+            isMultiUser={currentSession?.my_mode === "MULTI"}
+            currentDraftId={currentDraftId}
+        >
+            {children}
+        </OperatorGate>
+    )
+}
+
+/**
+ * Variante para pantallas fuera de `POSProvider` (p. ej. la lista de sesiones): la sesión
+ * y el modo del dispositivo llegan por props en lugar de leerse del contexto del POS.
+ */
+export function SessionOperatorGate({
+    sessionId,
+    isMultiUser,
+    children,
+}: {
+    sessionId: number
+    isMultiUser: boolean
+    children: ReactNode
+}) {
+    return (
+        <OperatorGate sessionId={sessionId} isMultiUser={isMultiUser} currentDraftId={null}>
+            {children}
+        </OperatorGate>
+    )
+}
+
+interface OperatorGateProps {
+    sessionId: number | null
+    isMultiUser: boolean
+    currentDraftId: number | null
+    children: ReactNode
+}
+
+function OperatorGate({ sessionId, isMultiUser, currentDraftId, children }: OperatorGateProps) {
     const currentDraftIdRef = useRef(currentDraftId)
     useEffect(() => { currentDraftIdRef.current = currentDraftId }, [currentDraftId])
-    const sessionId = currentSession?.id ?? null
-    const isMultiUser = currentSession?.my_mode === "MULTI"
 
     const [pending, setPending] = useState<PendingRequest | null>(null)
     const pendingRef = useRef<PendingRequest | null>(null)

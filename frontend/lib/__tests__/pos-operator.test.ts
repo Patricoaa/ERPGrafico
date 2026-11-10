@@ -94,6 +94,18 @@ describe("interceptor de lib/api", () => {
         expect(handler).toHaveBeenCalledWith("DRAFT", { url: "sales/pos-drafts/12/" })
     })
 
+    it("reconoce el retiro de socio como propósito propio", async () => {
+        api.defaults.adapter = async (config) => {
+            calls.push(config)
+            if (calls.length === 1) throw requiredError(config, "PARTNER_WITHDRAWAL")
+            return { data: { ok: true }, status: 200, statusText: "OK", headers: {}, config }
+        }
+        const handler = vi.fn().mockResolvedValue(true)
+        setPosOperatorChallengeHandler(handler)
+        await api.post("/sales/pos-drafts/12/withdraw/", {})
+        expect(handler).toHaveBeenCalledWith("PARTNER_WITHDRAWAL", { url: "sales/pos-drafts/12/withdraw/" })
+    })
+
     it("rechaza con el error original si el usuario cancela", async () => {
         useAdapter(1)
         setPosOperatorChallengeHandler(async () => false)

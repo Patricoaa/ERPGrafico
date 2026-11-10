@@ -40,3 +40,8 @@ El POS atribuye todo a `request.user`, la cuenta que inició sesión en el dispo
 - **PIN/tarjeta desde el inicio:** descartado por el dueño del producto para la primera edición.
 - **Token firmado en lugar de fila:** no permite invalidar al emitir otro ni sirve de registro.
 - **Cambiar el modo a mitad de sesión:** fuera de alcance; se cierra y se abre otra.
+
+## Adenda — retiro de socio y cierre desde la lista de sesiones
+
+- El retiro de socio es una transacción propia con propósito `PARTNER_WITHDRAWAL` (pase de un solo uso, 5 min, ligado al borrador); ya no queda cubierto por el pase `DRAFT` del carrito.
+- El cierre de sesión desde la lista de sesiones (fuera de `POSProvider`) pide operador igual que desde el menú del POS, mediante `SessionOperatorGate` + `GatedSessionCloseModal` (resuelve #243).

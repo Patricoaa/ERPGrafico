@@ -240,3 +240,31 @@ def test_multi_heartbeat_on_expired_lock_ends_pass_and_requires_identification(a
     assert POSOperatorPass.objects.get(pk=p["pass_id"]).end_reason == "EXPIRED"
     r = _update(api, multi, d_id, token=p["token"])
     assert r.status_code == 403
+
+
+# ── Retiro de socio: transacción propia que pide operador ──────────────────────
+
+def test_multi_withdraw_rejects_the_carts_draft_pass_and_names_its_purpose(api, multi, ana):
+    p = _identify(api, multi, ana)
+    d_id = _create(api, multi, token=p["token"]).json()["id"]
+    r = api.post(f"/api/sales/pos-drafts/{d_id}/withdraw/", {"pos_session_id": multi.id}, format="json",
+                 **{HEADER: p["token"]})
+    assert r.status_code == 403
+    assert _code(r)["code"] == "pos_operator_required" and _code(r)["purpose"] == "PARTNER_WITHDRAWAL"
+    assert DraftCart.objects.filter(pk=d_id).exists()
+
+
+def test_multi_withdraw_with_its_own_pass_runs_as_that_operator_and_consumes_it(api, multi, ana, beto, monkeypatch):
+    from sales.draft_cart_service import DraftCartService
+
+    p = _identify(api, multi, ana)
+    d_id = _create(api, multi, token=p["token"]).json()["id"]
+    seen = {}
+    monkeypatch.setattr(DraftCartService, "process_withdrawal",
+                        staticmethod(lambda **kw: seen.update(kw) or {"message": "ok"}))
+    w = _identify(api, multi, beto, purpose="PARTNER_WITHDRAWAL", target=d_id)
+    r = api.post(f"/api/sales/pos-drafts/{d_id}/withdraw/", {"pos_session_id": multi.id}, format="json",
+                 **{HEADER: w["token"]})
+    assert r.status_code == 200, r.content
+    assert seen["user"] == beto
+    assert POSOperatorPass.objects.get(pk=w["pass_id"]).end_reason == "CONSUMED"
