@@ -9,7 +9,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from sales.models import DraftCart, SaleTrackingEvent
-from treasury.models import POSOperatorPass, POSSession
+from treasury.models import POSOperatorPass
+from treasury.tests.helpers import make_pos_session
 
 User = get_user_model()
 HEADER = "HTTP_X_POS_OPERATOR_PASS"
@@ -46,12 +47,12 @@ def api(cashier):
 
 @pytest.fixture
 def multi(cashier):
-    return POSSession.objects.create(user=cashier, mode="MULTI")
+    return make_pos_session(cashier, "MULTI")
 
 
 @pytest.fixture
 def single(cashier):
-    return POSSession.objects.create(user=cashier, mode="SINGLE")
+    return make_pos_session(cashier, "SINGLE")
 
 
 def _identify(api, session, operator, *, tab="tab1", target=None, purpose="DRAFT"):

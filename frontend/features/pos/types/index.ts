@@ -161,7 +161,8 @@ export interface POSTerminal {
 }
 
 export interface POSSession {
-    mode: POSSessionMode
+    /** Modo de caja de este dispositivo en la sesión. */
+    my_mode: POSSessionMode
     id: number
     terminal: number
     terminal_name?: string

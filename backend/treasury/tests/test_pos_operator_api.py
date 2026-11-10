@@ -8,7 +8,8 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
-from treasury.models import POSOperatorPass, POSSession
+from treasury.models import POSOperatorPass
+from treasury.tests.helpers import make_pos_session
 from treasury.selectors import POSSelector
 
 User = get_user_model()
@@ -40,12 +41,12 @@ def api(cashier):
 
 @pytest.fixture
 def multi_session(cashier):
-    return POSSession.objects.create(user=cashier, mode="MULTI")
+    return make_pos_session(cashier, "MULTI")
 
 
 @pytest.fixture
 def single_session(cashier):
-    return POSSession.objects.create(user=cashier, mode="SINGLE")
+    return make_pos_session(cashier, "SINGLE")
 
 
 def _url(session, action):

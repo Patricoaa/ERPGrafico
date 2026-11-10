@@ -2317,16 +2317,6 @@ class POSSession(models.Model):
         _("Estado"), max_length=10, choices=Status.choices, default=Status.OPEN
     )
 
-    # Modo de caja: fijo durante toda la sesión (se elige al abrir).
-    # MULTI exige identificar al operador en cada transacción inicializadora.
-    mode = models.CharField(
-        _("Modo de caja"),
-        max_length=10,
-        choices=Mode.choices,
-        default=Mode.SINGLE,
-        help_text=_("SINGLE: opera quien inició sesión. MULTI: se identifica al operador por transacción."),
-    )
-
     # Opening
     opened_at = models.DateTimeField(_("Abierta el"), auto_now_add=True)
     opening_balance = models.DecimalField(
@@ -2391,9 +2381,20 @@ class POSSession(models.Model):
     def __str__(self):
         return f"Sesión #{self.id} - {self.user.get_full_name() or self.user.username} ({self.get_status_display()})"
 
-    @property
-    def is_multi_user(self) -> bool:
-        return self.mode == self.Mode.MULTI
+    def mode_for(self, user) -> str:
+        """Modo de caja del dispositivo (cuenta) ``user`` en esta sesión; SINGLE si no registró uno."""
+        mode = self.devices.filter(user=user).values_list("mode", flat=True).first()
+        return mode or self.Mode.SINGLE
+
+    def is_multi_user_for(self, user) -> bool:
+        return self.mode_for(user) == self.Mode.MULTI
+
+    def set_device_mode(self, user, mode: str) -> "POSSessionDevice":
+        """Registra (o cambia) el modo de caja con el que ``user`` opera esta sesión."""
+        device, _created = POSSessionDevice.objects.update_or_create(
+            session=self, user=user, defaults={"mode": mode}
+        )
+        return device
 
     @property
     def uses_cash_ledger(self) -> bool:
@@ -2426,6 +2427,30 @@ class POSSession(models.Model):
 
             net = ledger_net(self)
         return self.opening_balance + net
+
+
+class POSSessionDevice(TimeStampedModel):
+    """
+    Modo de caja con el que un dispositivo (la cuenta que abre la sesión o se une a ella)
+    opera una sesión POS (ADR-0125). El modo es del dispositivo, no de la sesión: una misma
+    sesión puede tener un dispositivo SINGLE y otro MULTI.
+    """
+
+    session = models.ForeignKey(POSSession, on_delete=models.CASCADE, related_name="devices")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    mode = models.CharField(
+        _("Modo de caja"), max_length=10, choices=POSSession.Mode.choices, default=POSSession.Mode.SINGLE
+    )
+
+    class Meta:
+        verbose_name = _("Dispositivo de sesión POS")
+        verbose_name_plural = _("Dispositivos de sesión POS")
+        constraints = [
+            models.UniqueConstraint(fields=["session", "user"], name="uniq_possessiondevice_session_user"),
+        ]
+
+    def __str__(self):
+        return f"Sesión #{self.session_id} · {self.user_id} · {self.mode}"
 
 
 class POSOperatorPass(models.Model):

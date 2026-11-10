@@ -6,8 +6,8 @@ import { OperatorGateProvider } from "../OperatorGateProvider"
 import { operatorStore } from "../operatorStore"
 import { useOperatorGate } from "../useOperatorGate"
 
-type Session = { id: number; mode: "SINGLE" | "MULTI" } | null
-let session: Session = { id: 5, mode: "MULTI" }
+type Session = { id: number; my_mode: "SINGLE" | "MULTI" } | null
+let session: Session = { id: 5, my_mode: "MULTI" }
 let currentDraftId: number | null = null
 
 const identify = vi.fn()
@@ -37,7 +37,7 @@ async function choose(name: RegExp) {
 }
 
 beforeEach(() => {
-    session = { id: 5, mode: "MULTI" }
+    session = { id: 5, my_mode: "MULTI" }
     currentDraftId = null
     identify.mockReset()
     releaseOperator.mockReset().mockResolvedValue(undefined)
@@ -53,7 +53,7 @@ afterEach(() => {
 
 describe("useOperatorGate", () => {
     it("en SINGLE resuelve true sin abrir el selector ni llamar a la API", async () => {
-        session = { id: 5, mode: "SINGLE" }
+        session = { id: 5, my_mode: "SINGLE" }
         const { result } = renderHook(() => useOperatorGate(), { wrapper })
         expect(result.current.isMultiUser).toBe(false)
         let ok = false

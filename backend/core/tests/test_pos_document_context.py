@@ -8,7 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleTrackingEvent
-from treasury.models import POSOperatorPass, POSSession
+from treasury.models import POSOperatorPass
+from treasury.tests.helpers import make_pos_session
 from treasury.pos_operator_service import POSOperatorService
 
 User = get_user_model()
@@ -41,12 +42,12 @@ def api(cashier):
 
 @pytest.fixture
 def multi(cashier):
-    return POSSession.objects.create(user=cashier, mode="MULTI")
+    return make_pos_session(cashier, "MULTI")
 
 
 @pytest.fixture
 def single(cashier):
-    return POSSession.objects.create(user=cashier, mode="SINGLE")
+    return make_pos_session(cashier, "SINGLE")
 
 
 @pytest.fixture

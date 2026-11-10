@@ -9,7 +9,6 @@ export const posSessionEntity = defineEntity<POSSession>()((f) => ({
         folio: f.code((s) => formatEntityDisplay("pos.session", { id: s.id }), { label: "ID" }),
         userName: f.text("user_name", { label: "Usuario" }),
         terminal: f.text("terminal_name", { label: "Punto de venta" }),
-        mode: f.text((s) => (s.mode === "MULTI" ? "Multiusuario" : "Un solo usuario"), { label: "Modo de caja" }),
         openedAt: f.date("opened_at", { label: "Apertura", time: true }),
         closedAt: f.date("closed_at", { label: "Cierre", time: true }),
         // DRF sends decimals as strings: add numbers, never concatenate (TC-065).
@@ -19,6 +18,6 @@ export const posSessionEntity = defineEntity<POSSession>()((f) => ({
 }))
 
 export const posSessionViews = posSessionEntity.views({
-    table: { columns: ["folio", "userName", "terminal", "mode", "openedAt", "closedAt", "totalSales", "status"], defaultSort: "-openedAt" },
+    table: { columns: ["folio", "userName", "terminal", "openedAt", "closedAt", "totalSales", "status"], defaultSort: "-openedAt" },
     card: { rail: { status: (r) => r.status }, title: "folio", subtitle: ["userName", "terminal"], meta: ["openedAt", "closedAt"], trailing: ["status", "totalSales"] },
 })

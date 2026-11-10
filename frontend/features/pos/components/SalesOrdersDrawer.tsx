@@ -181,7 +181,6 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                                 <div className={documentEntry ? "hidden" : "flex flex-1 min-h-0 flex-col"}>
                                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                                         <SalesOrdersView
-                                            posSessionId={posSessionId}
                                             viewMode={viewMode}
                                             onSelectOrder={handleRowSelect}
                                             selectedId={rootEntry?.id ?? null}

@@ -18,8 +18,8 @@ let currentDraftId: number | null = null
 vi.mock("../../operator", () => ({
     useOperatorGate: () => ({
         ensureOperator: (...a: [string, { type: string; id: number }?]) => ensureOperator(...a),
-        bindTarget: (id: number) => bindTarget(id),
-        release: (p?: string) => release(p),
+        bindTarget: (id: number): void => { bindTarget(id) },
+        release: async (p?: string): Promise<void> => { release(p) },
     }),
 }))
 vi.mock("../../contexts/POSProvider", () => ({
@@ -28,7 +28,7 @@ vi.mock("../../contexts/POSProvider", () => ({
         setItems: vi.fn(),
         selectedCustomerId: null,
         setSelectedCustomerId: vi.fn(),
-        currentSession: { id: 5, mode: "MULTI" },
+        currentSession: { id: 5, my_mode: "MULTI" },
         currentDraftId,
         setCurrentDraftId,
         wizardState: null,

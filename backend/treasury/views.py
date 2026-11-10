@@ -933,6 +933,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         "register_manual_movement": None,
         # Solo autenticación: identificar al operador no es una operación de tesorería.
         "operators": None,
+        "join_session": None,
         "identify_operator": None,
         "release_operator": None,
     }
@@ -963,6 +964,14 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
         # ADR-0109: expected_cash sin consultas por fila (arqueo o neto anotado)
         qs = annotate_ledger_cash_net(super().get_queryset().select_related("audit"))
+        if self.request.user.is_authenticated:  # modo de caja del dispositivo, sin consulta por fila
+            from django.db.models import Prefetch
+
+            from .models import POSSessionDevice
+
+            qs = qs.prefetch_related(Prefetch(
+                "devices", queryset=POSSessionDevice.objects.filter(user=self.request.user), to_attr="my_devices"
+            ))
         from django.utils.dateparse import parse_date
         if raw := self.request.query_params.get("date_from"):
             if d := parse_date(raw):
@@ -977,8 +986,22 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         from .selectors import POSSelector
         session = POSSelector.get_current_session(request.user)
         if session:
-            return Response(POSSessionSerializer(session).data)
+            return Response(POSSessionSerializer(session, context={'request': request}).data)
         return Response({"session": None})
+
+    @action(detail=True, methods=["post"])
+    def join_session(self, request, pk=None):
+        """El dispositivo se une a la sesión con su propio modo de caja (SINGLE | MULTI)."""
+        from .pos_service import POSService
+
+        try:
+            session = POSService.join_session(
+                session=self.get_object(), user=request.user, mode=request.data.get("mode") or "SINGLE"
+            )
+        except ValidationError as e:
+            return Response({"error": "; ".join(e.messages)}, status=400)
+        session.__dict__.pop("my_devices", None)  # precarga previa al cambio de modo: ya no vale
+        return Response(POSSessionSerializer(session, context={"request": request}).data)
 
     @action(detail=True, methods=["get"])
     def operators(self, request, pk=None):
@@ -1016,7 +1039,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         try:
             from .pos_service import POSService
             session = POSService.open_session_from_request(request)
-            return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
+            return Response(POSSessionSerializer(session, context={'request': request}).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({'error': str(getattr(e, 'message', e))}, status=400)
         except Exception as e:
@@ -1026,7 +1049,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         try:
             from .pos_service import POSService
             session, audit = POSService.close_session_from_request(request, self.get_object())
-            return Response({'session': POSSessionSerializer(session).data, 'audit': POSSessionAuditSerializer(audit).data, 'message': 'Sesión de POS cerrada correctamente'})
+            return Response({'session': POSSessionSerializer(session, context={'request': request}).data, 'audit': POSSessionAuditSerializer(audit).data, 'message': 'Sesión de POS cerrada correctamente'})
         except APIException:
             raise
         except ValidationError as e:
@@ -1076,7 +1099,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             from .pos_service import POSService
             session = self.get_object()
             POSService.register_manual_movement_from_request(request, session)
-            return Response({'session': POSSessionSerializer(session).data, 'message': 'Movimiento registrado correctamente'})
+            return Response({'session': POSSessionSerializer(session, context={'request': request}).data, 'message': 'Movimiento registrado correctamente'})
         except APIException:
             raise
         except Exception as e:

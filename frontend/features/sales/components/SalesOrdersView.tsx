@@ -24,7 +24,6 @@ import { buildSalesAnalyticsScreen } from "./saleOrderAnalyticsScreen"
 
 interface SalesOrdersViewProps {
     viewMode: 'orders' | 'notes'
-    posSessionId?: number | null
     onSelectOrder?: (id: number | null) => void
     selectedId?: number | null
 }
@@ -41,7 +40,7 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 const ORDER_GROUPS: Record<string, FieldId<typeof saleOrderEntity.fields>> = { date: "date", customer: "customer", status: "hub", channel: "channel" }
 const NOTE_GROUPS: Record<string, FieldId<typeof saleNoteEntity.fields>> = { date: "date", customer: "customer", status: "hub" }
 
-export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selectedId }: SalesOrdersViewProps) {
+export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOrdersViewProps) {
     // ?selected abre la ficha documental en la pila (ADR-0083): OV en "orders", factura/nota
     // en "notes". Con onSelectOrder (POS) la lista solo selecciona; el panel lo pone el host.
     const sheet = useDocumentSheetRoute(onSelectOrder ? null : (viewMode === "orders" ? "sales.saleorder" : "billing.invoice"))
@@ -51,18 +50,15 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
 
     // One collection per mode, each with its own hook: the hidden mode no longer fetches.
     return viewMode === "orders"
-        ? <SaleOrderCollection posSessionId={posSessionId} selection={selection} />
+        ? <SaleOrderCollection selection={selection} />
         : <SaleNoteCollection selection={selection} />
 }
 
-function SaleOrderCollection({ posSessionId, selection }: { posSessionId?: number | null; selection: SheetSelection }) {
+function SaleOrderCollection({ selection }: { selection: SheetSelection }) {
     const search = useUnifiedSearch(salesOrderUnifiedSearchDef)
     const groupBy = search.groupBy ? ORDER_GROUPS[search.groupBy] ?? null : null
     const [sort, setSort] = useState<SortSpec<FieldId<typeof saleOrderEntity.fields>> | null>(null)
-    const filters = useMemo<SaleOrderFilters>(
-        () => ({ ...(search.filters as SaleOrderFilters), pos_session: posSessionId || undefined }),
-        [search.filters, posSessionId],
-    )
+    const filters = useMemo<SaleOrderFilters>(() => search.filters as SaleOrderFilters, [search.filters])
     const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("sales.saleorder")
 

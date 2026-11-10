@@ -16,8 +16,8 @@ import { fetchPOSSessionSummary } from "@/features/pos"
 
 export interface POSSession {
     id: number
-    /** Modo de caja de la sesión (SINGLE | MULTI). */
-    mode: 'SINGLE' | 'MULTI'
+    /** Modo de caja de este dispositivo en la sesión (SINGLE | MULTI). */
+    my_mode: 'SINGLE' | 'MULTI'
     /** Id del usuario que abrió la sesión de POS. */
     user: number
     id_display: string

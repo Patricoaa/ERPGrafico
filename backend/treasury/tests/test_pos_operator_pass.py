@@ -7,7 +7,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from treasury.models import POSOperatorPass, POSSession
+from treasury.models import POSOperatorPass
+from treasury.tests.helpers import make_pos_session
 from treasury.pos_operator_service import POSOperatorRequired, POSOperatorService
 
 User = get_user_model()
@@ -40,12 +41,12 @@ def beto(db):
 
 @pytest.fixture
 def multi_session(cashier):
-    return POSSession.objects.create(user=cashier, mode="MULTI")
+    return make_pos_session(cashier, "MULTI")
 
 
 @pytest.fixture
 def single_session(cashier):
-    return POSSession.objects.create(user=cashier, mode="SINGLE")
+    return make_pos_session(cashier, "SINGLE")
 
 
 def _identify(session, cashier, operator, tab="t1", purpose="CASH_MOVEMENT", **kw):
@@ -105,9 +106,11 @@ def test_pass_rejections(case, multi_session, cashier, ana, beto):
     if case == "wrong_purpose":
         purpose = "SESSION_CLOSE"
     elif case == "other_session":
-        session = POSSession.objects.create(user=beto, mode="MULTI")
+        session = make_pos_session(beto, "MULTI")
+        session.set_device_mode(cashier, "MULTI")  # el dispositivo también opera esa sesión en MULTI
     elif case == "other_device_user":
         device = beto
+        multi_session.set_device_mode(beto, "MULTI")
     elif case == "ended":
         POSOperatorService.end(p, "RELEASED")
     elif case == "expired":

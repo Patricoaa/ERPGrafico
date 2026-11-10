@@ -16,7 +16,7 @@ El POS atribuye todo a `request.user`, la cuenta que inició sesión en el dispo
 
 ## Decisión
 
-1. **Modo de caja.** `POSSession.mode` ∈ {`SINGLE` (defecto), `MULTI`}, elegido en el wizard de apertura, inmutable con la sesión abierta y expuesto de solo lectura. `SINGLE` no cambia en nada.
+1. **Modo de caja por dispositivo.** El modo no es de la sesión sino del *dispositivo* (la cuenta que abre la sesión o se une a ella): `POSSessionDevice(session, user, mode)` con `mode` ∈ {`SINGLE` (defecto), `MULTI`}. Cada dispositivo elige el suyo en el wizard al abrir (`open_session`) o al unirse (`POST pos-sessions/{id}/join_session/`), de modo que una misma sesión puede tener un dispositivo `SINGLE` y otro `MULTI`. La sesión expone `my_mode` (el del dispositivo que consulta). Un dispositivo sin registro opera `SINGLE`. `SINGLE` no cambia en nada. Unirse de nuevo con otro modo reemplaza el anterior. El dispositivo se identifica por la cuenta autenticada, así que dos navegadores con la misma cuenta comparten modo.
 2. **Operador identificado (solo `MULTI`).** Cada transacción inicializadora exige un *pase de operador* (`POSOperatorPass`): crear/retomar un borrador, registrar un retiro o movimiento, cerrar la sesión y modificar un documento desde los drawers de ventas. El pase se emite con `POST pos-sessions/{id}/identify_operator/`, viaja en el header `X-POS-Operator-Pass` (guardado como sha256), va atado a sesión, operador, cuenta del dispositivo, pestaña (`tab_key` = clave del bloqueo de borradores), propósito y destino.
 3. **Vida del pase.** Emitir un pase invalida el anterior de la misma sesión y pestaña. Borrador: vive mientras la pestaña conserve el bloqueo (30 min sin destino). Movimiento y cierre: un solo uso, vencen a los 5 min. Documento: termina al salir de él.
 4. **Rechazo.** Sin pase válido el backend responde 403; por el manejador global de errores el código queda en `error.details.code = "pos_operator_required"` junto a `error.details.purpose`. El cliente abre el selector y reintenta con una `Idempotency-Key` nueva.
@@ -29,7 +29,7 @@ El POS atribuye todo a `request.user`, la cuenta que inició sesión en el dispo
 
 - Las cajas de un solo usuario no cambian (ningún modal, clic ni espera extra).
 - En `MULTI` la exigencia vive en el backend: llamar a la API sin pase falla aunque se salte la pantalla.
-- Riesgo asumido: en `MULTI` solo un operador igual a la cuenta que abrió la sesión (o un superusuario) puede cerrarla.
+- Riesgo asumido: en un dispositivo `MULTI` solo un operador igual a la cuenta que abrió la sesión (o un superusuario) puede cerrarla.
 - Cerrar una sesión `MULTI` desde el listado de sesiones (fuera de la pantalla del POS) no tiene selector y devuelve el 403; se cierra desde el POS.
 - Límite conocido: la exigencia de operador al modificar documentos (`DOCUMENT_EDIT`) depende de que el cliente envíe `X-POS-Document-Context`; son endpoints generales del ERP, así que llamar a la API sin ese header no pide pase. El destino del pase tampoco se contrasta con el documento de la URL.
 - `SaleTrackingEvent` y `POSOperatorPass` son registros de auditoría con sus propias fechas; están exentos de `TimeStampedModel`.

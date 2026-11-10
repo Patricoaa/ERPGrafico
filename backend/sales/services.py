@@ -71,7 +71,7 @@ class SalesService:
         from treasury.pos_operator_service import Actor, POSOperatorService
 
         session = SalesService._resolve_pos_session(request.user, request.data.get("pos_session_id"))
-        if not session.is_multi_user:
+        if not session.is_multi_user_for(request.user):
             return Actor(request.user, request.user, None)
         draft_id = request.data.get("draft_id")
         if not draft_id:

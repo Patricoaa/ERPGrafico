@@ -237,9 +237,18 @@ export function SessionOpenModal({
         }
 
         const foundSession = availableSessions.find(s => s.id === parseInt(selectedSharedSessionId))
-        if (foundSession) {
-            onSuccess?.(foundSession, 'join')
+        if (!foundSession) return
+
+        setSubmitting(true)
+        try {
+            // Cada dispositivo se une con su propio modo de caja, sea cual sea el de los demás.
+            const joined = await posApi.joinSession(foundSession.id, cashMode)
+            onSuccess?.({ ...foundSession, ...joined }, 'join')
             onOpenChange(false)
+        } catch (error: unknown) {
+            showApiError(error, "Error al unirse a la sesión de POS")
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -569,6 +578,7 @@ export function SessionOpenModal({
                     </Button>
                 ))}
             </div>
+            <CashModeChoice value={cashMode} onChange={setCashMode} />
         </FadeIn>
     )
 
