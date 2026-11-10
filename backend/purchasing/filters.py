@@ -4,7 +4,12 @@ from django_filters.rest_framework import FilterSet
 from .models import PurchaseReceipt, PurchaseReturn
 
 
+class CharInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
+    """Accepts a comma-separated list of values and applies an __in lookup (issue #223)."""
+
+
 class PurchaseReceiptFilter(FilterSet):
+    status = CharInFilter(field_name="status", lookup_expr="in")
     date_after = django_filters.DateFilter(field_name="receipt_date", lookup_expr="gte")
     date_before = django_filters.DateFilter(field_name="receipt_date", lookup_expr="lte")
     supplier_name = django_filters.CharFilter(
@@ -42,6 +47,7 @@ class PurchaseReturnFilter(FilterSet):
     """ADR-0090: la lista de devoluciones de compra es una vista documental propia,
     así que necesita los mismos filtros que su hermana PurchaseReceiptFilter."""
 
+    status = CharInFilter(field_name="status", lookup_expr="in")
     date_after = django_filters.DateFilter(field_name="date", lookup_expr="gte")
     date_before = django_filters.DateFilter(field_name="date", lookup_expr="lte")
     supplier_name = django_filters.CharFilter(

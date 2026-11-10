@@ -29,7 +29,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         placeholderData: (prev) => prev,
     })
 
-    const invoices = query.data ?? []
+    const invoices = query.data?.results ?? []
     const showSkeleton = query.isLoading && !invoices.length
     const isRefetching = query.isFetching && !showSkeleton
     const refetch = query.refetch
@@ -81,6 +81,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     })
 
     return {
+        page: query.data,
         invoices,
         isLoading: showSkeleton,
         isRefetching,

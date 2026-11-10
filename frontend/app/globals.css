@@ -1460,3 +1460,40 @@ table [data-notched-field] {
   from { opacity: 0; transform: translateX(-12px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+
+/*
+ * POS PANEL MOTION — opción B (panel de ventas del POS). Excluido de component-animation.md (vistas POS).
+ * Curva ease-in en entrada y salida: arranque lento, final rápido. Solo lo usan las clases `pos-*`
+ * (drawers del ámbito POS, sus fondos y los cambios de documento dentro del panel).
+ */
+:root {
+  --ease-pos-enter: cubic-bezier(0.55, 0, 0.9, 0.35);
+  --duration-pos-enter: 640ms;
+  --duration-pos-exit: 460ms;
+}
+
+@keyframes pos-sheet-in-bottom  { from { transform: translate3d(0, 100%, 0); } to { transform: translate3d(0, 0, 0); } }
+@keyframes pos-sheet-out-bottom { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 100%, 0); } }
+@keyframes pos-sheet-in-left    { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(0, 0, 0); } }
+@keyframes pos-sheet-out-left   { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-100%, 0, 0); } }
+@keyframes pos-sheet-in-right   { from { transform: translate3d(100%, 0, 0); } to { transform: translate3d(0, 0, 0); } }
+@keyframes pos-sheet-out-right  { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(100%, 0, 0); } }
+@keyframes pos-view-in { from { opacity: 0; transform: translate3d(24px, 0, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes pos-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pos-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+[data-slot="sheet-content"].pos-motion[data-state="open"][data-side="bottom"] { animation: pos-sheet-in-bottom var(--duration-pos-enter) var(--ease-pos-enter) both !important; }
+[data-slot="sheet-content"].pos-motion[data-state="closed"][data-side="bottom"] { animation: pos-sheet-out-bottom var(--duration-pos-exit) var(--ease-pos-enter) both !important; }
+[data-slot="sheet-content"].pos-motion[data-state="open"][data-side="left"] { animation: pos-sheet-in-left var(--duration-pos-enter) var(--ease-pos-enter) both !important; }
+[data-slot="sheet-content"].pos-motion[data-state="closed"][data-side="left"] { animation: pos-sheet-out-left var(--duration-pos-exit) var(--ease-pos-enter) both !important; }
+[data-slot="sheet-content"].pos-motion[data-state="open"][data-side="right"] { animation: pos-sheet-in-right var(--duration-pos-enter) var(--ease-pos-enter) both !important; }
+[data-slot="sheet-content"].pos-motion[data-state="closed"][data-side="right"] { animation: pos-sheet-out-right var(--duration-pos-exit) var(--ease-pos-enter) both !important; }
+.pos-view-in { animation: pos-view-in var(--duration-pos-enter) var(--ease-pos-enter) both; }
+[data-slot="sheet-overlay"].pos-motion[data-state="open"] { animation: pos-fade-in var(--duration-pos-enter) var(--ease-pos-enter) both !important; }
+[data-slot="sheet-overlay"].pos-motion[data-state="closed"] { animation: pos-fade-out var(--duration-pos-exit) var(--ease-pos-enter) both !important; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sheet-content"].pos-motion, [data-slot="sheet-overlay"].pos-motion { animation-duration: 1ms !important; animation-delay: 0s !important; }
+  .pos-view-in { animation-duration: 1ms !important; animation-delay: 0s !important; }
+}

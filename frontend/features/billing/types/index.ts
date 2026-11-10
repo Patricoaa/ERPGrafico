@@ -56,6 +56,7 @@ export interface InvoiceFilters {
     partner_name?: string
     search?: string
     status?: string
+    payment_status?: string
     dte_type?: string
     mode?: 'sale' | 'purchase'
     date_from?: string
@@ -63,6 +64,9 @@ export interface InvoiceFilters {
     total_min?: string
     total_max?: string
     number?: string
+    page?: number
+    page_size?: number
+    ordering?: string
 }
 
 export interface AnnulInvoicePayload {

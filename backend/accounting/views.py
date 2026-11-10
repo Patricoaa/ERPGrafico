@@ -165,7 +165,7 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     serializer_class = JournalEntrySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
-    search_fields = ["description", "display_id", "items__partner__name", "items__partner__tax_id"]
+    search_fields = ["description", "number", "items__partner__name", "items__partner__tax_id"]
     action_permissions = {
         "post_entry": "accounting.post_journalentry",
         "reverse_entry": "accounting.reverse_journalentry",

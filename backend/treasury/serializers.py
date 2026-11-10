@@ -44,6 +44,15 @@ class BankSerializer(serializers.ModelSerializer):
         return ContactTinySerializer(obj.account_executives.all(), many=True).data
 
 
+class BankOptionSerializer(serializers.ModelSerializer):
+    """Banco como opción de selector (ADR-0124): sin ejecutivos ni datos de contacto."""
+
+    class Meta:
+        model = Bank
+        fields = ["id", "name", "code", "is_active"]
+        read_only_fields = fields
+
+
 class PaymentMethodSerializer(serializers.ModelSerializer):
     frozen_fields = FrozenFieldsField()
     method_type_display = serializers.CharField(source="get_method_type_display", read_only=True)

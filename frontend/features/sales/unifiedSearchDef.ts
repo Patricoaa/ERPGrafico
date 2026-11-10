@@ -80,9 +80,9 @@ export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Origen',
       serverParam: 'origin_status',
       options: [
-        { label: 'Borrador', value: 'neutral' },
-        { label: 'Completado', value: 'success' },
-        { label: 'Anulado', value: 'destructive' },
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Completado', value: 'ACTIVE' },
+        { label: 'Anulado', value: 'CANCELLED' },
       ],
     },
     {
@@ -113,8 +113,8 @@ export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Facturación',
       serverParam: 'billing_status',
       options: [
-        { label: 'Facturado', value: 'success' },
-        { label: 'No Facturado', value: 'pending' },
+        { label: 'Facturado', value: 'INVOICED' },
+        { label: 'No Facturado', value: 'PENDING' },
       ],
     },
     {
@@ -123,9 +123,9 @@ export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Pago',
       serverParam: 'payment_status',
       options: [
-        { label: 'Pendiente', value: 'neutral' },
-        { label: 'Parcial', value: 'active' },
-        { label: 'Pagado', value: 'success' },
+        { label: 'Pendiente', value: 'UNPAID' },
+        { label: 'Parcial', value: 'PARTIAL' },
+        { label: 'Pagado', value: 'PAID' },
       ],
     },
     {

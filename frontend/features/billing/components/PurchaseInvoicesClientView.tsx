@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef, lazy, Suspense } from "react"
 import { ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { Collection, GROUP_ROW_LIMIT, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId } from "@/components/entity-view"
 import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
@@ -29,13 +29,14 @@ const UnifiedNoteWizard = lazy(() =>
     import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard }))
 )
 
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
+
 interface Props {
     createAction?: React.ReactNode
 }
 
 export function PurchaseInvoicesClientView({ createAction }: Props) {
     const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
-    const { invoices: documents, isLoading, isRefetching, isError, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...search.filters } as InvoiceFilters })
     const [payingDoc, setPayingDoc] = useState<Invoice | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<Invoice | null>(null)
     const [notingDoc, setNotingDoc] = useState<Invoice | null>(null)
@@ -46,6 +47,17 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
     const sheet = useDocumentSheetRoute("billing.invoice")
     const groupBy = search.groupBy ? INVOICE_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode("billing.invoice")
+
+    const filters = { ...search.filters } as InvoiceFilters
+    const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
+
+    const { page, invoices: documents, isLoading, isRefetching, isError, refetch: fetchDocuments } = usePurchaseInvoices({
+        filters: {
+            ...filters,
+            page: groupBy ? 1 : pageState.pageIndex + 1,
+            page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        },
+    })
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -132,8 +144,8 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
 
     const collection = useEntityCollection(
         purchaseInvoiceEntity,
-        { rows: documents, isLoading, isRefetching, error: isError, refetch: fetchDocuments, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { rows: documents, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch: fetchDocuments, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
     )
 
     return (

@@ -47,7 +47,6 @@ export const invoiceUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Boleta', value: 'BOLETA' },
         { label: 'Nota de crédito', value: 'NOTA_CREDITO' },
         { label: 'Nota de débito', value: 'NOTA_DEBITO' },
-        { label: 'Guía de despacho', value: 'GUIA_DESPACHO' },
         { label: 'Factura exenta', value: 'FACTURA_EXENTA' },
         { label: 'Boleta exenta', value: 'BOLETA_EXENTA' },
       ],

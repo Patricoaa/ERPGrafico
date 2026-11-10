@@ -145,19 +145,6 @@ class ChangePasswordView(APIView):
         except ValidationError as e: return Response({'detail': str(e)}, status=400)
 
 
-class ChangePinView(APIView):
-    """Allows the authenticated user to change their own POS PIN."""
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        from rest_framework.exceptions import ValidationError
-
-        from .user_service import UserServiceExt
-        try: return Response(UserServiceExt.change_pin_from_request(request))
-        except ValidationError as e: return Response({'detail': str(e)}, status=400)
-
-
 class UserPreferenceView(APIView):
     permission_classes = [IsAuthenticated]
 

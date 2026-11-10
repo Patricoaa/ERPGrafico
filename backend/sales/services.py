@@ -50,7 +50,7 @@ class SalesService:
     @transaction.atomic
     def create_sale_order_from_pos(user, data, files, serializer):
         """
-        Validates POS session and PIN, then saves the serializer and confirms the sale.
+        Validates the POS session, then saves the serializer and confirms the sale.
         """
         pos_session_id = data.get("pos_session_id")
         from treasury.models import POSSession
@@ -65,22 +65,7 @@ class SalesService:
             if not session:
                 raise ValidationError("Debe tener una sesión de caja activa para crear ventas (o seleccionar una compartida).")
 
-        pos_pin = data.get("pos_pin")
-        from rest_framework.exceptions import PermissionDenied
-
-        from core.services import PINService
-
         salesperson = user
-
-        if pos_pin:
-            pin_user = PINService.validate_pin(pos_pin)
-            if not pin_user:
-                raise PermissionDenied("PIN de seguridad incorrecto.")
-            salesperson = pin_user
-        else:
-            if user == session.user:
-                raise PermissionDenied("Se requiere PIN de autorización para confirmar la venta en este terminal.")
-            salesperson = user
 
         serializer.is_valid(raise_exception=True)
         order = serializer.save(pos_session=session, salesperson=salesperson)

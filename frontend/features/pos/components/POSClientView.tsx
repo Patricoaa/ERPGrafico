@@ -660,7 +660,6 @@ export function POSClientView() {
                                 initialDraftId={currentDraftId}
                                 onStateChange={handleWizardStateChange}
                                 isInline
-                                isSessionHost={user?.id === currentSession?.user}
                                 touchMode={isTouchMode}
                             />
                         </div>

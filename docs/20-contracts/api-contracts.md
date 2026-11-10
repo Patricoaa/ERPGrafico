@@ -1247,7 +1247,6 @@ GET    /api/core/status/            estado del sistema
 GET    /api/core/auth/me/               usuario actual
 GET    /api/core/auth/my-profile/       perfil del usuario
 POST   /api/core/auth/change-password/  cambio de password
-POST   /api/core/auth/change-pin/       cambio de PIN
 ```
 
 > `/api/auth/user/` (top-level, `config/urls.py`) y `/api/core/auth/me/` exponen el mismo usuario actual — `/api/auth/user/` es el punto de entrada del bootstrap de sesión.

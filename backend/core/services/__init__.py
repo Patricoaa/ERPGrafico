@@ -183,30 +183,6 @@ class ActionLoggingService:
             )
 
 
-class PINService:
-    @staticmethod
-    def validate_pin(pin_text):
-        """
-        Validates if a plain-text PIN matches ANY active user's pos_pin.
-        Returns the User object if found and valid, else None.
-        """
-        if not pin_text:
-            return None
-
-        from core.models import User
-
-        # Iterate active users to check hashes.
-        # Note: Optimize with a separate lookup table or PIN salt if scale becomes an issue.
-        active_users = (
-            User.objects.filter(is_active=True).exclude(pos_pin__isnull=True).exclude(pos_pin="")
-        )
-
-        for user in active_users:
-            if user.check_pos_pin(pin_text):
-                return user
-        return None
-
-
 class GroupService:
     """Guards for role (Group) mutations."""
 
@@ -270,7 +246,7 @@ class UserService:
     Operaciones de ciclo de vida del usuario (seguridad, acceso).
 
     Centraliza mutaciones de User que antes estaban directamente en las vistas
-    ChangePasswordView, ChangePinView y UserViewSet.
+    ChangePasswordView y UserViewSet.
     """
 
     @staticmethod
@@ -290,28 +266,6 @@ class UserService:
             user=user,
             action_type=ActionLog.Type.SECURITY,
             description=f"Usuario {user.username} cambió su contraseña.",
-            request=request,
-        )
-
-    @staticmethod
-    def change_pin(*, user, new_pin: str, request=None) -> None:
-        """
-        Actualiza el PIN de POS del usuario y registra la acción en el audit log.
-
-        Reemplaza ``user.pos_pin = make_password(pin); user.save()`` + log que
-        estaban en ``ChangePinView.post``.
-        """
-        from django.contrib.auth.hashers import make_password
-
-        from core.models import ActionLog
-
-        user.pos_pin = make_password(new_pin)
-        user.save(update_fields=["pos_pin"])
-
-        ActionLoggingService.log_action(
-            user=user,
-            action_type=ActionLog.Type.SECURITY,
-            description=f"Usuario {user.username} cambió su PIN de POS.",
             request=request,
         )
 

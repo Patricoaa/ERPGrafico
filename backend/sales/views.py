@@ -54,6 +54,10 @@ from core.api.permissions import StandardizedModelPermissions
 from core.idempotency import idempotent_endpoint
 
 
+class _CharInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
+    """CSV-capable filter: accepts ?param=A,B and applies field__in=[A, B] (issue #223)."""
+
+
 class SaleOrderFilterSet(django_filters.FilterSet):
     customer_name = django_filters.CharFilter(field_name="customer__name", lookup_expr="icontains")
     date_after = django_filters.DateFilter(field_name="date", lookup_expr="gte")
@@ -62,7 +66,7 @@ class SaleOrderFilterSet(django_filters.FilterSet):
     total_max = django_filters.NumberFilter(field_name="total", lookup_expr="lte")
     number = django_filters.CharFilter(field_name="number", lookup_expr="icontains")
     product_name = django_filters.CharFilter(method="filter_product_name")
-    delivery_status = django_filters.CharFilter(field_name="delivery_status")
+    delivery_status = _CharInFilter(field_name="delivery_status", lookup_expr="in")
     origin_status = django_filters.CharFilter(method="filter_origin_status")
     billing_status = django_filters.CharFilter(method="filter_billing_status")
     payment_status = django_filters.CharFilter(method="filter_payment_status")
@@ -91,13 +95,18 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         return queryset.filter(lines__product__name__icontains=value).distinct()
 
     def filter_origin_status(self, queryset, name, value):
-        if value == "success":
-            return queryset.exclude(status__in=["DRAFT", "CANCELLED"])
-        elif value == "neutral":
-            return queryset.filter(status="DRAFT")
-        elif value == "destructive":
-            return queryset.filter(status="CANCELLED")
-        return queryset
+        values = {v.strip() for v in value.split(",") if v.strip()} if value else set()
+        if not values:
+            return queryset
+        result = queryset.none()
+        # ADR-0120: domain values (DRAFT/ACTIVE/CANCELLED); legacy tone-tokens kept for compat
+        if "ACTIVE" in values or "success" in values:
+            result = result | queryset.exclude(status__in=["DRAFT", "CANCELLED"])
+        if "DRAFT" in values or "neutral" in values:
+            result = result | queryset.filter(status="DRAFT")
+        if "CANCELLED" in values or "destructive" in values:
+            result = result | queryset.filter(status="CANCELLED")
+        return result.distinct()
 
     def filter_billing_status(self, queryset, name, value):
         values = value.split(",") if value else []
@@ -108,9 +117,10 @@ class SaleOrderFilterSet(django_filters.FilterSet):
             id__in=invoiced.values("id")
         ).distinct()
 
-        if "success" in values and "pending" not in values:
+        # ADR-0120: domain values (INVOICED/PENDING); legacy tone-tokens kept for compat
+        if ("INVOICED" in values or "success" in values) and not any(v in values for v in ("PENDING", "pending")):
             return invoiced
-        if "pending" in values and "success" not in values:
+        if ("PENDING" in values or "pending" in values) and not any(v in values for v in ("INVOICED", "success")):
             return not_invoiced
         return queryset
 
@@ -118,20 +128,32 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         # ADR-0084: el pago es un eje derivado del saldo, no un estado de la OV
         from core.payment_status import filter_by_payment_status
 
-        return filter_by_payment_status(queryset.exclude(status="CANCELLED"), value)
+        values = [v.strip() for v in value.split(",") if v.strip()] if value else []
+        if not values:
+            return queryset
+        base = queryset.exclude(status="CANCELLED")
+        if len(values) == 1:
+            return filter_by_payment_status(base, values[0])
+        result = base.none()
+        for v in values:
+            result = result | filter_by_payment_status(base, v)
+        return result.distinct()
 
     def filter_production_status(self, queryset, name, value):
-        if value == "none":
-            return queryset.filter(work_orders__isnull=True)
-        elif value == "in_progress":
-            return queryset.filter(work_orders__status__in=["DRAFT", "IN_PROGRESS"]).distinct()
-        elif value == "finished":
-            return (
+        values = {v.strip() for v in value.split(",") if v.strip()} if value else set()
+        if not values:
+            return queryset
+        result = queryset.none()
+        if "none" in values:
+            result = result | queryset.filter(work_orders__isnull=True)
+        if "in_progress" in values:
+            result = result | queryset.filter(work_orders__status__in=["DRAFT", "IN_PROGRESS"])
+        if "finished" in values:
+            result = result | (
                 queryset.exclude(work_orders__isnull=True)
                 .exclude(work_orders__status__in=["DRAFT", "IN_PROGRESS"])
-                .distinct()
             )
-        return queryset
+        return result.distinct()
 
 
 class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):

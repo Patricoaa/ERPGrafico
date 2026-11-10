@@ -6,7 +6,7 @@ import { useState, useMemo } from "react"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
+import { changePassword, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
 import { useMyProfile } from '../context/ProfileProvider'
 import type { MyProfile } from "@/types/profile"
 import type { Payroll } from "@/types/hr"
@@ -15,7 +15,7 @@ import { SubmitButton, FadeIn, MoneyDisplay, type BulkAction } from "@/component
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import {
-    User, KeyRound, Wallet,
+    User, KeyRound,
     Download,
     Check, Sun, Moon, Monitor,
     ShieldCheck, Users,
@@ -32,8 +32,8 @@ import { unifiedPaymentEntity, unifiedPaymentViews, type UnifiedPayment } from "
 
 import { useTheme } from "next-themes"
 import { useThemeSync } from "../hooks/useThemeSync"
-import { passwordSchema, pinSchema } from "../schema"
-import type { PasswordFormValues, PinFormValues } from "../schema"
+import { passwordSchema } from "../schema"
+import type { PasswordFormValues } from "../schema"
 
 interface ProfileViewProps {
     activeSection: string
@@ -98,10 +98,6 @@ function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
 
                     <FadeIn delay={0.2} yOffset={10}>
                         <PasswordChangeSection />
-                    </FadeIn>
-
-                    <FadeIn delay={0.3} yOffset={10}>
-                        <PinChangeSection />
                     </FadeIn>
                 </>
             )}
@@ -493,89 +489,5 @@ function PersonalTab({
                 allPayments={unifiedPayments}
             />
         </div>
-    )
-}
-
-function PinChangeSection() {
-    const [saving, setSaving] = useState(false)
-
-    const form = useForm<PinFormValues>({
-        resolver: zodResolver(pinSchema),
-        defaultValues: { current_password: "", new_pin: "", confirm_pin: "" },
-    })
-
-    const onSubmit = async (data: PinFormValues) => {
-        setSaving(true)
-        try {
-            await changePin({
-                current_password: data.current_password,
-                new_pin: data.new_pin,
-            })
-            toast.success("PIN de Punto de Venta (POS) actualizado exitosamente")
-            form.reset()
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Error al cambiar PIN")
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    return (
-        <section className="w-full max-w-none">
-            <header className="border-b border-border/70 pb-4">
-                <h2 className="text-base font-semibold text-foreground">PIN de seguridad POS</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Defina su PIN para operaciones en Punto de Venta.</p>
-            </header>
-            <div className="pt-5">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                        <FormField control={form.control} name="current_password" render={({ field, fieldState }) => (
-                            <LabeledInput
-                                {...field}
-                                label="Contraseña Actual"
-                                type="password"
-                                placeholder="••••••••"
-                                error={fieldState.error?.message}
-                            />
-                        )} />
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="new_pin" render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    {...field}
-                                    label="Nuevo PIN (máx 4 dígitos)"
-                                    type="password"
-                                    pattern="\d*"
-                                    inputMode="numeric"
-                                    placeholder="••••"
-                                    maxLength={4}
-                                    error={fieldState.error?.message}
-                                />
-                            )} />
-
-                            <FormField control={form.control} name="confirm_pin" render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    {...field}
-                                    label="Confirmar PIN"
-                                    type="password"
-                                    pattern="\d*"
-                                    inputMode="numeric"
-                                    placeholder="••••"
-                                    maxLength={4}
-                                    error={fieldState.error?.message}
-                                />
-                            )} />
-                        </div>
-
-                        <div className="flex justify-end pt-2">
-                            <SubmitButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
-                                <Wallet className="h-4 w-4" />
-                                Guardar PIN
-                            </SubmitButton>
-                        </div>
-                    </form>
-                </Form>
-            </div>
-        </section>
     )
 }

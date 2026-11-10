@@ -20,6 +20,26 @@ export const posApi = {
         api.post(`/sales/pos-drafts/${id}/lock/`, payload).then(r => r.data),
     unlockDraft: (id: number, payload?: Record<string, unknown>) =>
         api.post(`/sales/pos-drafts/${id}/unlock/`, payload).then(r => r.data),
+    /**
+     * Libera el bloqueo al cerrar la pestaña. `navigator.sendBeacon` no puede enviar
+     * `Authorization` (la API usa Bearer), así que siempre recibía 401; `fetch` con
+     * `keepalive` sobrevive a la descarga de la página y conserva el header.
+     */
+    unlockDraftOnUnload: (id: number, payload: Record<string, unknown>): void => {
+        let token: string | null = null
+        try {
+            token = localStorage.getItem('access_token')
+        } catch {}
+        if (!token) return
+        const rawBase = process.env.NEXT_PUBLIC_API_URL || ''
+        const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`
+        fetch(`${base}sales/pos-drafts/${id}/unlock/`, {
+            method: 'POST',
+            keepalive: true,
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(payload),
+        }).catch(() => undefined)
+    },
     withdrawDraft: (id: number, payload?: Record<string, unknown>) =>
         api.post(`/sales/pos-drafts/${id}/withdraw/`, payload).then(r => r.data),
 

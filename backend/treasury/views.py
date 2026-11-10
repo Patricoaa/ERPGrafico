@@ -47,6 +47,7 @@ from .selectors import BankStatementSelector
 from .serializers import (
     BankLoanSerializer,
     BankLoanWriteSerializer,
+    BankOptionSerializer,
     BankSerializer,
     BankStatementLineSerializer,
     BankStatementListSerializer,
@@ -101,8 +102,30 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "restore": "treasury.change_bank",
     }
 
+    def _limited_read(self):
+        """Lista para un usuario sin ``treasury.view_bank`` (ADR-0124): solo opciones."""
+        request = getattr(self, "request", None)
+        return (
+            self.action == "list"
+            and request is not None
+            and not request.user.has_perm("treasury.view_bank")
+        )
+
+    def get_permissions(self):
+        # ADR-0124: el selector «banco del cheque» del cobro necesita el listado.
+        if self.action == "list":
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self._limited_read():
+            return BankOptionSerializer
+        return super().get_serializer_class()
+
     def get_queryset(self):
         qs = super().get_queryset()
+        if self._limited_read():
+            qs = qs.prefetch_related(None)  # no se leen los ejecutivos
         return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     @action(detail=True, methods=["get"])
@@ -329,6 +352,14 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     )
     serializer_class = POSTerminalSerializer
     pagination_class = None  # Master data
+
+    def get_permissions(self):
+        # ADR-0123: el listado de cajas y sus métodos de pago permitidos alimentan el
+        # POS (apertura de sesión y cobro); cualquier usuario autenticado puede leerlos.
+        # Detalle, otras acciones y escrituras: RBAC estándar.
+        if self.action in ("list", "allowed_payment_methods"):
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -928,12 +959,13 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
         # ADR-0109: expected_cash sin consultas por fila (arqueo o neto anotado)
         qs = annotate_ledger_cash_net(super().get_queryset().select_related("audit"))
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
-        if date_from:
-            qs = qs.filter(opened_at__date__gte=date_from)
-        if date_to:
-            qs = qs.filter(opened_at__date__lte=date_to)
+        from django.utils.dateparse import parse_date
+        if raw := self.request.query_params.get("date_from"):
+            if d := parse_date(raw):
+                qs = qs.filter(opened_at__date__gte=d)
+        if raw := self.request.query_params.get("date_to"):
+            if d := parse_date(raw):
+                qs = qs.filter(opened_at__date__lte=d)
         return qs
 
     @action(detail=False, methods=["get"])
@@ -1030,7 +1062,7 @@ class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     }
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = CheckFilter
-    search_fields = ["check_number", "drawer_name", "counterparty__name", "bank__name", "amount"]
+    search_fields = ["check_number", "drawer_name", "counterparty__name", "bank__name"]
 
     def get_queryset(self):
         from .models import Check as CheckModel
@@ -1219,15 +1251,13 @@ class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryM
     def get_queryset(self):
         qs = super().get_queryset()
 
-        # Date range filtering
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
-
-        if date_from:
-            qs = qs.filter(sales_date__gte=date_from)
-        if date_to:
-            qs = qs.filter(sales_date__lte=date_to)
-
+        from django.utils.dateparse import parse_date
+        if raw := self.request.query_params.get("date_from"):
+            if d := parse_date(raw):
+                qs = qs.filter(sales_date__gte=d)
+        if raw := self.request.query_params.get("date_to"):
+            if d := parse_date(raw):
+                qs = qs.filter(sales_date__lte=d)
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -1251,7 +1281,8 @@ class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryM
         try:
             from .services import TerminalBatchService
             invoice = TerminalBatchService.generate_monthly_invoice_from_request(request)
-            if not invoice: return Response({'message': 'No hay lotes para facturar.'}, status=404)
+            if not invoice:
+                return Response({'message': 'No hay lotes para facturar.'}, status=404)
             return Response({'message': 'Factura generada', 'invoice_id': invoice.id, 'number': invoice.number}, status=201)
         except Exception as e:
             return Response({'error': str(e)}, status=400)

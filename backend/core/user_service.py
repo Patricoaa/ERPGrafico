@@ -37,16 +37,3 @@ class UserServiceExt:
         if len(new) < 6: raise ValidationError('La nueva contraseña debe tener al menos 6 caracteres.')
         UserService.change_password(user=request.user, new_password=new, request=request)
         return {'detail': 'Contraseña actualizada exitosamente.'}
-
-    @staticmethod
-    def change_pin_from_request(request):
-        from rest_framework.exceptions import ValidationError
-
-        from .user_services import UserService
-        cur = request.data.get('current_password', '')
-        pin = request.data.get('new_pin', '')
-        if not cur or not pin: raise ValidationError('Debe proporcionar la contraseña actual y el nuevo PIN.')
-        if not request.user.check_password(cur): raise ValidationError('La contraseña actual es incorrecta.')
-        if not pin.isdigit() or len(pin) > 4: raise ValidationError('El PIN debe ser numérico y tener un máximo de 4 dígitos.')
-        UserService.change_pin(user=request.user, new_pin=pin, request=request)
-        return {'detail': 'PIN de POS actualizado exitosamente.'}

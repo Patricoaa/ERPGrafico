@@ -1062,9 +1062,13 @@ class TreasuryMovementSelector:
         if (is_rec := params.get("is_reconciled")) is not None and is_rec != "":
             qs = qs.filter(is_reconciled=str(is_rec).lower() not in ("false", "0", "no"))
 
-        if date := params.get("date"): qs = qs.filter(date=date)
-        if df := params.get("date_from"): qs = qs.filter(date__gte=df)
-        if dt := params.get("date_to"): qs = qs.filter(date__lte=dt)
+        from django.utils.dateparse import parse_date
+        if raw := params.get("date"):
+            if d := parse_date(raw): qs = qs.filter(date=d)
+        if raw := params.get("date_from"):
+            if d := parse_date(raw): qs = qs.filter(date__gte=d)
+        if raw := params.get("date_to"):
+            if d := parse_date(raw): qs = qs.filter(date__lte=d)
         if amin := params.get("amount_min"): qs = qs.filter(amount__gte=amin)
         if amax := params.get("amount_max"): qs = qs.filter(amount__lte=amax)
 
@@ -1080,6 +1084,16 @@ class TreasuryMovementSelector:
 
         if pm := params.get("payment_method_new"):
             qs = qs.filter(payment_method_new_id=pm)
+
+        if mt_raw := params.get("movement_type"):
+            mt_values = [v.strip() for v in mt_raw.split(",") if v.strip()]
+            if mt_values:
+                qs = qs.filter(movement_type__in=mt_values)
+
+        if pm_raw := params.get("payment_method"):
+            pm_values = [v.strip() for v in pm_raw.split(",") if v.strip()]
+            if pm_values:
+                qs = qs.filter(payment_method_new__method_type__in=pm_values)
 
         if (direction := params.get("direction")) and treasury_account:
             if direction == "IN":
@@ -1114,8 +1128,9 @@ class BankStatementSelector:
         if st := params.get('statement'): qs = qs.filter(statement_id=st)
         if rs := (params.get('reconciliation_status') or params.get('reconciliation_state')):
             qs = qs.filter(reconciliation_status__in=rs.split(',')) if ',' in rs else qs.filter(reconciliation_status=rs)
-        if df := params.get('date_from'): qs = qs.filter(transaction_date__gte=df)
-        if dt := params.get('date_to'): qs = qs.filter(transaction_date__lte=dt)
+        from django.utils.dateparse import parse_date
+        if (df := params.get('date_from')) and (d := parse_date(df)): qs = qs.filter(transaction_date__gte=d)
+        if (dt := params.get('date_to')) and (d := parse_date(dt)): qs = qs.filter(transaction_date__lte=d)
         if search := params.get('search'):
             from django.db.models import Q
             qs = qs.filter(Q(description__icontains=search) | Q(reference__icontains=search))

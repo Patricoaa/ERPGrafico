@@ -36,7 +36,7 @@ export const paymentMethodUnifiedSearchDef: UnifiedSearchConfig = {
     {
       type: 'single',
       key: 'method_type',
-      label: 'Categoría',
+      label: 'Categoría Operativa',
       serverParam: 'method_type',
       options: [
         { label: 'Efectivo Directo', value: 'CASH' },
@@ -72,7 +72,7 @@ export const treasuryAccountUnifiedSearchDef: UnifiedSearchConfig = {
     {
       type: 'single',
       key: 'account_type',
-      label: 'Tipo',
+      label: 'Tipología',
       serverParam: 'account_type',
       options: [
         { label: 'Caja Física (Efectivo)', value: 'CASH' },

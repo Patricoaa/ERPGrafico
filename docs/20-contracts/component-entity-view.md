@@ -51,7 +51,7 @@ Este contrato rige **todo código nuevo o migrado** que presenta una colección 
 | `date` | `ISODate \| null` | `time` | start | ISO |
 | `dateRange` | `{ from, to } \| null` | — | start | `from` |
 | `status` | `StatusValue \| null` (StatusBadge) | — | center | `status` |
-| `hubStatus` | fila del documento | **`entity`**, **`caption: StatusValue`** (obligatoria) | start | texto de `caption` |
+| `hubStatus` | fila del documento | **`entity`**, **`caption: StatusValue`** (obligatoria; alimenta texto, orden y exportación, no se dibuja) | start | texto de `caption` |
 | `contact` | `{ id, name } \| null` | — | start | `name` |
 | `tags` | `readonly string[] \| null` | `domain` | start | texto |
 | `progress` | `{ done, total } \| null` | `format: "percent" \| "ratio"` | start | `done/total` |
@@ -157,7 +157,7 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 `Surface` incluye `cardFooter`: el monto anclado de la card (`footer`). Es `card` a escala de importe: los kinds opt-in (`money` y `productPrice` ya lo hacen) renderizan el valor grande (`text-lg font-semibold`; el precio de producto añade la unidad pequeña) y el resto lo trata como `card`. En cards, `tags` mantiene el ancho de cada chip y sigue la alineación (en tabla se centra cada chip como siempre).
 
 ### 6.2b `hubStatus` en cards
-En la superficie `card` el kind `hubStatus` muestra solo los anillos del hub, sin el chip con la etiqueta: el estado se lee en el riel y la etiqueta queda como texto `sr-only`. En tabla se mantiene chip + anillos. Las facturas y notas de venta/compra exponen `hub` en su `trailing`.
+En las superficies `table` y `card` el kind `hubStatus` muestra solo los anillos del hub de procesamiento, sin el chip de `caption` (en cards el estado se lee en el riel). La etiqueta de `caption` queda como texto `sr-only` para lectores de pantalla, y `caption` sigue siendo obligatoria porque alimenta orden y exportación. Las facturas y notas de venta/compra exponen `hub` en su `trailing`.
 
 ### 6.3 `CardLayout` (slots, sin inferencia)
 

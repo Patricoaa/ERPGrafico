@@ -4,7 +4,15 @@ from django_filters.rest_framework import FilterSet
 from .models import SaleDelivery, SaleReturn
 
 
+class CharInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
+    """Accepts a comma-separated list of values and applies an __in lookup.
+    Used for all multi-select enum status filters (issue #223)."""
+
+
 class SaleDeliveryFilter(FilterSet):
+    # Explicit CharInFilter overrides the auto-generated ChoiceFilter from Meta.fields,
+    # allowing the frontend to send status=DRAFT,CONFIRMED (CSV) without a 400 error.
+    status = CharInFilter(field_name="status", lookup_expr="in")
     date_after = django_filters.DateFilter(field_name="delivery_date", lookup_expr="gte")
     date_before = django_filters.DateFilter(field_name="delivery_date", lookup_expr="lte")
     customer_name = django_filters.CharFilter(
@@ -42,6 +50,7 @@ class SaleReturnFilter(FilterSet):
     """ADR-0090: la lista de devoluciones es una vista documental propia, así que
     necesita los mismos filtros que su hermana SaleDeliveryFilter."""
 
+    status = CharInFilter(field_name="status", lookup_expr="in")
     date_after = django_filters.DateFilter(field_name="date", lookup_expr="gte")
     date_before = django_filters.DateFilter(field_name="date", lookup_expr="lte")
     customer_name = django_filters.CharFilter(

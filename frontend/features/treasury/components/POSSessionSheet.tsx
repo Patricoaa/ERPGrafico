@@ -16,9 +16,12 @@ import {
     useDocumentRelations,
     type DocumentDomain,
 } from "@/features/documents"
-import { useSalesOrders } from "@/features/sales"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { saleOrderEntity, useSalesOrders } from "@/features/sales"
 import { formatCurrency } from "@/lib/money"
 import { format, parseISO } from "date-fns"
+import { posSessionMovementViews, posSessionSalesViews } from "../entity-view/posSessionSheet.views"
+import { treasuryMovementEntity } from "../entity-view/treasuryMovement.entity"
 import { usePOSSession } from "../hooks/usePOSSession"
 import type { POSSession } from "../types"
 
@@ -182,6 +185,7 @@ function AmountCell({ value, bold, isExpense }: { value: number | string; bold?:
 
 function POSSessionSalesTab({ sessionId }: { sessionId: number }) {
     const { orders, isLoading } = useSalesOrders({ filters: { pos_session: sessionId, page_size: 100 } })
+    const collection = useEntityCollection(saleOrderEntity, { rows: orders }, { pagination: { mode: "none" } })
 
     if (isLoading) {
         return (
@@ -203,56 +207,15 @@ function POSSessionSalesTab({ sessionId }: { sessionId: number }) {
     }
 
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-                <thead>
-                    <tr className="border-b text-muted-foreground">
-                        <th className="py-2 px-3 text-left font-medium">OV</th>
-                        <th className="py-2 px-3 text-left font-medium">Cliente</th>
-                        <th className="py-2 px-3 text-left font-medium">Fecha</th>
-                        <th className="py-2 px-3 text-right font-medium">Total</th>
-                        <th className="py-2 px-3 text-left font-medium">Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {orders.map((order) => (
-                        <tr key={order.id} className="border-b hover:bg-muted/40 transition-colors">
-                            <td className="py-2 px-3 font-mono font-semibold text-foreground">
-                                {order.display_id ?? order.number}
-                            </td>
-                            <td className="py-2 px-3 text-muted-foreground max-w-[140px] truncate">
-                                {order.customer_name}
-                            </td>
-                            <td className="py-2 px-3 text-muted-foreground">
-                                {order.date ? format(parseISO(order.date), "dd/MM/yyyy") : "—"}
-                            </td>
-                            <td className="py-2 px-3 text-right tabular-nums font-semibold">
-                                {formatCurrency(Number(order.total))}
-                            </td>
-                            <td className="py-2 px-3">
-                                <StatusBadge status={order.status} variant="badge" />
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-                <tfoot>
-                    <tr className="border-t bg-muted/20">
-                        <td className="py-2 px-3 font-semibold text-foreground" colSpan={3}>
-                            {orders.length} venta{orders.length !== 1 ? "s" : ""}
-                        </td>
-                        <td className="py-2 px-3 text-right tabular-nums font-bold">
-                            {formatCurrency(orders.reduce((sum, o) => sum + Number(o.total), 0))}
-                        </td>
-                        <td />
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+        <Collection.Root collection={collection} label="Ventas de la sesión">
+            <Collection.View table={posSessionSalesViews.table} />
+        </Collection.Root>
     )
 }
 
 function POSSessionActivityTab({ session }: { session: POSSession }) {
     const movements = session.cash_movements ?? []
+    const collection = useEntityCollection(treasuryMovementEntity, { rows: movements }, { pagination: { mode: "none" } })
 
     if (!movements.length) {
         return (
@@ -264,35 +227,8 @@ function POSSessionActivityTab({ session }: { session: POSSession }) {
     }
 
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-                <thead>
-                    <tr className="border-b text-muted-foreground">
-                        <th className="py-2 px-3 text-left font-medium">Fecha</th>
-                        <th className="py-2 px-3 text-left font-medium">Tipo</th>
-                        <th className="py-2 px-3 text-left font-medium">Descripción / Contacto</th>
-                        <th className="py-2 px-3 text-right font-medium">Monto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {movements.map((mov) => (
-                        <tr key={mov.id} className="border-b hover:bg-muted/40 transition-colors">
-                            <td className="py-2 px-3 text-muted-foreground whitespace-nowrap">
-                                {mov.date ? format(parseISO(mov.date), "dd/MM HH:mm") : "—"}
-                            </td>
-                            <td className="py-2 px-3">
-                                <StatusBadge status={mov.movement_type} variant="badge" />
-                            </td>
-                            <td className="py-2 px-3 text-muted-foreground max-w-[160px] truncate">
-                                {mov.partner_name ?? mov.notes ?? mov.payment_method_display ?? "—"}
-                            </td>
-                            <td className={`py-2 px-3 text-right tabular-nums font-semibold ${mov.movement_type === "OUTBOUND" ? "text-destructive" : "text-foreground"}`}>
-                                {mov.movement_type === "OUTBOUND" ? "-" : ""}{formatCurrency(Number(mov.amount))}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+        <Collection.Root collection={collection} label="Movimientos de la sesión">
+            <Collection.View table={posSessionMovementViews.table} />
+        </Collection.Root>
     )
 }

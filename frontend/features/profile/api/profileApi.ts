@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import type { MyProfile, ChangePasswordPayload, ChangePinPayload } from "@/types/profile"
+import type { MyProfile, ChangePasswordPayload } from "@/types/profile"
 
 export async function getUserPreferences(): Promise<Record<string, unknown>> {
   const res = await api.get<Record<string, unknown>>('/core/preferences/')
@@ -28,11 +28,6 @@ export async function getEmployeePayrollPreview(payrollId: number | string): Pro
 
 export async function changePassword(data: ChangePasswordPayload): Promise<{ detail: string }> {
   const res = await api.post<{ detail: string }>('/core/auth/change-password/', data)
-  return res.data
-}
-
-export async function changePin(data: ChangePinPayload): Promise<{ detail: string }> {
-  const res = await api.post<{ detail: string }>('/core/auth/change-pin/', data)
   return res.data
 }
 

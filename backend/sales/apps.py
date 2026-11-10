@@ -28,7 +28,9 @@ class SalesConfig(AppConfig):
         except ImportError:
             pass
 
-        # Import signals
+        # Import signals (side-effect import: registers DraftCart WS broadcast receivers).
+        # Do NOT remove: ruff F401 is silenced on purpose.
+        import sales.signals  # noqa: F401
 
         try:
             from core.prefix_registry import EntityPrefix

@@ -33,7 +33,7 @@ describe("RelatedDocumentsTable", () => {
 
     it("shows inaccessible documents without a link", () => {
         render(<RelatedDocumentsTable items={[item("invoice", "derivation", { accessible: false, display_id: "FACV-9", status: null })]} onOpen={vi.fn()} />)
-        expect(screen.getByText("FACV-9 · sin acceso")).toBeInTheDocument()
+        expect(screen.getByText("FACV-9 sin acceso")).toBeInTheDocument()
         expect(screen.queryByRole("button", { name: "FACV-9" })).toBeNull()
     })
 

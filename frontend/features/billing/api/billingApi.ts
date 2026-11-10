@@ -1,4 +1,6 @@
 import api from '@/lib/api'
+import { toPage } from '@/lib/pagination'
+import type { Page } from '@/lib/pagination'
 import type { Invoice, InvoiceFilters, AnnulInvoicePayload, InvoiceableLinesParams, InvoiceableOrder, InvoiceFromLinesPayload } from '../types'
 import { invoiceableOrderSchema } from '../types'
 
@@ -17,30 +19,35 @@ export const billingApi = {
      * completo después de haberlo descargado. El backend ya soporta estos
      * filtros vía filterset_fields: { sale_order: ['isnull'], purchase_order: ['isnull'] }.
      */
-    getInvoices: async (filters?: InvoiceFilters): Promise<Invoice[]> => {
+    getInvoices: async (filters?: InvoiceFilters): Promise<Page<Invoice>> => {
+        const { page = 1, page_size = 20, ...rest } = filters ?? {}
         const params = new URLSearchParams()
 
         // Mode → server-side filter (era client-side anteriormente)
-        if (filters?.mode === 'purchase') {
+        if (rest.mode === 'purchase') {
             params.append('purchase_order__isnull', 'false')
-        } else if (filters?.mode === 'sale' || !filters?.mode) {
+        } else if (rest.mode === 'sale' || !rest.mode) {
             // Por defecto: documentos de venta
             params.append('sale_order__isnull', 'false')
         }
 
-        if (filters?.status)       params.append('status', filters.status)
-        if (filters?.dte_type)     params.append('dte_type', filters.dte_type)
-        if (filters?.date_from)    params.append('date_from', filters.date_from)
-        if (filters?.date_to)      params.append('date_to', filters.date_to)
-        if (filters?.total_min)    params.append('total_min', filters.total_min)
-        if (filters?.total_max)    params.append('total_max', filters.total_max)
-        if (filters?.number)       params.append('number', filters.number)
-        // partner_name no tiene campo directo en filterset → usar search=
-        if (filters?.partner_name) params.append('search', filters.partner_name)
-        if (filters?.search) params.append('search', filters.search)
+        params.append('page', String(page))
+        params.append('page_size', String(page_size))
 
-        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
-        return data.results
+        if (rest.status)         params.append('status', rest.status)
+        if (rest.dte_type)       params.append('dte_type', rest.dte_type)
+        if (rest.date_from)      params.append('date_from', rest.date_from)
+        if (rest.date_to)        params.append('date_to', rest.date_to)
+        if (rest.total_min)      params.append('total_min', rest.total_min)
+        if (rest.total_max)      params.append('total_max', rest.total_max)
+        if (rest.number)         params.append('number', rest.number)
+        if (rest.partner_name)   params.append('partner_name', rest.partner_name)
+        if (rest.search)         params.append('search', rest.search)
+        if (rest.payment_status) params.append('payment_status', rest.payment_status)
+        if (rest.ordering)       params.append('ordering', rest.ordering)
+
+        const { data } = await api.get<unknown>('/billing/invoices/', { params })
+        return toPage<Invoice>(data, page, page_size)
     },
 
     /**

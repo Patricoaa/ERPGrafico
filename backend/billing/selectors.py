@@ -67,8 +67,9 @@ class InvoiceSelectorExt:
                     qs = qs.filter(sale_order__isnull=False)
             if stat: qs = qs.filter(status=stat)
             if part: qs = qs.filter(partner_id=part)
-            if df: qs = qs.filter(date__gte=df)
-            if dt: qs = qs.filter(date__lte=dt)
+            from django.utils.dateparse import parse_date
+            if df and (d := parse_date(df)): qs = qs.filter(date__gte=d)
+            if dt and (d := parse_date(dt)): qs = qs.filter(date__lte=d)
             if is_boleta: qs = qs.filter(document_type__in=['39', '41']) if is_boleta.lower() == 'true' else qs.exclude(document_type__in=['39', '41'])
         return qs.order_by('-date', '-id')
 

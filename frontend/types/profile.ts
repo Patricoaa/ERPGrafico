@@ -28,8 +28,3 @@ export interface ChangePasswordPayload {
   current_password: string
   new_password: string
 }
-
-export interface ChangePinPayload {
-  current_password: string
-  new_pin: string
-}
