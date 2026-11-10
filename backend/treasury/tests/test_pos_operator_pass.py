@@ -18,14 +18,24 @@ def cashier(db):
     return User.objects.create_user(username="cashier", password="x")
 
 
+def _seller(username):
+    from django.contrib.auth.models import Permission
+
+    user = User.objects.create_user(username=username, password="x")
+    user.user_permissions.add(
+        Permission.objects.get(codename="add_saleorder", content_type__app_label="sales")
+    )
+    return user
+
+
 @pytest.fixture
 def ana(db):
-    return User.objects.create_user(username="ana", password="x")
+    return _seller("ana")
 
 
 @pytest.fixture
 def beto(db):
-    return User.objects.create_user(username="beto", password="x")
+    return _seller("beto")
 
 
 @pytest.fixture

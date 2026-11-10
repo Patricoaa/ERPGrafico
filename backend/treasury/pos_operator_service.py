@@ -80,7 +80,9 @@ class POSOperatorService:
             raise ValidationError("La sesión no es multiusuario.")
         if purpose not in POSOperatorPass.Purpose.values:
             raise ValidationError("Propósito de identificación inválido.")
-        operator = User.objects.filter(pk=operator_id, is_active=True).first()
+        from .selectors import POSSelector
+
+        operator = POSSelector.list_operators().filter(pk=operator_id).first()
         if operator is None:
             raise ValidationError("Operador no válido.")
         POSOperatorService.verify_identity(operator, credential)
@@ -153,6 +155,18 @@ class POSOperatorService:
             purpose=purpose,
             target_id=target_id,
         )
+
+    @staticmethod
+    def release_from_request(request, session: POSSession) -> None:
+        """Termina el pase del encabezado si es de esta sesión y cuenta. Silencioso si no hay."""
+        raw = request.headers.get(PASS_HEADER)
+        if not raw:
+            return
+        op_pass = POSOperatorPass.objects.filter(
+            token_hash=_hash(raw), session=session, device_user=request.user
+        ).first()
+        if op_pass is not None:
+            POSOperatorService.end(op_pass, POSOperatorPass.EndReason.RELEASED)
 
     @staticmethod
     def bind_target(op_pass: POSOperatorPass, target_type: str, target_id: int) -> None:
