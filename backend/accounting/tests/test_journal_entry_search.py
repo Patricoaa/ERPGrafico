@@ -3,8 +3,8 @@ Regression for issue #224: JournalEntryViewSet.search_fields contained "display_
 (a Python @property), which caused FieldError → 500 on any search query.
 """
 import pytest
-from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 User = get_user_model()
 

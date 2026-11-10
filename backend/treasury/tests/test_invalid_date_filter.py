@@ -3,8 +3,8 @@ Regression for issue #224: manual date filters in treasury views did not validat
 the date string before passing to the ORM. An invalid date caused ValueError → 500.
 """
 import pytest
-from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 User = get_user_model()
 

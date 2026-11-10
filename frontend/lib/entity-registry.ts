@@ -914,6 +914,18 @@ const REGISTRY = {
     detailUrlPattern: '/treasury/bank-center?terminal={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
+  'treasury.possession': {
+    label: 'treasury.possession',
+    title: 'Sesión de POS',
+    titlePlural: 'Sesiones de POS',
+    icon: Smartphone,
+    iconName: 'Smartphone',
+    description: 'Periodo de apertura y cierre de una Caja POS',
+    shortTemplate: '{id_display}',
+    listUrl: '/sales/sessions',
+    detailUrlPattern: '/sales/sessions?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+  },
   'treasury.terminalprovider': {
     label: 'treasury.terminalprovider',
     title: 'Proveedor de terminal de cobro',

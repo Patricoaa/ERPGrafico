@@ -2,14 +2,15 @@
 Regression tests for issue #223: multi-select filters (CSV values) failing with
 400 or returning 0 results when 2+ options are selected in purchasing views.
 """
-import pytest
 from decimal import Decimal
-from rest_framework.test import APIClient
+
+import pytest
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 from contacts.models import Contact
 from inventory.models import Product, ProductCategory, UoM, UoMCategory, Warehouse
-from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReturn
+from purchasing.models import PurchaseLine, PurchaseOrder, PurchaseReceipt, PurchaseReturn
 
 User = get_user_model()
 

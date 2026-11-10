@@ -5,14 +5,15 @@ Regression tests for issue #223: multi-select filters (CSV values) failing with
 The frontend sends `status=DRAFT,CONFIRMED` (single param, comma-separated).
 The backend must split the CSV and return rows matching any of the values.
 """
-import pytest
 from decimal import Decimal
-from rest_framework.test import APIClient
+
+import pytest
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 from contacts.models import Contact
 from inventory.models import Product, ProductCategory, UoM, UoMCategory, Warehouse
-from sales.models import SaleDelivery, SaleOrder, SaleLine, SaleReturn
+from sales.models import SaleDelivery, SaleLine, SaleOrder, SaleReturn
 
 User = get_user_model()
 

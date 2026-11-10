@@ -961,9 +961,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         qs = annotate_ledger_cash_net(super().get_queryset().select_related("audit"))
         from django.utils.dateparse import parse_date
         if raw := self.request.query_params.get("date_from"):
-            if d := parse_date(raw): qs = qs.filter(opened_at__date__gte=d)
+            if d := parse_date(raw):
+                qs = qs.filter(opened_at__date__gte=d)
         if raw := self.request.query_params.get("date_to"):
-            if d := parse_date(raw): qs = qs.filter(opened_at__date__lte=d)
+            if d := parse_date(raw):
+                qs = qs.filter(opened_at__date__lte=d)
         return qs
 
     @action(detail=False, methods=["get"])
@@ -1251,9 +1253,11 @@ class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryM
 
         from django.utils.dateparse import parse_date
         if raw := self.request.query_params.get("date_from"):
-            if d := parse_date(raw): qs = qs.filter(sales_date__gte=d)
+            if d := parse_date(raw):
+                qs = qs.filter(sales_date__gte=d)
         if raw := self.request.query_params.get("date_to"):
-            if d := parse_date(raw): qs = qs.filter(sales_date__lte=d)
+            if d := parse_date(raw):
+                qs = qs.filter(sales_date__lte=d)
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -1277,7 +1281,8 @@ class TerminalBatchViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryM
         try:
             from .services import TerminalBatchService
             invoice = TerminalBatchService.generate_monthly_invoice_from_request(request)
-            if not invoice: return Response({'message': 'No hay lotes para facturar.'}, status=404)
+            if not invoice:
+                return Response({'message': 'No hay lotes para facturar.'}, status=404)
             return Response({'message': 'Factura generada', 'invoice_id': invoice.id, 'number': invoice.number}, status=201)
         except Exception as e:
             return Response({'error': str(e)}, status=400)

@@ -41,7 +41,8 @@ vi.mock("next/navigation", () => ({
     useSearchParams: () => new URLSearchParams(),
 }))
 
-vi.mock("@/features/_shared", () => ({
+vi.mock("@/features/_shared", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/features/_shared")>()),
     useDrawerIdentity: () => ({ title: "Usuario", subtitle: "", icon: null, headerActions: null }),
     usePrintableDrawer: () => ({ printRef: { current: null }, handlePrint: vi.fn() }),
     PrintableLayout: ({ children }: { children: React.ReactNode }) => <>{children}</>,
