@@ -58,7 +58,7 @@ interface UseDraftSyncOptions {
     onSessionStateChange?: (status: 'OPEN' | 'CLOSED', closedByName: string | null) => void
 }
 
-function getBrowserSessionKey(): string {
+export function getBrowserSessionKey(): string {
     if (typeof window === 'undefined') return ''
     const KEY = 'pos_browser_session_key'
     let key = sessionStorage.getItem(KEY)

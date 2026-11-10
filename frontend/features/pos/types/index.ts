@@ -1,6 +1,7 @@
 // POS Type Definitions
 
 import type { POSSessionMode } from '@/types/pos'
+import type { OperatorPurpose } from '@/lib/pos-operator'
 
 export type { POSSessionMode }
 
@@ -244,4 +245,31 @@ export interface DraftCart {
 
 export interface PosDraftFilters {
     [key: string]: unknown
+}
+
+// ── Operador de caja multiusuario (spec 2026-11-10) ──
+
+/** Operador elegible para una caja multiusuario. */
+export interface PosOperator {
+    id: number
+    full_name: string
+    initials: string
+}
+
+export interface IdentifyOperatorPayload {
+    operator_id: number
+    /** Pestaña del navegador (misma clave que el bloqueo de borradores). */
+    tab_key: string
+    purpose: OperatorPurpose
+    target_type?: string
+    target_id?: number
+}
+
+/** Respuesta de identify: el token en claro solo se entrega aquí. */
+export interface OperatorPassResponse {
+    token: string
+    pass_id: number
+    operator: { id: number; full_name: string }
+    purpose: OperatorPurpose
+    expires_at: string | null
 }
