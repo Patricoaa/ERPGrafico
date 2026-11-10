@@ -14,7 +14,7 @@ import { posApi } from "../api/posApi"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 import { SessionOpenModal } from "@/features/pos/components/SessionOpenModal"
-import { SubmitButton } from "@/components/shared"
+import { Chip, SubmitButton } from "@/components/shared"
 import { forwardRef, useImperativeHandle } from "react"
 
 import { cn } from "@/lib/utils"
@@ -256,6 +256,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 <span className="text-xs text-muted-foreground">
                                     (Titular: {session.user_name})
                                 </span>
+                            )}
+                            {session.mode === "MULTI" && (
+                                <Chip size="xs" intent="neutral">Multiusuario</Chip>
                             )}
                         </div>
                     </>

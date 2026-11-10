@@ -1,5 +1,9 @@
 // POS Type Definitions
 
+import type { POSSessionMode } from '@/types/pos'
+
+export type { POSSessionMode }
+
 export interface Product {
     id: number
     code: string
@@ -156,6 +160,7 @@ export interface POSTerminal {
 }
 
 export interface POSSession {
+    mode: POSSessionMode
     id: number
     terminal: number
     terminal_name?: string
