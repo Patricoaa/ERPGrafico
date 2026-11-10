@@ -7,9 +7,11 @@ from django.utils import timezone
 
 from inventory.models import Product
 from inventory.services import StockService
-from treasury.models import POSSession
+from treasury.models import POSOperatorPass, POSSession
+from treasury.pos_operator_service import Actor, POSOperatorRequired, POSOperatorService
 
 from .models import DraftCart
+from .tracking_service import SaleTrackingService
 
 # Lock expires after this many seconds without heartbeat
 LOCK_TIMEOUT_SECONDS = 15
@@ -27,63 +29,141 @@ class DraftCartService:
         if not pos_session_id:
             raise ValueError("Se requiere una sesión POS activa (pos_session_id)")
 
+    # ── Actor (operador en cajas MULTI) ──────────────────────────────
+
     @staticmethod
-    def save_draft_from_request(data: dict, user) -> DraftCart:
-        pos_session_id = data.get("pos_session_id")
-        items = data.get("items", [])
-        DraftCartService.validate_pos_session_id(pos_session_id)
-        if not items and not data.get("draft_id"):
-            raise ValueError("El carrito está vacío")
-        return DraftCartService.save_draft(
-            pos_session_id=int(pos_session_id),
-            user=user,
-            items=items,
-            customer_id=data.get("customer_id"),
-            name=data.get("name", ""),
-            notes=data.get("notes", ""),
-            wizard_state=data.get("wizard_state"),
-            session_key=data.get("session_key", ""),
-            draft_id=data.get("draft_id"),
+    def _actor_for(request, pos_session_id, *, target_id: Optional[int] = None) -> Actor:
+        """Actor de la acción: el operador del pase en cajas MULTI, la cuenta logueada si no."""
+        session = POSSession.objects.filter(id=pos_session_id).first()
+        if session is None or not session.is_multi_user:
+            return Actor(request.user, request.user, None)
+        return POSOperatorService.actor_from_request(request, session, "DRAFT", target_id=target_id)
+
+    @staticmethod
+    def _holds_live_lock(draft: DraftCart, operator, session_key: str) -> bool:
+        return bool(
+            draft.locked_by_id == operator.pk
+            and draft.lock_session_key == session_key
+            and draft.locked_at
+            and (timezone.now() - draft.locked_at).total_seconds() <= LOCK_TIMEOUT_SECONDS
         )
 
     @staticmethod
-    def acquire_lock_from_request(draft_id: int, data: dict, user) -> Dict[str, Any]:
+    def _tab_operator(request, pos_session_id, draft_id: int, session_key: str):
+        """(operador, pase) de la pestaña en cajas MULTI; (request.user, None) si no aplica."""
+        session = POSSession.objects.filter(id=pos_session_id).first()
+        if session is None or not session.is_multi_user:
+            return request.user, None
+        op_pass = POSOperatorService.live_pass_for_tab(
+            session=session, device_user=request.user, tab_key=session_key,
+            purpose="DRAFT", target_id=draft_id,
+        )
+        return (op_pass.operator, op_pass) if op_pass else (request.user, None)
+
+    @staticmethod
+    def save_draft_from_request(request, draft_id: Optional[int] = None) -> DraftCart:
+        data = request.data
+        pos_session_id = data.get("pos_session_id")
+        items = data.get("items", [])
+        draft_id = draft_id or data.get("draft_id")
+        session_key = data.get("session_key", "")
+        DraftCartService.validate_pos_session_id(pos_session_id)
+        if not items and not draft_id:
+            raise ValueError("El carrito está vacío")
+
+        session = POSSession.objects.filter(id=int(pos_session_id)).first()
+        actor = DraftCartService._actor_for(request, int(pos_session_id), target_id=draft_id)
+        op_pass = actor.operator_pass
+        if op_pass is not None:
+            if not session_key:
+                raise ValueError("Se requiere session_key")
+            if draft_id is None and op_pass.target_id is not None:
+                raise POSOperatorRequired("DRAFT")  # un pase ligado no crea otro borrador
+            if draft_id is not None:
+                current = DraftCart.objects.filter(id=draft_id, pos_session_id=session.id).first()
+                if current and not DraftCartService._holds_live_lock(current, actor.operator, session_key):
+                    # El bloqueo venció: el pase muere con él, nunca se atribuye en silencio.
+                    POSOperatorService.end(op_pass, POSOperatorPass.EndReason.EXPIRED)
+                    raise POSOperatorRequired("DRAFT")
+
+        with transaction.atomic():
+            draft = DraftCartService.save_draft(
+                pos_session_id=int(pos_session_id),
+                user=actor.operator,
+                actor=actor,
+                items=items,
+                customer_id=data.get("customer_id"),
+                name=data.get("name", ""),
+                notes=data.get("notes", ""),
+                wizard_state=data.get("wizard_state"),
+                session_key=session_key,
+                draft_id=draft_id,
+            )
+            if op_pass is not None and draft_id is None:
+                POSOperatorService.bind_target(op_pass, "sales.draftcart", draft.id)
+        return draft
+
+    @staticmethod
+    def acquire_lock_from_request(request, draft_id: int) -> Dict[str, Any]:
+        data = request.data
         pos_session_id = data.get("pos_session_id")
         session_key = data.get("session_key", "")
         DraftCartService.validate_pos_session_id(pos_session_id)
         if not session_key:
             raise ValueError("Se requiere session_key")
+        actor = DraftCartService._actor_for(request, int(pos_session_id), target_id=draft_id)
         return DraftCartService.acquire_lock(
             draft_id=draft_id,
             pos_session_id=int(pos_session_id),
-            user=user,
+            user=actor.operator,
             session_key=session_key,
         )
 
     @staticmethod
-    def refresh_lock_from_request(draft_id: int, data: dict, user) -> bool:
+    def refresh_lock_from_request(request, draft_id: int) -> bool:
+        data = request.data
         pos_session_id = data.get("pos_session_id")
         session_key = data.get("session_key", "")
         DraftCartService.validate_pos_session_id(pos_session_id)
         if not session_key:
             raise ValueError("Se requiere session_key")
+        operator, _ = DraftCartService._tab_operator(request, int(pos_session_id), draft_id, session_key)
         return DraftCartService.refresh_lock(
             draft_id=draft_id,
             pos_session_id=int(pos_session_id),
-            user=user,
+            user=operator,
             session_key=session_key,
         )
 
     @staticmethod
-    def process_withdrawal_from_request(draft_id: int, data: dict, user) -> Dict[str, Any]:
+    def release_lock_from_request(request, draft_id: int) -> bool:
+        data = request.data
+        pos_session_id = data.get("pos_session_id")
+        session_key = data.get("session_key", "")
+        DraftCartService.validate_pos_session_id(pos_session_id)
+        operator, op_pass = DraftCartService._tab_operator(request, int(pos_session_id), draft_id, session_key)
+        released = DraftCartService.release_lock(
+            draft_id=draft_id, pos_session_id=int(pos_session_id), user=operator, session_key=session_key
+        )
+        if op_pass is not None and released:
+            POSOperatorService.end(op_pass, POSOperatorPass.EndReason.RELEASED)
+        return released
+
+    @staticmethod
+    def process_withdrawal_from_request(request, draft_id: int) -> Dict[str, Any]:
+        data = request.data
         pos_session_id = data.get("pos_session_id")
         DraftCartService.validate_pos_session_id(pos_session_id)
-        return DraftCartService.process_withdrawal(
+        actor = DraftCartService._actor_for(request, int(pos_session_id), target_id=draft_id)
+        result = DraftCartService.process_withdrawal(
             draft_id=draft_id,
             pos_session_id=int(pos_session_id),
-            user=user,
+            user=actor.operator,
             partner_id=data.get("partner_id"),
         )
+        if actor.operator_pass is not None:  # el retiro cierra el borrador: el pase termina con él
+            POSOperatorService.end(actor.operator_pass, POSOperatorPass.EndReason.CONSUMED)
+        return result
 
     # ── Lock Management ──────────────────────────────────────────────
 
@@ -310,12 +390,17 @@ class DraftCartService:
         total_discount_amount: Decimal = Decimal("0.00"),
         draft_id: Optional[int] = None,
         session_key: str = "",
+        actor: Optional[Actor] = None,
     ) -> DraftCart:
         """
         Guarda o actualiza un borrador de carrito.
         La sesión debe estar OPEN.
         Valida ownership del lock si el borrador está bloqueado.
+        `actor` (operador + cuenta del dispositivo) alimenta el seguimiento por paso;
+        sin él, la cuenta `user` actúa como ambos.
         """
+        actor = actor or Actor(user, user, None)
+        user = actor.operator
         # Validar que la sesión existe y está abierta
         # select_for_update serializa la creación para evitar duplicados en session_local_id
         try:
@@ -363,8 +448,12 @@ class DraftCartService:
                         "ser modificado. Espere la resolución de la solicitud."
                     )
                 # Solo wizard_state cambió — aplicar y retornar sin tocar items ni totales
+                steps = SaleTrackingService.changed_steps(
+                    draft, items=draft.items, customer_id=draft.customer_id, wizard_state=wizard_state
+                )
                 draft.wizard_state = wizard_state
                 draft.save(update_fields=["wizard_state", "updated_at"])
+                SaleTrackingService.record_draft_steps(draft=draft, steps=steps, actor=actor)
                 return draft
 
             # Validar lock ownership si está bloqueado por otro
@@ -382,6 +471,9 @@ class DraftCartService:
             if session_key and draft.locked_by == user and draft.lock_session_key == session_key:
                 draft.locked_at = timezone.now()
 
+            steps = SaleTrackingService.changed_steps(
+                draft, items=items, customer_id=customer_id, wizard_state=wizard_state
+            )
             draft.items = items
             draft.total_net = total_net
             draft.total_gross = total_gross
@@ -400,6 +492,9 @@ class DraftCartService:
             if not name:
                 name = f"Borrador {timezone.now().strftime('%d/%m/%Y %H:%M')}"
 
+            steps = SaleTrackingService.changed_steps(
+                None, items=items, customer_id=customer_id, wizard_state=wizard_state
+            )
             draft = DraftCart(
                 pos_session=session,
                 session_local_id=max_local_id + 1,
@@ -419,6 +514,7 @@ class DraftCartService:
             )
 
         draft.save()
+        SaleTrackingService.record_draft_steps(draft=draft, steps=steps, actor=actor)
         return draft
 
     @staticmethod

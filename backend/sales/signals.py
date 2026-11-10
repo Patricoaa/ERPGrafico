@@ -50,3 +50,11 @@ def handle_sale_order_cache_invalidation(sender, instance, **kwargs):
     from core.cache import invalidate_report_cache
 
     invalidate_report_cache("contacts")
+
+
+@receiver(post_delete, sender=DraftCart)
+def discard_untransferred_tracking(sender, instance, **kwargs):
+    """Al borrarse un borrador, descarta su seguimiento que no pasó a una orden."""
+    from .models import SaleTrackingEvent
+
+    SaleTrackingEvent.objects.filter(draft_ref=instance.pk, sale_order__isnull=True).delete()

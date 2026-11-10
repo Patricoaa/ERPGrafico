@@ -15,6 +15,7 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import APIException
 
@@ -156,6 +157,21 @@ class POSOperatorService:
             raw_token=request.headers.get(PASS_HEADER),
             purpose=purpose,
             target_id=target_id,
+        )
+
+    @staticmethod
+    def live_pass_for_tab(
+        *, session: POSSession, device_user, tab_key: str, purpose: str, target_id: int | None = None
+    ) -> POSOperatorPass | None:
+        """Pase vigente de una pestaña. Sirve a heartbeat/unlock, que no llevan encabezado."""
+        return (
+            POSOperatorPass.objects.select_related("operator")
+            .filter(
+                session=session, device_user=device_user, tab_key=tab_key, purpose=purpose,
+                target_id=target_id, ended_at__isnull=True,
+            )
+            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+            .first()
         )
 
     @staticmethod
