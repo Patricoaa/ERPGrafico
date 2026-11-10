@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.94](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.93...v0.3.94) (2026-11-10)
+
+
+### 🐛 Bug Fixes
+
+* **pos:** blobatar del operador, menú dinámico y asistente de movimiento de fondos ([f02cdc5](https://github.com/Patricoaa/ERPGrafico/commit/f02cdc5a1c3fdc6c639fdbb078da6607e29f0765))
+* **pos:** el blobatar del operador no rompe si falta username ([c94b29f](https://github.com/Patricoaa/ERPGrafico/commit/c94b29f8f81e3d2d91fb7ce2127423ec4f4fddc2))
+* **pos:** quitar el chip de operador; el menú solo indica caja multiusuario ([287608a](https://github.com/Patricoaa/ERPGrafico/commit/287608acec2df3c6814a77c7c203ef7cbbd97939))
+
 ### [0.3.93](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.92...v0.3.93) (2026-11-10)
 
 
