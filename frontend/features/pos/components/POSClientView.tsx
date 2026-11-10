@@ -151,7 +151,9 @@ export function POSClientView() {
         }
     })
 
-    const { forget: forgetOperatorPass } = useOperatorGate()
+    const { forget: forgetOperatorPass, isMultiUser, activePass } = useOperatorGate()
+    // En caja multiusuario el menú refleja a quien opera ahora; sin operador, a la cuenta del dispositivo.
+    const menuUsername = (isMultiUser && activePass?.operator.username) || user?.username || 'Usuario'
     const { saveDraft, loadDraft, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
         browserSessionKey,
         acquireLock,
@@ -544,7 +546,7 @@ export function POSClientView() {
                                         className="relative rounded-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
                                         aria-label="Abrir menú de usuario"
                                     >
-                                        <Blobatar name={user?.username || 'Usuario'} className="h-full w-full rounded-md bg-transparent" />
+                                        <Blobatar name={menuUsername} className="h-full w-full rounded-md bg-transparent" />
                                     </Button>
                                 </DropdownMenuTrigger>
                             </TooltipTrigger>
@@ -555,7 +557,12 @@ export function POSClientView() {
                         <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuLabel className="font-normal py-3">
                                 <div className="flex flex-col">
-                                    <p className="text-sm font-bold text-foreground">{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Usuario')}</p>
+                                    <p className="text-sm font-bold text-foreground">{isMultiUser && activePass ? activePass.operator.full_name : (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Usuario'))}</p>
+                                    {isMultiUser && (
+                                        <p className="text-3xs uppercase text-muted-foreground">
+                                            {activePass ? `Caja multiusuario · cuenta ${user?.username || ''}` : 'Caja multiusuario'}
+                                        </p>
+                                    )}
                                     <p className="text-3xs uppercase text-muted-foreground">{user?.groups?.[0]?.name || ''}</p>
                                     {currentSession?.id && (
                                         <p className="text-3xs font-mono font-bold text-primary mt-1">Sesión #{currentSession.id}</p>

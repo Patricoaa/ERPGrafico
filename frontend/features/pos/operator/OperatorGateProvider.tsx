@@ -99,7 +99,7 @@ export function OperatorGateProvider({ children }: { children: ReactNode }) {
                 const pass = await identify.mutateAsync({ sessionId, payload })
                 operatorStore.setPass({
                     token: pass.token,
-                    operator: pass.operator,
+                    operator: { ...pass.operator, username: operator.username },
                     purpose: pass.purpose,
                     targetId: request.target?.id ?? null,
                 })

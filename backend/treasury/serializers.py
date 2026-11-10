@@ -652,6 +652,7 @@ class POSOperatorSerializer(serializers.Serializer):
     """Operador elegible para una caja multiusuario (solo lectura)."""
 
     id = serializers.IntegerField()
+    username = serializers.CharField()
     full_name = serializers.SerializerMethodField()
     initials = serializers.SerializerMethodField()
 

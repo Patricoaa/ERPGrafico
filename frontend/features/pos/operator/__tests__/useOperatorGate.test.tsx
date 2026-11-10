@@ -19,7 +19,7 @@ vi.mock("../../hooks/useDraftSync", () => ({ getBrowserSessionKey: () => "tab-1"
 vi.mock("../../api/posApi", () => ({ posApi: { releaseOperator: (...a: unknown[]): unknown => releaseOperator(...a) } }))
 vi.mock("../useOperators", () => ({
     useOperators: () => ({
-        data: [{ id: 1, full_name: "Ana Pérez", initials: "AP" }, { id: 2, full_name: "Beto Soto", initials: "BS" }],
+        data: [{ id: 1, username: "ana", full_name: "Ana Pérez", initials: "AP" }, { id: 2, username: "beto", full_name: "Beto Soto", initials: "BS" }],
         isLoading: false, isError: false, refetch: vi.fn(),
     }),
     useIdentifyOperator: () => ({ mutateAsync: (...a: unknown[]): unknown => identify(...a), isPending: false }),
@@ -208,7 +208,7 @@ describe("OperatorChip", () => {
         const { result } = renderHook(() => useOperatorGate(), { wrapper })
         render(<OperatorChip />, { wrapper })
         expect(screen.queryByText(/Operador:/)).toBeNull()
-        operatorStore.setPass({ token: "t", operator: { id: 1, full_name: "Ana Pérez" }, purpose: "DRAFT", targetId: null })
+        operatorStore.setPass({ token: "t", operator: { id: 1, full_name: "Ana Pérez", username: "ana" }, purpose: "DRAFT", targetId: null })
         expect(await screen.findByText("Operador: Ana Pérez")).toBeTruthy()
         expect(result.current).toBeTruthy()
     })

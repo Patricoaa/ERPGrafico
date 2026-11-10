@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, UserRound } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BaseModal, Skeleton } from "@/components/shared"
+import { Blobatar } from "@/components/ui/blobatar"
 import { Input } from "@/components/ui/input"
 import { MIN_TOUCH_TARGET } from "../hooks/useDeviceContext"
 import type { PosOperator } from "../types"
@@ -81,9 +82,7 @@ export function OperatorPickerModal({
                                 style={{ minHeight: MIN_TOUCH_TARGET + 20 }}
                                 onClick={() => onSelect(operator)}
                             >
-                                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-                                    {operator.initials || <UserRound className="size-4" />}
-                                </span>
+                                <Blobatar name={operator.username} className="size-10 shrink-0 rounded-full" />
                                 <span className="truncate text-left font-medium">{operator.full_name}</span>
                             </Button>
                         ))}

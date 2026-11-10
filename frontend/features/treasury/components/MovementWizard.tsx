@@ -229,7 +229,7 @@ export function MovementWizard({
             },
             {
                 id: 'details',
-                title: impact === 'TRANSFER' ? 'Detalles del Traspaso' : 'Seleccionar Cuenta',
+                title: impact === 'TRANSFER' ? 'Detalles del Traspaso' : (context === 'pos' ? 'Motivo del Movimiento' : 'Seleccionar Cuenta'),
                 component: (
                     <div className="space-y-4 pt-2">
                         {context === 'pos' ? (
@@ -345,6 +345,8 @@ export function MovementWizard({
                         if (context === 'pos') return !!transferTargetId
                         return (!!fromAccountId && !!toAccountId && fromAccountId !== toAccountId && (fromAccountBalance ?? 0) > 0)
                     }
+                    // En el POS la cuenta es la de la caja (`fixedAccountId`): aquí solo se elige el motivo.
+                    if (context === 'pos') return !!moveType
                     if (impact === 'OUT') {
                         return !!fromAccountId && (fromAccountBalance ?? 0) > 0
                     }
@@ -630,7 +632,7 @@ export function MovementWizard({
                 if (!val) onCancel()
                 onOpenChange(val)
             }}
-            title={variant === 'partners' ? 'Movimiento de Socio' : 'Movimiento de Tesorería'}
+            title={variant === 'partners' ? 'Movimiento de Socio' : (context === 'pos' ? 'Movimiento de Fondos' : 'Movimiento de Tesorería')}
             steps={steps}
             initialStep={stepIndex}
             onComplete={handleFinalComplete}

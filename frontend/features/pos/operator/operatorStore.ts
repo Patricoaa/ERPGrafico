@@ -15,7 +15,7 @@ export interface OperatorTarget {
 
 export interface ActiveOperatorPass {
     token: string
-    operator: { id: number; full_name: string }
+    operator: { id: number; full_name: string; username: string }
     purpose: OperatorPurpose
     /** Id del borrador / documento al que quedó ligado el pase; `null` si aún no tiene. */
     targetId: number | null
