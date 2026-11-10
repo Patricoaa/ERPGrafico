@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.92](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.91...v0.3.92) (2026-11-10)
+
+
+### ✨ Features
+
+* **pos:** cierre y movimientos de caja atribuidos al operador ([9382cfd](https://github.com/Patricoaa/ERPGrafico/commit/9382cfdc231b8f56ea50582c47ed0f206ec4ae1a))
+* **pos:** ediciones de documentos desde el panel POS exigen y registran operador ([1d97f08](https://github.com/Patricoaa/ERPGrafico/commit/1d97f08c427cd9331694c4a7d62a4cb211433ad6))
+* **pos:** elegir modo de caja al abrir la sesión ([7998378](https://github.com/Patricoaa/ERPGrafico/commit/7998378272879b303cef752679bb0d153d76b326))
+* **pos:** endpoints para listar e identificar operadores ([fd879db](https://github.com/Patricoaa/ERPGrafico/commit/fd879db301a35ab983bd5087fffb4c8410947604))
+* **pos:** mecanismo de operador en el frontend (selector, pase y reintento ante 403) ([abddf4e](https://github.com/Patricoaa/ERPGrafico/commit/abddf4e4274dff0a976ee7a2d838bfb3fbc0dc52))
+* **pos:** modo de sesión SINGLE/MULTI ([4fbde33](https://github.com/Patricoaa/ERPGrafico/commit/4fbde33097b595075787064078d89c01cc4b8fa9))
+* **pos:** pase de operador y resolución del actor ([046cccc](https://github.com/Patricoaa/ERPGrafico/commit/046ccccf6a1cd20477cd3f436856441af52feed6))
+* **pos:** seguimiento por paso y borradores atribuidos al operador ([130df78](https://github.com/Patricoaa/ERPGrafico/commit/130df78003e912adc0680ebd11b2436a91c30da2))
+* **pos:** transacciones del POS conectadas al operador y seguimiento en la orden ([37071b9](https://github.com/Patricoaa/ERPGrafico/commit/37071b93661f56b64e284bf83aee7698fae8106a))
+* **pos:** venta atribuida al operador y seguimiento heredado a la orden ([6c9658c](https://github.com/Patricoaa/ERPGrafico/commit/6c9658c76719ca13aa3ed729fd63dc470efd1e19))
+
+
+### 📚 Documentation
+
+* **pos:** ADR-0125 y contratos del modo multiusuario ([cd15cb3](https://github.com/Patricoaa/ERPGrafico/commit/cd15cb38cc747d07d313c05be8b5913908e3ef48))
+* **pos:** diseño y plan del modo multiusuario con operador identificado ([1ede6c2](https://github.com/Patricoaa/ERPGrafico/commit/1ede6c20f2316b6ec07ebb0ba4cd37fcad2c7d08))
+
+
+### 🐛 Bug Fixes
+
+* **pos:** el seguimiento no rompe escrituras confirmadas ni adopta filas de otra sesión ([7ad7393](https://github.com/Patricoaa/ERPGrafico/commit/7ad73933ca5a33e33bc962d043f286a265c9a3bf))
+* **pos:** heartbeat por WebSocket con operador, bloqueo vencido no se revive, desafío del cobro y seguimiento en SINGLE ([452679e](https://github.com/Patricoaa/ERPGrafico/commit/452679e0de6ac2d31097f8edfbf2cf579f9d40d8))
+* **pos:** registrar la edición de documentos con la orden ligada y limpiar lint ([6698573](https://github.com/Patricoaa/ERPGrafico/commit/6698573b70324650d5024c1b7f67d50b1238e06f))
+
 ### [0.3.91](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.90...v0.3.91) (2026-11-10)
 
 
