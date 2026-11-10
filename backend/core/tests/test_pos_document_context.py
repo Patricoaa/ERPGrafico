@@ -150,3 +150,13 @@ def test_unauthenticated_request_is_left_to_the_view(multi, contact):
     r = APIClient().patch(f"/api/contacts/{contact.id}/", {"name": "x"}, format="json", **{CTX: str(multi.id)})
     assert r.status_code in (401, 403)
     assert "pos_operator_required" not in r.content.decode()
+
+
+def test_multi_edit_with_pass_targeting_missing_order_still_succeeds(api, multi, cashier, ana, contact):
+    """El seguimiento nunca convierte una escritura ya confirmada en un 500."""
+    _, token = _edit_pass(multi, cashier, ana, target_type="sales.saleorder", target_id=999999)
+    r = _patch(api, contact, **{CTX: str(multi.id), PASS: token})
+    assert r.status_code == 200, r.content
+    row = SaleTrackingEvent.objects.get()
+    assert row.sale_order_id is None
+    assert row.operator_id == ana.id

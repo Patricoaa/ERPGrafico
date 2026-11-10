@@ -165,3 +165,13 @@ def test_document_edit_always_inserts(session, cashier, ana, customer):
         )
     rows = SaleTrackingEvent.objects.filter(sale_order=order, step=Step.DOCUMENT_EDIT)
     assert rows.count() == 2 and rows.first().entity_id == order.id
+
+
+def test_transfer_ignores_draft_rows_of_another_session(session, cashier, ana, customer):
+    """Un draft_id enviado por el cliente no puede adoptar el seguimiento de otra sesión."""
+    other = POSSession.objects.create(user=ana, mode="SINGLE")
+    foreign = _save(other, _actor(ana, ana))
+    order = SaleOrder.objects.create(customer=customer, pos_session=session)
+    SaleTrackingService.transfer_to_order(draft_id=foreign.id, order=order, actor=_actor(ana, cashier))
+    assert not SaleTrackingEvent.objects.filter(draft_ref=foreign.id, step=Step.CART, sale_order=order).exists()
+    assert SaleTrackingEvent.objects.filter(sale_order=order, step=Step.CHECKOUT).count() == 1

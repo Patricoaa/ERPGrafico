@@ -95,9 +95,10 @@ class SaleTrackingService:
     def transfer_to_order(*, draft_id: int | None, order, actor) -> None:
         """Liga a la orden las filas del borrador (si hubo) y agrega el evento de cobro."""
         if draft_id is not None:
-            SaleTrackingEvent.objects.filter(draft_ref=draft_id, sale_order__isnull=True).update(
-                sale_order=order
-            )
+            rows = SaleTrackingEvent.objects.filter(draft_ref=draft_id, sale_order__isnull=True)
+            if getattr(order, "pos_session_id", None) is not None:
+                rows = rows.filter(pos_session_id=order.pos_session_id)  # nunca el seguimiento de otra caja
+            rows.update(sale_order=order)
         SaleTrackingEvent.objects.create(
             draft_ref=draft_id,
             sale_order=order,

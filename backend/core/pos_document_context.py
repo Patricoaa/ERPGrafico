@@ -15,9 +15,12 @@ salir del documento o el siguiente ``identify`` de la pestaña.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from rest_framework.renderers import JSONRenderer
+
+logger = logging.getLogger(__name__)
 
 CONTEXT_HEADER = "X-POS-Document-Context"
 _UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
@@ -77,7 +80,10 @@ class POSDocumentContextMiddleware:
             return _error_response(exc)
         response = self.get_response(request)
         if ctx is not None and 200 <= response.status_code < 300:
-            self._record(request, response, ctx)
+            try:
+                self._record(request, response, ctx)
+            except Exception:  # noqa: BLE001 — el seguimiento no puede deshacer una escritura ya confirmada
+                logger.exception("No se pudo registrar el seguimiento de la edición del documento")
         return response
 
     @staticmethod
@@ -130,6 +136,11 @@ class POSDocumentContextMiddleware:
         elif op_pass is not None and op_pass.target_type == "sales.saleorder":
             sale_order_id = op_pass.target_id
 
+        if sale_order_id is not None:
+            from sales.models import SaleOrder
+
+            if not SaleOrder.objects.filter(pk=sale_order_id).exists():
+                sale_order_id = None  # destino del pase inexistente: se registra la edición sin orden
         action = getattr(view, "action", None) or "-"
         SaleTrackingService.record_document_edit(
             actor=ctx.actor,
