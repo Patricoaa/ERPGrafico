@@ -2274,6 +2274,10 @@ class POSSession(models.Model):
         OPEN = "OPEN", _("Abierta")
         CLOSED = "CLOSED", _("Cerrada")
 
+    class Mode(models.TextChoices):
+        SINGLE = "SINGLE", _("Un solo usuario")
+        MULTI = "MULTI", _("Multiusuario")
+
     # New: Terminal reference (replaces direct treasury_account)
     terminal = models.ForeignKey(
         "POSTerminal",
@@ -2311,6 +2315,16 @@ class POSSession(models.Model):
 
     status = models.CharField(
         _("Estado"), max_length=10, choices=Status.choices, default=Status.OPEN
+    )
+
+    # Modo de caja: fijo durante toda la sesión (se elige al abrir).
+    # MULTI exige identificar al operador en cada transacción inicializadora.
+    mode = models.CharField(
+        _("Modo de caja"),
+        max_length=10,
+        choices=Mode.choices,
+        default=Mode.SINGLE,
+        help_text=_("SINGLE: opera quien inició sesión. MULTI: se identifica al operador por transacción."),
     )
 
     # Opening
@@ -2376,6 +2390,10 @@ class POSSession(models.Model):
 
     def __str__(self):
         return f"Sesión #{self.id} - {self.user.get_full_name() or self.user.username} ({self.get_status_display()})"
+
+    @property
+    def is_multi_user(self) -> bool:
+        return self.mode == self.Mode.MULTI
 
     @property
     def uses_cash_ledger(self) -> bool:

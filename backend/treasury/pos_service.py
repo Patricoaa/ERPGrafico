@@ -37,9 +37,12 @@ class POSService:
         justify_reason: str | None = None,
         justify_target_id: int | None = None,
         notes: str = "",
+        mode: str = POSSession.Mode.SINGLE,
     ) -> POSSession:
         """
         Opens a POS session.
+
+        - `mode` (SINGLE | MULTI) queda fijo durante toda la sesión.
 
         - Requires a terminal_id; the session treasury account is snapshotted
           from terminal.default_treasury_account at open time.
@@ -52,6 +55,9 @@ class POSService:
 
         Raises ValidationError on any business rule violation.
         """
+        if mode not in POSSession.Mode.values:
+            raise ValidationError("Modo de caja inválido.")
+
         if POSSession.objects.filter(user=user, status="OPEN").exists():
             raise ValidationError("Ya tiene una sesión abierta.")
 
@@ -83,6 +89,7 @@ class POSService:
             user=user,
             opening_balance=opening_balance,
             status="OPEN",
+            mode=mode,
         )
 
         _apply_opening_fund_adjustment(
@@ -213,6 +220,7 @@ class POSService:
             justify_reason=request.data.get("justify_reason"),
             justify_target_id=request.data.get("justify_target_id"),
             notes=request.data.get("notes", ""),
+            mode=request.data.get("mode") or POSSession.Mode.SINGLE,
         )
 
     @staticmethod

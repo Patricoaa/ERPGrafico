@@ -632,6 +632,7 @@ class POSSessionSerializer(serializers.ModelSerializer):
 
         model = POSSession
         fields = "__all__"
+        read_only_fields = ["mode"]
 
     def get_user_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
