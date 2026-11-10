@@ -13,7 +13,7 @@ from rest_framework import filters as drf_filters
 from rest_framework import mixins, status, viewsets
 from rest_framework import serializers as drf_serializers
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -1027,7 +1027,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             from .pos_service import POSService
             session, audit = POSService.close_session_from_request(request, self.get_object())
             return Response({'session': POSSessionSerializer(session).data, 'audit': POSSessionAuditSerializer(audit).data, 'message': 'Sesión de POS cerrada correctamente'})
-        except PermissionDenied:
+        except APIException:
             raise
         except ValidationError as e:
             return Response({'error': str(getattr(e, 'message', e))}, status=400)
@@ -1077,6 +1077,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             session = self.get_object()
             POSService.register_manual_movement_from_request(request, session)
             return Response({'session': POSSessionSerializer(session).data, 'message': 'Movimiento registrado correctamente'})
+        except APIException:
+            raise
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 class CheckViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):

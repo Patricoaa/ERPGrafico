@@ -38,7 +38,9 @@ class POSOperatorRequired(APIException):
     default_detail = "Debe identificar al operador para esta acción."
 
     def __init__(self, purpose: str):
-        super().__init__(detail={"code": self.default_code, "purpose": purpose})
+        super().__init__(
+            detail={"detail": self.default_detail, "code": self.default_code, "purpose": purpose}
+        )
 
 
 @dataclass(frozen=True)
