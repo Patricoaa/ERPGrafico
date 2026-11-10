@@ -330,6 +330,13 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = POSTerminalSerializer
     pagination_class = None  # Master data
 
+    def get_permissions(self):
+        # ADR-0123: el listado es el selector de caja al abrir sesión POS; cualquier
+        # usuario autenticado puede leerlo. Detalle, acciones y escrituras: RBAC estándar.
+        if self.action == "list":
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     def get_queryset(self):
         qs = super().get_queryset()
 
