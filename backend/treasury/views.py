@@ -47,6 +47,7 @@ from .selectors import BankStatementSelector
 from .serializers import (
     BankLoanSerializer,
     BankLoanWriteSerializer,
+    BankOptionSerializer,
     BankSerializer,
     BankStatementLineSerializer,
     BankStatementListSerializer,
@@ -101,8 +102,30 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "restore": "treasury.change_bank",
     }
 
+    def _limited_read(self):
+        """Lista para un usuario sin ``treasury.view_bank`` (ADR-0124): solo opciones."""
+        request = getattr(self, "request", None)
+        return (
+            self.action == "list"
+            and request is not None
+            and not request.user.has_perm("treasury.view_bank")
+        )
+
+    def get_permissions(self):
+        # ADR-0124: el selector «banco del cheque» del cobro necesita el listado.
+        if self.action == "list":
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self._limited_read():
+            return BankOptionSerializer
+        return super().get_serializer_class()
+
     def get_queryset(self):
         qs = super().get_queryset()
+        if self._limited_read():
+            qs = qs.prefetch_related(None)  # no se leen los ejecutivos
         return apply_archivo_is_active_filter(qs, self.request, self.action)
 
     @action(detail=True, methods=["get"])
@@ -331,9 +354,10 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = None  # Master data
 
     def get_permissions(self):
-        # ADR-0123: el listado es el selector de caja al abrir sesión POS; cualquier
-        # usuario autenticado puede leerlo. Detalle, acciones y escrituras: RBAC estándar.
-        if self.action == "list":
+        # ADR-0123: el listado de cajas y sus métodos de pago permitidos alimentan el
+        # POS (apertura de sesión y cobro); cualquier usuario autenticado puede leerlos.
+        # Detalle, otras acciones y escrituras: RBAC estándar.
+        if self.action in ("list", "allowed_payment_methods"):
             return [IsAuthenticated()]
         return super().get_permissions()
 

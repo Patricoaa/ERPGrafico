@@ -186,5 +186,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0119](0119-dividend-payment-safeguards.md) | Protecciones del pago de dividendos — idempotencia en el pago masivo, y fondos y período abierto en el pago masivo y el individual | Accepted |
 | [0122](0122-remove-pos-pin.md) | Eliminación del PIN de POS — sin campo `pos_pin`, sin endpoint `change-pin` ni `PINPadModal`; el vendedor es el usuario autenticado | Accepted |
 | [0123](0123-pos-terminal-list-authenticated.md) | Listado de cajas POS legible por cualquier usuario autenticado — `GET pos-terminals/` (list) requiere solo autenticación; el resto conserva RBAC | Accepted |
+| [0124](0124-pos-payment-selector-reads.md) | Lecturas del selector de cobro POS para usuarios autenticados — métodos permitidos de la caja y listado de bancos (sin ejecutivos salvo `view_bank`) | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
