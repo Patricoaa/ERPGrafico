@@ -103,8 +103,10 @@ export function OperatorGateProvider({ children }: { children: ReactNode }) {
         [identify, sessionId, settle],
     )
 
-    const release = useCallback(async () => {
-        if (!operatorStore.getState().pass || sessionId === null) return
+    const release = useCallback(async (purpose?: OperatorPurpose) => {
+        const live = operatorStore.getState().pass
+        if (!live || sessionId === null) return
+        if (purpose && live.purpose !== purpose) return // otro pase en curso: no se toca
         try {
             await posApi.releaseOperator(sessionId)
         } catch {
@@ -129,6 +131,7 @@ export function OperatorGateProvider({ children }: { children: ReactNode }) {
             isMultiUser,
             ensureOperator,
             release,
+            forget: () => operatorStore.setPass(null),
             bindTarget: operatorStore.bindTarget,
             setChallengeTarget: operatorStore.setChallengeTarget,
         }),

@@ -16,6 +16,7 @@ import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 import { SessionOpenModal } from "@/features/pos/components/SessionOpenModal"
 import { Chip, SubmitButton } from "@/components/shared"
 import { forwardRef, useImperativeHandle } from "react"
+import { useOperatorGate } from "../operator"
 
 import { cn } from "@/lib/utils"
 import type { POSSession, POSSessionAudit } from "@/types/pos"
@@ -47,8 +48,14 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     const [isSharedSession, setIsSharedSession] = useState(false)
 
-    const handleRequestClose = () => {
-        setCloseDialogOpen(true)
+    const { ensureOperator, forget } = useOperatorGate()
+
+    // En cajas multiusuario, identificar al operador antes de abrir el cierre o el movimiento.
+    const handleRequestClose = async () => {
+        if (await ensureOperator('SESSION_CLOSE')) setCloseDialogOpen(true)
+    }
+    const handleShowMoveDialog = async () => {
+        if (await ensureOperator('CASH_MOVEMENT')) setMoveDialogOpen(true)
     }
 
     useImperativeHandle(ref, () => ({
@@ -67,8 +74,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 await fetchCurrentSession()
             }
         },
-        showMoveDialog: () => setMoveDialogOpen(true),
-        requestCloseSession: handleRequestClose,
+        showMoveDialog: () => { void handleShowMoveDialog() },
+        requestCloseSession: () => { void handleRequestClose() },
         disconnectSharedSession: handleDisconnect,
         openSessionDialog: () => setOpenDialogOpen(true)
     }))
@@ -152,6 +159,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         if (!session) return
 
         setLastAudit(audit)
+        forget() // el pase de cierre ya fue consumido
 
         localStorage.removeItem('shared_pos_session_id')
         onSessionChange?.(null)
@@ -200,6 +208,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             const moveResponse = moveResult as { session: POSSession; message: string }
             onSessionChange?.(moveResponse.session)
             setMoveDialogOpen(false)
+            forget() // el pase de un solo uso ya lo consumió el backend
             toast.success(moveResponse.message)
         } catch (error: unknown) {
             showApiError(error, "Error al registrar movimiento")

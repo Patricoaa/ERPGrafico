@@ -56,6 +56,7 @@ import { formatDraftNumber, resolveDraftStatus, resolveDraftPhase, statusToneBg,
 import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/selectors/ProductGridPicker'
 import { Cart } from './Cart'
 import { POSCheckoutHeader } from './POSCheckoutHeader'
+import { OperatorChip, useOperatorGate } from '../operator'
 import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
 
 // Shared components
@@ -150,6 +151,7 @@ export function POSClientView() {
         }
     })
 
+    const { forget: forgetOperatorPass } = useOperatorGate()
     const { saveDraft, loadDraft, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
         browserSessionKey,
         acquireLock,
@@ -244,7 +246,7 @@ export function POSClientView() {
         if (dIdStr && currentSession?.id && !loading && !draftLoadedFromUrl.current) {
             const dId = parseInt(dIdStr); if (!isNaN(dId)) {
                 draftLoadedFromUrl.current = true
-                setTimeout(() => loadDraft(dId).then(() => setPosMode('CHECKOUT')), 500)
+                setTimeout(() => loadDraft(dId).then((loaded) => { if (loaded) setPosMode('CHECKOUT') }), 500)
             }
         }
     }, [searchParams, currentSession?.id, loading, loadDraft])
@@ -376,7 +378,8 @@ export function POSClientView() {
     }
 
     const handleLoadDraft = async (draft: SyncDraft | DraftCart) => {
-        await loadDraft(draft.id); setDraftsListOpen(false)
+        if (!(await loadDraft(draft.id))) return
+        setDraftsListOpen(false)
         if ('wizard_state' in draft && draft.wizard_state?.step) setPosMode('CHECKOUT')
     }
 
@@ -384,6 +387,7 @@ export function POSClientView() {
         // Map CheckoutResponse to TransactionData if needed, or just cast if they overlap in usage
         const transactionData = resData as TransactionData
         setCompletedSaleData(transactionData)
+        forgetOperatorPass() // el cobro ya consumió el pase en el backend
         await releaseCurrentLock()
         setCurrentDraftId(null); setWizardState(null); clearCart()
         await fetchDrafts(); invalidateCrossFeature(queryClient, [['sales']])
@@ -580,6 +584,7 @@ export function POSClientView() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                     </TooltipProvider>
+                    <OperatorChip />
                     <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession ?? undefined} hideSessionInfo />
                 </div>
             </div>

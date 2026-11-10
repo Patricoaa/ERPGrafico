@@ -12,7 +12,9 @@ export interface OperatorGateContextValue {
      */
     ensureOperator: (purpose: OperatorPurpose, target?: OperatorTarget) => Promise<boolean>
     /** Termina el pase vigente (avisa al backend) y limpia los encabezados. */
-    release: () => Promise<void>
+    release: (purpose?: OperatorPurpose) => Promise<void>
+    /** Olvida el pase localmente sin avisar al backend (ya lo consumió: cobro, movimiento, cierre). */
+    forget: () => void
     /** Liga el pase vigente al borrador recién creado. */
     bindTarget: (id: number) => void
     /** Destino a usar si el backend pide operador para este propósito sin que la request lo revele. */
@@ -24,6 +26,7 @@ export const NOOP_GATE: OperatorGateContextValue = {
     isMultiUser: false,
     ensureOperator: async () => true,
     release: async () => undefined,
+    forget: () => undefined,
     bindTarget: () => undefined,
     setChallengeTarget: () => undefined,
 }

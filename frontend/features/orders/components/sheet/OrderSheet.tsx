@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Ban, CheckCircle2, Edit, FileText, Link2, Trash2 } from "lucide-react"
+import { Ban, CheckCircle2, Edit, FileText, Link2, Trash2, UserRoundCheck } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,7 +25,7 @@ import {
     type DocumentDomain,
     type ResolvedDocumentAction,
 } from "@/features/documents"
-import { saleOrderActions } from "@/features/sales"
+import { saleOrderActions, SaleOrderTrackingPanel } from "@/features/sales"
 import { purchaseOrderActions, PurchaseCheckoutWizard } from "@/features/purchasing"
 import { WorkOrderWizard } from "@/features/production"
 import { useOrderDocument } from "../../hooks/useCommercialDocument"
@@ -199,6 +199,10 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
                 />
             ),
         },
+        ...(isSale ? [{
+            value: "tracking", label: "Seguimiento", icon: UserRoundCheck,
+            content: <SaleOrderTrackingPanel orderId={order.id} />,
+        }] : []),
     ] : []
 
     return (

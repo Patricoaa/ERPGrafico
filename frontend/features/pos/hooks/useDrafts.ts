@@ -13,6 +13,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { POS_KEYS } from './queryKeys'
 import { formatTimeWith } from '@/lib/utils'
+import { useOperatorGate } from '../operator'
+
+const DRAFT_TARGET_TYPE = 'sales.draftcart'
 
 interface DraftResponse {
     id: number
@@ -60,6 +63,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         setWizardState
     } = usePOS()
 
+    const { ensureOperator, release, bindTarget } = useOperatorGate()
     const [drafts, setDrafts] = useState<DraftCart[]>([])
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
     const [isSaving, setIsSaving] = useState(false)
@@ -136,6 +140,11 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             return
         }
 
+        // Caja multiusuario: crear un borrador es una transacción inicializadora.
+        if (!currentDraftId && !(await ensureOperator('DRAFT'))) {
+            return
+        }
+
         setIsSaving(true)
         try {
             const draftData: Record<string, unknown> = {
@@ -169,6 +178,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                 // Create new
                 const res = await createDraftMutation.mutateAsync(draftData) as Record<string, unknown>;
                 setCurrentDraftId(res.id as number)
+                bindTarget(res.id as number)
                 if (options.acquireLock) await options.acquireLock(res.id as number)
                 if (!silent) {
                     toast.success("Borrador guardado")
@@ -187,12 +197,15 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         } finally {
             setIsSaving(false)
         }
-    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId, isLoading, options.browserSessionKey, options.forceSync, updateDraftMutation, createDraftMutation, options.acquireLock])
+    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId, isLoading, ensureOperator, bindTarget, options.browserSessionKey, options.forceSync, updateDraftMutation, createDraftMutation, options.acquireLock])
 
     // Load a draft into cart (with lock acquisition)
-    const loadDraft = useCallback(async (draftId: number) => {
-        if (!currentSession?.id) return
-        
+    const loadDraft = useCallback(async (draftId: number): Promise<boolean> => {
+        if (!currentSession?.id) return false
+
+        // Caja multiusuario: retomar un borrador exige identificar al operador antes del bloqueo.
+        if (!(await ensureOperator('DRAFT', { type: DRAFT_TARGET_TYPE, id: draftId }))) return false
+
         // Try to acquire lock before loading
         if (options.acquireLock) {
             const lockResult = await options.acquireLock(draftId)
@@ -253,6 +266,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             setSelectedCustomerId(targetCustomerId)
 
             toast.success(`Borrador cargado: ${draft.name}`)
+            return true
         } catch (error: unknown) {
             console.error("Error loading draft:", error)
             const draftError = error as { response?: { status?: number }; message?: string }
@@ -272,7 +286,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         } finally {
             setIsLoading(false)
         }
-    }, [setItems, setSelectedCustomerId, setCurrentDraftId, setWizardState, currentSession, currentDraftId, fetchDrafts, options.acquireLock, options.releaseLock])
+    }, [setItems, setSelectedCustomerId, setCurrentDraftId, setWizardState, currentSession, currentDraftId, fetchDrafts, ensureOperator, options.acquireLock, options.releaseLock])
 
     // Delete a draft
     const deleteDraft = useCallback(async (draftId: number) => {
@@ -293,7 +307,8 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         if (currentDraftId && options.releaseLock) {
             await options.releaseLock(currentDraftId)
         }
-    }, [currentDraftId, options.releaseLock])
+        await release('DRAFT')
+    }, [currentDraftId, options.releaseLock, release])
 
     // Auto-save (optional, can be triggered manually)
     const autoSave = useCallback(async () => {

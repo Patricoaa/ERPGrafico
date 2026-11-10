@@ -21,6 +21,7 @@ export const SALES_KEYS = {
     /** Analytics over the filtered order list (same filters as `orders`, plus the period granularity). */
     orderAnalytics: (filters: SaleOrderFilters | undefined, granularity: string) => [...SALES_KEYS.all, 'orders', 'analytics', { filters, granularity }] as const,
     order: (id: number) => [...SALES_KEYS.all, 'order', id] as const,
+    orderTracking: (id: number) => [...SALES_KEYS.all, 'order', id, 'tracking'] as const,
     notes: (filters?: SaleOrderFilters) => [...SALES_KEYS.all, 'notes', { filters }] as const,
     deliveries: (filters?: SaleOrderFilters) => [...SALES_KEYS.all, 'deliveries', { filters }] as const,
     delivery: (id: number) => [...SALES_KEYS.all, 'delivery', id] as const,

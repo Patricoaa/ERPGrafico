@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { POS_KEYS } from './queryKeys'
 import { generateUuidV4 } from '@/lib/uuid'
+import { useOperatorGate } from '../operator'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -83,6 +84,7 @@ export function useDraftSync({
     onSessionStateChange,
 }: UseDraftSyncOptions) {
     const { user } = useAuth()
+    const { release: releaseOperator } = useOperatorGate()
     const [syncDrafts, setSyncDrafts] = useState<SyncDraft[]>([])
     const [isSocketConnected, setIsSocketConnected] = useState(false)
     const [activeLockDraftId, setActiveLockDraftId] = useState<number | null>(null)
@@ -106,6 +108,7 @@ export function useDraftSync({
         if (event === 'LOCK_LOST') {
             if (draft_id === activeLockDraftId) {
                 setActiveLockDraftId(null)
+                void releaseOperator('DRAFT') // sin bloqueo el pase de borrador ya no sirve
                 toast.warning('Bloqueo perdido', { description: error })
             }
             return
@@ -148,7 +151,7 @@ export function useDraftSync({
             // Sort by updated_at desc
             return next.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
         })
-    }, [user?.id, activeLockDraftId])
+    }, [user?.id, activeLockDraftId, releaseOperator])
 
     // ── Mutation hooks for draft sync operations ────────────────
     const queryClient = useQueryClient()
