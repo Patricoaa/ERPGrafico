@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.91](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.90...v0.3.91) (2026-11-10)
+
+
+### ✨ Features
+
+* **pos:** navegación del panel de ventas y fixes de POS/filtros ([#235](https://github.com/Patricoaa/ERPGrafico/issues/235)) ([6ecf7b9](https://github.com/Patricoaa/ERPGrafico/commit/6ecf7b9dbd19bf0c5133424d76a746245a733e65)), closes [#223](https://github.com/Patricoaa/ERPGrafico/issues/223) [#224](https://github.com/Patricoaa/ERPGrafico/issues/224) [#225](https://github.com/Patricoaa/ERPGrafico/issues/225) [#226](https://github.com/Patricoaa/ERPGrafico/issues/226) [#227](https://github.com/Patricoaa/ERPGrafico/issues/227) [#229](https://github.com/Patricoaa/ERPGrafico/issues/229) [#228](https://github.com/Patricoaa/ERPGrafico/issues/228)
+
 ### [0.3.90](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.89...v0.3.90) (2026-11-10)
 
 
