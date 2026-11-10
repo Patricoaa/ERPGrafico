@@ -127,7 +127,7 @@ def test_wrong_purpose_pass_is_rejected(api, multi, cashier, ana, contact):
 
 
 def test_draft_and_session_routes_are_exempt(api, multi):
-    r = api.post(f"/api/sales/pos-drafts/1/heartbeat/", {"pos_session_id": multi.id, "session_key": "t"},
+    r = api.post("/api/sales/pos-drafts/1/heartbeat/", {"pos_session_id": multi.id, "session_key": "t"},
                  format="json", **{CTX: str(multi.id)})
     assert r.status_code != 403 or r.json()["error"]["details"].get("code") != "pos_operator_required"
     r = api.post(f"/api/treasury/pos-sessions/{multi.id}/release_operator/", **{CTX: str(multi.id)})

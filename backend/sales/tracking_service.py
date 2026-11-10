@@ -119,9 +119,10 @@ class SaleTrackingService:
         sale_order=None,
         sale_order_id: int | None = None,
     ) -> None:
+        if sale_order is not None:
+            sale_order_id = sale_order.pk
         SaleTrackingEvent.objects.create(
-            sale_order=sale_order,
-            sale_order_id=sale_order_id if sale_order is None else None,
+            sale_order_id=sale_order_id,
             pos_session=pos_session,
             step=Step.DOCUMENT_EDIT,
             operator=actor.operator,
