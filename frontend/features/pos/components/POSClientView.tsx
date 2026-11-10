@@ -56,7 +56,7 @@ import { formatDraftNumber, resolveDraftStatus, resolveDraftPhase, statusToneBg,
 import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/selectors/ProductGridPicker'
 import { Cart } from './Cart'
 import { POSCheckoutHeader } from './POSCheckoutHeader'
-import { OperatorChip, useOperatorGate } from '../operator'
+import { useOperatorGate } from '../operator'
 import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
 
 // Shared components
@@ -559,9 +559,7 @@ export function POSClientView() {
                                 <div className="flex flex-col">
                                     <p className="text-sm font-bold text-foreground">{isMultiUser && activePass ? activePass.operator.full_name : (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Usuario'))}</p>
                                     {isMultiUser && (
-                                        <p className="text-3xs uppercase text-muted-foreground">
-                                            {activePass ? `Caja multiusuario · cuenta ${user?.username || ''}` : 'Caja multiusuario'}
-                                        </p>
+                                        <p className="text-3xs uppercase text-muted-foreground">Caja multiusuario</p>
                                     )}
                                     <p className="text-3xs uppercase text-muted-foreground">{user?.groups?.[0]?.name || ''}</p>
                                     {currentSession?.id && (
@@ -591,7 +589,6 @@ export function POSClientView() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                     </TooltipProvider>
-                    <OperatorChip />
                     <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession ?? undefined} hideSessionInfo />
                 </div>
             </div>

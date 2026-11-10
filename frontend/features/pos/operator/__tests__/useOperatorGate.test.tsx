@@ -5,7 +5,6 @@ import { getPosOperatorHeaders, runPosOperatorChallenge, setPosOperatorChallenge
 import { OperatorGateProvider } from "../OperatorGateProvider"
 import { operatorStore } from "../operatorStore"
 import { useOperatorGate } from "../useOperatorGate"
-import { OperatorChip } from "../OperatorChip"
 
 type Session = { id: number; mode: "SINGLE" | "MULTI" } | null
 let session: Session = { id: 5, mode: "MULTI" }
@@ -194,22 +193,5 @@ describe("useOperatorGate", () => {
         rerender()
         await waitFor(() => expect(result.current.activePass).toBeNull())
         expect(getPosOperatorHeaders()).toEqual({})
-    })
-})
-
-describe("OperatorChip", () => {
-    it("no se renderiza en SINGLE", () => {
-        session = { id: 5, mode: "SINGLE" }
-        const { container } = render(<OperatorChip />, { wrapper })
-        expect(container.textContent).toBe("")
-    })
-
-    it("muestra el operador activo en MULTI", async () => {
-        const { result } = renderHook(() => useOperatorGate(), { wrapper })
-        render(<OperatorChip />, { wrapper })
-        expect(screen.queryByText(/Operador:/)).toBeNull()
-        operatorStore.setPass({ token: "t", operator: { id: 1, full_name: "Ana Pérez", username: "ana" }, purpose: "DRAFT", targetId: null })
-        expect(await screen.findByText("Operador: Ana Pérez")).toBeTruthy()
-        expect(result.current).toBeTruthy()
     })
 })

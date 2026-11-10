@@ -1,4 +1,3 @@
-export { OperatorChip } from './OperatorChip'
 export { OperatorGateProvider } from './OperatorGateProvider'
 export { OperatorPickerModal } from './OperatorPickerModal'
 export { useOperatorGate } from './useOperatorGate'
