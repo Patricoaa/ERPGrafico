@@ -292,15 +292,10 @@ export function useDraftSync({
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (activeLockDraftId && posSessionId) {
-                const url = `${process.env.NEXT_PUBLIC_API_URL}/sales/pos-drafts/${activeLockDraftId}/unlock/`
-                const body = JSON.stringify({
+                posApi.unlockDraftOnUnload(activeLockDraftId, {
                     pos_session_id: posSessionId,
                     session_key: browserSessionKey,
                 })
-                if (navigator.sendBeacon) {
-                    const blob = new Blob([body], { type: 'application/json' })
-                    navigator.sendBeacon(url, blob)
-                }
             }
         }
         window.addEventListener('beforeunload', handleBeforeUnload)
