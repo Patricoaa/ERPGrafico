@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.97](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.96...v0.3.97) (2026-11-11)
+
+
+### ✨ Features
+
+* **pos:** ficha de la sesión POS por pestañas, bloqueo de configuración con sesión abierta ([90f4943](https://github.com/Patricoaa/ERPGrafico/commit/90f4943e22dfa0ee74e08fb53f1bfb45e77c6860))
+
+
+### 💅 Styling
+
+* **treasury:** limpia imports de los tests de operador POS para bajar el ratchet de Ruff ([241abda](https://github.com/Patricoaa/ERPGrafico/commit/241abda0e50df5f0ca2b9f70c28f5a0dce41f99f))
+* **treasury:** ordena los imports de pos_lock para no subir el ratchet de Ruff ([7373dad](https://github.com/Patricoaa/ERPGrafico/commit/7373dadfb531977241dcecf277d83e5e22717230))
+
 ### [0.3.96](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.95...v0.3.96) (2026-11-10)
 
 
