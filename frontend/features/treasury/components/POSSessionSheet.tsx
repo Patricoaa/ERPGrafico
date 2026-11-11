@@ -82,7 +82,7 @@ export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: PO
             content: <SummaryTab session={session} overview={overview} isLoading={overviewQuery.isLoading} onGoTab={(t) => setTab(t)} />,
         },
         {
-            value: "sales", label: "Ventas", icon: ShoppingCart, badge: overview?.sales.rows.length,
+            value: "sales", label: "Ventas", icon: ShoppingCart,
             content: <SalesTab overview={overview} isLoading={overviewQuery.isLoading} />,
         },
         { value: "cash", label: "Tesorería", icon: Banknote, content: <CashTab session={session} overview={overview} /> },
