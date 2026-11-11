@@ -465,6 +465,7 @@ export interface POSSession {
     expected_cash: number
     notes: string
     cash_movements: TreasuryMovement[]
+    my_mode?: 'SINGLE' | 'MULTI'
 }
 
 /** Fila de la pestaña Ventas: una venta (importe +) o una devolución (importe −). */

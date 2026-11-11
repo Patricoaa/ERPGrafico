@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/AuthContext"
 
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
@@ -42,7 +43,7 @@ interface POSSessionsClientViewProps {
     hideHeader?: boolean
 }
 
-import { usePOSSessions, useDownloadPOSReportPDF } from "@/features/pos"
+import { usePOSSessions, useDownloadPOSReportPDF, POS_SESSIONS_QUERY_KEY } from "@/features/pos"
 import { posSessionUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
@@ -65,8 +66,11 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
 
     const [selectedSession, setSelectedSession] = useState<POSSession | null>(null)
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+    const queryClient = useQueryClient()
 
     const handleCloseSuccess = () => {
+        void queryClient.invalidateQueries({ queryKey: POS_SESSIONS_QUERY_KEY })
+        void queryClient.invalidateQueries({ queryKey: ['pos-session', selectedSession?.id] })
         // Al cerrar se muestra su informe Z en la ficha.
         if (selectedSession && !(sheet.selectedId === selectedSession.id && sheet.isOpen)) sheet.toggle(selectedSession.id)
         refetch()
@@ -78,7 +82,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
 
     const actionsCtx: POSSessionActionsCtx = {
         // #233: solo quien abrió la sesión de POS o un superusuario puede cerrarla.
-        canClose: (session) => !!authUser && (authUser.is_superuser || authUser.id === session.user),
+        canClose: (session) => !!authUser && (authUser.is_superuser || authUser.id === Number(session.user)),
         onOpen: (session) => sheet.toggle(session.id),
         onDownloadReport: async (session, type) => {
             try {

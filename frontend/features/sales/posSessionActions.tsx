@@ -45,7 +45,8 @@ export const posSessionActions = createEntityActions<
             label: "Cerrar sesión de POS",
             className: "text-destructive",
             onClick: () => ctx.onCloseRegister(item),
-            visible: isOpen && ctx.canClose(item),
+            visible: isOpen,
+            disabled: !ctx.canClose(item),
         },
     ]
 })
