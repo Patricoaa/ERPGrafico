@@ -2,8 +2,6 @@ from rest_framework import serializers
 
 from core.serializers.mixins import FrozenFieldsField, IsEditableField
 
-from .pos_lock import PosSessionLockedField
-
 from .models import (
     Bank,
     BankStatement,
@@ -18,6 +16,7 @@ from .models import (
     TreasuryAccount,
     TreasuryMovement,
 )
+from .pos_lock import PosSessionLockedField
 
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer

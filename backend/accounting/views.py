@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagination
+from treasury.pos_lock import PosSessionLockMixin, annotate_pos_lock
 
 from .models import (
     Account,
@@ -34,7 +35,6 @@ from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin, EditPolicyMixin
-from treasury.pos_lock import PosSessionLockMixin, annotate_pos_lock
 
 from .fiscal_year_service import FiscalYearClosingService
 from .selectors import (

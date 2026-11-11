@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http import FileResponse, HttpResponse
 
+from .pos_lock import PosSessionLockMixin
+
 logger = logging.getLogger(__name__)
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import filters as drf_filters
@@ -43,7 +45,6 @@ from .models import (
 from .reconciliation_service import ReconciliationService
 
 # from .rule_service import RuleService
-from .pos_lock import PosSessionLockMixin
 from .selectors import BankStatementSelector
 from .serializers import (
     BankLoanSerializer,
