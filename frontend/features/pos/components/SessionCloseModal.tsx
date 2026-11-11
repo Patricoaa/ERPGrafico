@@ -2,13 +2,16 @@
 import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Loader2, AlertTriangle, Search, ChevronDown, Check } from "lucide-react"
 import { toast } from "sonner"
+import { isAxiosError } from "axios"
 import { posApi } from "../api/posApi"
+import { usePOSSessionSummary } from "../hooks/usePOSSessions"
+import { usePOSSessionRealtime } from "../hooks/usePOSSessionRealtime"
 import { GenericWizard, Numpad, FadeIn, type WizardStep } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
@@ -25,6 +28,15 @@ interface SessionCloseModalProps {
     onOpenChange: (open: boolean) => void
     session: POSSession
     onSuccess?: (audit: POSSessionAudit) => void
+}
+
+/** 409 `pos_expected_cash_changed` del cierre (el esperado cambió desde que el operador lo vio). */
+function isExpectedCashChangedError(error: unknown): boolean {
+    if (!isAxiosError(error) || error.response?.status !== 409) return false
+    const data: unknown = error.response.data
+    const wrapped = typeof data === "object" && data !== null ? (data as { error?: unknown }).error : null
+    const details = typeof wrapped === "object" && wrapped !== null ? (wrapped as { details?: unknown }).details : null
+    return typeof details === "object" && details !== null && (details as { code?: unknown }).code === "pos_expected_cash_changed"
 }
 
 export function SessionCloseModal({
@@ -62,8 +74,15 @@ export function SessionCloseModal({
     const [settingsLoading, setSettingsLoading] = useState(false)
 
     // Fetch Accounting Settings and Full Report Data
-    const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
-    const [reportDataLoading, setReportDataLoading] = useState(false)
+    // ADR-0126: el informe se lee con Query y se refresca en vivo (Entity Bus) mientras se cuenta.
+    const summaryQuery = usePOSSessionSummary<POSReportData>(open ? session.id : null)
+    usePOSSessionRealtime(open ? session.id : null)
+    const fullReportData = summaryQuery.data ?? null
+    const reportDataLoading = summaryQuery.isLoading
+    const summaryReady = !summaryQuery.isFetching
+    // Efectivo esperado con el que el operador empezó a contar; si cambia, se le avisa.
+    const [baselineExpected, setBaselineExpected] = useState<number | null>(null)
+    const prefilledRef = useRef(false)
 
     // Derived values for validation and display
     const actual = parseFloat(actualCash) || 0
@@ -72,10 +91,14 @@ export function SessionCloseModal({
     const diff = actual - expected
     const hasDiff = diff !== 0
 
-    // Pre-populate expected cash and default treasury account when modal opens
+    // Pre-populate expected cash and default treasury account when modal opens. Solo una vez por
+    // apertura: un cambio posterior del esperado (venta en vivo) no pisa el conteo del operador.
     useEffect(() => {
-        if (open && session) {
+        if (!open) { prefilledRef.current = false; return }
+        if (session && summaryReady && !prefilledRef.current) {
+            prefilledRef.current = true
             requestAnimationFrame(() => {
+                setBaselineExpected(expected)
                 setActualCash(expected.toString())
                 setCloseNotes("")
                 setJustifyReason("")
@@ -86,24 +109,18 @@ export function SessionCloseModal({
                 setCashDestinationId(null) // Force user to pick a valid destination
             })
         }
-    }, [open, session, expected])
+    }, [open, session, expected, summaryReady])
 
     useEffect(() => {
         if (open && session) {
             let cancelled = false
             requestAnimationFrame(() => {
                 if (cancelled) return
-                setReportDataLoading(true)
                 setSettingsLoading(true)
                 posApi.getAccountingSettings()
                     .then(data => { if (!cancelled) requestAnimationFrame(() => setAccountingSettings(data)) })
                     .catch(err => { if (!cancelled) console.error("Failed to load accounting settings", err) })
                     .finally(() => { if (!cancelled) requestAnimationFrame(() => setSettingsLoading(false)) })
-
-                posApi.getSessionSummary(session.id)
-                    .then(data => { if (!cancelled) requestAnimationFrame(() => setFullReportData(data)) })
-                    .catch(err => { if (!cancelled) console.error("Failed to load sumary", err) })
-                    .finally(() => { if (!cancelled) requestAnimationFrame(() => setReportDataLoading(false)) })
             })
             return () => { cancelled = true }
         }
@@ -153,6 +170,7 @@ export function SessionCloseModal({
         try {
             const closeData = await posApi.closeSession(session.id, {
                 actual_cash: parseFloat(actualCash) || 0,
+                expected_cash_seen: expected,
                 withdrawal_amount: overrides?.withdrawal_amount ?? (parseFloat(withdrawalAmount) || 0),
                 notes: closeNotes,
                 cash_destination_id: cashDestinationId,
@@ -183,6 +201,13 @@ export function SessionCloseModal({
 
             return true
         } catch (error: unknown) {
+            if (isExpectedCashChangedError(error)) {
+                // ADR-0126: el servidor rechazó el cierre contra un esperado viejo; se relee y se avisa.
+                toast.warning("El efectivo esperado cambió. Revisa el nuevo monto y confirma de nuevo.")
+                void summaryQuery.refetch()
+                setStepIndex(0)
+                return false
+            }
             showApiError(error, "Error al cerrar la sesión de POS")
             return false
         } finally {
@@ -234,6 +259,21 @@ export function SessionCloseModal({
 
                 {/* Right Column: Counter */}
                 <div className="space-y-4">
+                    {baselineExpected !== null && expected !== baselineExpected && (
+                        <div role="status" className="rounded-md border border-warning/20 bg-warning/10 p-3 text-sm space-y-2">
+                            <div className="flex items-center gap-2 font-bold text-warning">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span>El efectivo esperado cambió</span>
+                            </div>
+                            <p>
+                                Pasó de {formatCurrency(baselineExpected)} a {formatCurrency(expected)} mientras contabas
+                                (hubo una venta o un movimiento en la sesión).
+                            </p>
+                            <Button type="button" size="sm" variant="outline" onClick={() => setBaselineExpected(expected)}>
+                                Entendido
+                            </Button>
+                        </div>
+                    )}
                     <div className="md:hidden mb-4 p-3 bg-primary/10 rounded-md border border-primary/10">
                         <div className="flex justify-between text-sm font-bold">
                             <span>Efectivo Esperado:</span>

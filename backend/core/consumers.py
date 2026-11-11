@@ -32,10 +32,18 @@ _TOPIC_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*(\.[0-9]+(\.comments)?
 _COMMENTS_SUFFIX = ".comments"
 
 
-def _required_permission(topic: str) -> str:
-    """Permiso exigido para suscribirse. Bloqueante: consulta la entidad comentada."""
+# Tópicos de entidades cuya API de lectura solo exige autenticación (no `view_<model>`): la
+# suscripción sigue la misma regla para no dejar mudo al cajero. El evento no lleva datos.
+# `treasury.possession`: el POS lee sus sesiones con solo estar autenticado (ADR-0126).
+_AUTHENTICATED_ONLY = {("treasury", "possession")}
+
+
+def _required_permission(topic: str) -> str | None:
+    """Permiso exigido para suscribirse (None = basta estar autenticado). Bloqueante: consulta la entidad comentada."""
     app, model = topic.split(".")[:2]
     if not topic.endswith(_COMMENTS_SUFFIX):
+        if (app, model) in _AUTHENTICATED_ONLY:
+            return None
         return f"{app}.view_{model}"
     # Comment visibility is inherited from the commented entity (ADR-0111), which may
     # itself inherit from a parent (see DocumentTypeRegistry.comment_view_permission).
@@ -85,7 +93,8 @@ class EntityBusConsumer(AsyncJsonWebsocketConsumer):
             # Require view permission for the subscribed model.
             # Topic format: <app>.<model>, <app>.<model>.<id> or <app>.<model>.<id>.comments
             required = await sync_to_async(_required_permission)(topic)
-            has_perm = await sync_to_async(self.scope["user"].has_perm)(required)
+            user = self.scope["user"]
+            has_perm = bool(user and user.is_authenticated) if required is None else await sync_to_async(user.has_perm)(required)
             if not has_perm:
                 await self.send_json(
                     {"event": "error", "code": "forbidden", "topic": topic}

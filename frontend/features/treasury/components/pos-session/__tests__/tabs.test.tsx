@@ -39,7 +39,7 @@ describe("POSSession summary tab", () => {
         expect(screen.getByText("El efectivo contado es inferior al esperado.")).toBeInTheDocument()
         await userEvent.click(screen.getByRole("button", { name: "Ir al cierre" }))
         expect(onGoTab).toHaveBeenCalledWith("closing")
-        expect(screen.getByText("Ticket medio bruto")).toBeInTheDocument()
+        expect(screen.getByText("Media de Orden de Venta")).toBeInTheDocument()
         expect(screen.getByText("62%")).toBeInTheDocument()
         expect(screen.getByRole("img", { name: /Efectivo 62%, Transferencia BancoEstado 38%/ })).toBeInTheDocument()
         expect(screen.getByText("Cobros por métodos")).toBeInTheDocument()

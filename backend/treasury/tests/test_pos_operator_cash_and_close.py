@@ -200,3 +200,30 @@ def test_single_mode_unchanged(api, single, safe_account, cashier):
     assert _close(api, single).status_code == 200
     single.refresh_from_db()
     assert single.closed_by == cashier
+
+
+# ─── ADR-0126: cierre contra el esperado que el operador vio ─────────────────
+
+
+def test_close_with_stale_expected_cash_is_409_and_keeps_session_open(api, single, safe_account):
+    seen = str(single.expected_cash)
+    assert _move(api, single, safe_account, "1000").status_code in (200, 201)  # el esperado baja
+    r = api.post(
+        f"/api/treasury/pos-sessions/{single.id}/close_session/",
+        {"actual_cash": seen, "expected_cash_seen": seen}, format="json",
+    )
+    assert r.status_code == 409
+    err = _error(r)
+    assert err["details"]["code"] == "pos_expected_cash_changed"
+    assert Decimal(err["details"]["expected_cash"]) == Decimal(seen) - Decimal("1000")
+    single.refresh_from_db()
+    assert single.status == "OPEN"
+
+
+def test_close_with_matching_expected_cash_closes(api, single):
+    seen = str(single.expected_cash)
+    r = api.post(
+        f"/api/treasury/pos-sessions/{single.id}/close_session/",
+        {"actual_cash": seen, "expected_cash_seen": seen}, format="json",
+    )
+    assert r.status_code == 200, r.content

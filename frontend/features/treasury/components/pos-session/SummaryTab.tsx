@@ -68,7 +68,7 @@ function IndicatorCards({ session, overview }: { session: POSSession; overview: 
     return (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
-                label="Ventas netas"
+                label="Ventas"
                 value={formatCurrency(Number(sales.net))}
                 icon={TrendingUp}
                 accent="success"
@@ -76,7 +76,7 @@ function IndicatorCards({ session, overview }: { session: POSSession; overview: 
                 subtext={`Brutas ${formatCurrency(Number(sales.gross))} − devoluciones ${formatCurrency(Number(sales.returns_total))}`}
             />
             <StatCard
-                label="Órdenes de venta"
+                label="N°Órdenes de venta"
                 value={sales.sale_count}
                 icon={Receipt}
                 accent="primary"
@@ -84,12 +84,12 @@ function IndicatorCards({ session, overview }: { session: POSSession; overview: 
                 subtext={`${sales.return_count} devolución(es)`}
             />
             <StatCard
-                label="Ticket medio bruto"
+                label="Media de Orden de Venta"
                 value={formatCurrency(Number(sales.average_ticket))}
                 icon={Banknote}
                 accent="info"
                 valueSize="md"
-                subtext="Ventas brutas ÷ órdenes de venta, IVA incluido"
+                subtext="Ventas ÷ órdenes de venta, IVA incluido"
             />
             <StatCard
                 label="Duración"
@@ -97,7 +97,7 @@ function IndicatorCards({ session, overview }: { session: POSSession; overview: 
                 icon={Timer}
                 accent="muted"
                 valueSize="md"
-                subtext={`${session.closed_at ? "Sesión cerrada" : "En curso"} · ${overview.timezone}`}
+                subtext={`${session.closed_at ? "Sesión cerrada" : "En curso"} `}
             />
         </div>
     )
@@ -147,7 +147,7 @@ function CollectionsBar({ collections }: { collections: POSSessionOverview["coll
                     </div>
                 ))}
             </div>
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-1">
                 {collections.map((c) => (
                     <li key={c.key} className="flex items-center justify-between gap-3 text-xs">
                         <span className="flex items-center gap-2">

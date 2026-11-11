@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 
 from core.prefix_registry import EntityPrefix
 
@@ -22,6 +22,19 @@ from .models import (
 )
 from .pos_operator_service import POSOperatorService
 from .services import TreasuryService
+
+
+class ExpectedCashChanged(APIException):
+    """409: el efectivo esperado cambió desde que el operador lo vio (ADR-0126)."""
+
+    status_code = 409
+    default_code = "pos_expected_cash_changed"
+    default_detail = "El efectivo esperado cambió mientras contabas. Revisa el nuevo monto y confirma de nuevo."
+
+    def __init__(self, expected_cash: Decimal):
+        super().__init__(
+            detail={"detail": self.default_detail, "code": self.default_code, "expected_cash": str(expected_cash)}
+        )
 
 
 class POSService:
@@ -244,6 +257,11 @@ class POSService:
     def close_session_from_request(request, session: POSSession):
         if session.status == "CLOSED":
             raise ValidationError("Esta sesión ya está cerrada.")
+        # ADR-0126: si el cliente informa el esperado que vio y ya no coincide, no se cierra con
+        # un arqueo contra un número viejo; antes de consumir el pase de operador.
+        seen = request.data.get("expected_cash_seen")
+        if seen not in (None, "") and Decimal(str(seen)) != session.expected_cash:
+            raise ExpectedCashChanged(session.expected_cash)
         actor = POSOperatorService.actor_from_request(request, session, "SESSION_CLOSE")
         # El pase se consume junto con el cierre: si el cierre falla, vuelve a estar vigente.
         with transaction.atomic():

@@ -72,12 +72,15 @@ ALLOWLIST: set[tuple[str, str]] = {
     ("inventory", "product"),
     ("inventory", "productcategory"),
     ("inventory", "uom"),
+    ("treasury", "possession"),   # ADR-0126
 }
 
 # Child models que invalidan a su padre en vez de tener tópico propio.
 # (child_app, child_model) → (parent_app, parent_model, fk_id_attr_on_child)
 PARENT_BROADCASTS: dict[tuple[str, str], tuple[str, str, str]] = {
     ("sales", "saleline"): ("sales", "saleorder", "order_id"),
+    ("treasury", "treasurymovement"): ("treasury", "possession", "pos_session_id"),  # ADR-0126
+    ("sales", "saleorder"): ("treasury", "possession", "pos_session_id"),            # ADR-0126
 }
 
 def _broadcast(*, app: str, model: str, instance_id: int, op: str) -> None:
@@ -130,7 +133,7 @@ useEntitySubscription(`sales.saleorder.${id}`, [['sales', id]])
 
 ### Alcance vigente (2026-08-04)
 
-**Allowlist activa:** `sales.SaleOrder` (broadcast propio) + `inventory.Product`, `inventory.ProductCategory`, `inventory.UoM`. `sales.SaleLine` vía `PARENT_BROADCASTS` (dispara `op="updated"` sobre el `SaleOrder` padre, sin tópico propio). Agregar modelos al bus = editar `ALLOWLIST` en `core/entity_bus.py` (cambio que pasa por PR). Antes de extender a `billing`, `purchasing`, `contacts`: validar carga de WS y latencia percibida.
+**Allowlist activa:** `sales.SaleOrder` (broadcast propio) + `treasury.POSSession` (informe X/Z en vivo; lo invalidan sus movimientos y ventas, [ADR-0126](../10-architecture/adr/0126-pos-session-report-realtime.md); suscribirse solo exige estar autenticado, igual que la lectura de sesiones del POS) + `inventory.Product`, `inventory.ProductCategory`, `inventory.UoM`. `sales.SaleLine` vía `PARENT_BROADCASTS` (dispara `op="updated"` sobre el `SaleOrder` padre, sin tópico propio). Agregar modelos al bus = editar `ALLOWLIST` en `core/entity_bus.py` (cambio que pasa por PR). Antes de extender a `billing`, `purchasing`, `contacts`: validar carga de WS y latencia percibida.
 
 ---
 

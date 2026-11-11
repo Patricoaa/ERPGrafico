@@ -36,6 +36,7 @@ ALLOWLIST: set[tuple[str, str]] = {
     ("inventory", "product"),
     ("inventory", "productcategory"),
     ("inventory", "uom"),
+    ("treasury", "possession"),
 }
 
 # Child models that invalidate their parent instead of broadcasting their own topic.
@@ -46,6 +47,9 @@ ALLOWLIST: set[tuple[str, str]] = {
 # `op="deleted"` arrives. Listeners refetch twice; tolerated for simplicity.
 PARENT_BROADCASTS: dict[tuple[str, str], tuple[str, str, str]] = {
     ("sales", "saleline"): ("sales", "saleorder", "order_id"),
+    # Informe X/Z de la sesión POS: todo movimiento o venta ligado a la sesión la invalida (ADR-0126).
+    ("treasury", "treasurymovement"): ("treasury", "possession", "pos_session_id"),
+    ("sales", "saleorder"): ("treasury", "possession", "pos_session_id"),
 }
 
 
@@ -125,7 +129,6 @@ def _on_post_save(sender, instance, created, **kwargs):
             instance_id=instance.pk,
             op="created" if created else "updated",
         )
-        return
     _broadcast_parent_for_child(instance)
 
 
@@ -139,7 +142,6 @@ def _on_post_delete(sender, instance, **kwargs):
             instance_id=instance.pk,
             op="deleted",
         )
-        return
     _broadcast_parent_for_child(instance)
 
 

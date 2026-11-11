@@ -212,3 +212,29 @@ def test_parent_broadcasts_targets_exist_in_allowlist():
         assert (papp, pmodel) in entity_bus.ALLOWLIST, (
             f"PARENT_BROADCASTS points to ({papp}, {pmodel}) which is not in ALLOWLIST"
         )
+
+
+# ─── Sesión POS: movimientos y ventas invalidan el informe X/Z (ADR-0126) ──────
+
+
+@pytest.mark.django_db
+def test_sale_with_pos_session_broadcasts_session_updated_and_own_topic(broadcast_spy, customer):
+    from django.contrib.auth import get_user_model
+    from treasury.models import POSSession, POSTerminal, TreasuryAccount
+
+    user = get_user_model().objects.create_user(username="rt-cajero", password="x")
+    account = TreasuryAccount.objects.create(name="Caja RT", account_type="CASH", currency="CLP")
+    terminal = POSTerminal.objects.create(name="Caja RT", code="RT-01", default_treasury_account=account)
+    session = POSSession.objects.create(terminal=terminal, user=user, treasury_account=account, opening_balance=0)
+    broadcast_spy.clear()
+
+    order = SaleOrder.objects.create(customer=customer, number="OV-RT-POS", pos_session=session)
+
+    assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "created"} in broadcast_spy
+    assert {"app": "treasury", "model": "possession", "id": session.id, "op": "updated"} in broadcast_spy
+
+
+@pytest.mark.django_db
+def test_sale_without_pos_session_does_not_broadcast_session(broadcast_spy, customer):
+    SaleOrder.objects.create(customer=customer, number="OV-RT-NOPOS")
+    assert all(c["model"] != "possession" for c in broadcast_spy)
