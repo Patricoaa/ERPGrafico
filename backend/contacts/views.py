@@ -32,10 +32,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "unblock_credit": "sales.override_credit_limit",
         "write_off_debt": "contacts.write_off_contact",
         "recover_written_off_debt": "contacts.write_off_contact",
-        "promote_partner": "contacts.post_partnertransaction",
         "demote_partner": "contacts.post_partnertransaction",
-        "setup_partner": "contacts.post_partnertransaction",
-        "initial_setup": "contacts.post_partnertransaction",
         "equity_subscription": "contacts.post_partnertransaction",
         "equity_transfer": "contacts.post_partnertransaction",
         "individual_dividend_payment": "contacts.post_partnertransaction",
@@ -172,22 +169,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             summary[key] = str(summary[key])
         return Response(summary)
 
-    @action(detail=True, methods=["post"], url_path="promote-partner")
-    def promote_partner(self, request, pk=None):
-        """
-        Promotes a contact to Partner (Socio), auto-creating the necessary accounting sub-accounts.
-        """
-        contact = self.get_object()
-        from .services import ContactPartnerService
-
-        try:
-            ContactPartnerService.promote_to_partner(contact, user=request.user)
-            return Response(self.get_serializer(contact).data)
-        except Exception as e:
-            from rest_framework import status
-
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
     @action(detail=True, methods=["post"], url_path="demote-partner")
     def demote_partner(self, request, pk=None):
         """
@@ -203,19 +184,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             from rest_framework import status
 
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=["post", "put", "patch"])
-    def setup_partner(self, request, pk=None):
-        """Enable or update partner specific settings for a contact"""
-        from .services import ContactService
-
-        contact = self.get_object()
-        ContactService.setup_partner(
-            contact=contact,
-            is_partner=request.data.get("is_partner", contact.is_partner),
-            equity_percentage=request.data.get("partner_equity_percentage"),
-        )
-        return Response(self.get_serializer(contact).data)
 
     @action(detail=True, methods=['post'])
     def individual_dividend_payment(self, request, pk=None):
@@ -304,16 +272,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         months = int(request.query_params.get('months', '24'))
         granularity = request.query_params.get('granularity', 'month')
         return Response(PartnerAnalyticsService.get_evolution(months, granularity))
-
-    @action(detail=False, methods=['post'])
-    def initial_setup(self, request):
-        from rest_framework.exceptions import ValidationError
-
-        from .services import ContactService
-        try:
-            return Response(ContactService.initial_setup_from_request(request))
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=400)
 
     @action(detail=False, methods=['post'])
     def mass_mobilize_retained_earnings(self, request):

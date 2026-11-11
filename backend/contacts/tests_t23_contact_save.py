@@ -2,7 +2,6 @@ from django.test import TestCase
 
 from accounting.models import Account, AccountingSettings, AccountType
 from contacts.models import Contact
-from contacts.services import ContactPartnerService
 
 
 class ContactSaveT23Tests(TestCase):
@@ -31,22 +30,6 @@ class ContactSaveT23Tests(TestCase):
         Per-contact account FKs have been removed; global defaults from AccountingSettings are used.
         """
         contact = Contact.objects.create(name="Test Partner", tax_id="12345678-9", is_partner=True)
-
-        promoted = ContactPartnerService.promote_to_partner(contact)
-        self.assertTrue(promoted.is_partner)
-
-    def test_promote_to_partner_succeeds(self):
-        """
-        Test that ContactPartnerService.promote_to_partner succeeds.
-        Per-contact account FKs have been removed; global defaults from AccountingSettings are used.
-        """
-        contact = Contact.objects.create(
-            name="Test Partner Service", tax_id="98765432-1", is_partner=False
-        )
-
-        ContactPartnerService.promote_to_partner(contact)
-        contact.refresh_from_db()
-
         self.assertTrue(contact.is_partner)
 
     def test_default_customer_signal_switch(self):

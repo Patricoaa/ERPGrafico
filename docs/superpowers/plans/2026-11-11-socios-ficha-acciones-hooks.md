@@ -18,7 +18,7 @@
 
 | Elemento | Decisión | Razón |
 |---|---|---|
-| **Configuración inicial** (`initial_setup`, `InitialCapitalModal`, `partnersApi.initialSetup`, `PartnerService.initial_setup`, `ContactService.initial_setup_from_request`) | **ELIMINAR** (pedido del usuario) | Es una suscripción en lote con fecha fija = hoy. `equity_subscription` ya hace `ensure_partner_setup` (auto-promueve) y recalcula participaciones; con un solo socio queda 100 %. "Añadir socio" lo reemplaza sin pérdida. La toolbar vacía pasa a mostrar "Añadir socio". |
+| **Configuración inicial** (`initial_setup`, `InitialCapitalModal`, `partnersApi.initialSetup`, `PartnerService.initial_setup`, `ContactService.initial_setup_from_request`) | **ELIMINAR** (pedido del usuario) | Es una suscripción en lote con fecha fija = hoy. `equity_subscription` ya hace `ensure_partner_setup` (auto-promueve) y recalcula participaciones; la participación se mide sobre capital *pagado* (`partner_net_equity`), por lo que el % es 0 hasta el primer aporte; el `initial_setup` viejo se comportaba igual (sin regresión). "Añadir socio" lo reemplaza sin pérdida. La toolbar vacía pasa a mostrar "Añadir socio". |
 | **`setup_partner`** (`ContactService.setup_partner`, endpoint, `partnersApi.setupPartner`) + **`PartnerEditDrawer`** | **ELIMINAR** | Es el único camino que escribe `partner_equity_percentage` a mano, sin asiento ni `PartnerEquityStake`; contradice que el % es un caché derivado de las suscripciones. Cualquier edición del % debe pasar por suscripción/reducción/transferencia. |
 | **`promote_partner`** (+ `ContactPartnerService.promote_to_partner`) | **ELIMINAR** | Solo voltea `is_partner`; un socio sin capital no tiene sentido y `equity_subscription` ya lo promueve. |
 | **`demote_partner`** (+ guards) | **MANTENER y exponer** como "Dar de baja socio" en la ficha | Los guards (capital, retiros, utilidades, dividendos) son valiosos; es el cierre natural tras reducir capital a 0 o transferir todo. Solo visible si cumple guards (o deshabilitado con motivo). |
@@ -51,7 +51,7 @@
 Backend:
 - [ ] Eliminar `initial_setup` (view + `ContactService.initial_setup_from_request` + `PartnerService.initial_setup`), `setup_partner` (view + `ContactService.setup_partner`), `promote_partner` (view + `ContactPartnerService.promote_to_partner`) y sus entradas en `action_permissions`.
 - [ ] Actualizar `core/tests/test_business_action_permissions.py` y tests de `contacts` afectados; quitar `CONTACT_PROMOTED` si queda sin uso (verificar con grep).
-- [ ] Verificar con test que `equity_subscription` sobre un contacto nuevo: lo promueve, fija `partner_since`, crea stake 100 %, genera 1 asiento balanceado. (Es el reemplazo de `initial_setup`; si falta, añadirlo antes de borrar.)
+- [ ] Verificar con test que `equity_subscription` sobre un contacto nuevo: lo promueve, fija `partner_since`, fija el capital suscrito, genera 1 asiento balanceado (la participación queda en 0 % hasta el primer aporte pagado). (Es el reemplazo de `initial_setup`; si falta, añadirlo antes de borrar.)
 
 Frontend:
 - [ ] Borrar `InitialCapitalModal`, `PartnerEditDrawer`, `InventoryContributionModal` (se reescribe en Fase 3 como método del wizard; copiar su lógica de producto/almacén/UoM antes de borrar), `CapitalContributionModal`, `ProvisionalWithdrawalModal`, y el `PartnerWithdrawalWizard` huérfano de `PartnersClientView` (con su estado `isWithdrawalOpen`).
@@ -112,7 +112,7 @@ Frontend:
 
 ## Criterios de aceptación globales
 
-- Añadir el primer socio desde cero produce capital, participación 100 % y un asiento balanceado, sin pasar por "configuración inicial".
+- Añadir el primer socio desde cero produce capital suscrito y un asiento balanceado (participación 100 % tras el primer aporte pagado), sin pasar por "configuración inicial".
 - `grep -rn "initial_setup\|setup_partner\|promote_partner\|InitialCapital\|PartnerEditDrawer"` no devuelve código vivo.
 - Desde un contacto, una búsqueda o un asiento se llega a la ficha del socio con `openEntity`.
 - Ningún componente de socios importa `@/lib/api` ni llama `partnersApi` directamente.
