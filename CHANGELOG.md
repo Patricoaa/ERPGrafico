@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.99](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.98...v0.3.99) (2026-11-11)
+
+
+### ✨ Features
+
+* **pos-sessions:** acción primaria siempre abre el drawer; reportes X/Z como acciones secundarias ([14810bf](https://github.com/Patricoaa/ERPGrafico/commit/14810bf1777d71414ce44b9ab5d3fde54dc639fa))
+* **pos-sessions:** permitir cierre de sesión desde clientview y desde drawer ([d7e005b](https://github.com/Patricoaa/ERPGrafico/commit/d7e005b1fd8c98a44fd425b8987dc710a9beb02e))
+* **pos:** ficha de sesión con cobrado/por cobrar, arqueo con motivo y actividad por venta ([9e01964](https://github.com/Patricoaa/ERPGrafico/commit/9e019645d6bc7ccc4e10d4b7b68e45bfed1d27f0))
+
 ### [0.3.98](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.97...v0.3.98) (2026-11-11)
 
 
