@@ -53,6 +53,8 @@ export const posSessionSaleRowEntity = defineEntity<POSSessionSaleRow>()((f) => 
         customer: f.text((r) => (r.is_walk_in ? `${r.customer_name} · venta ocasional` : r.customer_name), { label: "Cliente" }),
         method: f.text("payment_method", { label: "Método de pago", tone: "secondary" }),
         amount: f.money("amount", { label: "Importe", sign: "always" }),
+        collected: f.money((r) => (r.collected == null ? null : Number(r.collected)), { label: "Cobrado" }),
+        pending: f.money((r) => (r.pending == null ? null : Number(r.pending)), { label: "Por cobrar" }),
         status: f.status((r) => {
             if (r.kind === "COLLECTION") return { status: "received", label: "Cobro en la sesión", intent: "info" }
             if (r.kind === "RETURN") return { status: "sent", label: `Devolución · ${r.status_display}`, intent: "warning" }
@@ -64,7 +66,7 @@ export const posSessionSaleRowEntity = defineEntity<POSSessionSaleRow>()((f) => 
 }))
 
 export const posSessionSaleRowViews = posSessionSaleRowEntity.views({
-    table: { columns: ["folio", "date", "customer", "method", "amount", "status"], primary: "folio" },
+    table: { columns: ["folio", "date", "customer", "method", "amount", "collected", "pending", "status"], primary: "folio" },
 })
 
 export const ACTIVITY_CATEGORY_LABEL: Record<POSSessionActivityEvent["category"], string> = {
@@ -91,10 +93,11 @@ export const posSessionActivityEntity = defineEntity<POSSessionActivityRow>()((f
         category: f.text((e) => ACTIVITY_CATEGORY_LABEL[e.category], { label: "Categoría", tone: "secondary" }),
         description: f.text("description", { label: "Descripción" }),
         actor: f.text("actor", { label: "Responsable" }),
+        amount: f.money((e) => (e.amount == null ? null : Number(e.amount)), { label: "Importe", sign: "always" }),
         reference: f.value("sessionEventReference", (e) => e.reference, { label: "Referencia" }),
     },
 }))
 
 export const posSessionActivityViews = posSessionActivityEntity.views({
-    table: { columns: ["date", "category", "description", "actor", "reference"], primary: "description" },
+    table: { columns: ["date", "category", "description", "amount", "actor", "reference"], primary: "description" },
 })

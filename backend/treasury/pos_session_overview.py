@@ -17,8 +17,9 @@ ZERO = Decimal("0")
 
 
 def _clp(value) -> str:
-    """Importe en pesos chilenos con separador de miles: $10.000."""
-    return "$" + f"{Decimal(value):,.0f}".replace(",", ".")
+    """Importe en pesos chilenos con separador de miles: $10.000 (los negativos: -$10.000)."""
+    amount = Decimal(value)
+    return ("-" if amount < 0 else "") + "$" + f"{abs(amount):,.0f}".replace(",", ".")
 
 
 # Frase en español de cada paso del seguimiento (la fila se muestra con su responsable aparte).
@@ -97,8 +98,46 @@ def _collection_rows(session: POSSession) -> list[dict]:
             "is_walk_in": order.customer.is_default_customer,
             "payment_method": ", ".join(methods), "amount": net,
             "status": "COLLECTED", "status_display": "Cobro en la sesión", "counts": False,
+            "collected": net, "pending": None,
         })
     return rows
+
+
+def _collected_by_order(order_ids: list[int]) -> dict[int, Decimal]:
+    """Cobrado neto de reembolsos por orden (una consulta, sin importar cuántas ordenes)."""
+    if not order_ids:
+        return {}
+    totals: dict[int, Decimal] = {}
+    rows = (
+        TreasuryMovement.objects.filter(sale_order_id__in=order_ids)
+        .exclude(status="CANCELLED")
+        .values_list("sale_order_id", "movement_type", "amount")
+    )
+    for order_id, kind, amount in rows:
+        signed = amount if kind == TreasuryMovement.Type.INBOUND else -amount if kind == TreasuryMovement.Type.OUTBOUND else ZERO
+        totals[order_id] = totals.get(order_id, ZERO) + signed
+    return totals
+
+
+def _returned_by_order(order_ids: list[int]) -> dict[int, Decimal]:
+    """Devuelto (no anulado) por orden: se descuenta de lo que queda por cobrar."""
+    from django.db.models import Sum
+
+    from sales.models import SaleReturn
+
+    if not order_ids:
+        return {}
+    rows = (
+        SaleReturn.objects.filter(sale_order_id__in=order_ids)
+        .exclude(status=SaleReturn.Status.CANCELLED)
+        .values("sale_order_id")
+        .annotate(total=Sum("total"))
+    )
+    return {r["sale_order_id"]: r["total"] or ZERO for r in rows}
+
+
+def _pending(total: Decimal, paid: Decimal, returned: Decimal) -> Decimal:
+    return max(total - returned - paid, ZERO)
 
 
 def _sales_rows(session: POSSession):
@@ -116,8 +155,11 @@ def _sales_rows(session: POSSession):
         .select_related("sale_order", "sale_order__customer", "sale_order__payment_method_ref")
         .order_by("created_at", "id")
     )
+    collected = _collected_by_order([o.pk for o in orders])
+    returned = _returned_by_order([o.pk for o in orders])
     rows = []
     for order in orders:
+        paid = collected.get(order.pk, ZERO)
         rows.append({
             "key": f"sale-{order.pk}", "kind": "SALE", "id": order.pk, "label": "sales.saleorder",
             "display_id": order.display_id, "occurred_at": order.created_at,
@@ -126,6 +168,8 @@ def _sales_rows(session: POSSession):
             "payment_method": _order_method(order), "amount": order.total,
             "status": order.status, "status_display": order.get_status_display(),
             "counts": order.status != SaleOrder.Status.CANCELLED,
+            "collected": paid,
+            "pending": _pending(order.total, paid, returned.get(order.pk, ZERO)) if order.status != SaleOrder.Status.CANCELLED else ZERO,
         })
     for ret in returns:
         order = ret.sale_order
@@ -137,6 +181,7 @@ def _sales_rows(session: POSSession):
             "payment_method": _order_method(order), "amount": -ret.total,
             "status": ret.status, "status_display": ret.get_status_display(),
             "counts": ret.status != type(ret).Status.CANCELLED,
+            "collected": None, "pending": None,
         })
     rows.extend(_collection_rows(session))
     rows.sort(key=lambda r: (r["occurred_at"], r["key"]))
@@ -189,10 +234,38 @@ def _net_collections(session: POSSession) -> list[dict]:
     ]
 
 
+def _closing_movements(session: POSSession) -> dict:
+    """Movimientos que genera el cierre: ajuste por diferencia y retiro de efectivo (una consulta)."""
+    from core.prefix_registry import EntityPrefix
+
+    refs = {
+        f"{EntityPrefix.POS_SESSION}-EXCEDENTE-{session.id}": "adjustment",
+        f"{EntityPrefix.POS_SESSION}-RETIRO-{session.id}": "withdrawal",
+    }
+    found: dict[str, TreasuryMovement] = {}
+    for mv in session.movements.filter(reference__in=refs).exclude(status="CANCELLED").select_related("to_account"):
+        found[refs[mv.reference]] = mv
+    return found
+
+
+def _closing_movement_info(mv: TreasuryMovement | None, *, with_reason: bool = False) -> dict | None:
+    if mv is None:
+        return None
+    info = {
+        "id": mv.pk, "display_id": mv.display_id, "label": "treasury.treasurymovement", "amount": mv.amount,
+        "destination": mv.to_account.name if mv.to_account_id else None,
+    }
+    if with_reason:
+        info["reason"] = mv.justify_reason or None
+        info["reason_display"] = mv.get_justify_reason_display() if mv.justify_reason else None
+    return info
+
+
 def _closing(session: POSSession) -> dict | None:
     audit = getattr(session, "audit", None)
     if session.closed_at is None:
         return None
+    produced = _closing_movements(session)
     expected = audit.expected_amount if audit else session.expected_cash
     counted = audit.actual_amount if audit else None
     difference = audit.difference if audit else None
@@ -208,6 +281,9 @@ def _closing(session: POSSession) -> dict | None:
         "notes": audit.notes if audit else "",
         "notes_author": _name(session.closed_by),
         "notes_at": audit.created_at if audit else session.closed_at,
+        "adjustment": _closing_movement_info(produced.get("adjustment"), with_reason=True),
+        "withdrawal": _closing_movement_info(produced.get("withdrawal")),
+        "left_in_box": (counted - produced["withdrawal"].amount) if counted is not None and "withdrawal" in produced else counted,
     }
 
 
@@ -242,6 +318,8 @@ def build_overview(session: POSSession) -> dict:
             "average_ticket": (gross / len(sales)) if sales else ZERO,
             # Cobros de ventas que nacieron fuera de la sesión: no suman a las ventas, sí a los cobros.
             "collection_count": sum(1 for r in rows if r["kind"] == "COLLECTION"),
+            "collected": sum((r["collected"] for r in sales), ZERO),
+            "pending": sum((r["pending"] for r in sales), ZERO),
             "rows": rows,
         },
         "collections": _net_collections(session),
@@ -256,16 +334,19 @@ def build_activity(session: POSSession) -> list[dict]:
     (``label``, ``id``, ``display_id``) para enlazarlo.
     """
     from production.models import WorkOrder
-    from sales.models import SaleReturn, SaleTrackingEvent
+    from sales.models import SaleOrder, SaleReturn, SaleTrackingEvent
 
     events: list[dict] = []
 
-    def add(key, at, category, kind, description, actor=None, reference=None):
+    def add(key, at, category, kind, description, actor=None, reference=None, amount=None):
         events.append({
             "key": key, "occurred_at": at, "category": category, "kind": kind,
             "description": description, "actor_id": actor.pk if actor else None,
-            "actor_name": _name(actor), "reference": reference,
+            "actor_name": _name(actor), "reference": reference, "amount": amount,
         })
+
+    def signed(mv):
+        return mv.amount if mv.movement_type == TreasuryMovement.Type.INBOUND else -mv.amount
 
     session = POSSession.objects.select_related("user", "closed_by", "terminal").get(pk=session.pk)
     add("open", session.opened_at, "caja", "SESSION_OPENED",
@@ -275,7 +356,36 @@ def build_activity(session: POSSession) -> list[dict]:
         add(f"pass-{p.pk}", p.issued_at, "acceso", "OPERATOR_PASS",
             f"Identificación del operador para: {p.get_purpose_display().lower()}", p.operator)
 
-    for ev in SaleTrackingEvent.objects.filter(pos_session=session).select_related("operator", "sale_order"):
+    tracking = list(SaleTrackingEvent.objects.filter(pos_session=session).select_related("operator", "sale_order"))
+    checkout_operator = {
+        ev.sale_order_id: ev.operator
+        for ev in tracking
+        if ev.step == SaleTrackingEvent.Step.CHECKOUT and ev.sale_order_id
+    }
+
+    # Una fila por venta: quién la hizo, a quién, por cuánto y cómo se cobró (incluye cobros parciales).
+    orders = list(
+        SaleOrder.objects.filter(pos_session=session)
+        .exclude(status=SaleOrder.Status.DRAFT)
+        .select_related("customer", "salesperson", "payment_method_ref")
+    )
+    paid_by_order = _collected_by_order([o.pk for o in orders])
+    returned_by_order = _returned_by_order([o.pk for o in orders])
+    for order in orders:
+        paid = paid_by_order.get(order.pk, ZERO)
+        owed = _pending(order.total, paid, returned_by_order.get(order.pk, ZERO))
+        text = f"Venta {order.display_id} a {order.customer.name} por {_clp(order.total)} — {_order_method(order)}"
+        if order.status == SaleOrder.Status.CANCELLED:
+            text += " (anulada)"
+        elif owed > 0:
+            text += f"; cobrado {_clp(paid)}, pendiente {_clp(owed)}"
+        add(f"sale-{order.pk}", order.created_at, "venta", "SALE", text,
+            checkout_operator.get(order.pk) or order.salesperson,
+            {"label": "sales.saleorder", "id": order.pk, "display_id": order.display_id}, order.total)
+
+    for ev in tracking:
+        if ev.step == SaleTrackingEvent.Step.CHECKOUT and ev.sale_order_id:
+            continue  # ya está en la fila de la venta
         ref = None
         order = ev.sale_order
         if order is not None:
@@ -299,26 +409,37 @@ def build_activity(session: POSSession) -> list[dict]:
 
     # Todos los movimientos de tesorería de la sesión que no son cobros de una venta
     # (esos están en Ventas): ingresos, salidas y retiros.
-    movements = session.movements.exclude(status="CANCELLED").select_related("created_by")
+    movements = session.movements.exclude(status="CANCELLED").select_related("created_by", "to_account")
+    produced = _closing_movements(session)
+    adjustment = produced.get("adjustment")
+    close_withdrawal = produced.get("withdrawal")
     for mv in movements.filter(sale_order__isnull=True, invoice__isnull=True):
+        if adjustment is not None and mv.pk == adjustment.pk:
+            continue  # se muestra junto a la diferencia detectada
+        ref = {"label": "treasury.treasurymovement", "id": mv.pk, "display_id": mv.display_id}
+        if close_withdrawal is not None and mv.pk == close_withdrawal.pk:
+            dest = f" hacia {mv.to_account.name}" if mv.to_account_id else ""
+            add(f"mov-{mv.pk}", mv.created_at, "cierre", "CLOSE_WITHDRAWAL",
+                f"Retiro de efectivo al cerrar de {_clp(mv.amount)}{dest}", mv.created_by, ref, -mv.amount)
+            continue
         withdrawal = mv.justify_reason == TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL
         sign = "Ingreso" if mv.movement_type == TreasuryMovement.Type.INBOUND else "Salida"
         reason = mv.get_justify_reason_display() if mv.justify_reason else ""
         detail = " — ".join(part for part in (reason, mv.notes) if part)
         add(f"mov-{mv.pk}", mv.created_at, "caja", "PARTNER_WITHDRAWAL" if withdrawal else "CASH_MOVEMENT",
             f"{'Retiro de socio' if withdrawal else sign} de {_clp(mv.amount)}" + (f" — {detail}" if detail else ""),
-            mv.created_by, {"label": "treasury.treasurymovement", "id": mv.pk, "display_id": mv.display_id})
+            mv.created_by, ref, signed(mv))
 
     for order, mvs in _collected_elsewhere(session):
         for mv in mvs:
             incoming = mv.movement_type == TreasuryMovement.Type.INBOUND
             add(f"collect-{mv.pk}", mv.created_at, "caja", "SALE_COLLECTION",
                 f"{'Cobro' if incoming else 'Reembolso'} de la venta {order.display_id} por {_clp(mv.amount)}",
-                mv.created_by, {"label": "sales.saleorder", "id": order.pk, "display_id": order.display_id})
+                mv.created_by, {"label": "sales.saleorder", "id": order.pk, "display_id": order.display_id}, signed(mv))
 
     for ret in SaleReturn.objects.filter(sale_order__pos_session=session).select_related("sale_order"):
         add(f"ret-{ret.pk}", ret.created_at, "venta", "RETURN", f"Devolución sobre la venta {ret.sale_order.display_id}", None,
-            {"label": "sales.salereturn", "id": ret.pk, "display_id": ret.display_id})
+            {"label": "sales.salereturn", "id": ret.pk, "display_id": ret.display_id}, -ret.total)
 
     for wo in WorkOrder.objects.filter(sale_order__pos_session=session).select_related("sale_order"):
         add(f"wo-{wo.pk}", wo.created_at, "venta", "WORK_ORDER", f"Orden de trabajo creada para la venta {wo.sale_order.display_id}", None,
@@ -326,10 +447,17 @@ def build_activity(session: POSSession) -> list[dict]:
 
     if session.closed_at:
         closing = _closing(session)
-        add("close", session.closed_at, "cierre", "SESSION_CLOSED", "Cierre de la sesión", session.closed_by)
+        summary = ""
+        if closing and closing["counted_cash"] is not None:
+            summary = f" — esperado {_clp(closing['expected_cash'])}, declarado {_clp(closing['counted_cash'])}"
+        add("close", session.closed_at, "cierre", "SESSION_CLOSED", "Cierre de la sesión" + summary, session.closed_by)
         if closing and closing["difference"]:
+            diff = closing["difference"]
+            adj = closing["adjustment"]
+            reason = f" — {adj['reason_display']}" if adj and adj.get("reason_display") else ""
             add("difference", session.closed_at, "cierre", "CASH_DIFFERENCE",
-                f"Diferencia de caja detectada: {_clp(closing['difference'])}", session.closed_by)
+                f"{'Faltante' if diff < 0 else 'Sobrante'} de caja de {_clp(abs(diff))}{reason}", session.closed_by,
+                {"label": adj["label"], "id": adj["id"], "display_id": adj["display_id"]} if adj else None, diff)
 
     events.sort(key=lambda e: (e["occurred_at"], e["key"]), reverse=True)
     return events

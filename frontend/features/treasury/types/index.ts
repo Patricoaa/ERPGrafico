@@ -465,6 +465,7 @@ export interface POSSession {
     expected_cash: number
     notes: string
     cash_movements: TreasuryMovement[]
+    my_mode?: 'SINGLE' | 'MULTI'
 }
 
 /** Fila de la pestaña Ventas: una venta (importe +) o una devolución (importe −). */
@@ -486,6 +487,10 @@ export interface POSSessionSaleRow {
     status: string
     status_display: string
     counts: boolean
+    /** Cobrado neto de reembolsos; `null` en devoluciones. */
+    collected: number | string | null
+    /** Por cobrar (total − devuelto − cobrado); `null` en devoluciones y cobros de otras ventas. */
+    pending: number | string | null
 }
 
 /** Cobro neto por método de pago real de la Caja POS (no por tipo fijo). */
@@ -524,6 +529,20 @@ export interface POSSessionClosing {
     notes: string
     notes_author: string | null
     notes_at: string
+    /** Movimiento de ajuste que generó la diferencia, con el motivo declarado al cerrar. */
+    adjustment: (POSSessionClosingMovement & { reason: string | null; reason_display: string | null }) | null
+    /** Retiro de efectivo hecho al cerrar (hacia caja fuerte/banco). */
+    withdrawal: POSSessionClosingMovement | null
+    /** Declarado − retirado al cerrar: lo que queda en la caja. */
+    left_in_box: number | string | null
+}
+
+export interface POSSessionClosingMovement {
+    id: number
+    display_id: string
+    label: string
+    amount: number | string
+    destination: string | null
 }
 
 export interface POSSessionOverview {
@@ -538,6 +557,9 @@ export interface POSSessionOverview {
         includes_tax: boolean
         average_ticket: number | string
         collection_count: number
+        /** Cobrado y por cobrar de las ventas de la sesión. */
+        collected: number | string
+        pending: number | string
         rows: POSSessionSaleRow[]
     }
     collections: POSSessionCollection[]
@@ -556,6 +578,8 @@ export interface POSSessionActivityEvent {
     /** `null` = origen automático del sistema. */
     actor_name: string | null
     reference: { label: string; id: number; display_id: string } | null
+    /** Importe con signo del evento (ventas +, salidas −); `null` si no aplica. */
+    amount: number | string | null
 }
 
 export interface TransferPayload {

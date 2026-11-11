@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Activity, Banknote, ClipboardCheck, Download, FileText, Link2, Monitor, ShoppingCart } from "lucide-react"
+import { Activity, Banknote, ClipboardCheck, Download, FileText, Link2, Lock, Monitor, ShoppingCart } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/AuthContext"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import {
     DocumentActionsMenu,
@@ -13,7 +15,7 @@ import {
 } from "@/components/shared"
 import { useDrawerIdentity } from "@/features/_shared"
 import { DocumentRelationsTab, useDocumentRelations, type DocumentDomain } from "@/features/documents"
-import { useDownloadPOSReportPDF, usePOSSessionRealtime } from "@/features/pos"
+import { GatedSessionCloseModal, useDownloadPOSReportPDF, usePOSSessionRealtime, POS_SESSIONS_QUERY_KEY, type POSSession as POSSessionModal } from "@/features/pos"
 import { usePOSSession } from "../hooks/usePOSSession"
 import { usePOSSessionOverview } from "../hooks/usePOSSessionDetail"
 import { ActivityTab } from "./pos-session/ActivityTab"
@@ -39,13 +41,16 @@ export interface POSSessionSheetProps {
  * (contraste de resultados) y Actividad (trazabilidad). Relaciones enlaza la caja y las ventas.
  */
 export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: POSSessionSheetProps) {
-    const { session, isLoading, isError } = usePOSSession(id ?? null)
+    const { session, isLoading, isError, refetch } = usePOSSession(id ?? null)
     const overviewQuery = usePOSSessionOverview(id ?? null)
     usePOSSessionRealtime(open ? (id ?? null) : null)
     const { data: relations } = useDocumentRelations(LABEL, id ?? null)
     const { downloadPdf } = useDownloadPOSReportPDF()
+    const { user: authUser } = useAuth()
+    const queryClient = useQueryClient()
     const [tab, setTab] = useState<SessionTab>("summary")
     const [domain, setDomain] = useState<DocumentDomain | null>(null)
+    const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 
     const displayId = session ? `SES-${session.id}` : `#${id}`
     const identity = useDrawerIdentity(LABEL, "view", session, { overrideTitle: displayId })
@@ -58,6 +63,7 @@ export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: PO
     const overview = overviewQuery.data
     const isClosed = session?.status === "CLOSED"
     const reportKind = isClosed ? "Z" : "X"
+    const canClose = !!session && !!authUser && (authUser.is_superuser || authUser.id === Number(session.user))
 
     const handleDownload = async () => {
         if (!session) return
@@ -69,12 +75,31 @@ export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: PO
         }
     }
 
-    const actions: DocumentActionItem[] = session ? [{
-        id: "download-report",
-        label: `Descargar informe ${reportKind} (PDF)`,
-        icon: Download,
-        onClick: handleDownload,
-    }] : []
+    const handleCloseSuccess = () => {
+        setCloseDialogOpen(false)
+        void queryClient.invalidateQueries({ queryKey: POS_SESSIONS_QUERY_KEY })
+        void queryClient.invalidateQueries({ queryKey: ['pos-session', id] })
+        void refetch()
+        void overviewQuery.refetch()
+    }
+
+    const actions: DocumentActionItem[] = session ? [
+        ...(session.status === 'OPEN' ? [{
+            id: "close-session",
+            label: "Cerrar sesión de POS",
+            icon: Lock,
+            disabled: !canClose,
+            disabledReason: !canClose ? "Solo quien abrió la sesión o un superusuario puede cerrarla" : undefined,
+            destructive: true,
+            onClick: () => setCloseDialogOpen(true),
+        }] : []),
+        {
+            id: "download-report",
+            label: `Descargar Reporte ${reportKind} (PDF)`,
+            icon: Download,
+            onClick: handleDownload,
+        },
+    ] : []
 
     const tabs: DocumentSheetTab[] = session ? [
         {
@@ -110,25 +135,35 @@ export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: PO
     ] : []
 
     return (
-        <DocumentDrawerShell
-            open={open}
-            onOpenChange={onOpenChange}
-            embedded={embedded}
-            title={identity.title}
-            subtitle={identity.subtitle}
-            icon={identity.icon ?? Monitor}
-            headerActions={session ? (
-                <>
-                    <StatusBadge status={session.status} variant="badge" />
-                    <DocumentActionsMenu actions={actions} />
-                </>
-            ) : undefined}
-            isLoading={isLoading || (!session && !isError)}
-            error={isError ? new Error("No se pudo cargar la sesión POS") : undefined}
-            loadingLabel="Cargando sesión POS"
-            tabs={tabs}
-            tab={tab}
-            onTabChange={(value) => setTab(value as SessionTab)}
-        />
+        <>
+            <DocumentDrawerShell
+                open={open}
+                onOpenChange={onOpenChange}
+                embedded={embedded}
+                title={identity.title}
+                subtitle={identity.subtitle}
+                icon={identity.icon ?? Monitor}
+                headerActions={session ? (
+                    <>
+                        <StatusBadge status={session.status} variant="badge" />
+                        <DocumentActionsMenu actions={actions} />
+                    </>
+                ) : undefined}
+                isLoading={isLoading || (!session && !isError)}
+                error={isError ? new Error("No se pudo cargar la sesión POS") : undefined}
+                loadingLabel="Cargando sesión POS"
+                tabs={tabs}
+                tab={tab}
+                onTabChange={(value) => setTab(value as SessionTab)}
+            />
+            {session && (
+                <GatedSessionCloseModal
+                    open={closeDialogOpen}
+                    onOpenChange={setCloseDialogOpen}
+                    session={session as unknown as POSSessionModal}
+                    onSuccess={handleCloseSuccess}
+                />
+            )}
+        </>
     )
 }

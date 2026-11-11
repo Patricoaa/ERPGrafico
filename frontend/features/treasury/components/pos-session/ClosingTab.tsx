@@ -1,7 +1,9 @@
 "use client"
 
-import { AlertTriangle, CheckCircle2, ClipboardCheck, ListChecks, MessageSquareText, Scale, UserCheck } from "lucide-react"
+import { AlertTriangle, Banknote, CheckCircle2, ClipboardCheck, ListChecks, MessageSquareText, Scale, UserCheck } from "lucide-react"
 import { DocumentFieldGrid, EmptyState, FormSection, SkeletonShell, StatCard, type DocumentField } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { formatCurrency } from "@/lib/money"
 import type { POSSession, POSSessionOverview } from "../../types"
 import { AmountCell, GRID_LEFT, dateTime } from "./shared"
@@ -18,6 +20,9 @@ interface ClosingTabProps {
  */
 export function ClosingTab({ session, overview, isLoading }: ClosingTabProps) {
     const closing = overview?.closing ?? null
+    const { openEntity } = useGlobalModals()
+    // La diferencia de efectivo ya se explica en «Arqueo de efectivo»; aquí van las demás incidencias.
+    const otherAlerts = (overview?.alerts ?? []).filter((a) => a.code !== "CASH_DIFFERENCE")
 
     if (!session.closed_at) {
         return <EmptyState variant="compact" icon={ClipboardCheck} title="La sesión sigue abierta" description="El cierre aparecerá aquí cuando se cierre la sesión." />
@@ -46,17 +51,22 @@ export function ClosingTab({ session, overview, isLoading }: ClosingTabProps) {
                         />
                         <StatCard
                             label="Incidencias"
-                            value={overview.alerts.length}
+                            value={otherAlerts.length}
                             icon={ListChecks}
-                            accent={overview.alerts.length > 0 ? "warning" : "success"}
+                            accent={otherAlerts.length > 0 ? "warning" : "success"}
                             valueSize="md"
-                            subtext={overview.alerts.length > 0 ? overview.alerts.map((a) => a.message).join(" ") : "Sin incidencias"}
+                            subtext={otherAlerts.length > 0 ? otherAlerts.map((a) => a.message).join(" ") : "Sin otras incidencias"}
                         />
                     </div>
 
-                    <section aria-label="Comparativa por método" className="space-y-4">
-                        <FormSection title="Comparativa por método" icon={Scale} />
-                        <DocumentFieldGrid className={GRID_LEFT} fields={comparison(overview)} />
+                    <section aria-label="Arqueo de efectivo" className="space-y-4">
+                        <FormSection title="Arqueo de efectivo" icon={Banknote} />
+                        <DocumentFieldGrid className={GRID_LEFT} fields={cashCount(overview, openEntity)} />
+                    </section>
+
+                    <section aria-label="Cobros por método" className="space-y-4">
+                        <FormSection title="Cobros por método" icon={Scale} />
+                        <DocumentFieldGrid className={GRID_LEFT} fields={otherMethods(overview)} />
                     </section>
 
                     <section aria-label="Observaciones del cierre" className="space-y-4">
@@ -78,15 +88,54 @@ export function ClosingTab({ session, overview, isLoading }: ClosingTabProps) {
     )
 }
 
-function comparison(overview: POSSessionOverview): DocumentField[] {
+type OpenEntity = (label: string, id: number) => void
+
+function MovementLink({ movement, openEntity }: { movement: { id: number; display_id: string; label: string }; openEntity: OpenEntity }) {
+    return (
+        <Button type="button" variant="link" className="h-auto p-0 font-mono text-xs" onClick={() => openEntity(movement.label, movement.id)}>
+            {movement.display_id}
+        </Button>
+    )
+}
+
+/** Esperado, declarado y diferencia con su motivo, el ajuste que generó y el retiro al cerrar. */
+function cashCount(overview: POSSessionOverview, openEntity: OpenEntity): DocumentField[] {
     const closing = overview.closing
+    const adjustment = closing?.adjustment ?? null
+    const withdrawal = closing?.withdrawal ?? null
     const fields: DocumentField[] = [
-        { label: "Efectivo · esperado", value: <AmountCell value={closing?.expected_cash ?? 0} /> },
-        { label: "Efectivo · declarado", value: closing?.counted_cash != null ? <AmountCell value={closing.counted_cash} /> : null },
-        { label: "Efectivo · diferencia", value: closing?.difference != null ? <AmountCell value={closing.difference} signed bold /> : null },
+        { label: "Esperado", value: <AmountCell value={closing?.expected_cash ?? 0} /> },
+        { label: "Declarado", value: closing?.counted_cash != null ? <AmountCell value={closing.counted_cash} /> : null },
+        { label: "Diferencia", value: closing?.difference != null ? <AmountCell value={closing.difference} signed bold /> : null },
     ]
-    for (const c of overview.collections.filter((x) => x.method !== "CASH")) {
-        fields.push({ label: `${c.label} · esperado`, value: <AmountCell value={c.amount} /> })
+    if (adjustment) {
+        fields.push(
+            { label: "Motivo de la diferencia", value: adjustment.reason_display ?? "Sin motivo registrado" },
+            { label: "Ajuste generado", value: <MovementLink movement={adjustment} openEntity={openEntity} /> },
+        )
+    }
+    if (withdrawal) {
+        fields.push(
+            {
+                label: "Retirado al cerrar",
+                value: (
+                    <span className="flex flex-col">
+                        <AmountCell value={withdrawal.amount} />
+                        <span className="text-muted-foreground">{withdrawal.destination ? `Hacia ${withdrawal.destination} · ` : ""}<MovementLink movement={withdrawal} openEntity={openEntity} /></span>
+                    </span>
+                ),
+            },
+        )
+    }
+    if (closing?.left_in_box != null) {
+        fields.push({ label: "Queda en la caja", value: <AmountCell value={closing.left_in_box} bold /> })
     }
     return fields
+}
+
+/** Métodos distintos de efectivo: lo cobrado en la sesión (el efectivo se contrasta arriba). */
+function otherMethods(overview: POSSessionOverview): DocumentField[] {
+    return overview.collections
+        .filter((c) => c.method !== "CASH")
+        .map((c) => ({ label: c.label, value: <AmountCell value={c.amount} /> }))
 }

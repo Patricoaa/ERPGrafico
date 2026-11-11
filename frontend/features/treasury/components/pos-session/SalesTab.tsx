@@ -1,6 +1,6 @@
 "use client"
 
-import { Hash, Receipt, TrendingUp, Undo2, Wallet } from "lucide-react"
+import { HandCoins, Hash, Receipt, TrendingUp, Undo2, Wallet } from "lucide-react"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { FormSection, SkeletonShell, StatCard } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -29,7 +29,7 @@ export function SalesTab({ overview, isLoading }: SalesTabProps) {
         <SkeletonShell isLoading={isLoading || !overview} ariaLabel="Cargando ventas de la sesión" className="flex flex-1 min-h-0 flex-col">
             {overview && (
                 <div className="flex flex-1 min-h-0 flex-col gap-8">
-                    <div aria-label="Balance comercial" className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div aria-label="Balance comercial" className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-5">
                         <StatCard
                             label="Ventas"
                             value={formatCurrency(Number(overview.sales.gross))}
@@ -40,6 +40,14 @@ export function SalesTab({ overview, isLoading }: SalesTabProps) {
                         />
                         <StatCard label="Devoluciones" value={formatCurrency(Number(overview.sales.returns_total))} icon={Undo2} accent="warning" valueSize="md" />
                         <StatCard label="Ventas netas" value={formatCurrency(Number(overview.sales.net))} icon={TrendingUp} accent="success" valueSize="md" subtext="Ventas − devoluciones" />
+                        <StatCard
+                            label="Por cobrar"
+                            value={formatCurrency(Number(overview.sales.pending))}
+                            icon={HandCoins}
+                            accent={Number(overview.sales.pending) > 0 ? "warning" : "success"}
+                            valueSize="md"
+                            subtext={`Cobrado ${formatCurrency(Number(overview.sales.collected))} de ${formatCurrency(Number(overview.sales.net))}`}
+                        />
                         <StatCard
                             label="Registros"
                             value={overview.sales.sale_count + overview.sales.return_count}
