@@ -6,7 +6,7 @@ export const partnersApi = {
      * Get summary metrics for all partners
      */
     getSummary: async (): Promise<PartnerSummary> => {
-        const response = await api.get('/contacts/partners_summary/')
+        const response = await api.get<PartnerSummary>('/contacts/partners_summary/')
         // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
@@ -15,7 +15,7 @@ export const partnersApi = {
      * Get all contacts marked as partners
      */
     getPartners: async (): Promise<Partner[]> => {
-        const response = await api.get('/contacts/partners/')
+        const response = await api.get<Partner[]>('/contacts/partners/')
         // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
@@ -24,7 +24,7 @@ export const partnersApi = {
      * Get statement (transactions and balance) for a specific partner
      */
     getStatement: async (contactId: number): Promise<PartnerStatement> => {
-        const response = await api.get(`/contacts/${contactId}/partner_statement/`)
+        const response = await api.get<PartnerStatement>(`/contacts/${contactId}/partner_statement/`)
         return response.data
     },
 
@@ -62,12 +62,17 @@ export const partnersApi = {
      */
     getProfitDistributions: async (year?: number): Promise<ProfitDistribution[]> => {
         const url = year ? `/contacts/profit-distributions/?fiscal_year=${year}` : '/contacts/profit-distributions/'
-        const response = await api.get(url)
+        const response = await api.get<{ results: ProfitDistribution[] }>(url)
         return response.data.results
     },
 
+    getProfitDistribution: async (id: number): Promise<ProfitDistribution> => {
+        const response = await api.get<ProfitDistribution>(`/contacts/profit-distributions/${id}/`)
+        return response.data
+    },
+
     createProfitDistribution: async (data: { fiscal_year_id: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }): Promise<ProfitDistribution> => {
-        const response = await api.post('/contacts/profit-distributions/', data)
+        const response = await api.post<ProfitDistribution>('/contacts/profit-distributions/', data)
         return response.data
     },
 
@@ -92,7 +97,7 @@ export const partnersApi = {
     },
 
     recalculateProfitDistribution: async (id: number) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/recalculate/`)
+        const response = await api.post<ProfitDistribution>(`/contacts/profit-distributions/${id}/recalculate/`)
         return response.data
     },
 
@@ -121,7 +126,7 @@ export const partnersApi = {
     },
 
     getPartnerEvolution: async (months = 24, granularity = 'month'): Promise<{ periods: PartnerEvolutionPeriod[] }> => {
-        const response = await api.get(`/contacts/partner_evolution/?months=${months}&granularity=${granularity}`)
+        const response = await api.get<{ periods: PartnerEvolutionPeriod[] }>(`/contacts/partner_evolution/?months=${months}&granularity=${granularity}`)
         // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },

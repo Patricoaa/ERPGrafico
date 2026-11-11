@@ -22,7 +22,7 @@
 | **`setup_partner`** (`ContactService.setup_partner`, endpoint, `partnersApi.setupPartner`) + **`PartnerEditDrawer`** | **ELIMINAR** | Es el único camino que escribe `partner_equity_percentage` a mano, sin asiento ni `PartnerEquityStake`; contradice que el % es un caché derivado de las suscripciones. Cualquier edición del % debe pasar por suscripción/reducción/transferencia. |
 | **`promote_partner`** (+ `ContactPartnerService.promote_to_partner`) | **ELIMINAR** | Solo voltea `is_partner`; un socio sin capital no tiene sentido y `equity_subscription` ya lo promueve. |
 | **`demote_partner`** (+ guards) | **MANTENER y exponer** como "Dar de baja socio" en la ficha | Los guards (capital, retiros, utilidades, dividendos) son valiosos; es el cierre natural tras reducir capital a 0 o transferir todo. Solo visible si cumple guards (o deshabilitado con motivo). |
-| **`InventoryContributionModal`** (aporte en especie) | **REINTEGRAR** como método "Bienes" en `PartnerContributionWizard` | El backend ya lo soporta (`inventory.services` → `PARTNER_CONTRIBUTION`) y el retiro en especie ya existe con selector Efectivo/Bienes en `PartnerWithdrawalWizard`. Hoy hay asimetría. Si al reintegrar el backend no cierra el circuito (verificar en Fase 3), se elimina el modal. |
+| **`InventoryContributionModal`** (aporte en especie) | **ELIMINADO (Fase 1)** | Redundante: `PartnerContributionWizard` ya tenía el método «Bienes» (hallado en Fase 2). No hay nada que reintegrar. |
 | **`deleteProfitDistribution`** | **EXPONER** en la fila/drawer de distribución (solo `DRAFT`/`APPROVED`) | El backend ya valida (`validate_can_delete`); hoy un borrador inútil no se puede descartar. |
 | **Anular distribución `EXECUTED`** (`CANCELLED`) | **FUERA DE ALCANCE** | No existe servicio de reversa del asiento. Requiere ADR propio; se deja el estado en el enum. |
 | **`CapitalContributionModal`, `ProvisionalWithdrawalModal`** (EquityMovementModals) y wizard de retiro huérfano en `PartnersClientView` | **ELIMINAR** | Duplicados de los wizards, sin consumidores. |
@@ -61,7 +61,7 @@ Frontend:
 
 **Salida:** menos ~1.200 líneas, comportamiento visible igual salvo el botón inicial. **Riesgo:** bajo; verificar que no haya seed/demo (`setup_demo_data`) que llame a `initial_setup`.
 
-## Fase 2 — Hooks de feature y mover el dominio (cumplir invariantes 4 y 5)
+## Fase 2 — Hooks de feature y mover el dominio (cumplir invariantes 4 y 5) — HECHA (rama `refactor/socios-ficha-acciones`)
 
 - [ ] Crear `usePartnerStatement`, `usePartnerMutations` (suscripción, reducción, transferencia, aporte, retiro, pago dividendo, movilización) y `useProfitDistributions` / `useProfitDistributionMutations` (crear, recalcular, destinos, aprobar, ejecutar, eliminar, pago masivo) en `features/contacts/hooks/`.
 - [ ] Una sola invalidación: toda mutación invalida `PARTNERS_KEYS.all`, `partner statement`, y las claves de asientos/tesorería afectadas.
@@ -79,7 +79,8 @@ Frontend:
 - [ ] Las filas de `PartnersClientView` abren el drawer; `?ledger=` se reemplaza por el mecanismo estándar del drawer (ADR-0022) manteniendo compat. de URLs viejas con redirect.
 - [ ] `partnerActions` único (fuente de verdad), con `visible` según estado — no `pointer-events-none`. Acciones: Registrar aporte (Efectivo/**Bienes**), Registrar retiro (Efectivo/Bienes), Formalizar capital pendiente, Pagar dividendos, Distribuir utilidades retenidas, Transferir participación, Reducir capital, **Dar de baja socio** (`demote_partner`). La toolbar de la lista solo conserva acciones globales (Añadir socio, Nueva suscripción, Transferencia).
 - [ ] Reemplazar los 8 `useState` de modales por un estado único `activeAction: { type, partnerId?, params? } | null` (o reducer) y un `PartnerActionHost`.
-- [ ] Aporte en especie: añadir método "Bienes" a `PartnerContributionWizard` espejando `PartnerWithdrawalWizard`; verificar el circuito backend `PARTNER_CONTRIBUTION` → `PartnerTransaction(CAPITAL_INVENTORY)` + asiento; si no cierra, quitar la opción y documentarlo.
+- [x] Aporte en especie: ya existe como método «Bienes» de `PartnerContributionWizard`. Solo verificar el circuito backend `PARTNER_CONTRIBUTION` → `PartnerTransaction(CAPITAL_INVENTORY)` + asiento con un test.
+- [ ] Unificar `PartnerContributionWizard` y `PartnerWithdrawalWizard` (≈70 % duplicados: efectivo/bienes, socio, bodega, producto) en un único `PartnerMovementWizard` parametrizado por dirección.
 - [ ] Drawer para `contacts.partnertransaction` (o visor del asiento/documento origen) para que `DocumentRelationsTab` y la búsqueda universal tengan destino.
 - [ ] Contacto → socio: en `ContactDrawer`, si `is_partner`, mostrar chip "Socio" y atajo "Ver ficha de socio"; si no, acción "Incorporar como socio" que abre `AddPartnerModal` con el contacto prefijado.
 

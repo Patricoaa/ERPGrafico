@@ -2,9 +2,10 @@
 import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
-import { useEffect, useState, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { BaseModal, CancelButton, SubmitButton, Chip, LabeledInput, LabeledContainer, PeriodValidationDateInput } from '@/components/shared'
-import { partnersApi, subscribedPercentages } from "@/features/contacts"
+import { usePartners, subscribedPercentages } from "@/features/contacts"
+import { usePartnerMutations } from "../hooks"
 import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import { UserPlus, TrendingDown } from "lucide-react"
@@ -16,13 +17,13 @@ import { projectionRowEntity, projectionRowViews, type ProjectionRow } from "../
 interface AddPartnerModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess: () => void
+    onSuccess?: () => void
 }
 
 export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<Partner[]>([])
-    const [totalCapital, setTotalCapital] = useState(0)
+    const { partners } = usePartners()
+    const { recordSubscription } = usePartnerMutations()
     const [formData, setFormData] = useState({
         contact_id: "",
         amount: "",
@@ -30,20 +31,12 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
         description: "Incorporación de nuevo socio"
     })
 
-    useEffect(() => {
-        if (open) {
-            partnersApi.getPartners().then(data => {
-                setPartners(data)
-                const total = data.reduce((acc: number, p: Partner) => {
-                    const amount = typeof p.partner_total_contributions === 'string'
-                        ? parseFloat(p.partner_total_contributions)
-                        : (p.partner_total_contributions || 0)
-                    return acc + amount
-                }, 0)
-                setTotalCapital(total)
-            })
-        }
-    }, [open])
+    const totalCapital = useMemo(() => partners.reduce((acc: number, p: Partner) => {
+        const amount = typeof p.partner_total_contributions === 'string'
+            ? parseFloat(p.partner_total_contributions)
+            : (p.partner_total_contributions || 0)
+        return acc + amount
+    }, 0), [partners])
 
     const handleSubmit = async () => {
         if (!formData.contact_id || !formData.amount) {
@@ -53,7 +46,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
 
         setLoading(true)
         try {
-            await partnersApi.recordSubscription({
+            await recordSubscription.mutateAsync({
                 contact_id: parseInt(formData.contact_id),
                 amount: parseFloat(formData.amount),
                 type: 'SUBSCRIPTION',
@@ -61,7 +54,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                 description: formData.description
             })
             toast.success("Socio añadido exitosamente")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
             showApiError(error, "Error al añadir socio")

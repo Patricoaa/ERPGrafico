@@ -9,8 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Drawer, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { partnersApi } from "@/features/contacts"
-import { type PartnerStatement } from "@/features/contacts"
+import { usePartnerStatement } from "../hooks"
 import { toast } from "sonner"
 import { parseDateOnly } from "@/lib/utils"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -39,8 +38,12 @@ export function PartnerLedgerDrawer({
     partnerId,
     partnerName
 }: PartnerLedgerDrawerProps) {
-    const [loading, setLoading] = useState(false)
-    const [data, setData] = useState<PartnerStatement | null>(null)
+    const { data: statement, isLoading: loading, isError } = usePartnerStatement(open ? (partnerId ?? null) : null)
+    const data = statement ?? null
+
+    useEffect(() => {
+        if (isError) toast.error("Error al cargar movimientos del socio")
+    }, [isError])
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
 
@@ -58,30 +61,6 @@ export function PartnerLedgerDrawer({
     }), [])
 
     const search = useUnifiedSearch(partnerSearchConfig)
-
-    const fetchData = async () => {
-        if (!partnerId) return
-        setLoading(true)
-        try {
-            const statement = await partnersApi.getStatement(partnerId)
-            setData(statement)
-        } catch (error) {
-            console.error(error)
-            toast.error("Error al cargar movimientos del socio")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        if (open && partnerId) {
-            requestAnimationFrame(() => {
-                fetchData()
-            })
-        } else {
-            setTimeout(() => setData(null), 0)
-        }
-    }, [open, partnerId])
 
     const transactionsWithBalance = React.useMemo<PartnerLedgerRow[]>(() => {
         if (!data?.transactions) return []
@@ -172,13 +151,13 @@ export function PartnerLedgerDrawer({
             <PartnerContributionWizard
                 open={isContributionOpen}
                 onOpenChange={setIsContributionOpen}
-                onSuccess={fetchData}
+                
                 initialPartnerId={partnerId?.toString()}
             />
             <PartnerWithdrawalWizard
                 open={isWithdrawalOpen}
                 onOpenChange={setIsWithdrawalOpen}
-                onSuccess={fetchData}
+                
                 initialPartnerId={partnerId?.toString()}
             />
         </Drawer>

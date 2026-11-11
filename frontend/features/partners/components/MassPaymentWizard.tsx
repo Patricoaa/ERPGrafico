@@ -8,7 +8,7 @@ import { useTreasuryAccounts } from "@/features/settings"
 import { LabeledSelect, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { partnersApi } from "@/features/contacts"
+import { useProfitDistributionMutations } from "../hooks"
 import { toast } from "sonner"
 
 import { Wallet, CheckCircle2, Banknote } from "lucide-react"
@@ -18,14 +18,12 @@ interface MassPaymentWizardProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     resolution: ProfitDistribution
-    onSuccess: () => void
+    onSuccess?: () => void
 }
-
-/** @deprecated Use MassPaymentWizard — renamed to match GenericWizard surface (naming-conventions.md §1.1) */
-export { MassPaymentWizard as MassPaymentModal }
 
 export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }: MassPaymentWizardProps) {
     const [loading, setLoading] = useState(false)
+    const { massPayment } = useProfitDistributionMutations()
     const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [payments, setPayments] = useState<Record<number, number>>({})
     const idempotencyKeyRef = useRef<string>(generateUuidV4())
@@ -68,15 +66,15 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                 amount: payments[parseInt(pId)]
             })).filter(p => p.amount > 0)
 
-            await partnersApi.massPaymentProfitDistribution(
-                resolution.id,
-                parseInt(selectedAccountId),
-                paymentsData,
-                idempotencyKeyRef.current,
-            )
+            await massPayment.mutateAsync({
+                id: resolution.id,
+                treasuryAccountId: parseInt(selectedAccountId),
+                payments: paymentsData,
+                idempotencyKey: idempotencyKeyRef.current,
+            })
             idempotencyKeyRef.current = generateUuidV4()
             toast.success("Pagos procesados correctamente.")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
             if (!shouldKeepIdempotencyKey(error)) idempotencyKeyRef.current = generateUuidV4()

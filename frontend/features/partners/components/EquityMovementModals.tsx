@@ -2,14 +2,13 @@
 import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 
 import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { partnersApi, netEquityPercentages } from "@/features/contacts"
-import { settingsApi } from "@/features/settings"
-import { type Partner } from "@/features/contacts"
-import { type TreasuryAccount } from "@/features/treasury"
+import { usePartners, netEquityPercentages } from "@/features/contacts"
+import { usePartnerMutations, useOnOpen } from "../hooks"
+import { useTreasuryAccounts } from "@/features/settings"
 import { toast } from "sonner"
 
 import {
@@ -21,14 +20,15 @@ import {
 interface ModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess: () => void
+    onSuccess?: () => void
     initialPartnerId?: string
     initialAmount?: string
 }
 
 export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initialPartnerId, initialAmount }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<Partner[]>([])
+    const { partners } = usePartners()
+    const mutations = usePartnerMutations()
     const [showConfirm, setShowConfirm] = useState(false)
     const [formData, setFormData] = useState({
         contact_id: "",
@@ -48,23 +48,18 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
         })
     }
 
-    useEffect(() => {
-        if (open) {
-            partnersApi.getPartners().then(partners => {
-                setPartners(partners)
-                if (initialPartnerId || initialAmount) {
-                    setFormData(prev => ({
-                        ...prev,
-                        contact_id: initialPartnerId || "",
-                        amount: initialAmount || "",
-                        description: initialAmount ? `Formalización de exceso de capital: ${formatCurrency(parseFloat(initialAmount))}` : ""
-                    }))
-                } else {
-                    resetForm()
-                }
-            })
+    useOnOpen(open, () => {
+        if (initialPartnerId || initialAmount) {
+            setFormData(prev => ({
+                ...prev,
+                contact_id: initialPartnerId || "",
+                amount: initialAmount || "",
+                description: initialAmount ? `Formalización de exceso de capital: ${formatCurrency(parseFloat(initialAmount))}` : ""
+            }))
+        } else {
+            resetForm()
         }
-    }, [open, initialPartnerId, initialAmount])
+    })
 
     // Selected partner info
     const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
@@ -93,7 +88,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
         setLoading(true)
         try {
-            await partnersApi.recordSubscription({
+            await mutations.recordSubscription.mutateAsync({
                 contact_id: parseInt(formData.contact_id),
                 amount: parseFloat(formData.amount),
                 type: formData.type,
@@ -101,7 +96,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                 description: formData.description
             })
             toast.success("Movimiento de capital registrado exitosamente")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
             showApiError(error, "Error al registrar suscripción")
@@ -225,7 +220,8 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
 export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<Partner[]>([])
+    const { partners } = usePartners()
+    const mutations = usePartnerMutations()
     const [showConfirm, setShowConfirm] = useState(false)
     const [formData, setFormData] = useState({
         from_contact_id: "",
@@ -245,14 +241,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
         })
     }
 
-    useEffect(() => {
-        if (open) {
-            partnersApi.getPartners().then(partners => {
-                setPartners(partners)
-                resetForm()
-            })
-        }
-    }, [open])
+    useOnOpen(open, resetForm)
 
     // Seller info
     const seller = partners.find(p => p.id.toString() === formData.from_contact_id)
@@ -286,7 +275,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
 
         setLoading(true)
         try {
-            await partnersApi.recordTransfer({
+            await mutations.recordTransfer.mutateAsync({
                 from_contact_id: parseInt(formData.from_contact_id),
                 to_contact_id: parseInt(formData.to_contact_id),
                 amount: parseFloat(formData.amount),
@@ -294,7 +283,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                 description: formData.description
             })
             toast.success("Transferencia de participación registrada exitosamente")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
             showApiError(error, "Error al registrar transferencia")
@@ -422,23 +411,11 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
     )
 }
 
-function useTreasuryAccounts() {
-    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
-
-    useEffect(() => {
-        // Fetch treasury accounts for the dropdowns
-        settingsApi.getTreasuryAccounts().then((accs) => setAccounts(accs as unknown as TreasuryAccount[])).catch((error) => {
-            console.error("Error fetching treasury accounts:", error)
-        })
-    }, [])
-
-    return accounts
-}
-
 export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPartnerId }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<Partner[]>([])
-    const treasuryAccounts = useTreasuryAccounts()
+    const { partners } = usePartners()
+    const mutations = usePartnerMutations()
+    const { data: treasuryAccounts = [] } = useTreasuryAccounts(open)
 
     const [formData, setFormData] = useState({
         contact_id: "",
@@ -458,18 +435,13 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
         })
     }
 
-    useEffect(() => {
-        if (open) {
-            partnersApi.getPartners().then(partners => {
-                setPartners(partners)
-                if (initialPartnerId) {
-                    setFormData(prev => ({ ...prev, contact_id: initialPartnerId }))
-                } else {
-                    resetForm()
-                }
-            })
+    useOnOpen(open, () => {
+        if (initialPartnerId) {
+            setFormData(prev => ({ ...prev, contact_id: initialPartnerId }))
+        } else {
+            resetForm()
         }
-    }, [open, initialPartnerId])
+    })
 
     const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
     const dividendBalance = selectedPartner ? (parseFloat(selectedPartner.partner_dividends_payable_balance) || 0) : 0
@@ -484,14 +456,17 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
 
         setLoading(true)
         try {
-            await partnersApi.recordDividendPayment(parseInt(formData.contact_id), {
-                amount: amountNum,
-                date: formData.date,
-                treasury_account_id: parseInt(formData.treasury_account_id),
-                description: formData.description
+            await mutations.recordDividendPayment.mutateAsync({
+                contactId: parseInt(formData.contact_id),
+                data: {
+                    amount: amountNum,
+                    date: formData.date,
+                    treasury_account_id: parseInt(formData.treasury_account_id),
+                    description: formData.description
+                }
             })
             toast.success("Pago de dividendos registrado exitosamente")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
             showApiError(error, "Error al registrar pago de dividendos")

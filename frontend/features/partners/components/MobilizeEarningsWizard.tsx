@@ -4,7 +4,8 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { LabeledInput, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { partnersApi } from "@/features/contacts"
+import { usePartners } from "@/features/contacts"
+import { usePartnerMutations } from "../hooks"
 import { toast } from "sonner"
 
 import { ArrowRightLeft } from "lucide-react"
@@ -13,12 +14,14 @@ import { type Partner } from "@/features/contacts"
 interface MobilizeEarningsWizardProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess: () => void
+    onSuccess?: () => void
     initialPartnerId?: number
 }
 
 export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialPartnerId }: MobilizeEarningsWizardProps) {
     const [loading, setLoading] = useState(false)
+    const { partners: allPartners } = usePartners()
+    const { mobilizeRetainedEarnings } = usePartnerMutations()
     const [partners, setPartners] = useState<Partner[]>([])
     const [mobilizations, setMobilizations] = useState<Record<number, { dividend: number, reinvest: number }>>({})
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
@@ -36,30 +39,19 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
     }, [open])
 
     useEffect(() => {
-        if (open) {
-            const fetchPartners = async () => {
-                try {
-                    const data = await partnersApi.getPartners()
-                    let availablePartners = data.filter((p: Partner) => parseFloat(p.partner_earnings_balance || "0") > 0)
-
-                    if (initialPartnerId) {
-                        availablePartners = availablePartners.filter((p: Partner) => p.id === initialPartnerId)
-                    }
-
-                    setPartners(availablePartners)
-
-                    const initial: Record<number, { dividend: number, reinvest: number }> = {}
-                    availablePartners.forEach((p: Partner) => {
-                        initial[p.id] = { dividend: 0, reinvest: 0 }
-                    })
-                    setMobilizations(initial)
-                } catch (error) {
-                    console.error("Error fetching partners:", error)
-                }
-            }
-            fetchPartners()
+        if (!open) return
+        let availablePartners = allPartners.filter((p: Partner) => parseFloat(p.partner_earnings_balance || "0") > 0)
+        if (initialPartnerId) {
+            availablePartners = availablePartners.filter((p: Partner) => p.id === initialPartnerId)
         }
-    }, [open, initialPartnerId])
+        const initial: Record<number, { dividend: number, reinvest: number }> = {}
+        availablePartners.forEach((p: Partner) => {
+            initial[p.id] = { dividend: 0, reinvest: 0 }
+        })
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reinicia el borrador al abrir con la lista cacheada
+        setPartners(availablePartners)
+        setMobilizations(initial)
+    }, [open, initialPartnerId, allPartners])
 
     const handleExecute = async () => {
         setLoading(true)
@@ -73,14 +65,14 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 }
             }).filter(m => m.dividend_amount > 0 || m.reinvest_amount > 0)
 
-            await partnersApi.massMobilizeRetainedEarnings({
+            await mobilizeRetainedEarnings.mutateAsync({
                 date,
                 description,
                 mobilizations: payload
             })
 
             toast.success("Utilidades movilizadas correctamente.")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
             showApiError(error, "Error al movilizar utilidades")

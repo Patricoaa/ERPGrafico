@@ -5,10 +5,9 @@ import React, { useState, useEffect, useMemo } from "react"
 import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { partnersApi } from "@/features/contacts"
 import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
-import { accountingApi } from "@/features/accounting"
-import { type FiscalYear } from "@/features/accounting"
+import { useFiscalYears } from "@/features/accounting"
+import { useProfitDistributionMutations } from "../hooks"
 import { toast } from "sonner"
 
 import {
@@ -27,13 +26,15 @@ import {
 interface ModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess: () => void
+    onSuccess?: () => void
     initialResolution?: ProfitDistribution
 }
 
-export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
+export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([])
+    const { fiscalYears: allFiscalYears } = useFiscalYears()
+    const fiscalYears = useMemo(() => allFiscalYears.filter(fy => fy.status === 'CLOSED'), [allFiscalYears])
+    const { create, update, recalculate, updateLines, approve, execute } = useProfitDistributionMutations()
 
     // Step 1 Form
     const [formData, setFormData] = useState({
@@ -68,33 +69,21 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
         })
     }
 
-    // Load closed fiscal years
-    useEffect(() => {
-        if (open) {
-            const fetchYears = async () => {
-                try {
-                    const data = await accountingApi.getFiscalYears({ status: 'CLOSED' })
-                    setFiscalYears(data)
-
-                    const params = new URLSearchParams(window.location.search)
-                    const yearParam = params.get('yearId')
-                    if (yearParam) {
-                        const fy = data.find(f => f.year.toString() === yearParam)
-                        if (fy) {
-                            setFormData(prev => ({
-                                ...prev,
-                                fiscal_year_id: fy.id.toString(),
-                                net_result: fy.net_result?.toString() || ""
-                            }))
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error loading fiscal years", error)
-                }
-            }
-            fetchYears()
+    // Preselección del ejercicio desde la URL (?yearId=), una vez por apertura
+    const [yearSeeded, setYearSeeded] = useState(false)
+    if (!open && yearSeeded) setYearSeeded(false)
+    if (open && !initialResolution && !yearSeeded && fiscalYears.length > 0) {
+        setYearSeeded(true)
+        const yearParam = new URLSearchParams(window.location.search).get('yearId')
+        const fy = yearParam ? fiscalYears.find(f => f.year.toString() === yearParam) : undefined
+        if (fy && !formData.fiscal_year_id) {
+            setFormData(prev => ({
+                ...prev,
+                fiscal_year_id: fy.id.toString(),
+                net_result: fy.net_result?.toString() || ""
+            }))
         }
-    }, [open])
+    }
 
     // Hydrate state if initialResolution is provided
     useEffect(() => {
@@ -150,10 +139,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
 
             let res: ProfitDistribution;
             if (draftResolution?.status === 'DRAFT') {
-                await partnersApi.updateProfitDistribution(draftResolution.id, payload)
-                res = await partnersApi.recalculateProfitDistribution(draftResolution.id)
+                await update.mutateAsync({ id: draftResolution.id, data: payload })
+                res = await recalculate.mutateAsync(draftResolution.id)
             } else {
-                res = await partnersApi.createProfitDistribution(payload)
+                res = await create.mutateAsync(payload)
             }
 
             setDraftResolution(res)
@@ -202,7 +191,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             }))
 
             if (draftResolution) {
-                await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
+                await updateLines.mutateAsync({ id: draftResolution.id, lines: updates })
             }
             return true
         } catch (error: unknown) {
@@ -216,12 +205,12 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
         try {
             if (draftResolution) {
                 if (draftResolution.status === 'DRAFT') {
-                    await partnersApi.approveProfitDistribution(draftResolution.id)
+                    await approve.mutateAsync(draftResolution.id)
                 }
-                await partnersApi.executeProfitDistribution(draftResolution.id)
+                await execute.mutateAsync(draftResolution.id)
             }
             toast.success("Distribución contable ejecutada con éxito")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
             showApiError(error, "Error al ejecutar la distribución")

@@ -1,16 +1,16 @@
 "use client"
 
-import React, { useEffect, useState, useRef, useCallback } from "react"
+import React, { useState, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 import { ActionConfirmModal } from '@/components/shared'
 import { profitDistributionActions, type ProfitDistributionActionsCtx } from './profitDistributionActions'
 
-import { partnersApi } from "@/features/contacts"
 import { type ProfitDistribution } from "@/features/contacts"
 import { toast } from "sonner"
-import { CreateDistributionFlow } from "./CreateDistributionFlow"
-import { MassPaymentModal } from "./MassPaymentWizard"
+import { useProfitDistributions, useProfitDistributionMutations, useOnOpen } from "../hooks"
+import { CreateDistributionWizard } from "./CreateDistributionWizard"
+import { MassPaymentWizard } from "./MassPaymentWizard"
 import { ProfitDistributionDrawer } from "./ProfitDistributionDrawer"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { profitDistributionEntity, profitDistributionViews } from "../entity-view/profitDistribution.entity"
@@ -34,10 +34,9 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
             router.replace(query ? `?${query}` : pathname, { scroll: false })
         }
     }, [searchParams, router, pathname])
-    // Unified state to prevent fragmented updates
-    const [state, setState] = useState({
-        distributions: [] as ProfitDistribution[],
-        loading: true,
+    const { distributions, isLoading } = useProfitDistributions()
+    const { execute } = useProfitDistributionMutations()
+    const [flow, setFlow] = useState({
         isFlowOpen: false,
         isMassPaymentOpen: false,
         selectedResolution: undefined as ProfitDistribution | undefined,
@@ -45,87 +44,39 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
     })
     const [confirmExecute, setConfirmExecute] = useState<ProfitDistribution | null>(null)
 
-    const isMounted = useRef(false)
-
-    const fetchDistributions = React.useCallback(async () => {
-        if (!isMounted.current) return
-        setState(prev => ({ ...prev, loading: true }))
-
-        try {
-            const data = await partnersApi.getProfitDistributions()
-            if (isMounted.current) {
-                setState(prev => ({
-                    ...prev,
-                    distributions: data,
-                    loading: false
-                }))
-            }
-        } catch (error) {
-            console.error(error)
-            if (isMounted.current) {
-                setState(prev => ({ ...prev, loading: false }))
-            }
-        }
-    }, [])
-
-    useEffect(() => {
-        isMounted.current = true
-        setTimeout(() => fetchDistributions(), 0)
-        return () => { isMounted.current = false }
-    }, [fetchDistributions])
-
-    // Effect to handle modal opening from URL/props
-    useEffect(() => {
-        if (initialFlowOpen) {
-            setTimeout(() => {
-                setState(prev => ({
-                    ...prev,
-                    selectedResolution: undefined,
-                    isFlowOpen: initialFlowOpen
-                }))
-            }, 0)
-        }
-    }, [initialFlowOpen])
+    // Apertura del flujo desde la URL (?modal=new-distribution)
+    useOnOpen(initialFlowOpen, () => setFlow(prev => ({ ...prev, selectedResolution: undefined, isFlowOpen: true })))
 
     const closeFlow = () => {
-        setState(prev => ({
-            ...prev,
-            isFlowOpen: false
-        }))
+        setFlow(prev => ({ ...prev, isFlowOpen: false }))
         clearModalParam()
-        fetchDistributions()
     }
 
     const handleExecute = (resolution: ProfitDistribution) => setConfirmExecute(resolution)
 
     const actionsCtx: ProfitDistributionActionsCtx = {
-        onViewDetail: (dist) => setState(prev => ({ ...prev, viewingDist: dist })),
-        onRetake: (dist) => setState(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true })),
+        onViewDetail: (dist) => setFlow(prev => ({ ...prev, viewingDist: dist })),
+        onRetake: (dist) => setFlow(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true })),
         onExecute: handleExecute,
-        onPayDividends: (dist) => setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true })),
+        onPayDividends: (dist) => setFlow(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true })),
     }
 
     const onConfirmExecute = async () => {
         if (!confirmExecute) return
-        setState(prev => ({ ...prev, loading: true }))
         try {
-            await partnersApi.executeProfitDistribution(confirmExecute.id)
+            await execute.mutateAsync(confirmExecute.id)
             toast.success("Distribución ejecutada exitosamente.")
-            fetchDistributions()
         } catch (error: unknown) {
-            console.error(error)
             const errResponse = error as unknown as { response?: { data?: { detail?: string } } }
             const detail = errResponse.response?.data?.detail || (error instanceof Error ? error.message : "Error al ejecutar la resolución")
             toast.error(detail)
             throw error
-        } finally {
-            setState(prev => ({ ...prev, loading: false }))
         }
     }
 
     const collection = useEntityCollection(
         profitDistributionEntity,
-        { rows: state.distributions, isLoading: state.loading },
+        { rows: distributions, isLoading },
         { pagination: { mode: "none" } }
     )
 
@@ -149,29 +100,27 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
             </div>
 
             {/* Modal Flows */}
-            {state.isFlowOpen && (
-                <CreateDistributionFlow
-                    open={state.isFlowOpen}
+            {flow.isFlowOpen && (
+                <CreateDistributionWizard
+                    open={flow.isFlowOpen}
                     onOpenChange={closeFlow}
-                    onSuccess={fetchDistributions}
-                    initialResolution={state.selectedResolution}
+                    initialResolution={flow.selectedResolution}
                 />
             )}
 
-            {state.isMassPaymentOpen && (
-                <MassPaymentModal
-                    open={state.isMassPaymentOpen}
-                    onOpenChange={(v) => setState(prev => ({ ...prev, isMassPaymentOpen: v }))}
-                    resolution={state.selectedResolution as ProfitDistribution}
-                    onSuccess={fetchDistributions}
+            {flow.isMassPaymentOpen && (
+                <MassPaymentWizard
+                    open={flow.isMassPaymentOpen}
+                    onOpenChange={(v) => setFlow(prev => ({ ...prev, isMassPaymentOpen: v }))}
+                    resolution={flow.selectedResolution as ProfitDistribution}
                 />
             )}
 
-            {state.viewingDist && (
+            {flow.viewingDist && (
                 <ProfitDistributionDrawer
-                    id={state.viewingDist.id}
-                    open={!!state.viewingDist}
-                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: undefined }))}
+                    id={flow.viewingDist.id}
+                    open={!!flow.viewingDist}
+                    onOpenChange={() => setFlow(prev => ({ ...prev, viewingDist: undefined }))}
                 />
             )}
 

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import {
     Plus,
     MoveHorizontal,
@@ -10,6 +10,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
 import { usePartners, netEquityPercentages } from "@/features/contacts"
+import { useOnOpen } from "../hooks"
 import {
     AnalyticsPanelContent,
     UnifiedSearchBar,
@@ -113,11 +114,7 @@ export function PartnersClientView({
         amount: undefined as string | undefined
     })
 
-    useEffect(() => {
-        if (initialAddPartnerOpen) {
-            setTimeout(() => setIsAddPartnerOpen(true), 0)
-        }
-    }, [initialAddPartnerOpen])
+    useOnOpen(initialAddPartnerOpen, () => setIsAddPartnerOpen(true))
 
     const ledgerParam = searchParams.get("ledger")
     const { selectedPartnerName, partnerIdForLedger, isLedgerOpen } = React.useMemo(() => {
@@ -256,14 +253,12 @@ export function PartnersClientView({
                     setIsSubscriptionOpen(open)
                     if (!open) setSubModalParams({ partnerId: undefined, amount: undefined })
                 }}
-                onSuccess={() => refetch()}
                 initialPartnerId={subModalParams.partnerId}
                 initialAmount={subModalParams.amount}
             />
             <EquityTransferModal
                 open={isTransferOpen}
                 onOpenChange={setIsTransferOpen}
-                onSuccess={() => refetch()}
             />
             <PartnerContributionWizard
                 open={isContributionOpen}
@@ -271,7 +266,6 @@ export function PartnersClientView({
                     setIsContributionOpen(open)
                     if (!open) setContributionTarget({})
                 }}
-                onSuccess={() => refetch()}
                 initialPartnerId={contributionTarget.partnerId?.toString()}
                 initialAmount={contributionTarget.amount}
                 lockAmount={!!contributionTarget.amount}
@@ -279,13 +273,11 @@ export function PartnersClientView({
             <MobilizeEarningsWizard
                 open={isMobilizeOpen}
                 onOpenChange={setIsMobilizeOpen}
-                onSuccess={() => refetch()}
                 initialPartnerId={selectedPartnerId}
             />
             <DividendPaymentModal
                 open={isDividendOpen}
                 onOpenChange={setIsDividendOpen}
-                onSuccess={() => refetch()}
                 initialPartnerId={selectedPartnerId?.toString()}
             />
             <PartnerLedgerDrawer
@@ -306,7 +298,6 @@ export function PartnersClientView({
                     setIsAddPartnerOpen(open)
                     if (!open) clearModalParam()
                 }}
-                onSuccess={() => refetch()}
             />
         </div>
     )

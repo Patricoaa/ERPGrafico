@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import {
     Wallet,
     Package,
@@ -11,11 +11,10 @@ import {
     Lock
 } from "lucide-react"
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, ChoiceCard, ChoiceGroup, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
-import { partnersApi, netEquityPercentages } from "@/features/contacts"
-import { type Partner } from "@/features/contacts"
+import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
-import { type Product } from "@/features/inventory"
-import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "@/features/settings"
+import { useTreasuryAccounts } from "@/features/settings"
+import { usePartnerMutations, usePartnerWarehouses, usePartnerInventoryAdjustment, usePartnerAssetEntry, useOnOpen } from "../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 import {Alert} from "@/components/ui/alert"
@@ -25,7 +24,7 @@ import { showApiError } from "@/lib/errors"
 interface PartnerContributionWizardProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess: () => void
+    onSuccess?: () => void
     initialPartnerId?: string
     initialAmount?: string
     lockAmount?: boolean
@@ -41,13 +40,16 @@ export function PartnerContributionWizard({
     initialAmount,
     lockAmount = false
 }: PartnerContributionWizardProps) {
-    const [loading, setLoading] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
 
-    // Data lists
-    const [partners, setPartners] = useState<Partner[]>([])
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
-    const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
+    // Data lists (cacheadas por TanStack Query)
+    const { partners, isLoading: partnersLoading } = usePartners()
+    const { data: warehouses = [], isLoading: warehousesLoading } = usePartnerWarehouses(open)
+    const { data: accountsData, isLoading: accountsLoading } = useTreasuryAccounts(open)
+    const treasuryAccounts = (accountsData ?? []) as unknown as TreasuryAccount[]
+    const loading = open && (partnersLoading || warehousesLoading || accountsLoading)
+    const { createTransaction } = usePartnerMutations()
+    const inventoryAdjustment = usePartnerInventoryAdjustment()
 
     // Form State
     const [partnerId, setPartnerId] = useState(initialPartnerId || "")
@@ -61,101 +63,27 @@ export function PartnerContributionWizard({
         description: ""
     })
 
-    // Assets specific
-    const [assetData, setAssetData] = useState({
-        warehouseId: "",
-        productId: "",
-        quantity: "",
-        uomId: "",
-        unitCost: "0",
-        date: new Date().toISOString().split('T')[0],
-        description: ""
-    })
+    // Assets specific (borrador, producto y UoM base)
+    const { assetData, setAssetData, productUoMs, reset: resetAssets } = usePartnerAssetEntry()
 
-    // Product details for assets
-    const [, setProductDetails] = useState<Product | null>(null)
-    const [productUoMs, setProductUoMs] = useState<UoM[]>([])
+    const resetForm = () => {
+        setPartnerId(initialPartnerId || "")
+        setMethod("CASH")
+        setCashData({
+            amount: initialAmount || "",
+            treasuryAccountId: "",
+            date: new Date().toISOString().split('T')[0],
+            description: initialAmount ? "Pago de capital pendiente" : ""
+        })
+        resetAssets()
+    }
 
-    // Load initial data
-    useEffect(() => {
-        if (open) {
-            setTimeout(() => setLoading(true), 0)
-            if (initialAmount) {
-                setTimeout(() => {
-                    setCashData(prev => ({
-                        ...prev,
-                        amount: initialAmount,
-                        description: "Pago de capital pendiente"
-                    }))
-                }, 0)
-            }
-            Promise.all([
-                partnersApi.getPartners(),
-                settingsApi.getWarehouses(),
-                settingsApi.getTreasuryAccounts()
-            ]).then(([pData, warehouses, accounts]) => {
-                setPartners(pData)
-                setWarehouses(warehouses)
-                setTreasuryAccounts(accounts as TreasuryAccount[])
-
-                if (initialPartnerId) setPartnerId(initialPartnerId)
-            }).catch(err => {
-                console.error(err)
-                toast.error("Error al cargar datos necesarios")
-            }).finally(() => setLoading(false))
-        } else {
-            // Reset
-            setTimeout(() => {
-                setPartnerId(initialPartnerId || "")
-                setMethod("CASH")
-                setCashData({
-                    amount: initialAmount || "",
-                    treasuryAccountId: "",
-                    date: new Date().toISOString().split('T')[0],
-                    description: initialAmount ? "Pago de capital pendiente" : ""
-                })
-                setAssetData({
-                    warehouseId: "",
-                    productId: "",
-                    quantity: "",
-                    uomId: "",
-                    unitCost: "0",
-                    date: new Date().toISOString().split('T')[0],
-                    description: ""
-                })
-                setProductDetails(null)
-                setProductUoMs([])
-            }, 0)
+    useOnOpen(open, () => {
+        if (initialAmount) {
+            setCashData(prev => ({ ...prev, amount: initialAmount, description: "Pago de capital pendiente" }))
         }
-    }, [open, initialPartnerId, initialAmount])
-
-    // Load product details when productId changes
-    useEffect(() => {
-        if (!assetData.productId) {
-            requestAnimationFrame(() => {
-                setProductDetails(null)
-                setProductUoMs([])
-            })
-            return
-        }
-
-            settingsApi.getProduct(assetData.productId)
-            .then((data: ProductMinimal) => {
-                setProductDetails(data as unknown as Product)
-                setAssetData(prev => ({ ...prev, unitCost: data.cost_price?.toString() || "0" }))
-
-                if (data.uom_category) {
-                    settingsApi.getUoms({ category: data.uom_category })
-                        .then((uoms) => {
-                            setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
-                            const base = uoms.find((u) => u.id === baseId)
-                            if (base) setAssetData(prev => ({ ...prev, uomId: base.id.toString() }))
-                        })
-                }
-            })
-            .catch(() => toast.error("Error cargando producto"))
-    }, [assetData.productId])
+        if (initialPartnerId) setPartnerId(initialPartnerId)
+    }, resetForm)
 
     // Helpers
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
@@ -176,15 +104,18 @@ export function PartnerContributionWizard({
                     return
                 }
 
-                await partnersApi.createTransaction(parseInt(partnerId), {
-                    transaction_type: 'CAPITAL_CASH',
-                    amount: amountToSubmit,
-                    date: cashData.date,
-                    treasury_account_id: parseInt(cashData.treasuryAccountId),
-                    description: cashData.description
+                await createTransaction.mutateAsync({
+                    contactId: parseInt(partnerId),
+                    data: {
+                        transaction_type: 'CAPITAL_CASH',
+                        amount: amountToSubmit,
+                        date: cashData.date,
+                        treasury_account_id: parseInt(cashData.treasuryAccountId),
+                        description: cashData.description
+                    }
                 })
             } else {
-                await settingsApi.createInventoryAdjustment({
+                await inventoryAdjustment.mutateAsync({
                     product_id: assetData.productId,
                     warehouse_id: assetData.warehouseId,
                     quantity: Number(assetData.quantity),
@@ -197,7 +128,7 @@ export function PartnerContributionWizard({
             }
 
             toast.success("Aporte registrado exitosamente")
-            onSuccess()
+            onSuccess?.()
             onOpenChange(false)
         } catch (error) {
             showApiError(error, "Error al registrar aporte")
