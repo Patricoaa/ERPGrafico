@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { ClosingTab } from "../ClosingTab"
+import { SalesTab } from "../SalesTab"
 import { SummaryTab } from "../SummaryTab"
 vi.mock("@/components/providers/GlobalModalProvider", () => ({
     useGlobalModals: () => ({ openEntity: vi.fn() }),
@@ -19,7 +20,7 @@ const session = {
 const overview: POSSessionOverview = {
     timezone: "America/Santiago",
     alerts: [{ code: "CASH_DIFFERENCE", severity: "destructive", tab: "closing", amount: -2000, message: "El efectivo contado es inferior al esperado." }],
-    sales: { gross: 15000, returns_total: 2000, net: 13000, sale_count: 2, return_count: 1, includes_tax: true, average_ticket: 7500, collection_count: 0, rows: [] },
+    sales: { gross: 15000, returns_total: 2000, net: 13000, sale_count: 2, return_count: 1, includes_tax: true, average_ticket: 7500, collection_count: 0, collected: 11000, pending: 2000, rows: [] },
     collections: [
         { key: "pm-1", method_id: 1, method: "CASH", label: "Efectivo", enabled: true, amount: 8000, share: 61.54 },
         { key: "pm-2", method_id: 2, method: "TRANSFER", label: "Transferencia BancoEstado", enabled: false, amount: 5000, share: 38.46 },
@@ -28,6 +29,9 @@ const overview: POSSessionOverview = {
         closed_at: "2026-11-10T20:00:00Z", closed_by_id: 2, closed_by_name: "Luis Soto", expected_cash: 18000,
         counted_cash: 16000, difference: -2000, result: "DIFFERENCE", notes: "Faltante tras recuento", notes_author: "Luis Soto",
         notes_at: "2026-11-10T20:00:00Z",
+        adjustment: { id: 90, display_id: "TES-90", label: "treasury.treasurymovement", amount: 2000, destination: null, reason: "COUNTING_ERROR", reason_display: "Error de Conteo" },
+        withdrawal: { id: 91, display_id: "TES-91", label: "treasury.treasurymovement", amount: 10000, destination: "Caja Fuerte" },
+        left_in_box: 6000,
     },
 }
 
@@ -73,8 +77,33 @@ describe("POSSession closing tab", () => {
         expect(screen.getByText("Cerrada por")).toBeInTheDocument()
     })
 
+    it("explica la diferencia: motivo, ajuste, retiro y saldo que queda", () => {
+        render(<ClosingTab session={session} overview={overview} isLoading={false} />)
+        expect(screen.getByText("Arqueo de efectivo")).toBeInTheDocument()
+        expect(screen.getByText("Error de Conteo")).toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "TES-90" })).toBeInTheDocument()
+        expect(screen.getByText("Retirado al cerrar")).toBeInTheDocument()
+        expect(screen.getByText(/Hacia Caja Fuerte/)).toBeInTheDocument()
+        expect(screen.getByText("Queda en la caja")).toBeInTheDocument()
+    })
+
+    it("la diferencia de efectivo no se repite en Incidencias", () => {
+        render(<ClosingTab session={session} overview={overview} isLoading={false} />)
+        expect(screen.getByText("Sin otras incidencias")).toBeInTheDocument()
+        expect(screen.queryByText("El efectivo contado es inferior al esperado.")).not.toBeInTheDocument()
+    })
+
     it("sesión abierta: aún no hay cierre", () => {
         render(<ClosingTab session={{ ...session, closed_at: null }} overview={overview} isLoading={false} />)
         expect(screen.getByText("La sesión sigue abierta")).toBeInTheDocument()
+    })
+})
+
+
+describe("POSSession sales tab", () => {
+    it("muestra lo que queda por cobrar de las ventas", () => {
+        render(<SalesTab overview={overview} isLoading={false} />)
+        expect(screen.getByText("Por cobrar")).toBeInTheDocument()
+        expect(screen.getByText(/Cobrado \$11\.000 de \$13\.000/)).toBeInTheDocument()
     })
 })

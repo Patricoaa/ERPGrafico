@@ -189,3 +189,74 @@ def test_sale_collected_in_session_but_born_elsewhere_is_listed(scene):
     assert overview["sales"]["collection_count"] == 1
     assert {c["method"]: c["amount"] for c in overview["collections"]}["CASH"] == Decimal("128000")
     assert any(e["kind"] == "SALE_COLLECTION" and e["reference"]["id"] == elsewhere.pk for e in build_activity(session))
+
+
+# ─── Cobrado / pendiente, actividad por venta y cierre (spec 2026-11-11) ────────
+
+
+@pytest.mark.django_db
+def test_sales_rows_report_collected_and_pending_net_of_returns(scene):
+    session, _ = scene
+    sales = build_overview(session)["sales"]
+    rows = {r["display_id"]: r for r in sales["rows"] if r["kind"] == "SALE"}
+
+    # La venta de $10.000 tuvo una devolución de $2.000 reembolsada: nada queda por cobrar.
+    big = next(r for r in rows.values() if r["amount"] == Decimal("10000"))
+    assert (big["collected"], big["pending"]) == (Decimal("8000"), Decimal("0"))
+    assert sales["pending"] == Decimal("0")
+    assert sales["collected"] == Decimal("13000")
+
+
+@pytest.mark.django_db
+def test_partial_payment_shows_pending_in_rows_and_activity(scene):
+    session, _ = scene
+    user = session.user
+    order = SaleOrder.objects.create(
+        customer=Contact.objects.get(is_default_customer=True), date=date(2026, 11, 1),
+        status=SaleOrder.Status.CONFIRMED, pos_session=session, total=Decimal("26180"),
+    )
+    SaleOrder.objects.filter(pk=order.pk).update(total=Decimal("26180"))
+    TreasuryMovement.objects.create(
+        movement_type=TreasuryMovement.Type.INBOUND, payment_method="CASH", amount=Decimal("20000"),
+        sale_order=order, pos_session=session, created_by=user, date=date(2026, 11, 1),
+    )
+
+    overview = build_overview(session)
+    row = next(r for r in overview["sales"]["rows"] if r["id"] == order.pk)
+    assert (row["collected"], row["pending"]) == (Decimal("20000"), Decimal("6180"))
+    assert overview["sales"]["pending"] == Decimal("6180")
+
+    sale_event = next(e for e in build_activity(session) if e["key"] == f"sale-{order.pk}")
+    assert sale_event["amount"] == Decimal("26180")
+    assert "pendiente $6.180" in sale_event["description"]
+    assert sale_event["reference"]["display_id"] == order.display_id
+
+
+@pytest.mark.django_db
+def test_closing_difference_is_one_event_with_reason_and_adjustment_link(scene):
+    from django.utils import timezone
+
+    from core.prefix_registry import EntityPrefix
+
+    session, _ = scene
+    adjust = TreasuryMovement.objects.create(
+        movement_type=TreasuryMovement.Type.OUTBOUND, payment_method="CASH", amount=Decimal("500"),
+        pos_session=session, created_by=session.user, date=date(2026, 11, 1),
+        justify_reason="COUNTING_ERROR", reference=f"{EntityPrefix.POS_SESSION}-EXCEDENTE-{session.id}",
+    )
+    POSSessionAudit.objects.create(
+        session=session, expected_amount=Decimal("1000"), actual_amount=Decimal("500"), difference=Decimal("-500"),
+    )
+    session.status, session.closed_at, session.closed_by = "CLOSED", timezone.now(), session.user
+    session.save()
+
+    closing = build_overview(session)["closing"]
+    assert closing["adjustment"]["id"] == adjust.pk
+    assert closing["adjustment"]["reason"] == "COUNTING_ERROR"
+
+    events = build_activity(session)
+    diff = [e for e in events if e["kind"] == "CASH_DIFFERENCE"]
+    assert len(diff) == 1 and diff[0]["description"].startswith("Faltante de caja de $500")
+    assert diff[0]["amount"] == Decimal("-500")
+    assert diff[0]["reference"]["id"] == adjust.pk
+    assert all(e["key"] != f"mov-{adjust.pk}" for e in events)  # no se repite como movimiento
