@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.98](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.97...v0.3.98) (2026-11-11)
+
+
+### ✨ Features
+
+* **pos:** informe X/Z de la sesión en tiempo real vía Entity Bus (ADR-0126) ([cee92cd](https://github.com/Patricoaa/ERPGrafico/commit/cee92cdd13d2aec570f03d77226d77a3c911619b))
+* **pos:** suscripción del cajero al informe Z y cierre contra el esperado visto (ADR-0126) ([6ceb9dc](https://github.com/Patricoaa/ERPGrafico/commit/6ceb9dc4b174f42ba180bfea8fe701fee0c9a431))
+* **treasury:** paginación y full-height en tab Tesorería; sin badge en tab Ventas ([d1b6b0a](https://github.com/Patricoaa/ERPGrafico/commit/d1b6b0a24f6057e0da45b47b5bef09cb2bb09edd))
+
 ### [0.3.97](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.96...v0.3.97) (2026-11-11)
 
 
