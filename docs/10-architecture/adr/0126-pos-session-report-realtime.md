@@ -26,3 +26,5 @@ Los datos del informe X/Z (efectivo esperado, cobros por método, movimientos) s
 - El payload del bus sigue sin datos de la entidad: los clientes refetchean.
 - Cada venta o movimiento de una sesión suma un evento extra al grupo de esa sesión (volumen bajo, un solo nodo).
 - Sin caché, cada lectura del X/Z recalcula; aceptable por volumen de una PYME.
+- **Autorización de la suscripción:** `treasury.possession` solo exige estar autenticado (`_AUTHENTICATED_ONLY` en `core/consumers.py`), porque la API de sesiones del POS ya se lee así y `treasury.view_possession` no está en ningún rol del cajero. El evento no lleva datos de la entidad.
+- **Cierre contra el esperado visto:** `close_session` acepta `expected_cash_seen`; si no coincide con `session.expected_cash` responde 409 `pos_expected_cash_changed` (con `expected_cash` actual) antes de consumir el pase de operador. El modal relee el resumen y vuelve al conteo. Sin el campo, el comportamiento no cambia.

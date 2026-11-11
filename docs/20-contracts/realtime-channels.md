@@ -133,7 +133,7 @@ useEntitySubscription(`sales.saleorder.${id}`, [['sales', id]])
 
 ### Alcance vigente (2026-08-04)
 
-**Allowlist activa:** `sales.SaleOrder` (broadcast propio) + `treasury.POSSession` (informe X/Z en vivo; lo invalidan sus movimientos y ventas, [ADR-0126](../10-architecture/adr/0126-pos-session-report-realtime.md); suscribirse exige `treasury.view_possession`) + `inventory.Product`, `inventory.ProductCategory`, `inventory.UoM`. `sales.SaleLine` vía `PARENT_BROADCASTS` (dispara `op="updated"` sobre el `SaleOrder` padre, sin tópico propio). Agregar modelos al bus = editar `ALLOWLIST` en `core/entity_bus.py` (cambio que pasa por PR). Antes de extender a `billing`, `purchasing`, `contacts`: validar carga de WS y latencia percibida.
+**Allowlist activa:** `sales.SaleOrder` (broadcast propio) + `treasury.POSSession` (informe X/Z en vivo; lo invalidan sus movimientos y ventas, [ADR-0126](../10-architecture/adr/0126-pos-session-report-realtime.md); suscribirse solo exige estar autenticado, igual que la lectura de sesiones del POS) + `inventory.Product`, `inventory.ProductCategory`, `inventory.UoM`. `sales.SaleLine` vía `PARENT_BROADCASTS` (dispara `op="updated"` sobre el `SaleOrder` padre, sin tópico propio). Agregar modelos al bus = editar `ALLOWLIST` en `core/entity_bus.py` (cambio que pasa por PR). Antes de extender a `billing`, `purchasing`, `contacts`: validar carga de WS y latencia percibida.
 
 ---
 

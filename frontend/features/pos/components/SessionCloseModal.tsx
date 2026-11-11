@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Loader2, AlertTriangle, Search, ChevronDown, Check } from "lucide-react"
 import { toast } from "sonner"
+import { isAxiosError } from "axios"
 import { posApi } from "../api/posApi"
 import { usePOSSessionSummary } from "../hooks/usePOSSessions"
 import { usePOSSessionRealtime } from "../hooks/usePOSSessionRealtime"
@@ -27,6 +28,15 @@ interface SessionCloseModalProps {
     onOpenChange: (open: boolean) => void
     session: POSSession
     onSuccess?: (audit: POSSessionAudit) => void
+}
+
+/** 409 `pos_expected_cash_changed` del cierre (el esperado cambió desde que el operador lo vio). */
+function isExpectedCashChangedError(error: unknown): boolean {
+    if (!isAxiosError(error) || error.response?.status !== 409) return false
+    const data: unknown = error.response.data
+    const wrapped = typeof data === "object" && data !== null ? (data as { error?: unknown }).error : null
+    const details = typeof wrapped === "object" && wrapped !== null ? (wrapped as { details?: unknown }).details : null
+    return typeof details === "object" && details !== null && (details as { code?: unknown }).code === "pos_expected_cash_changed"
 }
 
 export function SessionCloseModal({
@@ -160,6 +170,7 @@ export function SessionCloseModal({
         try {
             const closeData = await posApi.closeSession(session.id, {
                 actual_cash: parseFloat(actualCash) || 0,
+                expected_cash_seen: expected,
                 withdrawal_amount: overrides?.withdrawal_amount ?? (parseFloat(withdrawalAmount) || 0),
                 notes: closeNotes,
                 cash_destination_id: cashDestinationId,
@@ -190,6 +201,13 @@ export function SessionCloseModal({
 
             return true
         } catch (error: unknown) {
+            if (isExpectedCashChangedError(error)) {
+                // ADR-0126: el servidor rechazó el cierre contra un esperado viejo; se relee y se avisa.
+                toast.warning("El efectivo esperado cambió. Revisa el nuevo monto y confirma de nuevo.")
+                void summaryQuery.refetch()
+                setStepIndex(0)
+                return false
+            }
             showApiError(error, "Error al cerrar la sesión de POS")
             return false
         } finally {

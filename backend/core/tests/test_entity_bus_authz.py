@@ -227,3 +227,24 @@ def test_task_comments_subtopic_uses_parent_permission():
     asyncio.run(go())
     # Se exige el permiso de la entidad dueña, no workflow.view_task.
     assert seen == ["contacts.view_contact"]
+
+
+# ─── Sesión POS: solo autenticación (ADR-0126) ────────────────────────────────
+
+
+def test_pos_session_topic_only_requires_authentication():
+    """El cajero no tiene `treasury.view_possession` pero sí lee sus sesiones: puede suscribirse."""
+
+    async def go():
+        user = _make_user(has_perm_result=False)
+        comm = await _open(user)
+        await comm.connect()
+
+        await comm.send_json_to({"op": "subscribe", "topic": "treasury.possession.7"})
+        msg = await comm.receive_json_from(timeout=2)
+
+        assert msg == {"event": "subscribed", "topic": "treasury.possession.7"}
+        user.has_perm.assert_not_called()
+        await comm.disconnect()
+
+    asyncio.run(go())
