@@ -221,3 +221,30 @@ export const treasuryMovementsUnifiedSearchDef: UnifiedSearchConfig = {
   ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
+
+/**
+ * Actividad de una sesión POS (filtrado en el cliente sobre los eventos cargados). Las claves
+ * `category` y `actor` son campos de la fila; los responsables salen de los propios eventos
+ * (`filterOptions.actor`).
+ */
+export const posSessionActivitySearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'description', label: 'Descripción', serverParam: 'search', clientKey: ['description', 'reference_display'] },
+  ],
+  filters: [
+    {
+      type: 'multi',
+      key: 'category',
+      label: 'Tipo de evento',
+      serverParam: 'category',
+      options: [
+        { label: 'Caja', value: 'caja' },
+        { label: 'Venta', value: 'venta' },
+        { label: 'Acceso', value: 'acceso' },
+        { label: 'Cierre', value: 'cierre' },
+        { label: 'Sistema', value: 'sistema' },
+      ],
+    },
+    { type: 'multi', key: 'actor', label: 'Responsable', serverParam: 'actor', options: [], dynamic: true },
+  ],
+}

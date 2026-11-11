@@ -103,6 +103,7 @@ export const RELATED_ROLE_LABELS: Record<string, string> = {
     pos_session: "Sesión POS",
     pos_box: "Caja POS",
     pos_sale: "Venta POS",
+    pos_collected_sale: "Venta cobrada en la sesión",
     // Tesorería extendida
     bank_reconciliation: "Conciliación bancaria",
     collection_batch: "Lote de recaudación",

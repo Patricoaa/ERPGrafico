@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from core.serializers.mixins import FrozenFieldsField, IsEditableField
 
+from .pos_lock import PosSessionLockedField
+
 from .models import (
     Bank,
     BankStatement,
@@ -55,6 +57,7 @@ class BankOptionSerializer(serializers.ModelSerializer):
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
     frozen_fields = FrozenFieldsField()
+    pos_session_locked = PosSessionLockedField()
     method_type_display = serializers.CharField(source="get_method_type_display", read_only=True)
     treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
 
@@ -79,6 +82,7 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
 
 class TreasuryAccountSerializer(serializers.ModelSerializer):
     frozen_fields = FrozenFieldsField()
+    pos_session_locked = PosSessionLockedField()
     account_name = serializers.CharField(source="account.name", read_only=True)
     account_code = serializers.CharField(source="account.code", read_only=True)
     bank_name = serializers.CharField(source="bank.name", read_only=True, allow_null=True)
@@ -134,6 +138,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
         model = TreasuryAccount
         fields = [
             "frozen_fields",
+            "pos_session_locked",
             "id",
             "name",
             "code",
@@ -165,6 +170,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
+    pos_session_locked = PosSessionLockedField()
     # Computed field (read-only)
     allowed_payment_method_types = serializers.SerializerMethodField()
 
@@ -216,6 +222,7 @@ class POSTerminalSerializer(serializers.ModelSerializer):
     class Meta:
         model = POSTerminal
         fields = [
+            "pos_session_locked",
             "id",
             "name",
             "code",
@@ -622,9 +629,7 @@ class POSSessionSerializer(serializers.ModelSerializer):
     treasury_account = serializers.PrimaryKeyRelatedField(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
-    closed_by_name = serializers.CharField(
-        source="closed_by.username", read_only=True, allow_null=True
-    )
+    closed_by_name = serializers.SerializerMethodField()
     cash_movements = TreasuryMovementSerializer(source="movements", many=True, read_only=True)
     my_mode = serializers.SerializerMethodField()
 
@@ -646,6 +651,10 @@ class POSSessionSerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
+
+    def get_closed_by_name(self, obj):
+        closer = obj.closed_by
+        return (closer.get_full_name() or closer.username) if closer else None
 
     def get_treasury_account_name(self, obj):
         from treasury.pos_service import _get_session_treasury

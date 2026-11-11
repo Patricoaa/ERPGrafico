@@ -18,6 +18,9 @@ export const treasuryMovementEntity = defineEntity<TreasuryMovement>()((f) => ({
             return { status: "in_progress", label: "Ajuste", intent: "warning" }
         }, { label: "Tipo" }),
         date: f.date("date", { label: "Fecha" }),
+        createdAt: f.date("created_at", { label: "Fecha y hora", time: true }),
+        createdBy: f.text((m) => m.created_by_name ?? "", { label: "Responsable" }),
+        reason: f.text((m) => [m.justify_reason_display, m.notes].filter(Boolean).join(" · "), { label: "Concepto / destino", tone: "secondary" }),
         paymentMethod: f.text((m) => m.payment_method_display ?? m.payment_method ?? "", { label: "Método", tone: "secondary" }),
         accounts: f.value("movementPath", (m) => movementEndpoints(m), { label: "Cuentas" }),
         // No icon in the flow badge: the card rail already carries the entry/exit arrow, and the

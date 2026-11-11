@@ -133,3 +133,18 @@ class SaleTrackingService:
             entity_id=entity_id,
             detail=detail[:255],
         )
+
+    @staticmethod
+    def record_partner_withdrawal(*, actor, pos_session_id: int, detail: str) -> None:
+        """Retiro de socio hecho desde el POS: queda en la actividad de la sesión.
+
+        Sin ``draft_ref``: el borrador se elimina al procesar el retiro y su traza no debe seguirlo.
+        """
+        SaleTrackingEvent.objects.create(
+            pos_session_id=pos_session_id,
+            step=Step.PARTNER_WITHDRAWAL,
+            operator=actor.operator,
+            device_user=actor.device_user,
+            operator_pass=actor.operator_pass,
+            detail=detail[:255],
+        )

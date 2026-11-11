@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from billing.dte_policy import CONFIGURABLE_DTE_TYPES
 from core.serializers.mixins import FrozenFieldsField
+from treasury.pos_lock import PosSessionLockedField
 
 from .models import (
     Account,
@@ -18,6 +19,7 @@ from .models import (
 
 class AccountSerializer(serializers.ModelSerializer):
     frozen_fields = FrozenFieldsField()
+    pos_session_locked = PosSessionLockedField()
     account_type_display = serializers.CharField(source="get_account_type_display", read_only=True)
     bs_category_display = serializers.CharField(source="get_bs_category_display", read_only=True)
     debit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
@@ -29,6 +31,7 @@ class AccountSerializer(serializers.ModelSerializer):
         model = Account
         fields = [
             "frozen_fields",
+            "pos_session_locked",
             "id",
             "code",
             "name",

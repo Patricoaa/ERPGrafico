@@ -194,6 +194,11 @@ class DraftCartService:
             user=actor.operator,
             partner_id=data.get("partner_id"),
         )
+        SaleTrackingService.record_partner_withdrawal(
+            actor=actor,
+            pos_session_id=int(pos_session_id),
+            detail=f"{result.get('customer_name', '')}: {result.get('moves_count', 0)} producto(s)".strip(": "),
+        )
         if actor.operator_pass is not None:  # el retiro cierra el borrador: el pase termina con él
             POSOperatorService.end(actor.operator_pass, POSOperatorPass.EndReason.CONSUMED)
         return result

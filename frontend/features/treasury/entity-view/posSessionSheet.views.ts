@@ -1,14 +1,9 @@
-import { saleOrderEntity } from "@/features/sales"
 import { treasuryMovementEntity } from "./treasuryMovement.entity"
 
 /**
- * Embedded lists of the POS session sheet (ADR-0087): same entities as the sales/treasury
- * collections, composed with a compact table per surface. No hand-written tables.
+ * Lista de movimientos de caja de la ficha de la sesión POS (ADR-0087): misma entidad que
+ * tesorería, tabla compacta.
  */
-export const posSessionSalesViews = saleOrderEntity.views({
-    table: { columns: ["folio", "customer", "date", "hub", "total"], footer: { sum: ["total"] } },
-})
-
 export const posSessionMovementViews = treasuryMovementEntity.views({
-    table: { columns: ["date", "movementType", "paymentMethod", "accounts", "amount"] },
+    table: { columns: ["createdAt", "movementType", "reason", "createdBy", "amount"] },
 })

@@ -1003,6 +1003,7 @@ class SaleTrackingEvent(models.Model):
         DELIVERY = "DELIVERY", _("Entrega")
         CHECKOUT = "CHECKOUT", _("Cobro")
         DOCUMENT_EDIT = "DOCUMENT_EDIT", _("Edición de documento")
+        PARTNER_WITHDRAWAL = "PARTNER_WITHDRAWAL", _("Retiro de socio")
 
     draft_ref = models.PositiveIntegerField(_("Borrador (id)"), null=True, blank=True, db_index=True)
     sale_order = models.ForeignKey(

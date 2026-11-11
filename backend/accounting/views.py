@@ -34,6 +34,7 @@ from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin, EditPolicyMixin
+from treasury.pos_lock import PosSessionLockMixin, annotate_pos_lock
 
 from .fiscal_year_service import FiscalYearClosingService
 from .selectors import (
@@ -94,7 +95,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
         return Response({"rate": rate_float, "multiplier": round(1 + rate_float / 100, 10)})
 
 
-class AccountViewSet(OptionalPaginationMixin, EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+class AccountViewSet(PosSessionLockMixin, OptionalPaginationMixin, EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Account.objects.all()  # Base queryset includes archived for detail/update
     serializer_class = AccountSerializer
     pagination_class = StandardResultsSetPagination  # Master data, opt-in (ADR-0112)
@@ -107,7 +108,7 @@ class AccountViewSet(OptionalPaginationMixin, EditPolicyMixin, BulkImportMixin, 
     def get_queryset(self):
         # List view uses selector with is_active filter
         if self.action == "list":
-            return annotate_edit_usage(list_accounts(params=self.request.query_params))
+            return annotate_pos_lock(annotate_edit_usage(list_accounts(params=self.request.query_params)))
         # Detail/update/retrieve use full queryset (allows accessing archived)
         return annotate_edit_usage(super().get_queryset())
 

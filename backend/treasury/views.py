@@ -43,6 +43,7 @@ from .models import (
 from .reconciliation_service import ReconciliationService
 
 # from .rule_service import RuleService
+from .pos_lock import PosSessionLockMixin
 from .selectors import BankStatementSelector
 from .serializers import (
     BankLoanSerializer,
@@ -183,7 +184,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return super().partial_update(request, *args, **kwargs)
 
 
-class PaymentMethodViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PaymentMethodViewSet(PosSessionLockMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by("name")
     serializer_class = PaymentMethodSerializer
     pagination_class = None  # Master data
@@ -247,7 +248,7 @@ class TreasuryAccountFilterSet(FilterSet):
         fields = ["name", "account_type", "bank_id"]
 
 
-class TreasuryAccountViewSet(OptionalPaginationMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class TreasuryAccountViewSet(PosSessionLockMixin, OptionalPaginationMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by("account_type", "name")
     serializer_class = TreasuryAccountSerializer
     pagination_class = StandardResultsSetPagination  # Master data, opt-in (ADR-0112)
@@ -339,7 +340,7 @@ class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     filterset_fields = ["provider", "status"]
 
 
-class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class POSTerminalViewSet(PosSessionLockMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     """
     ViewSet for managing POS Terminals.
     Supports filtering by active status via `?is_active=true/false/all` query param.
@@ -1070,6 +1071,20 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["get"])
+    def overview(self, request, pk=None):
+        """Resumen, ventas, cobros netos y cierre de la sesión (ficha de la sesión POS)."""
+        from .pos_session_overview import build_overview
+
+        return Response(build_overview(self.get_object()))
+
+    @action(detail=True, methods=["get"])
+    def activity(self, request, pk=None):
+        """Línea de tiempo de la sesión, más reciente primero (solo lectura)."""
+        from .pos_session_overview import build_activity
+
+        return Response(build_activity(self.get_object()))
 
     @action(detail=True, methods=["get"])
     def pdf(self, request, pk=None):
