@@ -3,8 +3,6 @@ export * from './DteSettingsView';
 export * from './CompanySettingsView';
 export * from './GroupsClientView';
 export * from './HRSettingsView';
-export * from './InitialCapitalModal';
-export * from './PartnerEditDrawer';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';
 export * from './UsersSettingsClientView';

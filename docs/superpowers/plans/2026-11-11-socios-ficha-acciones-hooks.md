@@ -46,7 +46,7 @@
 
 **Salida:** ADR aprobado. **Riesgo:** ninguno.
 
-## Fase 1 — Limpieza (borrar lo muerto y la configuración inicial)
+## Fase 1 — Limpieza (HECHA en la rama `refactor/socios-ficha-acciones`) (borrar lo muerto y la configuración inicial)
 
 Backend:
 - [ ] Eliminar `initial_setup` (view + `ContactService.initial_setup_from_request` + `PartnerService.initial_setup`), `setup_partner` (view + `ContactService.setup_partner`), `promote_partner` (view + `ContactPartnerService.promote_to_partner`) y sus entradas en `action_permissions`.

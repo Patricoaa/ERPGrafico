@@ -37,22 +37,6 @@ export const partnersApi = {
     },
 
     /**
-     * Setup or edit partner properties for a given contact
-     */
-    setupPartner: async (contactId: number, data: { is_partner: boolean, partner_equity_percentage?: string | number, partner_account_id?: number | null }) => {
-        const response = await api.post(`/contacts/${contactId}/setup_partner/`, data)
-        return response.data
-    },
-
-    /**
-     * Bulk setup partners and initial capital entry
-     */
-    initialSetup: async (partners: { contact_id: number, amount: number }[]) => {
-        const response = await api.post('/contacts/initial_setup/', { partners })
-        return response.data
-    },
-
-    /**
      * Record a formal capital subscription or reduction
      */
     recordSubscription: async (data: { contact_id: number, amount: number, type: 'SUBSCRIPTION' | 'REDUCTION', date?: string, description?: string }) => {

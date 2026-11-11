@@ -30,9 +30,7 @@ import {
     DividendPaymentModal
 } from "@/features/settings/components/partners/EquityMovementModals"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
-import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 import { AddPartnerModal } from "@/features/settings/components/partners/AddPartnerModal"
-import { InitialCapitalModal } from "@/features/settings/components/InitialCapitalModal"
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
 import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
 
@@ -87,7 +85,6 @@ export function PartnersClientView({
     const { view, onViewChange } = useCollectionViewMode("settings.partner")
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
     const [isTransferOpen, setIsTransferOpen] = useState(false)
-    const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
     const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("composicion")
     const [granularity, setGranularity] = useState<Granularity>("month")
@@ -106,7 +103,6 @@ export function PartnersClientView({
     }, [searchParams, router, pathname])
 
     const [isContributionOpen, setIsContributionOpen] = useState(false)
-    const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
     const [isDividendOpen, setIsDividendOpen] = useState(false)
     const [isMobilizeOpen, setIsMobilizeOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
@@ -197,9 +193,9 @@ export function PartnersClientView({
 
     const toolbarActionButtons = !hasPartners
         ? (
-            <Button size="sm" onClick={() => setIsInitialSetupOpen(true)}>
+            <Button size="sm" onClick={() => setIsAddPartnerOpen(true)}>
                 <Plus className="h-4 w-4 mr-1.5" />
-                Configuración Inicial
+                Añadir socio
             </Button>
         ) : (
             <>
@@ -280,12 +276,6 @@ export function PartnersClientView({
                 initialAmount={contributionTarget.amount}
                 lockAmount={!!contributionTarget.amount}
             />
-            <PartnerWithdrawalWizard
-                open={isWithdrawalOpen}
-                onOpenChange={setIsWithdrawalOpen}
-                onSuccess={() => refetch()}
-                initialPartnerId={selectedPartnerId?.toString()}
-            />
             <MobilizeEarningsWizard
                 open={isMobilizeOpen}
                 onOpenChange={setIsMobilizeOpen}
@@ -316,11 +306,6 @@ export function PartnersClientView({
                     setIsAddPartnerOpen(open)
                     if (!open) clearModalParam()
                 }}
-                onSuccess={() => refetch()}
-            />
-            <InitialCapitalModal
-                open={isInitialSetupOpen}
-                onOpenChange={setIsInitialSetupOpen}
                 onSuccess={() => refetch()}
             />
         </div>
