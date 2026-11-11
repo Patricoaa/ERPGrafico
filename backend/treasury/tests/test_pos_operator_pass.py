@@ -8,8 +8,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from treasury.models import POSOperatorPass
-from treasury.tests.helpers import make_pos_session
 from treasury.pos_operator_service import POSOperatorRequired, POSOperatorService
+from treasury.tests.helpers import make_pos_session
 
 User = get_user_model()
 
