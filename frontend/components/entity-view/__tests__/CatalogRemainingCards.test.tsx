@@ -8,7 +8,7 @@ import { bankCheckingAccountEntity, bankCheckingAccountViews } from "@/features/
 import { bankCreditCardEntity, bankCreditCardViews } from "@/features/treasury/entity-view/bankCreditCard.entity"
 import { terminalProviderEntity, terminalProviderViews } from "@/features/treasury/entity-view/terminalProvider.entity"
 import { posTerminalEntity, posTerminalViews } from "@/features/sales/entity-view/posTerminal.entity"
-import { partnerEntity, partnerViews } from "@/features/settings/entity-view/partner.entity"
+import { partnerEntity, partnerViews } from "@/features/partners/entity-view/partner.entity"
 import type { Attribute } from "@/features/inventory/hooks/useAttributes"
 import type { BankOverviewData } from "@/features/treasury/hooks/useBankOverview"
 import type { PaymentMethod, PaymentTerminalProvider, Terminal } from "@/features/treasury/types"

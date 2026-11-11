@@ -13,4 +13,3 @@ export { useTreasurySettings } from "./useTreasurySettings"
 export { useGroups } from "./useGroups"
 export { useTreasuryAccounts } from "./useTreasuryAccounts"
 
-export { usePartnerAnalyticsData } from "./usePartnerAnalyticsData"

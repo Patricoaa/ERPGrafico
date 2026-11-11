@@ -11,7 +11,7 @@ import { UserPlus, TrendingDown } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { projectionRowEntity, projectionRowViews, type ProjectionRow } from "../../entity-view/projectionRow.entity"
+import { projectionRowEntity, projectionRowViews, type ProjectionRow } from "../entity-view/projectionRow.entity"
 
 interface AddPartnerModalProps {
     open: boolean

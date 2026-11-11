@@ -18,21 +18,21 @@ import {
 } from "@/components/shared"
 import type { UnifiedSearchConfig } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
-import { usePartnerEvolutionData } from "@/features/settings/hooks/usePartnerEvolutionData"
+import { usePartnerAnalyticsData } from "../hooks/usePartnerAnalyticsData"
+import { usePartnerEvolutionData } from "../hooks/usePartnerEvolutionData"
 import type { Granularity } from "@/lib/analytics-helpers"
-import { partnerEntity, partnerViews } from "@/features/settings/entity-view/partner.entity"
+import { partnerEntity, partnerViews } from "../entity-view/partner.entity"
 import { buildPartnerAnalyticsScreen } from "./partnerAnalyticsScreen"
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
     SubscriptionMovementModal,
     EquityTransferModal,
     DividendPaymentModal
-} from "@/features/settings/components/partners/EquityMovementModals"
-import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
-import { AddPartnerModal } from "@/features/settings/components/partners/AddPartnerModal"
-import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
-import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
+} from "./EquityMovementModals"
+import { PartnerContributionWizard } from "./PartnerContributionWizard"
+import { AddPartnerModal } from "./AddPartnerModal"
+import { MobilizeEarningsWizard } from "./MobilizeEarningsWizard"
+import { PartnerLedgerDrawer } from "./PartnerLedgerDrawer"
 
 const partnerUnifiedSearchDef: UnifiedSearchConfig = {
     searchFields: [

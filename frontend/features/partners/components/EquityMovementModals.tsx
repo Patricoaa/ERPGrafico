@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi, netEquityPercentages } from "@/features/contacts"
-import { settingsApi } from "../../hooks"
+import { settingsApi } from "@/features/settings"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
 import { toast } from "sonner"

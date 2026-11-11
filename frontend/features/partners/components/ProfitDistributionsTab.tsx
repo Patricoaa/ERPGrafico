@@ -11,9 +11,9 @@ import { type ProfitDistribution } from "@/features/contacts"
 import { toast } from "sonner"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
 import { MassPaymentModal } from "./MassPaymentWizard"
-import { ProfitDistributionDrawer } from "@/features/settings/components/ProfitDistributionDrawer"
+import { ProfitDistributionDrawer } from "./ProfitDistributionDrawer"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { profitDistributionEntity, profitDistributionViews } from "../../entity-view/profitDistribution.entity"
+import { profitDistributionEntity, profitDistributionViews } from "../entity-view/profitDistribution.entity"
 
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */

@@ -63,7 +63,7 @@ export const NO_UNSAFE_BASELINE = {
     "features/purchasing/api/purchasingApi.ts": 7,
     "features/sales/components/checkout/SalesCheckoutWizardView.tsx": 11,
     "features/settings/api/settingsApi.ts": 6,
-    "features/settings/components/partners/CreateDistributionFlow.tsx": 1,
+    "features/partners/components/CreateDistributionFlow.tsx": 1,
     "features/treasury/api/treasuryApi.ts": 20,
     "features/users/api/usersApi.ts": 8,
     "features/users/components/GroupDrawer.tsx": 1,

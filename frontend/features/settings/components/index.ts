@@ -6,7 +6,6 @@ export * from './HRSettingsView';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';
 export * from './UsersSettingsClientView';
-export * from './PartnersSettingsView';
 export * from './UnifiedAccountsView';
 export * from './VatRatesView';
 export * from './groupActions';

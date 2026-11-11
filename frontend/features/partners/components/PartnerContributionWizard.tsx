@@ -15,7 +15,7 @@ import { partnersApi, netEquityPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
 import { type Product } from "@/features/inventory"
-import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "../../hooks"
+import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "@/features/settings"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 import {Alert} from "@/components/ui/alert"

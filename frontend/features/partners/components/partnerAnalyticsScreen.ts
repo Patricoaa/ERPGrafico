@@ -1,8 +1,8 @@
 import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { PieChart as PieChartIcon, Wallet, Gauge, TrendingUp } from "lucide-react"
-import type { PartnerAnalyticsData } from "../../hooks/usePartnerAnalyticsData"
-import type { PartnerEvolutionData } from "../../hooks/usePartnerEvolutionData"
+import type { PartnerAnalyticsData } from "../hooks/usePartnerAnalyticsData"
+import type { PartnerEvolutionData } from "../hooks/usePartnerEvolutionData"
 
 export interface PartnerAnalyticsUi {
     activeTab: string

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { PageHeader, ToolbarCreateButton } from "@/components/shared"
-import { PartnersSettingsView } from "@/features/settings"
+import { PartnersView } from "@/features/partners"
 import {
   FINANCES_TABS,
   getFinancesTab,
@@ -54,7 +54,7 @@ export default async function PartnersCompositionPage({ searchParams }: PageProp
         navigation={navigation}
       />
 
-      <PartnersSettingsView
+      <PartnersView
         activeTab="composition"
         initialAddPartnerOpen={modal === "add-partner"}
         createAction={createAction}

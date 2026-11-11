@@ -1,22 +1,22 @@
 "use client"
 
 import React from "react"
-import { PartnersClientView } from "./partners/PartnersClientView"
-import { ProfitDistributionsTab } from "./partners/ProfitDistributionsTab"
+import { PartnersClientView } from "./PartnersClientView"
+import { ProfitDistributionsTab } from "./ProfitDistributionsTab"
 
-interface PartnersSettingsViewProps {
+interface PartnersViewProps {
     activeTab?: string
     initialFlowOpen?: boolean
     initialAddPartnerOpen?: boolean
     createAction?: React.ReactNode
 }
 
-export function PartnersSettingsView({
+export function PartnersView({
     activeTab = "composition",
     initialFlowOpen = false,
     initialAddPartnerOpen = false,
     createAction
-}: PartnersSettingsViewProps) {
+}: PartnersViewProps) {
     return (
         <div className="h-full flex flex-col overflow-y-auto">
             {activeTab === "composition" && (

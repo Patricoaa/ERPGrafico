@@ -22,9 +22,9 @@ import {
     isOutflowType,
     PARTNER_TRANSACTION_TYPE_OPTIONS,
     type PartnerLedgerRow,
-} from "@/features/settings"
-import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
-import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
+} from "../entity-view/partnerLedger.entity"
+import { PartnerContributionWizard } from "./PartnerContributionWizard"
+import { PartnerWithdrawalWizard } from "./PartnerWithdrawalWizard"
 
 interface PartnerLedgerDrawerProps {
     open: boolean

@@ -191,9 +191,9 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/purchasing/components/checkout/Step4_Receipt.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
-    "features/settings/components/partners/CreateDistributionFlow.tsx",
-    "features/settings/components/partners/MassPaymentWizard.tsx",
-    "features/settings/components/partners/MobilizeEarningsWizard.tsx",
+    "features/partners/components/CreateDistributionFlow.tsx",
+    "features/partners/components/MassPaymentWizard.tsx",
+    "features/partners/components/MobilizeEarningsWizard.tsx",
     "features/treasury/card-statements/BillChargesModal.tsx",
 ]
 const ADHOC_TABLE = /<table[\s>/]|from ["']@\/components\/ui\/table["']/

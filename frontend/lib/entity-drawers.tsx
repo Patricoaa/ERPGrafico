@@ -189,7 +189,7 @@ const CheckDrawer = dynamic(
 )
 
 const ProfitDistributionDrawer = dynamic(
-    () => import("@/features/settings/components/ProfitDistributionDrawer").then((m) => m.ProfitDistributionDrawer),
+    () => import("@/features/partners").then((m) => m.ProfitDistributionDrawer),
     { ssr: false, loading: () => skeleton("distribución de resultados") }
 )
 

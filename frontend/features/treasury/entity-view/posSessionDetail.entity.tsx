@@ -49,7 +49,7 @@ export const posSessionSaleRowEntity = defineEntity<POSSessionSaleRow>()((f) => 
     rowId: (r) => r.key,
     fields: {
         folio: f.code("display_id", { label: "Documento" }),
-        date: f.date("occurred_at", { label: "Fecha y hora", time: true }),
+        date: f.date("occurred_at", { label: "Fecha", time: true }),
         customer: f.text((r) => (r.is_walk_in ? `${r.customer_name} · venta ocasional` : r.customer_name), { label: "Cliente" }),
         method: f.text("payment_method", { label: "Método de pago", tone: "secondary" }),
         amount: f.money("amount", { label: "Importe", sign: "always" }),
@@ -89,7 +89,7 @@ export const posSessionActivityEntity = defineEntity<POSSessionActivityRow>()((f
     label: "treasury.possession",
     rowId: (e) => e.key,
     fields: {
-        date: f.date("occurred_at", { label: "Fecha y hora", time: true }),
+        date: f.date("occurred_at", { label: "Fecha", time: true }),
         category: f.text((e) => ACTIVITY_CATEGORY_LABEL[e.category], { label: "Categoría", tone: "secondary" }),
         description: f.text("description", { label: "Descripción" }),
         actor: f.text("actor", { label: "Responsable" }),
