@@ -19,7 +19,7 @@ const ANIMATE_UTILITY = /\banimate-(?:in|out)\b/
  * not grow — migrating a file means deleting its entry here.
  *
  * T2 migrated: PartnerContributionWizard, PartnerWithdrawalWizard,
- * StatementImportModal, SessionOpenModal, SessionCloseModal.
+ * StatementImportModal, SessionOpenModal (now SessionOpenView), SessionCloseModal.
  */
 const ANIMATE_ALLOWLIST = [
     "app/login/page.tsx",
@@ -70,7 +70,6 @@ const ANIMATE_ALLOWLIST = [
     "features/notes/components/steps/NoteStep_Review.tsx",
     "features/notes/components/steps/NoteStep_TypeSelector.tsx",
     "features/pos/components/Cart.tsx",
-    "features/pos/components/POSCheckoutHeader.tsx",
     "features/pos/components/POSClientView.tsx",
     "features/pos/components/POSReport.tsx",
     "features/pos/components/SalesOrdersDrawer.tsx",
@@ -107,8 +106,8 @@ const ANIMATE_ALLOWLIST = [
 /** Files migrated in T2 — inline animation must never come back. */
 const MIGRATED_FILES = [
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
-    "features/pos/components/SessionCloseModal.tsx",
-    "features/pos/components/SessionOpenModal.tsx",
+    // SessionOpenModal/SessionCloseModal → SessionOpenView/SessionCloseView sobre POSFlowLayout (ADR-0127)
+    "features/pos/components/flow/POSFlowLayout.tsx",
     "features/settings/components/partners/PartnerContributionWizard.tsx",
     "features/settings/components/partners/PartnerWithdrawalWizard.tsx",
 ] as const

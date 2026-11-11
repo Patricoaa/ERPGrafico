@@ -10,14 +10,18 @@ export interface POSSessionDrawerProps {
     id: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    embedded?: boolean
+    onBack?: () => void
 }
 
-export function POSSessionDrawer({ id, open, onOpenChange }: POSSessionDrawerProps) {
+export function POSSessionDrawer({ id, open, onOpenChange, embedded, onBack }: POSSessionDrawerProps) {
     return (
         <POSSessionSheet
             id={id}
             open={open}
             onOpenChange={onOpenChange}
+            embedded={embedded}
+            onBack={onBack}
         />
     )
 }

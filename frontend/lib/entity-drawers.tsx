@@ -236,7 +236,7 @@ const BankStatementDrawer = dynamic(
     { ssr: false, loading: () => skeleton("cartola bancaria") }
 )
 
-const POSSessionDrawer = dynamic(
+export const POSSessionDrawer = dynamic(
     () => import("@/features/treasury/components/POSSessionDrawer").then((m) => m.POSSessionDrawer),
     { ssr: false, loading: () => skeleton("sesión POS") }
 )

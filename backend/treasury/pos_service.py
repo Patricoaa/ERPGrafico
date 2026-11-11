@@ -135,6 +135,8 @@ class POSService:
         justify_target_id: int | None = None,
         withdrawal_amount: Decimal = Decimal("0"),
         cash_destination_id: int | None = None,
+        withdrawal_kind: str = "TRANSFER",
+        withdrawal_partner_id: int | None = None,
         user,
     ) -> tuple[POSSession, POSSessionAudit]:
         """
@@ -145,7 +147,9 @@ class POSService:
         Steps:
         1. Create POSSessionAudit.
         2. If there is a cash difference, create an adjustment movement.
-        3. If withdrawal_amount > 0, create a transfer to cash_destination.
+        3. If withdrawal_amount > 0, move cash out of the box (ADR-0129), still inside the session:
+           ``withdrawal_kind="TRANSFER"`` → transfer to ``cash_destination`` (another box or a bank);
+           ``PARTNER_WITHDRAWAL`` / ``OTHER_OUT`` → outbound with that reason (leaves treasury).
         4. Clean up draft carts.
         5. Mark session CLOSED.
 
@@ -161,6 +165,21 @@ class POSService:
             raise PermissionDenied(
                 "Solo quien abrió la sesión de POS o un superusuario puede cerrarla."
             )
+
+        pos_treasury = _get_session_treasury(session)
+        withdrawal = _validate_close_withdrawal(
+            pos_treasury=pos_treasury,
+            actual_cash=actual_cash,
+            amount=withdrawal_amount,
+            kind=withdrawal_kind,
+            destination_id=cash_destination_id,
+        )
+        # ADR-0131: el retiro de socio queda a nombre del socio (cuenta y ficha de socio).
+        withdrawal_partner = (
+            _partner_target(withdrawal_partner_id)
+            if withdrawal is not None and withdrawal[0] == "PARTNER_WITHDRAWAL"
+            else None
+        )
 
         # Clear any partial audit from a failed previous close attempt
         if hasattr(session, "audit"):
@@ -178,8 +197,6 @@ class POSService:
             notes=notes,
         )
 
-        pos_treasury = _get_session_treasury(session)
-
         # Cash difference adjustment
         if difference != 0:
             movement = _create_difference_movement(
@@ -195,18 +212,21 @@ class POSService:
                 audit.journal_entry = movement.journal_entry
                 audit.save()
 
-        # Physical cash withdrawal to safe/bank
-        if withdrawal_amount > 0 and cash_destination_id:
-            to_account = TreasuryAccount.objects.get(id=cash_destination_id)
+        # ADR-0129: el efectivo que sale al cerrar se registra después del arqueo y antes de cerrar,
+        # ligado a la sesión (el informe Z lo muestra como movimiento de cierre).
+        if withdrawal is not None:
+            kind, to_account = withdrawal
+            is_transfer = kind == "TRANSFER"
             TreasuryService.create_movement(
-                movement_type=TreasuryMovement.Type.TRANSFER,
+                movement_type=TreasuryMovement.Type.TRANSFER if is_transfer else TreasuryMovement.Type.OUTBOUND,
                 from_account=pos_treasury,
                 to_account=to_account,
                 amount=withdrawal_amount,
-                justify_reason="RETIREMENT",
+                justify_reason="RETIREMENT" if is_transfer else kind,
+                partner=withdrawal_partner,
                 pos_session=session,
                 created_by=user,
-                notes=f"Retiro de cierre sesión #{session.id}",
+                notes=f"{'Traspaso' if is_transfer else 'Retiro'} de cierre sesión #{session.id}",
                 reference=f"{EntityPrefix.POS_SESSION}-RETIRO-{session.id}",
             )
 
@@ -275,6 +295,8 @@ class POSService:
                 justify_target_id=request.data.get("justify_target_id"),
                 withdrawal_amount=Decimal(str(request.data.get("withdrawal_amount", "0"))),
                 cash_destination_id=request.data.get("cash_destination_id"),
+                withdrawal_kind=request.data.get("withdrawal_kind") or "TRANSFER",
+                withdrawal_partner_id=request.data.get("withdrawal_partner_id"),
                 user=actor.operator,
             )
 
@@ -411,6 +433,96 @@ _LABEL_MAP = {
 }
 
 
+def _transfer_target(target_id, pos_treasury) -> TreasuryAccount:
+    """Cuenta de origen/destino de una diferencia justificada como traspaso (obligatoria y válida)."""
+    if not target_id:
+        raise ValidationError("Elija la cuenta del traspaso que explica la diferencia.")
+    target = TreasuryAccount.objects.filter(id=target_id, is_active=True).first()
+    if target is None:
+        raise ValidationError("Cuenta del traspaso no encontrada.")
+    if pos_treasury and target.pk == pos_treasury.pk:
+        raise ValidationError("La cuenta del traspaso no puede ser la misma caja.")
+    return target
+
+
+def _partner_target(partner_id):
+    """Socio que retira efectivo (obligatorio, activo y marcado como socio)."""
+    from contacts.models import Contact
+
+    if not partner_id:
+        raise ValidationError("Elija el socio que retira el efectivo.")
+    partner = Contact.objects.filter(id=partner_id, is_active=True, is_partner=True).first()
+    if partner is None:
+        raise ValidationError("Socio no encontrado.")
+    return partner
+
+
+def _partner_for_difference(reason: str | None, target_id):
+    """Socio de una diferencia justificada como retiro de socio; ``None`` para los demás motivos."""
+    return _partner_target(target_id) if reason == "PARTNER_WITHDRAWAL" else None
+
+
+def difference_reason_account(settings, reason: str | None, direction: str):
+    """Cuenta contable de una diferencia de efectivo (ADR-0130).
+
+    La del motivo elegido; sin motivo (``UNKNOWN``) o con uno sin cuenta propia, la genérica
+    «Sobrante de caja» (IN) / «Faltante de caja» (OUT). ``None`` si tampoco está configurada.
+    """
+    account = TreasuryService._get_reason_account(settings, reason, direction) if reason else None
+    if account:
+        return account
+    return (
+        settings.pos_cash_difference_gain_account
+        if direction == "IN"
+        else settings.pos_cash_difference_loss_account
+    )
+
+
+def _difference_counterpart(reason: str | None, direction: str):
+    """Como ``difference_reason_account`` pero exige cuenta: nunca cae en CxC/CxP por omisión."""
+    from accounting.models import AccountingSettings
+
+    account = difference_reason_account(AccountingSettings.get_solo(), reason, direction)
+    if account is None:
+        kind = "sobrante" if direction == "IN" else "faltante"
+        raise ValidationError(
+            f"No hay cuenta contable configurada para registrar el {kind} de caja "
+            f"({_LABEL_MAP.get(reason, reason or 'sin motivo')}). Configúrela en Cuentas del POS."
+        )
+    return account
+
+
+#: Motivos de retiro al cerrar (salen de tesorería). El traspaso es ``"TRANSFER"``.
+CLOSE_WITHDRAWAL_REASONS = ("PARTNER_WITHDRAWAL", "OTHER_OUT")
+
+
+def _validate_close_withdrawal(*, pos_treasury, actual_cash, amount, kind, destination_id):
+    """Valida el efectivo que sale al cerrar. Devuelve ``(kind, to_account)`` o ``None`` sin retiro."""
+    if amount < 0:
+        raise ValidationError("El monto a retirar no puede ser negativo.")
+    if amount == 0:
+        return None
+    if amount > actual_cash:
+        raise ValidationError(f"No puede retirar más que el efectivo contado (${actual_cash:,.0f}).")
+    if kind == "TRANSFER":
+        if not destination_id:
+            raise ValidationError("Elija la cuenta de destino del traspaso.")
+        try:
+            to_account = TreasuryAccount.objects.get(id=destination_id, is_active=True)
+        except TreasuryAccount.DoesNotExist:
+            raise ValidationError("Cuenta de destino no encontrada.")
+        if pos_treasury and to_account.pk == pos_treasury.pk:
+            raise ValidationError("El destino no puede ser la misma caja.")
+        return kind, to_account
+    if kind in CLOSE_WITHDRAWAL_REASONS:
+        from accounting.models import AccountingSettings
+
+        if not TreasuryService._get_reason_account(AccountingSettings.get_solo(), kind, "OUT"):
+            raise ValidationError(f"Cuenta contable no configurada para {_LABEL_MAP.get(kind, kind)}.")
+        return kind, None
+    raise ValidationError("Tipo de retiro inválido.")
+
+
 def _get_session_treasury(session: POSSession) -> TreasuryAccount | None:
     if session.treasury_account:
         return session.treasury_account
@@ -437,11 +549,11 @@ def _apply_opening_fund_adjustment(
         return
 
     label = _LABEL_MAP.get(justify_reason, justify_reason)
+    counterpart = None
+    partner = None
 
     if justify_reason == "TRANSFER":
-        target = None
-        if justify_target_id:
-            target = TreasuryAccount.objects.filter(id=justify_target_id).first()
+        target = _transfer_target(justify_target_id, pos_treasury)
         if diff > 0:
             # Excedente: el efectivo vino desde la cuenta indicada
             from_account, to_account = target, pos_treasury
@@ -456,6 +568,8 @@ def _apply_opening_fund_adjustment(
         else:
             from_account, to_account = pos_treasury, None
             movement_type = TreasuryMovement.Type.OUTBOUND
+        partner = _partner_for_difference(justify_reason, justify_target_id)
+        counterpart = None if partner else _difference_counterpart(justify_reason, "IN" if diff > 0 else "OUT")
 
     full_notes = f"Ajuste de Apertura POS #{session.id}. Fondo: {opening_balance}, Libros: {book_balance}. Motivo: {label}"
     if notes:
@@ -470,6 +584,8 @@ def _apply_opening_fund_adjustment(
         pos_session=session,
         notes=full_notes,
         justify_reason=justify_reason,
+        partner=partner,
+        counterpart_account=counterpart,
         reference=f"{EntityPrefix.POS_SESSION}-AJUSTE-{session.id}",
     )
 
@@ -485,16 +601,14 @@ def _create_difference_movement(
     user,
 ) -> TreasuryMovement:
     """Handles cash difference adjustment on session close."""
+    counterpart = None
+    partner = None
     if justify_reason == "TRANSFER":
+        target = _transfer_target(justify_target_id, pos_treasury)
         if difference < 0:
-            from_account, to_account = pos_treasury, None
-            if justify_target_id:
-                to_account = TreasuryAccount.objects.filter(id=justify_target_id).first()
+            from_account, to_account = pos_treasury, target
         else:
-            to_account = pos_treasury
-            from_account = None
-            if justify_target_id:
-                from_account = TreasuryAccount.objects.filter(id=justify_target_id).first()
+            from_account, to_account = target, pos_treasury
         movement_type = TreasuryMovement.Type.TRANSFER
     else:
         if difference < 0:
@@ -503,6 +617,8 @@ def _create_difference_movement(
         else:
             from_account, to_account = None, pos_treasury
             movement_type = TreasuryMovement.Type.INBOUND
+        partner = _partner_for_difference(justify_reason, justify_target_id)
+        counterpart = None if partner else _difference_counterpart(justify_reason, "IN" if difference > 0 else "OUT")
 
     return TreasuryService.create_movement(
         movement_type=movement_type,
@@ -513,5 +629,7 @@ def _create_difference_movement(
         pos_session=session,
         notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
         justify_reason=justify_reason,
+        partner=partner,
+        counterpart_account=counterpart,
         reference=f"{EntityPrefix.POS_SESSION}-EXCEDENTE-{session.id}",
     )

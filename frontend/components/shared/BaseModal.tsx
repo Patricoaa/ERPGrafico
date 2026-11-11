@@ -31,6 +31,8 @@ export interface BaseModalProps extends
     allowOverflow?: boolean
     variant?: BaseModalVariant
     showCloseButton?: boolean
+    /** Extra classes for the header close button (e.g. a larger tap target on touch surfaces). */
+    closeButtonClassName?: string
     /** Force rendering as a dialog even inside a workspace persistent panel. */
     asDialog?: boolean
 }
@@ -55,6 +57,7 @@ export function BaseModal({
     allowOverflow = false,
     variant = "default",
     showCloseButton = true,
+    closeButtonClassName,
     asDialog = false,
     ...props
 }: BaseModalProps) {
@@ -159,7 +162,7 @@ export function BaseModal({
                             ) : undefined}
                             headerActions={headerActions}
                             onClose={showCloseButton ? () => onOpenChange(false) : undefined}
-                            closeButtonClassName={isTransaction ? "text-primary-foreground hover:text-primary-foreground" : undefined}
+                            closeButtonClassName={isTransaction ? cn("text-primary-foreground hover:text-primary-foreground", closeButtonClassName) : closeButtonClassName}
                         />
                     </DialogHeader>
                 )}

@@ -28,6 +28,11 @@ interface NumpadProps {
     title?: string
     icon?: ReactNode
     displayValue?: string
+    /**
+     * Touch-first sizing (totems / tablets): 64px keys, large display and a backspace key.
+     * Without decimals the "." key is replaced by backspace.
+     */
+    touch?: boolean
 }
 
 export function Numpad({
@@ -46,8 +51,16 @@ export function Numpad({
     onQuickAmountAction,
     title,
     icon,
-    displayValue
+    displayValue,
+    touch = false
 }: NumpadProps) {
+    const keyClass = touch
+        ? "h-16 [@media(max-height:820px)]:h-14 text-2xl font-semibold active:scale-95 transition-transform"
+        : "h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
+    const actionClass = touch
+        ? "w-full h-16 [@media(max-height:820px)]:h-14 text-lg font-semibold"
+        : "w-full h-12 lg:h-14 font-medium text-sm lg:text-base"
+
     const handleNumber = (n: string) => {
         if (n === "." && value.includes(".")) return
         if (value === "0" && n !== ".") {
@@ -125,11 +138,11 @@ export function Numpad({
                     {title && (
                         <div className="flex items-center justify-center gap-2">
                             {icon && <span className="shrink-0">{icon}</span>}
-                            <span className="text-lg font-bold">{title}</span>
+                            <span className={cn("font-bold", touch ? "text-xl" : "text-lg")}>{title}</span>
                         </div>
                     )}
                     {displayValue ? (
-                        <div className="text-3xl font-black font-mono tracking-tight text-primary text-center">
+                        <div className={cn("font-black font-mono tracking-tight text-primary text-center", touch ? "text-5xl [@media(max-height:820px)]:text-4xl" : "text-3xl")}>
                             {displayValue}
                         </div>
                     ) : !title && (
@@ -141,12 +154,12 @@ export function Numpad({
             )}
 
             {quickAmounts && quickAmounts.length > 0 && (
-                <div className="grid grid-cols-3 lg:gap-1.5 gap-1">
+                <div className={cn("grid grid-cols-3", touch ? "gap-2" : "lg:gap-1.5 gap-1")}>
                     {quickAmounts.map((qa) => (
                         <Button
                             key={qa.label}
                             variant="outline"
-                            className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
+                            className={keyClass}
                             onClick={() => {
                                 if (onQuickAmountAction) {
                                     onQuickAmountAction(qa)
@@ -161,12 +174,12 @@ export function Numpad({
                 </div>
             )}
 
-            <div className="grid grid-cols-3 lg:gap-1.5 gap-1">
+            <div className={cn("grid grid-cols-3", touch ? "gap-2" : "lg:gap-1.5 gap-1")}>
                 {keys.map((key) => (
                     <Button
                         key={key}
                         variant="outline"
-                        className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
+                        className={keyClass}
                         onClick={() => handleNumber(key)}
                     >
                         {key}
@@ -176,7 +189,7 @@ export function Numpad({
                 {/* Row 4 */}
                 <Button
                     variant="destructive"
-                    className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
+                    className={cn(keyClass, "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20")}
                     onClick={handleClear}
                 >
                     C
@@ -184,7 +197,7 @@ export function Numpad({
 
                 <Button
                     variant="outline"
-                    className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
+                    className={keyClass}
                     onClick={() => handleNumber("0")}
                 >
                     0
@@ -193,7 +206,7 @@ export function Numpad({
                 {allowDecimal ? (
                     <Button
                         variant="outline"
-                        className="h-12 lg:h-14 text-sm lg:text-base font-medium active:scale-95 transition-transform"
+                        className={keyClass}
                         onClick={() => handleNumber(".")}
                     >
                         .
@@ -201,10 +214,11 @@ export function Numpad({
                 ) : (
                     <Button
                         variant="outline"
-                        className="h-12 lg:h-14 text-warning font-medium active:scale-95 transition-transform"
+                        className={cn(keyClass, "text-warning")}
+                        aria-label="Borrar último dígito"
                         onClick={handleDelete}
                     >
-                        <Delete className="lg:h-5 lg:w-5 h-4 w-4" />
+                        <Delete className={touch ? "size-7" : "size-4 lg:size-5"} />
                     </Button>
                 )}
             </div>
@@ -212,7 +226,7 @@ export function Numpad({
             {onExactAmount && (
                 <Button
                     variant="outline"
-                    className="w-full h-12 lg:h-14 font-medium text-sm lg:text-base bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20"
+                    className={cn(actionClass, "bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20")}
                     onClick={onExactAmount}
                 >
                     {exactAmountLabel || "MONTO EXACTO"}
@@ -221,7 +235,7 @@ export function Numpad({
 
             {onConfirm && !hideConfirm && (
                 <Button
-                    className="w-full h-12 lg:h-14 font-black uppercase tracking-widest text-sm lg:text-base bg-primary hover:bg-primary active:scale-95 transition-transform"
+                    className={cn(actionClass, "font-black uppercase tracking-widest bg-primary hover:bg-primary active:scale-95 transition-transform")}
                     onClick={onConfirm}
                 >
                     {confirmLabel}

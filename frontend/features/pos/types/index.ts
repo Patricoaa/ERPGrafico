@@ -276,3 +276,30 @@ export interface OperatorPassResponse {
     purpose: OperatorPurpose
     expires_at: string | null
 }
+
+/** ADR-0128: `GET /treasury/pos-sessions/justify_options/`. */
+export interface POSJustifyAccount {
+    id: number
+    name: string
+    account_type: 'CASH' | 'CHECKING'
+    /** Solo cajas físicas; en bancos el cajero no ve el saldo (`null`). */
+    current_balance: number | null
+}
+
+/** Socio que puede retirar efectivo desde la caja (ADR-0131). */
+export interface POSJustifyPartner {
+    id: number
+    name: string
+}
+
+export interface POSJustifyOptions {
+    /**
+     * Por motivo, si su cuenta contable está configurada. `UNEXPLAINED_GAIN` / `UNEXPLAINED_LOSS`:
+     * cuentas genéricas de sobrante / faltante de caja (diferencia sin explicar, ADR-0130).
+     */
+    reasons: Partial<Record<string, boolean>>
+    /** Cuentas que pueden ser origen o destino de un traspaso. */
+    accounts: POSJustifyAccount[]
+    /** Socios activos: quién retira cuando el motivo es «Retiro de socio». */
+    partners: POSJustifyPartner[]
+}
