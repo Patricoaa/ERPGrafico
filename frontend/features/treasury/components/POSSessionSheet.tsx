@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import {
     DocumentActionsMenu,
+    DocumentBackAction,
     DocumentDrawerShell,
     StatusBadge,
     type DocumentActionItem,
@@ -32,6 +33,8 @@ export interface POSSessionSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     embedded?: boolean
+    /** Vista incrustada (POS): «Volver a la lista» en el header. */
+    onBack?: () => void
 }
 
 /**
@@ -40,7 +43,7 @@ export interface POSSessionSheetProps {
  * pestañas explican el detalle: Ventas (actividad comercial), Tesorería (efectivo), Cierre
  * (contraste de resultados) y Actividad (trazabilidad). Relaciones enlaza la caja y las ventas.
  */
-export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: POSSessionSheetProps) {
+export function POSSessionSheet({ id, open, onOpenChange, embedded = false, onBack }: POSSessionSheetProps) {
     const { session, isLoading, isError, refetch } = usePOSSession(id ?? null)
     const overviewQuery = usePOSSessionOverview(id ?? null)
     usePOSSessionRealtime(open ? (id ?? null) : null)
@@ -145,6 +148,7 @@ export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: PO
                 icon={identity.icon ?? Monitor}
                 headerActions={session ? (
                     <>
+                        {onBack && <DocumentBackAction label="Volver a la lista" onClick={onBack} />}
                         <StatusBadge status={session.status} variant="badge" />
                         <DocumentActionsMenu actions={actions} />
                     </>

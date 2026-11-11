@@ -3,7 +3,7 @@
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { ShoppingCart, FileText } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
-import { ENTITY_DRAWERS } from "@/lib/entity-drawers"
+import { ENTITY_DRAWERS, POSSessionDrawer } from "@/lib/entity-drawers"
 import { SalesOrdersView } from "@/features/sales"
 import { TabBar, Drawer, DrawerScope, SkeletonShell, DocumentHeaderSlotContext, type DocumentHeaderSlots, type DrawerScopeValue } from "@/components/shared"
 import { EntityNavigationScope } from "@/components/providers/GlobalModalProvider"
@@ -95,7 +95,15 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
     // Documento embebido en el cuerpo del drawer del POS (sin Drawer propio: ver ADR-0121).
     const renderDocument = () => {
         if (!documentEntry) return null
-        const body = documentEntry.label === 'billing.invoice' ? (
+        const body = documentEntry.label === 'treasury.possession' ? (
+            <POSSessionDrawer
+                id={documentEntry.id}
+                embedded
+                open
+                onOpenChange={(isOpen) => { if (!isOpen) closeDocument() }}
+                onBack={closeDocument}
+            />
+        ) : documentEntry.label === 'billing.invoice' ? (
             <InvoiceSheet
                 id={documentEntry.id}
                 embedded

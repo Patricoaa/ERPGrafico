@@ -5,7 +5,7 @@
  */
 
 /** Documentos que se renderizan dentro del panel (ficha incrustada). */
-export const PANE_LABELS: ReadonlySet<string> = new Set(["sales.saleorder", "billing.invoice"])
+export const PANE_LABELS: ReadonlySet<string> = new Set(["sales.saleorder", "billing.invoice", "treasury.possession"])
 
 export interface StackEntry {
     key: string
