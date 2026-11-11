@@ -78,6 +78,29 @@ Document lists open the sheet with `useDocumentSheetRoute(label)` (`@/hooks`): `
 
 **POS (ADR-0121):** the sales drawer is the only drawer of the POS. Rows open their document embedded in that same drawer (`embedded`), replacing the list, with «Volver a la lista» (`onBack`). The embedded sheet does not draw its own header: title, subtitle and actions are portaled into the container header through `DocumentHeaderSlotContext`. Opening another document replaces it. At most one nested drawer (product, contact, work order) may sit above it, replacing any previous one; the sales drawer wraps its subtree in `EntityNavigationScope` and `DrawerScope { boundary: "screen", className: "pos-motion" }` (`components/shared/Drawer.tsx`). Motion is ease-in (`--ease-pos-enter`, globals.css).
 
+## 6b. POS session sheet (`treasury.possession`)
+
+`POSSessionSheet` (`features/treasury`) is the only surface of a POS session: sessions list (`?selected`), the Caja POS **Relaciones** tab and any `openEntity("treasury.possession", id)`. It composes `DocumentDrawerShell` (not `DocumentSheet`) because its Resumen is an executive view. Idea: the Resumen explains the session in seconds; the other tabs explain the detail without duplicating each other.
+
+| Tab | Answers | Content |
+|---|---|---|
+| Resumen | What happened; does anything need attention | Alerts first (cash difference, pending terminal payments) with a button to the tab that investigates them · indicators (ventas netas, órdenes de venta + devoluciones, ticket medio bruto with its criterion, duración + time zone) · operational info (responsable, cerrada por, apertura/cierre, fondo, punto de venta) · **net** collections by method with % (after refunds) |
+| Ventas | What was sold/returned/collected | Commercial balance (gross, returns, net, counts kept separate, tax note) · one table of sales (+) and returns (−) with document link (`openEntity`), date-time, customer (walk-in flagged), method, amount, status |
+| Tesorería | How much cash there should be | Esperado / contado / diferencia · transparent formula (fondo + ventas efectivo − devoluciones + entradas − retiradas) · **every** treasury movement associated with the session (sale collections included, each opening its movement sheet) · movements outside the session |
+| Cierre (closed only) | How it ended; do declared amounts match | Who/when, result («Coincide» ≠ «revisado»), expected vs declared per method (only cash is declared today), closing notes with author and time |
+| Actividad | Who did what, when | Read-only chronological history, newest first, time zone visible, filters by event type and responsible; each event may link to its document |
+| Relaciones | Linked documents | The Caja POS (`pos_box`) and the session's sales (`pos_sale`) |
+
+Backend: `GET treasury/pos-sessions/{id}/overview/` (alerts, sales balance + rows, net collections, closing) and `/activity/` (`treasury/pos_session_overview.py`, fixed query count — zero N+1) next to the existing `/summary/` (cash ledger). Activity merges session open/close, operator passes, draft-step tracking (`SaleTrackingEvent`, including POS partner withdrawals via `Step.PARTNER_WITHDRAWAL`), treasury movements without a sale (incl. cash partner withdrawals), returns and work orders. Descriptions are always Spanish; `reference` is a clickable link to the related document. KPI sections (first block of Resumen, Ventas, Tesorería, Cierre) use `StatCard` with no section divider. The actions menu downloads the X (open) / Z (closed) PDF.
+
+Not captured by the system yet (so not shown): counts by denomination, declared amounts for card/transfer, supervisor review status and POS connection state at close.
+
+**Payment methods are never hardcoded:** Cobros por métodos lists the methods enabled today for the Caja POS (`allowed_payment_methods`, active, for sales) with their configured names, plus any method that collected in the session and is no longer enabled (marked «ya no habilitado»); legacy movements without a method group by type.
+
+**Configuration lock (`treasury/pos_lock.py`):** while a session is OPEN, the Caja POS, its allowed payment methods, the treasury accounts it uses (default, allowed, method account/settlement, session account) and the accounting accounts linked to those (plus the `pos_*` accounts of `AccountingSettings`) cannot be edited or archived through the API (`DOCUMENT_LOCKED`, 422). Serializers expose `pos_session_locked` (precomputed with `annotate_pos_lock`, no N+1); `PosTerminalDrawer` shows a notice and disables the form. Closing the session releases the lock.
+
+Caja POS ↔ sesiones: backend labels `treasury.posterminal` (provider `pos_terminal_relations`: every session of the box, newest first, role `pos_session`) and `treasury.possession` (links back with role `pos_box`). The box drawer (`PosTerminalDrawer`) has tabs **Configuración** / **Relaciones**.
+
 ## 7. Anti-patterns
 
 - Opening a document in a surface other than its sheet (Hub, ad-hoc modal).

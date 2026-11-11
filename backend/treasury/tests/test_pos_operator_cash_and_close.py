@@ -8,7 +8,12 @@ from django.contrib.auth.models import Permission
 from rest_framework.test import APIClient
 
 from accounting.models import Account, AccountType
-from treasury.models import POSOperatorPass, POSSession, POSTerminal, TreasuryAccount, TreasuryMovement
+from treasury.models import (
+    POSOperatorPass,
+    POSTerminal,
+    TreasuryAccount,
+    TreasuryMovement,
+)
 from treasury.pos_service import POSService
 from treasury.services import TreasuryService
 

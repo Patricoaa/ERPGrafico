@@ -268,3 +268,8 @@ def test_multi_withdraw_with_its_own_pass_runs_as_that_operator_and_consumes_it(
     assert r.status_code == 200, r.content
     assert seen["user"] == beto
     assert POSOperatorPass.objects.get(pk=w["pass_id"]).end_reason == "CONSUMED"
+    # El retiro queda en la actividad de la sesión, a nombre del operador que lo hizo.
+    from sales.models import SaleTrackingEvent
+
+    event = SaleTrackingEvent.objects.get(pos_session=multi, step=SaleTrackingEvent.Step.PARTNER_WITHDRAWAL)
+    assert event.operator == beto

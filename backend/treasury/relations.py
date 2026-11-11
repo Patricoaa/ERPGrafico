@@ -65,8 +65,23 @@ DocumentTypeRegistry.register(DocumentType(
 
 @relation_provider("treasury.possession")
 def pos_session_relations(session):
+    if session.terminal_id:
+        yield Link("association", "incoming", "pos_box", session.terminal, is_dependency=False)
     for order in session.sale_orders.all():
         yield Link("derivation", "outgoing", "pos_sale", order, is_dependency=False)
+    # Ventas de otro origen (crédito, otro canal) cobradas en esta sesión.
+    from treasury.pos_session_overview import _collected_elsewhere
+
+    for order, movements in _collected_elsewhere(session):
+        amount = sum(m.amount for m in movements)
+        yield Link("settlement", "outgoing", "pos_collected_sale", order, amount=amount, is_dependency=False)
+
+
+@relation_provider("treasury.posterminal")
+def pos_terminal_relations(terminal):
+    """Todas las sesiones de la caja POS, la más reciente primero."""
+    for session in terminal.sessions.select_related("user").order_by("-opened_at", "-id"):
+        yield Link("association", "outgoing", "pos_session", session, is_dependency=False)
 
 
 @relation_provider("treasury.treasurymovement")

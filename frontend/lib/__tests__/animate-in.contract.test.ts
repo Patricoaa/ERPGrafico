@@ -93,7 +93,6 @@ const ANIMATE_ALLOWLIST = [
     "features/sales/components/checkout/OrderSummaryCard.tsx",
     "features/sales/components/checkout/Step2_DTE.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
-    "features/sales/components/POSSessionsClientView.tsx",
     "features/settings/components/partners/PartnerLedgerDrawer.tsx",
     "features/tax/components/DeclarationWizard.tsx",
     "features/treasury/components/MonthlyInvoiceModal.tsx",

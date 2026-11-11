@@ -14,6 +14,7 @@ export { default as SalesPosLayout } from './components/SalesPosLayout'
 export { POSSessionsClientView } from './components/POSSessionsClientView'
 export { PosTerminalClientView } from './components/PosTerminalClientView'
 export { PosTerminalDrawer } from './components/PosTerminalDrawer'
+export { PosTerminalDrawerById } from './components/PosTerminalDrawerById'
 export { TERMINALS_KEYS, usePosTerminals } from './hooks/usePosTerminals'
 export { AdvancedManufacturingDrawer } from './components/forms/AdvancedManufacturingDrawer'
 export { PricingRuleDrawer } from './components/PricingRuleDrawer'
@@ -43,5 +44,3 @@ export type {
     DeliveryStatus,
 } from './types'
 
-export { SaleOrderTrackingPanel } from './components/SaleOrderTrackingPanel'
-export { useSaleOrderTracking } from './hooks/useSaleOrderTracking'

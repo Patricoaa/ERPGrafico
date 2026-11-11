@@ -7,14 +7,19 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import {Banknote, CreditCard, Landmark, Smartphone, FileCheck, CircleHelp, type LucideIcon} from "lucide-react"
+import {Banknote, CreditCard, Landmark, Smartphone, FileCheck, CircleHelp, Link2, Lock, Settings2, type LucideIcon} from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal, type TerminalCreatePayload, type TerminalUpdatePayload } from "@/features/treasury"
 import { treasuryApi } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
-import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, FormSelectionGroup, SubmitButton } from "@/components/shared"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, DrawerLayout, FormSelectionGroup, SubmitButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { EntitySidebar } from "@/features/comments"
+import { DocumentRelationsTab, useDocumentRelations, type DocumentDomain } from "@/features/documents"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+
+/** Etiqueta documental del modelo POSTerminal en el backend (relaciones con sus sesiones). */
+const TERMINAL_RELATIONS_LABEL = "treasury.posterminal"
 
 const terminalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -37,9 +42,14 @@ interface PosTerminalDrawerProps {
 
 export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: modeProp }: PosTerminalDrawerProps) {
     const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: terminal })
+    // Con una sesión POS abierta la caja no se modifica ni se archiva (el backend lo rechaza igual).
+    const sessionLocked = !!terminal?.pos_session_locked
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [activeTab, setActiveTab] = useState("config")
+    const [domain, setDomain] = useState<DocumentDomain | null>(null)
+    const { data: relations } = useDocumentRelations(TERMINAL_RELATIONS_LABEL, terminal?.id ?? null)
     const [selectedMethodIds, setSelectedMethodIds] = useState<number[]>([])
 
     const { methods: allPaymentMethods } = usePaymentMethods()
@@ -226,7 +236,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <SubmitButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
+                                <SubmitButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting || sessionLocked}>
                                     {mode === 'create' ? "Crear Punto de Venta" : "Guardar Cambios"}
                                 </SubmitButton>
                             </>
@@ -234,23 +244,40 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                     />
                 )}
             >
-                <FormSplitLayout
-                    className="space-y-6 p-6"
-                    collapsible
-                    collapseStorageKey="erpgrafico.drawer.sidebar.terminal_pos"
-                    showSidebar={!!terminal?.id}
-                    sidebar={terminal?.id ? (
-                        <EntitySidebar
-                            entityType="terminal"
-                            entityId={terminal.id}
-                            className="h-full border-none"
-                            title="Historial"
-                        />
-                    ) : undefined}
-                >
-                    <Form {...form}>
-                        <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)}>
-                            <fieldset disabled={isView} className="contents">
+                <Form {...form}>
+                    <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
+                        <DrawerLayout
+                            contentDisabled={isView || sessionLocked}
+                            activeTab={activeTab}
+                            onTabChange={setActiveTab}
+                            rightRail={terminal?.id ? (
+                                <EntitySidebar
+                                    entityType="terminal"
+                                    entityId={terminal.id}
+                                    className="h-full border-none"
+                                    title="Historial"
+                                />
+                            ) : undefined}
+                            rightRailCollapsible
+                            rightRailStorageKey="erpgrafico.drawer.sidebar.terminal_pos"
+                            className="min-w-0 h-full overflow-hidden"
+                            tabs={[
+                                {
+                                    value: "config",
+                                    label: "Configuración",
+                                    icon: Settings2,
+                                    content: (
+                                        <div className="space-y-6 p-6">
+                                            {sessionLocked && (
+                                                <Alert variant="warning">
+                                                    <Lock className="h-4 w-4" />
+                                                    <AlertTitle>Sesión POS abierta</AlertTitle>
+                                                    <AlertDescription>
+                                                        Esta caja no se puede modificar ni archivar hasta cerrar su sesión. Lo mismo vale para sus
+                                                        métodos de pago, cuentas de tesorería y cuentas contables vinculadas.
+                                                    </AlertDescription>
+                                                </Alert>
+                                            )}
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
@@ -351,10 +378,29 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                         })}
                                     </div>
                                 </div>
-                            </fieldset>
-                        </form>
-                    </Form>
-                </FormSplitLayout>
+                                        </div>
+                                    ),
+                                },
+                                ...(terminal?.id ? [{
+                                    value: "relations",
+                                    label: "Relaciones",
+                                    icon: Link2,
+                                    badge: relations?.relations.length,
+                                    content: (
+                                        <DocumentRelationsTab
+                                            label={TERMINAL_RELATIONS_LABEL}
+                                            id={terminal.id}
+                                            sectionActions={{}}
+                                            rowActions={() => []}
+                                            domain={domain}
+                                            onDomainChange={setDomain}
+                                        />
+                                    ),
+                                }] : []),
+                            ]}
+                        />
+                    </form>
+                </Form>
             </Drawer>
         </>
     )

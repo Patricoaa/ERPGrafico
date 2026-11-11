@@ -9,8 +9,8 @@ from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from treasury.models import POSOperatorPass
-from treasury.tests.helpers import make_pos_session
 from treasury.selectors import POSSelector
+from treasury.tests.helpers import make_pos_session
 
 User = get_user_model()
 

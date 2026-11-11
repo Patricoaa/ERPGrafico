@@ -266,8 +266,9 @@ class TreasuryConfig(AppConfig):
                     title_plural="Cajas POS",
                     icon="monitor",
                     search_fields=("name", "code"),
-                    short_display_template=f"{EntityPrefix.POS_TERMINAL}-{{code}}",
-                    display_template=f"{EntityPrefix.POS_TERMINAL}-{{code}}",
+                    # El código de la caja ya es su identificador (p. ej. «POS-01»): sin prefijo adicional.
+                    short_display_template="{code}",
+                    display_template="{code}",
                     subtitle_template="{name}",
                     extra_info_template="{location}",
                     list_url="/treasury/operaciones/pos",

@@ -3,6 +3,8 @@ import { toPage, type Page } from '@/lib/pagination'
 import { fetchBoundedList } from '@/lib/bounded-list'
 import type {
     Terminal,
+    POSSessionOverview,
+    POSSessionActivityEvent,
     TerminalCreatePayload,
     TerminalUpdatePayload,
     TreasuryAccount,
@@ -274,6 +276,16 @@ export const treasuryApi = {
 
     getPOSSession: async (id: number): Promise<POSSession> => {
         const response = await api.get<POSSession>(`/treasury/pos-sessions/${id}/`)
+        return response.data
+    },
+
+    getPOSSessionOverview: async (id: number): Promise<POSSessionOverview> => {
+        const response = await api.get<POSSessionOverview>(`/treasury/pos-sessions/${id}/overview/`)
+        return response.data
+    },
+
+    getPOSSessionActivity: async (id: number): Promise<POSSessionActivityEvent[]> => {
+        const response = await api.get<POSSessionActivityEvent[]>(`/treasury/pos-sessions/${id}/activity/`)
         return response.data
     },
 

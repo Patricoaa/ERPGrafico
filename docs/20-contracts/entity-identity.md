@@ -457,7 +457,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `finance.bankjournal` | `BJ` | `BANK_JOURNAL` | Diario Banco | `Landmark` |
 | `finance.payment` | `PAY` | `PAYMENT` | Pago | `Receipt` |
 | `pos.session` | `POS` | `POS_SESSION` | Sesión POS | `ShoppingCart` |
-| `pos.terminal` | `POS-C` | `POS_TERMINAL` | Caja POS | `Monitor` |
+| `pos.terminal` | `{code}` | — | Caja POS | `Monitor` |
 | `tax.f29declaration` | `F29` | `F29_DECLARATION` | Declaración F29 | `FileText` |
 | `tax.accountingperiod` | `PER` | `ACCOUNTING_PERIOD` | Período Contable | `Calendar` |
 | `tax.taxperiod` | `IMP` | `TAX_PERIOD` | Período Tributario | `Calendar` |

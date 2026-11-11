@@ -1,5 +1,7 @@
 export interface Terminal {
     id: number
+    /** Hay una sesión POS abierta que usa esta caja: no se puede modificar ni archivar. */
+    pos_session_locked?: boolean
     name: string
     code: string
     location: string
@@ -463,6 +465,97 @@ export interface POSSession {
     expected_cash: number
     notes: string
     cash_movements: TreasuryMovement[]
+}
+
+/** Fila de la pestaña Ventas: una venta (importe +) o una devolución (importe −). */
+export interface POSSessionSaleRow {
+    key: string
+    /** `COLLECTION`: venta de otro origen cuyo cobro se registró en la sesión (no suma a las ventas). */
+    kind: 'SALE' | 'RETURN' | 'COLLECTION'
+    id: number
+    /** Etiqueta de entidad para abrir su ficha (`sales.saleorder` | `sales.salereturn`). */
+    label: string
+    display_id: string
+    occurred_at: string
+    customer_id: number
+    customer_name: string
+    /** Venta ocasional (cliente por defecto) frente a cliente identificado. */
+    is_walk_in: boolean
+    payment_method: string
+    amount: number | string
+    status: string
+    status_display: string
+    counts: boolean
+}
+
+/** Cobro neto por método de pago real de la Caja POS (no por tipo fijo). */
+export interface POSSessionCollection {
+    key: string
+    method_id: number | null
+    /** Tipo del método (`CASH`, `CARD`, `TRANSFER`…). */
+    method: string
+    /** Nombre del método de pago tal como está configurado. */
+    label: string
+    /** `false`: cobró en la sesión pero hoy ya no está habilitado para la caja (o es un dato antiguo sin método). */
+    enabled: boolean
+    amount: number | string
+    share: number | string
+}
+
+export interface POSSessionAlert {
+    code: 'CASH_DIFFERENCE' | 'PAYMENT_PENDING'
+    severity: 'destructive' | 'warning'
+    /** Pestaña donde se investiga la alerta. */
+    tab: 'sales' | 'closing'
+    message: string
+    amount?: number | string
+    count?: number
+}
+
+export interface POSSessionClosing {
+    closed_at: string
+    closed_by_id: number | null
+    closed_by_name: string | null
+    expected_cash: number | string
+    counted_cash: number | string | null
+    difference: number | string | null
+    /** «Coincide» compara importes; no implica que un supervisor haya revisado el cierre. */
+    result: 'MATCH' | 'DIFFERENCE' | null
+    notes: string
+    notes_author: string | null
+    notes_at: string
+}
+
+export interface POSSessionOverview {
+    timezone: string
+    alerts: POSSessionAlert[]
+    sales: {
+        gross: number | string
+        returns_total: number | string
+        net: number | string
+        sale_count: number
+        return_count: number
+        includes_tax: boolean
+        average_ticket: number | string
+        collection_count: number
+        rows: POSSessionSaleRow[]
+    }
+    collections: POSSessionCollection[]
+    closing: POSSessionClosing | null
+}
+
+export type POSSessionActivityCategory = 'caja' | 'venta' | 'acceso' | 'cierre' | 'sistema'
+
+export interface POSSessionActivityEvent {
+    key: string
+    occurred_at: string
+    category: POSSessionActivityCategory
+    kind: string
+    description: string
+    actor_id: number | null
+    /** `null` = origen automático del sistema. */
+    actor_name: string | null
+    reference: { label: string; id: number; display_id: string } | null
 }
 
 export interface TransferPayload {

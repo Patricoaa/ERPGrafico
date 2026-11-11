@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote, SaleTrackingEvent } from '../types'
+import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
 import type { SaleNoteFilters } from '../hooks/useSalesOrders'
 import { type Invoice } from '@/features/billing'
 import { toPage } from '@/lib/pagination'
@@ -84,14 +84,6 @@ export const salesApi = {
      */
     getOrder: async (id: number): Promise<SaleOrder> => {
         const { data } = await api.get<SaleOrder>(`/sales/orders/${id}/`)
-        return data
-    },
-
-    /**
-     * Seguimiento POS de una orden: operador y cuenta del dispositivo por paso
-     */
-    getOrderTracking: async (id: number): Promise<SaleTrackingEvent[]> => {
-        const { data } = await api.get<SaleTrackingEvent[]>(`/sales/orders/${id}/tracking/`)
         return data
     },
 

@@ -118,6 +118,11 @@ const PosTerminalDrawer = dynamic(
     { ssr: false, loading: () => skeleton("caja") }
 )
 
+const PosTerminalDrawerById = dynamic(
+    () => import("@/features/sales").then((m) => m.PosTerminalDrawerById),
+    { ssr: false, loading: () => skeleton("caja") }
+)
+
 const ProviderDrawer = dynamic(
     () => import("@/features/treasury").then((m) => m.ProviderDrawer),
     { ssr: false, loading: () => skeleton("proveedor de pago") }
@@ -420,6 +425,10 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             terminal={(data as Terminal | null) ?? null}
             onSuccess={() => onSuccess?.()}
         />
+    ),
+    // Etiqueta documental del modelo POSTerminal: relaciones sesión ↔ caja abren aquí (solo id).
+    "treasury.posterminal": ({ id, open, onOpenChange, onSuccess }) => (
+        <PosTerminalDrawerById id={id} open={open} onOpenChange={onOpenChange} onSuccess={() => onSuccess?.()} />
     ),
     "treasury.terminalprovider": ({ open, onOpenChange, data, onSuccess }) => (
         <ProviderDrawer
