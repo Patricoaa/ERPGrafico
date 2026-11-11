@@ -38,8 +38,12 @@ type StackedProps = {
     tone?: "default" | "warning"
     /** Bottom-pinned content: amounts, secondary facts. */
     footer?: React.ReactNode
-    /** `compact` shortens the media strip for dense grids (payment methods). */
-    size?: "default" | "compact"
+    /**
+     * `compact` shortens the media strip for dense grids (payment methods).
+     * `touch` scales the whole card for full-screen touch flows and kiosks (POS session opening):
+     * taller strip, 48px icon, display-size title and body-size description.
+     */
+    size?: "default" | "compact" | "touch"
     /** Extra body content rendered between the description and the footer. */
     children?: React.ReactNode
     className?: string
@@ -95,6 +99,7 @@ function renderStackedVariant({
     className,
 }: StackedProps) {
     const compact = size === "compact"
+    const touch = size === "touch"
 
     return (
         <Button
@@ -118,7 +123,7 @@ function renderStackedVariant({
             <span
                 className={cn(
                     "relative flex w-full shrink-0 items-center justify-center overflow-hidden bg-muted",
-                    compact ? "h-14" : "h-20",
+                    compact ? "h-14" : touch ? "h-32 [@media(max-height:820px)]:h-24" : "h-20",
                     tone === "warning" && !disabled && "bg-warning/20",
                     disabled && "bg-muted/60"
                 )}
@@ -126,7 +131,7 @@ function renderStackedVariant({
                 {media ?? (Icon && (
                     <Icon
                         className={cn(
-                            compact ? "size-6" : "size-8",
+                            compact ? "size-6" : touch ? "size-12" : "size-8",
                             disabled ? "text-muted-foreground/40" : (iconClassName ?? (tone === "warning" ? "text-warning-foreground" : "text-muted-foreground/70"))
                         )}
                         aria-hidden
@@ -137,18 +142,19 @@ function renderStackedVariant({
                         {badge}
                     </Chip>
                 )}
-                {selected && <SelectionCheck />}
+                {selected && <SelectionCheck className={touch ? "bottom-3 right-3 h-8 w-8 [&_svg]:size-5" : undefined} />}
             </span>
 
             <span className={cn(
-                "flex w-full flex-1 flex-col gap-1 px-3 pb-3 text-left",
-                compact ? "pt-2" : "pt-2.5"
+                "flex w-full flex-1 flex-col text-left",
+                touch ? "gap-1.5 px-5 pb-5 pt-4" : "gap-1 px-3 pb-3",
+                compact ? "pt-2" : !touch && "pt-2.5"
             )}>
-                {meta && <span className={cardAnatomy.code}>{meta}</span>}
-                <span className={cn(cardAnatomy.title, disabled && "text-muted-foreground")}>{title}</span>
-                {description && <span className={cardAnatomy.description}>{description}</span>}
+                {meta && <span className={cn(cardAnatomy.code, touch && "text-sm")}>{meta}</span>}
+                <span className={cn(cardAnatomy.title, touch && "text-2xl tracking-tight", disabled && "text-muted-foreground")}>{title}</span>
+                {description && <span className={cn(cardAnatomy.description, touch && "text-base")}>{description}</span>}
                 {children}
-                {footer && <span className={cardAnatomy.footer}>{footer}</span>}
+                {footer && <span className={cn(cardAnatomy.footer, touch && "pt-3")}>{footer}</span>}
             </span>
         </Button>
     )

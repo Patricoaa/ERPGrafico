@@ -938,14 +938,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         "join_session": None,
         "identify_operator": None,
         "release_operator": None,
+        # ADR-0128: motivos y cuentas para justificar diferencias de efectivo (apertura y cierre)
+        "justify_options": None,
     }
 
     def get_permissions(self):
         from treasury.api.permissions import IsPOSSessionActive
 
         permissions = [IsAuthenticated()]
-        # current() y open_session() no requieren sesión activa
-        if self.action not in ("current", "open_session"):
+        # current(), open_session() y justify_options() no requieren sesión activa
+        if self.action not in ("current", "open_session", "justify_options"):
             permissions.append(IsPOSSessionActive())
         return permissions
 
@@ -990,6 +992,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         if session:
             return Response(POSSessionSerializer(session, context={'request': request}).data)
         return Response({"session": None})
+
+    @action(detail=False, methods=["get"])
+    def justify_options(self, request):
+        from .selectors import POSSelector
+        return Response(POSSelector.get_justify_options())
 
     @action(detail=True, methods=["post"])
     def join_session(self, request, pk=None):

@@ -135,6 +135,7 @@ class POSService:
         justify_target_id: int | None = None,
         withdrawal_amount: Decimal = Decimal("0"),
         cash_destination_id: int | None = None,
+        withdrawal_kind: str = "TRANSFER",
         user,
     ) -> tuple[POSSession, POSSessionAudit]:
         """
@@ -145,7 +146,9 @@ class POSService:
         Steps:
         1. Create POSSessionAudit.
         2. If there is a cash difference, create an adjustment movement.
-        3. If withdrawal_amount > 0, create a transfer to cash_destination.
+        3. If withdrawal_amount > 0, move cash out of the box (ADR-0129), still inside the session:
+           ``withdrawal_kind="TRANSFER"`` → transfer to ``cash_destination`` (another box or a bank);
+           ``PARTNER_WITHDRAWAL`` / ``OTHER_OUT`` → outbound with that reason (leaves treasury).
         4. Clean up draft carts.
         5. Mark session CLOSED.
 
@@ -161,6 +164,15 @@ class POSService:
             raise PermissionDenied(
                 "Solo quien abrió la sesión de POS o un superusuario puede cerrarla."
             )
+
+        pos_treasury = _get_session_treasury(session)
+        withdrawal = _validate_close_withdrawal(
+            pos_treasury=pos_treasury,
+            actual_cash=actual_cash,
+            amount=withdrawal_amount,
+            kind=withdrawal_kind,
+            destination_id=cash_destination_id,
+        )
 
         # Clear any partial audit from a failed previous close attempt
         if hasattr(session, "audit"):
@@ -178,8 +190,6 @@ class POSService:
             notes=notes,
         )
 
-        pos_treasury = _get_session_treasury(session)
-
         # Cash difference adjustment
         if difference != 0:
             movement = _create_difference_movement(
@@ -195,18 +205,20 @@ class POSService:
                 audit.journal_entry = movement.journal_entry
                 audit.save()
 
-        # Physical cash withdrawal to safe/bank
-        if withdrawal_amount > 0 and cash_destination_id:
-            to_account = TreasuryAccount.objects.get(id=cash_destination_id)
+        # ADR-0129: el efectivo que sale al cerrar se registra después del arqueo y antes de cerrar,
+        # ligado a la sesión (el informe Z lo muestra como movimiento de cierre).
+        if withdrawal is not None:
+            kind, to_account = withdrawal
+            is_transfer = kind == "TRANSFER"
             TreasuryService.create_movement(
-                movement_type=TreasuryMovement.Type.TRANSFER,
+                movement_type=TreasuryMovement.Type.TRANSFER if is_transfer else TreasuryMovement.Type.OUTBOUND,
                 from_account=pos_treasury,
                 to_account=to_account,
                 amount=withdrawal_amount,
-                justify_reason="RETIREMENT",
+                justify_reason="RETIREMENT" if is_transfer else kind,
                 pos_session=session,
                 created_by=user,
-                notes=f"Retiro de cierre sesión #{session.id}",
+                notes=f"{'Traspaso' if is_transfer else 'Retiro'} de cierre sesión #{session.id}",
                 reference=f"{EntityPrefix.POS_SESSION}-RETIRO-{session.id}",
             )
 
@@ -275,6 +287,7 @@ class POSService:
                 justify_target_id=request.data.get("justify_target_id"),
                 withdrawal_amount=Decimal(str(request.data.get("withdrawal_amount", "0"))),
                 cash_destination_id=request.data.get("cash_destination_id"),
+                withdrawal_kind=request.data.get("withdrawal_kind") or "TRANSFER",
                 user=actor.operator,
             )
 
@@ -409,6 +422,37 @@ _LABEL_MAP = {
     "SYSTEM_ERROR": "Error de Sistema",
     "CASHBACK": "Vuelto Incorrecto",
 }
+
+
+#: Motivos de retiro al cerrar (salen de tesorería). El traspaso es ``"TRANSFER"``.
+CLOSE_WITHDRAWAL_REASONS = ("PARTNER_WITHDRAWAL", "OTHER_OUT")
+
+
+def _validate_close_withdrawal(*, pos_treasury, actual_cash, amount, kind, destination_id):
+    """Valida el efectivo que sale al cerrar. Devuelve ``(kind, to_account)`` o ``None`` sin retiro."""
+    if amount < 0:
+        raise ValidationError("El monto a retirar no puede ser negativo.")
+    if amount == 0:
+        return None
+    if amount > actual_cash:
+        raise ValidationError(f"No puede retirar más que el efectivo contado (${actual_cash:,.0f}).")
+    if kind == "TRANSFER":
+        if not destination_id:
+            raise ValidationError("Elija la cuenta de destino del traspaso.")
+        try:
+            to_account = TreasuryAccount.objects.get(id=destination_id, is_active=True)
+        except TreasuryAccount.DoesNotExist:
+            raise ValidationError("Cuenta de destino no encontrada.")
+        if pos_treasury and to_account.pk == pos_treasury.pk:
+            raise ValidationError("El destino no puede ser la misma caja.")
+        return kind, to_account
+    if kind in CLOSE_WITHDRAWAL_REASONS:
+        from accounting.models import AccountingSettings
+
+        if not TreasuryService._get_reason_account(AccountingSettings.get_solo(), kind, "OUT"):
+            raise ValidationError(f"Cuenta contable no configurada para {_LABEL_MAP.get(kind, kind)}.")
+        return kind, None
+    raise ValidationError("Tipo de retiro inválido.")
 
 
 def _get_session_treasury(session: POSSession) -> TreasuryAccount | None:

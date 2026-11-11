@@ -242,18 +242,21 @@ export function GenericWizard({
         totalSteps,
     }), [handleNext, handleBack, goTo, isLastStep, onComplete, safeStep, totalSteps])
 
+    const touchCloseButton = "h-12 w-12 [&_svg]:h-6 [&_svg]:w-6"
+    const touchFooterButton = "h-14 min-w-36 px-8 text-sm active:scale-[0.98]"
+
     // Industrial step indicator: "01 / 03 — Título del Paso"
     const stepDescription = (
         <div className={cn("flex items-center gap-3", touchMode && "gap-4")}>
             <span className={cn(
                 "font-mono font-black text-primary tracking-wider",
-                touchMode ? "text-sm" : "text-xs"
+                touchMode ? "text-base" : "text-xs"
             )}>
                 {String(safeStep + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
             </span>
             <span className={cn(
                 "font-black uppercase tracking-wider text-muted-foreground",
-                touchMode ? "text-xs" : "text-3xs"
+                touchMode ? "text-sm" : "text-3xs"
             )}>
                 {currentStepData?.title}
             </span>
@@ -268,15 +271,18 @@ export function GenericWizard({
             {/* Navigation */}
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
+                    {/* En táctil no se muestra un "Anterior" inerte en el primer paso */}
+                    {!(touchMode && isFirstStep) && (
                     <Button
                         variant="ghost"
                         onClick={handleBack}
                         disabled={isFirstStep || isCompleting || isStepTransitioning}
-                        className={cn("gap-2", touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
+                        className={cn("gap-2", touchMode && touchFooterButton)}
                     >
-                        <ChevronLeft className={cn("h-4 w-4", touchMode && "h-5 w-5")} />
+                        <ChevronLeft className={cn("h-4 w-4", touchMode && "h-6 w-6")} />
                         Anterior
                     </Button>
+                    )}
                     {footerLeft}
                 </div>
 
@@ -286,7 +292,7 @@ export function GenericWizard({
                         disabled={currentStepData?.isValid === false || isCompleting || isStepTransitioning}
                         loading={isCompleting || isStepTransitioning}
                         icon={isCompleting || isStepTransitioning ? undefined : (completeButtonIcon ?? CheckCircle2)}
-                        className={cn("bg-success hover:bg-success/90 text-success-foreground", touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
+                        className={cn("bg-success hover:bg-success/90 text-success-foreground", touchMode && touchFooterButton)}
                     >
                         {completeButtonLabel}
                     </SubmitButton>
@@ -296,7 +302,7 @@ export function GenericWizard({
                         disabled={currentStepData?.isValid === false || isCompleting || isStepTransitioning}
                         loading={isStepTransitioning}
                         icon={isStepTransitioning ? undefined : ChevronRight}
-                        className={cn(touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
+                        className={cn(touchMode && touchFooterButton)}
                     >
                         Siguiente
                     </SubmitButton>
@@ -346,7 +352,7 @@ export function GenericWizard({
                                 onClose?.()
                                 onOpenChange(false)
                             }}
-                            className={cn(touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
+                            className={cn(touchMode && touchFooterButton)}
                         >Cerrar</Button>
                     </div>
                 </Drawer>
@@ -367,6 +373,7 @@ export function GenericWizard({
                 title={title}
                 size={size}
                 showCloseButton={true}
+                closeButtonClassName={touchMode ? touchCloseButton : undefined}
                 {...props}
             >
                 <div className="py-8">
@@ -378,7 +385,7 @@ export function GenericWizard({
                             onClose?.()
                             onOpenChange(false)
                         }}
-                        className={cn(touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
+                        className={cn(touchMode && touchFooterButton)}
                     >Cerrar</Button>
                 </div>
             </BaseModal>
@@ -477,6 +484,7 @@ export function GenericWizard({
             variant="wizard"
             footer={footer ?? undefined}
             hideScrollArea={hasSidebars}
+            closeButtonClassName={touchMode ? touchCloseButton : undefined}
             {...props}
         >
             {hasSidebars ? withSidebars : stepContent}

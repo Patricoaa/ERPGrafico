@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card'
 import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag } from 'lucide-react'
+import { Loader2, FileText, BarChart3, Save, Lock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag } from 'lucide-react'
 
 import {
     DropdownMenu,
@@ -61,6 +61,9 @@ import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
 
 // Shared components
 import { SessionControl, type SessionControlHandle } from '@/features/pos/components/SessionControl'
+import { SessionOpenView } from '@/features/pos/components/SessionOpenView'
+import { POSTopBar } from '@/features/pos/components/flow/POSTopBar'
+import { cashModeLabel } from '@/features/pos/components/flow/flowParts'
 import { ScannerFeedback, type ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing-utils'
 import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
@@ -441,26 +444,35 @@ export function POSClientView() {
 
     if (loading) return <POSLayoutSkeleton />
 
+    // SessionControl sits outside both branches so it stays mounted across open ↔ closed:
+    // it resolves the current session and shows the Z report over the opening screen.
+    const sessionControl = (
+        <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession} hideSessionInfo />
+    )
+
+    if (currentSession === null) {
+        return (
+            <>
+                <SessionOpenView onSuccess={(session, mode) => sessionControlRef.current?.acceptOpenedSession(session, mode)} />
+                {sessionControl}
+            </>
+        )
+    }
+
     return (
-        <div className="flex-1 p-3 pt-1.5 flex flex-col gap-1.5 overflow-hidden animate-in fade-in duration-500 motion-reduce:animate-none">
-            <div className="flex items-center justify-between py-0.5 px-1 mb-1 relative min-h-[44px]">
-                {/* Left: Terminal & Session Info */}
-                <div className="flex items-center gap-3 flex-1">
-                    <h2 className="text-lg font-bold tracking-tight">
-                        {currentSession?.terminal_name || "Punto de Venta"}
-                    </h2>
-
-                </div>
-
-                {/* Middle: Steps Header */}
-                <div className="flex-1 flex justify-center px-4">
-                    <div className="w-full max-w-2xl">
-                        <POSCheckoutHeader />
-                    </div>
-                </div>
-
-                {/* Right: Actions & Menu */}
-                <div className="flex items-center gap-2 flex-1 justify-end">
+        <>
+        <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-500 motion-reduce:animate-none">
+            <POSTopBar
+                title={currentSession?.terminal_name || "Punto de Venta"}
+                subtitle={currentSession
+                    ? [
+                        cashModeLabel(currentSession.my_mode),
+                        isMultiUser && activePass ? activePass.operator.full_name : null,
+                        `Sesión #${currentSession.id}`,
+                    ].filter(Boolean).join(" · ")
+                    : undefined}
+                progress={<div className="w-full max-w-3xl"><POSCheckoutHeader /></div>}
+                actions={<>
                     {(() => {
                         // Prioritize current draft in quick view
                         const quickDrafts = [...syncDrafts].slice(0, 5)
@@ -598,30 +610,10 @@ export function POSClientView() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                     </TooltipProvider>
-                    <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession ?? undefined} hideSessionInfo />
-                </div>
-            </div>
+                </>}
+            />
 
-            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
-                {currentSession !== undefined && currentSession === null && (
-                    <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-                        <Card className="w-full max-w-md shadow-card border-primary/20 p-8 text-center space-y-4 rounded-md">
-                            <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
-                            <h3 className="text-2xl font-bold">Sesión Cerrada</h3>
-                            <p className="text-muted-foreground">Debe iniciar una sesión para realizar ventas.</p>
-                            <Button
-                                variant="default"
-                                size="lg"
-                                className="gap-2"
-                                onClick={() => sessionControlRef.current?.openSessionDialog()}
-                            >
-                                <Unlock className="h-4 w-4" />
-                                Iniciar Sesión
-                            </Button>
-                        </Card>
-                    </div>
-                )}
-
+            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden p-3">
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
                         <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
@@ -826,5 +818,7 @@ export function POSClientView() {
                 }
             />
         </div>
+        {sessionControl}
+        </>
     )
 }

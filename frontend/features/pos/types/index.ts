@@ -276,3 +276,19 @@ export interface OperatorPassResponse {
     purpose: OperatorPurpose
     expires_at: string | null
 }
+
+/** ADR-0128: `GET /treasury/pos-sessions/justify_options/`. */
+export interface POSJustifyAccount {
+    id: number
+    name: string
+    account_type: 'CASH' | 'CHECKING'
+    /** Solo cajas físicas; en bancos el cajero no ve el saldo (`null`). */
+    current_balance: number | null
+}
+
+export interface POSJustifyOptions {
+    /** Motivos que dependen de una cuenta contable configurada. */
+    reasons: { PARTNER_WITHDRAWAL: boolean; THEFT: boolean; ROUNDING: boolean; OTHER_OUT: boolean }
+    /** Cuentas que pueden ser origen o destino de un traspaso. */
+    accounts: POSJustifyAccount[]
+}

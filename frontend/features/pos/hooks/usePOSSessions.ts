@@ -107,3 +107,16 @@ export function useDownloadPOSReportPDF() {
         },
     }
 }
+
+/**
+ * ADR-0128: motivos de diferencia disponibles y cuentas de traspaso para apertura y cierre.
+ * Legible por cualquier usuario autenticado (el cajero no tiene permisos de contabilidad/tesorería).
+ */
+export function usePOSJustifyOptions(enabled = true) {
+    return useQuery({
+        queryKey: [...POS_SESSIONS_QUERY_KEY, 'justify-options'],
+        queryFn: () => posApi.getJustifyOptions(),
+        enabled,
+        staleTime: 0,
+    })
+}

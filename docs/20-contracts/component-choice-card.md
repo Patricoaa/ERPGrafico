@@ -78,7 +78,7 @@ cardAnatomy.glyph       "h-4 w-4 shrink-0 transition-colors text-muted-foregroun
 | `badge` | `string` | ❌ | chip sobre la esquina sup. izquierda de la franja |
 | `tone` | `"default" \| "warning"` | ❌ | `warning` tiñe la franja de ámbar (documentos exentos) |
 | `footer` | `ReactNode` | ❌ | anclado al fondo |
-| `size` | `"default" \| "compact"` | ❌ | `compact` acorta la franja (métodos de pago) |
+| `size` | `"default" \| "compact" \| "touch"` | ❌ | `compact` acorta la franja (métodos de pago); `touch` agranda toda la card (franja 128px, ícono 48px, título `text-2xl`, descripción `text-base`) para flujos táctiles a pantalla completa y tótems — ADR-0127 |
 | `disabled` | `boolean` | ❌ | `aria-disabled`, fuera del orden de tab |
 | `children` | `ReactNode` | ❌ | entre descripción y footer |
 
@@ -99,6 +99,7 @@ Es un `Button` de shadcn con `role="radio"`. Los íconos usan clases `size-*` (e
 | Fabricación (`Step2_ManufacturingDetails`) | **`MfgLineCard`** (`CardRowWithRail` + tokens), `role="button"`, **no** `ChoiceCard`. Riel ámbar→verde = único estado; ribbon solo en hover (preview). |
 | Variante (`VariantSelectorModal`) | **`CardRow`** (lead 64×64, chips, precio, badge, chevron) |
 | Producción: OV + Producto (`SaleOrderProductStep`) | Órdenes: `CardSurface` stacked; Líneas: **`CardRow`** (lead 40×40) |
+| Apertura y cierre de sesión POS (`SessionOpenView`, `SessionCloseView`) | `ChoiceCard size="touch"` en todos los pasos de elección (abrir/unirse, punto de venta, modo de caja, sesión activa, motivo de diferencia, cuenta del traspaso, retiro, caja de destino); tocar una card elige y avanza |
 | Producción: Origen (`OriginSelectionStep`) | **`CardSurface`** stacked + tokens (2 cards) |
 | entity-view Collection | **`EntityCard`** → `CardSurface` stacked + tokens |
 

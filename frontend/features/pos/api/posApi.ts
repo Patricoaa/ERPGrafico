@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { IdentifyOperatorPayload, OperatorPassResponse, PosOperator, POSSession, POSSessionMode } from '../types'
+import type { IdentifyOperatorPayload, OperatorPassResponse, PosOperator, POSJustifyOptions, POSSession, POSSessionMode } from '../types'
 
 export const posApi = {
     // ── Drafts ──
@@ -97,13 +97,10 @@ export const posApi = {
     getTerminals: () =>
         api.get('/treasury/pos-terminals/').then(r => r.data),
 
-    // ── Treasury Accounts ──
-    getTreasuryAccount: (id: number) =>
-        api.get(`/treasury/accounts/${id}/`).then(r => r.data),
-
-    // ── Accounting Settings ──
-    getAccountingSettings: () =>
-        api.get('/accounting/settings/current/').then(r => r.data),
+    // ── Justificación de diferencias de efectivo ──
+    /** ADR-0128: motivos disponibles y cuentas de traspaso para justificar diferencias de efectivo. */
+    getJustifyOptions: () =>
+        api.get<POSJustifyOptions>('/treasury/pos-sessions/justify_options/').then(r => r.data),
 
     // ── Contacts ──
     getDefaultCustomer: () =>

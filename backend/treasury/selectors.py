@@ -517,6 +517,51 @@ class POSSelector:
         return methods
 
     @staticmethod
+    def get_justify_options():
+        """ADR-0128: lo que el cajero necesita para justificar una diferencia de efectivo.
+
+        - ``reasons``: motivos que dependen de una cuenta contable configurable (sin cuenta, se ocultan).
+        - ``accounts``: cuentas de efectivo/banco activas que pueden ser origen o destino de un traspaso,
+          con el saldo de las cajas para avisar si no alcanza (el de bancos va en ``None``). Sin datos
+          bancarios ni de la cuenta contable.
+        """
+        from accounting.services import AccountingService
+
+        settings = AccountingService.get_or_create_current_settings()
+        accounts = (
+            TreasuryAccount.objects.filter(
+                is_active=True,
+                account_type__in=[TreasuryAccount.Type.CASH, TreasuryAccount.Type.CHECKING],
+            )
+            .select_related("account")
+            .order_by("account_type", "name")
+        )
+        return {
+            "reasons": {
+                "PARTNER_WITHDRAWAL": settings.pos_partner_withdrawal_account_id is not None,
+                "THEFT": settings.pos_theft_account_id is not None,
+                "ROUNDING": (
+                    settings.pos_rounding_adjustment_account_id is not None
+                    or settings.rounding_adjustment_account_id is not None
+                ),
+                # Retiro de cierre "Otro egreso" (ADR-0129)
+                "OTHER_OUT": settings.pos_other_outflow_account_id is not None,
+            },
+            "accounts": [
+                {
+                    "id": acc.id,
+                    "name": acc.name,
+                    "account_type": acc.account_type,
+                    # Solo el saldo de cajas físicas: el de bancos no le corresponde al cajero.
+                    "current_balance": (
+                        float(acc.current_balance) if acc.account_type == TreasuryAccount.Type.CASH else None
+                    ),
+                }
+                for acc in accounts
+            ],
+        }
+
+    @staticmethod
     def get_current_session(user):
         session = POSSession.objects.filter(user=user, status="OPEN").first()
         return session
