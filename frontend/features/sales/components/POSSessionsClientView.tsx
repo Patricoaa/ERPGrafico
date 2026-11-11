@@ -42,7 +42,7 @@ interface POSSessionsClientViewProps {
     hideHeader?: boolean
 }
 
-import { usePOSSessions } from "@/features/pos"
+import { usePOSSessions, useDownloadPOSReportPDF } from "@/features/pos"
 import { posSessionUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
@@ -74,10 +74,19 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
 
     const { user: authUser } = useAuth()
 
+    const { downloadPdf } = useDownloadPOSReportPDF()
+
     const actionsCtx: POSSessionActionsCtx = {
         // #233: solo quien abrió la sesión de POS o un superusuario puede cerrarla.
         canClose: (session) => !!authUser && (authUser.is_superuser || authUser.id === session.user),
-        onReport: (session) => sheet.toggle(session.id),
+        onOpen: (session) => sheet.toggle(session.id),
+        onDownloadReport: async (session, type) => {
+            try {
+                await downloadPdf(session.id, type)
+            } catch {
+                // toast handled inside downloadPdf
+            }
+        },
         onCloseRegister: (session) => {
             setSelectedSession(session)
             setCloseDialogOpen(true)

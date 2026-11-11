@@ -1,9 +1,10 @@
 import { createEntityActions } from '@/components/shared'
 import type { POSSession } from './components/POSSessionsClientView'
-import { FileText, Lock } from "lucide-react"
+import { Download, Eye, Lock } from "lucide-react"
 
 export interface POSSessionActionsCtx {
-    onReport: (session: POSSession, type: 'X' | 'Z') => void
+    onOpen: (session: POSSession) => void
+    onDownloadReport: (session: POSSession, type: 'X' | 'Z') => void
     onCloseRegister: (session: POSSession) => void
     canClose: (session: POSSession) => boolean
 }
@@ -16,12 +17,27 @@ export const posSessionActions = createEntityActions<
 
     return [
         {
+            action: "view",
+            icon: Eye,
+            label: "Ver sesión",
+            onClick: () => ctx.onOpen(item),
+        },
+        { separator: true },
+        {
             action: "report",
-            icon: FileText,
-            label: "Reporte X",
+            icon: Download,
+            label: "Descargar reporte X",
             className: "text-info",
-            onClick: () => ctx.onReport(item, 'X'),
+            onClick: () => ctx.onDownloadReport(item, 'X'),
             visible: isOpen,
+        },
+        {
+            action: "report",
+            icon: Download,
+            label: "Descargar reporte Z",
+            className: "text-success",
+            onClick: () => ctx.onDownloadReport(item, 'Z'),
+            visible: !isOpen,
         },
         {
             action: "lock",
@@ -30,14 +46,6 @@ export const posSessionActions = createEntityActions<
             className: "text-destructive",
             onClick: () => ctx.onCloseRegister(item),
             visible: isOpen && ctx.canClose(item),
-        },
-        {
-            action: "report",
-            icon: FileText,
-            label: "Reporte Z",
-            className: "text-success",
-            onClick: () => ctx.onReport(item, 'Z'),
-            visible: !isOpen,
         },
     ]
 })
