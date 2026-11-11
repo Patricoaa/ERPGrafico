@@ -40,8 +40,10 @@ type StackedProps = {
     footer?: React.ReactNode
     /**
      * `compact` shortens the media strip for dense grids (payment methods).
-     * `touch` scales the whole card for full-screen touch flows and kiosks (POS session opening):
-     * taller strip, 48px icon, display-size title and body-size description.
+     * `touch` scales the whole card for full-screen touch flows and kiosks (POS session opening
+     * and closing). It adapts to its own width (container queries), so a row can hold many cards
+     * without scrolling: ≥17rem → 128px strip, 48px icon, 2xl title, description; ≥12rem → medium;
+     * narrower → icon + title only (the description is hidden).
      */
     size?: "default" | "compact" | "touch"
     /** Extra body content rendered between the description and the footer. */
@@ -117,13 +119,14 @@ function renderStackedVariant({
                 // Button resets: a card, not a button — natural height, stacked, left-aligned, wrapping text.
                 "h-full w-full items-stretch justify-start gap-0 whitespace-normal p-0 text-sm font-normal",
                 disabled ? "hover:bg-muted/40 dark:hover:bg-muted/40" : "hover:bg-card dark:hover:bg-card",
+                touch && "@container min-w-0",
                 className
             )}
         >
             <span
                 className={cn(
                     "relative flex w-full shrink-0 items-center justify-center overflow-hidden bg-muted",
-                    compact ? "h-14" : touch ? "h-32 [@media(max-height:820px)]:h-24" : "h-20",
+                    compact ? "h-14" : touch ? "h-16 @[12rem]:h-24 @[17rem]:h-32 [@media(max-height:820px)]:@[17rem]:h-24 [@media(max-height:820px)]:@[12rem]:h-20" : "h-20",
                     tone === "warning" && !disabled && "bg-warning/20",
                     disabled && "bg-muted/60"
                 )}
@@ -131,7 +134,7 @@ function renderStackedVariant({
                 {media ?? (Icon && (
                     <Icon
                         className={cn(
-                            compact ? "size-6" : touch ? "size-12" : "size-8",
+                            compact ? "size-6" : touch ? "size-7 @[12rem]:size-10 @[17rem]:size-12" : "size-8",
                             disabled ? "text-muted-foreground/40" : (iconClassName ?? (tone === "warning" ? "text-warning-foreground" : "text-muted-foreground/70"))
                         )}
                         aria-hidden
@@ -142,19 +145,19 @@ function renderStackedVariant({
                         {badge}
                     </Chip>
                 )}
-                {selected && <SelectionCheck className={touch ? "bottom-3 right-3 h-8 w-8 [&_svg]:size-5" : undefined} />}
+                {selected && <SelectionCheck className={touch ? "@[12rem]:bottom-3 @[12rem]:right-3 @[12rem]:h-8 @[12rem]:w-8 @[12rem]:[&_svg]:size-5" : undefined} />}
             </span>
 
             <span className={cn(
                 "flex w-full flex-1 flex-col text-left",
-                touch ? "gap-1.5 px-5 pb-5 pt-4" : "gap-1 px-3 pb-3",
+                touch ? "gap-1 px-3 pb-3 pt-2.5 @[12rem]:px-4 @[12rem]:pb-4 @[12rem]:pt-3 @[17rem]:gap-1.5 @[17rem]:px-5 @[17rem]:pb-5 @[17rem]:pt-4" : "gap-1 px-3 pb-3",
                 compact ? "pt-2" : !touch && "pt-2.5"
             )}>
-                {meta && <span className={cn(cardAnatomy.code, touch && "text-sm")}>{meta}</span>}
-                <span className={cn(cardAnatomy.title, touch && "text-2xl tracking-tight", disabled && "text-muted-foreground")}>{title}</span>
-                {description && <span className={cn(cardAnatomy.description, touch && "text-base")}>{description}</span>}
+                {meta && <span className={cn(cardAnatomy.code, touch && "text-xs @[17rem]:text-sm")}>{meta}</span>}
+                <span className={cn(cardAnatomy.title, touch && "line-clamp-3 break-words text-base tracking-tight @[12rem]:line-clamp-2 @[12rem]:text-xl @[17rem]:text-2xl", disabled && "text-muted-foreground")}>{title}</span>
+                {description && <span className={cn(cardAnatomy.description, touch && "hidden @[12rem]:block @[12rem]:text-sm @[17rem]:text-base")}>{description}</span>}
                 {children}
-                {footer && <span className={cn(cardAnatomy.footer, touch && "pt-3")}>{footer}</span>}
+                {footer && <span className={cn(cardAnatomy.footer, touch && "@[17rem]:pt-3")}>{footer}</span>}
             </span>
         </Button>
     )

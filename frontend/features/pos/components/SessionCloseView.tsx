@@ -13,13 +13,13 @@ import { posApi } from "../api/posApi"
 import { usePOSJustifyOptions, usePOSSessionSummary } from "../hooks/usePOSSessions"
 import { usePOSSessionRealtime } from "../hooks/usePOSSessionRealtime"
 import { CLOSE_DEFICIT_OPTIONS, CLOSE_SURPLUS_OPTIONS, CLOSE_WITHDRAWAL_OPTIONS, availableReasons } from "../utils/reasons"
-import { CashDifferenceBanner, CashDifferenceReasonChoice, TransferAccountChoice } from "./CashDifferenceJustification"
+import { CashDifferenceBanner, CashDifferenceReasonChoice, PartnerChoice, TransferAccountChoice } from "./CashDifferenceJustification"
 import type { POSReportData } from "./POSReport"
 import { SessionCashSummary } from "./SessionCashSummary"
 import { POSFlowLayout, type POSFlowPrimaryAction } from "./flow/POSFlowLayout"
-import { cashModeLabel, summaryRow } from "./flow/flowParts"
+import { TOUCH_ROW_GAP, cashModeLabel, summaryRow, touchRow, touchRowWidth } from "./flow/flowParts"
 
-type StepId = "count" | "reason" | "transfer" | "cash-out" | "out-reason" | "out-amount" | "out-destination" | "confirm"
+type StepId = "count" | "reason" | "transfer" | "partner" | "cash-out" | "out-reason" | "out-partner" | "out-amount" | "out-destination" | "confirm"
 /** Qué pasa con el efectivo al cerrar (ADR-0129). */
 type CashOut = "keep" | "transfer" | "withdraw"
 
@@ -27,8 +27,10 @@ const STEP_LABELS: Record<StepId, string> = {
     count: "Conteo",
     reason: "Motivo",
     transfer: "Cuenta",
+    partner: "Socio",
     "cash-out": "Efectivo",
     "out-reason": "Motivo del retiro",
+    "out-partner": "Socio",
     "out-amount": "Monto",
     "out-destination": "Destino",
     confirm: "Confirmar",
@@ -81,6 +83,8 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
     const [withdrawReason, setWithdrawReason] = useState("")
     const [withdrawalAmount, setWithdrawalAmount] = useState("0")
     const [destinationId, setDestinationId] = useState<string | null>(null)
+    const [partnerId, setPartnerId] = useState<string | null>(null)
+    const [withdrawPartnerId, setWithdrawPartnerId] = useState<string | null>(null)
     const [notes, setNotes] = useState("")
     const [stepIndex, setStepIndex] = useState(0)
     const [submitting, setSubmitting] = useState(false)
@@ -103,7 +107,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
     const surplus = diff > 0
     const withdrawal = parseFloat(withdrawalAmount) || 0
 
-    const reasons = availableReasons(diff >= 0 ? CLOSE_SURPLUS_OPTIONS : CLOSE_DEFICIT_OPTIONS, justifyQuery.data?.reasons)
+    const reasons = availableReasons(surplus ? CLOSE_SURPLUS_OPTIONS : CLOSE_DEFICIT_OPTIONS, justifyQuery.data?.reasons, surplus ? "IN" : "OUT")
     const posAccountId = accountIdOf(session)
     const cashAccounts = (justifyQuery.data?.accounts ?? []).filter(a => a.account_type === "CASH" && a.id !== posAccountId)
     const targetAccount = cashAccounts.find(a => a.id.toString() === justifyTargetId)
@@ -112,6 +116,11 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
     const destination = destinationAccounts.find(a => a.id.toString() === destinationId)
     const withdrawReasons = availableReasons(CLOSE_WITHDRAWAL_OPTIONS, justifyQuery.data?.reasons)
     const withdrawReasonLabel = withdrawReasons.find(r => r.value === withdrawReason)?.label
+    // Con un solo socio no hay nada que elegir: se toma ese.
+    const partners = justifyQuery.data?.partners ?? []
+    const soleId = partners.length === 1 ? partners[0]!.id.toString() : null
+    const differencePartner = partners.find(p => p.id.toString() === (partnerId ?? soleId))
+    const withdrawPartner = partners.find(p => p.id.toString() === (withdrawPartnerId ?? soleId))
     const movesCash = cashOut === "transfer" || cashOut === "withdraw"
     const reasonLabel = reasons.find(r => r.value === justifyReason)?.label
 
@@ -119,8 +128,10 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
         "count",
         ...(hasDiff ? ["reason" as const] : []),
         ...(hasDiff && justifyReason === "TRANSFER" ? ["transfer" as const] : []),
+        ...(hasDiff && justifyReason === "PARTNER_WITHDRAWAL" && !soleId ? ["partner" as const] : []),
         ...(actual > 0 ? ["cash-out" as const] : []),
         ...(actual > 0 && cashOut === "withdraw" ? ["out-reason" as const] : []),
+        ...(actual > 0 && cashOut === "withdraw" && withdrawReason === "PARTNER_WITHDRAWAL" && !soleId ? ["out-partner" as const] : []),
         ...(actual > 0 && movesCash ? ["out-amount" as const] : []),
         ...(actual > 0 && cashOut === "transfer" ? ["out-destination" as const] : []),
         "confirm",
@@ -130,10 +141,15 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
     const next = () => setStepIndex(i => i + 1)
     const goBack = () => setStepIndex(i => Math.max(i - 1, 0))
 
-    const justified = !hasDiff || (!!justifyReason && (justifyReason !== "TRANSFER" || !!targetAccount))
+    const justified = !hasDiff || (
+        !!justifyReason
+        && (justifyReason !== "TRANSFER" || !!targetAccount)
+        && (justifyReason !== "PARTNER_WITHDRAWAL" || !!differencePartner)
+    )
     const withdrawalValid = !movesCash || (
         withdrawal > 0 && withdrawal <= actual
-        && (cashOut === "transfer" ? !!destination : !!withdrawReasonLabel)
+        && (cashOut === "transfer" ? !!destination : !!withdrawReasonLabel
+            && (withdrawReason !== "PARTNER_WITHDRAWAL" || !!withdrawPartner))
     )
     const canClose = justified && withdrawalValid
 
@@ -157,7 +173,10 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                 notes,
                 cash_destination_id: cashOut === "transfer" && destination ? destination.id : null,
                 justify_reason: hasDiff ? justifyReason : undefined,
-                justify_target_id: hasDiff && justifyReason === "TRANSFER" && targetAccount ? targetAccount.id : null,
+                justify_target_id: hasDiff
+                    ? (justifyReason === "TRANSFER" ? targetAccount?.id : justifyReason === "PARTNER_WITHDRAWAL" ? differencePartner?.id : null) ?? null
+                    : null,
+                withdrawal_partner_id: cashOut === "withdraw" && withdrawReason === "PARTNER_WITHDRAWAL" ? withdrawPartner?.id ?? null : null,
             }) as { audit: POSSessionAudit }
             const difference = parseFloat(String(closeData.audit.difference))
             if (difference !== 0) {
@@ -232,7 +251,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             description = `Se esperaban ${formatCurrency(expected)} y contó ${formatCurrency(actual)}.`
             hint = justifyReason ? null : "Toque el motivo de la diferencia"
             primary = { label: "Siguiente", onClick: next, disabled: !justifyReason }
-            width = reasons.length > 4 ? "max-w-6xl" : "max-w-4xl"
+            width = touchRowWidth(reasons.length)
             body = (
                 <div className="space-y-6">
                     <CashDifferenceBanner diff={diff} />
@@ -243,6 +262,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                         onChange={value => {
                             setJustifyReason(value)
                             if (value !== "TRANSFER") setJustifyTargetId(null)
+                            if (value !== "PARTNER_WITHDRAWAL") setPartnerId(null)
                             next()
                         }}
                     />
@@ -255,7 +275,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             description = `Traspaso de ${formatCurrency(Math.abs(diff))}.`
             hint = targetAccount ? null : "Toque la cuenta del traspaso"
             primary = { label: "Siguiente", onClick: next, disabled: !targetAccount }
-            width = cashAccounts.length > 4 ? "max-w-6xl" : "max-w-4xl"
+            width = touchRowWidth(cashAccounts.length)
             body = (
                 <TransferAccountChoice
                     label={surplus ? "Cuenta de origen" : "Cuenta de destino"}
@@ -267,6 +287,15 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             )
             break
 
+        case "partner":
+            heading = "¿Qué socio retiró el dinero?"
+            description = `Retiro de ${formatCurrency(Math.abs(diff))}; queda a su nombre.`
+            hint = differencePartner ? null : "Toque al socio"
+            primary = { label: "Siguiente", onClick: next, disabled: !differencePartner }
+            width = touchRowWidth(partners.length)
+            body = <PartnerChoice partners={partners} value={partnerId} onChange={id => { setPartnerId(id); next() }} />
+            break
+
         case "cash-out":
             heading = "¿Qué hace con el efectivo?"
             description = `Hay ${formatCurrency(actual)} en la caja.`
@@ -274,7 +303,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             primary = { label: "Siguiente", onClick: next, disabled: cashOut === null }
             width = "max-w-6xl"
             body = (
-                <ChoiceGroup label="Destino del efectivo" columns="grid-cols-1 sm:grid-cols-3" activation="focus" className="gap-4">
+                <ChoiceGroup label="Destino del efectivo" columns={touchRow(3)} activation="focus" className={TOUCH_ROW_GAP}>
                     <ChoiceCard
                         size="touch"
                         icon={Lock}
@@ -321,7 +350,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             hint = withdrawReasonLabel ? null : "Toque el motivo del retiro"
             primary = { label: "Siguiente", onClick: next, disabled: !withdrawReasonLabel }
             body = (
-                <ChoiceGroup label="Motivo del retiro" columns="grid-cols-1 sm:grid-cols-2" activation="focus" className="gap-4">
+                <ChoiceGroup label="Motivo del retiro" columns={touchRow(withdrawReasons.length)} activation="focus" className={TOUCH_ROW_GAP}>
                     {withdrawReasons.map(opt => (
                         <ChoiceCard
                             key={opt.value}
@@ -330,11 +359,24 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                             title={opt.label}
                             description={opt.description}
                             selected={withdrawReason === opt.value}
-                            onSelect={() => { setWithdrawReason(opt.value); next() }}
+                            onSelect={() => {
+                                setWithdrawReason(opt.value)
+                                if (opt.value !== "PARTNER_WITHDRAWAL") setWithdrawPartnerId(null)
+                                next()
+                            }}
                         />
                     ))}
                 </ChoiceGroup>
             )
+            break
+
+        case "out-partner":
+            heading = "¿Qué socio retira el efectivo?"
+            description = "El retiro queda a su nombre en la ficha de socio."
+            hint = withdrawPartner ? null : "Toque al socio"
+            primary = { label: "Siguiente", onClick: next, disabled: !withdrawPartner }
+            width = touchRowWidth(partners.length)
+            body = <PartnerChoice partners={partners} value={withdrawPartnerId} onChange={id => { setWithdrawPartnerId(id); next() }} />
             break
 
         case "out-amount": {
@@ -369,7 +411,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             description = `Traspaso de ${formatCurrency(withdrawal)}.`
             hint = destination ? null : "Toque la caja o el banco de destino"
             primary = { label: "Siguiente", onClick: next, disabled: !destination }
-            width = destinationAccounts.length > 4 ? "max-w-6xl" : "max-w-4xl"
+            width = touchRowWidth(destinationAccounts.length)
             body = (
                 <TransferAccountChoice
                     label="Cuenta de destino"
@@ -385,9 +427,9 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             description = session.terminal_name ?? undefined
             hint = canClose ? null : "Falta completar un paso anterior"
             primary = { label: "Cerrar caja", onClick: () => void handleClose(), disabled: !canClose || submitting, final: true, loading: submitting, icon: Lock }
-            width = "max-w-2xl"
+            width = "max-w-5xl"
             body = (
-                <div className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
                     <section aria-label="Resumen de cierre" className="surface-panel divide-y divide-border px-6 py-2 shadow-card">
                         {summaryRow("Efectivo esperado", <span className="font-mono tabular-nums">{formatCurrency(expected)}</span>)}
                         {summaryRow("Efectivo contado", <span className="font-mono tabular-nums">{formatCurrency(actual)}</span>, true)}
@@ -396,10 +438,13 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                         {targetAccount && summaryRow(surplus ? "Vino de" : "Se llevó a", targetAccount.name)}
                         {cashOut === "transfer" && destination && summaryRow("Traspaso",
                             <span><span className="font-mono tabular-nums">{formatCurrency(withdrawal)}</span> → {destination.name}</span>)}
+                        {hasDiff && differencePartner && justifyReason === "PARTNER_WITHDRAWAL" && summaryRow("Retiró", differencePartner.name)}
                         {cashOut === "withdraw" && withdrawReasonLabel && summaryRow(withdrawReasonLabel,
                             <span className="font-mono tabular-nums">{formatCurrency(withdrawal)}</span>)}
+                        {cashOut === "withdraw" && withdrawReason === "PARTNER_WITHDRAWAL" && withdrawPartner && summaryRow("Socio", withdrawPartner.name)}
                         {summaryRow("Queda en la caja", <span className="font-mono tabular-nums">{formatCurrency(actual - (movesCash ? withdrawal : 0))}</span>)}
                     </section>
+                    <div className="space-y-6">
                     {!hasDiff && (
                         <div className="flex items-center gap-4 rounded-lg border border-success/40 bg-success/10 p-5 text-lg">
                             <CheckCircle2 className="size-8 shrink-0 text-success" aria-hidden />
@@ -416,6 +461,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                             onChange={e => setNotes(e.target.value)}
                         />
                     </label>
+                    </div>
                 </div>
             )
             break

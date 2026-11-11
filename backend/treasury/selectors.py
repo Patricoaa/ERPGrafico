@@ -516,11 +516,39 @@ class POSSelector:
             methods = methods.filter(allow_for_purchases=True)
         return methods
 
+    #: Motivo → campo de AccountingSettings con su cuenta (espejo de TreasuryService._get_reason_account).
+    _REASON_ACCOUNT_FIELDS = {
+        "COUNTING_ERROR": "pos_counting_error_account",
+        "SYSTEM_ERROR": "pos_system_error_account",
+        "TIP": "pos_tip_account",
+        "OTHER_IN": "pos_other_inflow_account",
+        "THEFT": "pos_theft_account",
+        "PARTNER_WITHDRAWAL": "pos_partner_withdrawal_account",
+        "CASHBACK": "pos_cashback_error_account",
+        "OTHER_OUT": "pos_other_outflow_account",
+    }
+
+    @staticmethod
+    def _reason_availability(settings) -> dict:
+        """Qué motivos tienen cuenta contable propia (los demás no se ofrecen en la caja)."""
+        flags = {
+            reason: getattr(settings, f"{field}_id") is not None
+            for reason, field in POSSelector._REASON_ACCOUNT_FIELDS.items()
+        }
+        flags["ROUNDING"] = (
+            settings.pos_rounding_adjustment_account_id is not None
+            or settings.rounding_adjustment_account_id is not None
+        )
+        # Diferencia sin explicar (ADR-0130): cuentas genéricas de sobrante / faltante de caja.
+        flags["UNEXPLAINED_GAIN"] = settings.pos_cash_difference_gain_account_id is not None
+        flags["UNEXPLAINED_LOSS"] = settings.pos_cash_difference_loss_account_id is not None
+        return flags
+
     @staticmethod
     def get_justify_options():
         """ADR-0128: lo que el cajero necesita para justificar una diferencia de efectivo.
 
-        - ``reasons``: motivos que dependen de una cuenta contable configurable (sin cuenta, se ocultan).
+        - ``reasons``: por motivo, si su cuenta contable está configurada (sin cuenta, se ocultan).
         - ``accounts``: cuentas de efectivo/banco activas que pueden ser origen o destino de un traspaso,
           con el saldo de las cajas para avisar si no alcanza (el de bancos va en ``None``). Sin datos
           bancarios ni de la cuenta contable.
@@ -536,17 +564,13 @@ class POSSelector:
             .select_related("account")
             .order_by("account_type", "name")
         )
+        from contacts.models import Contact
+
+        partners = Contact.objects.filter(is_active=True, is_partner=True).order_by("name").values("id", "name")
         return {
-            "reasons": {
-                "PARTNER_WITHDRAWAL": settings.pos_partner_withdrawal_account_id is not None,
-                "THEFT": settings.pos_theft_account_id is not None,
-                "ROUNDING": (
-                    settings.pos_rounding_adjustment_account_id is not None
-                    or settings.rounding_adjustment_account_id is not None
-                ),
-                # Retiro de cierre "Otro egreso" (ADR-0129)
-                "OTHER_OUT": settings.pos_other_outflow_account_id is not None,
-            },
+            "reasons": POSSelector._reason_availability(settings),
+            # ADR-0131: socios que pueden retirar efectivo (solo id y nombre).
+            "partners": list(partners),
             "accounts": [
                 {
                     "id": acc.id,

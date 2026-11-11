@@ -1,15 +1,16 @@
 "use client"
 
 import {
-    AlertTriangle, ArrowLeftRight, Calculator, Coins, Cpu, Download,
-    HandCoins, Landmark, ShieldAlert, Undo2, UserMinus, Wallet,
+    AlertTriangle, ArrowLeftRight, Calculator, CircleHelp, Coins, Cpu, Download,
+    HandCoins, Landmark, Receipt, ShieldAlert, Undo2, UserMinus, UserRound, Wallet,
 } from "lucide-react"
 import type { ComponentType } from "react"
 import { ChoiceCard, ChoiceGroup, EmptyState } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { JustifyOption } from "@/features/pos/utils/reasons"
-import type { POSJustifyAccount } from "../types"
+import type { POSJustifyAccount, POSJustifyPartner } from "../types"
+import { TOUCH_ROW_GAP, touchRow } from "./flow/flowParts"
 
 const REASON_ICONS: Record<string, ComponentType<{ className?: string }>> = {
     COUNTING_ERROR: Calculator,
@@ -21,6 +22,8 @@ const REASON_ICONS: Record<string, ComponentType<{ className?: string }>> = {
     ROUNDING: Coins,
     TIP: HandCoins,
     OTHER_IN: Download,
+    OTHER_OUT: Receipt,
+    UNKNOWN: CircleHelp,
 }
 
 /**
@@ -32,7 +35,7 @@ export function CashDifferenceBanner({ diff, className }: { diff: number; classN
     return (
         <div
             role="status"
-            className={cn("flex items-center justify-between gap-4 rounded-lg border border-warning/40 bg-warning/10 px-6 py-4", className)}
+            className={cn("mx-auto flex w-full max-w-4xl items-center justify-between gap-4 rounded-lg border border-warning/40 bg-warning/10 px-6 py-4", className)}
         >
             <span className="flex items-center gap-3 text-lg font-semibold text-foreground">
                 <AlertTriangle className="size-7 shrink-0 text-warning" aria-hidden />
@@ -61,9 +64,9 @@ export function CashDifferenceReasonChoice({ reasons, value, onChange, loading =
     return (
         <ChoiceGroup
             label="Motivo de la diferencia"
-            columns={reasons.length > 4 ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}
+            columns={touchRow(reasons.length)}
             activation="focus"
-            className="gap-4"
+            className={TOUCH_ROW_GAP}
         >
             {reasons.map(opt => (
                 <ChoiceCard
@@ -105,9 +108,9 @@ export function TransferAccountChoice({ accounts, value, onChange, minBalance, l
     return (
         <ChoiceGroup
             label={label}
-            columns={accounts.length > 4 ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}
+            columns={touchRow(accounts.length)}
             activation="focus"
-            className="gap-4"
+            className={TOUCH_ROW_GAP}
         >
             {accounts.map(acc => {
                 const short = minBalance !== undefined && acc.current_balance !== null && acc.current_balance < minBalance
@@ -120,7 +123,7 @@ export function TransferAccountChoice({ accounts, value, onChange, minBalance, l
                         title={acc.name}
                         description={short ? `Saldo insuficiente: faltan ${formatCurrency((minBalance ?? 0) - (acc.current_balance ?? 0))}` : undefined}
                         footer={acc.current_balance !== null ? (
-                            <span className="text-base text-muted-foreground">
+                            <span className="text-sm text-muted-foreground @[17rem]:text-base">
                                 Saldo <span className="font-mono font-semibold tabular-nums text-foreground">{formatCurrency(acc.current_balance)}</span>
                             </span>
                         ) : undefined}
@@ -130,6 +133,41 @@ export function TransferAccountChoice({ accounts, value, onChange, minBalance, l
                     />
                 )
             })}
+        </ChoiceGroup>
+    )
+}
+
+interface PartnerChoiceProps {
+    partners: POSJustifyPartner[]
+    value: string | null
+    onChange: (id: string) => void
+}
+
+/** Socio que retira el efectivo (ADR-0131), como tarjetas táctiles. */
+export function PartnerChoice({ partners, value, onChange }: PartnerChoiceProps) {
+    if (partners.length === 0) {
+        return (
+            <EmptyState
+                variant="compact"
+                icon={UserRound}
+                title="No hay socios registrados"
+                description="Pida a administración que marque a la persona como socio en Contactos, o elija otro motivo."
+            />
+        )
+    }
+    return (
+        <ChoiceGroup label="Socio que retira" columns={touchRow(partners.length)} activation="focus" className={TOUCH_ROW_GAP}>
+            {partners.map(p => (
+                <ChoiceCard
+                    key={p.id}
+                    size="touch"
+                    icon={UserRound}
+                    meta="Socio"
+                    title={p.name}
+                    selected={value === p.id.toString()}
+                    onSelect={() => onChange(p.id.toString())}
+                />
+            ))}
         </ChoiceGroup>
     )
 }

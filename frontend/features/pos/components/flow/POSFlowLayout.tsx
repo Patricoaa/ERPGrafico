@@ -47,7 +47,9 @@ interface POSFlowLayoutProps {
 /**
  * Flujo táctil a pantalla completa del POS (apertura y cierre de sesión): barra superior compartida,
  * una pregunta por paso con su respuesta centrada y una barra inferior fija con
- * Anterior · indicación · acción del paso (blancos de 64px, pensado para tótem).
+ * Anterior · indicación · acción del paso (blancos de 64px, pensado para tótem). El paso debe caber
+ * sin scroll vertical: en pantallas bajas se compactan márgenes y títulos; el scroll queda solo
+ * como resguardo.
  */
 export function POSFlowLayout({
     title, subtitle, steps, currentStep = 0, progressLabel = "Progreso", exitAction,
@@ -64,17 +66,17 @@ export function POSFlowLayout({
                 actions={exitAction}
             />
 
-            <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-8 sm:px-6 lg:py-12">
-                <FadeIn key={stepKey} className={cn("mx-auto my-auto w-full flex-none gap-8", width)}>
+            <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6 lg:py-10 [@media(max-height:820px)]:py-4">
+                <FadeIn key={stepKey} className={cn("mx-auto my-auto w-full flex-none gap-8 [@media(max-height:820px)]:gap-5", width)}>
                     <div className="space-y-2 text-center">
-                        <h1 className="text-balance text-3xl font-bold tracking-tight lg:text-4xl">{heading}</h1>
-                        {description && <p className="text-pretty text-lg text-muted-foreground">{description}</p>}
+                        <h1 className="text-balance text-3xl font-bold tracking-tight lg:text-4xl [@media(max-height:820px)]:text-2xl">{heading}</h1>
+                        {description && <p className="text-pretty text-lg text-muted-foreground [@media(max-height:820px)]:text-base">{description}</p>}
                     </div>
                     {children}
                 </FadeIn>
             </main>
 
-            <footer className="flex shrink-0 items-center gap-4 border-t border-border bg-card px-4 py-4 sm:px-6">
+            <footer className="flex shrink-0 items-center gap-4 border-t border-border bg-card px-4 py-4 sm:px-6 [@media(max-height:820px)]:py-3">
                 <div className="flex-1">
                     {onBack && (
                         <Button

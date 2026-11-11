@@ -1,5 +1,4 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
@@ -14,7 +13,7 @@ import { forwardRef, useImperativeHandle } from "react"
 import { useOperatorGate } from "../operator"
 
 import { cn } from "@/lib/utils"
-import type { POSSession, POSSessionAudit } from "@/types/pos"
+import type { POSSession } from "@/types/pos"
 
 interface SessionControlProps {
     onSessionChange?: (session: POSSession | null) => void
@@ -39,7 +38,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [moveDialogOpen, setMoveDialogOpen] = useState(false)
     const [reportData, setReportData] = useState<POSReportData | null>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
-    const [lastAudit, setLastAudit] = useState<POSSessionAudit | null>(null)
 
     const [isSharedSession, setIsSharedSession] = useState(false)
 
@@ -149,25 +147,14 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         fetchCurrentSession()
     }
 
-    const handleSessionCloseSuccess = async (audit: POSSessionAudit) => {
-        if (!session) return
-
-        setLastAudit(audit)
+    // Cerrada la caja se vuelve a la pantalla de apertura; el informe Z ya no se muestra (queda
+    // disponible en PDF desde el resumen del conteo y desde la sesión).
+    const handleSessionCloseSuccess = () => {
         forget() // el pase de cierre ya fue consumido
 
         localStorage.removeItem('shared_pos_session_id')
         onSessionChange?.(null)
         setIsSharedSession(false)
-
-        try {
-            const summaryData = await posApi.getSessionSummary(session.id)
-            setReportData(summaryData)
-            setReportType("Z")
-            setReportDialogOpen(true)
-        } catch (error) {
-            console.error("Error fetching Z report:", error)
-            toast.error("Sesión de POS cerrada correctamente, pero no se pudo cargar el reporte Z")
-        }
     }
 
     const handleShowXReport = async () => {
@@ -216,28 +203,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     <POSReport
                         data={reportData}
                         type={reportType}
-                        title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                        title="Informe Parcial (X)"
                         onClose={() => setReportDialogOpen(false)}
                     />
-                )}
-                {lastAudit && reportType === 'Z' && (
-                    <div className="surface-panel p-4 space-y-2 shadow-card text-sm">
-                        <div className="font-bold text-xs uppercase text-muted-foreground">Resultado del Conteo</div>
-                        <div className="flex justify-between">
-                            <span>Esperado:</span>
-                            <span className="font-mono">{formatCurrency(Number(lastAudit.expected_amount))}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Real:</span>
-                            <span className="font-mono">{formatCurrency(Number(lastAudit.actual_amount))}</span>
-                        </div>
-                        <div className="flex justify-between font-bold border-t pt-2">
-                            <span>Diferencia:</span>
-                            <span className={cn("font-mono", Number(lastAudit.difference) !== 0 ? "text-warning" : "text-success")}>
-                                {formatCurrency(Number(lastAudit.difference))}
-                            </span>
-                        </div>
-                    </div>
                 )}
             </div>
         </div>
@@ -252,10 +220,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         )
     }
 
-    // Sin sesión: la apertura vive en SessionOpenView (pantalla completa). Aquí solo queda el
-    // informe Z recién emitido, que se muestra encima de la pantalla de apertura.
+    // Sin sesión: la apertura vive en SessionOpenView (pantalla completa).
     if (!session || session.status !== 'OPEN') {
-        return <>{reportOverlay}</>
+        return null
     }
 
     return (

@@ -11,6 +11,7 @@ vi.mock("../../api/posApi", () => ({
         getSessionSummary: vi.fn().mockResolvedValue({ expected_cash: 20000, session_id: 4 }),
         getJustifyOptions: vi.fn().mockResolvedValue({
             reasons: { PARTNER_WITHDRAWAL: true, THEFT: true, ROUNDING: true, OTHER_OUT: false },
+            partners: [{ id: 21, name: "Ana Socia" }, { id: 22, name: "Beto Socio" }],
             accounts: [
                 { id: 5, name: "Caja propia", account_type: "CASH", current_balance: 20000 },
                 { id: 8, name: "Caja fuerte", account_type: "CASH", current_balance: 500000 },
@@ -82,6 +83,9 @@ describe("SessionCloseView", () => {
         await screen.findByRole("radiogroup", { name: "Motivo del retiro" })
         expect(screen.queryByRole("radio", { name: /Otro egreso/ })).toBeNull()
         fireEvent.click(screen.getByRole("radio", { name: /Retiro de socio/ }))
+        // Retiro de socio: pregunta quién retira, y el monto va después
+        await screen.findByRole("radiogroup", { name: "Socio que retira" })
+        fireEvent.click(screen.getByRole("radio", { name: /Beto Socio/ }))
         await screen.findByText("Monto a retirar")
         fireEvent.click(screen.getByRole("button", { name: "C" }))
         for (const k of ["5", "0", "0", "0"]) fireEvent.click(screen.getByRole("button", { name: k }))
@@ -90,7 +94,7 @@ describe("SessionCloseView", () => {
         fireEvent.click(screen.getByRole("button", { name: /Cerrar caja/ }))
         await waitFor(() => expect(closeSession).toHaveBeenCalled())
         expect(closeSession.mock.calls[0]![1]).toMatchObject({
-            withdrawal_amount: 5000, withdrawal_kind: "PARTNER_WITHDRAWAL", cash_destination_id: null,
+            withdrawal_amount: 5000, withdrawal_kind: "PARTNER_WITHDRAWAL", withdrawal_partner_id: 22, cash_destination_id: null,
         })
     })
 })

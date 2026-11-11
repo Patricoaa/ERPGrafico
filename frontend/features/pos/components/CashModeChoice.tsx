@@ -28,7 +28,7 @@ export function CashModeChoice({ value, onChange, size = "default" }: CashModeCh
             columns="grid-cols-1 sm:grid-cols-2"
             // En táctil elegir avanza el flujo: las flechas solo mueven el foco
             activation={touch ? "focus" : "select"}
-            className={touch ? "gap-4" : undefined}
+            className={touch ? "gap-3 xl:gap-4" : undefined}
         >
             {OPTIONS.map(opt => touch ? (
                 <ChoiceCard

@@ -286,9 +286,20 @@ export interface POSJustifyAccount {
     current_balance: number | null
 }
 
+/** Socio que puede retirar efectivo desde la caja (ADR-0131). */
+export interface POSJustifyPartner {
+    id: number
+    name: string
+}
+
 export interface POSJustifyOptions {
-    /** Motivos que dependen de una cuenta contable configurada. */
-    reasons: { PARTNER_WITHDRAWAL: boolean; THEFT: boolean; ROUNDING: boolean; OTHER_OUT: boolean }
+    /**
+     * Por motivo, si su cuenta contable está configurada. `UNEXPLAINED_GAIN` / `UNEXPLAINED_LOSS`:
+     * cuentas genéricas de sobrante / faltante de caja (diferencia sin explicar, ADR-0130).
+     */
+    reasons: Partial<Record<string, boolean>>
     /** Cuentas que pueden ser origen o destino de un traspaso. */
     accounts: POSJustifyAccount[]
+    /** Socios activos: quién retira cuando el motivo es «Retiro de socio». */
+    partners: POSJustifyPartner[]
 }

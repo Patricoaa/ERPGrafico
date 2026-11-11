@@ -13,6 +13,8 @@ export const DEFICIT_OPTIONS: JustifyOption[] = [
   { value: "PARTNER_WITHDRAWAL", label: "Retiro Socio", description: "Un socio retiró efectivo de la caja." },
   { value: "THEFT", label: "Faltante / Robo", description: "Falta dinero sin explicación." },
   { value: "SYSTEM_ERROR", label: "Error de Sistema", description: "El sistema registró un monto equivocado." },
+  { value: "OTHER_OUT", label: "Otro egreso", description: "Se pagó un gasto con el efectivo de la caja." },
+  { value: "UNKNOWN", label: "Sin explicación", description: "No sabe por qué falta; queda como faltante de caja." },
 ]
 
 export const SURPLUS_OPTIONS: JustifyOption[] = [
@@ -21,6 +23,7 @@ export const SURPLUS_OPTIONS: JustifyOption[] = [
   { value: "TRANSFER", label: "Traspaso (Dinero Recibido)", description: "El efectivo llegó desde otra caja o cuenta." },
   { value: "OTHER_IN", label: "Otro Depósito", description: "Ingresó efectivo por otro motivo." },
   { value: "SYSTEM_ERROR", label: "Error de Sistema", description: "El sistema registró un monto equivocado." },
+  { value: "UNKNOWN", label: "Sin explicación", description: "No sabe por qué sobra; queda como sobrante de caja." },
 ]
 
 export const CLOSE_DEFICIT_OPTIONS: JustifyOption[] = [
@@ -31,6 +34,8 @@ export const CLOSE_DEFICIT_OPTIONS: JustifyOption[] = [
   { value: "THEFT", label: "Faltante / Robo", description: "Falta dinero sin explicación." },
   { value: "ROUNDING", label: "Redondeo", description: "Diferencias por redondeo de vueltos." },
   { value: "SYSTEM_ERROR", label: "Error de Sistema", description: "El sistema registró un monto equivocado." },
+  { value: "OTHER_OUT", label: "Otro egreso", description: "Se pagó un gasto con el efectivo de la caja." },
+  { value: "UNKNOWN", label: "Sin explicación", description: "No sabe por qué falta; queda como faltante de caja." },
 ]
 
 export const CLOSE_SURPLUS_OPTIONS: JustifyOption[] = [
@@ -39,6 +44,8 @@ export const CLOSE_SURPLUS_OPTIONS: JustifyOption[] = [
   { value: "TRANSFER", label: "Traspaso (Dinero ingresado)", description: "El efectivo llegó desde otra caja o cuenta." },
   { value: "ROUNDING", label: "Redondeo", description: "Diferencias por redondeo de vueltos." },
   { value: "SYSTEM_ERROR", label: "Error de Sistema", description: "El sistema registró un monto equivocado." },
+  { value: "OTHER_IN", label: "Otro ingreso", description: "Ingresó efectivo por otro motivo." },
+  { value: "UNKNOWN", label: "Sin explicación", description: "No sabe por qué sobra; queda como sobrante de caja." },
 ]
 
 /**
@@ -50,13 +57,20 @@ export const CLOSE_WITHDRAWAL_OPTIONS: JustifyOption[] = [
   { value: "OTHER_OUT", label: "Otro egreso", description: "Un gasto pagado con el efectivo de la caja." },
 ]
 
-/** Quita los motivos cuya cuenta contable no está configurada (ADR-0128). Sin datos aún, los oculta. */
-export function availableReasons(options: JustifyOption[], flags: POSJustifyOptions["reasons"] | undefined): JustifyOption[] {
+/**
+ * Deja solo los motivos con cuenta contable configurada (ADR-0128/0130), así toda diferencia queda
+ * en la cuenta de su motivo. `direction`: "IN" sobra, "OUT" falta (decide la cuenta genérica de
+ * "Sin explicación"). El traspaso no depende de una cuenta contable. Sin datos aún, no ofrece ninguno.
+ */
+export function availableReasons(
+  options: JustifyOption[],
+  flags: POSJustifyOptions["reasons"] | undefined,
+  direction: "IN" | "OUT" = "OUT",
+): JustifyOption[] {
+  if (!flags) return []
   return options.filter(o => {
-    if (o.value === "PARTNER_WITHDRAWAL") return !!flags?.PARTNER_WITHDRAWAL
-    if (o.value === "THEFT") return !!flags?.THEFT
-    if (o.value === "ROUNDING") return !!flags?.ROUNDING
-    if (o.value === "OTHER_OUT") return !!flags?.OTHER_OUT
-    return true
+    if (o.value === "TRANSFER") return true
+    if (o.value === "UNKNOWN") return !!flags[direction === "IN" ? "UNEXPLAINED_GAIN" : "UNEXPLAINED_LOSS"]
+    return !!flags[o.value]
   })
 }

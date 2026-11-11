@@ -35,7 +35,11 @@ def _account(name, account_type, is_active=True):
 def test_ventas_reads_justify_options_without_open_session(ventas_client):
     res = ventas_client.get(URL)
     assert res.status_code == 200
-    assert set(res.data["reasons"]) == {"PARTNER_WITHDRAWAL", "THEFT", "ROUNDING", "OTHER_OUT"}
+    assert set(res.data["reasons"]) == {
+        "COUNTING_ERROR", "SYSTEM_ERROR", "ROUNDING", "TIP", "OTHER_IN",
+        "THEFT", "PARTNER_WITHDRAWAL", "CASHBACK", "OTHER_OUT",
+        "UNEXPLAINED_GAIN", "UNEXPLAINED_LOSS",
+    }
     assert isinstance(res.data["accounts"], list)
 
 

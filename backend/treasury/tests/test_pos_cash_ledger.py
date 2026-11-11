@@ -192,6 +192,11 @@ def test_second_open_session_on_same_cash_account_is_blocked(cashier, terminal, 
 @pytest.mark.django_db
 def test_opening_adjusts_against_own_book_balance(cashier, terminal, cash_account_fixture, income_account):
     _inflow(cash_account_fixture, cashier, income_account, "8000")
+    # ADR-0130: la diferencia exige la cuenta contable de su motivo
+    from accounting.services import AccountingService
+    settings = AccountingService.get_or_create_current_settings()
+    settings.pos_other_inflow_account = income_account
+    settings.save()
     session = POSService.open_session(
         user=cashier, terminal_id=terminal.id, opening_balance=Decimal("10000"), justify_reason="OTHER_IN"
     )

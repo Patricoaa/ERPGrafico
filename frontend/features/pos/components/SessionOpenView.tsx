@@ -13,13 +13,13 @@ import { useTouchMode } from "@/hooks/useTouchMode"
 import { formatTimeWith } from "@/lib/utils"
 import type { POSSession, POSSessionMode, POSTerminal } from "@/types/pos"
 import { CashModeChoice } from "./CashModeChoice"
-import { CashDifferenceBanner, CashDifferenceReasonChoice, TransferAccountChoice } from "./CashDifferenceJustification"
+import { CashDifferenceBanner, CashDifferenceReasonChoice, PartnerChoice, TransferAccountChoice } from "./CashDifferenceJustification"
 import { POSFlowLayout, type POSFlowPrimaryAction } from "./flow/POSFlowLayout"
-import { cashModeLabel, summaryRow } from "./flow/flowParts"
+import { TOUCH_ROW_GAP, cashModeLabel, summaryRow, touchRow, touchRowWidth } from "./flow/flowParts"
 import { DEFICIT_OPTIONS, SURPLUS_OPTIONS, availableReasons } from "@/features/pos/utils/reasons"
 
 type Flow = "open" | "join"
-type StepId = "start" | "terminal" | "cash-mode" | "fund" | "reason" | "transfer" | "confirm" | "join"
+type StepId = "start" | "terminal" | "cash-mode" | "fund" | "reason" | "transfer" | "partner" | "confirm" | "join"
 
 const STEP_LABELS: Record<StepId, string> = {
     start: "Inicio",
@@ -28,13 +28,10 @@ const STEP_LABELS: Record<StepId, string> = {
     fund: "Fondo inicial",
     reason: "Motivo",
     transfer: "Cuenta",
+    partner: "Socio",
     confirm: "Confirmar",
     join: "Sesión activa",
 }
-
-const gridColumns = (count: number) => count > 2
-    ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
-    : count === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 max-w-md mx-auto"
 
 interface SessionOpenViewProps {
     /** Called after a session is opened (`mode: 'open'`) or joined (`mode: 'join'`) */
@@ -67,6 +64,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
     const [cashMode, setCashMode] = useState<POSSessionMode>("SINGLE")
     const [justifyReason, setJustifyReason] = useState<string>("")
     const [justifyTargetId, setJustifyTargetId] = useState<string | null>(null)
+    const [partnerId, setPartnerId] = useState<string | null>(null)
 
     const [selectedSharedSessionId, setSelectedSharedSessionId] = useState<string>("")
     const [submitting, setSubmitting] = useState(false)
@@ -81,9 +79,13 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
     const hasDiff = openingDiff !== 0
     const surplus = openingDiff > 0
 
-    const reasons = availableReasons(openingDiff >= 0 ? SURPLUS_OPTIONS : DEFICIT_OPTIONS, justifyQuery.data?.reasons)
+    const reasons = availableReasons(surplus ? SURPLUS_OPTIONS : DEFICIT_OPTIONS, justifyQuery.data?.reasons, surplus ? "IN" : "OUT")
     const transferAccounts = (justifyQuery.data?.accounts ?? []).filter(a => a.id !== selectedTerminal?.default_treasury_account)
     const reasonLabel = reasons.find(r => r.value === justifyReason)?.label
+    // Con un solo socio no hay nada que elegir: se toma ese.
+    const partners = justifyQuery.data?.partners ?? []
+    const soleId = partners.length === 1 ? partners[0]!.id.toString() : null
+    const partner = partners.find(p => p.id.toString() === (partnerId ?? soleId))
     const targetAccount = transferAccounts.find(a => a.id.toString() === justifyTargetId)
 
     const stepIdsFor = useCallback((nextFlow: Flow): StepId[] => nextFlow === "join"
@@ -95,14 +97,16 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
             "fund",
             ...(hasDiff ? ["reason" as const] : []),
             ...(hasDiff && justifyReason === "TRANSFER" ? ["transfer" as const] : []),
+            ...(hasDiff && justifyReason === "PARTNER_WITHDRAWAL" && !soleId ? ["partner" as const] : []),
             "confirm",
-        ], [needsTerminalSelection, hasDiff, justifyReason])
+        ], [needsTerminalSelection, hasDiff, justifyReason, soleId])
 
     const stepIds = stepIdsFor(flow)
     const safeIndex = Math.min(stepIndex, stepIds.length - 1)
     const stepId = stepIds[safeIndex]
 
-    const canConfirm = !hasDiff || (!!justifyReason && (justifyReason !== "TRANSFER" || !!targetAccount))
+    const canConfirm = !hasDiff || (!!justifyReason && (justifyReason !== "TRANSFER" || !!targetAccount)
+        && (justifyReason !== "PARTNER_WITHDRAWAL" || !!partner))
 
     const goTo = (nextFlow: Flow, id: StepId) => {
         setFlow(nextFlow)
@@ -156,7 +160,9 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
                 opening_balance: actualBalance,
                 mode: cashMode,
                 justify_reason: hasDiff ? justifyReason : "",
-                justify_target_id: hasDiff && justifyReason === "TRANSFER" && justifyTargetId ? parseInt(justifyTargetId) : null,
+                justify_target_id: hasDiff
+                    ? (justifyReason === "TRANSFER" && justifyTargetId ? parseInt(justifyTargetId) : justifyReason === "PARTNER_WITHDRAWAL" ? partner?.id : null) ?? null
+                    : null,
             }) as POSSession
             onSuccess(sessionData, "open")
         } catch (error: unknown) {
@@ -229,7 +235,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
                     action={<Button size="lg" className="h-14 px-8 text-base" onClick={loadInitialData}>Reintentar</Button>}
                 />
             ) : (
-                <ChoiceGroup label="Qué desea realizar" columns="grid-cols-1 sm:grid-cols-2" activation="focus" className="gap-4">
+                <ChoiceGroup label="Qué desea realizar" columns={touchRow(2)} activation="focus" className={TOUCH_ROW_GAP}>
                     <ChoiceCard
                         size="touch"
                         icon={Unlock}
@@ -269,7 +275,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
             hint = "Toque una opción para continuar"
             primary = { label: "Siguiente", onClick: next, disabled: !selectedTerminalId }
             body = (
-                <ChoiceGroup label="Punto de venta" columns={gridColumns(freeTerminals.length)} activation="focus" className="gap-4">
+                <ChoiceGroup label="Punto de venta" columns={touchRow(freeTerminals.length)} activation="focus" className={TOUCH_ROW_GAP}>
                     {freeTerminals.map(t => (
                         <ChoiceCard
                             key={t.id}
@@ -348,6 +354,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
                         onChange={value => {
                             setJustifyReason(value)
                             if (value !== "TRANSFER") setJustifyTargetId(null)
+                            if (value !== "PARTNER_WITHDRAWAL") setPartnerId(null)
                             next()
                         }}
                     />
@@ -371,6 +378,14 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
             )
             break
 
+        case "partner":
+            heading = "¿Qué socio retiró el dinero?"
+            description = `Retiro de ${formatCurrency(Math.abs(openingDiff))}; queda a su nombre.`
+            hint = partner ? null : "Toque al socio"
+            primary = { label: "Siguiente", onClick: next, disabled: !partner }
+            body = <PartnerChoice partners={partners} value={partnerId} onChange={id => { setPartnerId(id); next() }} />
+            break
+
         case "confirm":
             heading = "Revise y abra la caja"
             description = selectedTerminal?.name
@@ -389,6 +404,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
                         )}
                         {hasDiff && reasonLabel && summaryRow("Motivo", reasonLabel)}
                         {targetAccount && summaryRow(surplus ? "Vino de" : "Se fue a", targetAccount.name)}
+                        {justifyReason === "PARTNER_WITHDRAWAL" && partner && summaryRow("Retiró", partner.name)}
                     </section>
                     {!hasDiff && (
                         <div className="flex items-center gap-4 rounded-lg border border-success/40 bg-success/10 p-5 text-lg">
@@ -406,7 +422,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
             hint = selectedSharedSessionId ? null : "Toque la sesión a la que quiere unirse"
             primary = { label: "Unirse", onClick: () => void handleJoinSession(), disabled: !selectedSharedSessionId || submitting, final: true, loading: submitting }
             body = (
-                <ChoiceGroup label="Sesión de POS activa" columns={gridColumns(availableSessions.length)} className="gap-4">
+                <ChoiceGroup label="Sesión de POS activa" columns={touchRow(availableSessions.length)} className={TOUCH_ROW_GAP}>
                     {availableSessions.map(session => (
                         <ChoiceCard
                             key={session.id}
@@ -429,11 +445,12 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
             break
     }
 
-    const listCount = stepId === "terminal" ? freeTerminals.length
-        : stepId === "join" ? availableSessions.length
-            : stepId === "reason" ? reasons.length
-                : stepId === "transfer" ? transferAccounts.length : 0
-    const width = stepId === "fund" ? "max-w-xl" : listCount > 4 || (stepId !== "reason" && listCount > 2) ? "max-w-6xl" : "max-w-4xl"
+    // Ancho del paso: las filas de tarjetas se ajustan a cuántas son (sin scroll en tótem)
+    const rowCount: Partial<Record<StepId, number>> = {
+        start: 2, "cash-mode": 2, terminal: freeTerminals.length, join: availableSessions.length,
+        reason: reasons.length, transfer: transferAccounts.length,
+    }
+    const width = stepId === "fund" ? "max-w-xl" : stepId === "confirm" ? "max-w-5xl" : touchRowWidth(rowCount[stepId] ?? 2)
 
     const progressIds = stepIds.filter(id => id !== "start")
     const subtitle = flow === "open" && stepIds.indexOf("cash-mode") < safeIndex

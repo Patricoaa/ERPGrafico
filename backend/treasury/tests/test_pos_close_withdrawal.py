@@ -29,6 +29,13 @@ def safe(db):
 
 
 @pytest.fixture
+def partner(db):
+    from contacts.models import Contact
+
+    return Contact.objects.create(name="Socia Uno", tax_id="11111111-1", is_partner=True)
+
+
+@pytest.fixture
 def cashier(db):
     return User.objects.create_user(username="closer", password="x")
 
@@ -58,14 +65,16 @@ def test_transfer_on_close_goes_to_destination_inside_session(session, cashier, 
 
 
 @pytest.mark.django_db
-def test_reason_withdrawal_is_outbound_with_reason(session, cashier):
+def test_reason_withdrawal_is_outbound_with_reason(session, cashier, partner):
     with patch("treasury.pos_service.TreasuryService._get_reason_account", return_value=object()), \
             patch("treasury.pos_service.TreasuryService.create_movement") as create:
-        _close(session, cashier, withdrawal_amount=Decimal("10000"), withdrawal_kind="PARTNER_WITHDRAWAL")
+        _close(session, cashier, withdrawal_amount=Decimal("10000"), withdrawal_kind="PARTNER_WITHDRAWAL",
+               withdrawal_partner_id=partner.id)
     kwargs = create.call_args.kwargs
     assert kwargs["movement_type"] == TreasuryMovement.Type.OUTBOUND
     assert kwargs["justify_reason"] == "PARTNER_WITHDRAWAL"
     assert kwargs["to_account"] is None
+    assert kwargs["partner"] == partner
 
 
 @pytest.mark.django_db
@@ -93,3 +102,26 @@ def test_reason_without_configured_account_rejected(session, cashier):
     with patch("treasury.pos_service.TreasuryService._get_reason_account", return_value=None):
         with pytest.raises(ValidationError, match="no configurada"):
             _close(session, cashier, withdrawal_amount=Decimal("1000"), withdrawal_kind="OTHER_OUT")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("partner_id_kind, message", [("none", "Elija el socio"), ("not_partner", "Socio no encontrado")])
+def test_partner_withdrawal_requires_a_valid_partner(session, cashier, partner_id_kind, message):
+    from contacts.models import Contact
+
+    pid = None if partner_id_kind == "none" else Contact.objects.create(name="Cliente", tax_id="22222222-2", is_partner=False).id
+    with patch("treasury.pos_service.TreasuryService._get_reason_account", return_value=object()):
+        with pytest.raises(ValidationError, match=message):
+            _close(session, cashier, withdrawal_amount=Decimal("1000"), withdrawal_kind="PARTNER_WITHDRAWAL",
+                   withdrawal_partner_id=pid)
+    session.refresh_from_db()
+    assert session.status == "OPEN"
+
+
+@pytest.mark.django_db
+def test_other_out_ignores_partner(session, cashier, partner):
+    with patch("treasury.pos_service.TreasuryService._get_reason_account", return_value=object()), \
+            patch("treasury.pos_service.TreasuryService.create_movement") as create:
+        _close(session, cashier, withdrawal_amount=Decimal("1000"), withdrawal_kind="OTHER_OUT",
+               withdrawal_partner_id=partner.id)
+    assert create.call_args.kwargs["partner"] is None

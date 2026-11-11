@@ -192,5 +192,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0127](0127-pos-session-opening-fullscreen-touch.md) | Apertura y cierre de sesión POS a pantalla completa — `POSTopBar`/`POSStepper`/`POSFlowLayout` compartidos con la venta, motivo y cuenta como pasos táctiles, `ChoiceCard size="touch"` | Accepted |
 | [0128](0128-pos-justify-options-read.md) | Motivos y cuentas de justificación de efectivo legibles por el cajero — `GET /treasury/pos-sessions/justify_options/` | Accepted |
 | [0129](0129-pos-close-cash-out-transfer-vs-withdrawal.md) | Efectivo al cerrar la caja — dejar, traspasar (a caja o banco) o retirar con motivo (socio / otro egreso), dentro de la sesión después del arqueo, con validaciones | Accepted |
+| [0130](0130-pos-cash-difference-accounts.md) | Diferencias de efectivo del POS contra la cuenta de su motivo (o sobrante/faltante de caja), sin caer en CxC/CxP | Accepted |
+| [0131](0131-pos-partner-withdrawal-requires-partner.md) | El retiro de socio en el POS siempre nombra al socio (cierre y diferencias) | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

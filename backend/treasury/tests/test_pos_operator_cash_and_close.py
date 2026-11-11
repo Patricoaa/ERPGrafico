@@ -197,6 +197,13 @@ def test_single_mode_unchanged(api, single, safe_account, cashier):
     r = _move(api, single, safe_account)
     assert r.status_code == 200, r.content
     assert _last_movement(single).created_by == cashier
+    # El cierre declara $100.000 tras sacar $1.000: sobrante sin motivo → cuenta genérica (ADR-0130)
+    from accounting.services import AccountingService
+    settings = AccountingService.get_or_create_current_settings()
+    settings.pos_cash_difference_gain_account = Account.objects.create(
+        code="4.2.05", name="Sobrante de caja", account_type=AccountType.INCOME
+    )
+    settings.save()
     assert _close(api, single).status_code == 200
     single.refresh_from_db()
     assert single.closed_by == cashier
