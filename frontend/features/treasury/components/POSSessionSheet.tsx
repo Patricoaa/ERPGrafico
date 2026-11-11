@@ -13,7 +13,7 @@ import {
 } from "@/components/shared"
 import { useDrawerIdentity } from "@/features/_shared"
 import { DocumentRelationsTab, useDocumentRelations, type DocumentDomain } from "@/features/documents"
-import { useDownloadPOSReportPDF } from "@/features/pos"
+import { useDownloadPOSReportPDF, usePOSSessionRealtime } from "@/features/pos"
 import { usePOSSession } from "../hooks/usePOSSession"
 import { usePOSSessionOverview } from "../hooks/usePOSSessionDetail"
 import { ActivityTab } from "./pos-session/ActivityTab"
@@ -41,6 +41,7 @@ export interface POSSessionSheetProps {
 export function POSSessionSheet({ id, open, onOpenChange, embedded = false }: POSSessionSheetProps) {
     const { session, isLoading, isError } = usePOSSession(id ?? null)
     const overviewQuery = usePOSSessionOverview(id ?? null)
+    usePOSSessionRealtime(open ? (id ?? null) : null)
     const { data: relations } = useDocumentRelations(LABEL, id ?? null)
     const { downloadPdf } = useDownloadPOSReportPDF()
     const [tab, setTab] = useState<SessionTab>("summary")

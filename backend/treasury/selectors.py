@@ -542,8 +542,6 @@ class POSSelector:
 
     @staticmethod
     def get_summary(session) -> dict:
-        from core.cache import cache_report
-
         def _generate():
             totals = {
                 "session_id": session.id,
@@ -648,16 +646,9 @@ class POSSelector:
                 "closed_at": session.closed_at,
             }
 
-        if session.status == "CLOSED":
-            return _generate()
-
-        return cache_report(
-            module="treasury",
-            endpoint="pos_summary",
-            params={"session_id": session.id},
-            timeout=60,
-            generator=_generate,
-        )
+        # Sin caché: el X/Z debe reflejar la realidad al instante (ADR-0126); la invalidación
+        # por tiempo dejaba el efectivo esperado hasta 60 s desfasado.
+        return _generate()
 
     @staticmethod
     def _cash_ledger_section(session) -> dict:

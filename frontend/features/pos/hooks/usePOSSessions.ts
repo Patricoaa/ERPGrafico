@@ -82,8 +82,10 @@ export function usePOSSessionSummary<T = Record<string, unknown>>(sessionId: num
             return posApi.getSessionSummary(sessionId) as Promise<T>
         },
         enabled: !!sessionId,
-        // Summary se computa server-side y es relativamente costoso; sin staleTime
-        // explícito → vuelve a fetchear según el global staleTime (5min).
+        // ADR-0126: el X/Z se calcula fresco en el backend y se invalida por Entity Bus; al montar
+        // siempre se relee para no mostrar un efectivo esperado de caché.
+        staleTime: 0,
+        refetchOnMount: 'always',
     })
 }
 

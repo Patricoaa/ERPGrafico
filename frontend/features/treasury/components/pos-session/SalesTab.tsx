@@ -31,7 +31,7 @@ export function SalesTab({ overview, isLoading }: SalesTabProps) {
                 <div className="flex flex-1 min-h-0 flex-col gap-8">
                     <div aria-label="Balance comercial" className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
                         <StatCard
-                            label="Ventas brutas"
+                            label="Ventas"
                             value={formatCurrency(Number(overview.sales.gross))}
                             icon={Wallet}
                             accent="primary"

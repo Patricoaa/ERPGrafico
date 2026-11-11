@@ -188,5 +188,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0123](0123-pos-terminal-list-authenticated.md) | Listado de cajas POS legible por cualquier usuario autenticado — `GET pos-terminals/` (list) requiere solo autenticación; el resto conserva RBAC | Accepted |
 | [0124](0124-pos-payment-selector-reads.md) | Lecturas del selector de cobro POS para usuarios autenticados — métodos permitidos de la caja y listado de bancos (sin ejecutivos salvo `view_bank`) | Accepted |
 | [0125](0125-pos-session-mode-identified-operator.md) | Modo de caja multiusuario y operador identificado — `POSSession.mode`, pase de operador por transacción, seguimiento por paso en la orden; primera edición sin PIN (registro de buena fe) | Accepted |
+| [0126](0126-pos-session-report-realtime.md) | Informe X/Z de la sesión POS en tiempo real — `treasury.possession` en el Entity Bus, broadcast desde movimientos y ventas, sin caché del resumen | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
