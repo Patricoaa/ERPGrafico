@@ -7,6 +7,7 @@ export interface Contact {
     tax_id: string | null
     contact_type: 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'RELATED' | 'OTHER'
     active_roles?: string[]
+    is_partner?: boolean
     email: string | null
     phone: string | null
     address: string | null

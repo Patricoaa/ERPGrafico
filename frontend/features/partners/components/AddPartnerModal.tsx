@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useMemo } from "react"
 import { BaseModal, CancelButton, SubmitButton, Chip, LabeledInput, LabeledContainer, PeriodValidationDateInput } from '@/components/shared'
 import { usePartners, subscribedPercentages } from "@/features/contacts"
-import { usePartnerMutations } from "../hooks"
+import { usePartnerMutations, useOnOpen } from "../hooks"
 import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import { UserPlus, TrendingDown } from "lucide-react"
@@ -18,9 +18,11 @@ interface AddPartnerModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
+    /** Contacto preseleccionado (p. ej. «Incorporar como socio» desde la ficha del contacto). */
+    initialContactId?: number
 }
 
-export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerModalProps) {
+export function AddPartnerModal({ open, onOpenChange, onSuccess, initialContactId }: AddPartnerModalProps) {
     const [loading, setLoading] = useState(false)
     const { partners } = usePartners()
     const { recordSubscription } = usePartnerMutations()
@@ -30,6 +32,13 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
         date: new Date().toISOString().split('T')[0],
         description: "Incorporación de nuevo socio"
     })
+
+    useOnOpen(open, () => setFormData({
+        contact_id: initialContactId ? String(initialContactId) : "",
+        amount: "",
+        date: new Date().toISOString().split('T')[0],
+        description: "Incorporación de nuevo socio",
+    }))
 
     const totalCapital = useMemo(() => partners.reduce((acc: number, p: Partner) => {
         const amount = typeof p.partner_total_contributions === 'string'

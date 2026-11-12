@@ -28,7 +28,7 @@ import type { Granularity } from "@/lib/analytics-helpers"
 import { partnerEntity, partnerViews } from "../entity-view/partner.entity"
 import { buildPartnerAnalyticsScreen } from "./partnerAnalyticsScreen"
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
-import { usePartnerActionHost } from "./PartnerActionHost"
+import { usePartnerActions } from "./PartnerActionModal"
 import { PartnerDrawer } from "./PartnerDrawer"
 
 const partnerUnifiedSearchDef: UnifiedSearchConfig = {
@@ -87,7 +87,15 @@ export function PartnersClientView({
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const { openSelected } = useEntityRouteActions()
-    const { run, host } = usePartnerActionHost()
+    const clearModalParams = React.useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (!params.has('modal') && !params.has('contact')) return
+        params.delete('modal')
+        params.delete('contact')
+        const query = params.toString()
+        router.replace(query ? `?${query}` : pathname, { scroll: false })
+    }, [searchParams, router, pathname])
+    const { run, host } = usePartnerActions({ onClose: clearModalParams })
 
     // La ficha del socio es un panel de entidad (`?selected=id`); no necesita endpoint: carga por id.
     const panel = useEntityPanelRoute({ create: false })
@@ -102,7 +110,7 @@ export function PartnersClientView({
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [ledgerParam, searchParams, router, pathname])
 
-    useOnOpen(initialAddPartnerOpen, () => run({ type: "add-partner" }))
+    useOnOpen(initialAddPartnerOpen, () => run({ type: "add-partner", contactId: Number(searchParams.get("contact")) || undefined }))
 
     const analyticsData = usePartnerAnalyticsData(partners, granularity)
     const evolutionData = usePartnerEvolutionData(24, granularity)

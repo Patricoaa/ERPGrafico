@@ -13,7 +13,7 @@ import { usePartnerStakes, useProfitDistributions } from "../hooks"
 import { partnerStakeEntity, partnerStakeViews } from "../entity-view/partnerStake.entity"
 import { partnerDistributionEntity, partnerDistributionViews, type PartnerDistributionRow } from "../entity-view/partnerDistribution.entity"
 import { partnerActions, demoteBlockedReason } from "./partnerActions"
-import { usePartnerActionHost } from "./PartnerActionHost"
+import { usePartnerActions } from "./PartnerActionModal"
 import { PartnerLedgerPanel } from "./PartnerLedgerPanel"
 
 interface PartnerDrawerProps {
@@ -102,7 +102,7 @@ export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDraw
     const partner = useMemo(() => partners.find(p => p.id === id), [partners, id])
     const equityPct = useMemo(() => (id ? netEquityPercentages(partners)[id] ?? "0" : "0"), [partners, id])
     const [activeTab, setActiveTab] = useState("summary")
-    const { run, host } = usePartnerActionHost({
+    const { run, host } = usePartnerActions({
         onDemoted: () => { onSuccess?.(); onOpenChange(false) },
     })
 

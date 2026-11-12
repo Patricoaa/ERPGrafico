@@ -37,6 +37,10 @@ import { type LucideIcon } from "lucide-react"
 import { getHubStatuses } from '@/features/orders'
 import { LabeledInput, FormSelectionGroup, DrawerLayout, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Handshake } from "lucide-react"
+import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
 
 const contactSchema = z.object({
@@ -71,6 +75,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const [activeTab, setActiveTab] = useState("profile")
+    const openEntity = useOptionalGlobalModalActions()?.openEntity
     const c = contact
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights } = useContactInsights(c?.id)
@@ -312,6 +317,21 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <span className="text-xs text-muted-foreground">Sin roles asignados</span>
                                                     )}
                                                 </div>
+                                                {c?.id && mode !== 'create' && (
+                                                    c.is_partner ? (
+                                                        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => openEntity?.('contacts.partner', c.id)}>
+                                                            <Handshake className="h-4 w-4" />
+                                                            Ver ficha de socio
+                                                        </Button>
+                                                    ) : (
+                                                        <Button asChild variant="outline" size="sm" className="gap-2">
+                                                            <Link href={`/finances/partners/composition?modal=add-partner&contact=${c.id}`}>
+                                                                <Handshake className="h-4 w-4" />
+                                                                Incorporar como socio
+                                                            </Link>
+                                                        </Button>
+                                                    )
+                                                )}
                                             
                                         </div>
 

@@ -72,17 +72,19 @@ Frontend:
 
 **Salida:** cero `api` directo en componentes de socios; datos consistentes entre lista, libro y perfil. **Riesgo:** medio (muchos imports); mitigar con mover en un commit puro de rename y luego cambios de lógica.
 
-## Fase 3 — `PartnerDrawer` y superficie única de acciones
+## Fase 3 — `PartnerDrawer` y superficie única de acciones — HECHA salvo unificar wizards (ver nota)
 
-- [ ] Registrar `contacts.partner` (o reutilizar `contacts.contact` con modo `partner`; decidir en ADR) en `entity-drawers.tsx` y `entity-registry.ts`, con `openEntity`.
-- [ ] `PartnerDrawer` con pestañas: **Resumen** (capital suscrito/pagado/pendiente, utilidades, dividendos, retiros, %), **Libro auxiliar** (el actual, ahora pestaña), **Participación** (`equity_stakes_history` filtrado por socio), **Distribuciones** (líneas del socio por ejercicio), **Documentos** (relaciones, `document-relations.md`).
-- [ ] Las filas de `PartnersClientView` abren el drawer; `?ledger=` se reemplaza por el mecanismo estándar del drawer (ADR-0022) manteniendo compat. de URLs viejas con redirect.
-- [ ] `partnerActions` único (fuente de verdad), con `visible` según estado — no `pointer-events-none`. Acciones: Registrar aporte (Efectivo/**Bienes**), Registrar retiro (Efectivo/Bienes), Formalizar capital pendiente, Pagar dividendos, Distribuir utilidades retenidas, Transferir participación, Reducir capital, **Dar de baja socio** (`demote_partner`). La toolbar de la lista solo conserva acciones globales (Añadir socio, Nueva suscripción, Transferencia).
-- [ ] Reemplazar los 8 `useState` de modales por un estado único `activeAction: { type, partnerId?, params? } | null` (o reducer) y un `PartnerActionHost`.
+- [x] Registrar `contacts.partner` (o reutilizar `contacts.contact` con modo `partner`; decidir en ADR) en `entity-drawers.tsx` y `entity-registry.ts`, con `openEntity`.
+- [x] `PartnerDrawer` con pestañas: **Resumen** (capital suscrito/pagado/pendiente, utilidades, dividendos, retiros, %), **Libro auxiliar** (el actual, ahora pestaña), **Participación** (`equity_stakes_history` filtrado por socio), **Distribuciones** (líneas del socio por ejercicio), **Documentos** (relaciones, `document-relations.md`).
+- [x] Las filas de `PartnersClientView` abren el drawer; `?ledger=` se reemplaza por el mecanismo estándar del drawer (ADR-0022) manteniendo compat. de URLs viejas con redirect.
+- [x] `partnerActions` único (fuente de verdad), con `visible` según estado — no `pointer-events-none`. Acciones: Registrar aporte (Efectivo/**Bienes**), Registrar retiro (Efectivo/Bienes), Formalizar capital pendiente, Pagar dividendos, Distribuir utilidades retenidas, Transferir participación, Reducir capital, **Dar de baja socio** (`demote_partner`). La toolbar de la lista solo conserva acciones globales (Añadir socio, Nueva suscripción, Transferencia).
+- [x] Reemplazar los 8 `useState` de modales por un estado único `activeAction: { type, partnerId?, params? } | null` (o reducer) y un `PartnerActionHost`.
 - [x] Aporte en especie: ya existe como método «Bienes» de `PartnerContributionWizard`. Solo verificar el circuito backend `PARTNER_CONTRIBUTION` → `PartnerTransaction(CAPITAL_INVENTORY)` + asiento con un test.
 - [ ] Unificar `PartnerContributionWizard` y `PartnerWithdrawalWizard` (≈70 % duplicados: efectivo/bienes, socio, bodega, producto) en un único `PartnerMovementWizard` parametrizado por dirección.
-- [ ] Drawer para `contacts.partnertransaction` (o visor del asiento/documento origen) para que `DocumentRelationsTab` y la búsqueda universal tengan destino.
-- [ ] Contacto → socio: en `ContactDrawer`, si `is_partner`, mostrar chip "Socio" y atajo "Ver ficha de socio"; si no, acción "Incorporar como socio" que abre `AddPartnerModal` con el contacto prefijado.
+- [x] Documento origen de cada movimiento: acción «Ver documento» en el libro (`openEntity` al asiento, tesorería, stock o resolución). No se creó un drawer propio de `partnertransaction`: el movimiento no tiene contenido más allá de su documento.
+- [x] Contacto → socio: en `ContactDrawer`, si `is_partner`, mostrar chip "Socio" y atajo "Ver ficha de socio"; si no, acción "Incorporar como socio" que abre `AddPartnerModal` con el contacto prefijado.
+
+**Notas de ejecución:** la pestaña «Documentos» se descartó (el socio no es un documento; el drill-down vive en el libro). La unificación `PartnerMovementWizard` (aporte+retiro) queda pendiente por tamaño/riesgo: se hará con la UI verificable en navegador. `demote` se oculta cuando los guards la bloquearían y la ficha explica el motivo.
 
 **Salida:** el socio es navegable desde contactos, búsqueda, asientos y distribuciones. **Riesgo:** medio-alto (UI nueva); entregar el drawer primero solo-lectura y sumar acciones por PR.
 

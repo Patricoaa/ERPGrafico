@@ -4,6 +4,8 @@ import React, { useEffect, useMemo } from "react"
 import { SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { usePartnerStatement } from "../hooks"
+import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+import { partnerTransactionActions } from "./partnerTransactionActions"
 import { toast } from "sonner"
 import { parseDateOnly } from "@/lib/utils"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -25,6 +27,7 @@ interface PartnerLedgerPanelProps {
 export function PartnerLedgerPanel({ partnerId }: PartnerLedgerPanelProps) {
     const { data: statement, isLoading: loading, isError } = usePartnerStatement(partnerId)
     const data = statement ?? null
+    const openEntity = useOptionalGlobalModalActions()?.openEntity
 
     useEffect(() => {
         if (isError) toast.error("Error al cargar movimientos del socio")
@@ -83,7 +86,10 @@ export function PartnerLedgerPanel({ partnerId }: PartnerLedgerPanelProps) {
 
     return (
         <div className="p-4 h-full min-h-0 flex flex-col">
-            <Collection.Root collection={collection}>
+            <Collection.Root
+                collection={collection}
+                actions={partnerTransactionActions.forCollection({ onViewDocument: (label, id) => openEntity?.(label, id) })}
+            >
                 <Collection.Toolbar>
                     <UnifiedSearchBar
                         config={partnerSearchConfig}

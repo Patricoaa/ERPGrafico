@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { Partner } from "@/features/contacts"
-import { PartnerActionHost } from "../PartnerActionHost"
+import { PartnerActionModal } from "../PartnerActionModal"
 import { demoteBlockedReason } from "../partnerActions"
+import { resolvePartnerTransactionDocument } from "../partnerTransactionActions"
 
 const demote = vi.fn()
 
@@ -23,11 +24,11 @@ vi.mock("../PartnerWithdrawalWizard", () => ({ PartnerWithdrawalWizard: () => nu
 
 beforeEach(() => vi.clearAllMocks())
 
-describe("PartnerActionHost", () => {
+describe("PartnerActionModal", () => {
     it("confirma y da de baja al socio, avisando a quien lo monta", async () => {
         demote.mockResolvedValue({})
         const onDemoted = vi.fn()
-        render(<PartnerActionHost request={{ type: "demote", partnerId: 1 }} onClose={vi.fn()} onDemoted={onDemoted} />)
+        render(<PartnerActionModal request={{ type: "demote", partnerId: 1 }} onClose={vi.fn()} onDemoted={onDemoted} />)
 
         expect(screen.getByText(/Ana Socia/)).toBeTruthy()
         fireEvent.click(screen.getByRole("button", { name: /Dar de baja/ }))
@@ -37,7 +38,7 @@ describe("PartnerActionHost", () => {
     })
 
     it("no monta ninguna confirmación sin petición activa", () => {
-        render(<PartnerActionHost request={null} onClose={vi.fn()} />)
+        render(<PartnerActionModal request={null} onClose={vi.fn()} />)
         expect(screen.queryByRole("button", { name: /Dar de baja/ })).toBeNull()
     })
 })
@@ -53,5 +54,19 @@ describe("demoteBlockedReason", () => {
         ["partner_dividends_payable_balance", /dividendos/],
     ] as const)("la bloquea si %s > 0", (field, reason) => {
         expect(demoteBlockedReason({ ...base, [field]: "10" })).toMatch(reason)
+    })
+})
+
+describe("resolvePartnerTransactionDocument", () => {
+    const tx = { id: 1, partner: 1, partner_name: "A", transaction_type: "CAPITAL_CASH", transaction_type_display: "", amount: "1", date: "2026-01-01", description: "", journal_entry_id: 9, journal_entry_display: "", created_by: 1, created_by_name: "", created_at: "" }
+
+    it("prioriza bienes > tesorería > resolución > asiento", () => {
+        expect(resolvePartnerTransactionDocument({ ...tx, stock_move: 5, treasury_movement: 6, distribution_resolution: 7 })).toEqual({ label: "inventory.stockmove", id: 5 })
+        expect(resolvePartnerTransactionDocument({ ...tx, treasury_movement: 6, distribution_resolution: 7 })).toEqual({ label: "treasury.treasurymovement", id: 6 })
+        expect(resolvePartnerTransactionDocument({ ...tx, distribution_resolution: 7 })).toEqual({ label: "contacts.profitdistributionresolution", id: 7 })
+        expect(resolvePartnerTransactionDocument(tx)).toEqual({ label: "accounting.journalentry", id: 9 })
+    })
+    it("devuelve null sin respaldo", () => {
+        expect(resolvePartnerTransactionDocument({ ...tx, journal_entry_id: 0 })).toBeNull()
     })
 })

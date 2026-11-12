@@ -13,7 +13,7 @@ import { PartnerContributionWizard } from "./PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "./PartnerWithdrawalWizard"
 import type { PartnerActionRequest, PartnerActionRunner } from "./partnerActionRequest"
 
-interface PartnerActionHostProps {
+interface PartnerActionModalProps {
     /** Acción activa (null = ninguna). */
     request: PartnerActionRequest | null
     onClose: () => void
@@ -22,7 +22,7 @@ interface PartnerActionHostProps {
 }
 
 /** Monta la superficie (modal / wizard / confirmación) de la acción activa. Un solo estado, cero flags. */
-export function PartnerActionHost({ request, onClose, onDemoted }: PartnerActionHostProps) {
+export function PartnerActionModal({ request, onClose, onDemoted }: PartnerActionModalProps) {
     const { partners } = usePartners()
     const { demotePartner } = usePartnerMutations()
     const close = (open: boolean) => { if (!open) onClose() }
@@ -44,7 +44,11 @@ export function PartnerActionHost({ request, onClose, onDemoted }: PartnerAction
 
     return (
         <>
-            <AddPartnerModal open={request?.type === "add-partner"} onOpenChange={close} />
+            <AddPartnerModal
+                open={request?.type === "add-partner"}
+                onOpenChange={close}
+                initialContactId={request?.type === "add-partner" ? request.contactId : undefined}
+            />
             <SubscriptionMovementModal
                 open={request?.type === "subscription"}
                 onOpenChange={close}
@@ -87,11 +91,11 @@ export function PartnerActionHost({ request, onClose, onDemoted }: PartnerAction
     )
 }
 
-/** Estado + host de acciones de socio: `const { run, host } = usePartnerActionHost()` y render `{host}`. */
-export function usePartnerActionHost(options: { onDemoted?: (partnerId: number) => void } = {}): { run: PartnerActionRunner; host: ReactNode } {
+/** Estado + host de acciones de socio: `const { run, host } = usePartnerActions()` y render `{host}`. */
+export function usePartnerActions(options: { onDemoted?: (partnerId: number) => void; onClose?: () => void } = {}): { run: PartnerActionRunner; host: ReactNode } {
     const [request, setRequest] = useState<PartnerActionRequest | null>(null)
     return {
         run: setRequest,
-        host: <PartnerActionHost request={request} onClose={() => setRequest(null)} onDemoted={options.onDemoted} />,
+        host: <PartnerActionModal request={request} onClose={() => { setRequest(null); options.onClose?.() }} onDemoted={options.onDemoted} />,
     }
 }
