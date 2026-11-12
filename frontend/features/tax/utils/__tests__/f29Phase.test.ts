@@ -62,4 +62,14 @@ describe("deriveF29Phase", () => {
             ),
         ).toBe("done")
     })
+
+    it("returns done when CLOSED even without a declaration summary", () => {
+        expect(deriveF29Phase(period({ status: "CLOSED", declaration_summary: undefined }))).toBe("done")
+    })
+
+    it("returns payment when vat_to_pay is not a finite number (fail safe)", () => {
+        expect(deriveF29Phase(period({ declaration_summary: summary({ vat_to_pay: Number.NaN }) }))).toBe(
+            "payment",
+        )
+    })
 })
