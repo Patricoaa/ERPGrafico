@@ -33,3 +33,12 @@ Cambia la API pública de `/contacts/` (tres acciones eliminadas); no hay otros 
 
 La UI solo permite eliminar distribuciones `DRAFT`/`APPROVED` (el backend rechaza `EXECUTED` en `validate_can_delete`). Anular una ejecutada exige un asiento de reversa, revertir los `PartnerTransaction` generados y los pagos de dividendos ya hechos, y recalcular `PartnerEquityStake`; interactúa con ADR-0091 (inmutabilidad económica). No se implementa aquí: requiere su propio ADR.
 
+## Fase 5 — Backend de socios (ejecutada)
+
+- **Errores:** `erpgrafico_exception_handler` convierte `django.core.exceptions.ValidationError` en 400 con la forma estándar `{"error": {"message", "code", "details"}}`. Se eliminaron los `except Exception → 400/500` de `ContactViewSet` y `ProfitDistributionResolutionViewSet`: los errores inesperados responden 500 genérico y no exponen `str(e)`. Los parseos de monto inválido y cuentas inexistentes ahora son 400.
+- **Vistas delgadas:** la lógica pasó a `PartnerService` (`equity_subscription_response`, `equity_transfer_response`, `get_global_summary_payload`) y `ProfitDistributionService.create_draft_from_request`. `@transaction.atomic` vive en los servicios.
+- **`partner_transactions`:** GET (`partner_transactions`) y POST (`register_partner_transaction`, mismo URL) son acciones distintas, ambas con `contacts.post_partnertransaction`.
+- **Idempotencia:** se amplía la lista cerrada de `idempotency.md` con 7 scopes (suscripción, transferencia, aporte/retiro, pago individual de dividendo, movilización, aprobar y ejecutar distribución). El frontend genera la clave en `useIdempotencyKey` (por payload; se conserva ante fallos inciertos), de modo que los formularios no cambian.
+- **N+1:** `profit-distributions`, `partners` y `partners_summary` tienen test de conteo de queries constante.
+- **Pendiente deliberado:** `PartnerViewSet` propio con rutas `/partners/…` y alias deprecados — no se hizo: cambia URLs públicas y no aporta sobre lo anterior.
+

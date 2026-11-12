@@ -1,12 +1,11 @@
 
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
+from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin
 
 from .models import Contact
@@ -37,6 +36,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "equity_transfer": "contacts.post_partnertransaction",
         "individual_dividend_payment": "contacts.post_partnertransaction",
         "partner_transactions": "contacts.post_partnertransaction",
+        "register_partner_transaction": "contacts.post_partnertransaction",
         "mass_mobilize_retained_earnings": "contacts.post_partnertransaction",
     }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -102,16 +102,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def write_off_debt(self, request, pk=None):
-        from django.core.exceptions import ValidationError as DjangoValidationError
-        from rest_framework.exceptions import ValidationError
-
         from .services import ContactService
-        try:
-            return Response(ContactService.write_off_debt_from_request(request, self.get_object()))
-        except (DjangoValidationError, ValidationError) as e:
-            return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
-        except Exception as e:
-            return Response({'error': f'Error interno: {str(e)}'}, status=500)
+        return Response(ContactService.write_off_debt_from_request(request, self.get_object()))
 
     @action(detail=True, methods=["get"])
     def credit_history(self, request, pk=None):
@@ -129,16 +121,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def recover_written_off_debt(self, request, pk=None):
-        from django.core.exceptions import ValidationError as DjangoValidationError
-        from rest_framework.exceptions import ValidationError
-
         from .services import ContactService
-        try:
-            return Response(ContactService.recover_written_off_debt_from_request(request, self.get_object()))
-        except (DjangoValidationError, ValidationError) as e:
-            return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
-        except Exception as e:
-            return Response({'error': str(e)}, status=500)
+        return Response(ContactService.recover_written_off_debt_from_request(request, self.get_object()))
 
     # ==========================================================
     # PARTNERS (SOCIOS) ENDPOINTS
@@ -150,64 +134,32 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'])
     def partner_statement(self, request, pk=None):
-        from rest_framework.exceptions import ValidationError
-
         from .selectors import ContactSelectorExt
-        try:
-            return Response(ContactSelectorExt.get_partner_statement(self.get_object(), self.get_serializer))
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=400)
+        return Response(ContactSelectorExt.get_partner_statement(self.get_object(), self.get_serializer))
 
     @action(detail=False, methods=["get"])
     def partners_summary(self, request):
         """Calculates global metrics for the partner dashboard."""
         from .partner_service import PartnerService
-
-        summary = PartnerService.get_global_summary()
-        # Convert Decimal values to strings for JSON serialization
-        for key in ["total_capital", "total_provisional_withdrawals"]:
-            summary[key] = str(summary[key])
-        return Response(summary)
+        return Response(PartnerService.get_global_summary_payload())
 
     @action(detail=True, methods=["post"], url_path="demote-partner")
     def demote_partner(self, request, pk=None):
-        """
-        Demotes a Partner back to a regular Contact, removing the partner accounts if possible.
-        """
-        contact = self.get_object()
+        """Demotes a Partner back to a regular Contact, removing the partner accounts if possible."""
         from .services import ContactPartnerService
 
-        try:
-            ContactPartnerService.demote_from_partner(contact, user=request.user)
-            return Response(self.get_serializer(contact).data)
-        except Exception as e:
-            from rest_framework import status
+        contact = self.get_object()
+        ContactPartnerService.demote_from_partner(contact, user=request.user)
+        return Response(self.get_serializer(contact).data)
 
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+    @idempotent_endpoint(scope="contacts.partner.dividend_payment")
     @action(detail=True, methods=['post'])
     def individual_dividend_payment(self, request, pk=None):
-        from rest_framework.exceptions import ValidationError
-
         from .services import ContactService
-        try:
-            return Response(ContactService.individual_dividend_payment_from_request(request, self.get_object()))
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=400)
+        return Response(ContactService.individual_dividend_payment_from_request(request, self.get_object()))
 
-    @action(detail=True, methods=['get', 'post'])
+    @action(detail=True, methods=['get'])
     def partner_transactions(self, request, pk=None):
-        if request.method == 'POST':
-            from rest_framework.exceptions import ValidationError
-
-            from .partner_service import PartnerService
-            try:
-                return Response(PartnerService.register_partner_transaction(request, self.get_object()))
-            except ValidationError as e:
-                return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
-            except Exception as e:
-                return Response({"error": str(e)}, status=500)
-
         from .serializers import PartnerTransactionSerializer
         transactions = ContactSelector.list_partner_transactions(self.get_object())
         page = self.paginate_queryset(transactions)
@@ -215,47 +167,25 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return self.get_paginated_response(PartnerTransactionSerializer(page, many=True).data)
         return Response(PartnerTransactionSerializer(transactions, many=True).data)
 
-    @action(detail=False, methods=["post"])
-    @transaction.atomic
-    def equity_subscription(self, request):
-        """
-        Records a formal capital subscription or reduction.
-        Uses PartnerService for proper accounting separation.
-        """
+    @idempotent_endpoint(scope="contacts.partner.transaction")
+    @partner_transactions.mapping.post
+    def register_partner_transaction(self, request, pk=None):
         from .partner_service import PartnerService
-        try:
-            ptx = PartnerService.handle_equity_movement_from_payload(request.data, request.user)
-            return Response(
-                {
-                    "message": "Movimiento de capital registrado.",
-                    "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
-                }
-            )
-        except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+        return Response(PartnerService.register_partner_transaction(request, self.get_object()))
 
+    @idempotent_endpoint(scope="contacts.partner.equity_subscription")
     @action(detail=False, methods=["post"])
-    @transaction.atomic
+    def equity_subscription(self, request):
+        """Records a formal capital subscription or reduction."""
+        from .partner_service import PartnerService
+        return Response(PartnerService.equity_subscription_response(request))
+
+    @idempotent_endpoint(scope="contacts.partner.equity_transfer")
+    @action(detail=False, methods=["post"])
     def equity_transfer(self, request):
         """Records a transfer of participation between two partners."""
         from .partner_service import PartnerService
-
-        try:
-            seller_tx, buyer_tx = PartnerService.equity_transfer_from_request(request)
-            return Response(
-                {
-                    "message": "Transferencia completada.",
-                    "journal_entry": seller_tx.journal_entry.display_id
-                    if seller_tx.journal_entry
-                    else None,
-                }
-            )
-        except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+        return Response(PartnerService.equity_transfer_response(request))
 
     @action(detail=False, methods=["get"])
     def equity_stakes_history(self, request):
@@ -273,12 +203,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         granularity = request.query_params.get('granularity', 'month')
         return Response(PartnerAnalyticsService.get_evolution(months, granularity))
 
+    @idempotent_endpoint(scope="contacts.partner.mobilize_earnings")
     @action(detail=False, methods=['post'])
     def mass_mobilize_retained_earnings(self, request):
-        from rest_framework.exceptions import ValidationError
-
         from .services import ContactService
-        try:
-            return Response(ContactService.mass_mobilize_retained_earnings_from_request(request))
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=400)
+        return Response(ContactService.mass_mobilize_retained_earnings_from_request(request))

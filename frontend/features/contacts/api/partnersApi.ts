@@ -31,8 +31,8 @@ export const partnersApi = {
     /**
      * Register a new transaction (contribution/withdrawal) for a partner
      */
-    createTransaction: async (contactId: number, data: PartnerTransactionPayload) => {
-        const response = await api.post(`/contacts/${contactId}/partner_transactions/`, data)
+    createTransaction: async (contactId: number, data: PartnerTransactionPayload, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/${contactId}/partner_transactions/`, data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
@@ -56,21 +56,21 @@ export const partnersApi = {
     /**
      * Record a formal capital subscription or reduction
      */
-    recordSubscription: async (data: { contact_id: number, amount: number, type: 'SUBSCRIPTION' | 'REDUCTION', date?: string, description?: string }) => {
-        const response = await api.post('/contacts/equity_subscription/', data)
+    recordSubscription: async (data: { contact_id: number, amount: number, type: 'SUBSCRIPTION' | 'REDUCTION', date?: string, description?: string }, idempotencyKey: string) => {
+        const response = await api.post('/contacts/equity_subscription/', data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
     /**
      * Record a transfer of equity between two partners
      */
-    recordTransfer: async (data: { from_contact_id: number, to_contact_id: number, amount: number, date?: string, description?: string }) => {
-        const response = await api.post('/contacts/equity_transfer/', data)
+    recordTransfer: async (data: { from_contact_id: number, to_contact_id: number, amount: number, date?: string, description?: string }, idempotencyKey: string) => {
+        const response = await api.post('/contacts/equity_transfer/', data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
-    recordDividendPayment: async (contactId: number, data: { amount: number, date: string, treasury_account_id?: number, description?: string }) => {
-        const response = await api.post(`/contacts/${contactId}/individual_dividend_payment/`, data)
+    recordDividendPayment: async (contactId: number, data: { amount: number, date: string, treasury_account_id?: number, description?: string }, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/${contactId}/individual_dividend_payment/`, data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
@@ -103,13 +103,13 @@ export const partnersApi = {
         return response.data
     },
 
-    approveProfitDistribution: async (id: number) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/approve/`)
+    approveProfitDistribution: async (id: number, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/approve/`, undefined, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
-    executeProfitDistribution: async (id: number) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/execute/`)
+    executeProfitDistribution: async (id: number, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/execute/`, undefined, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
@@ -137,8 +137,8 @@ export const partnersApi = {
         return response.data
     },
 
-    massMobilizeRetainedEarnings: async (payload: { mobilizations: { partner_id: number, dividend_amount: number, reinvest_amount: number }[], date: string, description: string }) => {
-        const response = await api.post(`/contacts/mass_mobilize_retained_earnings/`, payload)
+    massMobilizeRetainedEarnings: async (payload: { mobilizations: { partner_id: number, dividend_amount: number, reinvest_amount: number }[], date: string, description: string }, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/mass_mobilize_retained_earnings/`, payload, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 

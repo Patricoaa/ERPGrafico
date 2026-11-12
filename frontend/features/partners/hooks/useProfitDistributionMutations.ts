@@ -7,6 +7,7 @@ import { MOVEMENTS_KEYS, TREASURY_ACCOUNTS_KEYS } from '@/features/treasury'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { PARTNER_KEYS } from './queryKeys'
+import { useIdempotencyKey } from './useIdempotencyKey'
 
 type CreateInput = Parameters<typeof partnersApi.createProfitDistribution>[0]
 type LinesInput = Parameters<typeof partnersApi.updateProfitDistributionLines>[1]
@@ -16,6 +17,8 @@ type PaymentsInput = { id: number; treasuryAccountId: number; payments: { partne
 export function useProfitDistributionMutations() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
+    const approveKey = useIdempotencyKey()
+    const executeKey = useIdempotencyKey()
     const invalidate = () => {
         markLocalMutation()
         invalidateCrossFeature(queryClient, [
@@ -43,12 +46,14 @@ export function useProfitDistributionMutations() {
         onSuccess: invalidate,
     })
     const approve = useMutation({
-        mutationFn: (id: number) => partnersApi.approveProfitDistribution(id),
-        onSuccess: invalidate,
+        mutationFn: (id: number) => partnersApi.approveProfitDistribution(id, approveKey.keyFor(id)),
+        onSuccess: () => { approveKey.succeeded(); invalidate() },
+        onError: approveKey.failed,
     })
     const execute = useMutation({
-        mutationFn: (id: number) => partnersApi.executeProfitDistribution(id),
-        onSuccess: invalidate,
+        mutationFn: (id: number) => partnersApi.executeProfitDistribution(id, executeKey.keyFor(id)),
+        onSuccess: () => { executeKey.succeeded(); invalidate() },
+        onError: executeKey.failed,
     })
     const remove = useMutation({
         mutationFn: (id: number) => partnersApi.deleteProfitDistribution(id),

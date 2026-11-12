@@ -84,36 +84,49 @@ class ContactService:
 
     @classmethod
     def recover_written_off_debt_from_request(cls, request, contact):
-        from decimal import Decimal
+        from decimal import Decimal, InvalidOperation
 
         from rest_framework.exceptions import ValidationError
         amount_str = request.data.get('amount')
         if not amount_str: raise ValidationError('Debe especificar el monto recuperado.')
-        amount = Decimal(amount_str)
+        try:
+            amount = Decimal(str(amount_str))
+        except InvalidOperation:
+            raise ValidationError('Monto inválido.')
         entry = cls.recover_written_off_debt(contact, amount)
         return {'message': f'Recuperación procesada por {amount}.', 'journal_entry': entry.display_id}
 
     @classmethod
     def individual_dividend_payment_from_request(cls, request, contact):
-        from decimal import Decimal
+        from decimal import Decimal, InvalidOperation
 
         from rest_framework.exceptions import ValidationError
 
         from treasury.models import TreasuryAccount
         v = request.data
         if 'amount' not in v or 'treasury_account_id' not in v: raise ValidationError('Monto y cuenta requeridos.')
-        ta = TreasuryAccount.objects.get(pk=v['treasury_account_id'])
-        entry = cls.individual_dividend_payment(partner=contact, amount=Decimal(str(v['amount'])), treasury_account=ta, date=v.get('date'), created_by=request.user)
+        ta = TreasuryAccount.objects.filter(pk=v['treasury_account_id']).first()
+        if ta is None:
+            raise ValidationError('La cuenta de tesorería no existe.')
+        try:
+            amount = Decimal(str(v['amount']))
+        except InvalidOperation:
+            raise ValidationError('Monto inválido.')
+        entry = cls.individual_dividend_payment(partner=contact, amount=amount, treasury_account=ta, date=v.get('date'), created_by=request.user)
         return {'message': 'Pago de dividendos procesado.', 'journal_entry': entry.display_id}
 
     @classmethod
     def mass_mobilize_retained_earnings_from_request(cls, request):
-        from decimal import Decimal
+        from decimal import Decimal, InvalidOperation
 
         from rest_framework.exceptions import ValidationError
         amount = request.data.get('amount')
         if not amount: raise ValidationError('Monto requerido.')
-        cls.mass_mobilize_retained_earnings(amount=Decimal(str(amount)), date=request.data.get('date'), created_by=request.user)
+        try:
+            amount = Decimal(str(amount))
+        except InvalidOperation:
+            raise ValidationError('Monto inválido.')
+        cls.mass_mobilize_retained_earnings(amount=amount, date=request.data.get('date'), created_by=request.user)
         return {'message': 'Utilidades retenidas movilizadas exitosamente.'}
 
     @staticmethod

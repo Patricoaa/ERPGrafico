@@ -100,6 +100,7 @@ WAVE_2 = [
     ("contacts.views.ContactViewSet", "equity_transfer", "contacts.post_partnertransaction"),
     ("contacts.views.ContactViewSet", "individual_dividend_payment", "contacts.post_partnertransaction"),
     ("contacts.views.ContactViewSet", "partner_transactions", "contacts.post_partnertransaction"),
+    ("contacts.views.ContactViewSet", "register_partner_transaction", "contacts.post_partnertransaction"),
     ("contacts.views.ContactViewSet", "mass_mobilize_retained_earnings", "contacts.post_partnertransaction"),
     # Distribución de utilidades
     ("contacts.profit_distribution_views.ProfitDistributionResolutionViewSet", "approve", "contacts.approve_profitdistributionresolution"),

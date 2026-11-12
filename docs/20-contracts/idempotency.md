@@ -59,6 +59,13 @@ La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el c�
 | `treasury.reconciliation.match` | `POST /api/treasury/statement-lines/match_group/` | Matching automático de un grupo de líneas |
 | `treasury.transfer.register` | `POST /api/treasury/dashboard/register_transfer/` | Transferencia entre cuentas — dos asientos |
 | `contacts.dividend.mass_payment` | `POST /api/contacts/profit-distributions/{id}/mass_payment/` | Pago masivo de dividendos — salida de dinero, un doble envío de un pago parcial se aplicaría dos veces (ADR-0119) |
+| `contacts.partner.equity_subscription` | `POST /api/contacts/equity_subscription/` | Suscripción/reducción de capital — asiento y participación (ADR-0132) |
+| `contacts.partner.equity_transfer` | `POST /api/contacts/equity_transfer/` | Transferencia de participación entre socios (ADR-0132) |
+| `contacts.partner.transaction` | `POST /api/contacts/{id}/partner_transactions/` | Aporte o retiro de socio — mueve tesorería (ADR-0132) |
+| `contacts.partner.dividend_payment` | `POST /api/contacts/{id}/individual_dividend_payment/` | Pago individual de dividendo — salida de dinero (ADR-0132) |
+| `contacts.partner.mobilize_earnings` | `POST /api/contacts/mass_mobilize_retained_earnings/` | Movilización masiva de utilidades retenidas (ADR-0132) |
+| `contacts.distribution.approve` | `POST /api/contacts/profit-distributions/{id}/approve/` | Aprobación de distribución (ADR-0132) |
+| `contacts.distribution.execute` | `POST /api/contacts/profit-distributions/{id}/execute/` | Ejecución contable de la distribución — asiento y movimientos de socios (ADR-0132) |
 
 > Nota: `TreasuryMovementViewSet` está registrado bajo dos rutas (`movements` y `payments`, [treasury/urls.py:26-27](../../backend/treasury/urls.py#L26)) — los decorators de ese viewset aplican a ambas.
 >

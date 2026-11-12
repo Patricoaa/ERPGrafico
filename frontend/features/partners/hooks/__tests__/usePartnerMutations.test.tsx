@@ -55,7 +55,7 @@ describe("mutaciones de socios", () => {
 
         await act(() => result.current.execute.mutateAsync(7))
 
-        expect(executeProfitDistribution).toHaveBeenCalledWith(7)
+        expect(executeProfitDistribution).toHaveBeenCalledWith(7, expect.stringMatching(/^[0-9a-f-]{36}$/))
         await waitFor(() => expect(invalidatedKeys(invalidate)).toContainEqual(PARTNER_KEYS.all))
     })
 

@@ -99,13 +99,13 @@ Frontend:
 
 **Salida:** ciclo de vida completo gestionable desde UI. **Riesgo:** bajo.
 
-## Fase 5 — Backend: vistas delgadas, errores y seguridad de escritura
+## Fase 5 — Backend: vistas delgadas, errores y seguridad de escritura — HECHA (salvo `PartnerViewSet`, ver ADR-0132)
 
-- [ ] Extraer lógica de `ContactViewSet` de socios a `*_from_request`/services ya existentes; vistas ≤ 20 líneas (invariante 10). Considerar `PartnerViewSet` propio (`/partners/…`) con rutas `equity-subscriptions`, `equity-transfers`, `transactions`, manteniendo alias deprecados un ciclo.
-- [ ] Reemplazar `except Exception → 500 str(e)` y `except Exception → 400` por manejo común de `ValidationError` (handler DRF); nunca exponer `str(e)` de excepciones inesperadas.
-- [ ] Separar `partner_transactions` GET/POST en acciones distintas.
-- [ ] `Idempotency-Key` (`idempotent_endpoint`) en: `equity_subscription`, `equity_transfer`, `partner_transactions` POST, `individual_dividend_payment`, `mass_mobilize_retained_earnings`, `execute`, `approve`. Frontend envía la key (patrón de `massPaymentProfitDistribution`).
-- [ ] Revisar N+1 de `partners` / `partner_statement` / `partners_summary` con test de conteo de queries (invariante 14).
+- [x] Extraer lógica de `ContactViewSet` de socios a `*_from_request`/services ya existentes; vistas ≤ 20 líneas (invariante 10). Considerar `PartnerViewSet` propio (`/partners/…`) con rutas `equity-subscriptions`, `equity-transfers`, `transactions`, manteniendo alias deprecados un ciclo.
+- [x] Reemplazar `except Exception → 500 str(e)` y `except Exception → 400` por manejo común de `ValidationError` (handler DRF); nunca exponer `str(e)` de excepciones inesperadas.
+- [x] Separar `partner_transactions` GET/POST en acciones distintas.
+- [x] `Idempotency-Key` (`idempotent_endpoint`) en: `equity_subscription`, `equity_transfer`, `partner_transactions` POST, `individual_dividend_payment`, `mass_mobilize_retained_earnings`, `execute`, `approve`. Frontend envía la key (patrón de `massPaymentProfitDistribution`).
+- [x] Revisar N+1 de `partners` / `partner_statement` / `partners_summary` con test de conteo de queries (invariante 14).
 
 **Salida:** backend alineado con invariantes. **Riesgo:** medio (cambio de rutas si se separa el ViewSet; mitigar con alias).
 

@@ -9,7 +9,7 @@ Handles:
 - Balance calculations and validations
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -645,12 +645,37 @@ class PartnerService:
 
     # ──────────────────────────────────────────────────────────────
     @staticmethod
+    def _parse_amount(raw, default=None) -> Decimal:
+        try:
+            return Decimal(str(raw if raw not in (None, "") else default))
+        except (InvalidOperation, TypeError):
+            raise ValidationError("Monto inválido.")
+
+    @staticmethod
+    @transaction.atomic
+    def equity_subscription_response(request) -> dict:
+        ptx = PartnerService.handle_equity_movement_from_payload(request.data, request.user)
+        return {
+            "message": "Movimiento de capital registrado.",
+            "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
+        }
+
+    @staticmethod
+    @transaction.atomic
+    def equity_transfer_response(request) -> dict:
+        seller_tx, _buyer_tx = PartnerService.equity_transfer_from_request(request)
+        return {
+            "message": "Transferencia completada.",
+            "journal_entry": seller_tx.journal_entry.display_id if seller_tx.journal_entry else None,
+        }
+
+    @staticmethod
     def equity_transfer_from_request(request) -> tuple:
         from contacts.models import Contact
 
         from_id = request.data.get("from_contact_id")
         to_id = request.data.get("to_contact_id")
-        amount = Decimal(str(request.data.get("amount", "0")))
+        amount = PartnerService._parse_amount(request.data.get("amount"), "0")
         date = request.data.get("date")
         description = request.data.get("description", "")
 
@@ -683,10 +708,7 @@ class PartnerService:
         if not all([transaction_type, amount_str, date]):
             raise ValidationError("Faltan campos obligatorios (transaction_type, amount, date).")
 
-        try:
-            amount = Decimal(amount_str)
-        except Exception:
-            raise ValidationError("Monto inválido.")
+        amount = PartnerService._parse_amount(amount_str)
 
         if transaction_type == "CAPITAL_CASH":
             return PartnerService.record_capital_contribution(
@@ -1027,6 +1049,14 @@ class PartnerService:
         if stake:
             return stake.percentage
         return partner.partner_equity_percentage or Decimal("0")
+
+    @staticmethod
+    def get_global_summary_payload() -> dict:
+        """Resumen global serializable (Decimals como string) para el dashboard de socios."""
+        summary = PartnerService.get_global_summary()
+        for key in ["total_capital", "total_provisional_withdrawals"]:
+            summary[key] = str(summary[key])
+        return summary
 
     @staticmethod
     def get_global_summary() -> dict:

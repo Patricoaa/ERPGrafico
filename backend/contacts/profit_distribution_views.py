@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -35,75 +34,42 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
         return qs
 
     def create(self, request, *args, **kwargs):
-        from decimal import Decimal
-
-        fiscal_year_id = request.data.get("fiscal_year_id") or request.data.get("fiscal_year")
-        net_result = request.data.get("net_result")
-        resolution_date = request.data.get("resolution_date")
-
-        try:
-            ProfitDistributionService.validate_create_data(fiscal_year_id, net_result, resolution_date)
-            res = ProfitDistributionService.create_draft_resolution(
-                fiscal_year_id=int(fiscal_year_id),
-                net_result=Decimal(str(net_result)),
-                resolution_date=resolution_date,
-                acta_number=request.data.get("acta_number", ""),
-                notes=request.data.get("notes", ""),
-                created_by=request.user,
-            )
-            return Response(self.get_serializer(res).data, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        res = ProfitDistributionService.create_draft_from_request(request)
+        return Response(self.get_serializer(res).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["patch"])
     def update_destinations(self, request, pk=None):
         """Update destinations for lines in a draft resolution"""
         resolution = self.get_object()
-        lines_data = request.data.get("lines", [])
+        ProfitDistributionService.update_draft_line_destinations(resolution, request.data.get("lines", []))
+        resolution.refresh_from_db()
+        return Response(self.get_serializer(resolution).data)
 
-        try:
-            ProfitDistributionService.update_draft_line_destinations(resolution, lines_data)
-            resolution.refresh_from_db()
-            return Response(self.get_serializer(resolution).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+    @idempotent_endpoint(scope="contacts.distribution.approve")
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
         """Approve a draft resolution"""
         resolution = self.get_object()
-        try:
-            ProfitDistributionService.approve_resolution(resolution, request.user)
-            return Response(self.get_serializer(resolution).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        ProfitDistributionService.approve_resolution(resolution, request.user)
+        return Response(self.get_serializer(resolution).data)
 
+    @idempotent_endpoint(scope="contacts.distribution.execute")
     @action(detail=True, methods=["post"])
     def execute(self, request, pk=None):
         """Execute an approved resolution (creates journal entry & partner txs)"""
         resolution = self.get_object()
-        try:
-            ProfitDistributionService.execute_resolution(resolution, request.user)
-            return Response(self.get_serializer(resolution).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        ProfitDistributionService.execute_resolution(resolution, request.user)
+        return Response(self.get_serializer(resolution).data)
 
     @action(detail=True, methods=["post"])
     def recalculate(self, request, pk=None):
         """Recalculate lines for a draft resolution with fresh data"""
         resolution = self.get_object()
-        try:
-            ProfitDistributionService.recalculate_draft_resolution(resolution)
-            return Response(self.get_serializer(resolution).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        ProfitDistributionService.recalculate_draft_resolution(resolution)
+        return Response(self.get_serializer(resolution).data)
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        try:
-            ProfitDistributionService.validate_can_delete(instance)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        ProfitDistributionService.validate_can_delete(self.get_object())
         return super().destroy(request, *args, **kwargs)
 
     @idempotent_endpoint(scope="contacts.dividend.mass_payment")
@@ -113,11 +79,8 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
         treasury_account_id = request.data.get("treasury_account_id")
         payments_data = request.data.get("payments_data", [])
 
-        try:
-            ProfitDistributionService.execute_mass_payment(
-                resolution, treasury_account_id, payments_data, request.user
-            )
-        except DjangoValidationError as e:
-            return Response({"error": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        ProfitDistributionService.execute_mass_payment(
+            resolution, treasury_account_id, payments_data, request.user
+        )
         # Reload: the instance above holds its payments as prefetched before this one.
         return Response(self.get_serializer(self.get_object()).data)
