@@ -67,7 +67,7 @@ El design system es sólido y consistente: DESIGN.md + contratos Capa-20 vivos, 
 
 | Archivo | Líneas | Reimplementa | Fix |
 |---|---|---|---|
-| `features/tax/components/F29CloseModal.tsx` | 39–62 | `BaseModal` | `<BaseModal open title>` + `FormFooter` |
+| `features/tax/components/F29CloseModal.tsx` (retirado en ADR-0134) | 39–62 | `BaseModal` | `<BaseModal open title>` + `FormFooter` |
 | `features/treasury/credit-lines/CreditLineDrawer.tsx` | 145–323 | `Drawer` | `Sheet`/`SheetContent` → `Drawer` compartido |
 | `features/accounting/hooks/useReopenConfirm.tsx` | 53–81 | `ActionConfirmModal` | Reemplazar todo el bloque `AlertDialog` |
 | `features/production/components/steps/ManufacturingConfigStep.tsx` | 556–572 | `ActionConfirmModal` | ídem |

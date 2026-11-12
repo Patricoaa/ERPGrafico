@@ -84,7 +84,7 @@ La fuente es `TaxPeriod.declaration_summary` (`vat_to_pay`, `total_paid`, `is_fu
 
 ### 2. Checklist del cierre contable
 
-**Backend** — `TaxPeriodService.get_period_status` (`backend/tax/services.py`) agrega a la respuesta listas de
+**Backend** — `AccountingPeriodService.get_period_status` (`backend/tax/services.py`) agrega a la respuesta listas de
 pendientes por categoría, acotadas (p. ej. hasta 50 por categoría, con el total real en el `*_count` existente):
 
 - `draft_entries`: asientos en borrador → `{id, label, amount, date}` (label registry `accounting.journalentry`)
@@ -131,6 +131,7 @@ implementación, no una decisión de producto.
 - Tope de 50 pendientes por categoría en la respuesta.
 - Qué es obligatorio vs. sugerido no cambia.
 - Eliminar `F29PaymentModal`/`F29CloseModal` si quedan sin consumidores tras la extracción.
+- Resultado real de la estrategia de capas: los documentos y el wizard no se apilan sobre el checklist; este se oculta mientras están activos (desviación registrada en ADR-0134).
 
 ## Qué se deja al implementador
 

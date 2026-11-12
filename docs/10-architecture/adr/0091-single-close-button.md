@@ -43,7 +43,7 @@ The 7 violating components were migrated:
 - `DateRangeFilter` → `BaseModal` + footer (Cancel/Aceptar)
 - `InventoryCountClientView` → `BaseModal` + preserved `onPointerDownOutside`
 - `CartItem` (POS UOM selector) → `BaseModal size="xs"`
-- `F29CloseModal` → `BaseModal` + `FileText` icon
+- `F29CloseModal` → `BaseModal` + `FileText` icon (retirado en ADR-0134)
 - `PayrollPaymentsDrawer` → `Drawer` (shared)
 - `CreditLineDrawer` → `Drawer` (shared) + `boundary="screen"` for nested drawer + footer with form submit
 

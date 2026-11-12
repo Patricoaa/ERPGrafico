@@ -468,6 +468,8 @@ statement esté en `OPEN` (no pagado, no anulado).
 
 **Edit policy (ADR-0091):** `F29Declaration` registrada (con `journal_entry`) solo admite `notes` y `document`; no se elimina; `create_or_update_declaration` rechaza recalcular un período ya registrado. `F29Payment` (`POSTED` → `CANCELLED`) con asiento es inmutable y no se elimina; se corrige con `POST /tax/payments/{id}/annul/`. Los pagos anulados no cuentan como pagados.
 
+**Fases del wizard F29 (ADR-0134):** la fase se deriva del estado, no se persiste (`deriveF29Phase`): `prior` (sin declaración registrada) → `payment` (registrada con `vat_to_pay > 0` y saldo sin cubrir; se omite si `vat_to_pay <= 0`) → `close` (saldo cubierto, período abierto) → `done` (`TaxPeriod` cerrado, vista de solo lectura). Un `vat_to_pay` no numérico se trata como `payment` (fail-safe).
+
 ## TaxPeriod / AccountingPeriod
 
 | Status | Intent | Transitions allowed to |
