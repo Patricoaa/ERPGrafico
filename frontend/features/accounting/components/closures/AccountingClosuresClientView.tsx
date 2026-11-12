@@ -8,9 +8,7 @@ import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
 import { type AccountingPeriod, type TaxPeriod } from '../../types';
-import { useTaxPeriods, useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod, useCreateTaxPayment, DeclarationWizard, F29PaymentModal, F29CloseModal } from '@/features/tax';
-import { showApiError } from '@/lib/errors';
-import type { TaxDeclaration, TaxPaymentData } from '@/features/tax';
+import { useTaxPeriods, useReopenPeriod as useReopenTaxPeriod, DeclarationWizard } from '@/features/tax';
 import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -22,8 +20,6 @@ import { buildClosureTree } from '../../utils/closureTree';
 import { useReopenConfirm } from '../../hooks/useReopenConfirm';
 import { closureActions, type ClosureActionsCtx } from './closureActions';
 import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
-import { toast } from 'sonner';
-import { generateUuidV4 } from '@/lib/uuid'
 
 interface AccountingClosuresClientViewProps {
     externalOpen?: boolean;
@@ -61,22 +57,12 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         () => ((taxPeriodsRaw as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[],
         [taxPeriodsRaw]
     );
-    const { closePeriod: closeTaxPeriod, isClosingPeriod: isClosingTaxPeriod } = useCloseTaxPeriod();
     const { reopenPeriod: reopenTaxPeriod, isReopeningPeriod: isReopeningTaxPeriod } = useReopenTaxPeriod();
-    const isLoadingTaxAction = isClosingTaxPeriod || isReopeningTaxPeriod;
+    const isLoadingTaxAction = isReopeningTaxPeriod;
 
     const [activeYearToClose] = useState<number | null>(null);
     const [declarationTarget, setDeclarationTarget] = useState<{ id?: number; year?: number; month?: number } | undefined>(undefined);
     const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
-
-    // Payment state
-    const [paymentPeriodId, setPaymentPeriodId] = useState<number | null>(null);
-    const [paymentDeclaration, setPaymentDeclaration] = useState<TaxDeclaration | null>(null);
-    const { createTaxPayment } = useCreateTaxPayment();
-
-    // F29 Close state
-    const [closeF29PeriodId, setCloseF29PeriodId] = useState<number | null>(null);
-    const [closeF29Declaration, setCloseF29Declaration] = useState<TaxDeclaration | null>(null);
 
     // Checklist state before closing accounting period
     const [pendingClosePeriodId, setPendingClosePeriodId] = useState<number | null>(null);
@@ -156,110 +142,21 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         setDeclarationWizardOpen(true);
     }, []);
 
-    const handleDeclarationSuccess = useCallback(() => {
+    // The wizard stays open after registering/paying; the lists refresh whenever it closes
+    // (Finalizar or leaving mid-way) so the row reflects the phase reached.
+    const handleDeclarationOpenChange = useCallback((open: boolean) => {
+        if (open) return;
         setDeclarationWizardOpen(false);
         setDeclarationTarget(undefined);
         refetchTaxPeriods();
         fetchPeriods();
     }, [refetchTaxPeriods, fetchPeriods]);
 
-    const handleCloseTaxPeriod = useCallback(async (id: number) => {
-        const taxPeriod = taxPeriods.find(p => p.id === id)
-        if (taxPeriod?.declaration_summary) {
-            setCloseF29PeriodId(id)
-            setCloseF29Declaration({
-                id: taxPeriod.declaration_summary.id,
-                vat_to_pay: taxPeriod.declaration_summary.vat_to_pay,
-                total_paid: taxPeriod.declaration_summary.total_paid,
-                is_fully_paid: taxPeriod.declaration_summary.is_fully_paid,
-                payments: taxPeriod.declaration_summary.payments || [],
-                folio_number: taxPeriod.declaration_summary.folio_number,
-                tax_period_display: `${taxPeriod.month_display} ${taxPeriod.year}`,
-                tax_period_year: taxPeriod.year,
-                tax_period_month: taxPeriod.month,
-                ppm_amount: 0,
-                withholding_tax: 0,
-                vat_credit_carryforward: 0,
-                vat_correction_amount: 0,
-                second_category_tax: 0,
-                loan_retention: 0,
-                ila_tax: 0,
-                vat_withholding: 0,
-                tax_rate: 0,
-            })
-        }
-    }, [taxPeriods]);
-
-    const handleConfirmCloseTaxPeriod = useCallback(async () => {
-        if (!closeF29PeriodId) return
-        const key = generateUuidV4()
-        try {
-            await closeTaxPeriod({ id: closeF29PeriodId, idempotencyKey: key });
-        } catch (error: unknown) {
-            showApiError(error, "No se pudo cerrar el período F29");
-            throw error;
-        }
-        refetchTaxPeriods();
-        fetchPeriods();
-        setCloseF29PeriodId(null);
-        setCloseF29Declaration(null);
-    }, [closeF29PeriodId, closeTaxPeriod, refetchTaxPeriods, fetchPeriods]);
-
     const handleReopenTaxPeriod = useCallback(async (params: { id: number; reason?: string }) => {
         await reopenTaxPeriod(params);
         refetchTaxPeriods();
         fetchPeriods();
     }, [reopenTaxPeriod, refetchTaxPeriods, fetchPeriods]);
-
-    const handlePayF29 = useCallback((periodId: number) => {
-        const taxPeriod = taxPeriods.find(p => p.id === periodId)
-        if (taxPeriod?.declaration_summary) {
-            setPaymentPeriodId(periodId)
-            setPaymentDeclaration({
-                id: taxPeriod.declaration_summary.id,
-                vat_to_pay: taxPeriod.declaration_summary.vat_to_pay,
-                total_paid: taxPeriod.declaration_summary.total_paid,
-                is_fully_paid: taxPeriod.declaration_summary.is_fully_paid,
-                payments: taxPeriod.declaration_summary.payments || [],
-                folio_number: taxPeriod.declaration_summary.folio_number,
-                tax_period_display: `${taxPeriod.month_display} ${taxPeriod.year}`,
-                tax_period_year: taxPeriod.year,
-                tax_period_month: taxPeriod.month,
-                ppm_amount: 0,
-                withholding_tax: 0,
-                vat_credit_carryforward: 0,
-                vat_correction_amount: 0,
-                second_category_tax: 0,
-                loan_retention: 0,
-                ila_tax: 0,
-                vat_withholding: 0,
-                tax_rate: 0,
-            })
-        }
-    }, [taxPeriods])
-
-    const handlePaymentConfirm = useCallback(async (data: TaxPaymentData) => {
-        if (!paymentDeclaration) return
-        try {
-            const dateString = new Date().toISOString().split('T')[0]
-            await createTaxPayment({
-                declaration: paymentDeclaration.id,
-                payment_date: data.documentDate || dateString,
-                amount: data.amount,
-                payment_method: data.paymentMethod,
-                reference: data.reference || '',
-                treasury_account: data.treasury_account_id,
-                notes: `Pago F29 - ${paymentDeclaration.tax_period_display}`,
-            })
-            setPaymentPeriodId(null)
-            setPaymentDeclaration(null)
-            toast.success("Pago F29 registrado con éxito")
-            refetchTaxPeriods()
-            fetchPeriods()
-        } catch {
-            // error handled by mutation
-        }
-    }, [paymentDeclaration, createTaxPayment, refetchTaxPeriods, fetchPeriods])
 
     const handleClosePeriodWithChecklist = useCallback(async (periodId: number) => {
         const period = periods.find(p => p.id === periodId)
@@ -337,8 +234,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         onClosePeriod: handleClosePeriodWithChecklist,
         onReopenPeriod: confirmReopenPeriod,
         onOpenDeclaration: handleOpenDeclaration,
-        onPayF29: handlePayF29,
-        onCloseTaxPeriod: (id) => { void handleCloseTaxPeriod(id) },
         onReopenTaxPeriod: confirmReopenTaxPeriod,
         isPeriodActionLoading: actionLoadingPeriod,
         isTaxActionLoading: isLoadingTaxAction,
@@ -370,16 +265,11 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
             <DeclarationWizard
                 isOpen={declarationWizardOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setDeclarationWizardOpen(false);
-                        setDeclarationTarget(undefined);
-                    }
-                }}
+                onOpenChange={handleDeclarationOpenChange}
                 periodId={declarationTarget?.id}
                 year={declarationTarget?.year}
                 month={declarationTarget?.month}
-                onSuccess={handleDeclarationSuccess}
+                onSuccess={() => handleDeclarationOpenChange(false)}
             />
 
             <EntityPanelTab label="accounting.fiscalyear" {...newFYPanel.tab}>
@@ -394,37 +284,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     />
                 )}
             </EntityPanelTab>
-
-            {/* F29 Close Modal */}
-            {closeF29Declaration && (
-                <F29CloseModal
-                    isOpen={closeF29PeriodId !== null}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setCloseF29PeriodId(null)
-                            setCloseF29Declaration(null)
-                        }
-                    }}
-                    onConfirm={handleConfirmCloseTaxPeriod}
-                    declaration={closeF29Declaration}
-                    isClosing={isClosingTaxPeriod}
-                />
-            )}
-
-            {/* F29 Payment Modal */}
-            {paymentDeclaration && (
-                <F29PaymentModal
-                    isOpen={paymentPeriodId !== null}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setPaymentPeriodId(null)
-                            setPaymentDeclaration(null)
-                        }
-                    }}
-                    declaration={paymentDeclaration}
-                    onConfirmPayment={handlePaymentConfirm}
-                />
-            )}
 
             {/* Accounting Period Pre-Close Checklist */}
             <AccountingPeriodCloseChecklistModal

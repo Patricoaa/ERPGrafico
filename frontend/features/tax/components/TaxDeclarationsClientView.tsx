@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
     CheckCircle2,
@@ -9,9 +9,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { toast } from "sonner"
 import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
-import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -19,13 +17,12 @@ import { Collection, useCollectionViewMode, useEntityCollection } from "@/compon
 import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
 import { taxPeriodEntity, taxPeriodViews } from '../entity-view/taxPeriod.entity'
 
-import { type TaxPeriod, type TaxDeclaration, type TaxPaymentData } from "../types"
+import { type TaxPeriod } from "../types"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { EntityPanelTab } from "@/components/providers"
 import { SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
-import { useCreateTaxPayment } from "../hooks/useTaxMutations"
+import { useTaxPeriods } from "../hooks/useTaxQueries"
 
 interface TaxDeclarationsClientViewProps {
     externalOpen?: boolean
@@ -37,74 +34,16 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
-    // Declarar (wizard, `?selected` sin acción o botón externo) y pagar F29 (`?action=pay`) comparten la ruta.
+    // Declarar, pagar y cerrar F29 viven en el wizard unificado (`?selected` o botón externo).
     const declarationPanel = useEntityPanelRoute<TaxPeriod>({ endpoint: '/tax/periods', actions: [null], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const paymentPanel = useEntityPanelRoute<TaxPeriod>({ endpoint: '/tax/periods', actions: ['pay'], create: false })
-    const selectedFromUrl = paymentPanel.entity
-
     const { taxPeriods: periodsData, isLoading: isLoadingPeriods, isError: isPeriodsError, refetch: refetchPeriods } = useTaxPeriods()
-    const { fetchDeclarations } = useLazyTaxDeclarations()
-    const { createTaxPayment } = useCreateTaxPayment()
 
     const periods = ((periodsData as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[]
     const isLoading = isLoadingPeriods
 
-    const action = searchParams.get('action')
-    const isPaymentOpen = paymentPanel.open
-
     const handleCloseModal = () => {
-        setSelectedDeclaration(null)
         declarationPanel.close()
     }
-
-    const openPaymentModal = async (period: TaxPeriod) => {
-        if (period.declaration_summary) {
-            setSelectedDeclaration({
-                id: period.declaration_summary.id,
-                vat_to_pay: period.declaration_summary.vat_to_pay,
-                total_paid: period.declaration_summary.total_paid,
-                is_fully_paid: period.declaration_summary.is_fully_paid,
-                payments: period.declaration_summary.payments || [],
-                folio_number: period.declaration_summary.folio_number,
-                tax_period_display: `${period.month_display} ${period.year}`,
-                tax_period_year: period.year,
-                tax_period_month: period.month,
-                ppm_amount: 0,
-                withholding_tax: 0,
-                vat_credit_carryforward: 0,
-                vat_correction_amount: 0,
-                second_category_tax: 0,
-                loan_retention: 0,
-                ila_tax: 0,
-                vat_withholding: 0,
-                tax_rate: 0
-            })
-        } else {
-            try {
-                const declarations = await fetchDeclarations({ tax_period__year: period.year, tax_period__month: period.month })
-                if (declarations.length > 0) {
-                    setSelectedDeclaration({
-                        ...declarations[0],
-                        tax_period_display: `${period.month_display} ${period.year}`
-                    })
-                } else {
-                    toast.error("No se encontró una declaración válida para pagar")
-                }
-            } catch {
-                toast.error("Error al buscar la declaración")
-            }
-        }
-    }
-
-    // Trigger payment data fetch when URL has action=pay
-    useEffect(() => {
-        if (selectedFromUrl && action === 'pay') {
-            requestAnimationFrame(() => {
-                openPaymentModal(selectedFromUrl)
-            })
-        }
-    }, [selectedFromUrl, action])
 
     const handleOpenWizard = (period: TaxPeriod) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -113,34 +52,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
-    const handleOpenPayment = (period: TaxPeriod) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(period.id))
-        params.set('action', 'pay')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
-
-    const { serverDate, dateString } = useServerDate()
-
-    const handlePaymentConfirm = async (data: TaxPaymentData) => {
-        if (!selectedDeclaration) return
-        try {
-            await createTaxPayment({
-                declaration: selectedDeclaration.id,
-                payment_date: data.documentDate || dateString || "",
-                amount: data.amount,
-                payment_method: data.paymentMethod,
-                reference: data.reference || '',
-                treasury_account: data.treasury_account_id,
-                notes: `Pago F29 - ${selectedDeclaration.tax_period_display}`
-            })
-
-            toast.success("Pago de impuestos registrado correctamente")
-            handleCloseModal()
-        } catch {
-            // Error handled by mutation's onError
-        }
-    }
+    const { serverDate } = useServerDate()
 
     const config: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
@@ -160,7 +72,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const currentVatToPay = latestPeriod?.declaration_summary?.vat_to_pay || 0
 
     const taxDeclarationActionsCtx: TaxDeclarationActionsCtx = {
-        onPayment: handleOpenPayment,
+        onPayment: handleOpenWizard,
         onWizard: handleOpenWizard,
     }
 
@@ -252,25 +164,19 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                 {(open) => (
                     <DeclarationWizard
                         isOpen={open}
-                        onOpenChange={(open) => !open && handleCloseModal()}
-                        periodId={declarationPanel.selectedId ?? undefined}
-                        onSuccess={() => {
+                        onOpenChange={(open) => {
+                            if (open) return
+                            // The wizard stays open while the user registers/pays; refresh on leaving it.
                             refetchPeriods()
                             handleCloseModal()
                         }}
+                        periodId={declarationPanel.selectedId ?? undefined}
+                        onSuccess={() => refetchPeriods()}
                         existingPeriods={periods}
                     />
                 )}
             </EntityPanelTab>
 
-            {selectedDeclaration && (
-                <F29PaymentModal
-                    isOpen={isPaymentOpen}
-                    onOpenChange={(open) => !open && handleCloseModal()}
-                    declaration={selectedDeclaration}
-                    onConfirmPayment={handlePaymentConfirm}
-                />
-            )}
         </div>
     )
 }

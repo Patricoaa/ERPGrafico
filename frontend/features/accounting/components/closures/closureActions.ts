@@ -1,5 +1,6 @@
 import { CalendarPlus, FileCheck, FileText, ShieldAlert, Undo2 } from 'lucide-react'
 import { createEntityActions, type StructuredAction } from '@/components/shared'
+import { deriveF29Phase } from '@/features/tax'
 import { monthState, yearState, type ClosureRow } from '../../utils/closureTree'
 
 export interface ClosureActionsCtx {
@@ -9,8 +10,6 @@ export interface ClosureActionsCtx {
     onClosePeriod: (id: number) => void
     onReopenPeriod: (id: number) => void
     onOpenDeclaration: (params: { id?: number; year: number; month: number }) => void
-    onPayF29: (taxPeriodId: number) => void
-    onCloseTaxPeriod: (taxPeriodId: number) => void
     onReopenTaxPeriod: (taxPeriodId: number) => void
     isPeriodActionLoading: boolean
     isTaxActionLoading: boolean
@@ -38,7 +37,8 @@ export function closureActionList(row: ClosureRow, ctx: ClosureActionsCtx): Stru
     }
     const { acct, tax } = row
     const s = monthState(row)
-    const canDeclare = !tax || (!s.taxClosed && !s.hasDeclaration)
+    const phase = deriveF29Phase(tax ?? null)
+    const f29Label = phase === 'payment' ? 'Registrar pago F29' : phase === 'close' ? 'Cerrar F29' : null
     const declarationDoc = tax?.declaration_summary?.document
     return [
         { action: 'unlock', icon: CalendarPlus, label: 'Abrir periodo contable', onClick: () => ctx.onCreatePeriod(row.year, row.month), disabled: ctx.isPeriodActionLoading, visible: !acct },
@@ -47,16 +47,15 @@ export function closureActionList(row: ClosureRow, ctx: ClosureActionsCtx): Stru
         // Shown disabled so the reason stays visible (the former card's dimmed lock "Bloqueado por cierre F29").
         { action: 'reopen', label: 'Reabrir periodo contable (bloqueado por cierre F29)', onClick: () => undefined, disabled: true, visible: !!acct && s.acctClosed && s.taxFrozen },
         { separator: true },
+        // One contextual primary F29 action: the wizard opens in the phase the TaxPeriod is in.
         {
-            action: 'post',
-            icon: FileText,
-            label: !acct ? 'Declarar F29 (abre el periodo contable primero)' : s.acctClosed ? 'Declarar F29 (periodo contable cerrado)' : 'Declarar F29',
+            action: phase === 'close' ? 'lock' : phase === 'payment' ? 'pay' : 'post',
+            icon: phase === 'close' ? FileCheck : FileText,
+            label: f29Label ?? (!acct ? 'Declarar F29 (abre el periodo contable primero)' : s.acctClosed ? 'Declarar F29 (periodo contable cerrado)' : 'Declarar F29'),
             onClick: () => ctx.onOpenDeclaration({ id: tax?.id, year: row.year, month: row.month }),
-            disabled: ctx.isTaxActionLoading || !acct || s.acctClosed,
-            visible: canDeclare,
+            disabled: ctx.isTaxActionLoading || (phase === 'prior' && (!acct || s.acctClosed)),
+            visible: phase !== 'done',
         },
-        { action: 'pay', label: 'Pagar F29', onClick: () => tax && ctx.onPayF29(tax.id), disabled: ctx.isTaxActionLoading, visible: !!tax && !s.taxClosed && s.hasDeclaration && !s.isFullyPaid && s.requiresPayment },
-        { action: 'lock', icon: FileCheck, label: 'Cerrar F29', onClick: () => tax && ctx.onCloseTaxPeriod(tax.id), disabled: ctx.isTaxActionLoading, visible: !!tax && !s.taxClosed && s.hasDeclaration && (s.isFullyPaid || !s.requiresPayment) },
         { action: 'reopen', icon: Undo2, label: 'Reabrir F29', onClick: () => tax && ctx.onReopenTaxPeriod(tax.id), disabled: ctx.isTaxActionLoading, visible: !!tax && s.taxClosed && !s.acctClosed },
         { action: 'download', label: 'Ver comprobante F29', onClick: () => declarationDoc && window.open(declarationDoc, '_blank', 'noopener,noreferrer'), visible: !!declarationDoc },
     ]

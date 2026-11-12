@@ -14,7 +14,7 @@ const summary = (vat: number, paid: boolean): TaxPeriod["declaration_summary"] =
 
 const ctx: ClosureActionsCtx = {
     onCloseYear: vi.fn(), onReopenYear: vi.fn(), onCreatePeriod: vi.fn(), onClosePeriod: vi.fn(), onReopenPeriod: vi.fn(),
-    onOpenDeclaration: vi.fn(), onPayF29: vi.fn(), onCloseTaxPeriod: vi.fn(), onReopenTaxPeriod: vi.fn(),
+    onOpenDeclaration: vi.fn(), onReopenTaxPeriod: vi.fn(),
     isPeriodActionLoading: false, isTaxActionLoading: false, isFiscalYearLoading: false,
 }
 
@@ -38,12 +38,36 @@ describe("closure actions keep the rules of the former month card", () => {
         expect(actions.find((a) => !("separator" in a) && a.label?.startsWith("Declarar F29"))).toMatchObject({ disabled: true })
     })
 
-    it("open period, F29 declared and unpaid: close period, pay F29", () => {
-        expect(visible(closureActionList(month(acct(3, "OPEN"), tax(3, "OPEN", summary(5000, false))), ctx))).toEqual(["Cerrar periodo contable", "Pagar F29"])
+    it("open period, F29 declared and unpaid: close period, register F29 payment", () => {
+        expect(visible(closureActionList(month(acct(3, "OPEN"), tax(3, "OPEN", summary(5000, false))), ctx))).toEqual(["Cerrar periodo contable", "Registrar pago F29"])
     })
 
-    it("F29 declared and paid: it can be closed", () => {
+    it("F29 declared and paid: it can be closed from the single F29 action", () => {
         expect(visible(closureActionList(month(acct(3, "OPEN"), tax(3, "OPEN", summary(5000, true))), ctx))).toEqual(["Cerrar periodo contable", "Cerrar F29"])
+    })
+
+    it("exactly one primary F29 action per phase, never a standalone 'Pagar F29'", () => {
+        const cases: Array<[string, TaxPeriod | undefined]> = [
+            ["Declarar F29", undefined],
+            ["Declarar F29", tax(3, "OPEN")],
+            ["Registrar pago F29", tax(3, "OPEN", summary(5000, false))],
+            ["Cerrar F29", tax(3, "OPEN", summary(5000, true))],
+            ["Cerrar F29", tax(3, "OPEN", summary(0, true))],
+        ]
+        for (const [label, t] of cases) {
+            const labels = visible(closureActionList(month(acct(3, "OPEN"), t), ctx))
+            expect(labels.filter((l) => /F29/.test(l) && !/Reabrir|comprobante/.test(l))).toEqual([label])
+            expect(labels).not.toContain("Pagar F29")
+        }
+    })
+
+    it("the single F29 action opens the wizard for the tax period", () => {
+        const onOpenDeclaration = vi.fn()
+        const actions = closureActionList(month(acct(3, "OPEN"), tax(3, "OPEN", summary(5000, false))), { ...ctx, onOpenDeclaration })
+        const action = actions.find((a) => !("separator" in a) && a.label === "Registrar pago F29")
+        if (!action || "separator" in action) throw new Error("missing action")
+        action.onClick?.({} as never)
+        expect(onOpenDeclaration).toHaveBeenCalledWith({ id: 203, year: 2026, month: 3 })
     })
 
     it("closed F29 freezes the accounting period: only the disabled reason is shown", () => {
