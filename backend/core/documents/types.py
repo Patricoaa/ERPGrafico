@@ -62,6 +62,12 @@ class DocumentType:
     # (obj) -> texto breve que identifica el documento en una lista de relacionados
     # ("Transferencia · ref. 123", "Factura electrónica"). ADR-0083.
     detail: Callable[[models.Model], str | None] | None = None
+    # Etiqueta de vista sobre un modelo que ya tiene su propia etiqueta (p. ej. `contacts.partner`
+    # sobre Contact, junto a `contacts.contact`): () -> QuerySet que resuelve la etiqueta y
+    # restringe sus filas (un contacto no socio no existe como `contacts.partner`). ADR-0133.
+    queryset: Callable[[], models.QuerySet] | None = None
+    # Permiso de lectura de la etiqueta cuando no deriva de ella (no hay `contacts.view_partner`).
+    permission: str | None = None
 
 
 class DocumentTypeRegistry:
@@ -91,7 +97,18 @@ class DocumentTypeRegistry:
         return UniversalRegistry.get(label)
 
     @classmethod
+    def queryset_for(cls, label: str) -> models.QuerySet | None:
+        declared = cls._types.get(label)
+        if declared and declared.queryset:
+            return declared.queryset()
+        model = cls.model_for(label)
+        return model.objects.all() if model else None
+
+    @classmethod
     def model_for(cls, label: str) -> type[models.Model] | None:
+        declared = cls._types.get(label)
+        if declared and declared.queryset:
+            return declared.queryset().model
         entity = UniversalRegistry.get(label)
         if entity:
             return entity.model
@@ -122,6 +139,9 @@ class DocumentTypeRegistry:
 
     @classmethod
     def view_permission(cls, label: str) -> str:
+        declared = cls._types.get(label)
+        if declared and declared.permission:
+            return declared.permission
         entity = UniversalRegistry.get(label)
         if entity and entity.permission:
             return entity.permission
