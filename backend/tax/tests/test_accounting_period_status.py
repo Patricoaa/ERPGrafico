@@ -4,11 +4,15 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
 from accounting.models import JournalEntry
 from billing.models import Invoice
+from contacts.models import Contact
+from hr.models import Employee, Payroll
+from treasury.models import BankStatement, TreasuryAccount
 from tax.models import AccountingPeriod, TaxPeriod
 
 URL = "/api/tax/accounting-periods/{}/status_check/"
@@ -31,6 +35,39 @@ def _invoice(day=10):
         total=Decimal("1190"),
         total_net=Decimal("1000"),
         total_tax=Decimal("190"),
+    )
+
+
+_seq = {"n": 0}
+
+
+def _payroll():
+    _seq["n"] += 1
+    employee = Employee.objects.create(
+        contact=Contact.objects.create(name=f"Empleado {_seq['n']}", tax_id=f"1{_seq['n']:07d}-0"),
+        base_salary=500000,
+        dias_pactados=30,
+    )
+    return Payroll.objects.create(
+        employee=employee,
+        period_year=2026,
+        period_month=8,
+        status=Payroll.Status.DRAFT,
+        net_salary=Decimal("400000"),
+    )
+
+
+def _statement(day=10):
+    _seq["n"] += 1
+    account = TreasuryAccount.objects.create(name=f"Banco {_seq['n']}", code=f"1.1.7{_seq['n']}")
+    user, _ = get_user_model().objects.get_or_create(username="importer")
+    return BankStatement.objects.create(
+        treasury_account=account,
+        imported_by=user,
+        statement_date=date(2026, 8, day),
+        opening_balance=Decimal("0"),
+        closing_balance=Decimal("987654"),
+        status=BankStatement.Status.DRAFT,
     )
 
 
@@ -88,10 +125,36 @@ def test_status_query_count_constant(api_client, period):
     acc, _ = period
     _entry(1, 0)
     _invoice()
+    _payroll()
+    _statement()
     api_client.get(URL.format(acc.pk))  # warm-up
     few = _count_queries(api_client, acc)
     for n in range(9):
         _entry(2, n)
         _invoice()
+        _payroll()
+        _statement(3)
     many = _count_queries(api_client, acc)
     assert few == many
+
+
+def test_status_hides_payroll_and_statement_amounts(api_client, period):
+    """Sin permiso de nómina/banco el endpoint no filtra sueldos ni saldos."""
+    acc, _ = period
+    _payroll()
+    _statement()
+    data = api_client.get(URL.format(acc.pk)).json()
+    assert len(data["unposted_payrolls"]) == 1
+    assert len(data["unconfirmed_statements"]) == 1
+    assert data["unposted_payrolls"][0]["amount"] is None
+    assert data["unconfirmed_statements"][0]["amount"] is None
+    assert "400000" not in str(data) and "987654" not in str(data)
+
+
+def test_status_caps_invoices_at_50(api_client, period):
+    acc, _ = period
+    for _n in range(52):
+        _invoice()
+    data = api_client.get(URL.format(acc.pk)).json()
+    assert len(data["draft_invoices"]) == 50
+    assert data["draft_invoices_count"] == 52

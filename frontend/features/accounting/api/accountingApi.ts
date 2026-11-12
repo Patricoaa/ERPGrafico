@@ -4,7 +4,7 @@ import { toPage, type Page } from '@/lib/pagination'
 import { fetchBoundedList } from '@/lib/bounded-list'
 import { z } from 'zod'
 
-/** Documento pendiente del checklist de cierre (espejo de `TaxPeriodService.get_period_status`). */
+/** Documento pendiente del checklist de cierre (espejo de `AccountingPeriodService.get_period_status`). */
 const pendingDocumentSchema = z.object({
     id: z.number(),
     label: z.string(),

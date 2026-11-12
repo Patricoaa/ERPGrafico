@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { AlertCircle, Calendar, CheckCircle2, CreditCard, History, Plus } from "lucide-react"
@@ -35,7 +35,12 @@ export function F29PaymentStep({ declaration, onChanged }: F29PaymentStepProps) 
     const pendingAmount = Number(declaration.vat_to_pay) - Number(declaration.total_paid)
     const isFullyPaid = declaration.is_fully_paid || pendingAmount <= 0
 
+    // POST /tax/payments/ no es idempotente: un segundo "Confirmar" mientras el primero vuela duplicaría el pago.
+    const submittingRef = useRef(false)
+
     const handleConfirmPayment = async (data: TaxPaymentData) => {
+        if (submittingRef.current) return
+        submittingRef.current = true
         try {
             await createTaxPayment({
                 declaration: declaration.id,
@@ -49,6 +54,8 @@ export function F29PaymentStep({ declaration, onChanged }: F29PaymentStepProps) 
         } catch {
             // El hook ya mostró el error; el diálogo de pago queda abierto.
             return
+        } finally {
+            submittingRef.current = false
         }
         toast.success("Pago de impuestos registrado correctamente")
         setIsRegisteringPayment(false)

@@ -1169,7 +1169,7 @@ class AccountingPeriodService:
                 p.pk,
                 f"{p.employee.contact.name if p.employee.contact else p.employee.code} "
                 f"{p.period_month:02d}/{p.period_year}",
-                p.net_salary,
+                None,  # sin monto: el endpoint no valida permiso de nómina
                 date(p.period_year, p.period_month, 1),
             )
             for p in Payroll.objects.filter(period_year=year, period_month=month)
@@ -1181,7 +1181,7 @@ class AccountingPeriodService:
             _item(
                 b.pk,
                 f"{b.treasury_account.name} {b.statement_date.isoformat()}",
-                b.closing_balance,
+                None,  # sin monto: el endpoint no valida permiso de banco
                 b.statement_date,
             )
             for b in BankStatement.objects.filter(

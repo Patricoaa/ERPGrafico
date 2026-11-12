@@ -205,6 +205,30 @@ describe("AccountingPeriodCloseChecklistModal", () => {
         expect(props.month).toBe(10)
     })
 
+    it("keeps the wizard target when the status refetch changes tax_period_id mid-flow", async () => {
+        m.status = makeStatus({ tax_period_id: null })
+        const { rerender } = mount()
+        await press(buttonByText(/Abrir F29/))
+        expect((m.wizardProps as WizardProps).periodId).toBeUndefined()
+
+        m.status = makeStatus({ tax_period_id: 77 })
+        rerender(<AccountingPeriodCloseChecklistModal {...baseProps} />)
+
+        const props = m.wizardProps as WizardProps
+        expect(props.periodId).toBeUndefined()
+        expect(props.year).toBe(2026)
+        expect(props.month).toBe(10)
+    })
+
+    it("offers a CTA to the list when there are no payrolls or bank statements", () => {
+        m.status = makeStatus({ payroll_count: 0, payroll_posted_count: 0, reconciliation_count: 0, reconciliation_confirmed_count: 0 })
+        mount()
+        const payroll = screen.getByRole("link", { name: "Crear nómina" })
+        const statements = screen.getByRole("link", { name: "Ir a conciliaciones" })
+        expect(payroll.getAttribute("href")).toBeTruthy()
+        expect(statements.getAttribute("href")).toBeTruthy()
+    })
+
     it("refetches the status when the wizard closes", async () => {
         mount()
         await press(buttonByText(/Abrir F29/))

@@ -25,6 +25,12 @@ interface AccountingPeriodCloseChecklistModalProps {
 
 type DocumentLabel = 'accounting.journalentry' | 'billing.invoice' | 'hr.payroll' | 'treasury.bankstatement'
 
+interface WizardTarget {
+    periodId: number | undefined
+    year: number
+    month: number
+}
+
 interface ChecklistItem {
     key: string
     title: string
@@ -32,12 +38,17 @@ interface ChecklistItem {
     detail?: string
     /** Documentos pendientes: los listados (hasta 50) y el total real. */
     pending?: { label: DocumentLabel; documents: PendingDocument[]; total: number }
-    action?: { text: string; onClick: () => void }
+    action?: { text: string; onClick?: () => void; href?: string }
 }
 
 function errorMessage(error: unknown): string {
     const msg = (error as { response?: { data?: { error?: unknown } } } | null)?.response?.data?.error
     return typeof msg === 'string' && msg ? msg : 'Error al obtener el estado del período'
+}
+
+function zeroStateAction(label: DocumentLabel, text: string): ChecklistItem['action'] {
+    const href = getEntityMetadata(label)?.listUrl
+    return href ? { text, href } : undefined
 }
 
 function buildItems(status: AccountingPeriodStatus, openF29: () => void): { required: ChecklistItem[]; suggested: ChecklistItem[] } {
@@ -76,6 +87,7 @@ function buildItems(status: AccountingPeriodStatus, openF29: () => void): { requ
                 detail: status.payroll_count > 0
                     ? `${status.payroll_count} nómina(s) creadas, ${status.payroll_posted_count} contabilizada(s)`
                     : 'Sin nóminas creadas',
+                action: status.payroll_count === 0 ? zeroStateAction('hr.payroll', 'Crear nómina') : undefined,
                 pending: { label: 'hr.payroll', documents: status.unposted_payrolls, total: pendingPayrolls },
             },
             {
@@ -85,6 +97,7 @@ function buildItems(status: AccountingPeriodStatus, openF29: () => void): { requ
                 detail: status.reconciliation_count > 0
                     ? `${status.reconciliation_confirmed_count} de ${status.reconciliation_count} conciliación(es) confirmada(s)`
                     : 'Sin conciliaciones bancarias en el período',
+                action: status.reconciliation_count === 0 ? zeroStateAction('treasury.bankstatement', 'Ir a conciliaciones') : undefined,
                 pending: { label: 'treasury.bankstatement', documents: status.unconfirmed_statements, total: pendingStatements },
             },
         ],
@@ -128,11 +141,15 @@ function ChecklistRow({ item, critical, expanded, onToggle, onOpenDocument }: Ch
                         {`Ver ${pending.total} ${pending.total === 1 ? 'pendiente' : 'pendientes'}`}
                     </Button>
                 )}
-                {item.action && (
+                {item.action && (item.action.href ? (
+                    <Button variant="outline" size="sm" className="h-7 shrink-0 text-xs" asChild>
+                        <Link href={item.action.href}>{item.action.text}</Link>
+                    </Button>
+                ) : (
                     <Button variant="outline" size="sm" className="h-7 shrink-0 text-xs" onClick={item.action.onClick}>
                         {item.action.text}
                     </Button>
-                )}
+                ))}
             </div>
             {pending && expanded && (
                 <ul className="mt-2 ml-7 border-l border-border pl-3">
@@ -213,7 +230,9 @@ export function AccountingPeriodCloseChecklistModal({
     const { status, isLoading: isFetchingFirst, isFetching, error, refetch } = useAccountingPeriodStatus(periodId, isOpen)
     const { openEntity, tabs } = useGlobalModals()
     const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
-    const [wizardOpen, setWizardOpen] = useState(false)
+    // Objetivo del wizard F29 fijado al pulsar el CTA: el refetch del estado (p. ej. al volver el foco)
+    // no debe cambiar `periodId` a mitad del flujo ni remontar el wizard.
+    const [wizardTarget, setWizardTarget] = useState<WizardTarget | null>(null)
 
     // Un documento abierto desde el checklist es la pestaña activa: el diálogo modal del checklist
     // lo taparía (portal en body sobre #main-content), así que cede el paso mientras siga a la vista.
@@ -232,17 +251,17 @@ export function AccountingPeriodCloseChecklistModal({
     })
 
     const closeWizard = () => {
-        setWizardOpen(false)
+        setWizardTarget(null)
         void refetch()
     }
 
-    const items = status ? buildItems(status, () => setWizardOpen(true)) : null
+    const items = status ? buildItems(status, () => setWizardTarget({ periodId: status.tax_period_id ?? undefined, year, month })) : null
     const canClose = !!status && status.tax_period_closed && status.draft_entries_count === 0
 
     return (
         <>
             <BaseModal
-                open={isOpen && !wizardOpen && !documentActive}
+                open={isOpen && !wizardTarget && !documentActive}
                 onOpenChange={onClose}
                 icon={ClipboardCheck}
                 title={`Checklist de Cierre — ${month}/${year}`}
@@ -301,13 +320,13 @@ export function AccountingPeriodCloseChecklistModal({
                     )}
                 </div>
             </BaseModal>
-            {wizardOpen && (
+            {wizardTarget && (
                 <DeclarationWizard
                     isOpen
                     onOpenChange={(open) => { if (!open) closeWizard() }}
-                    periodId={status?.tax_period_id ?? undefined}
-                    year={year}
-                    month={month}
+                    periodId={wizardTarget.periodId}
+                    year={wizardTarget.year}
+                    month={wizardTarget.month}
                     onSuccess={closeWizard}
                 />
             )}
