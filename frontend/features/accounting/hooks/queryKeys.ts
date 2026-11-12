@@ -1,4 +1,6 @@
 export const ACCOUNTING_PERIODS_QUERY_KEY = ['accounting-periods'] as const
+/** Estado del checklist de cierre de un período (cuelga de la clave de períodos: se invalida con ella). */
+export const accountingPeriodStatusQueryKey = (periodId: number) => [...ACCOUNTING_PERIODS_QUERY_KEY, periodId, 'status'] as const
 export const JOURNAL_ENTRIES_QUERY_KEY = ['journal-entries'] as const
 export const ACCOUNTS_QUERY_KEY = ['accounts'] as const
 export const ACCOUNTS_MAPPINGS_QUERY_KEY = ['accounts', 'mappings'] as const

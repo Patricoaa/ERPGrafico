@@ -2,6 +2,40 @@ import api from '@/lib/api'
 import type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerData } from '../types'
 import { toPage, type Page } from '@/lib/pagination'
 import { fetchBoundedList } from '@/lib/bounded-list'
+import { z } from 'zod'
+
+/** Documento pendiente del checklist de cierre (espejo de `TaxPeriodService.get_period_status`). */
+const pendingDocumentSchema = z.object({
+    id: z.number(),
+    label: z.string(),
+    amount: z.string().nullable(),
+    date: z.string().nullable(),
+})
+
+/**
+ * Respuesta de `GET /tax/accounting-periods/{id}/status_check/`. Las listas traen hasta 50 documentos;
+ * el total real está en el `*_count` de cada categoría.
+ */
+export const accountingPeriodStatusSchema = z.object({
+    tax_period_id: z.number().nullable(),
+    draft_entries: z.array(pendingDocumentSchema),
+    draft_invoices: z.array(pendingDocumentSchema),
+    unposted_payrolls: z.array(pendingDocumentSchema),
+    unconfirmed_statements: z.array(pendingDocumentSchema),
+    period_exists: z.boolean(),
+    period_status: z.string(),
+    tax_period_closed: z.boolean(),
+    draft_entries_count: z.number(),
+    draft_invoices_count: z.number(),
+    payroll_count: z.number(),
+    payroll_posted_count: z.number(),
+    reconciliation_count: z.number(),
+    reconciliation_confirmed_count: z.number(),
+    is_fully_closable: z.boolean(),
+})
+
+export type PendingDocument = z.infer<typeof pendingDocumentSchema>
+export type AccountingPeriodStatus = z.infer<typeof accountingPeriodStatusSchema>
 
 export const accountingApi = {
     getAccounts: async (filters?: AccountFilters): Promise<Account[]> =>
@@ -102,9 +136,9 @@ export const accountingApi = {
         )
     },
 
-    getAccountingPeriodStatus: async (periodId: number): Promise<Record<string, unknown>> => {
-        const { data } = await api.get<Record<string, unknown>>(`/tax/accounting-periods/${periodId}/status_check/`)
-        return data
+    getAccountingPeriodStatus: async (periodId: number): Promise<AccountingPeriodStatus> => {
+        const { data } = await api.get<unknown>(`/tax/accounting-periods/${periodId}/status_check/`)
+        return accountingPeriodStatusSchema.parse(data)
     },
 
     checkPeriodClosed: async (date: string): Promise<{ is_closed: boolean; date: string; period_name?: string }> => {
