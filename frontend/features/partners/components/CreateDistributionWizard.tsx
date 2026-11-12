@@ -268,7 +268,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                 placeholder="0"
                                 value={formData.net_result}
                                 readOnly
-                                className="font-mono text-2xl pl-10 bg-muted/50 cursor-not-allowed"
+                                className="pl-10 bg-muted/50 cursor-not-allowed"
                             />
                             
                             <div className="absolute right-4 top-1/2 -translate-y-1/2">
