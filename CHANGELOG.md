@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.105](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.104...v0.3.105) (2026-11-12)
+
+
+### 💅 Styling
+
+* **accounting:** CTAs ghost con icono en checklist de cierre ([e92e6b7](https://github.com/Patricoaa/ERPGrafico/commit/e92e6b7b357097c23d5b649e77f226c2f2a03047))
+
 ### [0.3.104](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.103...v0.3.104) (2026-11-12)
 
 
