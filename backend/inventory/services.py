@@ -636,9 +636,11 @@ class StockService:
 
             debit_account = asset_account
             # The partner gives capital
-            credit_account = settings.partner_capital_contribution_account
-            if not credit_account:
+            if not settings.partner_capital_contribution_account:
                 raise ValidationError("Falta configurar la cuenta 'Aportes de Capital' en los ajustes de contabilidad.")
+            from contacts.partner_service import PartnerService
+
+            credit_account = PartnerService._resolve_partner_contribution_account(partner_contact)
         else:
             # Smart Withdrawal: Priority Dividends Payable > Provisional Withdrawal
             if partner_contact.partner_dividends_payable_balance > 0:
@@ -649,12 +651,19 @@ class StockService:
             credit_account = asset_account
             # The partner withdraws capital
             if target_tx_type == PartnerTransaction.Type.DIVIDEND_PAYMENT:
-                debit_account = getattr(partner_contact, 'partner_dividends_payable_account', None) or settings.partner_dividends_payable_account
-                if not debit_account:
+                if not settings.partner_dividends_payable_account:
                     raise ValidationError("Falta configurar la cuenta 'Dividendos por Pagar' en ajustes de contabilidad.")
+                from contacts.partner_service import PartnerService
+
+                debit_account = PartnerService._resolve_partner_dividends_account(partner_contact)
             else:
-                debit_account = settings.partner_provisional_withdrawal_account or settings.partner_capital_contribution_account
-                if not debit_account:
+                from contacts.partner_service import PartnerService
+
+                if settings.partner_provisional_withdrawal_account:
+                    debit_account = PartnerService._resolve_partner_withdrawal_account(partner_contact)
+                elif settings.partner_capital_contribution_account:
+                    debit_account = PartnerService._resolve_partner_contribution_account(partner_contact)
+                else:
                     raise ValidationError("Falta configurar la cuenta 'Retiros Provisionales' o 'Aportes de Capital' en ajustes contables.")
 
         total_value = abs(quantity * unit_cost)

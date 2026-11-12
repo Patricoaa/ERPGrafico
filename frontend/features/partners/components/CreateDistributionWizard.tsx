@@ -270,7 +270,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                 readOnly
                                 className="font-mono text-2xl pl-10 bg-muted/50 cursor-not-allowed"
                             />
-                            <Calculator className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            
                             <div className="absolute right-4 top-1/2 -translate-y-1/2">
                                 <span className={cn(
                                     "text-3xs font-bold uppercase tracking-widest px-2 py-1 rounded-sm",

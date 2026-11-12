@@ -59,6 +59,8 @@ export interface DocumentSheetProps {
     /** Tipo del historial de auditoría (EntitySidebar: comentarios + actividad); sin él no hay sidebar. */
     auditType?: AuditEntityType
     embedded?: boolean
+    /** Tamaño inicial del drawer. Por defecto `formDrawerWidth("master", true)` (90%). Pasar "100%" para pantalla completa. */
+    drawerSize?: string
 }
 
 /**
@@ -71,7 +73,7 @@ export interface DocumentSheetProps {
 export function DocumentSheet({
     label, open, onOpenChange, document, isLoading, error, loadingLabel, title, status,
     context, sections = [], lifecycle, primaryAction, actions = [], onPrint,
-    sectionActions, rowActions, extraTabs = [], auditType, embedded = false,
+    sectionActions, rowActions, extraTabs = [], auditType, embedded = false, drawerSize,
 }: DocumentSheetProps) {
     const displayId = title ?? document?.display_id ?? undefined
     const identity = useDrawerIdentity(label, "view", document, displayId ? { overrideTitle: displayId } : undefined)
@@ -145,6 +147,7 @@ export function DocumentSheet({
             tab={tab}
             onTabChange={setTab}
             sidebar={document && auditType && !embedded ? <EntitySidebar entityType={auditType} entityId={document.id} /> : undefined}
+            drawerSize={drawerSize}
         />
     )
 }

@@ -125,9 +125,10 @@ def test_pays_several_partners_with_one_movement_and_entry(client, resolution, b
     assert luis.partner_dividends_payable_balance == Decimal("250")
 
     bank_account.refresh_from_db()
-    dividends_account.refresh_from_db()
     assert bank_account.current_balance == Decimal("4250")
-    assert dividends_account.balance == Decimal("-750")
+    # El débito va a la subcuenta de cada socio, no a la cuenta global.
+    assert dividends_account.children.count() == 2
+    assert sum(child.balance for child in dividends_account.children.all()) == Decimal("-750")
 
 
 def test_entry_labels_and_partners_match_each_side(client, resolution, bank_account, dividends_account):
@@ -137,7 +138,7 @@ def test_entry_labels_and_partners_match_each_side(client, resolution, bank_acco
 
     entry = ProfitDistributionPayment.objects.get(resolution=resolution).treasury_movement.journal_entry
     credit = entry.items.get(account=bank_account.account)
-    debit = entry.items.get(account=dividends_account)
+    debit = entry.items.get(account__parent=dividends_account)
     assert (credit.credit, credit.debit) == (Decimal("600"), Decimal("0"))
     assert "Banco" in credit.label
     assert (debit.debit, debit.credit) == (Decimal("600"), Decimal("0"))

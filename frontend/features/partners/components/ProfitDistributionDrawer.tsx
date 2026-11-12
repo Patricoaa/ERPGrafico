@@ -87,12 +87,13 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         primaryAction={primaryAction}
         actions={actions}
         onPrint={handlePrint}
+        drawerSize="100%"
         context={distribution ? [
           {
             label: isProfit ? "Utilidad neta" : "Pérdida neta",
             value: <span className={`font-bold tabular-nums ${isProfit ? 'text-success' : 'text-destructive'}`}>{formatCurrency(Number(distribution.net_result))}</span>,
           },
-          { label: "Año fiscal", value: String(distribution.fiscal_year_obj ?? distribution.fiscal_year ?? '') || null },
+          { label: "Año fiscal", value: distribution.fiscal_year ? String(distribution.fiscal_year) : null },
           { label: "Acta N°", value: distribution.acta_number ? String(distribution.acta_number) : null },
           { label: "Total distribuido", value: <span className="tabular-nums">{formatCurrency(lines.reduce((s, l) => s + Number(l.net_amount ?? 0), 0))}</span> },
           { label: "Notas", value: distribution.notes || null, span: 4, hidden: !distribution.notes },

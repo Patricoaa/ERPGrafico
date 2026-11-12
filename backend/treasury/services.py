@@ -520,11 +520,19 @@ class TreasuryService:
                 and movement.contact.is_partner
             ):
                 partner = movement.contact
+                from contacts.partner_service import PartnerService
+
                 if partner.partner_pending_capital > 0:
-                    source_acc = settings.partner_capital_receivable_account
+                    source_acc = (
+                        PartnerService._resolve_partner_receivable_account(partner)
+                        if settings.partner_capital_receivable_account else None
+                    )
                     inbound_role = Roles.CAPITAL_COBRAR
                 else:
-                    source_acc = settings.partner_capital_contribution_account
+                    source_acc = (
+                        PartnerService._resolve_partner_contribution_account(partner)
+                        if settings.partner_capital_contribution_account else None
+                    )
                     inbound_role = Roles.CAPITAL_SOCIAL
 
             if not source_acc:
@@ -565,15 +573,22 @@ class TreasuryService:
                 and movement.contact.is_partner
             ):
                 partner = movement.contact
+                from contacts.partner_service import PartnerService
+
                 if partner.partner_dividends_payable_balance > 0:
-                    target_acc = settings.partner_dividends_payable_account
+                    target_acc = (
+                        PartnerService._resolve_partner_dividends_account(partner)
+                        if settings.partner_dividends_payable_account else None
+                    )
                     outbound_role = Roles.DIVIDENDO_PAGAR
                 else:
-                    target_acc = (
-                        settings.partner_provisional_withdrawal_account
-                        or settings.partner_withdrawal_account
-                        or settings.pos_partner_withdrawal_account
-                    )
+                    if settings.partner_provisional_withdrawal_account:
+                        target_acc = PartnerService._resolve_partner_withdrawal_account(partner)
+                    else:
+                        target_acc = (
+                            settings.partner_withdrawal_account
+                            or settings.pos_partner_withdrawal_account
+                        )
                     outbound_role = Roles.RETIRO_PROVISORIO
 
             payroll_target = {

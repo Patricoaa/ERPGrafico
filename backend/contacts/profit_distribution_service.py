@@ -341,7 +341,7 @@ class ProfitDistributionService:
                 # Accounting for Offset (Credit the Provisional Withdrawal account to reduce the contra-equity)
                 JournalItem.objects.create(
                     entry=entry,
-                    account=settings.partner_provisional_withdrawal_account,
+                    account=PartnerService._resolve_partner_withdrawal_account(partner),
                     partner=partner,
                     label=GlosaBuilder.item(Roles.RETIRO_PROVISORIO, partner.name, resolution.display_id),
                     debit=0,
@@ -371,7 +371,7 @@ class ProfitDistributionService:
                     # Credit Partner's Specific Earnings Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.partner_retained_earnings_account,
+                        account=PartnerService._resolve_partner_retained_account(partner),
                         partner=partner,
                         label=GlosaBuilder.item(Roles.RETENIDAS, partner.name, resolution.display_id),
                         debit=0,
@@ -397,15 +397,12 @@ class ProfitDistributionService:
                     == ProfitDistributionLineDestination.Destination.DIVIDEND_PAYABLE
                 ):
                     # Credit Dividends Payable (Liability)
-                    div_account = settings.partner_dividends_payable_account
-                    if not div_account:
-                        raise ValidationError(
-                            f"No hay cuenta de dividendos configurada para {partner.name} ni global."
-                        )
+                    div_account = PartnerService._resolve_partner_dividends_account(partner)
 
                     JournalItem.objects.create(
                         entry=entry,
                         account=div_account,
+                        partner=partner,
                         label=GlosaBuilder.item(Roles.DIVIDENDO_PAGAR, partner.name, resolution.display_id),
                         debit=0,
                         credit=abs_net,
@@ -426,15 +423,10 @@ class ProfitDistributionService:
                     dest.save(update_fields=["partner_transaction"])
 
                 elif dest.destination == ProfitDistributionLineDestination.Destination.REINVEST:
-                    if not settings.partner_capital_contribution_account:
-                        raise ValidationError(
-                            "La cuenta de Aportes de Capital no está configurada globalmente."
-                        )
-
                     # Credit Partner's Specific Capital Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.partner_capital_contribution_account,
+                        account=PartnerService._resolve_partner_contribution_account(partner),
                         partner=partner,
                         label=GlosaBuilder.item(Roles.REINVERSION, partner.name, resolution.display_id),
                         debit=0,
@@ -462,7 +454,7 @@ class ProfitDistributionService:
                     # Debit Partner's Specific Earnings Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.partner_retained_earnings_account,
+                        account=PartnerService._resolve_partner_retained_account(partner),
                         partner=partner,
                         label=GlosaBuilder.item(Roles.RESULTADO, f"Absorción pérdida {partner.name}", resolution.display_id),
                         debit=abs_net,
@@ -526,7 +518,6 @@ class ProfitDistributionService:
                 "La resolución debe estar ejecutada contablemente para realizar pagos."
             )
 
-        settings = ProfitDistributionService._get_settings()
         from .partner_models import ProfitDistributionLineDestination, ProfitDistributionPayment
 
         amounts_by_partner: dict = {}
@@ -611,12 +602,7 @@ class ProfitDistributionService:
             p_id = vp["partner_id"]
             p_amount = vp["amount"]
             p_obj = Contact.objects.get(id=p_id)
-            p_div_account = settings.partner_dividends_payable_account
-
-            if not p_div_account:
-                raise ValidationError(
-                    f"Falta configurar la Cuenta de Dividendos para {p_obj.name}."
-                )
+            p_div_account = PartnerService._resolve_partner_dividends_account(p_obj)
 
             JournalItem.objects.create(
                 entry=entry,

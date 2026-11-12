@@ -59,6 +59,8 @@ export interface DocumentDrawerShellProps {
     className?: string
     /** Área fija al pie del drawer (acciones primarias visibles sin scroll). */
     footer?: ReactNode
+    /** Tamaño inicial del drawer (ancho). Por defecto usa `formDrawerWidth("master", true)`. */
+    drawerSize?: string
 }
 
 /** Botón «Volver» para el header de una ficha hija: vuelve al drawer que la abrió. */
@@ -85,7 +87,7 @@ export interface DocumentHeaderSlots {
 export const DocumentHeaderSlotContext = createContext<DocumentHeaderSlots | null>(null)
 
 export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
-    const { open, onOpenChange, title, subtitle, icon, headerActions, embedded, tabs, side, footer } = props
+    const { open, onOpenChange, title, subtitle, icon, headerActions, embedded, tabs, side, footer, drawerSize } = props
     const slots = useContext(DocumentHeaderSlotContext)
 
     if (embedded && slots) {
@@ -121,7 +123,7 @@ export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
             open={open}
             onOpenChange={onOpenChange}
             side={side ?? "left"}
-            defaultSize={formDrawerWidth("master", true)}
+            defaultSize={drawerSize ?? formDrawerWidth("master", true)}
             title={title}
             subtitle={subtitle}
             icon={icon}

@@ -243,11 +243,7 @@ class PartnerService:
 
         # Cr: Equity (Excess or direct contribution)
         if amount_to_equity_surplus > 0:
-            contribution_account = settings.partner_capital_contribution_account
-            if not contribution_account:
-                raise ValidationError(
-                    "La cuenta de Aportes de Capital no está configurada globalmente."
-                )
+            contribution_account = PartnerService._resolve_partner_contribution_account(partner)
 
             JournalItem.objects.create(
                 entry=entry,
@@ -367,8 +363,9 @@ class PartnerService:
                 "no tiene cuenta de retiros provisorios para el excedente."
             )
 
-        if not dividends_payable_account:
-            raise ValidationError("La cuenta de Dividendos por Pagar no está configurada.")
+        dividends_payable_account = PartnerService._resolve_partner_dividends_account(partner)
+        if withdrawal_account:
+            withdrawal_account = PartnerService._resolve_partner_withdrawal_account(partner)
 
         treasury_account = None
         cash_account = None
@@ -780,7 +777,6 @@ class PartnerService:
                 buyer.partner_since = date if not isinstance(date, str) else timezone.now().date()
             buyer.save()
 
-        settings = PartnerService._get_settings()
         seller_social_account = PartnerService._resolve_partner_social_account(seller)
         buyer_social_account = PartnerService._resolve_partner_social_account(buyer)
 
@@ -903,24 +899,15 @@ class PartnerService:
                 f"retenidas disponibles del socio ({current_retained:,.0f})."
             )
 
-        settings = PartnerService._get_settings()
 
-        # Accounts
-        retained_account = settings.partner_retained_earnings_account
-        if not retained_account:
-            raise ValidationError(
-                "La cuenta de Utilidades Retenidas no está configurada globalmente."
-            )
-
-        dividends_payable_account = settings.partner_dividends_payable_account
-        if amount_dividend > 0 and not dividends_payable_account:
-            raise ValidationError("La cuenta de Dividendos por Pagar no está configurada.")
-
-        contribution_account = settings.partner_capital_contribution_account
-        if amount_reinvest > 0 and not contribution_account:
-            raise ValidationError(
-                "La cuenta de Aportes de Capital no está configurada globalmente."
-            )
+        # Accounts (subcuentas del socio bajo las cuentas globales)
+        retained_account = PartnerService._resolve_partner_retained_account(partner)
+        dividends_payable_account = (
+            PartnerService._resolve_partner_dividends_account(partner) if amount_dividend > 0 else None
+        )
+        contribution_account = (
+            PartnerService._resolve_partner_contribution_account(partner) if amount_reinvest > 0 else None
+        )
 
         # 1. Journal Entry
         entry = JournalEntry.objects.create(
@@ -1142,76 +1129,61 @@ class PartnerService:
     # ──────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _resolve_partner_receivable_account(partner: Contact):
-        """
-        Resolves the per-partner receivable sub-account under the global
-        ``partner_capital_receivable_account`` parent.
+    def _partner_account(partner: Contact, parent_account, missing_message: str):
+        """Subcuenta del socio bajo la cuenta global ``parent_account`` (ver ``partner_accounts``)."""
+        from contacts.partner_accounts import resolve_partner_account
 
-        The parent account (e.g. 1.1.05.01) is a category container and has
-        children → ``is_selectable`` is False, so it cannot be posted to.
-        This helper finds or auto-creates the partner-specific leaf account
-        (e.g. 1.1.05.01.003) under that parent.
-
-        Naming convention: ``{parent.name} - {partner.name}``
-        """
-        from accounting.models import Account
-
-        settings = PartnerService._get_settings()
-        parent_account = settings.partner_capital_receivable_account
         if not parent_account:
-            raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
+            raise ValidationError(missing_message)
+        return resolve_partner_account(partner, parent_account)
 
-        child_account = Account.objects.filter(
-            parent=parent_account,
-            name__endswith=f" - {partner.name}",
-        ).first()
-
-        if child_account:
-            return child_account
-
-        child_account = Account(
-            parent=parent_account,
-            name=f"{parent_account.name} - {partner.name}",
+    @staticmethod
+    def _resolve_partner_receivable_account(partner: Contact):
+        settings = PartnerService._get_settings()
+        return PartnerService._partner_account(
+            partner, settings.partner_capital_receivable_account,
+            "La cuenta de Aportes por Cobrar Socios no está configurada.",
         )
-        child_account.save()
-
-        return child_account
 
     @staticmethod
     def _resolve_partner_social_account(partner: Contact):
-        """
-        Resolves the per-partner Capital Social sub-account under the global
-        ``partner_capital_social_account`` parent.
-
-        Same pattern as ``_resolve_partner_receivable_account``: the parent
-        (e.g. 3.1.01) is a category container with children and cannot be
-        posted to directly.  This finds or auto-creates the partner-specific
-        leaf account (e.g. 3.1.01.003).
-
-        Naming convention: ``{parent.name} - {partner.name}``
-        """
-        from accounting.models import Account
-
         settings = PartnerService._get_settings()
-        parent_account = settings.partner_capital_social_account
-        if not parent_account:
-            raise ValidationError("No se ha configurado la cuenta de Capital Social.")
-
-        child_account = Account.objects.filter(
-            parent=parent_account,
-            name__endswith=f" - {partner.name}",
-        ).first()
-
-        if child_account:
-            return child_account
-
-        child_account = Account(
-            parent=parent_account,
-            name=f"{parent_account.name} - {partner.name}",
+        return PartnerService._partner_account(
+            partner, settings.partner_capital_social_account,
+            "No se ha configurado la cuenta de Capital Social.",
         )
-        child_account.save()
 
-        return child_account
+    @staticmethod
+    def _resolve_partner_contribution_account(partner: Contact):
+        settings = PartnerService._get_settings()
+        return PartnerService._partner_account(
+            partner, settings.partner_capital_contribution_account,
+            "La cuenta de Aportes de Capital no está configurada globalmente.",
+        )
+
+    @staticmethod
+    def _resolve_partner_withdrawal_account(partner: Contact):
+        settings = PartnerService._get_settings()
+        return PartnerService._partner_account(
+            partner, settings.partner_provisional_withdrawal_account,
+            "La cuenta de Retiros Provisorios no está configurada.",
+        )
+
+    @staticmethod
+    def _resolve_partner_retained_account(partner: Contact):
+        settings = PartnerService._get_settings()
+        return PartnerService._partner_account(
+            partner, settings.partner_retained_earnings_account,
+            "La cuenta de Utilidades Retenidas no está configurada globalmente.",
+        )
+
+    @staticmethod
+    def _resolve_partner_dividends_account(partner: Contact):
+        settings = PartnerService._get_settings()
+        return PartnerService._partner_account(
+            partner, settings.partner_dividends_payable_account,
+            "La cuenta de Dividendos por Pagar no está configurada.",
+        )
 
     @staticmethod
     def _assert_sufficient_funds(treasury_account, amount: Decimal) -> None:
