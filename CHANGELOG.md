@@ -2,6 +2,54 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.102](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.101...v0.3.102) (2026-11-12)
+
+
+### ⚙️ Refactors
+
+* **accounting:** una sola acción F29 en cierres ([3feb1a7](https://github.com/Patricoaa/ERPGrafico/commit/3feb1a769e30c2cf643987d1dac267cb424660d9))
+
+
+### ✨ Features
+
+* **accounting:** checklist de cierre con documentos pendientes y CTAs ([4d3697b](https://github.com/Patricoaa/ERPGrafico/commit/4d3697b59254a4f773f54f9e986dce2bdf68f10e))
+* **accounting:** cierre de ejercicio unifica resultado, asiento y efectos en un paso ([b01197f](https://github.com/Patricoaa/ERPGrafico/commit/b01197fd9a34be44bf3b227f113666b89a0c8b23))
+* **accounting:** el éxito del cierre de ejercicio es un paso del mismo wizard ([617ca50](https://github.com/Patricoaa/ERPGrafico/commit/617ca50d7273b2b5b55af00df939ec1f71ff9508))
+* **accounting:** icono en el botón Ver balance del cierre de ejercicio ([a5fbe9f](https://github.com/Patricoaa/ERPGrafico/commit/a5fbe9f0292a4ba297bfd9cc01d246b536a8daf5))
+* **partners:** distribución de utilidades con la estructura de los wizards de cierre; SummaryList compartido ([17317cb](https://github.com/Patricoaa/ERPGrafico/commit/17317cb639f12007ea27b585fbd589c783709240))
+* **partners:** pago masivo de dividendos con la estructura de los wizards de cierre ([6b5c682](https://github.com/Patricoaa/ERPGrafico/commit/6b5c682eb7aec9897a56bcd6ea8a9b16a887021b))
+* **tax:** derivación de fase del wizard F29 ([5a38408](https://github.com/Patricoaa/ERPGrafico/commit/5a384083e80c6ba83ea407051c4fe3455f963857))
+* **tax:** facturas en borrador bloquean F29 y cierre; wizard F29 modal con acción de cierre en el footer ([8a35b6e](https://github.com/Patricoaa/ERPGrafico/commit/8a35b6efdccbf85ee3885ed811563b8d103a8f1f))
+* **tax:** pendientes y tax_period_id en el estado del período contable ([8c78dfa](https://github.com/Patricoaa/ERPGrafico/commit/8c78dfa14fc9f48daf2a3da2cf4097d15ddf57cc))
+* **tax:** wizard F29 unificado con fases pago y cierre ([71beb09](https://github.com/Patricoaa/ERPGrafico/commit/71beb0979fc1572e3f30e2d6ec980ed49746bca5))
+* **wizards:** pasos a ancho completo, alto estable y bg de drawer; cierre de ejercicio migrado a wizard modal ([1904736](https://github.com/Patricoaa/ERPGrafico/commit/19047362ad4964af17ce9ffcde54ddc687c3abe1))
+
+
+### 🐛 Bug Fixes
+
+* **accounting:** botón Ver balance del cierre de ejercicio en variante ghost ([099dc8f](https://github.com/Patricoaa/ERPGrafico/commit/099dc8f16eb2be5fba3083a4867e401079a9b2dc))
+* **accounting:** el cierre de ejercicio ejecuta el cierre y muestra la pantalla de éxito ([fcc87b7](https://github.com/Patricoaa/ERPGrafico/commit/fcc87b777f8337c98636b54f717b1d75bcb208f4))
+* cierre de la revisión final del wizard F29 (permisos, doble pago, remount, CTAs, ADR) ([581cdd4](https://github.com/Patricoaa/ERPGrafico/commit/581cdd491b561750e178942c8bfe40e49926cc42))
+* numpad, f29 ([ec8c0ad](https://github.com/Patricoaa/ERPGrafico/commit/ec8c0ad7efef03a15205f73a99ebd8faffd24204))
+* **partners:** todas las cuentas de socio se contabilizan en subcuentas por socio, con desambiguación de homónimos (ADR-0135) ([6e2ca2d](https://github.com/Patricoaa/ERPGrafico/commit/6e2ca2d1cb4412cdbf6a1b9d1bf653130278b7a7))
+* **tax:** borradores del F29 arriba y lado a lado; el contenido del wizard modal siempre hace scroll ([d77d1e0](https://github.com/Patricoaa/ERPGrafico/commit/d77d1e03fa021fa678918b08d2038eda9f350870))
+* **tax:** cerrar panel al finalizar y acción F29 única en declaraciones ([00d5fbb](https://github.com/Patricoaa/ERPGrafico/commit/00d5fbb08a57c5fe81e7ea7a38870777f3b240cb))
+* **tax:** CLOSED siempre es done y NaN en vat_to_pay cae en payment ([47126d8](https://github.com/Patricoaa/ERPGrafico/commit/47126d8a7d9efdb0b158929ec923a9d3d72b12cb))
+* **tax:** débito y crédito lado a lado; borradores abajo en una columna a todo el ancho ([e648664](https://github.com/Patricoaa/ERPGrafico/commit/e6486641dd248065e244cf18b9c7e1ef89dfa2d3))
+* **tax:** fase estable durante la carga y reinicio de estado entre aperturas del wizard F29 ([e2d715a](https://github.com/Patricoaa/ERPGrafico/commit/e2d715ad6aee3b6b2a0ae1c495a765ed1538beb2))
+
+
+### 📚 Documentation
+
+* ADR-0134 wizard F29 unificado y checklist accionable ([2467d33](https://github.com/Patricoaa/ERPGrafico/commit/2467d334523e6b2a5c07cbb524a37382e7c8f6f2))
+* **adr:** fila del ADR-0135 dentro de la tabla del índice ([87ec32f](https://github.com/Patricoaa/ERPGrafico/commit/87ec32f9a982f2e6dab84cccabead06a0baa625f))
+* **specs:** diseño de wizard F29 unificado y checklist de cierre accionable ([eadb71f](https://github.com/Patricoaa/ERPGrafico/commit/eadb71fbc42af5ec4bf284978420548ab152851c))
+
+
+### 💅 Styling
+
+* **partners:** input de resultado neto sin tipografía mono grande ([b9ef48a](https://github.com/Patricoaa/ERPGrafico/commit/b9ef48a49082ffe1129f0dc211bf3cea41ac0e23))
+
 ### [0.3.101](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.100...v0.3.101) (2026-11-12)
 
 
