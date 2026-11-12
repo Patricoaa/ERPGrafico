@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep } from '@/components/shared';
+import { SkeletonShell, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
 import { PendingChecklistSection, type PendingChecklistItem } from '@/features/tax';
@@ -29,6 +29,36 @@ interface FiscalYearClosingWizardProps {
     year: number;
     preview: FiscalYearPreviewResult | null;
     isLoading: boolean;
+}
+
+function SummarySection({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+    return (
+        <section>
+            <div className="flex items-center justify-between border-b border-border pb-1">
+                <h3 className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
+                {action}
+            </div>
+            <ul className="divide-y divide-border">{children}</ul>
+        </section>
+    );
+}
+
+function SummaryRow({ label, value, strong, valueClassName }: { label: string; value: string; strong?: boolean; valueClassName?: string }) {
+    return (
+        <li className="flex items-baseline justify-between gap-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">{label}</span>
+            <span className={cn("font-mono tabular-nums", strong && "font-bold", valueClassName)}>{value}</span>
+        </li>
+    );
+}
+
+function SummaryNote({ children }: { children: React.ReactNode }) {
+    return (
+        <li className="flex items-start gap-3 py-2.5 text-sm text-muted-foreground">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
+            <span>{children}</span>
+        </li>
+    );
 }
 
 export function FiscalYearClosingWizard({
@@ -102,65 +132,43 @@ export function FiscalYearClosingWizard({
             },
             {
                 id: 1,
-                title: "Resultado Económico",
-                isValid: true,
-                component: preview ? (
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between gap-4 rounded-md border border-border p-5">
-                            <div>
-                                <p className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
-                                    {isProfit ? "Utilidad del ejercicio" : "Pérdida del ejercicio"} {year}
-                                </p>
-                                <p className={cn("text-3xl font-mono font-black", isProfit ? "text-success" : "text-destructive")}>
-                                    {formatCurrency(netResult)}
-                                </p>
-                            </div>
-                            <Button variant="outline" size="sm" className="shrink-0" onClick={() => setShowIncomeStatement(true)}>
-                                <PieChart className="mr-2 h-3.5 w-3.5" /> Ver Estado de Resultados
-                            </Button>
-                        </div>
-                    </div>
-                ) : null
-            },
-            {
-                id: 3,
-                title: "Configuración del Asiento",
-                isValid: true,
-                component: preview ? (
-                    <LabeledContainer label="Cuenta de Capital/Utilidades que recibe el resultado">
-                        <div className="flex items-center gap-4 rounded-md border border-border p-5">
-                            <Scale className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                                <p className="text-lg font-mono font-bold">{preview.result_account_code}</p>
-                                <p className="text-xs font-medium uppercase tracking-tight text-muted-foreground">{preview.result_account_name}</p>
-                            </div>
-                        </div>
-                    </LabeledContainer>
-                ) : null
-            },
-            {
-                id: 4,
-                title: "Confirmación y Cierre",
+                title: "Resultado y Cierre",
                 isValid: !!preview?.can_close,
                 component: preview ? (
-                    <div className="space-y-6">
-                        <dl className="divide-y divide-border rounded-md border border-border text-sm">
-                            <div className="flex items-center justify-between p-4">
-                                <dt className="text-muted-foreground">Ejercicio fiscal a cerrar</dt>
-                                <dd className="font-mono font-bold tabular-nums">{year}</dd>
-                            </div>
-                            <div className="flex items-center justify-between p-4">
-                                <dt className="text-muted-foreground">Transferencia patrimonial</dt>
-                                <dd className="font-mono font-bold text-primary">{formatCurrency(netResult)}</dd>
-                            </div>
-                        </dl>
-                        <p className="flex items-start gap-2 text-xs text-muted-foreground">
-                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
-                            Esta acción generará el asiento de cierre y bloqueará todos los periodos del año {year}. El re-abierto de periodos quedará registrado en el historial de auditoría.
-                        </p>
+                    <div className="space-y-8">
+                        <SummarySection title="Resultado del ejercicio" action={
+                            <Button variant="ghost" size="sm" className="h-6 gap-1 text-xs" onClick={() => setShowIncomeStatement(true)}>
+                                <PieChart className="h-3.5 w-3.5" aria-hidden /> Ver Estado de Resultados
+                            </Button>
+                        }>
+                            <SummaryRow label="Ingresos" value={formatCurrency(parseFloat(preview.income_total || '0'))} />
+                            <SummaryRow label="Gastos y costos" value={formatCurrency(parseFloat(preview.expense_total || '0'))} />
+                            <SummaryRow
+                                label={isProfit ? "Utilidad del ejercicio" : "Pérdida del ejercicio"}
+                                value={formatCurrency(netResult)}
+                                strong
+                                valueClassName={isProfit ? "text-success" : "text-destructive"}
+                            />
+                        </SummarySection>
+
+                        <SummarySection title="Asiento de cierre">
+                            <SummaryRow label="Ejercicio fiscal a cerrar" value={String(year)} />
+                            <SummaryRow
+                                label="Cuenta que recibe el resultado"
+                                value={preview.result_account_code ? `${preview.result_account_code} · ${preview.result_account_name ?? ''}` : "Sin configurar"}
+                                valueClassName={preview.result_account_code ? undefined : "text-destructive"}
+                            />
+                            <SummaryRow label="Transferencia patrimonial" value={formatCurrency(netResult)} strong />
+                        </SummarySection>
+
+                        <SummarySection title="Efectos del cierre">
+                            <SummaryNote>Se genera el asiento de cierre y se bloquean todos los períodos del año {year}.</SummaryNote>
+                            <SummaryNote>Reabrir períodos queda registrado en el historial de auditoría.</SummaryNote>
+                            {isProfit && <SummaryNote>Después podrás distribuir la utilidad a los socios.</SummaryNote>}
+                        </SummarySection>
                     </div>
                 ) : null
-            }
+            },
         ];
     }, [preview, year, isProfit, netResult]);
 
