@@ -2,9 +2,8 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, SummarySection, SummaryRow, SummaryNote, SubmitButton } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
 import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
 import { useFiscalYears } from "@/features/accounting"
 import { useProfitDistributionMutations } from "../hooks"
@@ -13,15 +12,8 @@ import { toast } from "sonner"
 import {
     PieChart,
     Calculator,
-    CheckCircle2,
-    Wallet,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-    Alert,
-    AlertTitle,
-    AlertDescription
-} from "@/components/ui/alert"
 
 interface ModalProps {
     open: boolean
@@ -32,6 +24,7 @@ interface ModalProps {
 
 export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
     const [loading, setLoading] = useState(false)
+    const [executed, setExecuted] = useState(false)
     const { fiscalYears: allFiscalYears } = useFiscalYears()
     const fiscalYears = useMemo(() => allFiscalYears.filter(fy => fy.status === 'CLOSED'), [allFiscalYears])
     const { create, update, recalculate, updateLines, approve, execute } = useProfitDistributionMutations()
@@ -57,6 +50,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
     const [lineDestinations, setLineDestinations] = useState<Record<number, DestinationAllocation[]>>({})
 
     const resetFlow = () => {
+        setExecuted(false)
         setDraftResolution(null)
         setLines([])
         setLineDestinations({})
@@ -210,14 +204,22 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                 await execute.mutateAsync(draftResolution.id)
             }
             toast.success("Distribución contable ejecutada con éxito")
-            onSuccess?.()
-            onOpenChange(false)
+            setExecuted(true)
         } catch (error: unknown) {
             showApiError(error, "Error al ejecutar la distribución")
         } finally {
             setLoading(false)
         }
     }
+
+    const totals = useMemo(() => [
+        { key: 'DIVIDEND', label: 'Dividendos' },
+        { key: 'REINVEST', label: 'Reinversión' },
+        { key: 'RETAINED', label: 'Utilidades retenidas' },
+    ].map(t => ({
+        ...t,
+        amount: Object.values(lineDestinations).flat().filter(d => d.destination === t.key).reduce((acc, d) => acc + d.amount, 0),
+    })), [lineDestinations])
 
     const steps: WizardStep[] = useMemo(() => [
         {
@@ -295,12 +297,11 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                         />
                     </div>
 
-                    <Alert variant="primary">
-                        <AlertTitle className="font-bold uppercase text-3xs">Automatización Activa</AlertTitle>
-                        <AlertDescription className="text-foreground/80 font-medium text-3xs leading-relaxed">
-                            El sistema calculará la participación exacta a la fecha de resolución y descontará automáticamente los <strong>retiros provisorios</strong> detectados en la contabilidad del ejercicio.
-                        </AlertDescription>
-                    </Alert>
+                    <SummarySection>
+                        <SummaryNote tone="success">
+                            El sistema calculará la participación exacta a la fecha de resolución y descontará automáticamente los retiros provisorios detectados en la contabilidad del ejercicio.
+                        </SummaryNote>
+                    </SummarySection>
                 </div>
             )
         },
@@ -317,18 +318,12 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
             onNext: handleUpdateDestinations,
             component: (
                 <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
-                            <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
-                            <DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="justify-start text-xl text-primary" />
-                        </Card>
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
-                            <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
-                            <p className="text-xl  font-black">{draftResolution?.fiscal_year}</p>
-                        </Card>
-                    </div>
+                    <SummarySection>
+                        <SummaryRow label="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
+                        <SummaryRow label="Monto a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0 text-primary" />} strong />
+                    </SummarySection>
 
-                    <div className="border rounded-sm overflow-hidden min-h-[300px]">
+                    <div className="border rounded-sm overflow-hidden">
                         <table className="w-full text-2xs text-left">
                             <thead className="bg-muted text-3xs font-bold uppercase text-muted-foreground tracking-wider border-b">
                                 <tr>
@@ -454,35 +449,49 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
             title: "Confirmación y Ejecución",
             isValid: true,
             component: (
-                <div className="space-y-6 py-4">
-                    <div className="flex flex-col items-center justify-center text-center space-y-4">
-                        <Wallet className="h-8 w-8" />
-                        <div>
-                            <h3 className="text-xl  font-black uppercase tracking-tighter">Confirmación de Ejecución</h3>
-                            <p className="text-sm text-muted-foreground max-w-md mt-2">
-                                Al ejecutar, el sistema impactará el patrimonio de la empresa automáticamente.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
-                        <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Impactos Contables Automatizados</p>
-                        {[
-                            `Cierre de la cuenta "Utilidades del Ejercicio"`,
-                            `Liquidación contable de retiros provisorios de socios`,
-                            `Creación de pasivos en "Dividendos por Pagar"`,
-                            `Aumento de Capital si hubo Reinversión`
-                        ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-3 text-xs font-medium">
-                                <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span>{item}</span>
-                            </div>
+                <div className="space-y-8">
+                    <SummarySection title="Resumen de la distribución">
+                        <SummaryRow label="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
+                        <SummaryRow label="Resultado a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0" />} strong />
+                        {draftResolution?.is_profit && totals.map(t => (
+                            <SummaryRow key={t.key} label={t.label} value={<DataCell.Currency value={t.amount} className="w-auto p-0" />} />
                         ))}
-                    </div>
+                    </SummarySection>
+                    <SummarySection title="Impactos contables automatizados">
+                        <SummaryNote tone="success">Cierre de la cuenta «Utilidades del Ejercicio»</SummaryNote>
+                        <SummaryNote tone="success">Liquidación contable de retiros provisorios de socios</SummaryNote>
+                        <SummaryNote tone="success">Creación de pasivos en «Dividendos por Pagar»</SummaryNote>
+                        <SummaryNote tone="success">Aumento de Capital si hubo Reinversión</SummaryNote>
+                    </SummarySection>
                 </div>
             )
         }
-    ], [fiscalYears, formData, lines, lineDestinations, draftResolution])
+    ], [fiscalYears, formData, lines, lineDestinations, draftResolution, totals])
+
+    // Tras ejecutar, el éxito es un paso más del mismo wizard (mismo modal, altura y footer).
+    const doneStep: WizardStep = {
+        id: 'done',
+        title: 'Distribución ejecutada',
+        isValid: true,
+        component: (
+            <div className="space-y-8">
+                <SummarySection title="Distribución completada">
+                    <SummaryRow label="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
+                    <SummaryRow label="Resultado distribuido" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0" />} strong />
+                    {draftResolution?.is_profit && totals.filter(t => t.amount > 0).map(t => (
+                        <SummaryRow key={t.key} label={t.label} value={<DataCell.Currency value={t.amount} className="w-auto p-0" />} />
+                    ))}
+                    <SummaryNote tone="success">La contabilidad de la distribución quedó registrada.</SummaryNote>
+                </SummarySection>
+            </div>
+        ),
+    }
+
+    const finish = () => {
+        onSuccess?.()
+        onOpenChange(false)
+        resetFlow()
+    }
 
     return (
         <GenericWizard
@@ -498,11 +507,19 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                     <span>Distribución de Utilidades</span>
                 </div>
             }
-            steps={steps}
+            steps={executed ? [doneStep] : steps}
+            subtitle={executed ? 'Ejecución completada' : undefined}
+            footer={executed ? (
+                <div className="flex w-full justify-end">
+                    <SubmitButton type="button" onClick={finish}>Finalizar</SubmitButton>
+                </div>
+            ) : undefined}
             onComplete={handleExecute}
             isCompleting={loading}
             completeButtonLabel="Ejecutar Contabilidad"
             size="xl"
+            stableHeight
+            cardSurface
             initialStep={initialResolution?.status === 'DRAFT' ? 1 : 0}
         />
     )

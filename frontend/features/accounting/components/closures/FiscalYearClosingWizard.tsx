@@ -2,21 +2,18 @@
 
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { SkeletonShell, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep } from '@/components/shared';
+import { SkeletonShell, CancelButton, SubmitButton, BaseModal, GenericWizard, SummarySection, SummaryRow, SummaryNote, type WizardStep } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
 import { PendingChecklistSection, type PendingChecklistItem } from '@/features/tax';
 
 import {
-    CheckCircle2,
-    AlertTriangle,
     Scale,
     Settings2,
     PieChart,
     Wallet,
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
-import { cn } from '@/lib/utils';
 
 // Lazy load FinancialStatementsReport
 const FinancialStatementsReport = lazy(() => import('@/features/finance/components/FinancialStatementsReport').then(m => ({ default: m.FinancialStatementsReport })));
@@ -28,36 +25,6 @@ interface FiscalYearClosingWizardProps {
     year: number;
     preview: FiscalYearPreviewResult | null;
     isLoading: boolean;
-}
-
-function SummarySection({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
-    return (
-        <section>
-            <div className="flex items-center justify-between border-b border-border pb-1">
-                <h3 className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
-                {action}
-            </div>
-            <ul className="divide-y divide-border">{children}</ul>
-        </section>
-    );
-}
-
-function SummaryRow({ label, value, strong, valueClassName }: { label: string; value: string; strong?: boolean; valueClassName?: string }) {
-    return (
-        <li className="flex items-baseline justify-between gap-4 py-2.5 text-sm">
-            <span className="text-muted-foreground">{label}</span>
-            <span className={cn("font-mono tabular-nums", strong && "font-bold", valueClassName)}>{value}</span>
-        </li>
-    );
-}
-
-function SummaryNote({ children }: { children: React.ReactNode }) {
-    return (
-        <li className="flex items-start gap-3 py-2.5 text-sm text-muted-foreground">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
-            <span>{children}</span>
-        </li>
-    );
 }
 
 export function FiscalYearClosingWizard({
@@ -186,10 +153,7 @@ export function FiscalYearClosingWizard({
                 <SummarySection title="Cierre completado">
                     <SummaryRow label="Ejercicio fiscal" value={String(year)} />
                     <SummaryRow label="Transferencia patrimonial" value={formatCurrency(netResult)} strong />
-                    <li className="flex items-start gap-3 py-2.5 text-sm text-muted-foreground">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
-                        <span>La contabilidad quedó sellada y el asiento de cierre se generó con éxito.</span>
-                    </li>
+                    <SummaryNote tone="success">La contabilidad quedó sellada y el asiento de cierre se generó con éxito.</SummaryNote>
                 </SummarySection>
                 <SummarySection title="Siguiente paso">
                     <SummaryNote>Distribuye la utilidad entre los socios cuando corresponda.</SummaryNote>

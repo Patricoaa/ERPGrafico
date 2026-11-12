@@ -27,6 +27,7 @@ export * from './CollapsibleSheet';
 export * from './SheetCloseButton';
 
 export * from './GenericWizard';
+export * from './SummaryList';
 
 // Buttons & Actions
 export * from './ActionFoldButton';

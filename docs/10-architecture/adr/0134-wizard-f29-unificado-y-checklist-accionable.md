@@ -42,6 +42,8 @@ Decisión: el modal del checklist **y** el del wizard **se ocultan** mientras al
 - Los pasos usan todo el ancho; un paso con una sola sección no lleva separador ni descripción.
 - El cierre de ejercicio muestra su auditoría con `PendingChecklistSection` (Obligatorios / Sugeridos) y su pantalla de éxito es un modal con las acciones en el footer.
 
+- La distribución de utilidades (`CreateDistributionWizard`) sigue el mismo esquema, y su éxito es un paso más del wizard. Las filas de resumen compartidas viven en `@/components/shared` (`SummarySection`, `SummaryRow`, `SummaryNote`).
+
 ## Consecuencias
 
 - Menos superficies y una sola acción F29; retomar un F29 a medias es directo.
