@@ -67,7 +67,7 @@ export function F29CloseStep({ declaration, onChanged }: F29CloseStepProps) {
                     Ya hay un comprobante adjunto; puedes reemplazarlo o cerrar con el actual.
                 </p>
             )}
-            <DocumentAttachmentDropzone file={file} onFileChange={setFile} />
+            <DocumentAttachmentDropzone file={file} onFileChange={setFile} accept="application/pdf,.pdf" />
             <div className="flex justify-end">
                 <SubmitButton
                     type="button"

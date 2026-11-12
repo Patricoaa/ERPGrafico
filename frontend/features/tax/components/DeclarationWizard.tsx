@@ -126,6 +126,19 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
     const { createDeclaration } = useCreateDeclaration()
     const { registerDeclaration } = useRegisterDeclaration()
 
+    // Per-opening state must not leak between openings or targets (the wizard stays mounted).
+    const sessionKey = isOpen ? `${periodId ?? ""}|${propYear ?? ""}|${propMonth ?? ""}` : null
+    const [activeSession, setActiveSession] = useState<string | null>(null)
+    const [stableInitialStep, setStableInitialStep] = useState(0)
+    if (sessionKey !== activeSession) {
+        setActiveSession(sessionKey)
+        setCalcPeriodId(null)
+        setClosedNow(false)
+        setCalcData(null)
+        setCalcFailed(false)
+        setStableInitialStep(0)
+    }
+
     // Persisted state of the period drives the phase (no wizard step is persisted).
     const resolvedPeriodId = periodId ?? calcPeriodId ?? undefined
     const { taxPeriod, isLoading: isPeriodLoading, refetch: refetchPeriod } = useTaxPeriod(isOpen ? resolvedPeriodId : undefined)
@@ -134,7 +147,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
         () => (taxPeriod && summary ? { tax_period__year: taxPeriod.year, tax_period__month: taxPeriod.month } : {}),
         [taxPeriod, summary],
     )
-    const { taxDeclarations } = useTaxDeclarations(declarationParams)
+    const { taxDeclarations, isLoading: isDeclarationsLoading } = useTaxDeclarations(declarationParams)
     const declarationRecord = ((taxDeclarations?.results ?? []) as DeclarationRecord[])[0] ?? null
 
     const basePhase = deriveF29Phase(taxPeriod)
@@ -156,7 +169,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             return
         }
         if (!targetYear || !targetMonth) return
-        const key = `${targetYear}-${targetMonth}`
+        const key = `${sessionKey}|${targetYear}-${targetMonth}`
         if (calcKeyRef.current === key) return
         calcKeyRef.current = key
         registerKeyRef.current = null
@@ -169,6 +182,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             setIsCalculating(true)
             try {
                 const data = await calculateTax({ year: targetYear, month: targetMonth })
+                // A late answer for a previous target must not leak into the current one.
+                if (calcKeyRef.current !== key) return
                 setCalcData(data)
                 if (data.tax_period_id) setCalcPeriodId(data.tax_period_id)
                 if (data.tax_rate) {
@@ -179,13 +194,13 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                     }))
                 }
             } catch {
-                setCalcFailed(true)
+                if (calcKeyRef.current === key) setCalcFailed(true)
             } finally {
-                setIsCalculating(false)
+                if (calcKeyRef.current === key) setIsCalculating(false)
             }
         }
         void run()
-    }, [isOpen, targetYear, targetMonth, calculateTax])
+    }, [isOpen, sessionKey, targetYear, targetMonth, calculateTax])
 
     // Once registered, the prior steps show the declared values (read-only).
     const manualFields = isDeclared && declarationRecord
@@ -484,8 +499,13 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
 
     const paymentIndex = PRIOR_STEP_COUNT
     const closeIndex = PRIOR_STEP_COUNT + (includePayment ? 1 : 0)
-    const initialStep = phase === "payment" ? paymentIndex : phase === "close" ? closeIndex : 0
-    const isPreLoading = isOpen && ((calcData === null && !calcFailed) || isPeriodLoading)
+    // The phase is provisional until the declaration record (is_registered) has loaded.
+    const isPhaseLoading = isPeriodLoading || (Boolean(summary) && isDeclarationsLoading)
+    const isPreLoading = isOpen && ((calcData === null && !calcFailed) || isPhaseLoading)
+    const phaseInitialStep = phase === "payment" ? paymentIndex : phase === "close" ? closeIndex : 0
+    // Hold the last settled step while loading so a provisional phase never moves the wizard.
+    if (!isPreLoading && phaseInitialStep !== stableInitialStep) setStableInitialStep(phaseInitialStep)
+    const initialStep = isPreLoading ? stableInitialStep : phaseInitialStep
 
     const renderFooter = ({ step, isFirstStep, isLastStep, goBack, goNext }: WizardRenderContext) => {
         const current = steps[step]
@@ -514,7 +534,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
         )
     }
 
-    if (phase === "done" && taxPeriod) {
+    if (phase === "done" && taxPeriod && !isPreLoading) {
         const display = taxPeriod.tax_period_display ?? `${taxPeriod.month_display ?? taxPeriod.month} ${taxPeriod.year}`
         return (
             <Drawer

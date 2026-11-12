@@ -15,6 +15,7 @@ global.ResizeObserver = class ResizeObserver {
 const m = vi.hoisted(() => ({
     period: null as unknown,
     declarations: null as unknown,
+    declarationsLoading: false,
     calculateTax: vi.fn(),
     createDeclaration: vi.fn(),
     registerDeclaration: vi.fn(),
@@ -41,7 +42,10 @@ vi.mock("@/features/tax/hooks/useTaxMutations", () => ({
 vi.mock("@/features/tax/hooks/useTaxQueries", () => ({
     useTaxPeriod: (id: number | undefined) => ({ taxPeriod: id ? m.period : null, isLoading: false, isError: false, refetch: m.refetch }),
     useTaxPeriods: () => ({ taxPeriods: null, isLoading: false, isError: false, refetch: vi.fn() }),
-    useTaxDeclarations: () => ({ taxDeclarations: m.declarations, isLoading: false, isError: false }),
+    useTaxDeclarations: (params: Record<string, unknown>) => {
+        const enabled = Object.keys(params).length > 0
+        return { taxDeclarations: enabled ? m.declarations : null, isLoading: enabled && m.declarationsLoading, isError: false }
+    },
     useF29Detail: () => ({ f29Detail: null, isLoading: false, isError: false, refetch: vi.fn() }),
     useLazyTaxDeclarations: () => ({ fetchDeclarations: vi.fn() }),
 }))
@@ -79,9 +83,10 @@ async function flush() {
 }
 
 async function mount(onSuccess = vi.fn()) {
-    render(<DeclarationWizard isOpen onOpenChange={vi.fn()} periodId={7} onSuccess={onSuccess} />)
+    const result = render(<DeclarationWizard isOpen onOpenChange={vi.fn()} periodId={7} onSuccess={onSuccess} />)
     await flush()
     await flush()
+    return result
 }
 
 function buttonByText(text: RegExp) {
@@ -106,6 +111,7 @@ const CALC = { year: 2026, month: 10, tax_period_id: 7, vat_debit: 0, vat_credit
 beforeEach(() => {
     vi.clearAllMocks()
     m.declarations = null
+    m.declarationsLoading = false
     m.calculateTax.mockResolvedValue(CALC)
     m.refetch.mockResolvedValue(undefined)
     m.uploadF29Document.mockResolvedValue(undefined)
@@ -212,5 +218,78 @@ describe("DeclarationWizard — cierre", () => {
         expect(first).toBeTruthy()
         expect(second).toBeTruthy()
         expect(first).not.toBe(second)
+    })
+})
+
+describe("DeclarationWizard — fase estable y estado por apertura", () => {
+    it("si el registro falla tras crear, la fase no salta a Pago mientras carga la declaración", async () => {
+        m.period = makePeriod(null)
+        m.createDeclaration.mockImplementation(async () => {
+            // The create invalidates the period: the refetch now carries a summary,
+            // while the declarations list (is_registered) is still loading.
+            m.period = makePeriod({ vat_to_pay: 100000, total_paid: 0, is_fully_paid: false })
+            m.declarationsLoading = true
+            return { id: 55, tax_period: 7 }
+        })
+        m.registerDeclaration.mockRejectedValue({ response: { data: { error: "Folio inválido" } } })
+        const { rerender } = await mount()
+        await press(buttonByText(/Siguiente/))
+        await press(buttonByText(/Siguiente/))
+        await press(buttonByText(/Registrar Declaración/))
+        // Query refetch (period has a summary, declarations list still loading) re-renders the wizard.
+        rerender(<DeclarationWizard isOpen onOpenChange={vi.fn()} periodId={7} onSuccess={vi.fn()} />)
+        await flush()
+        await flush()
+        expect(m.showApiError).toHaveBeenCalledTimes(1)
+        expect(screen.queryByText("Hay un saldo pendiente por pagar.")).not.toBeInTheDocument()
+        expect(buttonByText(/Registrar Abono/)).toBeNull()
+
+        // The list loads: the declaration exists but is not registered → still prior, on Resumen.
+        m.declarationsLoading = false
+        m.declarations = { results: [{ id: 55, is_registered: false, ppm_amount: 0 }] }
+        rerender(<DeclarationWizard isOpen onOpenChange={vi.fn()} periodId={7} onSuccess={vi.fn()} />)
+        await flush()
+        await flush()
+        expect(screen.getByText("03 / 04")).toBeInTheDocument()
+        expect(buttonByText(/Registrar Declaración/)).not.toBeNull()
+        expect(screen.queryByText("Hay un saldo pendiente por pagar.")).not.toBeInTheDocument()
+        expect(buttonByText(/Registrar Abono/)).toBeNull()
+    })
+
+    it("abrir otro período sin TaxPeriod nunca muestra los datos del período anterior", async () => {
+        const onOpenChange = vi.fn()
+        // Period A: closed.
+        m.calculateTax.mockResolvedValueOnce(CALC)
+        m.period = makePeriod({ vat_to_pay: 1000, total_paid: 1000, is_fully_paid: true, folio_number: "A-1" }, "CLOSED")
+        const { rerender } = render(<DeclarationWizard isOpen onOpenChange={onOpenChange} year={2026} month={9} onSuccess={vi.fn()} />)
+        await flush()
+        await flush()
+        expect(screen.getByText("Período Cerrado", { selector: "h3" })).toBeInTheDocument()
+
+        rerender(<DeclarationWizard isOpen={false} onOpenChange={onOpenChange} year={2026} month={9} onSuccess={vi.fn()} />)
+        await flush()
+
+        // Period B: no TaxPeriod yet (backend answers tax_period_id null); calc still pending.
+        let resolveB: (v: unknown) => void = () => {}
+        m.calculateTax.mockImplementationOnce(() => new Promise(r => { resolveB = r }))
+        rerender(<DeclarationWizard isOpen onOpenChange={onOpenChange} year={2026} month={10} onSuccess={vi.fn()} />)
+        expect(screen.queryByText("Período Cerrado")).not.toBeInTheDocument()
+        await flush()
+        expect(screen.queryByText("Período Cerrado")).not.toBeInTheDocument()
+
+        await act(async () => { resolveB({ ...CALC, tax_period_id: null }) })
+        await flush()
+        await flush()
+        expect(screen.queryByText("Período Cerrado")).not.toBeInTheDocument()
+        expect(screen.queryByText(/A-1/)).not.toBeInTheDocument()
+        expect(screen.getByText("01 / 04")).toBeInTheDocument()
+    })
+
+    it("Confirmar Cierre queda deshabilitado sin archivo ni comprobante previo", async () => {
+        m.period = makePeriod({ vat_to_pay: 0, total_paid: 0, is_fully_paid: true, document: null })
+        await mount()
+        expect(buttonByText(/Confirmar Cierre/)).toBeDisabled()
+        const input = document.querySelector("input[type=file]")
+        expect(input?.getAttribute("accept")).toContain("application/pdf")
     })
 })
