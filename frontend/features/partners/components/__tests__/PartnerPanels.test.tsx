@@ -132,11 +132,15 @@ describe("clasificación de movimientos", () => {
         expect(screen.getByText("Absorción UNICA")).toBeInTheDocument()
         expect(screen.queryByText("Devolución UNICA")).not.toBeInTheDocument()
     })
-    it("todo tipo del backend está en capital, resultados u omitidos (y sin duplicados)", () => {
-        const file = resolve(process.cwd(), "../backend/contacts/partner_models.py")
-        if (!existsSync(file)) return
+    const backendFile = resolve(process.cwd(), "../backend/contacts/partner_models.py")
+    it.skipIf(!existsSync(backendFile))("todo tipo del backend está en capital, resultados u omitidos (y sin duplicados)", () => {
+        const file = backendFile
         const src = readFileSync(file, "utf8")
-        const block = src.slice(src.indexOf("class Type(models.TextChoices)"), src.indexOf("partner = models.ForeignKey"))
+        const start = src.indexOf("class Type(models.TextChoices)")
+        expect(start).toBeGreaterThanOrEqual(0)
+        const end = src.indexOf("partner = models.ForeignKey", start)
+        expect(end).toBeGreaterThan(start)
+        const block = src.slice(start, end)
         const backendTypes = [...block.matchAll(/=\s*"([A-Z_]+)",\s*_\(/g)].map(m => m[1])
         expect(backendTypes.length).toBeGreaterThan(15)
         const all = [...CAPITAL_MOVEMENT_TYPES, ...RESULTS_MOVEMENT_TYPES, ...OMITTED_MOVEMENT_TYPES]
