@@ -76,12 +76,14 @@ describe("PartnerDrawer", () => {
         expect(await screen.findByText("capital-panel")).toBeInTheDocument()
     })
 
-    it("el header solo ofrece Dar de baja y lo ejecuta si no hay bloqueo", async () => {
+    it("el menú del header reúne todas las acciones y ejecuta la baja si no hay bloqueo", async () => {
         renderDrawer()
         await userEvent.click(screen.getByRole("button", { name: "Acciones" }))
         const items = screen.getAllByRole("menuitem")
-        expect(items).toHaveLength(1)
-        await userEvent.click(items[0])
+        expect(items.map(i => i.textContent)).toEqual([
+            "Suscribir / reducir capital", "Registrar aporte", "Transferir a otro socio", "Registrar retiro", "Dar de baja",
+        ])
+        await userEvent.click(items[items.length - 1])
         expect(m.run).toHaveBeenCalledWith({ type: "demote", partnerId: 7 })
     })
 
@@ -90,21 +92,21 @@ describe("PartnerDrawer", () => {
         m.partners = [blocked]
         renderDrawer()
         await userEvent.click(screen.getByRole("button", { name: "Acciones" }))
-        const item = screen.getByRole("menuitem")
+        const item = screen.getByRole("menuitem", { name: /Dar de baja/ })
         expect(item).toHaveAttribute("aria-disabled", "true")
         expect(item).toHaveTextContent(demoteBlockedReason(blocked) ?? "")
         await userEvent.click(item)
         expect(m.run).not.toHaveBeenCalled()
     })
 
-    it("subtítulo: ID fiscal y fecha de alta; solo ID fiscal mientras carga o sin fecha", () => {
+    it("subtítulo: RUT y fecha de alta; solo RUT mientras carga o sin fecha", () => {
         m.overview = { info: { tax_id: "1-9", partner_since: "2025-01-02", contact_id: 7 } }
         const { unmount } = renderDrawer()
-        expect(screen.getByText(/^1-9 · socio desde .*2025/)).toBeInTheDocument()
+        expect(screen.getByText(/^RUT 1-9 · socio desde .*2025/)).toBeInTheDocument()
         unmount()
         m.overview = { info: { tax_id: "1-9", partner_since: null, contact_id: 7 } }
         renderDrawer()
-        expect(screen.getByText("1-9")).toBeInTheDocument()
+        expect(screen.getByText("RUT 1-9")).toBeInTheDocument()
     })
 
     it("un id que no es socio muestra el aviso", () => {

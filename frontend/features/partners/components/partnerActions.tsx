@@ -34,7 +34,6 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: TrendingUp,
         label: "Formalizar exceso de capital",
         placement: "capital",
-        className: "text-warning",
         onClick: () => ctx.run({ type: "subscription", partnerId: item.id, amount: item.partner_excess_capital }),
         visible: num(item.partner_excess_capital) > 0,
     },
@@ -43,7 +42,6 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: HandCoins,
         label: "Pagar capital pendiente",
         placement: "capital",
-        className: "text-primary",
         onClick: () => ctx.run({ type: "contribution", partnerId: item.id, amount: item.partner_pending_capital }),
         visible: num(item.partner_pending_capital) > 0,
     },
@@ -73,7 +71,6 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: Banknote,
         label: "Pagar dividendos",
         placement: "results",
-        className: "text-primary",
         onClick: () => ctx.run({ type: "dividend", partnerId: item.id }),
         visible: num(item.partner_dividends_payable_balance) > 0,
     },
@@ -82,7 +79,6 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: ArrowRightLeft,
         label: "Distribuir utilidades retenidas",
         placement: "results",
-        className: "text-primary/70",
         onClick: () => ctx.run({ type: "mobilize", partnerId: item.id }),
         visible: num(item.partner_earnings_balance) > 0,
     },
@@ -109,4 +105,12 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
 /** Acciones visibles del socio para una zona de la ficha. */
 export function partnerActionsFor(partner: Partner, placement: PartnerActionPlacement, ctx: PartnerActionsCtx): StructuredAction[] {
     return buildPartnerActions(partner, ctx).filter(a => a.placement === placement && a.visible !== false)
+}
+
+/** Todas las acciones visibles para el menú "⋯" de la ficha: capital, resultados y la baja, separadas por grupo. */
+export function partnerMenuActions(partner: Partner, ctx: PartnerActionsCtx): StructuredAction[] {
+    const groups = (["capital", "results", "menu"] as const)
+        .map(placement => partnerActionsFor(partner, placement, ctx))
+        .filter(group => group.length > 0)
+    return groups.flatMap((group, i) => (i === 0 ? group : [{ separator: true as const }, ...group]))
 }

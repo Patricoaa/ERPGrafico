@@ -12,7 +12,7 @@ import { usePartners } from "@/features/contacts"
 import { formatPlainDate } from "@/lib/utils"
 import { usePartnerOverview, useProfitDistributions } from "../hooks"
 import { partnerDistributionEntity, partnerDistributionViews, type PartnerDistributionRow } from "../entity-view/partnerDistribution.entity"
-import { partnerActionsFor } from "./partnerActions"
+import { partnerMenuActions } from "./partnerActions"
 import { usePartnerActions } from "./PartnerActionModal"
 import { PartnerLedgerPanel } from "./PartnerLedgerPanel"
 import { PartnerSummaryPanel } from "./PartnerSummaryPanel"
@@ -76,11 +76,11 @@ export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDraw
     const taxId = overview?.info.tax_id || partner?.tax_id
     const since = overview?.info.partner_since
     const subtitle = taxId
-        ? (since ? `${taxId} · socio desde ${formatPlainDate(since)}` : taxId)
+        ? (since ? `RUT ${taxId} · socio desde ${formatPlainDate(since)}` : `RUT ${taxId}`)
         : identity.subtitle
 
-    // Siempre el menú "⋯": la baja bloqueada sigue visible, deshabilitada y con su motivo.
-    const menuActions = partner ? partnerActionsFor(partner, "menu", { run }) : []
+    // Menú "⋯" con todas las acciones del socio; la baja bloqueada sigue visible, deshabilitada y con su motivo.
+    const menuActions = partner ? partnerMenuActions(partner, { run }) : []
     const headerActions = menuActions.length > 0
         ? <DataCell.ActionMenu items={toMenuItems(menuActions)} title="Acciones" align="end" />
         : undefined

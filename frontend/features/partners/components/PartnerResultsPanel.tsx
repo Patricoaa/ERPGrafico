@@ -36,15 +36,14 @@ export function PartnerResultsPanel({ partner, run }: { partner: Partner; run: P
 
     return (
         <div className="space-y-8">
-            <PartnerPanelActions actions={actions} label="Acciones de resultados" />
-
             <section aria-label="Saldos de resultados" className="space-y-4">
                 <FormSection title="Saldos" icon={Coins} />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <StatCard variant="minimal" accent="destructive" label="Retiros provisorios" value={money(partner.partner_provisional_withdrawals_balance)} />
-                    <StatCard variant="minimal" accent="success" label="Utilidades retenidas" value={money(partner.partner_earnings_balance)} />
-                    <StatCard variant="minimal" accent="warning" label="Dividendos por pagar" value={money(partner.partner_dividends_payable_balance)} />
+                    <StatCard variant="default" accent="muted" label="Retiros provisorios" value={money(partner.partner_provisional_withdrawals_balance)} />
+                    <StatCard variant="default" accent="muted" label="Utilidades retenidas" value={money(partner.partner_earnings_balance)} />
+                    <StatCard variant="default" accent="muted" label="Dividendos por pagar" value={money(partner.partner_dividends_payable_balance)} />
                 </div>
+                <PartnerPanelActions actions={actions} label="Acciones de resultados" />
             </section>
 
             <section aria-label="Movimientos de resultados" className="space-y-4">

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import type { Partner } from "@/features/contacts"
-import { demoteBlockedReason, partnerActionsFor } from "../partnerActions"
+import { demoteBlockedReason, partnerActionsFor, partnerMenuActions } from "../partnerActions"
 
 const base: Partner = {
     id: 7, name: "Ana Socia", tax_id: "1-9", partner_equity_percentage: "50",
@@ -56,5 +56,15 @@ describe("demoteBlockedReason", () => {
     it("sin cambios", () => {
         expect(demoteBlockedReason(base)).toBeNull()
         expect(demoteBlockedReason({ ...base, partner_total_contributions: "1" })).toMatch(/capital suscrito/)
+    })
+})
+
+describe("partnerMenuActions", () => {
+    it("agrupa capital, resultados y baja separados, sin separadores al borde", () => {
+        const items = partnerMenuActions(base, { run: vi.fn() })
+        const seps = items.flatMap((a, i) => ("separator" in a ? [i] : []))
+        expect(seps).toHaveLength(2)
+        expect(seps[0]).toBeGreaterThan(0)
+        expect(seps[1]).toBeLessThan(items.length - 1)
     })
 })
