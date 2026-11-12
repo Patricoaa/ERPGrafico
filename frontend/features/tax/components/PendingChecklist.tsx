@@ -28,7 +28,7 @@ export interface PendingChecklistItem {
     detail?: string
     /** Documentos pendientes: los listados y el total real (puede superar lo listado). */
     pending?: { label: PendingDocumentLabel; documents: PendingChecklistDocument[]; total: number }
-    action?: { text: string; onClick?: () => void; href?: string }
+    action?: { text: string; onClick?: () => void; href?: string; variant?: "outline" | "ghost" }
 }
 
 function StateIcon({ passed, critical }: { passed: boolean; critical: boolean }) {
@@ -69,11 +69,11 @@ function PendingChecklistRow({ item, critical, expanded, onToggle, onOpenDocumen
                     </Button>
                 )}
                 {item.action && (item.action.href ? (
-                    <Button variant="outline" size="sm" className="h-7 shrink-0 text-xs" asChild>
+                    <Button variant={item.action.variant ?? "outline"} size="sm" className="h-7 shrink-0 text-xs" asChild>
                         <Link href={item.action.href}>{item.action.text}</Link>
                     </Button>
                 ) : (
-                    <Button variant="outline" size="sm" className="h-7 shrink-0 text-xs" onClick={item.action.onClick}>
+                    <Button variant={item.action.variant ?? "outline"} size="sm" className="h-7 shrink-0 text-xs" onClick={item.action.onClick}>
                         {item.action.text}
                     </Button>
                 ))}

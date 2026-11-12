@@ -107,7 +107,7 @@ export function FiscalYearClosingWizard({
                 title: 'Balance de comprobación cuadrado',
                 detail: preview.is_balanced ? undefined : 'El balance presenta descuadres; no se puede proceder con el cierre.',
                 passed: preview.is_balanced,
-                action: { text: 'Ver balance', onClick: () => setShowTrialBalance(true) },
+                action: { text: 'Ver balance', variant: 'ghost', onClick: () => setShowTrialBalance(true) },
             }
             : null;
         const warningKeys = new Set(
