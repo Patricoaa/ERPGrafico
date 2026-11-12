@@ -34,7 +34,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 
 import { type TaxPeriod, type TaxPeriodDetail, type TaxDeclaration, type TaxCalculationData } from "../types"
 import { deriveF29Phase, type F29Phase } from "../utils/f29Phase"
-import { F29PaymentStep } from "./wizard/F29PaymentStep"
+import { F29PaymentStep, F29PaymentHistory } from "./wizard/F29PaymentStep"
 import { F29CloseStep } from "./wizard/F29CloseStep"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -565,6 +565,11 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             <dd><MoneyDisplay amount={summary.total_paid} showColor={false} className="font-bold" /></dd>
                             {taxPeriod.closed_by_name && (<><dt className="text-muted-foreground">Cerrado por</dt><dd>{taxPeriod.closed_by_name}</dd></>)}
                         </dl>
+                    )}
+                    {summary && (
+                        <div className="w-full max-w-xl text-left">
+                            <F29PaymentHistory payments={summary.payments ?? []} />
+                        </div>
                     )}
                     <Button
                         onClick={() => (closedNow ? onSuccess() : onOpenChange(false))}

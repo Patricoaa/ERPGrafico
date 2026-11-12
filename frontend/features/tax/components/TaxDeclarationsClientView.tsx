@@ -72,8 +72,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const currentVatToPay = latestPeriod?.declaration_summary?.vat_to_pay || 0
 
     const taxDeclarationActionsCtx: TaxDeclarationActionsCtx = {
-        onPayment: handleOpenWizard,
-        onWizard: handleOpenWizard,
+        onOpenF29: handleOpenWizard,
     }
 
     const { view, onViewChange } = useCollectionViewMode("tax.taxperiod", "card")
@@ -171,7 +170,10 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                             handleCloseModal()
                         }}
                         periodId={declarationPanel.selectedId ?? undefined}
-                        onSuccess={() => refetchPeriods()}
+                        onSuccess={() => {
+                            refetchPeriods()
+                            handleCloseModal()
+                        }}
                         existingPeriods={periods}
                     />
                 )}

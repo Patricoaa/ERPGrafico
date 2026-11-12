@@ -256,6 +256,18 @@ describe("DeclarationWizard — fase estable y estado por apertura", () => {
         expect(buttonByText(/Registrar Abono/)).toBeNull()
     })
 
+    it("la vista de período cerrado lista el historial de pagos sin botón Anular", async () => {
+        m.period = makePeriod({
+            vat_to_pay: 1000, total_paid: 1000, is_fully_paid: true, folio_number: "A-1",
+            payments: [{ id: 1, payment_date: "2026-11-05", amount: 1000, payment_method_display: "Transferencia" }],
+        }, "CLOSED")
+        await mount()
+        expect(screen.getByText("Período Cerrado", { selector: "h3" })).toBeInTheDocument()
+        expect(screen.getByText("Historial de Pagos")).toBeInTheDocument()
+        expect(screen.getByText("Transferencia")).toBeInTheDocument()
+        expect(buttonByText(/Anular/)).toBeNull()
+    })
+
     it("abrir otro período sin TaxPeriod nunca muestra los datos del período anterior", async () => {
         const onOpenChange = vi.fn()
         // Period A: closed.

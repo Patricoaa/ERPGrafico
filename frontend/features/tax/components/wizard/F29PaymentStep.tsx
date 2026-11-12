@@ -13,7 +13,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { formatCurrency } from "@/lib/money"
 import { cn, parseDateOnly } from "@/lib/utils"
 import { useAnnulTaxPayment, useCreateTaxPayment } from "../../hooks/useTaxMutations"
-import type { TaxDeclaration, TaxPaymentData } from "../../types"
+import type { TaxDeclaration, TaxPayment, TaxPaymentData } from "../../types"
 
 interface F29PaymentStepProps {
     declaration: TaxDeclaration
@@ -95,49 +95,7 @@ export function F29PaymentStep({ declaration, onChanged }: F29PaymentStepProps) 
                 </div>
             )}
 
-            <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground tracking-wider">
-                    <History className="h-4 w-4" />
-                    <span>Historial de Pagos</span>
-                </div>
-                <div className="surface-panel overflow-hidden">
-                    {declaration.payments.length > 0 ? (
-                        <div className="divide-y">
-                            {declaration.payments.map((payment) => (
-                                <div key={payment.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center">
-                                            <CreditCard className="h-5 w-5 text-muted-foreground" />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold">{formatCurrency(payment.amount)}</div>
-                                            <div className="text-xs text-muted-foreground flex items-center gap-2">
-                                                <Calendar className="h-3 w-3" />
-                                                {format(parseDateOnly(payment.payment_date), "dd MMM yyyy", { locale: es })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Chip size="xs" intent="neutral">{payment.payment_method_display}</Chip>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                                            onClick={() => setPaymentToAnnul(payment.id)}
-                                        >
-                                            Anular
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="p-8 text-center text-muted-foreground">
-                            <p className="text-sm">No se han registrado pagos aún.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
+            <F29PaymentHistory payments={declaration.payments} onAnnul={setPaymentToAnnul} />
 
             <ActionConfirmModal
                 open={paymentToAnnul !== null}
@@ -165,6 +123,63 @@ export function F29PaymentStep({ declaration, onChanged }: F29PaymentStepProps) 
                 isPurchase={true}
                 hideDteFields={true}
             />
+        </div>
+    )
+}
+
+interface F29PaymentHistoryProps {
+    payments: TaxPayment[]
+    /** Sin `onAnnul` la lista es de solo lectura (período cerrado). */
+    onAnnul?: (paymentId: number) => void
+}
+
+/** Historial de pagos de una declaración F29; con `onAnnul` ofrece anular cada pago. */
+export function F29PaymentHistory({ payments, onAnnul }: F29PaymentHistoryProps) {
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground tracking-wider">
+                <History className="h-4 w-4" />
+                <span>Historial de Pagos</span>
+            </div>
+            <div className="surface-panel overflow-hidden">
+                {payments.length > 0 ? (
+                    <div className="divide-y">
+                        {payments.map((payment) => (
+                            <div key={payment.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center">
+                                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold">{formatCurrency(payment.amount)}</div>
+                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                            <Calendar className="h-3 w-3" />
+                                            {format(parseDateOnly(payment.payment_date), "dd MMM yyyy", { locale: es })}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Chip size="xs" intent="neutral">{payment.payment_method_display}</Chip>
+                                    {onAnnul && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                                            onClick={() => onAnnul(payment.id)}
+                                        >
+                                            Anular
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="p-8 text-center text-muted-foreground">
+                        <p className="text-sm">No se han registrado pagos aún.</p>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
