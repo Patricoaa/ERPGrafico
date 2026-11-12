@@ -137,6 +137,13 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from .selectors import ContactSelectorExt
         return Response(ContactSelectorExt.get_partner_statement(self.get_object(), self.get_serializer))
 
+    @action(detail=True, methods=["get"])
+    def partner_overview(self, request, pk=None):
+        """Alertas, KPIs y composición de la ficha del socio."""
+        from .partner_overview import build_partner_overview
+
+        return Response(build_partner_overview(self.get_object()))
+
     @action(detail=False, methods=["get"])
     def partners_summary(self, request):
         """Calculates global metrics for the partner dashboard."""
