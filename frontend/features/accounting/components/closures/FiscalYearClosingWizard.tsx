@@ -25,7 +25,7 @@ const FinancialStatementsReport = lazy(() => import('@/features/finance/componen
 interface FiscalYearClosingWizardProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
     year: number;
     preview: FiscalYearPreviewResult | null;
     isLoading: boolean;
@@ -85,7 +85,12 @@ export function FiscalYearClosingWizard({
     }, [isOpen]);
 
     const handleConfirm = async () => {
-        await onConfirm();
+        try {
+            await onConfirm();
+        } catch {
+            // El hook de cierre ya mostró el error; el wizard sigue abierto para reintentar.
+            return;
+        }
         setIsClosed(true);
     };
 

@@ -60,7 +60,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const { reopenPeriod: reopenTaxPeriod, isReopeningPeriod: isReopeningTaxPeriod } = useReopenTaxPeriod();
     const isLoadingTaxAction = isReopeningTaxPeriod;
 
-    const [activeYearToClose] = useState<number | null>(null);
     const [declarationTarget, setDeclarationTarget] = useState<{ id?: number; year?: number; month?: number } | undefined>(undefined);
     const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
 
@@ -129,12 +128,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     };
 
     const handleConfirmClosing = async () => {
-        if (activeYearToClose) {
-            await closeFiscalYear(activeYearToClose);
-            clearSelection();
-            fetchPeriods();
-            refetchTaxPeriods();
-        }
+        const year = selectedFromUrl?.year;
+        if (!year) return;
+        // Lanza si el cierre falla (el hook ya mostró el error). La selección se limpia al cerrar el wizard,
+        // para que su pantalla de éxito siga visible.
+        await closeFiscalYear(year);
+        fetchPeriods();
+        fetchFiscalYears();
+        refetchTaxPeriods();
     };
 
     const handleOpenDeclaration = useCallback((params: { id?: number; year: number; month: number }) => {
@@ -258,7 +259,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     clearSelection();
                 }}
                 onConfirm={handleConfirmClosing}
-                year={activeYearToClose || (selectedFromUrl?.year ?? 0)}
+                year={selectedFromUrl?.year ?? 0}
                 preview={previewData}
                 isLoading={!previewData && previewModalOpen}
             />
