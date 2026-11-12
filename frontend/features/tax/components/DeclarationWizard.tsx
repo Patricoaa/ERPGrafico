@@ -317,21 +317,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             title: "Auditoría de Documentos (IVA)",
             isValid: !hasBlockingDrafts,
             component: (
-                <div className="space-y-10 max-w-4xl mx-auto pb-6">
-                    {!isDeclared && (
-                        <div className="space-y-3">
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <PendingChecklistSection title="Obligatorios" items={draftChecklist.required} critical expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
-                                <PendingChecklistSection title="Sugeridos" items={draftChecklist.suggested} critical={false} expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
-                            </div>
-                            {hasBlockingDrafts && (
-                                <p className="text-xs text-muted-foreground">
-                                    Emita o anule las facturas en borrador del mes para continuar: un borrador no entra al cálculo de IVA.
-                                </p>
-                            )}
-                        </div>
-                    )}
-                    <div className="flex flex-col gap-12">
+                <div className="space-y-10 pb-6">
+                    <div className="grid gap-6 md:grid-cols-2">
                         <section className="space-y-8">
                             <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
                             <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
@@ -403,6 +390,17 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             </div>
                         </section>
                     </div>
+                    {!isDeclared && (
+                        <div className="space-y-5">
+                            <PendingChecklistSection title="Obligatorios" items={draftChecklist.required} critical expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                            <PendingChecklistSection title="Sugeridos" items={draftChecklist.suggested} critical={false} expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                            {hasBlockingDrafts && (
+                                <p className="text-xs text-muted-foreground">
+                                    Emita o anule las facturas en borrador del mes para continuar: un borrador no entra al cálculo de IVA.
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
             )
         },

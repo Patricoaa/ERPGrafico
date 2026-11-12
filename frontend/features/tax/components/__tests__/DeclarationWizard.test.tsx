@@ -319,17 +319,24 @@ describe("DeclarationWizard — borradores y footer", () => {
         expect(buttonByText(/Siguiente/)).toBeDisabled()
     })
 
-    it("Obligatorios y Sugeridos van arriba del primer paso, lado a lado, y el contenido hace scroll", async () => {
+    it("Débito y Crédito van lado a lado y Obligatorios/Sugeridos abajo, en una columna a todo el ancho", async () => {
         m.period = makePeriod(null)
         m.calculateTax.mockResolvedValue({ ...CALC, drafts_summary: { invoices: [INVOICE_DRAFT], entries: [ENTRY_DRAFT] } })
         await mount()
         const required = screen.getByRole("region", { name: "Obligatorios" })
         const suggested = screen.getByRole("region", { name: "Sugeridos" })
 
+        // Débito y Crédito comparten una grilla de dos columnas.
+        const debit = screen.getByText("Débito Fiscal").closest("section")
+        const credit = screen.getByText("Crédito Fiscal").closest("section")
+        expect(debit?.parentElement).toBe(credit?.parentElement)
+        expect(debit?.parentElement?.className).toContain("md:grid-cols-2")
+
+        // Obligatorios y Sugeridos van después, apilados (misma columna) y sin tope de ancho.
         expect(required.parentElement).toBe(suggested.parentElement)
-        expect(required.parentElement?.className).toContain("md:grid-cols-2")
-        const debit = screen.getByText("Débito Fiscal")
-        expect(required.compareDocumentPosition(debit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+        expect(required.parentElement?.className).not.toContain("grid-cols")
+        expect(debit!.compareDocumentPosition(required) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+        expect(required.closest(".max-w-4xl")).toBeNull()
         expect(required.closest(".overflow-y-auto")).not.toBeNull()
     })
 
