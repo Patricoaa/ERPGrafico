@@ -22,6 +22,7 @@ interface ModalProps {
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
     initialPartnerId?: string
+    initialFromPartnerId?: string
     initialAmount?: string
 }
 
@@ -218,7 +219,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
     )
 }
 
-export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProps) {
+export function EquityTransferModal({ open, onOpenChange, onSuccess, initialFromPartnerId }: ModalProps) {
     const [loading, setLoading] = useState(false)
     const { partners } = usePartners()
     const mutations = usePartnerMutations()
@@ -241,7 +242,10 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
         })
     }
 
-    useOnOpen(open, resetForm)
+    useOnOpen(open, () => {
+        resetForm()
+        if (initialFromPartnerId) setFormData(prev => ({ ...prev, from_contact_id: initialFromPartnerId }))
+    })
 
     // Seller info
     const seller = partners.find(p => p.id.toString() === formData.from_contact_id)

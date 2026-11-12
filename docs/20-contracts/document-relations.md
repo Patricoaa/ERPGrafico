@@ -76,6 +76,7 @@ Rules:
 - Providers read **typed FKs only**. No parsing of `description`/`reference` text, no heuristic matching.
 - A target that may not exist (GFK/PGFK) is yielded as `(label, id)`; the service reports it in `unresolved`.
 - Duplicate (role, target) pairs are collapsed by the service.
+- **View labels over an existing model** (ADR-0133): a label whose model already has its own label (e.g. `contacts.partner` over `Contact`, next to `contacts.contact`) declares `DocumentType(queryset=lambda: ..., permission=...)`. `queryset` resolves the label to its model and restricts rows (a non-partner contact is `404 Documento no encontrado` under `contacts.partner`); `permission` replaces the derived `app.view_<model>` (here `contacts.view_contact`). `label_for(model)` still returns the model's own label, so links *to* a contact keep `contacts.contact`. The label is not registered in `UniversalRegistry` (it would duplicate search indexing and make `get_for_model` ambiguous).
 - Pilot coverage (M2): `sales.saleorder`, `sales.saledelivery`, `billing.invoice`, `treasury.treasurymovement`, `accounting.journalentry`, `inventory.stockmove`, `inventory.inventorydocument`. Purchasing/production/other modules: phase M5.
 
 ## 4. Canonical URL

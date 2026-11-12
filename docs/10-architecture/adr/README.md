@@ -195,5 +195,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0130](0130-pos-cash-difference-accounts.md) | Diferencias de efectivo del POS contra la cuenta de su motivo (o sobrante/faltante de caja), sin caer en CxC/CxP | Accepted |
 | [0131](0131-pos-partner-withdrawal-requires-partner.md) | El retiro de socio en el POS siempre nombra al socio (cierre y diferencias) | Accepted |
 | [0132](0132-socios-ficha-y-superficie-de-acciones.md) | El socio es una entidad propia con ficha (`PartnerDrawer`), feature `partners` y una única superficie de acciones | Accepted |
+| [0133](0133-ficha-socio-estilo-pos.md) | La ficha de socio sigue el patrón de la ficha POS: 6 pestañas, alertas del backend (`partner_overview`) y acciones por `placement` | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

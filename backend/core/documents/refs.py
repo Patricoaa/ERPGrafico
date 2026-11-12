@@ -141,10 +141,10 @@ def missing_ref(label: str, pk: Any) -> dict:
 
 
 def get_document(label: str, pk: Any) -> models.Model | None:
-    model = DocumentTypeRegistry.model_for(label)
-    if model is None:
+    queryset = DocumentTypeRegistry.queryset_for(label)
+    if queryset is None:
         return None
-    return model.objects.filter(pk=pk).first()
+    return queryset.filter(pk=pk).first()
 
 
 def ref_for(label: str, pk: Any, user, navigational: bool = False) -> dict:

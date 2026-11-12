@@ -16,7 +16,7 @@ Las acciones de socio (suscripción, aporte, retiro, transferencia, dividendos, 
 
 ## Decisión
 
-1. **Entidad propia `contacts.partner`** con `PartnerDrawer` registrado en `entity-drawers` y `entity-registry` (pestañas: Resumen, Libro auxiliar, Participación, Distribuciones, Documentos). No es un modo de `ContactDrawer`; este solo enlaza a la ficha.
+1. **Entidad propia `contacts.partner`** con `PartnerDrawer` registrado en `entity-drawers` y `entity-registry` (pestañas: Resumen, Libro auxiliar, Participación, Distribuciones, Documentos; **lista de pestañas reemplazada por el [ADR-0133](0133-ficha-socio-estilo-pos.md)**). No es un modo de `ContactDrawer`; este solo enlaza a la ficha.
 2. **UI en `features/partners`** (nuevo feature con barrel). `settings` conserva solo `PartnerSettings`. API y tipos permanecen en `contacts` hasta separar el backend.
 3. **Una sola fuente de acciones** (`partnerActions`) con `visible` por estado; un único estado de acción activa en lugar de un flag por modal.
 4. **Se eliminan** `initial_setup`, `setup_partner`, `promote_partner` (endpoints, servicios, `InitialCapitalModal`, `PartnerEditDrawer`) y los modales duplicados sin uso. El primer socio se crea con «Añadir socio» (`equity_subscription`, que ya promueve al contacto; la participación se mide sobre capital pagado, así que es 0 % hasta el primer aporte, igual que antes). El % de participación solo cambia por suscripción, reducción o transferencia.

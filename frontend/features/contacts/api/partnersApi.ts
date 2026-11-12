@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import { type Partner, type PartnerEquityStake, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
+import { type Partner, type PartnerEquityStake, type PartnerSummary, type PartnerStatement, type PartnerOverview, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
 
 export const partnersApi = {
     /**
@@ -25,6 +25,14 @@ export const partnersApi = {
      */
     getStatement: async (contactId: number): Promise<PartnerStatement> => {
         const response = await api.get<PartnerStatement>(`/contacts/${contactId}/partner_statement/`)
+        return response.data
+    },
+
+    /**
+     * Resumen de la ficha de un socio (alertas, KPIs, datos y composición)
+     */
+    getOverview: async (contactId: number): Promise<PartnerOverview> => {
+        const response = await api.get<PartnerOverview>(`/contacts/${contactId}/partner_overview/`)
         return response.data
     },
 

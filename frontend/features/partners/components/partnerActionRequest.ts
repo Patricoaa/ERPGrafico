@@ -6,7 +6,7 @@
 export type PartnerActionRequest =
     | { type: "add-partner"; contactId?: number }
     | { type: "subscription"; partnerId?: number; amount?: string }
-    | { type: "transfer" }
+    | { type: "transfer"; fromPartnerId?: number }
     | { type: "contribution"; partnerId?: number; amount?: string }
     | { type: "withdrawal"; partnerId?: number }
     | { type: "dividend"; partnerId?: number }

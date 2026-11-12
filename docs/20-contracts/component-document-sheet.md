@@ -101,6 +101,23 @@ Not captured by the system yet (so not shown): counts by denomination, declared 
 
 Caja POS ↔ sesiones: backend labels `treasury.posterminal` (provider `pos_terminal_relations`: every session of the box, newest first, role `pos_session`) and `treasury.possession` (links back with role `pos_box`). The box drawer (`PosTerminalDrawer`) has tabs **Configuración** / **Relaciones**.
 
+## 6c. Partner sheet (`contacts.partner`)
+
+`PartnerDrawer` (`features/partners`) follows the POS session pattern (ADR-0133): Resumen explains the partner in seconds, other tabs answer different questions.
+
+| Tab | Answers | Content | Secondary actions |
+|---|---|---|---|
+| Resumen | How is the partner; what needs attention | Alerts first, each a single button that goes to Capital · partner data (linked contact, partner since, RUT) · two columns: capital distribution chart (partner highlighted) and participation history (`partnerStake`) | none |
+| Capital | How is the equity made up; what happened | Equity composition (donut + lines: subscribed, paid-in, pending, excess, retained earnings, dividends payable, provisional withdrawals, net) with the line's action at the right · all movements from the ledger (type filter, search, pagination) | Suscribir / reducir · Registrar aporte (prefilled with pending) · Formalizar exceso · Distribuir utilidades retenidas · Pagar dividendos · Registrar retiro · Transferir capital (origin prefilled) |
+| Distribuciones | Which profit-distribution resolutions the partner takes part in | `partnerDistribution` entity-view: percentage, gross, offset of provisional withdrawals, net, paid; rows open the distribution | none |
+| Relaciones | What it links to | `DocumentRelationsTab` with label `contacts.partner`: contact, journal entries of its movements, distributions it takes part in | none |
+
+**Actions.** `buildPartnerActions` (`features/partners/components/partnerActions.tsx`) is the single source. `placement` (`"capital" | "results" | "menu"`) only groups the header «⋯» menu, which lists every visible action via `partnerMenuActions`; `line` ties an action to a composition line (`partnerLineAction`). Visibility rules: `partner_excess_capital > 0`, `partner_dividends_payable_balance > 0`, `partner_earnings_balance > 0`; contribution, subscription, withdrawal and transfer always. «Dar de baja» is in the menu, disabled with `disabledReason` when `demoteBlockedReason` is set. All tables in the sheet use client pagination and `UnifiedSearchBar` through `usePartnerTableSearch` (URL params prefixed per table).
+
+**Backend.** `GET /contacts/{id}/partner_overview/` (`contacts/partner_overview.py`, fixed query count, N+1 test): alerts (`code`, `severity`, `amount`, `target_tab`, `action`), KPIs, partner data, composition. **Alerts are owned by the backend**; the frontend maps `action` to `run(...)` and never recomputes thresholds (a parity test compares them with the row-level `visible` rules). 400 if the contact is not a partner (404 if it does not exist); read permission like `partner_statement`.
+
+**Relaciones.** Provider in `contacts/relations.py` for `contacts.partner` (a view label over `Contact` restricted to partners: `DocumentType.queryset` / `permission`, see `document-relations.md` §3). Journal entries and resolutions are preloaded (`select_related`) because showing a journal entry costs 2 extra queries in core otherwise.
+
 ## 7. Anti-patterns
 
 - Opening a document in a surface other than its sheet (Hub, ad-hoc modal).

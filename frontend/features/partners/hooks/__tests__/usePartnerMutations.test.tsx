@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { PARTNERS_KEYS } from "@/features/contacts"
+import { DOCUMENTS_KEYS } from "@/features/documents"
 import { PARTNER_KEYS } from "../queryKeys"
 import { usePartnerMutations } from "../usePartnerMutations"
 import { useProfitDistributionMutations } from "../useProfitDistributionMutations"
@@ -46,6 +47,7 @@ describe("mutaciones de socios", () => {
         expect(recordSubscription).toHaveBeenCalledOnce()
         expect(markLocalMutation).toHaveBeenCalled()
         expect(invalidatedKeys(invalidate)).toContainEqual(PARTNER_KEYS.all)
+        expect(invalidatedKeys(invalidate)).toContainEqual(DOCUMENTS_KEYS.all)
     })
 
     it("ejecutar una distribución invalida el árbol de socios", async () => {
