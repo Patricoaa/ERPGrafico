@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { partnersApi, type PartnerTransactionPayload } from '@/features/contacts'
 import { LEDGER_QUERY_KEY } from '@/features/accounting'
 import { MOVEMENTS_KEYS, TREASURY_ACCOUNTS_KEYS } from '@/features/treasury'
+import { DOCUMENTS_KEYS } from '@/features/documents'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { PARTNER_KEYS } from './queryKeys'
@@ -30,6 +31,7 @@ export function usePartnerMutations() {
             MOVEMENTS_KEYS.all,
             TREASURY_ACCOUNTS_KEYS.all,
             LEDGER_QUERY_KEY,
+            DOCUMENTS_KEYS.all,
         ])
     }
 

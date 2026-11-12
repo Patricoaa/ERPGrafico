@@ -72,7 +72,7 @@ export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDraw
 
     const identity = useDrawerIdentity("contacts.partner", "view", partner ?? (id ? { id } : undefined), { printable: false })
     // Misma query que los paneles (mismo key): sin petición extra.
-    const { data: overview } = usePartnerOverview(id)
+    const { data: overview } = usePartnerOverview(partner ? id : null)
     const taxId = overview?.info.tax_id || partner?.tax_id
     const since = overview?.info.partner_since
     const subtitle = taxId

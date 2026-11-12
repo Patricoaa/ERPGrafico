@@ -10,6 +10,7 @@ const m = vi.hoisted(() => ({
     partners: [] as unknown[],
     run: vi.fn(),
     overview: undefined as unknown,
+    overviewCalls: [] as (number | null)[],
 }))
 
 vi.mock("@/features/contacts", () => ({
@@ -26,7 +27,7 @@ vi.mock("@/features/_shared", () => ({
 }))
 vi.mock("../../hooks", () => ({
     useProfitDistributions: () => ({ distributions: [], isLoading: false, error: null, refetch: vi.fn() }),
-    usePartnerOverview: () => ({ data: m.overview, isLoading: false, isError: false, refetch: vi.fn() }),
+    usePartnerOverview: (id: number | null) => (m.overviewCalls.push(id), { data: m.overview, isLoading: false, isError: false, refetch: vi.fn() }),
 }))
 vi.mock("../PartnerActionModal", () => ({
     usePartnerActions: () => ({ run: m.run, host: null }),
@@ -53,6 +54,7 @@ beforeEach(() => {
     m.run.mockClear()
     m.partners = [partner]
     m.overview = undefined
+    m.overviewCalls = []
 })
 
 describe("PartnerDrawer", () => {
@@ -108,5 +110,6 @@ describe("PartnerDrawer", () => {
     it("un id que no es socio muestra el aviso", () => {
         renderDrawer(99)
         expect(screen.getByText("Este contacto no es un socio de la sociedad.")).toBeInTheDocument()
+        expect(m.overviewCalls.every(c => c === null)).toBe(true)
     })
 })

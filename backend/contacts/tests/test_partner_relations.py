@@ -131,3 +131,8 @@ def test_partner_relations_require_contact_view_permission():
     user = User.objects.get(pk=user.pk)
     api.force_authenticate(user=user)
     assert api.get(_url(partner.pk)).status_code == 200
+
+
+def test_partner_canonical_url_points_at_composition_page():
+    from core.documents import DocumentTypeRegistry
+    assert DocumentTypeRegistry.get("contacts.partner").canonical_url == "/finances/partners/composition?selected={id}"

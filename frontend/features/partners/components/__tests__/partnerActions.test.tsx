@@ -19,6 +19,13 @@ describe("partnerActionsFor", () => {
         expect(l).toContain("Transferir a otro socio")
         expect(l).not.toContain("Registrar retiro")
     })
+    it("suscribir / reducir capital siempre está en Capital y abre la suscripción del socio", () => {
+        const run = vi.fn()
+        const a = partnerActionsFor(base, "capital", { run }).find(x => "label" in x && x.label === "Suscribir / reducir capital")
+        if (!a || !("onClick" in a)) throw new Error("falta la acción")
+        a.onClick({} as never)
+        expect(run).toHaveBeenCalledWith({ type: "subscription", partnerId: 7 })
+    })
     it("results incluye retiro", () => {
         expect(labels(base, "results")).toContain("Registrar retiro")
     })

@@ -1,5 +1,5 @@
-import { createEntityActions, type StructuredAction } from '@/components/shared'
-import { TrendingUp, Banknote, ArrowRightLeft, HandCoins, Wallet, LogOut, UserMinus } from 'lucide-react'
+import type { StructuredAction } from '@/components/shared'
+import { TrendingUp, Banknote, ArrowRightLeft, HandCoins, Wallet, Scale, LogOut, UserMinus } from 'lucide-react'
 import type { Partner } from '@/features/contacts'
 import type { PartnerActionRunner } from './partnerActionRequest'
 
@@ -46,6 +46,13 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         className: "text-primary",
         onClick: () => ctx.run({ type: "contribution", partnerId: item.id, amount: item.partner_pending_capital }),
         visible: num(item.partner_pending_capital) > 0,
+    },
+    {
+        action: "detail",
+        icon: Scale,
+        label: "Suscribir / reducir capital",
+        placement: "capital",
+        onClick: () => ctx.run({ type: "subscription", partnerId: item.id }),
     },
     {
         action: "pay",
@@ -98,9 +105,6 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
     },
     ]
 }
-
-/** Única fuente de acciones de socio; `placement` decide en qué zona de la ficha se muestra. */
-export const partnerActions = createEntityActions<Partner, PartnerActionsCtx>(buildPartnerActions)
 
 /** Acciones visibles del socio para una zona de la ficha. */
 export function partnerActionsFor(partner: Partner, placement: PartnerActionPlacement, ctx: PartnerActionsCtx): StructuredAction[] {

@@ -19,7 +19,7 @@ DocumentTypeRegistry.register(DocumentType(
 # Ficha del socio (ADR-0133): etiqueta de vista sobre Contact restringida a socios. Un contacto
 # no socio no existe con esta etiqueta (404). Se lee con el permiso de contactos.
 DocumentTypeRegistry.register(DocumentType(
-    label="contacts.partner", canonical_url="/finances/partners?selected={id}",
+    label="contacts.partner", canonical_url="/finances/partners/composition?selected={id}",
     status_field=None, amount_field=None, date_field="partner_since",
     queryset=_partners, permission="contacts.view_contact",
     detail=lambda c: join(c.name, c.tax_id),
