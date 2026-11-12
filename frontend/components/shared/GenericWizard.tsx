@@ -95,6 +95,13 @@ export interface GenericWizardProps extends Omit<BaseModalProps, "children" | "t
     footer?: WizardSlot | null
     /** Extra classes for the step content scroll container */
     contentClassName?: string
+    /**
+     * Modal only. Fixed dialog height (header/footer fixed, body scrolls) so the
+     * modal does not jump between steps of different content length.
+     */
+    stableHeight?: boolean
+    /** Modal only. Paints the step body with the drawer surface (`bg-card`) instead of the dialog background. */
+    cardSurface?: boolean
     /** Extra classes for the center column wrapper */
     bodyClassName?: string
 
@@ -153,6 +160,8 @@ export function GenericWizard({
     rightSidebarWidth = "w-80",
     footer: footerOverride,
     contentClassName,
+    stableHeight = false,
+    cardSurface = false,
     bodyClassName,
     handleRef,
     ...props
@@ -484,6 +493,7 @@ export function GenericWizard({
             variant="wizard"
             footer={footer ?? undefined}
             hideScrollArea
+            className={cn(stableHeight && "h-[min(85vh,48rem)]", cardSurface && "bg-card")}
             closeButtonClassName={touchMode ? touchCloseButton : undefined}
             {...props}
         >

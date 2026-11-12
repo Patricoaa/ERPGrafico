@@ -2,10 +2,10 @@
 
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, Drawer, GenericWizard, type WizardStep } from '@/components/shared';
+import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { PendingChecklistSection, type PendingChecklistItem } from '@/features/tax';
 
 import {
     ShieldCheck,
@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
-import { formDrawerWidth } from '@/lib/form-widths';
 
 // Lazy load FinancialStatementsReport
 const FinancialStatementsReport = lazy(() => import('@/features/finance/components/FinancialStatementsReport').then(m => ({ default: m.FinancialStatementsReport })));
@@ -60,219 +59,144 @@ export function FiscalYearClosingWizard({
         setIsClosed(true);
     };
 
-    const steps: WizardStep[] = useMemo(() => [
-        {
-            id: 0,
-            title: "Auditoría de Integridad",
-            isValid: !!preview?.can_close && !!preview?.is_balanced,
-            component: (
-                <div className="space-y-6">
-                    {preview && !preview.is_balanced ? (
-                        <Alert variant="destructive" className="border-2">
-                            <AlertTitle className="font-bold uppercase">Error de Cuadratura</AlertTitle>
-                            <AlertDescription className="font-medium mt-1 flex items-center justify-between gap-3 text-xs">
-                                <p>El Balance de Comprobación presenta descuadres. No se puede proceder con el cierre.</p>
-                                <Button
-                                    variant="outline" size="sm"
-                                    className="w-fit h-7 text-3xs font-medium uppercase tracking-widest bg-destructive/10 border-destructive/30 hover:bg-destructive/20 text-destructive"
-                                    onClick={() => setShowTrialBalance(true)}
-                                >
-                                    <Scale className="w-3 h-3 mr-2" /> Ver Balance
-                                </Button>
-                            </AlertDescription>
-                        </Alert>
-                    ) : preview ? (
-                        <Alert variant="success">
-                            <AlertTitle className="font-bold uppercase">Balance Cuadrado</AlertTitle>
-                            <AlertDescription className="text-success/80 font-medium flex items-center justify-between gap-3 text-xs">
-                                <p>Se ha verificado la integridad de la partida doble para el ejercicio {year}.</p>
-                                <Button
-                                    variant="outline" size="sm"
-                                    className="w-fit h-7 text-3xs font-medium uppercase tracking-widest bg-success/10 border-success/30 hover:bg-success/20 text-success"
-                                    onClick={() => setShowTrialBalance(true)}
-                                >
-                                    <Scale className="w-3 h-3 mr-2" /> Ver Balance
-                                </Button>
-                            </AlertDescription>
-                        </Alert>
-                    ) : null}
+    const netResult = parseFloat(preview?.net_result || '0');
+    const isProfit = netResult >= 0;
+    const noop = () => { };
 
-                    {preview && (
-                        <div className="space-y-2">
-                            <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest px-1">Validaciones Críticas</p>
-                            <div className="grid grid-cols-1 gap-2">
-                                {Object.entries(preview.validations).map(([key, val]: [string, { passed: boolean; message: string; is_warning?: boolean }]) => (
-                                    <div key={key} className={cn(
-                                        "flex items-center justify-between p-3 border rounded-md transition-colors",
-                                        val.passed ? (val.is_warning ? "bg-warning/5 border-warning/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"
-                                    )}>
-                                        <span className={cn(
-                                            "text-xs font-medium uppercase tracking-tight",
-                                            val.passed && val.is_warning && "text-warning"
-                                        )}>{val.message}</span>
-                                        {val.passed ? (
-                                            val.is_warning ? <AlertTriangle className="w-4 h-4 text-warning" /> : <CheckCircle2 className="w-4 h-4 text-success" />
-                                        ) : <AlertTriangle className="w-4 h-4 text-destructive" />}
-                                    </div>
-                                ))}
+    const steps: WizardStep[] = useMemo(() => {
+        const validationItems: PendingChecklistItem[] = preview
+            ? Object.entries(preview.validations).map(([key, val]) => ({
+                key,
+                title: val.message,
+                passed: val.passed,
+            }))
+            : [];
+        const balanceItem: PendingChecklistItem | null = preview
+            ? {
+                key: 'balance',
+                title: 'Balance de comprobación cuadrado',
+                detail: preview.is_balanced ? undefined : 'El balance presenta descuadres; no se puede proceder con el cierre.',
+                passed: preview.is_balanced,
+                action: { text: 'Ver balance', onClick: () => setShowTrialBalance(true) },
+            }
+            : null;
+        const warningKeys = new Set(
+            preview ? Object.entries(preview.validations).filter(([, v]) => v.is_warning).map(([k]) => k) : []
+        );
+        const required = [...(balanceItem ? [balanceItem] : []), ...validationItems.filter(i => !warningKeys.has(i.key))];
+        const suggested = validationItems.filter(i => warningKeys.has(i.key));
+
+        return [
+            {
+                id: 0,
+                title: "Auditoría de Integridad",
+                isValid: !!preview?.can_close && !!preview?.is_balanced,
+                component: (
+                    <div className="space-y-8">
+                        <PendingChecklistSection title="Obligatorios" items={required} critical expanded={new Set()} onToggle={noop} onOpenDocument={noop} />
+                        {suggested.length > 0 && (
+                            <PendingChecklistSection title="Sugeridos" items={suggested} critical={false} expanded={new Set()} onToggle={noop} onOpenDocument={noop} />
+                        )}
+                    </div>
+                )
+            },
+            {
+                id: 1,
+                title: "Resultado Económico",
+                isValid: true,
+                component: preview ? (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between gap-4 rounded-md border border-border p-5">
+                            <div>
+                                <p className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">
+                                    {isProfit ? "Utilidad del ejercicio" : "Pérdida del ejercicio"} {year}
+                                </p>
+                                <p className={cn("text-3xl font-mono font-black", isProfit ? "text-success" : "text-destructive")}>
+                                    {formatCurrency(netResult)}
+                                </p>
                             </div>
-                        </div>
-                    )}
-                </div>
-            )
-        },
-        {
-            id: 1,
-            title: "Resultado Económico",
-            isValid: true,
-            component: preview ? (
-                <div className="space-y-6">
-                    <Alert variant="primary" className="border-2">
-                        <AlertTitle className="font-bold uppercase">Estado de Resultados</AlertTitle>
-                        <AlertDescription className="text-primary/80 font-medium mt-1 flex items-center justify-between gap-3 text-xs">
-                            <p>Visualice el detalle de cuentas de resultados del ejercicio {year}.</p>
-                            <Button
-                                variant="outline" size="sm"
-                                className="w-fit h-7 text-3xs font-medium uppercase tracking-widest bg-primary/10 border-primary/30 hover:bg-primary/20 text-primary"
-                                onClick={() => setShowIncomeStatement(true)}
-                            >
-                                <PieChart className="w-3 h-3 mr-2" /> Ver Estado de Resultados
+                            <Button variant="outline" size="sm" className="shrink-0" onClick={() => setShowIncomeStatement(true)}>
+                                <PieChart className="mr-2 h-3.5 w-3.5" /> Ver Estado de Resultados
                             </Button>
-                        </AlertDescription>
-                    </Alert>
-
-                    <Alert variant={parseFloat(preview.net_result || '0') >= 0 ? "success" : "destructive"}>
-                        <AlertTitle className="font-bold uppercase">Resultado Neto Proyectado</AlertTitle>
-                        <AlertDescription className={cn(
-                            "font-medium flex items-center justify-between gap-3 text-xs mt-1",
-                            parseFloat(preview.net_result || '0') >= 0 ? "text-success/80" : "text-destructive/80"
-                        )}>
-                            <p>El ejercicio resultó en {parseFloat(preview.net_result || '0') >= 0 ? "una utilidad" : "una pérdida"} para la empresa.</p>
-                            <div className="flex items-center gap-4">
-                                <span className={cn(
-                                    "text-2xl font-mono font-black",
-                                    parseFloat(preview.net_result || '0') >= 0 ? "text-success" : "text-destructive"
-                                )}>
-                                    {formatCurrency(parseFloat(preview.net_result || '0'))}
-                                </span>
-                                <div className={cn(
-                                    "px-3 py-1.5 rounded-sm text-3xs font-bold uppercase tracking-looser",
-                                    parseFloat(preview.net_result || '0') >= 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"
-                                )}>
-                                    {parseFloat(preview.net_result || '0') >= 0 ? "Utilidad" : "Pérdida"}
-                                </div>
-                            </div>
-                        </AlertDescription>
-                    </Alert>
-                </div>
-            ) : null
-        },
-        {
-            id: 3,
-            title: "Configuración del Asiento",
-            isValid: true,
-            component: preview ? (
-                <div className="space-y-6">
-                    <Alert variant="primary">
-                        <AlertTitle className="font-bold uppercase">Asignación Automática</AlertTitle>
-                        <AlertDescription className="text-foreground/80 font-medium text-xs">
-                            El sistema identificó la cuenta patrimonial configurada para recibir el resultado.
-                        </AlertDescription>
-                    </Alert>
-
-                    <LabeledContainer
-                        label="Cuenta de Capital/Utilidades"
-                    >
-                        <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-md flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <Scale className="w-5 h-5 text-muted-foreground" />
-                                {preview && (
-                                    <div>
-                                        <p className="text-lg font-mono font-bold">{preview.result_account_code}</p>
-                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{preview.result_account_name}</p>
-                                    </div>
-                                )}
-                            </div>
-                            <CheckCircle2 className="w-6 h-6 text-primary opacity-50" />
-                        </div>
-                    </LabeledContainer>
-                </div>
-            ) : null
-        },
-        {
-            id: 4,
-            title: "Confirmación y Cierre",
-            isValid: !!preview?.can_close,
-            component: preview ? (
-                <div className="space-y-6">
-                    <div className="bg-muted/30 border border-border rounded-md overflow-hidden text-center">
-                        <div className="p-5 space-y-4">
-                            <div>
-                                <p className="text-3xs font-bold uppercase text-muted-foreground tracking-looser mb-1">Ejercicio Fiscal a Cerrar</p>
-                                <p className="text-4xl  font-black tabular-nums">{year}</p>
-                            </div>
-                            <div className="h-[1px] bg-border w-24 mx-auto" />
-                            <div>
-                                <p className="text-3xs font-bold uppercase text-muted-foreground tracking-looser mb-1">Transferencia Patrimonial</p>
-                                <p className="text-2xl font-mono font-bold text-primary">{formatCurrency(parseFloat(preview.net_result || '0'))}</p>
-                            </div>
                         </div>
                     </div>
-
-                    <Alert variant="warning">
-                        <AlertTitle className="text-warning-foreground font-extrabold uppercase tracking-tight">Advertencia</AlertTitle>
-                        <AlertDescription className="text-warning-foreground/90 text-3xs font-medium mt-1 leading-relaxed">
-                            Esta acción generará el asiento de cierre y bloqueará todos los periodos del año {year}.
-                            El re-abierto de periodos quedará registrado en el historial de auditoría.
-                        </AlertDescription>
-                    </Alert>
-                </div>
-            ) : null
-        }
-    ], [preview, year]);
+                ) : null
+            },
+            {
+                id: 3,
+                title: "Configuración del Asiento",
+                isValid: true,
+                component: preview ? (
+                    <LabeledContainer label="Cuenta de Capital/Utilidades que recibe el resultado">
+                        <div className="flex items-center gap-4 rounded-md border border-border p-5">
+                            <Scale className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                                <p className="text-lg font-mono font-bold">{preview.result_account_code}</p>
+                                <p className="text-xs font-medium uppercase tracking-tight text-muted-foreground">{preview.result_account_name}</p>
+                            </div>
+                        </div>
+                    </LabeledContainer>
+                ) : null
+            },
+            {
+                id: 4,
+                title: "Confirmación y Cierre",
+                isValid: !!preview?.can_close,
+                component: preview ? (
+                    <div className="space-y-6">
+                        <dl className="divide-y divide-border rounded-md border border-border text-sm">
+                            <div className="flex items-center justify-between p-4">
+                                <dt className="text-muted-foreground">Ejercicio fiscal a cerrar</dt>
+                                <dd className="font-mono font-bold tabular-nums">{year}</dd>
+                            </div>
+                            <div className="flex items-center justify-between p-4">
+                                <dt className="text-muted-foreground">Transferencia patrimonial</dt>
+                                <dd className="font-mono font-bold text-primary">{formatCurrency(netResult)}</dd>
+                            </div>
+                        </dl>
+                        <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
+                            Esta acción generará el asiento de cierre y bloqueará todos los periodos del año {year}. El re-abierto de periodos quedará registrado en el historial de auditoría.
+                        </p>
+                    </div>
+                ) : null
+            }
+        ];
+    }, [preview, year, isProfit, netResult]);
 
     if (isClosed) {
         return (
-            <Drawer
+            <BaseModal
                 open={isOpen}
                 onOpenChange={onClose}
-                defaultSize={formDrawerWidth("complex", false)}
-                minSize={500}
-                side="left"
-                boundary="embedded"
-                title=""
+                icon={ShieldCheck}
+                title={`Ejercicio ${year} cerrado`}
+                size="lg"
+                variant="wizard"
+                hideScrollArea
+                className="bg-card"
                 footer={
-                    <div className="flex flex-col gap-3 w-full">
+                    <div className="flex w-full items-center justify-end gap-2">
+                        <CancelButton onClick={onClose}>Finalizar</CancelButton>
                         <SubmitButton
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-2xs h-11"
                             onClick={() => {
                                 onClose();
                                 window.location.href = `/finances/partners/distributions?modal=new-distribution&yearId=${year}`;
                             }}
-                            icon={<PieChart className="w-4 h-4 mr-2" />}
+                            icon={<PieChart className="mr-2 h-4 w-4" />}
                         >
                             Iniciar Distribución de Utilidades
                         </SubmitButton>
-                        <CancelButton
-                            className="text-muted-foreground font-bold uppercase tracking-widest text-3xs"
-                            onClick={onClose}
-                        >
-                            Finalizar Proceso
-                        </CancelButton>
                     </div>
                 }
             >
-                <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
-                    <ShieldCheck className="w-10 h-10 text-muted-foreground" />
-                    <div>
-                        <h3 className="text-2xl  font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
-                        <p className="text-sm text-muted-foreground mt-1 px-4">
-                            La contabilidad ha sido sellada y el asiento de cierre ha sido generado con éxito.
-                            Ahora puedes proceder con la distribución de utilidades a los socios.
-                        </p>
-                    </div>
+                <div className="flex-1 min-h-0 overflow-y-auto p-5">
+                    <p className="flex items-start gap-3 text-sm text-muted-foreground">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />
+                        La contabilidad ha sido sellada y el asiento de cierre se generó con éxito. Ahora puedes proceder con la distribución de utilidades a los socios.
+                    </p>
                 </div>
-            </Drawer>
+            </BaseModal>
         );
     }
 
@@ -291,9 +215,9 @@ export function FiscalYearClosingWizard({
                 completeButtonIcon={<Wallet className="h-4 w-4 mr-2" />}
                 size="xl"
                 isLoading={!preview && isLoading}
-                surface="drawer"
-                drawerSide="left"
-                drawerBoundary="embedded"
+                surface="modal"
+                stableHeight
+                cardSurface
             />
 
             {/* Financial Statements Detail Modal */}

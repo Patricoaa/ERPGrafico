@@ -20,8 +20,6 @@ import {
     ArrowDownLeft,
     ChevronLeft,
     ChevronRight,
-    HandCoins,
-    History,
     Lock,
 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
@@ -38,7 +36,6 @@ import { F29CloseStep } from "./wizard/F29CloseStep"
 import { PendingChecklistSection, type PendingChecklistItem } from "./PendingChecklist"
 import { useF29Close } from "../hooks/useF29Close"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { generateUuidV4 } from "@/lib/uuid"
 
 interface DeclarationWizardProps {
@@ -409,7 +406,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             title: "Cargos Manuales del Período",
             isValid: true,
             component: (
-                <fieldset disabled={isDeclared} className="space-y-6 max-w-4xl mx-auto pb-6 min-w-0 border-0 p-0 m-0">
+                <fieldset disabled={isDeclared} className="space-y-6 min-w-0 border-0 p-0 m-0">
                     {isDeclared && (
                         <p className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Lock className="h-3.5 w-3.5" />
@@ -417,9 +414,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                         </p>
                     )}
                     <div className="grid grid-cols-2 gap-x-12 gap-y-8">
-                        <div className="col-span-full">
-                            <FormSection title="Retenciones" icon={HandCoins} />
-                        </div>
                         <div className="space-y-2">
                             <LabeledInput
                                 label="PPM (Pagos Provisionales)"
@@ -452,9 +446,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                                 onChange={e => setManualFields({ ...manualFields, loan_retention: Number(e.target.value) })}
                             />
                         </div>
-                        <div className="col-span-full">
-                            <FormSection title="Ajustes de IVA" icon={History} />
-                        </div>
                         <div className="space-y-2">
                             <LabeledInput
                                 label="Remanente Mes Anterior"
@@ -482,8 +473,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             isValid: true,
             onNext: handleRegister,
             component: (
-                <div className="max-w-4xl mx-auto pb-6 space-y-8">
-                    <FormSection title="Resumen de Impuestos" icon={Calculator} />
+                <div className="space-y-6">
                     <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
                         <div className="flex justify-between items-center">
                             <span className="text-xs uppercase font-bold text-muted-foreground/70">IVA Determinado</span>
@@ -649,6 +639,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             onComplete={async () => {}}
             footer={renderFooter}
             size="xl"
+            stableHeight
+            cardSurface
             surface="modal"
         />
     )

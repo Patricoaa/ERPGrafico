@@ -36,6 +36,12 @@ Decisión: el modal del checklist **y** el del wizard **se ocultan** mientras al
 - **Camino al apilado real:** un diálogo no modal para el checklist, o drawers con `boundary="screen"` cuando se abren desde un diálogo.
 - **Fragilidad latente:** si ya hay un tab activo al abrir el checklist, este queda oculto. Hoy no ocurre porque solo se abre desde la vista de la página (`AccountingClosuresClientView`). Si el usuario cambia a la página con la barra de tabs, el checklist reaparece (intencional).
 
+## Uniformidad de los wizards de cierre
+
+- Los wizards de cierre (F29 y cierre de ejercicio) son `GenericWizard` `surface="modal"` con `stableHeight` (alto fijo: header/footer fijos y cuerpo con scroll propio, sin saltos entre pasos) y `cardSurface` (cuerpo `bg-card`, igual que los drawers).
+- Los pasos usan todo el ancho; un paso con una sola sección no lleva separador ni descripción.
+- El cierre de ejercicio muestra su auditoría con `PendingChecklistSection` (Obligatorios / Sugeridos) y su pantalla de éxito es un modal con las acciones en el footer.
+
 ## Consecuencias
 
 - Menos superficies y una sola acción F29; retomar un F29 a medias es directo.

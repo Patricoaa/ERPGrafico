@@ -122,7 +122,7 @@ export interface FiscalYearPreviewResult {
     year: number;
     can_close: boolean;
     is_balanced: boolean;
-    validations: Record<string, { passed: boolean; message: string }>;
+    validations: Record<string, { passed: boolean; message: string; is_warning?: boolean }>;
     result_account_id: number | null;
     result_account_code: string | null;
     result_account_name: string | null;

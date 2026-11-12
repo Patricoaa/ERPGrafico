@@ -18,7 +18,7 @@ interface F29CloseStepProps {
  */
 export function F29CloseStep({ declaration, close }: F29CloseStepProps) {
     return (
-        <div className="max-w-4xl mx-auto pb-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex items-start gap-3">
                 <FileText className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                 <p className="text-sm text-muted-foreground">
