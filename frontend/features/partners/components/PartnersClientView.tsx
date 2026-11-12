@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
     Plus,
     MoveHorizontal,
@@ -8,6 +8,9 @@ import {
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { EntityPanelTab } from "@/components/providers"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { useOnOpen } from "../hooks"
@@ -25,15 +28,8 @@ import type { Granularity } from "@/lib/analytics-helpers"
 import { partnerEntity, partnerViews } from "../entity-view/partner.entity"
 import { buildPartnerAnalyticsScreen } from "./partnerAnalyticsScreen"
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
-import {
-    SubscriptionMovementModal,
-    EquityTransferModal,
-    DividendPaymentModal
-} from "./EquityMovementModals"
-import { PartnerContributionWizard } from "./PartnerContributionWizard"
-import { AddPartnerModal } from "./AddPartnerModal"
-import { MobilizeEarningsWizard } from "./MobilizeEarningsWizard"
-import { PartnerLedgerDrawer } from "./PartnerLedgerDrawer"
+import { usePartnerActionHost } from "./PartnerActionHost"
+import { PartnerDrawer } from "./PartnerDrawer"
 
 const partnerUnifiedSearchDef: UnifiedSearchConfig = {
     searchFields: [
@@ -83,56 +79,30 @@ export function PartnersClientView({
 }: PartnersClientViewProps) {
     const search = useUnifiedSearch(partnerUnifiedSearchDef)
     const { partners = [], isLoading, isFetching, refetch, error } = usePartners()
-    const { view, onViewChange } = useCollectionViewMode("settings.partner")
-    const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
-    const [isTransferOpen, setIsTransferOpen] = useState(false)
-    const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
+    const { view, onViewChange } = useCollectionViewMode("contacts.partner")
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("composicion")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    const { openSelected } = useEntityRouteActions()
+    const { run, host } = usePartnerActionHost()
 
-    const clearModalParam = React.useCallback(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        if (params.has('modal')) {
-            params.delete('modal')
-            const query = params.toString()
-            router.replace(query ? `?${query}` : pathname, { scroll: false })
-        }
-    }, [searchParams, router, pathname])
+    // La ficha del socio es un panel de entidad (`?selected=id`); no necesita endpoint: carga por id.
+    const panel = useEntityPanelRoute({ create: false })
 
-    const [isContributionOpen, setIsContributionOpen] = useState(false)
-    const [isDividendOpen, setIsDividendOpen] = useState(false)
-    const [isMobilizeOpen, setIsMobilizeOpen] = useState(false)
-    const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
-    const [contributionTarget, setContributionTarget] = useState<{ partnerId?: number, amount?: string }>({})
-
-    const [subModalParams, setSubModalParams] = useState({
-        partnerId: undefined as string | undefined,
-        amount: undefined as string | undefined
-    })
-
-    useOnOpen(initialAddPartnerOpen, () => setIsAddPartnerOpen(true))
-
+    // Enlaces antiguos `?ledger=id` (libro auxiliar) → ficha del socio.
     const ledgerParam = searchParams.get("ledger")
-    const { selectedPartnerName, partnerIdForLedger, isLedgerOpen } = React.useMemo(() => {
-        if (ledgerParam) {
-            const pId = parseInt(ledgerParam, 10)
-            const partner = partners.find(p => p.id === pId)
-            return {
-                partnerIdForLedger: pId,
-                selectedPartnerName: partner?.name || "",
-                isLedgerOpen: true
-            }
-        }
-        return {
-            partnerIdForLedger: undefined as number | undefined,
-            selectedPartnerName: "",
-            isLedgerOpen: false
-        }
-    }, [ledgerParam, partners])
+    useEffect(() => {
+        if (!ledgerParam) return
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("ledger")
+        params.set("selected", ledgerParam)
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [ledgerParam, searchParams, router, pathname])
+
+    useOnOpen(initialAddPartnerOpen, () => run({ type: "add-partner" }))
 
     const analyticsData = usePartnerAnalyticsData(partners, granularity)
     const evolutionData = usePartnerEvolutionData(24, granularity)
@@ -167,44 +137,27 @@ export function PartnersClientView({
         })),
     [filteredPartners, equityPctById])
 
-
     const hasPartners = partners.length > 0
 
-    const partnerActionsCtx: PartnerActionsCtx = {
-        onFormalizeExcessCapital: (id, amount) => {
-            setSubModalParams({ partnerId: id.toString(), amount: amount.toString() })
-            setIsSubscriptionOpen(true)
-        },
-        onRegisterContribution: (id, amount) => {
-            setContributionTarget({ partnerId: id, amount: amount.toString() })
-            setIsContributionOpen(true)
-        },
-        onPayDividends: (id) => { setSelectedPartnerId(id); setIsDividendOpen(true) },
-        onDistributeEarnings: (id) => { setSelectedPartnerId(id); setIsMobilizeOpen(true) },
-        onViewLedger: (id) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set("ledger", id.toString())
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
-    }
+    const actionsCtx: PartnerActionsCtx = { run, onOpen: openSelected }
 
     const toolbarActionButtons = !hasPartners
         ? (
-            <Button size="sm" onClick={() => setIsAddPartnerOpen(true)}>
+            <Button size="sm" onClick={() => run({ type: "add-partner" })}>
                 <Plus className="h-4 w-4 mr-1.5" />
                 Añadir socio
             </Button>
         ) : (
             <>
-                <Button size="sm" onClick={() => setIsSubscriptionOpen(true)}>
+                <Button size="sm" onClick={() => run({ type: "subscription" })}>
                     <Plus className="h-4 w-4 mr-1.5" />
                     Nueva Suscripción
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => { setContributionTarget({}); setIsContributionOpen(true) }}>
+                <Button variant="outline" size="sm" onClick={() => run({ type: "contribution" })}>
                     <Wallet className="h-4 w-4 mr-1.5" />
                     Registrar Aporte
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setIsTransferOpen(true)}>
+                <Button variant="outline" size="sm" onClick={() => run({ type: "transfer" })}>
                     <MoveHorizontal className="h-4 w-4 mr-1.5" />
                     Transferencia
                 </Button>
@@ -230,7 +183,8 @@ export function PartnersClientView({
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                actions={partnerActions.forCollection(partnerActionsCtx)}
+                onOpen={(partner) => openSelected(partner.id)}
+                actions={partnerActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={partnerActionButtons}>
                     <UnifiedSearchBar config={partnerUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar socio por nombre o ID fiscal..." />
@@ -247,58 +201,17 @@ export function PartnersClientView({
                 </Collection.Analytics>
             </Collection.Root>
 
-            <SubscriptionMovementModal
-                open={isSubscriptionOpen}
-                onOpenChange={(open) => {
-                    setIsSubscriptionOpen(open)
-                    if (!open) setSubModalParams({ partnerId: undefined, amount: undefined })
-                }}
-                initialPartnerId={subModalParams.partnerId}
-                initialAmount={subModalParams.amount}
-            />
-            <EquityTransferModal
-                open={isTransferOpen}
-                onOpenChange={setIsTransferOpen}
-            />
-            <PartnerContributionWizard
-                open={isContributionOpen}
-                onOpenChange={(open) => {
-                    setIsContributionOpen(open)
-                    if (!open) setContributionTarget({})
-                }}
-                initialPartnerId={contributionTarget.partnerId?.toString()}
-                initialAmount={contributionTarget.amount}
-                lockAmount={!!contributionTarget.amount}
-            />
-            <MobilizeEarningsWizard
-                open={isMobilizeOpen}
-                onOpenChange={setIsMobilizeOpen}
-                initialPartnerId={selectedPartnerId}
-            />
-            <DividendPaymentModal
-                open={isDividendOpen}
-                onOpenChange={setIsDividendOpen}
-                initialPartnerId={selectedPartnerId?.toString()}
-            />
-            <PartnerLedgerDrawer
-                open={isLedgerOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        const params = new URLSearchParams(searchParams.toString())
-                        params.delete("ledger")
-                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                    }
-                }}
-                partnerId={partnerIdForLedger ?? selectedPartnerId}
-                partnerName={selectedPartnerName}
-            />
-            <AddPartnerModal
-                open={isAddPartnerOpen}
-                onOpenChange={(open) => {
-                    setIsAddPartnerOpen(open)
-                    if (!open) clearModalParam()
-                }}
-            />
+            <EntityPanelTab label="contacts.partner" {...panel.tab}>
+                {(open) => (
+                    <PartnerDrawer
+                        id={panel.selectedId}
+                        open={open}
+                        onOpenChange={(o) => { if (!o) panel.close() }}
+                    />
+                )}
+            </EntityPanelTab>
+
+            {host}
         </div>
     )
 }

@@ -54,5 +54,10 @@ export function usePartnerMutations() {
         onSuccess: invalidate,
     })
 
-    return { recordSubscription, recordTransfer, createTransaction, recordDividendPayment, mobilizeRetainedEarnings }
+    const demotePartner = useMutation({
+        mutationFn: (contactId: number) => partnersApi.demotePartner(contactId),
+        onSuccess: invalidate,
+    })
+
+    return { demotePartner, recordSubscription, recordTransfer, createTransaction, recordDividendPayment, mobilizeRetainedEarnings }
 }

@@ -66,7 +66,7 @@ registerPartnerValueKinds()
 
 /** Company partners / shareholders (ADR-0087 oleada B5). Replaces partnerFields.ts + the inline name column. */
 export const partnerEntity = defineEntity<Partner>()((f) => ({
-    label: "settings.partner",
+    label: "contacts.partner",
     fields: {
         name: f.value("partnerName", (p) => p, { label: "Socio" }),
         equityPercentage: f.number("partner_equity_percentage", { label: "Part. %", suffix: "%" }),

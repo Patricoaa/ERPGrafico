@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import { type Partner, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
+import { type Partner, type PartnerEquityStake, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
 
 export const partnersApi = {
     /**
@@ -33,6 +33,23 @@ export const partnersApi = {
      */
     createTransaction: async (contactId: number, data: PartnerTransactionPayload) => {
         const response = await api.post(`/contacts/${contactId}/partner_transactions/`, data)
+        return response.data
+    },
+
+    /**
+     * Dar de baja a un socio (vuelve a contacto normal). El backend valida saldos y capital.
+     */
+    demotePartner: async (contactId: number) => {
+        const response = await api.post<unknown>(`/contacts/${contactId}/demote-partner/`)
+        return response.data
+    },
+
+    /**
+     * Historial de participación (vigencias del %) de un socio
+     */
+    getEquityStakesHistory: async (partnerId: number): Promise<PartnerEquityStake[]> => {
+        const response = await api.get<PartnerEquityStake[]>(`/contacts/equity_stakes_history/?partner_id=${partnerId}`)
+        // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
 

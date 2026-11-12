@@ -9,6 +9,7 @@ export const PARTNER_KEYS = {
     all: ROOT,
     list: () => [...ROOT, 'list'] as const,
     statement: (contactId: number) => [...ROOT, 'statement', contactId] as const,
+    stakes: (contactId: number) => [...ROOT, 'stakes', contactId] as const,
     evolution: (months: number, granularity: string) => [...ROOT, 'evolution', months, granularity] as const,
     distributions: () => [...ROOT, 'distributions'] as const,
     distribution: (id: number) => [...ROOT, 'distribution', id] as const,
