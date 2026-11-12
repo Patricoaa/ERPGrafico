@@ -55,7 +55,11 @@ export function PartnerActionModal({ request, onClose, onDemoted }: PartnerActio
                 initialPartnerId={request?.type === "subscription" ? idStr : undefined}
                 initialAmount={request?.type === "subscription" ? request.amount : undefined}
             />
-            <EquityTransferModal open={request?.type === "transfer"} onOpenChange={close} />
+            <EquityTransferModal
+                open={request?.type === "transfer"}
+                onOpenChange={close}
+                initialFromPartnerId={request?.type === "transfer" ? request.fromPartnerId?.toString() : undefined}
+            />
             <PartnerContributionWizard
                 open={request?.type === "contribution"}
                 onOpenChange={close}

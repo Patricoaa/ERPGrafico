@@ -147,7 +147,7 @@ export function PartnersClientView({
 
     const hasPartners = partners.length > 0
 
-    const actionsCtx: PartnerActionsCtx = { run, onOpen: openSelected }
+    const actionsCtx: PartnerActionsCtx = { run }
 
     const toolbarActionButtons = !hasPartners
         ? (

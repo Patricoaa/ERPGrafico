@@ -17,7 +17,7 @@ const base: Partner = {
 vi.mock("@/features/contacts", () => ({ usePartners: () => ({ partners: [base] }) }))
 vi.mock("../../hooks", () => ({ usePartnerMutations: () => ({ demotePartner: { mutateAsync: (...a: unknown[]): unknown => demote(...a) } }) }))
 vi.mock("../AddPartnerModal", () => ({ AddPartnerModal: () => null }))
-vi.mock("../EquityMovementModals", () => ({ DividendPaymentModal: () => null, EquityTransferModal: () => null, SubscriptionMovementModal: () => null }))
+vi.mock("../EquityMovementModals", () => ({ DividendPaymentModal: () => null, EquityTransferModal: (props: { open: boolean; initialFromPartnerId?: string }) => (props.open ? <div data-testid="transfer" data-from={props.initialFromPartnerId} /> : null), SubscriptionMovementModal: () => null }))
 vi.mock("../MobilizeEarningsWizard", () => ({ MobilizeEarningsWizard: () => null }))
 vi.mock("../PartnerContributionWizard", () => ({ PartnerContributionWizard: () => null }))
 vi.mock("../PartnerWithdrawalWizard", () => ({ PartnerWithdrawalWizard: () => null }))
@@ -35,6 +35,11 @@ describe("PartnerActionModal", () => {
 
         await waitFor(() => expect(demote).toHaveBeenCalledWith(1))
         await waitFor(() => expect(onDemoted).toHaveBeenCalledWith(1))
+    })
+
+    it("la transferencia recibe el socio de origen", () => {
+        render(<PartnerActionModal request={{ type: "transfer", fromPartnerId: 3 }} onClose={vi.fn()} />)
+        expect(screen.getByTestId("transfer").getAttribute("data-from")).toBe("3")
     })
 
     it("no monta ninguna confirmación sin petición activa", () => {

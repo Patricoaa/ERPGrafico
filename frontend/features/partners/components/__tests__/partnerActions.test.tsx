@@ -1,0 +1,47 @@
+import { describe, expect, it, vi } from "vitest"
+import type { Partner } from "@/features/contacts"
+import { demoteBlockedReason, partnerActionsFor } from "../partnerActions"
+
+const base: Partner = {
+    id: 7, name: "Ana Socia", tax_id: "1-9", partner_equity_percentage: "50",
+    partner_total_contributions: "0", partner_total_paid_in: "0", partner_pending_capital: "0",
+    partner_excess_capital: "0", partner_provisional_withdrawals_balance: "0",
+    partner_earnings_balance: "0", partner_dividends_payable_balance: "0", partner_net_equity: "0",
+}
+
+const labels = (p: Partner, placement: "capital" | "results" | "menu", run = vi.fn()) =>
+    partnerActionsFor(p, placement, { run }).map(a => ("label" in a ? a.label : undefined))
+
+describe("partnerActionsFor", () => {
+    it("capital incluye aporte y transferencia, y excluye retiro", () => {
+        const l = labels(base, "capital")
+        expect(l).toContain("Registrar aporte")
+        expect(l).toContain("Transferir a otro socio")
+        expect(l).not.toContain("Registrar retiro")
+    })
+    it("results incluye retiro", () => {
+        expect(labels(base, "results")).toContain("Registrar retiro")
+    })
+    it("formalizar exceso solo con exceso > 0", () => {
+        expect(labels(base, "capital")).not.toContain("Formalizar exceso de capital")
+        expect(labels({ ...base, partner_excess_capital: "5" }, "capital")).toContain("Formalizar exceso de capital")
+    })
+    it("baja es del menú y solo si no está bloqueada", () => {
+        expect(labels(base, "menu")).toEqual(["Dar de baja"])
+        expect(labels({ ...base, partner_total_contributions: "1" }, "menu")).toEqual([])
+    })
+    it("transferir pide la acción con el socio de origen", () => {
+        const run = vi.fn()
+        const t = partnerActionsFor(base, "capital", { run }).find(a => "label" in a && a.label === "Transferir a otro socio")
+        if (!t || !("onClick" in t)) throw new Error("falta transferir")
+        t.onClick({} as never)
+        expect(run).toHaveBeenCalledWith({ type: "transfer", fromPartnerId: 7 })
+    })
+})
+
+describe("demoteBlockedReason", () => {
+    it("sin cambios", () => {
+        expect(demoteBlockedReason(base)).toBeNull()
+        expect(demoteBlockedReason({ ...base, partner_total_contributions: "1" })).toMatch(/capital suscrito/)
+    })
+})
