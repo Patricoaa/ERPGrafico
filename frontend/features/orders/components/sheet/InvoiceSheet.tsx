@@ -52,7 +52,7 @@ const LABEL = "billing.invoice"
  * "modo nota": el mismo motor actúa sobre la factura (pagos imputados a ella, folio, NC/ND,
  * logística propia de la nota).
  */
-const INVOICE_ACTIONS = new Set(["complete-folio", "register-payment", "register-payment-return", "create-credit-note", "create-debit-note"])
+const INVOICE_ACTIONS = new Set(["invoice-by-lines", "complete-folio", "register-payment", "register-payment-return", "create-credit-note", "create-debit-note"])
 const NOTE_ACTIONS = new Set([
     "complete-folio", "register-payment", "register-payment-return",
     "register-delivery", "register-reception", "confirm-service-delivery", "register-merchandise-return",

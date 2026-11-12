@@ -291,6 +291,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         setNumpadOpen(false)
                     }}
                     allowDecimal
+                    mode="number"
                 />
             )}
         </div>

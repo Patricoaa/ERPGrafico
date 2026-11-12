@@ -725,6 +725,7 @@ export function POSClientView() {
                 onChange={setNumpadValue}
                 onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))}
                 allowDecimal
+                mode={numpadConfig?.field === 'qty' ? "number" : "currency"}
             />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />

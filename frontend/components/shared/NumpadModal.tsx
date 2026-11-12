@@ -20,6 +20,12 @@ interface NumpadModalProps {
     allowDecimal?: boolean
     maxValue?: number
     netValue?: string | number
+    /**
+     * Controla cómo se formatea el valor en el display superior del numpad.
+     * - `"currency"` (default): muestra el valor formateado como moneda (ej. $1.000).
+     * - `"number"`: muestra el valor como número plano, sin símbolo de moneda (ej. folio, cantidad).
+     */
+    mode?: "currency" | "number"
 }
 
 export function NumpadModal({
@@ -33,8 +39,12 @@ export function NumpadModal({
     icon,
     allowDecimal = true,
     maxValue,
-    netValue
+    netValue,
+    mode = "currency",
 }: NumpadModalProps) {
+    const displayValue = mode === "currency"
+        ? formatCurrency(parseFloat(value) || 0)
+        : (value || "0")
     return (
         <BaseModal
             asDialog
@@ -74,7 +84,7 @@ export function NumpadModal({
                     onClose={() => onOpenChange(false)}
                     allowDecimal={allowDecimal}
                     hideConfirm
-                    displayValue={formatCurrency(parseFloat(value) || 0)}
+                    displayValue={displayValue}
                     className="border-none shadow-none p-0 w-full max-w-none"
                 />
             </div>

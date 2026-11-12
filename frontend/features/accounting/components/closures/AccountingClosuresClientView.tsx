@@ -9,6 +9,7 @@ import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
 import { type AccountingPeriod, type TaxPeriod } from '../../types';
 import { useTaxPeriods, useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod, useCreateTaxPayment, DeclarationWizard, F29PaymentModal, F29CloseModal } from '@/features/tax';
+import { showApiError } from '@/lib/errors';
 import type { TaxDeclaration, TaxPaymentData } from '@/features/tax';
 import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
 
@@ -192,7 +193,12 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const handleConfirmCloseTaxPeriod = useCallback(async () => {
         if (!closeF29PeriodId) return
         const key = generateUuidV4()
-        await closeTaxPeriod({ id: closeF29PeriodId, idempotencyKey: key });
+        try {
+            await closeTaxPeriod({ id: closeF29PeriodId, idempotencyKey: key });
+        } catch (error: unknown) {
+            showApiError(error, "No se pudo cerrar el período F29");
+            throw error;
+        }
         refetchTaxPeriods();
         fetchPeriods();
         setCloseF29PeriodId(null);

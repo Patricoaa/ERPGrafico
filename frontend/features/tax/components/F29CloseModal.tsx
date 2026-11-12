@@ -24,7 +24,12 @@ export function F29CloseModal({ isOpen, onOpenChange, onConfirm, declaration, is
         if (file) {
             await uploadF29Document(file)
         }
-        await onConfirm()
+        try {
+            await onConfirm()
+        } catch {
+            // El llamador ya notificó el error; el modal queda abierto.
+            return
+        }
         onOpenChange(false)
     }
 

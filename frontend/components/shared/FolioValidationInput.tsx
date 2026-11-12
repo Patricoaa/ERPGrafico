@@ -119,6 +119,7 @@ export function FolioValidationInput({
                         setNumpadOpen(false)
                     }}
                     allowDecimal={false}
+                    mode="number"
                 />
             )}
         </div>
