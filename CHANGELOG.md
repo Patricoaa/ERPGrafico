@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.100](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.99...v0.3.100) (2026-11-11)
+
+
+### 🐛 Bug Fixes
+
+* **pos:** la sesión de POS abre como documento de panel en el drawer de ventas ([a59358a](https://github.com/Patricoaa/ERPGrafico/commit/a59358acf481d7dda287143c66bcf0434410665c))
+
+
+### ✨ Features
+
+* **pos:** apertura y cierre de sesión a pantalla completa, táctiles y con barra superior única ([9555559](https://github.com/Patricoaa/ERPGrafico/commit/9555559a535111754d92ff22f5f8ef57fed2dd2d))
+* **pos:** diferencias contra la cuenta del motivo, retiro de socio con socio y cierre sin informe Z posterior ([f893c8e](https://github.com/Patricoaa/ERPGrafico/commit/f893c8ef96ebb33468262ad37df82501f8107350))
+
 ### [0.3.99](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.98...v0.3.99) (2026-11-11)
 
 
