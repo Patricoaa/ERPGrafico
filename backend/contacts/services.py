@@ -102,6 +102,7 @@ class ContactService:
 
         from rest_framework.exceptions import ValidationError
 
+        from contacts.partner_service import PartnerService
         from treasury.models import TreasuryAccount
         v = request.data
         if 'amount' not in v or 'treasury_account_id' not in v: raise ValidationError('Monto y cuenta requeridos.')
@@ -112,8 +113,14 @@ class ContactService:
             amount = Decimal(str(v['amount']))
         except InvalidOperation:
             raise ValidationError('Monto inválido.')
-        entry = cls.individual_dividend_payment(partner=contact, amount=amount, treasury_account=ta, date=v.get('date'), created_by=request.user)
-        return {'message': 'Pago de dividendos procesado.', 'journal_entry': entry.display_id}
+        ptx = PartnerService.record_dividend_payment(
+            partner=contact,
+            amount=amount,
+            treasury_account_id=ta.id,
+            date=v.get('date'),
+            created_by=request.user,
+        )
+        return {'message': 'Pago de dividendos procesado.', 'journal_entry': ptx.journal_entry.display_id}
 
     @classmethod
     def mass_mobilize_retained_earnings_from_request(cls, request):

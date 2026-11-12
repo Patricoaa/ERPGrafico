@@ -136,3 +136,30 @@ def test_partner_relations_require_contact_view_permission():
 def test_partner_canonical_url_points_at_composition_page():
     from core.documents import DocumentTypeRegistry
     assert DocumentTypeRegistry.get("contacts.partner").canonical_url == "/finances/partners/composition?selected={id}"
+
+
+def test_profit_distribution_relations(client):
+    partner = _partner()
+    resolution = _distribution(partner, posted=True)
+    _movement(partner)
+
+    # Crear movimiento asociado a la resolución
+    ptx = PartnerTransaction.objects.create(
+        partner=partner,
+        transaction_type=PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL,
+        amount=Decimal("1500"),
+        date=date(2026, 1, 1),
+        distribution_resolution=resolution,
+    )
+
+    url = f"/api/core/documents/contacts.profitdistributionresolution/{resolution.pk}/relations/"
+    response = client.get(url)
+    assert response.status_code == 200, response.data
+    data = response.data
+    assert data["document"]["label"] == "contacts.profitdistributionresolution"
+    assert data["document"]["domain"] == "capital"
+
+    targets = _targets(data)
+    assert ("partner", "contacts.contact", partner.pk) in targets
+    assert ("journal_entry", "accounting.journalentry", resolution.journal_entry_id) in targets
+    assert ("partner_transaction", "contacts.partnertransaction", ptx.pk) in targets

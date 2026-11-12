@@ -1,8 +1,5 @@
 import { defineEntity } from "@/components/entity-view"
 import { docRef } from "@/features/documents"
-import { formatCurrency } from "@/lib/money"
-
-const DESTINATION: Record<string, string> = { DIVIDEND: "Dividendo", REINVEST: "Reinversión", RETAINED: "Retenida", LOSS: "Absorción pérdida" }
 
 export interface ProfitDistributionLine {
     id: number
@@ -15,21 +12,22 @@ export interface ProfitDistributionLine {
     gross_amount?: number | string
     destinations?: {
         id: number
-        destination: 'DIVIDEND' | 'REINVEST' | 'RETAINED'
+        destination: 'DIVIDEND' | 'REINVEST' | 'RETAINED' | 'LOSS'
         amount: string
     }[]
 }
 
 const fixed = { sortable: false } as const
 
-/** Renderiza el/los destinos de una línea: si hay destinations[], los lista todos; si no, el campo flat. */
-function formatDestinations(line: ProfitDistributionLine): string {
+function getDestAmount(line: ProfitDistributionLine, dest: 'DIVIDEND' | 'REINVEST' | 'RETAINED' | 'LOSS'): number {
     if (line.destinations && line.destinations.length > 0) {
-        return line.destinations
-            .map((d) => `${DESTINATION[d.destination] ?? d.destination}: ${formatCurrency(parseFloat(d.amount))}`)
-            .join(" · ")
+        const item = line.destinations.find(d => d.destination === dest)
+        return item ? parseFloat(item.amount) || 0 : 0
     }
-    return DESTINATION[line.destination] ?? line.destination ?? "—"
+    if (line.destination === dest) {
+        return typeof line.net_amount === 'number' ? line.net_amount : parseFloat(line.net_amount as unknown as string) || 0
+    }
+    return 0
 }
 
 export const profitDistributionLineEntity = defineEntity<ProfitDistributionLine>()((f) => ({
@@ -41,12 +39,13 @@ export const profitDistributionLineEntity = defineEntity<ProfitDistributionLine>
             { ...fixed, label: "Socio", fallback: (l) => l.partner_name ?? undefined },
         ),
         percentage: f.number("percentage_at_date", { ...fixed, label: "Participación", suffix: "%" }),
-        destinations: f.text(formatDestinations, { ...fixed, label: "Destino(s)" }),
-        offset: f.money("provisional_withdrawals_offset", { ...fixed, label: "Retiros a compensar" }),
         net_amount: f.money("net_amount", { ...fixed, label: "Monto neto" }),
+        dividends: f.money((l) => getDestAmount(l, 'DIVIDEND'), { ...fixed, label: "Dividendos" }),
+        reinvest: f.money((l) => getDestAmount(l, 'REINVEST'), { ...fixed, label: "Reinversión" }),
+        retained: f.money((l) => getDestAmount(l, 'RETAINED'), { ...fixed, label: "Ut. Retenidas" }),
     },
 }))
 
 export const profitDistributionLineViews = profitDistributionLineEntity.views({
-    table: { columns: ["partner", "percentage", "destinations", "offset", "net_amount"] },
+    table: { columns: ["partner", "percentage", "net_amount", "dividends", "reinvest", "retained"] },
 })

@@ -1,17 +1,25 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import { Users, Play, Wand2, Wallet, Trash2 } from 'lucide-react'
+import React, { useEffect, useState, useMemo } from 'react'
+import { Users, Play, Wand2, Wallet, Trash2, ExternalLink, MoreVertical } from 'lucide-react'
 import { Collection, useEntityCollection } from '@/components/entity-view'
 import { formatCurrency } from '@/lib/money'
+import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
 import { useProfitDistribution } from '../hooks'
 import { DocumentSheet } from '@/features/documents'
 import type { DocumentActionItem } from '@/components/shared'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { CreateDistributionWizard } from './CreateDistributionWizard'
 import { MassPaymentWizard } from './MassPaymentWizard'
 import { ProfitDistributionActionModal, type ProfitDistributionActionRequest } from './ProfitDistributionActionModal'
-import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
+import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { profitDistributionLineEntity, profitDistributionLineViews, type ProfitDistributionLine } from '../entity-view/profitDistributionLine.entity'
 
 interface ProfitDistributionDrawerProps extends TransactionDrawerProps {
@@ -26,7 +34,7 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
   const entityId = id ?? distributionId ?? null
   const { profitDistribution: distribution, isLoading } = useProfitDistribution(entityId)
   const { printRef, handlePrint } = usePrintableDrawer()
-  const { setEntityDisplay } = useGlobalModalActions()
+  const { setEntityDisplay, openEntity } = useGlobalModals()
   const [request, setRequest] = useState<ProfitDistributionActionRequest | null>(null)
   const [wizard, setWizard] = useState<'retake' | 'pay' | null>(null)
   const displayId = distribution?.display_id ?? `#${entityId}`
@@ -39,6 +47,29 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
   const isProfit = distribution?.is_profit !== false
   const lines = (distribution?.lines as ProfitDistributionLine[] | undefined) ?? []
   const collection = useEntityCollection(profitDistributionLineEntity, { rows: lines }, { pagination: { mode: "none" } })
+
+  const destTotals = useMemo(() => {
+    return lines.reduce(
+      (acc, line) => {
+        if (line.destinations && line.destinations.length > 0) {
+          for (const d of line.destinations) {
+            const amt = parseFloat(d.amount) || 0
+            if (d.destination === 'DIVIDEND') acc.dividends += amt
+            else if (d.destination === 'REINVEST') acc.reinvest += amt
+            else if (d.destination === 'RETAINED') acc.retained += amt
+          }
+        } else {
+          const amount = typeof line.net_amount === 'number' ? line.net_amount : parseFloat(line.net_amount as unknown as string) || 0
+          const dest = line.destination
+          if (dest === 'DIVIDEND') acc.dividends += amount
+          else if (dest === 'REINVEST') acc.reinvest += amount
+          else if (dest === 'RETAINED') acc.retained += amount
+        }
+        return acc
+      },
+      { dividends: 0, reinvest: 0, retained: 0 }
+    )
+  }, [lines])
 
   const hasDividends = !!distribution?.lines?.some((l) => l.destinations?.some((d) => d.destination === 'DIVIDEND') || l.destination === 'DIVIDEND')
   let primaryAction: DocumentActionItem | null = null
@@ -95,14 +126,61 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
           },
           { label: "Año fiscal", value: distribution.fiscal_year ? String(distribution.fiscal_year) : null },
           { label: "Acta N°", value: distribution.acta_number ? String(distribution.acta_number) : null },
-          { label: "Total distribuido", value: <span className="tabular-nums">{formatCurrency(lines.reduce((s, l) => s + Number(l.net_amount ?? 0), 0))}</span> },
+          { label: "Fecha", value: distribution.resolution_date ? formatPlainDate(distribution.resolution_date) : null },
+          { label: "Dividendos", value: <span className="tabular-nums">{formatCurrency(destTotals.dividends)}</span> },
+          { label: "Reinversión", value: <span className="tabular-nums">{formatCurrency(destTotals.reinvest)}</span> },
+          { label: "Ut. Retenidas", value: <span className="tabular-nums">{formatCurrency(destTotals.retained)}</span> },
+          { label: "Total distribuido", value: <span className="tabular-nums font-semibold">{formatCurrency(lines.reduce((s, l) => s + Number(l.net_amount ?? 0), 0))}</span> },
           { label: "Notas", value: distribution.notes || null, span: 4, hidden: !distribution.notes },
         ] : []}
         sections={[{
           title: "Socios",
           icon: Users,
           content: (
-            <Collection.Root collection={collection} label="Socios">
+            <Collection.Root
+              collection={collection}
+              label="Socios"
+              onOpen={(line: ProfitDistributionLine) => {
+                if (line.partner) openEntity("contacts.partner", line.partner as number)
+              }}
+              actions={(line: ProfitDistributionLine, _surface) => (
+                <div className="flex items-center gap-1 justify-end">
+                  {line.partner && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      onClick={() => openEntity("contacts.partner", line.partner as number)}
+                      title="Ver ficha del socio"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                      Ver socio
+                    </Button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                        <MoreVertical className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {line.partner && (
+                        <DropdownMenuItem onClick={() => openEntity("contacts.partner", line.partner as number)}>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Ficha del socio
+                        </DropdownMenuItem>
+                      )}
+                      {hasDividends && distribution?.status === 'EXECUTED' && (
+                        <DropdownMenuItem onClick={() => setWizard('pay')}>
+                          <Wallet className="h-4 w-4 mr-2" />
+                          Pagar dividendos
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+            >
               <Collection.View table={profitDistributionLineViews.table} emptyTitle="Sin socios" emptyDescription="La distribución no tiene líneas." />
             </Collection.Root>
           ),

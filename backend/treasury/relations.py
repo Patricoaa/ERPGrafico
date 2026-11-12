@@ -97,6 +97,17 @@ def treasury_movement_extra_relations(movement):
     if movement.payroll_id:
         yield Link("settlement", "outgoing", "payroll", movement.payroll, amount=movement.amount)
 
+    # Capital y Socios: aportes/retiros y pagos de dividendos de utilidades.
+    for ptx in movement.partner_transactions.select_related("partner").all():
+        yield Link("settlement", "incoming", "partner_transaction", ptx, amount=ptx.amount)
+        if ptx.partner_id:
+            yield Link("association", "incoming", "partner", ptx.partner, is_dependency=False)
+    for dist_pay in movement.profit_distribution_payments.select_related("resolution", "partner").all():
+        if dist_pay.resolution_id:
+            yield Link("settlement", "incoming", "profit_distribution", dist_pay.resolution, amount=dist_pay.amount)
+        if dist_pay.partner_id:
+            yield Link("association", "incoming", "partner", dist_pay.partner, is_dependency=False)
+
     # Préstamos bancarios: cuotas, desembolsos y prepagos.
     installment = related_or_none(movement, "installment_payment")
     if installment is not None:

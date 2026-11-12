@@ -3,7 +3,6 @@
 import { defineEntity, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
 import { formatCurrency } from "@/lib/money"
 import { formatPlainDate, cn } from "@/lib/utils"
-import { Chip } from "@/components/shared"
 import { Calendar } from "lucide-react"
 import type { ProfitDistribution } from "@/features/contacts"
 
@@ -32,38 +31,7 @@ registerValueKind("profitDistYear", {
     render: ProfitDistYearCell,
 })
 
-// ─── profitDistBreakdown: chips for DIV / REINV / RET ─────────────────────────
-
-export interface ProfitDistBreakdownValue { dividends: number; reinvest: number; retained: number }
-
-declare module "@/components/entity-view/core/value-kinds" {
-    interface ValueKinds {
-        profitDistBreakdown: { value: ProfitDistBreakdownValue | null; options: Record<never, never> }
-    }
-}
-
-function ProfitDistBreakdownCell({ value }: ValueRenderProps<"profitDistBreakdown">) {
-    if (!value) return null
-    const { dividends, reinvest, retained } = value
-    return (
-        <div className="flex flex-wrap justify-center gap-1.5">
-            {dividends > 0 && <Chip intent="success" size="xs">DIV: {formatCurrency(dividends)}</Chip>}
-            {reinvest > 0 && <Chip intent="info" size="xs">REINV: {formatCurrency(reinvest)}</Chip>}
-            {retained > 0 && <Chip intent="warning" size="xs">RET: {formatCurrency(retained)}</Chip>}
-        </div>
-    )
-}
-
-registerValueKind("profitDistBreakdown", {
-    format: (v) => v ? [
-        v.dividends > 0 ? `DIV: ${formatCurrency(v.dividends)}` : "",
-        v.reinvest > 0 ? `REINV: ${formatCurrency(v.reinvest)}` : "",
-        v.retained > 0 ? `RET: ${formatCurrency(v.retained)}` : "",
-    ].filter(Boolean).join(" | ") : "",
-    render: ProfitDistBreakdownCell,
-})
-
-// ─── profitDistActa: acta number + resolution date ────────────────────────────
+// ─── profitDistActa: acta number only ─────────────────────────────────────────
 
 export interface ProfitDistActaValue { actaNumber: string | null; date: string }
 
@@ -73,27 +41,44 @@ declare module "@/components/entity-view/core/value-kinds" {
     }
 }
 
-function ProfitDistActaCell({ value }: ValueRenderProps<"profitDistActa">) {
+function ProfitDistActaNumberCell({ value }: ValueRenderProps<"profitDistActa">) {
     if (!value) return null
     return (
-        <div className="flex flex-col items-center gap-1">
-            <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">
-                {value.actaNumber || 'Sin Acta'}
-            </span>
-            <div className="flex items-center gap-1 text-3xs text-muted-foreground font-medium">
-                <Calendar className="h-3 w-3" />
-                {formatPlainDate(value.date)}
-            </div>
-        </div>
+        <span className="text-xs font-semibold text-foreground">
+            {value.actaNumber ?? <span className="text-muted-foreground italic text-3xs">—</span>}
+        </span>
     )
 }
 
 registerValueKind("profitDistActa", {
-    format: (v) => v ? formatPlainDate(v.date) : "",
-    render: ProfitDistActaCell,
+    format: (v) => v?.actaNumber ?? "—",
+    render: ProfitDistActaNumberCell,
 })
 
-// ─── profitDistResult: net amount + "Asentado" when executed ─────────────────
+// ─── profitDistDate: resolution date only ─────────────────────────────────────
+
+declare module "@/components/entity-view/core/value-kinds" {
+    interface ValueKinds {
+        profitDistDate: { value: string | null; options: Record<never, never> }
+    }
+}
+
+function ProfitDistDateCell({ value }: ValueRenderProps<"profitDistDate">) {
+    if (!value) return null
+    return (
+        <div className="flex items-center gap-1 text-xs text-foreground">
+            <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span>{formatPlainDate(value)}</span>
+        </div>
+    )
+}
+
+registerValueKind("profitDistDate", {
+    format: (v) => v ? formatPlainDate(v) : "",
+    render: ProfitDistDateCell,
+})
+
+// ─── profitDistResult: net amount only (moneda) ───────────────────────────────
 
 export interface ProfitDistResultValue { amount: string; status: string }
 
@@ -107,17 +92,12 @@ function ProfitDistResultCell({ value }: ValueRenderProps<"profitDistResult">) {
     if (!value) return null
     const amount = parseFloat(value.amount)
     return (
-        <div className="flex flex-col items-center gap-0.5">
-            <span className={cn(
-                "font-mono font-black text-sm tracking-tighter",
-                amount < 0 ? "text-destructive" : "text-success"
-            )}>
-                {formatCurrency(Math.abs(amount))}
-            </span>
-            {value.status === 'EXECUTED' && (
-                <span className="text-4xs text-muted-foreground uppercase font-bold italic tracking-widest leading-none">Asentado</span>
-            )}
-        </div>
+        <span className={cn(
+            "font-mono font-black text-sm tracking-tighter tabular-nums",
+            amount < 0 ? "text-destructive" : "text-success"
+        )}>
+            {formatCurrency(Math.abs(amount))}
+        </span>
     )
 }
 
@@ -138,6 +118,29 @@ function mapProfitStatus(status: string): string {
     }
 }
 
+function calcBreakdown(r: ProfitDistribution) {
+    return (r.lines ?? []).reduce(
+        (acc, line) => {
+            if (line.destinations && line.destinations.length > 0) {
+                for (const d of line.destinations) {
+                    const amt = parseFloat(d.amount) || 0
+                    if (d.destination === 'DIVIDEND') acc.dividends += amt
+                    else if (d.destination === 'REINVEST') acc.reinvest += amt
+                    else if (d.destination === 'RETAINED') acc.retained += amt
+                }
+            } else {
+                const amount = parseFloat(line.net_amount) || 0
+                const dest = line.destination
+                if (dest === 'DIVIDEND') acc.dividends += amount
+                else if (dest === 'REINVEST') acc.reinvest += amount
+                else if (dest === 'RETAINED') acc.retained += amount
+            }
+            return acc
+        },
+        { dividends: 0, reinvest: 0, retained: 0 }
+    )
+}
+
 const fixed = { sortable: false } as const
 
 export const profitDistributionEntity = defineEntity<ProfitDistribution>()((f) => ({
@@ -149,25 +152,15 @@ export const profitDistributionEntity = defineEntity<ProfitDistribution>()((f) =
             status: r.status === 'CANCELLED' ? 'DESTRUCTIVE' : r.status === 'EXECUTED' ? 'SUCCESS' : 'NEUTRAL',
             label: mapProfitStatus(r.status),
         }), { ...fixed, label: "Estado" }),
-        breakdown: f.value("profitDistBreakdown", (r) => {
-            const totals = (r.lines ?? []).reduce(
-                (acc, line) => {
-                    const amount = parseFloat(line.net_amount) || 0
-                    const dest = line.destination
-                    if (dest === 'DIVIDEND') acc.dividends += amount
-                    else if (dest === 'REINVEST') acc.reinvest += amount
-                    else if (dest === 'RETAINED') acc.retained += amount
-                    return acc
-                },
-                { dividends: 0, reinvest: 0, retained: 0 }
-            )
-            return totals
-        }, { ...fixed, label: "Distribución por Destino" }),
-        actaDate: f.value("profitDistActa", (r) => ({ actaNumber: r.acta_number ?? null, date: r.resolution_date }), { ...fixed, label: "Acta / Fecha" }),
-        netResult: f.value("profitDistResult", (r) => ({ amount: r.net_result, status: r.status }), { ...fixed, label: "Resultado Neto" }),
+        dividends: f.money((r) => calcBreakdown(r).dividends, { ...fixed, label: "Dividendos" }),
+        reinvest:  f.money((r) => calcBreakdown(r).reinvest,  { ...fixed, label: "Reinversión" }),
+        retained:  f.money((r) => calcBreakdown(r).retained,  { ...fixed, label: "Ut. Retenidas" }),
+        actaNumber: f.value("profitDistActa", (r) => ({ actaNumber: r.acta_number ?? null, date: r.resolution_date }), { ...fixed, label: "Acta N°" }),
+        actaDate:   f.value("profitDistDate", (r) => r.resolution_date ?? null, { ...fixed, label: "Fecha" }),
+        netResult:  f.value("profitDistResult", (r) => ({ amount: r.net_result, status: r.status }), { ...fixed, label: "Resultado Neto" }),
     },
 }))
 
 export const profitDistributionViews = profitDistributionEntity.views({
-    table: { columns: ["fiscalYear", "status", "breakdown", "actaDate", "netResult"] },
+    table: { columns: ["fiscalYear", "status", "dividends", "reinvest", "retained", "actaNumber", "actaDate", "netResult"] },
 })

@@ -1,17 +1,20 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, SummarySection, SummaryRow, SummaryNote, SubmitButton } from "@/components/shared"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, SummarySection, SummaryRow, SummaryNote, SubmitButton, NumpadModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
 import { useFiscalYears } from "@/features/accounting"
 import { useProfitDistributionMutations } from "../hooks"
 import { toast } from "sonner"
+import { formatCurrency } from "@/lib/money"
 
 import {
     PieChart,
     Calculator,
+    Wand2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -49,11 +52,55 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
     // Destinations config: line_id -> array of allocations
     const [lineDestinations, setLineDestinations] = useState<Record<number, DestinationAllocation[]>>({})
 
+    // Numpad state
+    const [numpadState, setNumpadState] = useState<{
+        lineId: number
+        partnerName: string
+        destination: string
+        destinationLabel: string
+        value: string
+        availableDifference: number
+        totalNet: number
+    } | null>(null)
+
+    const handleAmountChange = useCallback((lineId: number, type: string, val: string | number) => {
+        const numVal = typeof val === 'number' ? val : (val === '' ? 0 : parseFloat(val));
+        const safeNum = isNaN(numVal) ? 0 : Math.max(0, numVal);
+        setLineDestinations(prev => {
+            const arr = [...(prev[lineId] || [])];
+            const idx = arr.findIndex(d => d.destination === type);
+            if (idx >= 0) arr[idx] = { destination: type, amount: safeNum };
+            else arr.push({ destination: type, amount: safeNum });
+            return { ...prev, [lineId]: arr };
+        });
+    }, [])
+
+    const handleAssignFirstAvailable = useCallback((lineId: number) => {
+        const line = lines.find(l => l.id === lineId);
+        if (!line) return;
+        const net = Math.abs(parseFloat(line.net_amount));
+        const dests = lineDestinations[lineId] || [];
+        const sumAllocated = dests.reduce((sum, d) => sum + d.amount, 0);
+        const remaining = net - sumAllocated;
+        if (remaining <= 0.01) return;
+
+        // Buscar el primer destino con monto 0 o el primero en la lista estándar
+        const order = ['DIVIDEND', 'REINVEST', 'RETAINED'];
+        const target = order.find(type => {
+            const current = dests.find(d => d.destination === type)?.amount || 0;
+            return current === 0;
+        }) || order[0];
+
+        const currentTargetAmount = dests.find(d => d.destination === target)?.amount || 0;
+        handleAmountChange(lineId, target, currentTargetAmount + remaining);
+    }, [lines, lineDestinations, handleAmountChange])
+
     const resetFlow = () => {
         setExecuted(false)
         setDraftResolution(null)
         setLines([])
         setLineDestinations({})
+        setNumpadState(null)
         setFormData({
             fiscal_year_id: "",
             net_result: "",
@@ -324,21 +371,21 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                     </SummarySection>
 
                     <div className="border rounded-sm overflow-hidden">
-                        <table className="w-full text-2xs text-left">
-                            <thead className="bg-muted text-3xs font-bold uppercase text-muted-foreground tracking-wider border-b">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-muted/50 text-xs font-semibold uppercase text-muted-foreground tracking-wider border-b">
                                 <tr>
-                                    <th className="px-3 py-3">Socio</th>
-                                    <th className="px-3 py-3 text-right">Torta (%)</th>
-                                    <th className="px-3 py-3 text-right">Info Montos</th>
+                                    <th className="px-4 py-3">Socio</th>
+                                    <th className="px-4 py-3 text-right">Participación</th>
+                                    <th className="px-4 py-3 text-right">Detalle Base</th>
                                     {draftResolution?.is_profit ? (
                                         <>
-                                            <th className="px-2 py-3 w-[120px]">Dividendos ($)</th>
-                                            <th className="px-2 py-3 w-[120px]">Reinversión ($)</th>
-                                            <th className="px-2 py-3 w-[120px]">Retenido ($)</th>
-                                            <th className="px-3 py-3 w-[90px] text-right">Diferencia</th>
+                                            <th className="px-3 py-3 w-[170px]">Dividendos ($)</th>
+                                            <th className="px-3 py-3 w-[170px]">Reinversión ($)</th>
+                                            <th className="px-3 py-3 w-[170px]">Retenido ($)</th>
+                                            <th className="px-4 py-3 w-[130px] text-right">Diferencia</th>
                                         </>
                                     ) : (
-                                        <th className="px-3 py-3">Absorción (Pérdida)</th>
+                                        <th className="px-4 py-3">Absorción (Pérdida)</th>
                                     )}
                                 </tr>
                             </thead>
@@ -350,88 +397,146 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
 
                                     const getAmount = (type: string) => dests.find(d => d.destination === type)?.amount || 0;
 
-                                    const handleAmountChange = (type: string, val: string) => {
-                                        const numVal = val === '' ? 0 : parseFloat(val);
-                                        setLineDestinations(prev => {
-                                            const arr = [...(prev[line.id] || [])];
-                                            const idx = arr.findIndex(d => d.destination === type);
-                                            if (idx >= 0) arr[idx] = { destination: type, amount: numVal };
-                                            else arr.push({ destination: type, amount: numVal });
-                                            return { ...prev, [line.id]: arr };
-                                        });
-                                    };
-
                                     const sumAllocated = dests.reduce((sum, d) => sum + d.amount, 0);
                                     const remaining = Math.abs(net) - sumAllocated;
 
+                                    const openCellNumpad = (destKey: string, destLabel: string) => {
+                                        const currentVal = getAmount(destKey);
+                                        const otherSum = dests.filter(d => d.destination !== destKey).reduce((acc, d) => acc + d.amount, 0);
+                                        const avail = Math.max(0, Math.abs(net) - otherSum);
+                                        setNumpadState({
+                                            lineId: line.id,
+                                            partnerName: line.partner_name,
+                                            destination: destKey,
+                                            destinationLabel: destLabel,
+                                            value: currentVal ? currentVal.toString() : '0',
+                                            availableDifference: avail,
+                                            totalNet: Math.abs(net),
+                                        });
+                                    };
+
                                     return (
                                         <tr key={line.id} className="hover:bg-muted/30">
-                                            <td className="px-3 py-2">
-                                                <DataCell.Text className="justify-start text-left font-black">{line.partner_name}</DataCell.Text>
+                                            <td className="px-4 py-3 align-middle">
+                                                <span className="font-semibold text-foreground text-sm">{line.partner_name}</span>
                                             </td>
-                                            <td className="px-3 py-2 text-right">
-                                                <span className="font-bold text-muted-foreground">{line.percentage_at_date}%</span>
+                                            <td className="px-4 py-3 text-right align-middle">
+                                                <span className="font-medium text-sm tabular-nums text-muted-foreground">{line.percentage_at_date}%</span>
                                             </td>
-                                            <td className="px-3 py-2 text-right">
-                                                <div className="flex flex-col text-3xs items-end">
-                                                    <span className="text-success flex items-center gap-1">
-                                                        Bruto: <DataCell.Currency value={line.gross_amount} className="w-auto p-0 inline-flex font-mono text-3xs text-success" />
+                                            <td className="px-4 py-3 text-right align-middle">
+                                                <div className="flex flex-col text-xs items-end gap-0.5">
+                                                    <span className="text-muted-foreground flex items-center gap-1">
+                                                        Bruto: <span className="font-mono">{formatCurrency(parseFloat(line.gross_amount))}</span>
                                                     </span>
-                                                    <span className="text-destructive flex items-center gap-1">
-                                                        Retiros: {parseFloat(line.provisional_withdrawals_offset) > 0 ? (
-                                                            <DataCell.Currency value={-parseFloat(line.provisional_withdrawals_offset)} className="w-auto p-0 inline-flex font-mono text-3xs text-destructive" />
-                                                        ) : '0'}
-                                                    </span>
-                                                    <span className="font-bold text-primary text-2xs flex items-center gap-1">
-                                                        Neto: <DataCell.Currency value={line.net_amount} weight="bold" className="w-auto p-0 inline-flex font-mono text-2xs text-primary" />
+                                                    {parseFloat(line.provisional_withdrawals_offset) > 0 && (
+                                                        <span className="text-destructive flex items-center gap-1 text-3xs">
+                                                            Retiros: <span className="font-mono">-{formatCurrency(parseFloat(line.provisional_withdrawals_offset))}</span>
+                                                        </span>
+                                                    )}
+                                                    <span className="font-bold text-primary flex items-center gap-1 text-xs">
+                                                        Neto: <span className="font-mono font-bold">{formatCurrency(parseFloat(line.net_amount))}</span>
                                                     </span>
                                                 </div>
                                             </td>
                                             {isCompensated ? (
-                                                <td colSpan={draftResolution?.is_profit ? 4 : 1} className="px-3 py-2 text-center">
-                                                    <span className="text-3xs font-bold text-muted-foreground uppercase">Retiros Compensan Totalmente Utilidad Bruta</span>
+                                                <td colSpan={draftResolution?.is_profit ? 4 : 1} className="px-4 py-3 text-center align-middle">
+                                                    <span className="text-xs font-semibold text-muted-foreground uppercase">Retiros Compensan Totalmente Utilidad Bruta</span>
                                                 </td>
                                             ) : draftResolution?.is_profit ? (
                                                 <>
-                                                    <td className="px-2 py-2">
-                                                        <Input
-                                                            type="number"
-                                                            className="h-8 text-2xs font-mono text-right"
-                                                            value={getAmount('DIVIDEND') || ''}
-                                                            onChange={(e) => handleAmountChange('DIVIDEND', e.target.value)}
-                                                            placeholder="0"
-                                                        />
+                                                    <td className="px-3 py-3 align-middle">
+                                                        <div className="flex items-center gap-1">
+                                                            <Input
+                                                                type="number"
+                                                                className="h-9 text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                value={getAmount('DIVIDEND') || ''}
+                                                                onChange={(e) => handleAmountChange(line.id, 'DIVIDEND', e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
+                                                                title="Abrir teclado numérico"
+                                                                onClick={() => openCellNumpad('DIVIDEND', 'Dividendos')}
+                                                            >
+                                                                <Calculator className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </td>
-                                                    <td className="px-2 py-2">
-                                                        <Input
-                                                            type="number"
-                                                            className="h-8 text-2xs font-mono text-right"
-                                                            value={getAmount('REINVEST') || ''}
-                                                            onChange={(e) => handleAmountChange('REINVEST', e.target.value)}
-                                                            placeholder="0"
-                                                        />
+                                                    <td className="px-3 py-3 align-middle">
+                                                        <div className="flex items-center gap-1">
+                                                            <Input
+                                                                type="number"
+                                                                className="h-9 text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                value={getAmount('REINVEST') || ''}
+                                                                onChange={(e) => handleAmountChange(line.id, 'REINVEST', e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
+                                                                title="Abrir teclado numérico"
+                                                                onClick={() => openCellNumpad('REINVEST', 'Reinversión')}
+                                                            >
+                                                                <Calculator className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </td>
-                                                    <td className="px-2 py-2">
-                                                        <Input
-                                                            type="number"
-                                                            className="h-8 text-2xs font-mono text-right"
-                                                            value={getAmount('RETAINED') || ''}
-                                                            onChange={(e) => handleAmountChange('RETAINED', e.target.value)}
-                                                            placeholder="0"
-                                                        />
+                                                    <td className="px-3 py-3 align-middle">
+                                                        <div className="flex items-center gap-1">
+                                                            <Input
+                                                                type="number"
+                                                                className="h-9 text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                value={getAmount('RETAINED') || ''}
+                                                                onChange={(e) => handleAmountChange(line.id, 'RETAINED', e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
+                                                                title="Abrir teclado numérico"
+                                                                onClick={() => openCellNumpad('RETAINED', 'Retenido')}
+                                                            >
+                                                                <Calculator className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </td>
-                                                    <td className="px-3 py-2 text-right">
-                                                        <div className={cn("font-mono text-2xs flex items-center justify-end gap-0.5", Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground")}>
-                                                            {remaining > 0 ? '+' : ''}
-                                                            <DataCell.Currency value={remaining} className="w-auto p-0 inline-flex font-mono text-2xs text-current" />
+                                                    <td className="px-4 py-3 text-right align-middle">
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <div className={cn(
+                                                                "font-mono text-xs font-bold flex items-center justify-end gap-0.5",
+                                                                Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-amber-500"
+                                                            )}>
+                                                                {remaining > 0 ? '+' : ''}
+                                                                {formatCurrency(remaining)}
+                                                            </div>
+                                                            {remaining > 0.01 && (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="h-6 px-1.5 text-3xs font-medium gap-1 text-primary hover:bg-primary/10 border-primary/30"
+                                                                    title="Asignar automáticamente el remanente disponible"
+                                                                    onClick={() => handleAssignFirstAvailable(line.id)}
+                                                                >
+                                                                    <Wand2 className="h-3 w-3" />
+                                                                    <span>Auto</span>
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </>
                                             ) : (
-                                                <td className="px-3 py-2 text-3xs font-bold text-muted-foreground">
+                                                <td className="px-4 py-3 text-xs font-medium text-muted-foreground align-middle">
                                                     <div className="flex items-center gap-2">
                                                         <span>Monto Automático a Absorber: </span>
-                                                        <DataCell.Currency value={Math.abs(parseFloat(line.net_amount))} className="w-auto p-0 inline-flex text-muted-foreground" />
+                                                        <span className="font-mono font-bold text-foreground">{formatCurrency(Math.abs(parseFloat(line.net_amount)))}</span>
                                                     </div>
                                                 </td>
                                             )}
@@ -494,33 +599,57 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
     }
 
     return (
-        <GenericWizard
-            open={open}
-            onOpenChange={onOpenChange}
-            onClose={() => {
-                onOpenChange(false)
-                resetFlow()
-            }}
-            title={
-                <div className="flex items-center gap-2">
-                    <PieChart className="h-5 w-5 text-primary" />
-                    <span>Distribución de Utilidades</span>
-                </div>
-            }
-            steps={executed ? [doneStep] : steps}
-            subtitle={executed ? 'Ejecución completada' : undefined}
-            footer={executed ? (
-                <div className="flex w-full justify-end">
-                    <SubmitButton type="button" onClick={finish}>Finalizar</SubmitButton>
-                </div>
-            ) : undefined}
-            onComplete={handleExecute}
-            isCompleting={loading}
-            completeButtonLabel="Ejecutar Contabilidad"
-            size="xl"
-            stableHeight
-            cardSurface
-            initialStep={initialResolution?.status === 'DRAFT' ? 1 : 0}
-        />
+        <>
+            <GenericWizard
+                open={open}
+                onOpenChange={onOpenChange}
+                onClose={() => {
+                    onOpenChange(false)
+                    resetFlow()
+                }}
+                title={
+                    <div className="flex items-center gap-2">
+                        <PieChart className="h-5 w-5 text-primary" />
+                        <span>Distribución de Utilidades</span>
+                    </div>
+                }
+                steps={executed ? [doneStep] : steps}
+                subtitle={executed ? 'Ejecución completada' : undefined}
+                footer={executed ? (
+                    <div className="flex w-full justify-end">
+                        <SubmitButton type="button" onClick={finish}>Finalizar</SubmitButton>
+                    </div>
+                ) : undefined}
+                onComplete={handleExecute}
+                isCompleting={loading}
+                completeButtonLabel="Ejecutar Contabilidad"
+                size="xl"
+                stableHeight
+                cardSurface
+                initialStep={initialResolution?.status === 'DRAFT' ? 1 : 0}
+            />
+
+            {numpadState && (
+                <NumpadModal
+                    open={!!numpadState}
+                    onOpenChange={(o) => { if (!o) setNumpadState(null) }}
+                    value={numpadState.value}
+                    onChange={(val) => setNumpadState(prev => prev ? ({ ...prev, value: val }) : null)}
+                    onConfirm={() => {
+                        if (numpadState) {
+                            handleAmountChange(numpadState.lineId, numpadState.destination, numpadState.value);
+                            setNumpadState(null);
+                        }
+                    }}
+                    title={`Asignar ${numpadState.destinationLabel}`}
+                    description={`${numpadState.partnerName} · Neto a distribuir: ${formatCurrency(numpadState.totalNet)}`}
+                    netValue={numpadState.totalNet}
+                    onExactAmount={() => {
+                        setNumpadState(prev => prev ? ({ ...prev, value: prev.availableDifference.toString() }) : null);
+                    }}
+                    exactAmountLabel={`ASIGNAR DISPONIBLE (${formatCurrency(numpadState.availableDifference)})`}
+                />
+            )}
+        </>
     )
 }

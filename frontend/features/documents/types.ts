@@ -2,7 +2,7 @@ import * as z from "zod"
 
 /** Área operativa (ADR-0083): agrupa los relacionados en el orden del ciclo. */
 export const DOCUMENT_DOMAINS = [
-    "origin", "billing", "production", "logistics", "treasury", "accounting", "contacts", "other",
+    "origin", "billing", "production", "logistics", "treasury", "accounting", "capital", "contacts", "other",
 ] as const
 export const documentDomainSchema = z.enum(DOCUMENT_DOMAINS)
 export type DocumentDomain = z.infer<typeof documentDomainSchema>

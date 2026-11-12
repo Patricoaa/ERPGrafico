@@ -22,8 +22,8 @@ RESOLVER_URL = "/d/{label}/{id}"
 
 DEFAULT_DATE_FIELDS = ("date", "delivery_date", "receipt_date", "return_date", "created_at")
 # Área operativa (ADR-0083): agrupa los relacionados en la ficha documental en el mismo
-# orden que el ciclo Origen → Facturación → Producción → Logística → Tesorería → Contabilidad.
-DOCUMENT_DOMAINS = ("origin", "billing", "production", "logistics", "treasury", "accounting", "contacts", "other")
+# orden que el ciclo Origen → Facturación → Producción → Logística → Tesorería → Contabilidad → Capital.
+DOCUMENT_DOMAINS = ("origin", "billing", "production", "logistics", "treasury", "accounting", "capital", "contacts", "other")
 DEFAULT_DOMAIN_BY_APP = {
     "billing": "billing",
     "production": "production",

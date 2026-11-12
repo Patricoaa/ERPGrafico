@@ -21,6 +21,12 @@ def journal_entry_relations(entry):
         yield Link("correction", "incoming", "reversal", reversal)
     for move in entry.stock_moves.all():
         yield Link("posting", "incoming", "stock_move", move)
+    for dist in entry.profit_distributions.all():
+        yield Link("posting", "incoming", "profit_distribution", dist)
+    for ptx in entry.partner_transactions.select_related("partner").all():
+        yield Link("posting", "incoming", "partner_transaction", ptx, amount=ptx.amount)
+        if ptx.partner_id:
+            yield Link("association", "incoming", "partner", ptx.partner, is_dependency=False)
 
 
 # Tipos sin ficha (drawer): ruta propia verificada por core/tests/test_document_routes_sync.py

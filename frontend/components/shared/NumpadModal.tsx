@@ -20,6 +20,8 @@ interface NumpadModalProps {
     allowDecimal?: boolean
     maxValue?: number
     netValue?: string | number
+    onExactAmount?: () => void
+    exactAmountLabel?: string
     /**
      * Controla cómo se formatea el valor en el display superior del numpad.
      * - `"currency"` (default): muestra el valor formateado como moneda (ej. $1.000).
@@ -40,6 +42,8 @@ export function NumpadModal({
     allowDecimal = true,
     maxValue,
     netValue,
+    onExactAmount,
+    exactAmountLabel,
     mode = "currency",
 }: NumpadModalProps) {
     const displayValue = mode === "currency"
@@ -85,6 +89,8 @@ export function NumpadModal({
                     allowDecimal={allowDecimal}
                     hideConfirm
                     displayValue={displayValue}
+                    onExactAmount={onExactAmount}
+                    exactAmountLabel={exactAmountLabel}
                     className="border-none shadow-none p-0 w-full max-w-none"
                 />
             </div>
