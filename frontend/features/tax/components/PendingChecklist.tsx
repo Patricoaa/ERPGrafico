@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, CircleAlert } from "lucide-react"
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, type LucideIcon } from "lucide-react"
 
 import { MoneyDisplay } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -28,7 +28,7 @@ export interface PendingChecklistItem {
     detail?: string
     /** Documentos pendientes: los listados y el total real (puede superar lo listado). */
     pending?: { label: PendingDocumentLabel; documents: PendingChecklistDocument[]; total: number }
-    action?: { text: string; onClick?: () => void; href?: string; variant?: "outline" | "ghost" }
+    action?: { text: string; onClick?: () => void; href?: string; variant?: "outline" | "ghost"; icon?: LucideIcon }
 }
 
 function StateIcon({ passed, critical }: { passed: boolean; critical: boolean }) {
@@ -49,6 +49,7 @@ function PendingChecklistRow({ item, critical, expanded, onToggle, onOpenDocumen
     const pending = item.pending && item.pending.total > 0 ? item.pending : null
     const hidden = pending ? pending.total - pending.documents.length : 0
     const listUrl = pending ? getEntityMetadata(pending.label)?.listUrl : undefined
+    const ActionIcon = item.action?.icon
     const Chevron = expanded ? ChevronDown : ChevronRight
 
     return (
@@ -69,11 +70,12 @@ function PendingChecklistRow({ item, critical, expanded, onToggle, onOpenDocumen
                     </Button>
                 )}
                 {item.action && (item.action.href ? (
-                    <Button variant={item.action.variant ?? "outline"} size="sm" className="h-7 shrink-0 text-xs" asChild>
-                        <Link href={item.action.href}>{item.action.text}</Link>
+                    <Button variant={item.action.variant ?? "outline"} size="sm" className="h-7 shrink-0 gap-1 text-xs" asChild>
+                        <Link href={item.action.href}>{ActionIcon && <ActionIcon className="h-3.5 w-3.5" aria-hidden />}{item.action.text}</Link>
                     </Button>
                 ) : (
-                    <Button variant={item.action.variant ?? "outline"} size="sm" className="h-7 shrink-0 text-xs" onClick={item.action.onClick}>
+                    <Button variant={item.action.variant ?? "outline"} size="sm" className="h-7 shrink-0 gap-1 text-xs" onClick={item.action.onClick}>
+                        {ActionIcon && <ActionIcon className="h-3.5 w-3.5" aria-hidden />}
                         {item.action.text}
                     </Button>
                 ))}
