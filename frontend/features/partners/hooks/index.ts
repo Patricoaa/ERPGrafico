@@ -1,5 +1,6 @@
 export { PARTNER_KEYS } from './queryKeys'
 export { usePartnerStatement } from './usePartnerStatement'
+export { usePartnerOverview } from './usePartnerOverview'
 export { useProfitDistribution } from './useProfitDistribution'
 export { useProfitDistributions } from './useProfitDistributions'
 export { usePartnerMutations } from './usePartnerMutations'

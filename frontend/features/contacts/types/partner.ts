@@ -137,3 +137,37 @@ export interface PartnerEquityStake {
     notes: string;
     created_at: string;
 }
+
+export type PartnerAlertCode = 'excess_capital' | 'pending_capital' | 'dividends_payable' | 'retained_earnings'
+
+export interface PartnerOverviewAlert {
+    code: PartnerAlertCode
+    severity: 'info' | 'warning'
+    amount: string
+    target_tab: 'capital' | 'results'
+    action: 'subscription' | 'contribution' | 'dividend' | 'mobilize'
+}
+
+/** Resumen de la ficha de un socio (`GET /contacts/{id}/partner_overview/`). Importes como string decimal. */
+export interface PartnerOverview {
+    alerts: PartnerOverviewAlert[]
+    kpis: {
+        equity_percentage: string
+        total_contributions: string
+        total_paid_in: string
+        pending_capital: string
+        excess_capital: string
+        net_equity: string
+    }
+    info: {
+        partner_since: string | null
+        tax_id: string
+        contact_id: number
+    }
+    composition: {
+        capital: string
+        earnings_balance: string
+        dividends_payable: string
+        provisional_withdrawals: string
+    }
+}
