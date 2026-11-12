@@ -146,6 +146,7 @@ based on the number of visible actions at runtime. The behavior is **unified acr
 - Action files define a `StructuredAction[]` with optional `visible` flags.
 - `auto()` (DataTable) and `render()` (Cards/Kanban) filter `visible: false`, count remaining, and pick the right component.
 - No manual decision needed — the system adapts per-row/card at runtime.
+- **Disabled with reason:** `StructuredAction` / `ActionMenuItem` accept `disabledReason?: string`. With `disabled: true`, `DataCell.ActionMenu` shows it as a second muted line under the label and ignores clicks on that item. Use it instead of hiding an action whose absence would confuse (ADR-0133).
 
 **DataTable (via `auto()`):**
 - The actions column has no header label and a fixed width of 40px.

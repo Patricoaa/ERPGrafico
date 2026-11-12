@@ -101,6 +101,25 @@ Not captured by the system yet (so not shown): counts by denomination, declared 
 
 Caja POS ↔ sesiones: backend labels `treasury.posterminal` (provider `pos_terminal_relations`: every session of the box, newest first, role `pos_session`) and `treasury.possession` (links back with role `pos_box`). The box drawer (`PosTerminalDrawer`) has tabs **Configuración** / **Relaciones**.
 
+## 6c. Partner sheet (`contacts.partner`)
+
+`PartnerDrawer` (`features/partners`) follows the POS session pattern (ADR-0133): Resumen explains the partner in seconds, other tabs answer different questions.
+
+| Tab | Answers | Content | Secondary actions |
+|---|---|---|---|
+| Resumen | How is the partner; what needs attention | Alerts first (excess capital, pending capital, dividends payable, retained earnings without destination), each with a button (runs the action or goes to the tab) · KPIs (`StatCard`: participation %, subscribed, paid-in, net equity) · partner data (linked contact, partner since, tax id) · equity composition | Those of each alert |
+| Capital | How much subscribed, contributed, owed | Subscribed / paid-in / pending / excess with visible formula · participation history (`partnerStake`) · capital movements from the ledger | Registrar aporte · Pagar capital pendiente · Suscribir / reducir · Formalizar exceso · Transferir (origin prefilled) |
+| Resultados y retiros | What is owed, what was withdrawn | Retained earnings, dividends payable, provisional withdrawals and their movements (type filter) | Registrar retiro · Pagar dividendos · Distribuir utilidades retenidas |
+| Distribuciones | Which distributions | `partnerDistribution` entity-view; rows open the distribution | none |
+| Libro | Which entries back it | `PartnerLedgerPanel` | none |
+| Relaciones | What it links to | `DocumentRelationsTab` with label `contacts.partner`: contact, journal entries of its movements, distributions it takes part in | none |
+
+**Actions and `placement`.** `partnerActions` (`features/partners/components/partnerActions.tsx`) is the single source; each action has `placement: "capital" | "results" | "menu"`. `partnerActionsFor(partner, placement)` returns only the visible actions of that placement; tabs and the header «⋯» menu render only that output and add no visibility logic. Visibility rules are unchanged (`partner_excess_capital > 0`, `partner_pending_capital > 0`, `partner_dividends_payable_balance > 0`, `partner_earnings_balance > 0`; contribution and withdrawal always). «Dar de baja» is in the menu, disabled with `disabledReason` when `demoteBlockedReason` is set. Movement types are classified into Capital / Results / omitted in `partnerMovement.entity`, guarded by a test against the backend `PartnerTransaction.Type`.
+
+**Backend.** `GET /contacts/{id}/partner_overview/` (`contacts/partner_overview.py`, fixed query count, N+1 test): alerts (`code`, `severity`, `amount`, `target_tab`, `action`), KPIs, partner data, composition. **Alerts are owned by the backend**; the frontend maps `action` to `run(...)` and never recomputes thresholds (a parity test compares them with the row-level `visible` rules). 404/400 if the contact is not a partner; read permission like `partner_statement`.
+
+**Relaciones.** Provider in `contacts/relations.py` for `contacts.partner` (a view label over `Contact` restricted to partners: `DocumentType.queryset` / `permission`, see `document-relations.md` §3). Journal entries and resolutions are preloaded (`select_related`) because showing a journal entry costs 2 extra queries in core otherwise.
+
 ## 7. Anti-patterns
 
 - Opening a document in a surface other than its sheet (Hub, ad-hoc modal).
