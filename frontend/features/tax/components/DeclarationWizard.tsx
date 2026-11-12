@@ -318,6 +318,19 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             isValid: !hasBlockingDrafts,
             component: (
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
+                    {!isDeclared && (
+                        <div className="space-y-3">
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <PendingChecklistSection title="Obligatorios" items={draftChecklist.required} critical expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                                <PendingChecklistSection title="Sugeridos" items={draftChecklist.suggested} critical={false} expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                            </div>
+                            {hasBlockingDrafts && (
+                                <p className="text-xs text-muted-foreground">
+                                    Emita o anule las facturas en borrador del mes para continuar: un borrador no entra al cálculo de IVA.
+                                </p>
+                            )}
+                        </div>
+                    )}
                     <div className="flex flex-col gap-12">
                         <section className="space-y-8">
                             <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
@@ -390,17 +403,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             </div>
                         </section>
                     </div>
-                    {!isDeclared && (
-                        <div className="space-y-5">
-                            <PendingChecklistSection title="Obligatorios" items={draftChecklist.required} critical expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
-                            <PendingChecklistSection title="Sugeridos" items={draftChecklist.suggested} critical={false} expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
-                            {hasBlockingDrafts && (
-                                <p className="text-xs text-muted-foreground">
-                                    Emita o anule las facturas en borrador del mes para continuar: un borrador no entra al cálculo de IVA.
-                                </p>
-                            )}
-                        </div>
-                    )}
                 </div>
             )
         },
@@ -590,6 +592,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                 icon={CheckCircle2}
                 title={closedNow ? "Ciclo Finalizado" : "Período Cerrado"}
                 size="lg"
+                hideScrollArea
                 footer={
                     <div className="flex justify-end w-full">
                         <SubmitButton type="button" onClick={() => (closedNow ? onSuccess() : onOpenChange(false))} icon={CheckCircle2}>
@@ -598,7 +601,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                     </div>
                 }
             >
-                <div className="flex flex-col items-center justify-center py-16 text-center space-y-8 animate-in zoom-in-95 duration-500">
+                <div className="flex-1 min-h-0 overflow-y-auto p-5">
+                <div className="flex flex-col items-center justify-center py-10 text-center space-y-8 animate-in zoom-in-95 duration-500">
                     <CheckCircle2 className="h-12 w-12 text-success" />
                     <div className="space-y-3">
                         <h3 className="text-3xl font-black uppercase tracking-tight">
@@ -623,6 +627,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             <F29PaymentHistory payments={summary.payments ?? []} />
                         </div>
                     )}
+                </div>
                 </div>
             </BaseModal>
         )

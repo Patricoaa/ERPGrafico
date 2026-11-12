@@ -483,11 +483,14 @@ export function GenericWizard({
             size={size}
             variant="wizard"
             footer={footer ?? undefined}
-            hideScrollArea={hasSidebars}
+            hideScrollArea
             closeButtonClassName={touchMode ? touchCloseButton : undefined}
             {...props}
         >
-            {hasSidebars ? withSidebars : stepContent}
+            {/* Scroll propio: el contenido del paso siempre puede desplazarse dentro del modal. */}
+            {hasSidebars ? withSidebars : (
+                <div className={cn("flex-1 min-h-0 overflow-y-auto p-5", contentClassName)}>{stepContent}</div>
+            )}
         </BaseModal>
     )
 }

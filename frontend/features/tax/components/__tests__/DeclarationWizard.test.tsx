@@ -319,6 +319,20 @@ describe("DeclarationWizard — borradores y footer", () => {
         expect(buttonByText(/Siguiente/)).toBeDisabled()
     })
 
+    it("Obligatorios y Sugeridos van arriba del primer paso, lado a lado, y el contenido hace scroll", async () => {
+        m.period = makePeriod(null)
+        m.calculateTax.mockResolvedValue({ ...CALC, drafts_summary: { invoices: [INVOICE_DRAFT], entries: [ENTRY_DRAFT] } })
+        await mount()
+        const required = screen.getByRole("region", { name: "Obligatorios" })
+        const suggested = screen.getByRole("region", { name: "Sugeridos" })
+
+        expect(required.parentElement).toBe(suggested.parentElement)
+        expect(required.parentElement?.className).toContain("md:grid-cols-2")
+        const debit = screen.getByText("Débito Fiscal")
+        expect(required.compareDocumentPosition(debit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+        expect(required.closest(".overflow-y-auto")).not.toBeNull()
+    })
+
     it("los asientos en borrador solo se sugieren y no bloquean", async () => {
         m.period = makePeriod(null)
         m.calculateTax.mockResolvedValue({ ...CALC, drafts_summary: { invoices: [], entries: [ENTRY_DRAFT] } })
