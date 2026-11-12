@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.103](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.102...v0.3.103) (2026-11-12)
+
+
+### 🐛 Bug Fixes
+
+* **partners:** corregir pago de dividendos y mejorar vista de distribuciones de utilidades ([65750d6](https://github.com/Patricoaa/ERPGrafico/commit/65750d605d015535dfd39766f93b019d01745641))
+
 ### [0.3.102](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.101...v0.3.102) (2026-11-12)
 
 
