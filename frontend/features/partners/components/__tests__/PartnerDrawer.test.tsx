@@ -32,11 +32,10 @@ vi.mock("../../hooks", () => ({
 vi.mock("../PartnerActionModal", () => ({
     usePartnerActions: () => ({ run: m.run, host: null }),
 }))
-vi.mock("../PartnerLedgerPanel", () => ({ PartnerLedgerPanel: () => <div>ledger-panel</div> }))
+vi.mock("../PartnerDistributionsPanel", () => ({ PartnerDistributionsPanel: () => <div>distributions-panel</div> }))
 vi.mock("../PartnerCapitalPanel", () => ({ PartnerCapitalPanel: () => <div>capital-panel</div> }))
-vi.mock("../PartnerResultsPanel", () => ({ PartnerResultsPanel: () => <div>results-panel</div> }))
 vi.mock("../PartnerSummaryPanel", () => ({
-    PartnerSummaryPanel: ({ onGoToTab }: { onGoToTab: (t: "capital" | "results") => void }): ReactNode => (
+    PartnerSummaryPanel: ({ onGoToTab }: { onGoToTab: (t: "capital") => void }): ReactNode => (
         <button onClick={() => onGoToTab("capital")}>Ver capital</button>
     ),
 }))
@@ -61,7 +60,7 @@ describe("PartnerDrawer", () => {
     it("muestra las 6 pestañas en orden", () => {
         renderDrawer()
         const names = screen.getAllByRole("tab").map(t => t.textContent)
-        expect(names).toEqual(["Resumen", "Capital", "Resultados y retiros", "Distribuciones", "Libro", "Relaciones"])
+        expect(names).toEqual(["Resumen", "Capital", "Distribuciones", "Relaciones"])
     })
 
     it("Relaciones muestra los relacionados del socio (contacts.partner)", async () => {

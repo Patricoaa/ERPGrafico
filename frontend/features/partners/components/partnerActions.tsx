@@ -1,5 +1,5 @@
 import type { StructuredAction } from '@/components/shared'
-import { TrendingUp, Banknote, ArrowRightLeft, HandCoins, Wallet, Scale, LogOut, UserMinus } from 'lucide-react'
+import { TrendingUp, Banknote, ArrowRightLeft, Wallet, Scale, LogOut, UserMinus } from 'lucide-react'
 import type { Partner } from '@/features/contacts'
 import type { PartnerActionRunner } from './partnerActionRequest'
 
@@ -10,7 +10,10 @@ export interface PartnerActionsCtx {
 /** Zona de la ficha donde se muestra la acción. */
 export type PartnerActionPlacement = "capital" | "results" | "menu"
 
-type PlacedAction = Extract<StructuredAction, { action: unknown }> & { placement: PartnerActionPlacement }
+/** Línea de la composición del patrimonio (pestaña Capital) a la que se asocia una acción. */
+export type PartnerLine = "subscribed" | "pending" | "excess" | "earnings" | "dividends" | "withdrawals"
+
+type PlacedAction = Extract<StructuredAction, { action: unknown }> & { placement: PartnerActionPlacement; line?: PartnerLine }
 
 const num = (v: string | null | undefined) => parseFloat(v ?? "0") || 0
 
@@ -34,22 +37,16 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: TrendingUp,
         label: "Formalizar exceso de capital",
         placement: "capital",
+        line: "excess",
         onClick: () => ctx.run({ type: "subscription", partnerId: item.id, amount: item.partner_excess_capital }),
         visible: num(item.partner_excess_capital) > 0,
-    },
-    {
-        action: "pay",
-        icon: HandCoins,
-        label: "Pagar capital pendiente",
-        placement: "capital",
-        onClick: () => ctx.run({ type: "contribution", partnerId: item.id, amount: item.partner_pending_capital }),
-        visible: num(item.partner_pending_capital) > 0,
     },
     {
         action: "detail",
         icon: Scale,
         label: "Suscribir / reducir capital",
         placement: "capital",
+        line: "subscribed",
         onClick: () => ctx.run({ type: "subscription", partnerId: item.id }),
     },
     {
@@ -57,13 +54,16 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: Wallet,
         label: "Registrar aporte",
         placement: "capital",
-        onClick: () => ctx.run({ type: "contribution", partnerId: item.id }),
+        line: "pending",
+        // Con capital pendiente, el aporte llega prellenado con ese monto.
+        onClick: () => ctx.run({ type: "contribution", partnerId: item.id, amount: num(item.partner_pending_capital) > 0 ? item.partner_pending_capital : undefined }),
     },
     {
         action: "detail",
         icon: LogOut,
         label: "Registrar retiro",
         placement: "results",
+        line: "withdrawals",
         onClick: () => ctx.run({ type: "withdrawal", partnerId: item.id }),
     },
     {
@@ -71,6 +71,7 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: Banknote,
         label: "Pagar dividendos",
         placement: "results",
+        line: "dividends",
         onClick: () => ctx.run({ type: "dividend", partnerId: item.id }),
         visible: num(item.partner_dividends_payable_balance) > 0,
     },
@@ -79,6 +80,7 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         icon: ArrowRightLeft,
         label: "Distribuir utilidades retenidas",
         placement: "results",
+        line: "earnings",
         onClick: () => ctx.run({ type: "mobilize", partnerId: item.id }),
         visible: num(item.partner_earnings_balance) > 0,
     },
@@ -113,4 +115,9 @@ export function partnerMenuActions(partner: Partner, ctx: PartnerActionsCtx): St
         .map(placement => partnerActionsFor(partner, placement, ctx))
         .filter(group => group.length > 0)
     return groups.flatMap((group, i) => (i === 0 ? group : [{ separator: true as const }, ...group]))
+}
+
+/** Acción visible asociada a una línea de la composición del patrimonio, o `undefined` si no aplica al estado del socio. */
+export function partnerLineAction(partner: Partner, line: PartnerLine, ctx: PartnerActionsCtx): Extract<StructuredAction, { action: unknown }> | undefined {
+    return buildPartnerActions(partner, ctx).find(a => a.line === line && a.visible !== false)
 }

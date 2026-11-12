@@ -144,7 +144,7 @@ export interface PartnerOverviewAlert {
     code: PartnerAlertCode
     severity: 'info' | 'warning'
     amount: string
-    target_tab: 'capital' | 'results'
+    target_tab: 'capital'
     action: 'subscription' | 'contribution' | 'dividend' | 'mobilize'
 }
 

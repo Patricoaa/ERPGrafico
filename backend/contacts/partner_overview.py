@@ -18,8 +18,8 @@ ZERO = Decimal("0")
 _ALERTS = (
     ("excess_capital", "partner_excess_capital", "capital", "subscription"),
     ("pending_capital", "partner_pending_capital", "capital", "contribution"),
-    ("dividends_payable", "partner_dividends_payable_balance", "results", "dividend"),
-    ("retained_earnings", "partner_earnings_balance", "results", "mobilize"),
+    ("dividends_payable", "partner_dividends_payable_balance", "capital", "dividend"),
+    ("retained_earnings", "partner_earnings_balance", "capital", "mobilize"),
 )
 
 

@@ -5,41 +5,15 @@ import { defineEntity } from "@/components/entity-view"
 import type { PartnerTransaction } from "@/features/contacts"
 import { partnerTxDirection } from "./partnerLedger.entity"
 
-/** Movimientos que cambian la composición del capital (pestaña Capital de la ficha). */
-export const CAPITAL_MOVEMENT_TYPES = [
-    "SUBSCRIPTION",
-    "REDUCTION",
-    "CAPITAL_CASH",
-    "CAPITAL_INVENTORY",
-    "TRANSFER_IN",
-    "TRANSFER_OUT",
-    "REINVESTMENT",
-    "CAPITAL_RETURN",
-]
-
-/** Movimientos de resultados: retiros provisorios, dividendos y utilidades retenidas (pestaña Resultados). */
-export const RESULTS_MOVEMENT_TYPES = [
-    "PROV_WITHDRAWAL",
-    "WITHDRAWAL",
-    "DIVIDEND",
-    "DIVIDEND_PAY",
-    "RETAINED",
-    "RETAINED_MOB",
-    "LOSS_ABSORB",
-]
-
 /**
- * Tipos que a propósito solo aparecen en el libro. Todo tipo del backend debe estar en una de las tres listas
- * (lo verifica un test): un tipo nuevo obliga a decidir su pestaña.
- * - CONTRIB_TRANSFER_IN/OUT: seguimiento de lo enterado, se crean junto a TRANSFER_IN/OUT y duplicarían la fila.
- * - LOAN_IN/OUT y OTHER: préstamos y otros, no son capital ni resultados.
+ * Tipos que no se listan: CONTRIB_TRANSFER_IN/OUT son seguimiento interno de lo enterado, se crean junto a
+ * TRANSFER_IN/OUT y duplicarían la fila. Todo lo demás (capital, resultados, préstamos) se muestra.
  */
-export const OMITTED_MOVEMENT_TYPES = ["CONTRIB_TRANSFER_IN", "CONTRIB_TRANSFER_OUT", "LOAN_IN", "LOAN_OUT", "OTHER"]
+export const HIDDEN_MOVEMENT_TYPES = ["CONTRIB_TRANSFER_IN", "CONTRIB_TRANSFER_OUT"]
 
-export const isCapitalMovement = (type: string) => CAPITAL_MOVEMENT_TYPES.includes(type)
-export const isResultsMovement = (type: string) => RESULTS_MOVEMENT_TYPES.includes(type)
+export const isListedMovement = (type: string) => !HIDDEN_MOVEMENT_TYPES.includes(type)
 
-/** Fila de movimiento de capital o resultados: el movimiento del libro sin el saldo corrido. */
+/** Fila de movimiento del socio: el movimiento del libro sin el saldo corrido. */
 export const partnerMovementEntity = defineEntity<PartnerTransaction>()((f) => ({
     title: "Movimientos",
     rowId: (tx) => tx.id,

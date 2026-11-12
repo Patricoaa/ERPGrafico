@@ -1,15 +1,16 @@
 "use client"
 
-import { AlertTriangle, Info, PieChart as PieChartIcon } from "lucide-react"
+import { AlertTriangle, Info, PieChart as PieChartIcon, History } from "lucide-react"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { EmptyState, FormSection, SkeletonShell, StatCard, PieChart, DocumentFieldGrid, type DocumentField } from "@/components/shared"
+import { EmptyState, FormSection, SkeletonShell, DocumentFieldGrid, type DocumentField } from "@/components/shared"
 import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { formatCurrency } from "@/lib/money"
 import { formatPlainDate } from "@/lib/utils"
-import type { Partner, PartnerAlertCode, PartnerOverview, PartnerOverviewAlert } from "@/features/contacts"
+import type { Partner, PartnerAlertCode } from "@/features/contacts"
 import { usePartnerOverview } from "../hooks"
-import type { PartnerActionRequest, PartnerActionRunner } from "./partnerActionRequest"
+import { PartnerParticipationPanel } from "./PartnerParticipationPanel"
+import { PartnerStakesTable } from "./PartnerStakesTable"
 
 const money = (v: string | number | null | undefined) => formatCurrency(Number(v) || 0)
 
@@ -27,31 +28,13 @@ const ALERT_HINT: Record<PartnerAlertCode, string> = {
     retained_earnings: "Hay utilidades retenidas disponibles para distribuir.",
 }
 
-const ALERT_BUTTON: Record<PartnerOverviewAlert["action"], string> = {
-    subscription: "Formalizar",
-    contribution: "Pagar capital",
-    dividend: "Pagar dividendos",
-    mobilize: "Distribuir",
-}
-
-/** La alerta ya trae la acción; aquí solo se traduce a la petición tipada. */
-function requestFor(alert: PartnerOverviewAlert, partnerId: number): PartnerActionRequest {
-    switch (alert.action) {
-        case "subscription": return { type: "subscription", partnerId, amount: alert.amount }
-        case "contribution": return { type: "contribution", partnerId, amount: alert.amount }
-        case "dividend": return { type: "dividend", partnerId }
-        case "mobilize": return { type: "mobilize", partnerId }
-    }
-}
-
 interface PartnerSummaryPanelProps {
     partner: Partner
-    run: PartnerActionRunner
-    onGoToTab: (tab: "capital" | "results") => void
+    onGoToTab: (tab: "capital") => void
 }
 
-/** Pestaña Resumen de la ficha: alertas del backend primero, indicadores, datos del socio y composición del patrimonio. */
-export function PartnerSummaryPanel({ partner, run, onGoToTab }: PartnerSummaryPanelProps) {
+/** Pestaña Resumen: alertas que llevan a Capital, datos del socio, su participación y el historial de vigencias. */
+export function PartnerSummaryPanel({ partner, onGoToTab }: PartnerSummaryPanelProps) {
     const { data: overview, isLoading, isError, refetch } = usePartnerOverview(partner.id)
     const openEntity = useOptionalGlobalModalActions()?.openEntity
 
@@ -81,84 +64,33 @@ export function PartnerSummaryPanel({ partner, run, onGoToTab }: PartnerSummaryP
                                             <p className="text-sm font-medium leading-snug">{ALERT_TITLE[alert.code]} · <span className="tabular-nums">{money(alert.amount)}</span></p>
                                             <p className="text-xs leading-snug text-muted-foreground">{ALERT_HINT[alert.code]}</p>
                                         </div>
-                                        <div className="flex shrink-0 items-center gap-2">
-                                            <Button type="button" size="sm" variant="outline" onClick={() => run(requestFor(alert, partner.id))}>
-                                                {ALERT_BUTTON[alert.action]}
-                                            </Button>
-                                            <Button type="button" size="sm" variant="ghost" aria-label={`Ver ${ALERT_TITLE[alert.code]}`} onClick={() => onGoToTab(alert.target_tab)}>
-                                                Ver
-                                            </Button>
-                                        </div>
+                                        <Button type="button" size="sm" variant="outline" className="shrink-0" onClick={() => onGoToTab(alert.target_tab)}>
+                                            Ver en Capital
+                                        </Button>
                                     </div>
                                 </Alert>
                             ))}
                         </section>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <StatCard variant="default" accent="muted" label="Participación" value={`${Number(overview.kpis.equity_percentage).toFixed(2)}%`} subtext="sobre capital enterado" />
-                        <StatCard variant="default" accent="muted" label="Capital suscrito" value={money(overview.kpis.total_contributions)} />
-                        <StatCard variant="default" accent="muted" label="Capital enterado" value={money(overview.kpis.total_paid_in)} />
-                        <StatCard variant="default" accent="muted" label="Patrimonio neto" value={money(overview.kpis.net_equity)} />
-                    </div>
-
                     <section aria-label="Datos del socio" className="space-y-4">
                         <FormSection title="Datos del socio" icon={Info} />
                         <DocumentFieldGrid className="w-auto justify-start text-left" fields={partnerFields(partner, overview.info, openEntity)} />
                     </section>
 
-                    <section aria-label="Composición del patrimonio" className="space-y-4">
-                        <FormSection title="Composición del patrimonio" icon={PieChartIcon} />
-                        <CompositionBreakdown composition={overview.composition} netEquity={overview.kpis.net_equity} />
-                    </section>
+                    <div className="grid gap-8 lg:grid-cols-2">
+                        <section aria-label="Distribución de capital" className="min-w-0 space-y-4">
+                            <FormSection title="Distribución de capital" icon={PieChartIcon} />
+                            <PartnerParticipationPanel partner={partner} />
+                        </section>
+                        <section aria-label="Participación histórica" className="min-w-0 space-y-4">
+                            <FormSection title="Participación histórica" icon={History} />
+                            <PartnerStakesTable partnerId={partner.id} />
+                        </section>
+                    </div>
                 </div>
             )}
         </SkeletonShell>
-    )
-}
-
-const COMPOSITION_ROWS = [
-    { key: "capital", label: "Capital enterado", color: "var(--color-primary)" },
-    { key: "earnings_balance", label: "Utilidades retenidas", color: "var(--color-success)" },
-    { key: "dividends_payable", label: "Dividendos por pagar", color: "var(--color-warning)" },
-    { key: "provisional_withdrawals", label: "Retiros provisorios", color: "var(--color-destructive)" },
-] as const
-
-/** Dona con lo que suma al patrimonio (los retiros provisorios restan y se listan aparte) y detalle con leyenda. */
-function CompositionBreakdown({ composition, netEquity }: { composition: PartnerOverview["composition"]; netEquity: string }) {
-    const slices = COMPOSITION_ROWS
-        .filter(r => r.key !== "provisional_withdrawals" && Number(composition[r.key]) > 0)
-        .map(r => ({ id: r.label, value: Number(composition[r.key]), color: r.color }))
-    return (
-        <div className="grid items-center gap-6 sm:grid-cols-[minmax(0,14rem)_1fr]">
-            <div className="h-48">
-                <PieChart
-                    data={slices}
-                    tooltipFormat="currency"
-                    innerRadius={0.68}
-                    enableArcLabels={false}
-                    enableArcLinkLabels={false}
-                    margin={{ top: 6, right: 6, bottom: 6, left: 6 }}
-                    centerLabel={{ value: money(netEquity), label: "Patrimonio neto" }}
-                    ariaLabel="Composición del patrimonio neto del socio"
-                />
-            </div>
-            <ul className="space-y-2">
-                {COMPOSITION_ROWS.map(r => (
-                    <li key={r.key} className="flex items-center justify-between gap-3 text-sm">
-                        <span className="flex items-center gap-2 text-muted-foreground">
-                            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: r.color }} />
-                            {r.label}
-                        </span>
-                        <span className="tabular-nums">{r.key === "provisional_withdrawals" ? "− " : ""}{money(composition[r.key])}</span>
-                    </li>
-                ))}
-                <li className="flex items-center justify-between gap-3 border-t pt-2 text-sm font-semibold">
-                    <span>Patrimonio neto</span>
-                    <span className="tabular-nums">{money(netEquity)}</span>
-                </li>
-            </ul>
-        </div>
     )
 }
 

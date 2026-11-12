@@ -16,13 +16,13 @@ author: frontend-team
 
 ## Decisión
 
-1. **Seis pestañas** (reemplazan la lista del ADR-0132): Resumen, Capital, Resultados y retiros, Distribuciones, Libro, Relaciones. «Participación» se fusiona en Capital.
+1. **Cuatro pestañas** (reemplazan la lista del ADR-0132): Resumen, Capital, Distribuciones, Relaciones. «Participación» pasa al Resumen; «Resultados y retiros» y «Libro» se fusionan en Capital, cuya sección Movimientos lista todos los del socio.
 2. **Alertas propiedad del backend.** `GET /contacts/{id}/partner_overview/` calcula los umbrales una vez y devuelve alertas (`code`, `severity`, `amount`, `target_tab`, `action`), KPIs, datos del socio y composición del patrimonio. El frontend no recalcula umbrales: mapea `action` a `run(...)`. Query count fijo, con test (ADR-0118). Reutiliza `_partner_metrics_map`; no define fórmulas nuevas.
-3. **`placement` en `partnerActions`** (`"capital" | "results" | "menu"`). `buildPartnerActions` (`partnerActions.tsx`) sigue siendo la única fuente de acciones; `partnerActionsFor(partner, placement)` entrega a cada pestaña (o al menú «⋯» del header) solo las suyas. `transfer` pertenece a Capital con origen prellenado (`PartnerActionRequest { type: "transfer"; fromPartnerId?: number }`); la barra de la lista usa la misma acción sin origen.
+3. **`placement` y `line` en `partnerActions`** (`placement`: `"capital" | "results" | "menu"`, agrupa el menú «⋯» del header, que reúne todas las acciones con `partnerMenuActions`; `line` asocia una acción a una línea de la composición del patrimonio, vía `partnerLineAction`). `buildPartnerActions` (`partnerActions.tsx`) sigue siendo la única fuente de acciones; `partnerActionsFor(partner, placement)` entrega a cada pestaña (o al menú «⋯» del header) solo las suyas. `transfer` pertenece a Capital con origen prellenado (`PartnerActionRequest { type: "transfer"; fromPartnerId?: number }`); la barra de la lista usa la misma acción sin origen.
 4. **«Dar de baja» deshabilitada con motivo** (en vez de oculta). `demoteBlockedReason` se calcula en el frontend con los campos del socio.
 5. **La lista de composición solo abre la ficha**: se elimina el menú por fila; la barra queda con «Añadir socio» (primaria) y «Transferencia» (secundaria).
 6. **Relaciones** con el patrón `DocumentRelationsTab` y un nuevo tipo documental `contacts.partner` (proveedor en `contacts/relations.py`: contacto, asientos de sus movimientos, distribuciones en las que participa).
-7. **Clasificación de movimientos.** Cada `PartnerTransaction.Type` se asigna a Capital, a Resultados o a una lista de omitidos (ledger-only: traspasos de aporte, préstamos, otros). La clasificación vive en `partnerMovement.entity` y un test la verifica contra `Type` del backend: un tipo nuevo sin clasificar rompe el test.
+7. **Movimientos.** La sección Movimientos de Capital lista todos los tipos salvo `CONTRIB_TRANSFER_IN/OUT` (seguimiento interno que duplicaría la fila de `TRANSFER_IN/OUT`; `HIDDEN_MOVEMENT_TYPES` en `partnerMovement.entity`). Las alertas del Resumen son un único botón que lleva a Capital (`target_tab` siempre `capital`); la acción se ejecuta desde la línea de la composición. Las tablas de la ficha usan paginación en cliente y `UnifiedSearchBar` con parámetros de URL prefijados por tabla (`usePartnerTableSearch`: `mov_`, `stk_`, `dst_`).
 
 ## Consecuencias
 
