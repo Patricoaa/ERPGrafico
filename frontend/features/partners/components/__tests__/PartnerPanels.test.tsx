@@ -5,6 +5,9 @@ import type { Partner, PartnerOverview, PartnerTransaction } from "@/features/co
 import { PartnerSummaryPanel } from "../PartnerSummaryPanel"
 import { PartnerCapitalPanel } from "../PartnerCapitalPanel"
 import { PartnerResultsPanel } from "../PartnerResultsPanel"
+import { readFileSync, existsSync } from "node:fs"
+import { resolve } from "node:path"
+import { CAPITAL_MOVEMENT_TYPES, RESULTS_MOVEMENT_TYPES, OMITTED_MOVEMENT_TYPES } from "../../entity-view/partnerMovement.entity"
 
 const hooks = vi.hoisted(() => ({
     usePartnerOverview: vi.fn(),
@@ -115,5 +118,29 @@ describe("PartnerResultsPanel", () => {
         render(<PartnerResultsPanel partner={partner} run={vi.fn()} />)
         await userEvent.click(screen.getAllByRole("button", { name: "Reintentar" })[0])
         expect(refetch).toHaveBeenCalled()
+    })
+})
+
+describe("clasificación de movimientos", () => {
+    it("CAPITAL_RETURN va a Capital y no a Resultados; LOSS_ABSORB al revés", () => {
+        hooks.usePartnerStatement.mockReturnValue(statement([tx(1, "CAPITAL_RETURN", "Devolución UNICA"), tx(2, "LOSS_ABSORB", "Absorción UNICA")]))
+        const cap = render(<PartnerCapitalPanel partner={partner} run={vi.fn()} />)
+        expect(screen.getByText("Devolución UNICA")).toBeInTheDocument()
+        expect(screen.queryByText("Absorción UNICA")).not.toBeInTheDocument()
+        cap.unmount()
+        render(<PartnerResultsPanel partner={partner} run={vi.fn()} />)
+        expect(screen.getByText("Absorción UNICA")).toBeInTheDocument()
+        expect(screen.queryByText("Devolución UNICA")).not.toBeInTheDocument()
+    })
+    it("todo tipo del backend está en capital, resultados u omitidos (y sin duplicados)", () => {
+        const file = resolve(process.cwd(), "../backend/contacts/partner_models.py")
+        if (!existsSync(file)) return
+        const src = readFileSync(file, "utf8")
+        const block = src.slice(src.indexOf("class Type(models.TextChoices)"), src.indexOf("partner = models.ForeignKey"))
+        const backendTypes = [...block.matchAll(/=\s*"([A-Z_]+)",\s*_\(/g)].map(m => m[1])
+        expect(backendTypes.length).toBeGreaterThan(15)
+        const all = [...CAPITAL_MOVEMENT_TYPES, ...RESULTS_MOVEMENT_TYPES, ...OMITTED_MOVEMENT_TYPES]
+        expect(backendTypes.filter(t => !all.includes(t))).toEqual([])
+        expect(new Set(all).size).toBe(all.length)
     })
 })

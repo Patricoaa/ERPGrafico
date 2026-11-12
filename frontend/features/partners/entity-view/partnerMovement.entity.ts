@@ -14,6 +14,7 @@ export const CAPITAL_MOVEMENT_TYPES = [
     "TRANSFER_IN",
     "TRANSFER_OUT",
     "REINVESTMENT",
+    "CAPITAL_RETURN",
 ]
 
 /** Movimientos de resultados: retiros provisorios, dividendos y utilidades retenidas (pestaña Resultados). */
@@ -24,7 +25,16 @@ export const RESULTS_MOVEMENT_TYPES = [
     "DIVIDEND_PAY",
     "RETAINED",
     "RETAINED_MOB",
+    "LOSS_ABSORB",
 ]
+
+/**
+ * Tipos que a propósito solo aparecen en el libro. Todo tipo del backend debe estar en una de las tres listas
+ * (lo verifica un test): un tipo nuevo obliga a decidir su pestaña.
+ * - CONTRIB_TRANSFER_IN/OUT: seguimiento de lo enterado, se crean junto a TRANSFER_IN/OUT y duplicarían la fila.
+ * - LOAN_IN/OUT y OTHER: préstamos y otros, no son capital ni resultados.
+ */
+export const OMITTED_MOVEMENT_TYPES = ["CONTRIB_TRANSFER_IN", "CONTRIB_TRANSFER_OUT", "LOAN_IN", "LOAN_OUT", "OTHER"]
 
 export const isCapitalMovement = (type: string) => CAPITAL_MOVEMENT_TYPES.includes(type)
 export const isResultsMovement = (type: string) => RESULTS_MOVEMENT_TYPES.includes(type)
