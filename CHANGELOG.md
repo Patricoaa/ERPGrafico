@@ -2,6 +2,56 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.101](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.100...v0.3.101) (2026-11-12)
+
+
+### 🧪 Testing
+
+* **partners:** el guard de tipos falla fuerte o se omite visiblemente ([69e26c5](https://github.com/Patricoaa/ERPGrafico/commit/69e26c52792f5ffd0512d386a9d83ab74a5d9eaf))
+
+
+### 📚 Documentation
+
+* **partners:** ADR-0133 y contrato de la ficha de socio ([9f977e0](https://github.com/Patricoaa/ERPGrafico/commit/9f977e03d7dd086f367f318e64b598b00527d96c))
+* **partners:** diseño y plan de la ficha de socio estilo POS ([9c3f073](https://github.com/Patricoaa/ERPGrafico/commit/9c3f07367b124a282ac109f612a18c0c1ba813f2))
+* **socios:** ADR-0132 y plan por fases del módulo societario ([8f13ebf](https://github.com/Patricoaa/ERPGrafico/commit/8f13ebf8ac498bd781a83710f4a65984494f4715))
+
+
+### 🐛 Bug Fixes
+
+* **partners:** clasificar CAPITAL_RETURN y LOSS_ABSORB y blindar tipos nuevos ([b353417](https://github.com/Patricoaa/ERPGrafico/commit/b3534172cb6a39e96b4e8a93f5277caefd9e2d08))
+* **partners:** marcar como client los hooks de useOnOpen y analytics (ADR-0132) ([b910d33](https://github.com/Patricoaa/ERPGrafico/commit/b910d33b75149510b309b1bc929ef8ad24814f97))
+* **partners:** subtítulo de la ficha con ID fiscal y fecha de alta ([c78c49a](https://github.com/Patricoaa/ERPGrafico/commit/c78c49a53468b11489daee4a74a39b7f65590ce5))
+* **partners:** URL canónica, invalidación de relaciones, acción suscribir/reducir y limpieza ([40f69df](https://github.com/Patricoaa/ERPGrafico/commit/40f69dfa855848d86a09cd7fbc6fa958d1e7cc53))
+* **tax:** evitar error de prop id en Fragment al cerrar F29 y blindar BaseModal ([aa29e94](https://github.com/Patricoaa/ERPGrafico/commit/aa29e94cbd1815f74b8e65061362f59fd11e51b9))
+
+
+### ✨ Features
+
+* **partners:** acciones integradas en el contenido y el menú, KPIs neutros, dona de composición y RUT ([5cacd80](https://github.com/Patricoaa/ERPGrafico/commit/5cacd805d9558dd4206f37d9ce8feef29af49d68))
+* **partners:** eliminar borrador, impacto al ejecutar y acciones de ciclo de vida en el drawer de distribuciones (ADR-0132) ([1a774f2](https://github.com/Patricoaa/ERPGrafico/commit/1a774f26ef9cae342e033493eefc43fab8e52b75))
+* **partners:** endpoint partner_overview con alertas y KPIs (ADR-0133) ([e3784f8](https://github.com/Patricoaa/ERPGrafico/commit/e3784f8665a7690475fe3e04a08e327ae6be775a))
+* **partners:** ficha de socio con pestañas Capital y Resultados ([bc5ea9e](https://github.com/Patricoaa/ERPGrafico/commit/bc5ea9efccfed741bfe8ce10880442138acb3529))
+* **partners:** ficha en 4 pestañas, composición del patrimonio con acciones por línea y tablas con búsqueda y paginación ([646aef6](https://github.com/Patricoaa/ERPGrafico/commit/646aef64c9f544c779cf14760e242a9be03c26eb))
+* **partners:** hook usePartnerOverview ([52b5d78](https://github.com/Patricoaa/ERPGrafico/commit/52b5d7847d504f6bf65572d8ac42a21bdeb0c50d))
+* **partners:** paneles Resumen, Capital y Resultados de la ficha ([dd3ecdb](https://github.com/Patricoaa/ERPGrafico/commit/dd3ecdb88d0b89048c043004e6ce54224f0f22fe))
+* **partners:** PartnerDrawer (contacts.partner) y host único de acciones (ADR-0132) ([39d18b8](https://github.com/Patricoaa/ERPGrafico/commit/39d18b8779034096eb7638bd8e6084e52844aa60))
+* **partners:** pestaña Relaciones de la ficha del socio ([36d4d86](https://github.com/Patricoaa/ERPGrafico/commit/36d4d86e305312dc37d081a79fd9dffefdda8b77))
+* **partners:** tipo documental contacts.partner y su proveedor de relaciones ([5f0fb69](https://github.com/Patricoaa/ERPGrafico/commit/5f0fb69de34f8f8e79a52462d7542db8777778fe))
+* **partners:** vincular contacto con socio, acción Ver documento en el libro y renombrar PartnerActionModal (ADR-0132) ([af6e1b4](https://github.com/Patricoaa/ERPGrafico/commit/af6e1b4c23bfe9d33a908051c53b8418259c228c))
+
+
+### ⚙️ Refactors
+
+* **contacts:** eliminar initial_setup, setup_partner y promote_partner (ADR-0132) ([8297b25](https://github.com/Patricoaa/ERPGrafico/commit/8297b25400fd571f24be30f4c057d223d82da1e1))
+* **partners:** hooks de feature para socios y distribuciones (ADR-0132) ([1a9bc55](https://github.com/Patricoaa/ERPGrafico/commit/1a9bc5555e4c846820a59d7d39374f76cbd3dfcb))
+* **partners:** la lista solo abre ficha, añade socio y transfiere ([0682921](https://github.com/Patricoaa/ERPGrafico/commit/06829216ceaa22275323e01aaedf387ed8096d5e))
+* **partners:** mover la UI de socios de settings al feature partners (ADR-0132) ([f150cbc](https://github.com/Patricoaa/ERPGrafico/commit/f150cbc28d343b35c6a22c93c22294fb2c3e4703))
+* **partners:** placement de acciones y transferencia con origen ([dd8ce1f](https://github.com/Patricoaa/ERPGrafico/commit/dd8ce1f03c0caaa48c7f59cdbbd189d4c40f1a2e))
+* **partners:** quitar configuración inicial, PartnerEditDrawer y modales sin uso (ADR-0132) ([11a9e98](https://github.com/Patricoaa/ERPGrafico/commit/11a9e982f2bf3aae0bb820b02ccc219999fb5866))
+* **partners:** un solo nombre para la transferencia de capital ([ed219fb](https://github.com/Patricoaa/ERPGrafico/commit/ed219fb36418493919ae792e8b1617518300e9f0))
+* **partners:** vistas delgadas, errores 400 estándar, Idempotency-Key y tests de N+1 (ADR-0132) ([94277a3](https://github.com/Patricoaa/ERPGrafico/commit/94277a31cdcf19f68c319caa38874852cf1d6b7e))
+
 ### [0.3.100](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.99...v0.3.100) (2026-11-11)
 
 
