@@ -1,3 +1,5 @@
+'use client'
+
 import { useQuery } from "@tanstack/react-query"
 import { partnersApi } from "@/features/contacts"
 import type { PartnerEvolutionPeriod } from "@/features/contacts"

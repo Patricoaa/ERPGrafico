@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from "react"
 import type { Partner } from "@/features/contacts"
 import type { Granularity } from "@/lib/analytics-helpers"
