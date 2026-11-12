@@ -8,7 +8,7 @@ import { ChartLegend, EmptyState, SkeletonShell, PieChart, StaleDataBanner } fro
 import { Button } from '@/components/ui/button'
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { usePartnerStatement } from "../hooks/usePartnerStatement"
+import { usePartnerStatement } from "@/features/partners"
 import { partnerTransactionEntity, partnerTransactionViews } from "../entity-view/partnerTransaction.entity"
 
 interface Props {

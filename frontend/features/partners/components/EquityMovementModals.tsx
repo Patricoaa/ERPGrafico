@@ -1,0 +1,558 @@
+"use client"
+import { formatCurrency } from "@/lib/money"
+
+import { showApiError } from "@/lib/errors"
+import React, { useMemo, useState } from "react"
+
+import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { usePartners, netEquityPercentages } from "@/features/contacts"
+import { usePartnerMutations, useOnOpen } from "../hooks"
+import { useTreasuryAccounts } from "@/features/settings"
+import { toast } from "sonner"
+
+import {
+    ArrowRightLeft,
+    TrendingUp,
+    Banknote
+} from "lucide-react"
+
+interface ModalProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    onSuccess?: () => void
+    initialPartnerId?: string
+    initialAmount?: string
+}
+
+export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initialPartnerId, initialAmount }: ModalProps) {
+    const [loading, setLoading] = useState(false)
+    const { partners } = usePartners()
+    const mutations = usePartnerMutations()
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [formData, setFormData] = useState({
+        contact_id: "",
+        amount: "",
+        type: "SUBSCRIPTION" as "SUBSCRIPTION" | "REDUCTION",
+        date: new Date().toISOString().split('T')[0],
+        description: ""
+    })
+
+    const resetForm = () => {
+        setFormData({
+            contact_id: "",
+            amount: "",
+            type: "SUBSCRIPTION",
+            date: new Date().toISOString().split('T')[0],
+            description: ""
+        })
+    }
+
+    useOnOpen(open, () => {
+        if (initialPartnerId || initialAmount) {
+            setFormData(prev => ({
+                ...prev,
+                contact_id: initialPartnerId || "",
+                amount: initialAmount || "",
+                description: initialAmount ? `Formalización de exceso de capital: ${formatCurrency(parseFloat(initialAmount))}` : ""
+            }))
+        } else {
+            resetForm()
+        }
+    })
+
+    // Selected partner info
+    const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
+    const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
+    const subscribedCapital = Number(selectedPartner?.partner_total_contributions || 0)
+    const isReduction = formData.type === "REDUCTION"
+    const amountNum = parseFloat(formData.amount) || 0
+    const exceedsCapital = isReduction && amountNum > subscribedCapital
+
+    const handleSubmit = async () => {
+        if (!formData.contact_id || !formData.amount) {
+            toast.error("Debe completar todos los campos obligatorios.")
+            return
+        }
+
+        if (exceedsCapital) {
+            toast.error(`El monto de reducción excede el capital suscrito del socio (${formatCurrency(subscribedCapital)}).`)
+            return
+        }
+
+        // For reductions, show confirmation dialog
+        if (isReduction && !showConfirm) {
+            setShowConfirm(true)
+            return
+        }
+
+        setLoading(true)
+        try {
+            await mutations.recordSubscription.mutateAsync({
+                contact_id: parseInt(formData.contact_id),
+                amount: parseFloat(formData.amount),
+                type: formData.type,
+                date: formData.date,
+                description: formData.description
+            })
+            toast.success("Movimiento de capital registrado exitosamente")
+            onSuccess?.()
+            onOpenChange(false)
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar suscripción")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <>
+            <BaseModal
+                open={open}
+                onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm() }}
+                size="md"
+                title={
+                    <div className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        Modificación de Capital
+                    </div>
+                }
+                description="Registre un cambio formal en la participación societaria. Esto afecta el capital suscrito y el saldo por enterar del socio."
+                footer={
+                    <div className="flex w-full gap-3 justify-end">
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                        <SubmitButton onClick={handleSubmit} disabled={exceedsCapital} loading={loading}>
+                            Confirmar Movimiento
+                        </SubmitButton>
+                    </div>
+                }
+            >
+                <div className="grid gap-4">
+                    <LabeledSelect
+                        label="Socio"
+                        value={formData.contact_id}
+                        onChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
+
+                    {/* Show selected partner's current capital */}
+                    {selectedPartner && (
+                        <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground font-medium">Capital Suscrito Actual</span>
+                                <span className="font-mono font-bold text-primary">{formatCurrency(subscribedCapital)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground font-medium">Participación Actual</span>
+                                <span className="font-bold">{equityPctById[selectedPartner.id] ?? "0"}%</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <LabeledSelect
+                        label="Tipo de Movimiento"
+                        value={formData.type}
+                        onChange={(v) => setFormData(prev => ({ ...prev, type: v as "SUBSCRIPTION" | "REDUCTION" }))}
+                        options={[
+                            { value: "SUBSCRIPTION", label: "Aumento de Capital (Suscripción)" },
+                            { value: "REDUCTION", label: "Reducción de Capital" },
+                        ]}
+                    />
+                    <div>
+                        <LabeledInput
+                            label="Monto ($)"
+                            id="amount"
+                            type="number"
+                            value={formData.amount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                            placeholder="0"
+                        />
+                        {isReduction && selectedPartner && amountNum > 0 && (
+                            <p className={`text-3xs font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                {exceedsCapital
+                                    ? `⚠ Excede el capital suscrito (${formatCurrency(subscribedCapital)})`
+                                    : `Capital resultante: ${formatCurrency(subscribedCapital - amountNum)}`
+                                }
+                            </p>
+                        )}
+                    </div>
+                    <PeriodValidationDateInput
+                        label="Fecha"
+                        date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                        onDateChange={(d) => {
+                            if (!d) {
+                                setFormData(prev => ({ ...prev, date: "" }))
+                                return
+                            }
+                            setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                        }}
+                        validationType="accounting"
+                    />
+                    <LabeledInput
+                        label="Descripción / Motivo"
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Ej: Aporte por expansión 2026"
+                    />
+                </div>
+            </BaseModal>
+
+            {/* Confirmation dialog for reductions */}
+            <ActionConfirmModal
+                open={showConfirm}
+                onOpenChange={setShowConfirm}
+                onConfirm={handleSubmit}
+                title="Confirmar Reducción de Capital"
+                description={
+                    <div className="space-y-2 text-sm leading-relaxed">
+                        <p>Está a punto de reducir el capital suscrito de <strong>{selectedPartner?.name}</strong> por <strong>{formatCurrency(amountNum)}</strong>.</p>
+                        <p>Esta operación genera un asiento contable reversando Capital Social. ¿Desea continuar?</p>
+                    </div>
+                }
+                variant="warning"
+                confirmText="Sí, Reducir Capital"
+            />
+        </>
+    )
+}
+
+export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProps) {
+    const [loading, setLoading] = useState(false)
+    const { partners } = usePartners()
+    const mutations = usePartnerMutations()
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [formData, setFormData] = useState({
+        from_contact_id: "",
+        to_contact_id: "",
+        amount: "",
+        date: new Date().toISOString().split('T')[0],
+        description: ""
+    })
+
+    const resetForm = () => {
+        setFormData({
+            from_contact_id: "",
+            to_contact_id: "",
+            amount: "",
+            date: new Date().toISOString().split('T')[0],
+            description: ""
+        })
+    }
+
+    useOnOpen(open, resetForm)
+
+    // Seller info
+    const seller = partners.find(p => p.id.toString() === formData.from_contact_id)
+    const buyer = partners.find(p => p.id.toString() === formData.to_contact_id)
+    const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
+    const sellerCapital = Number(seller?.partner_total_contributions || 0)
+    const amountNum = parseFloat(formData.amount) || 0
+    const exceedsCapital = amountNum > sellerCapital && sellerCapital > 0
+
+    const handleSubmit = async () => {
+        if (!formData.from_contact_id || !formData.to_contact_id || !formData.amount) {
+            toast.error("Debe completar todos los campos obligatorios.")
+            return
+        }
+
+        if (formData.from_contact_id === formData.to_contact_id) {
+            toast.error("El socio de origen y destino no pueden ser el mismo.")
+            return
+        }
+
+        if (exceedsCapital) {
+            toast.error(`El monto excede el capital suscrito del vendedor (${formatCurrency(sellerCapital)}).`)
+            return
+        }
+
+        // Show confirmation dialog
+        if (!showConfirm) {
+            setShowConfirm(true)
+            return
+        }
+
+        setLoading(true)
+        try {
+            await mutations.recordTransfer.mutateAsync({
+                from_contact_id: parseInt(formData.from_contact_id),
+                to_contact_id: parseInt(formData.to_contact_id),
+                amount: parseFloat(formData.amount),
+                date: formData.date,
+                description: formData.description
+            })
+            toast.success("Transferencia de participación registrada exitosamente")
+            onSuccess?.()
+            onOpenChange(false)
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar transferencia")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <>
+            <BaseModal
+                open={open}
+                onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm() }}
+                size="md"
+                title={
+                    <div className="flex items-center gap-2">
+                        <ArrowRightLeft className="h-5 w-5 text-primary" />
+                        Transferencia de Participación
+                    </div>
+                }
+                description="Mueva capital suscrito de un socio existente a otro nuevo o actual."
+                footer={
+                    <div className="flex w-full gap-3 justify-end">
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                        <SubmitButton onClick={handleSubmit} disabled={exceedsCapital} loading={loading}>
+                            Registrar Transferencia
+                        </SubmitButton>
+                    </div>
+                }
+            >
+                <div className="grid gap-4">
+                    <div>
+                        <LabeledSelect
+                            label="Socio que Transfiere (Vende)"
+                            value={formData.from_contact_id}
+                            onChange={(v) => setFormData(prev => ({ ...prev, from_contact_id: v }))}
+                            placeholder="Socio de origen"
+                            options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                        />
+                        {seller && (
+                            <p className="text-3xs text-muted-foreground font-medium mt-1">
+                                Capital suscrito: <span className="font-mono font-bold text-primary">{formatCurrency(sellerCapital)}</span> — Participación: <span className="font-bold">{equityPctById[seller.id] ?? "0"}%</span>
+                            </p>
+                        )}
+                    </div>
+                    <div className="grid gap-2 font-bold text-center text-muted-foreground">
+                        <ArrowRightLeft className="mx-auto h-4 w-4" />
+                    </div>
+                    <div>
+                        <LabeledSelect
+                            label="Socio que Recibe (Compra)"
+                            value={formData.to_contact_id}
+                            onChange={(v) => setFormData(prev => ({ ...prev, to_contact_id: v }))}
+                            placeholder="Socio de destino"
+                            options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                        />
+                        {buyer && (
+                            <p className="text-3xs text-muted-foreground font-medium mt-1">
+                                Capital actual: <span className="font-mono font-bold">{formatCurrency(buyer.partner_total_contributions || 0)}</span> — Participación: <span className="font-bold">{equityPctById[buyer.id] ?? "0"}%</span>
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <LabeledInput
+                            label="Monto Capital Transferido ($)"
+                            id="amount"
+                            type="number"
+                            value={formData.amount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                            placeholder="0"
+                        />
+                        {seller && amountNum > 0 && (
+                            <p className={`text-3xs font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                {exceedsCapital
+                                    ? `⚠ Excede el capital suscrito del vendedor (${formatCurrency(sellerCapital)})`
+                                    : `Capital restante del vendedor: ${formatCurrency(sellerCapital - amountNum)}`
+                                }
+                            </p>
+                        )}
+                    </div>
+                    <PeriodValidationDateInput
+                        label="Fecha de la Transacción"
+                        date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                        onDateChange={(d) => {
+                            if (!d) {
+                                setFormData(prev => ({ ...prev, date: "" }))
+                                return
+                            }
+                            setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                        }}
+                        validationType="accounting"
+                    />
+                    <LabeledInput
+                        label="Descripción / Motivo"
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Ej: Venta de acciones según acta Nº 45"
+                    />
+                </div>
+            </BaseModal>
+
+            {/* Confirmation dialog for transfers */}
+            <ActionConfirmModal
+                open={showConfirm}
+                onOpenChange={setShowConfirm}
+                onConfirm={handleSubmit}
+                title="Confirmar Transferencia de Capital"
+                description={
+                    <div className="space-y-2 text-sm leading-relaxed">
+                        <p>Está a punto de transferir <strong>{formatCurrency(amountNum)}</strong> de capital suscrito:</p>
+                        <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/50 text-sm font-medium">
+                            <span>{seller?.name}</span>
+                            <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                            <span>{buyer?.name}</span>
+                        </div>
+                        <p>Esto modificará los porcentajes de participación y generará un asiento contable reclasificando el capital suscrito y los saldos pendientes entre los socios involucrados. ¿Desea continuar?</p>
+                    </div>
+                }
+                variant="default"
+                icon={ArrowRightLeft}
+                confirmText="Sí, Transferir"
+            />
+        </>
+    )
+}
+
+export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPartnerId }: ModalProps) {
+    const [loading, setLoading] = useState(false)
+    const { partners } = usePartners()
+    const mutations = usePartnerMutations()
+    const { data: treasuryAccounts = [] } = useTreasuryAccounts(open)
+
+    const [formData, setFormData] = useState({
+        contact_id: "",
+        amount: "",
+        date: new Date().toISOString().split('T')[0],
+        treasury_account_id: "",
+        description: ""
+    })
+
+    const resetForm = () => {
+        setFormData({
+            contact_id: "",
+            amount: "",
+            date: new Date().toISOString().split('T')[0],
+            treasury_account_id: "",
+            description: ""
+        })
+    }
+
+    useOnOpen(open, () => {
+        if (initialPartnerId) {
+            setFormData(prev => ({ ...prev, contact_id: initialPartnerId }))
+        } else {
+            resetForm()
+        }
+    })
+
+    const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
+    const dividendBalance = selectedPartner ? (parseFloat(selectedPartner.partner_dividends_payable_balance) || 0) : 0
+    const amountNum = parseFloat(formData.amount) || 0
+    const isOverflow = amountNum > dividendBalance
+
+    const handleSubmit = async () => {
+        if (!formData.contact_id || !formData.amount || !formData.treasury_account_id) {
+            toast.error("Debe completar todos los campos obligatorios.")
+            return
+        }
+
+        setLoading(true)
+        try {
+            await mutations.recordDividendPayment.mutateAsync({
+                contactId: parseInt(formData.contact_id),
+                data: {
+                    amount: amountNum,
+                    date: formData.date,
+                    treasury_account_id: parseInt(formData.treasury_account_id),
+                    description: formData.description
+                }
+            })
+            toast.success("Pago de dividendos registrado exitosamente")
+            onSuccess?.()
+            onOpenChange(false)
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar pago de dividendos")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm() }}
+            size="md"
+            title={
+                <div className="flex items-center gap-2">
+                    <Banknote className="h-5 w-5 text-primary" />
+                    Pago de Dividendos
+                </div>
+            }
+            description="Registre la salida de fondos para el pago de utilidades decretadas."
+            footer={
+                <div className="flex w-full gap-3 justify-end">
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton onClick={handleSubmit} disabled={!formData.amount} loading={loading}>
+                        Confirmar Pago
+                    </SubmitButton>
+                </div>
+            }
+        >
+            <div className="grid gap-4">
+                <div>
+                    <LabeledSelect
+                        label="Socio Receptor"
+                        value={formData.contact_id}
+                        onChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
+                    {selectedPartner && (
+                        <p className="text-3xs text-muted-foreground font-medium mt-1">
+                            Saldo de Dividendos por Pagar: <span className="font-mono font-bold text-primary">{formatCurrency(dividendBalance)}</span>
+                        </p>
+                    )}
+                </div>
+                <LabeledSelect
+                    label="Cuenta de Tesorería (Origen)"
+                    value={formData.treasury_account_id}
+                    onChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}
+                    placeholder="Cuenta bancaria o caja"
+                    options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
+                />
+                <div>
+                    <LabeledInput
+                        label="Monto a Pagar ($)"
+                        type="number"
+                        value={formData.amount}
+                        onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                        placeholder="0"
+                    />
+                    {isOverflow && (
+                        <Alert variant="warning">
+                            <AlertDescription className="text-4xs text-warning leading-tight">
+                                El monto excede el saldo de dividendos. El excedente de <strong>{formatCurrency(amountNum - dividendBalance)}</strong> se registrará como un <strong>Retiro Provisorio</strong>.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </div>
+                <PeriodValidationDateInput
+                    label="Fecha del Pago"
+                    date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setFormData(prev => ({ ...prev, date: "" }))
+                            return
+                        }
+                        setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                    }}
+                    validationType="accounting"
+                />
+                <LabeledInput
+                    label="Descripción / Notas"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Ej: Pago dividendos ejercicio 2025"
+                />
+            </div>
+        </BaseModal>
+    )
+}

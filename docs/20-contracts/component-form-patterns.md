@@ -78,7 +78,7 @@ graph TD
 
 | Categoría | Campos | Modal `size` | Grid | Tabs | Ejemplo real |
 |:---|:---|:---|:---|:---|:---|
-| **Micro** | 1–3 | `sm` / `xs` o `Drawer 40%` | N/A (stack) | **Nunca** | `AddPartnerModal`, `InitialCapitalModal` |
+| **Micro** | 1–3 | `sm` / `xs` o `Drawer 40%` | N/A (stack) | **Nunca** | `AddPartnerModal` |
 | **Simple** | 4–6 | `md` o `Drawer 40%` | `grid-cols-4` | **Nunca** | `TransferModal`, `CategoryForm`, `TreasuryAccountModal` |
 | **Estándar** | 7–15 | `lg` o `Drawer 50–55%` | `grid-cols-4` | **Opcional** horiz. si 2–4 dominios. **Obligatorio** si ≥5 dominios | `PricingRuleForm`, `EmployeeDrawer`, `WarehouseForm` |
 | **Complejo** | 16–30 | `xl` / `2xl` o `Drawer 65%` | `grid-cols-4` | **Obligatorio** vertical + `h-[90vh]` o `Drawer` | `UserForm`, `ContactDrawer`, `BOMDrawer` |

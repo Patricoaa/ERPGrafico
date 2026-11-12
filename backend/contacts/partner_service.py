@@ -9,7 +9,7 @@ Handles:
 - Balance calculations and validations
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -645,12 +645,37 @@ class PartnerService:
 
     # ──────────────────────────────────────────────────────────────
     @staticmethod
+    def _parse_amount(raw, default=None) -> Decimal:
+        try:
+            return Decimal(str(raw if raw not in (None, "") else default))
+        except (InvalidOperation, TypeError):
+            raise ValidationError("Monto inválido.")
+
+    @staticmethod
+    @transaction.atomic
+    def equity_subscription_response(request) -> dict:
+        ptx = PartnerService.handle_equity_movement_from_payload(request.data, request.user)
+        return {
+            "message": "Movimiento de capital registrado.",
+            "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
+        }
+
+    @staticmethod
+    @transaction.atomic
+    def equity_transfer_response(request) -> dict:
+        seller_tx, _buyer_tx = PartnerService.equity_transfer_from_request(request)
+        return {
+            "message": "Transferencia completada.",
+            "journal_entry": seller_tx.journal_entry.display_id if seller_tx.journal_entry else None,
+        }
+
+    @staticmethod
     def equity_transfer_from_request(request) -> tuple:
         from contacts.models import Contact
 
         from_id = request.data.get("from_contact_id")
         to_id = request.data.get("to_contact_id")
-        amount = Decimal(str(request.data.get("amount", "0")))
+        amount = PartnerService._parse_amount(request.data.get("amount"), "0")
         date = request.data.get("date")
         description = request.data.get("description", "")
 
@@ -683,10 +708,7 @@ class PartnerService:
         if not all([transaction_type, amount_str, date]):
             raise ValidationError("Faltan campos obligatorios (transaction_type, amount, date).")
 
-        try:
-            amount = Decimal(amount_str)
-        except Exception:
-            raise ValidationError("Monto inválido.")
+        amount = PartnerService._parse_amount(amount_str)
 
         if transaction_type == "CAPITAL_CASH":
             return PartnerService.record_capital_contribution(
@@ -851,107 +873,6 @@ class PartnerService:
     # ──────────────────────────────────────────────────────────────
     # INITIAL SETUP (Bulk)
     # ──────────────────────────────────────────────────────────────
-
-    @staticmethod
-    @transaction.atomic
-    def initial_setup(partners_data: list, created_by=None) -> dict:
-        """
-        Bulk partner setup with initial capital subscription.
-
-        Args:
-            partners_data: List of {'contact_id': int, 'amount': Decimal}
-
-        Returns:
-            dict with total_capital, journal_entry, partners_updated count
-        """
-        settings = PartnerService._get_settings()
-        if not settings.partner_capital_social_account:
-            raise ValidationError("No se ha configurado la cuenta de Capital Social.")
-
-        contacts_with_amounts = []
-        total_capital = Decimal("0")
-
-        for item in partners_data:
-            contact_id = item.get("contact_id")
-            amount = Decimal(str(item.get("amount", "0")))
-            if amount <= 0:
-                raise ValidationError(f"El monto para el contacto {contact_id} debe ser > 0.")
-
-            contact = Contact.objects.get(id=contact_id)
-            contacts_with_amounts.append((contact, amount))
-            total_capital += amount
-
-        # Mark all as partners and ensure accounts exist
-        today = timezone.now().date()
-        for contact, _ in contacts_with_amounts:
-            contact.is_partner = True
-            if not contact.partner_since:
-                contact.partner_since = today
-            contact.save()
-
-        # Single Journal Entry for all
-        entry = JournalEntry.objects.create(
-            description=GlosaBuilder.build(GlosaBuilder.APERTURA, "CAPITAL", "", total_capital),
-            status=JournalEntry.Status.POSTED,
-            date=today,
-        )
-
-        # Individual partner transactions + debit/credit items
-        for contact, amount in contacts_with_amounts:
-            PartnerTransaction.objects.create(
-                partner=contact,
-                transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION,
-                amount=amount,
-                date=today,
-                description="Suscripción inicial de capital",
-                journal_entry=entry,
-                created_by=created_by,
-            )
-
-            partner_receivable = PartnerService._resolve_partner_receivable_account(contact)
-            partner_social = PartnerService._resolve_partner_social_account(contact)
-
-            JournalItem.objects.create(
-                entry=entry,
-                account=partner_receivable,
-                partner=contact,
-                partner_name=contact.name,
-                label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, contact.name, "APERTURA"),
-                debit=amount,
-                credit=0,
-            )
-
-            # Cr: Capital Social (per-partner)
-            JournalItem.objects.create(
-                entry=entry,
-                account=partner_social,
-                partner=contact,
-                label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, contact.name, "APERTURA"),
-                debit=0,
-                credit=amount,
-            )
-
-        entry.check_balance()
-
-        # Link source document to first partner transaction
-        first_ptx = PartnerTransaction.objects.filter(journal_entry=entry).first()
-        if first_ptx:
-            entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
-            entry.source_object_id = first_ptx.id
-            entry.save(update_fields=["source_content_type", "source_object_id"])
-
-        # Recalculate percentages
-        PartnerService._recalculate_and_snapshot_stakes(
-            date=today,
-            source_transaction=None,
-            created_by=created_by,
-        )
-
-        return {
-            "total_capital": total_capital,
-            "journal_entry": entry,
-            "partners_updated": len(contacts_with_amounts),
-        }
 
     # ──────────────────────────────────────────────────────────────
     # RETAINED EARNINGS MOBILIZATION
@@ -1128,6 +1049,14 @@ class PartnerService:
         if stake:
             return stake.percentage
         return partner.partner_equity_percentage or Decimal("0")
+
+    @staticmethod
+    def get_global_summary_payload() -> dict:
+        """Resumen global serializable (Decimals como string) para el dashboard de socios."""
+        summary = PartnerService.get_global_summary()
+        for key in ["total_capital", "total_provisional_withdrawals"]:
+            summary[key] = str(summary[key])
+        return summary
 
     @staticmethod
     def get_global_summary() -> dict:

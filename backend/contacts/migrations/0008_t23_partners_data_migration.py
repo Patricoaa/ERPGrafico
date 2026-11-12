@@ -4,26 +4,9 @@ from django.db import migrations
 
 
 def promote_existing_partners(apps, schema_editor):
-    from contacts.services import ContactPartnerService
-
-    Contact = apps.get_model("contacts", "Contact")
-
-    partners = Contact.objects.filter(is_partner=True)
-    for partner in partners:
-        missing_accounts = not all(
-            [
-                partner.partner_contribution_account_id,
-                partner.partner_provisional_withdrawal_account_id,
-                partner.partner_earnings_account_id,
-                partner.partner_dividends_payable_account_id,
-            ]
-        )
-
-        if missing_accounts:
-            try:
-                ContactPartnerService.promote_to_partner(partner)
-            except Exception as e:
-                print(f"Warning: Could not promote existing partner {partner.name}: {e}")
+    # No-op: la promoción solo fijaba is_partner (ya verdadero en estos contactos).
+    # ContactPartnerService.promote_to_partner fue eliminado (ADR-0132).
+    pass
 
 
 def reverse_promotion(apps, schema_editor):

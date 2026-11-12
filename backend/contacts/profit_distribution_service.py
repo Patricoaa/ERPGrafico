@@ -3,7 +3,7 @@ ProfitDistributionService: Business logic for formal profit (or loss) distributi
 Handles resolutions, percentage calculations based on history, and journal entries.
 """
 
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -30,6 +30,27 @@ class ProfitDistributionService:
             raise ValidationError(
                 "Faltan campos obligatorios (fiscal_year_id, net_result, resolution_date)."
             )
+
+    @staticmethod
+    def create_draft_from_request(request):
+        data = request.data
+        fiscal_year_id = data.get("fiscal_year_id") or data.get("fiscal_year")
+        net_result = data.get("net_result")
+        resolution_date = data.get("resolution_date")
+        ProfitDistributionService.validate_create_data(fiscal_year_id, net_result, resolution_date)
+        try:
+            net = Decimal(str(net_result))
+            fiscal_year = int(fiscal_year_id)
+        except (InvalidOperation, ValueError, TypeError):
+            raise ValidationError("Año fiscal o resultado neto inválido.")
+        return ProfitDistributionService.create_draft_resolution(
+            fiscal_year_id=fiscal_year,
+            net_result=net,
+            resolution_date=resolution_date,
+            acta_number=data.get("acta_number", ""),
+            notes=data.get("notes", ""),
+            created_by=request.user,
+        )
 
     @staticmethod
     def validate_can_delete(resolution: ProfitDistributionResolution):

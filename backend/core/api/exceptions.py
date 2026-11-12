@@ -1,7 +1,9 @@
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -30,6 +32,13 @@ def erpgrafico_exception_handler(exc, context):
     Custom exception handler for Django REST Framework.
     Standardizes error responses for both application-specific and generic exceptions.
     """
+    # Los servicios lanzan ValidationError de Django para reglas de negocio: son mensajes
+    # pensados para el usuario, se responden como 400 (nunca como 500).
+    if isinstance(exc, DjangoValidationError):
+        exc = DRFValidationError(
+            exc.message_dict if hasattr(exc, "error_dict") else exc.messages
+        )
+
     # Call DRF's default exception handler first to get the standard error response.
     response = exception_handler(exc, context)
 

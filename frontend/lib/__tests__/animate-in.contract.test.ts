@@ -92,7 +92,6 @@ const ANIMATE_ALLOWLIST = [
     "features/sales/components/checkout/OrderSummaryCard.tsx",
     "features/sales/components/checkout/Step2_DTE.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
-    "features/settings/components/partners/PartnerLedgerDrawer.tsx",
     "features/tax/components/DeclarationWizard.tsx",
     "features/treasury/components/MonthlyInvoiceModal.tsx",
     "features/treasury/components/PaymentMethodSelector.tsx",
@@ -108,8 +107,8 @@ const MIGRATED_FILES = [
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
     // SessionOpenModal/SessionCloseModal → SessionOpenView/SessionCloseView sobre POSFlowLayout (ADR-0127)
     "features/pos/components/flow/POSFlowLayout.tsx",
-    "features/settings/components/partners/PartnerContributionWizard.tsx",
-    "features/settings/components/partners/PartnerWithdrawalWizard.tsx",
+    "features/partners/components/PartnerContributionWizard.tsx",
+    "features/partners/components/PartnerWithdrawalWizard.tsx",
 ] as const
 
 const FADE_IN = "components/shared/FadeIn.tsx"

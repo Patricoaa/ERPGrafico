@@ -124,3 +124,16 @@ export interface PartnerTransactionPayload {
     description: string;
     treasury_account_id?: number | null;
 }
+
+export interface PartnerEquityStake {
+    id: number;
+    partner: number;
+    partner_name: string;
+    percentage: string;
+    effective_from: string;
+    effective_until: string | null;
+    is_active: boolean;
+    source_transaction: number | null;
+    notes: string;
+    created_at: string;
+}

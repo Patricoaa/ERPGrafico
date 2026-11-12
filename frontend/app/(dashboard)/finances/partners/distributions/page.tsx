@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { PageHeader, ToolbarCreateButton } from "@/components/shared"
-import { PartnersSettingsView } from "@/features/settings"
+import { PartnersView } from "@/features/partners"
 import {
   FINANCES_TABS,
   getFinancesTab,
@@ -57,7 +57,7 @@ export default async function PartnersDistributionsPage({ searchParams }: PagePr
         navigation={navigation}
       />
 
-      <PartnersSettingsView
+      <PartnersView
         activeTab="distributions"
         initialFlowOpen={modal === "new-distribution"}
         createAction={createAction}

@@ -188,8 +188,13 @@ const CheckDrawer = dynamic(
     { ssr: false, loading: () => skeleton("cheque") }
 )
 
+const PartnerDrawer = dynamic(
+    () => import("@/features/partners").then((m) => m.PartnerDrawer),
+    { ssr: false, loading: () => skeleton("socio") }
+)
+
 const ProfitDistributionDrawer = dynamic(
-    () => import("@/features/settings/components/ProfitDistributionDrawer").then((m) => m.ProfitDistributionDrawer),
+    () => import("@/features/partners").then((m) => m.ProfitDistributionDrawer),
     { ssr: false, loading: () => skeleton("distribución de resultados") }
 )
 
@@ -647,6 +652,9 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             open={open}
             onOpenChange={onOpenChange}
         />
+    ),
+    "contacts.partner": ({ id, open, onOpenChange, onSuccess }) => (
+        <PartnerDrawer id={id} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
     ),
     "contacts.profitdistributionresolution": ({ id, open, onOpenChange }) => (
         <ProfitDistributionDrawer

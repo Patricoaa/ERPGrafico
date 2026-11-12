@@ -13,32 +13,9 @@ logger = logging.getLogger(__name__)
 
 class ContactPartnerService:
     """
-    Servicio para gestionar la promoción de un Contacto a Socio (Partner) y su degradación.
-    T-22.
+    Servicio para degradar un Socio a Contacto normal (la promoción ocurre al suscribir capital,
+    ver ``PartnerService.ensure_partner_setup``). T-22.
     """
-
-    @staticmethod
-    @transaction.atomic
-    def promote_to_partner(contact: Contact, *, user=None) -> Contact:
-        """
-        Promueve un Contact a Socio.
-        Las cuentas contables ahora se usan desde AccountingSettings (configuración global).
-        """
-        if not contact.is_partner:
-            contact.is_partner = True
-            contact.save()
-
-        if user:
-            from core.services import ActionLoggingService
-
-            ActionLoggingService.log_action(
-                user=user,
-                action_type="CONTACT_PROMOTED",
-                description=f"Promovido a socio: {contact.name}",
-                metadata={"contact_id": contact.id},
-            )
-
-        return contact
 
     @staticmethod
     @transaction.atomic
@@ -107,51 +84,49 @@ class ContactService:
 
     @classmethod
     def recover_written_off_debt_from_request(cls, request, contact):
-        from decimal import Decimal
+        from decimal import Decimal, InvalidOperation
 
         from rest_framework.exceptions import ValidationError
         amount_str = request.data.get('amount')
         if not amount_str: raise ValidationError('Debe especificar el monto recuperado.')
-        amount = Decimal(amount_str)
+        try:
+            amount = Decimal(str(amount_str))
+        except InvalidOperation:
+            raise ValidationError('Monto inválido.')
         entry = cls.recover_written_off_debt(contact, amount)
         return {'message': f'Recuperación procesada por {amount}.', 'journal_entry': entry.display_id}
 
     @classmethod
-    def initial_setup_from_request(cls, request):
-        from datetime import date
-        from decimal import Decimal
-
-        from rest_framework.exceptions import ValidationError
-
-        from .partner_models import RetainedEarnings
-        amount_str = request.data.get('amount')
-        date_str = request.data.get('date', date.today().isoformat())
-        notes = request.data.get('notes', 'Saldo Inicial / Setup')
-        if not amount_str: raise ValidationError('Monto requerido.')
-        RetainedEarnings.objects.create(amount=Decimal(amount_str), date=date_str, notes=notes)
-        return {'message': 'Saldo inicial de utilidades retenidas configurado exitosamente.'}
-
-    @classmethod
     def individual_dividend_payment_from_request(cls, request, contact):
-        from decimal import Decimal
+        from decimal import Decimal, InvalidOperation
 
         from rest_framework.exceptions import ValidationError
 
         from treasury.models import TreasuryAccount
         v = request.data
         if 'amount' not in v or 'treasury_account_id' not in v: raise ValidationError('Monto y cuenta requeridos.')
-        ta = TreasuryAccount.objects.get(pk=v['treasury_account_id'])
-        entry = cls.individual_dividend_payment(partner=contact, amount=Decimal(str(v['amount'])), treasury_account=ta, date=v.get('date'), created_by=request.user)
+        ta = TreasuryAccount.objects.filter(pk=v['treasury_account_id']).first()
+        if ta is None:
+            raise ValidationError('La cuenta de tesorería no existe.')
+        try:
+            amount = Decimal(str(v['amount']))
+        except InvalidOperation:
+            raise ValidationError('Monto inválido.')
+        entry = cls.individual_dividend_payment(partner=contact, amount=amount, treasury_account=ta, date=v.get('date'), created_by=request.user)
         return {'message': 'Pago de dividendos procesado.', 'journal_entry': entry.display_id}
 
     @classmethod
     def mass_mobilize_retained_earnings_from_request(cls, request):
-        from decimal import Decimal
+        from decimal import Decimal, InvalidOperation
 
         from rest_framework.exceptions import ValidationError
         amount = request.data.get('amount')
         if not amount: raise ValidationError('Monto requerido.')
-        cls.mass_mobilize_retained_earnings(amount=Decimal(str(amount)), date=request.data.get('date'), created_by=request.user)
+        try:
+            amount = Decimal(str(amount))
+        except InvalidOperation:
+            raise ValidationError('Monto inválido.')
+        cls.mass_mobilize_retained_earnings(amount=amount, date=request.data.get('date'), created_by=request.user)
         return {'message': 'Utilidades retenidas movilizadas exitosamente.'}
 
     @staticmethod
@@ -346,29 +321,4 @@ class ContactService:
             content_object=contact,
             level="SUCCESS",
         )
-        return contact
-
-    @staticmethod
-    @transaction.atomic
-    def setup_partner(*, contact: Contact, is_partner: bool, equity_percentage=None) -> Contact:
-        """
-        Habilita o actualiza la configuración de socio de un contacto.
-
-        Reemplaza el bloque ``contact.is_partner = ...; contact.save()``
-        que vivía en ``ContactViewSet.setup_partner``.
-
-        Args:
-            contact: Contacto a actualizar.
-            is_partner: Valor booleano del flag de socio.
-            equity_percentage: Porcentaje de participación (opcional).
-
-        Returns:
-            Instancia ``Contact`` actualizada.
-        """
-        update_fields = ["is_partner"]
-        contact.is_partner = is_partner
-        if equity_percentage is not None:
-            contact.partner_equity_percentage = equity_percentage
-            update_fields.append("partner_equity_percentage")
-        contact.save(update_fields=update_fields)
         return contact

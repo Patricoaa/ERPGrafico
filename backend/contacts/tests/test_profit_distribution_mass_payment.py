@@ -277,7 +277,7 @@ def test_rejects_payment_above_the_account_balance(client, resolution, bank_acco
     response = _pay(client, resolution, bank_account, (ana, 5001))
 
     assert response.status_code == 400
-    assert "Saldo insuficiente" in response.json()["error"]
+    assert "Saldo insuficiente" in response.json()["error"]["message"]
     assert not TreasuryMovement.objects.exists()
 
 
@@ -294,5 +294,5 @@ def test_rejects_payment_in_a_closed_period(client, resolution, bank_account, mo
     response = _pay(client, resolution, bank_account, (ana, 100))
 
     assert response.status_code == 400
-    assert "cerrado" in response.json()["error"]
+    assert "cerrado" in response.json()["error"]["message"]
     assert not TreasuryMovement.objects.exists()

@@ -1,12 +1,12 @@
 import api from "@/lib/api"
-import { type Partner, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
+import { type Partner, type PartnerEquityStake, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
 
 export const partnersApi = {
     /**
      * Get summary metrics for all partners
      */
     getSummary: async (): Promise<PartnerSummary> => {
-        const response = await api.get('/contacts/partners_summary/')
+        const response = await api.get<PartnerSummary>('/contacts/partners_summary/')
         // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
@@ -15,7 +15,7 @@ export const partnersApi = {
      * Get all contacts marked as partners
      */
     getPartners: async (): Promise<Partner[]> => {
-        const response = await api.get('/contacts/partners/')
+        const response = await api.get<Partner[]>('/contacts/partners/')
         // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
@@ -24,52 +24,53 @@ export const partnersApi = {
      * Get statement (transactions and balance) for a specific partner
      */
     getStatement: async (contactId: number): Promise<PartnerStatement> => {
-        const response = await api.get(`/contacts/${contactId}/partner_statement/`)
+        const response = await api.get<PartnerStatement>(`/contacts/${contactId}/partner_statement/`)
         return response.data
     },
 
     /**
      * Register a new transaction (contribution/withdrawal) for a partner
      */
-    createTransaction: async (contactId: number, data: PartnerTransactionPayload) => {
-        const response = await api.post(`/contacts/${contactId}/partner_transactions/`, data)
+    createTransaction: async (contactId: number, data: PartnerTransactionPayload, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/${contactId}/partner_transactions/`, data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
     /**
-     * Setup or edit partner properties for a given contact
+     * Dar de baja a un socio (vuelve a contacto normal). El backend valida saldos y capital.
      */
-    setupPartner: async (contactId: number, data: { is_partner: boolean, partner_equity_percentage?: string | number, partner_account_id?: number | null }) => {
-        const response = await api.post(`/contacts/${contactId}/setup_partner/`, data)
+    demotePartner: async (contactId: number) => {
+        const response = await api.post<unknown>(`/contacts/${contactId}/demote-partner/`)
         return response.data
     },
 
     /**
-     * Bulk setup partners and initial capital entry
+     * Historial de participación (vigencias del %) de un socio
      */
-    initialSetup: async (partners: { contact_id: number, amount: number }[]) => {
-        const response = await api.post('/contacts/initial_setup/', { partners })
+    getEquityStakesHistory: async (partnerId: number): Promise<PartnerEquityStake[]> => {
+        const response = await api.get<PartnerEquityStake[]>(`/contacts/equity_stakes_history/?partner_id=${partnerId}`)
+        // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
 
     /**
      * Record a formal capital subscription or reduction
      */
-    recordSubscription: async (data: { contact_id: number, amount: number, type: 'SUBSCRIPTION' | 'REDUCTION', date?: string, description?: string }) => {
-        const response = await api.post('/contacts/equity_subscription/', data)
+    recordSubscription: async (data: { contact_id: number, amount: number, type: 'SUBSCRIPTION' | 'REDUCTION', date?: string, description?: string }, idempotencyKey: string) => {
+        const response = await api.post('/contacts/equity_subscription/', data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
     /**
      * Record a transfer of equity between two partners
      */
-    recordTransfer: async (data: { from_contact_id: number, to_contact_id: number, amount: number, date?: string, description?: string }) => {
-        const response = await api.post('/contacts/equity_transfer/', data)
+    recordTransfer: async (data: { from_contact_id: number, to_contact_id: number, amount: number, date?: string, description?: string }, idempotencyKey: string) => {
+        const response = await api.post('/contacts/equity_transfer/', data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
-    recordDividendPayment: async (contactId: number, data: { amount: number, date: string, treasury_account_id?: number, description?: string }) => {
-        const response = await api.post(`/contacts/${contactId}/individual_dividend_payment/`, data)
+    recordDividendPayment: async (contactId: number, data: { amount: number, date: string, treasury_account_id?: number, description?: string }, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/${contactId}/individual_dividend_payment/`, data, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
@@ -78,12 +79,17 @@ export const partnersApi = {
      */
     getProfitDistributions: async (year?: number): Promise<ProfitDistribution[]> => {
         const url = year ? `/contacts/profit-distributions/?fiscal_year=${year}` : '/contacts/profit-distributions/'
-        const response = await api.get(url)
+        const response = await api.get<{ results: ProfitDistribution[] }>(url)
         return response.data.results
     },
 
+    getProfitDistribution: async (id: number): Promise<ProfitDistribution> => {
+        const response = await api.get<ProfitDistribution>(`/contacts/profit-distributions/${id}/`)
+        return response.data
+    },
+
     createProfitDistribution: async (data: { fiscal_year_id: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }): Promise<ProfitDistribution> => {
-        const response = await api.post('/contacts/profit-distributions/', data)
+        const response = await api.post<ProfitDistribution>('/contacts/profit-distributions/', data)
         return response.data
     },
 
@@ -97,18 +103,18 @@ export const partnersApi = {
         return response.data
     },
 
-    approveProfitDistribution: async (id: number) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/approve/`)
+    approveProfitDistribution: async (id: number, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/approve/`, undefined, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
-    executeProfitDistribution: async (id: number) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/execute/`)
+    executeProfitDistribution: async (id: number, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/execute/`, undefined, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
     recalculateProfitDistribution: async (id: number) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/recalculate/`)
+        const response = await api.post<ProfitDistribution>(`/contacts/profit-distributions/${id}/recalculate/`)
         return response.data
     },
 
@@ -131,13 +137,13 @@ export const partnersApi = {
         return response.data
     },
 
-    massMobilizeRetainedEarnings: async (payload: { mobilizations: { partner_id: number, dividend_amount: number, reinvest_amount: number }[], date: string, description: string }) => {
-        const response = await api.post(`/contacts/mass_mobilize_retained_earnings/`, payload)
+    massMobilizeRetainedEarnings: async (payload: { mobilizations: { partner_id: number, dividend_amount: number, reinvest_amount: number }[], date: string, description: string }, idempotencyKey: string) => {
+        const response = await api.post(`/contacts/mass_mobilize_retained_earnings/`, payload, { headers: { 'Idempotency-Key': idempotencyKey } })
         return response.data
     },
 
     getPartnerEvolution: async (months = 24, granularity = 'month'): Promise<{ periods: PartnerEvolutionPeriod[] }> => {
-        const response = await api.get(`/contacts/partner_evolution/?months=${months}&granularity=${granularity}`)
+        const response = await api.get<{ periods: PartnerEvolutionPeriod[] }>(`/contacts/partner_evolution/?months=${months}&granularity=${granularity}`)
         // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },

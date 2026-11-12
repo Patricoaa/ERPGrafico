@@ -31,7 +31,7 @@ const files = [
   "features/sales/components/SalesOrdersView.tsx",
   "features/settings/components/GroupsClientView.tsx",
   "features/settings/components/UsersSettingsClientView.tsx",
-  "features/settings/components/partners/PartnersClientView.tsx",
+  "features/partners/components/PartnersClientView.tsx",
   "features/tax/components/TaxDeclarationsClientView.tsx",
   "features/treasury/card-statements/StatementDetailModal.tsx",
   "features/treasury/card-statements/StatementsClientView.tsx",

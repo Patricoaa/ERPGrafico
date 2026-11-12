@@ -715,8 +715,8 @@ const REGISTRY = {
     detailUrlPattern: '/settings/users/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
-  'settings.partner': {
-    label: 'settings.partner',
+  'contacts.partner': {
+    label: 'contacts.partner',
     title: 'Socio',
     titlePlural: 'Socios',
     icon: UserCheck,
