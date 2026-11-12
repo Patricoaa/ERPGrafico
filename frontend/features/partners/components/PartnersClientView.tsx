@@ -1,11 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
-import {
-    Plus,
-    MoveHorizontal,
-    Wallet,
-} from "lucide-react"
+import { MoveHorizontal } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityPanelTab } from "@/components/providers"
@@ -27,7 +23,6 @@ import { usePartnerEvolutionData } from "../hooks/usePartnerEvolutionData"
 import type { Granularity } from "@/lib/analytics-helpers"
 import { partnerEntity, partnerViews } from "../entity-view/partner.entity"
 import { buildPartnerAnalyticsScreen } from "./partnerAnalyticsScreen"
-import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import { usePartnerActions } from "./PartnerActionModal"
 import { PartnerDrawer } from "./PartnerDrawer"
 
@@ -147,32 +142,18 @@ export function PartnersClientView({
 
     const hasPartners = partners.length > 0
 
-    const actionsCtx: PartnerActionsCtx = { run }
-
-    const toolbarActionButtons = !hasPartners
-        ? (
-            <Button size="sm" onClick={() => run({ type: "add-partner" })}>
-                <Plus className="h-4 w-4 mr-1.5" />
-                Añadir socio
-            </Button>
-        ) : (
-            <>
-                <Button size="sm" onClick={() => run({ type: "subscription" })}>
-                    <Plus className="h-4 w-4 mr-1.5" />
-                    Nueva Suscripción
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => run({ type: "contribution" })}>
-                    <Wallet className="h-4 w-4 mr-1.5" />
-                    Registrar Aporte
-                </Button>
+    // «Añadir socio» es siempre el `createAction` de la página (primario); «Transferencia» solo con socios.
+    const partnerActionButtons = (
+        <>
+            {createAction}
+            {hasPartners && (
                 <Button variant="outline" size="sm" onClick={() => run({ type: "transfer" })}>
                     <MoveHorizontal className="h-4 w-4 mr-1.5" />
                     Transferencia
                 </Button>
-            </>
-        )
-
-    const partnerActionButtons = <>{createAction}{toolbarActionButtons}</>
+            )}
+        </>
+    )
 
     const collection = useEntityCollection(
         partnerEntity,
@@ -192,7 +173,6 @@ export function PartnersClientView({
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={(partner) => openSelected(partner.id)}
-                actions={partnerActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={partnerActionButtons}>
                     <UnifiedSearchBar config={partnerUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar socio por nombre o ID fiscal..." />
@@ -201,7 +181,6 @@ export function PartnersClientView({
                     table={partnerViews.table}
                     card={partnerViews.card}
                     emptyTitle="Aún no hay socios"
-                    emptyAction={partnerActionButtons}
                     onResetFilters={search.clearAll}
                 />
                 <Collection.Analytics>
