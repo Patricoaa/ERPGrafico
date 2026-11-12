@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.104](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.103...v0.3.104) (2026-11-12)
+
+
+### 🐛 Bug Fixes
+
+* **sales:** limitar el numpad de folio al checkout POS ([a6e0ec4](https://github.com/Patricoaa/ERPGrafico/commit/a6e0ec40cda823518b5fb972b6bbfdec0238080e))
+
 ### [0.3.103](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.102...v0.3.103) (2026-11-12)
 
 
