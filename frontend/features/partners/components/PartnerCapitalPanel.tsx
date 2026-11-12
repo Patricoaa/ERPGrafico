@@ -7,7 +7,7 @@ import { FormSection } from "@/components/shared"
 import type { Partner } from "@/features/contacts"
 import { usePartnerStatement } from "../hooks"
 import { isListedMovement } from "../entity-view/partnerMovement.entity"
-import { partnerActionsFor } from "./partnerActions"
+import { partnerActionsFor, TRANSFER_ACTION_LABEL } from "./partnerActions"
 import type { PartnerActionRunner } from "./partnerActionRequest"
 import { PartnerEquityPanel } from "./PartnerEquityPanel"
 import { PartnerMovementsTable } from "./PartnerMovementsTable"
@@ -18,7 +18,7 @@ export function PartnerCapitalPanel({ partner, run }: { partner: Partner; run: P
     const rows = useMemo(() => (statement.data?.transactions ?? [])
         .filter(tx => isListedMovement(tx.transaction_type))
         .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at)), [statement.data])
-    const transfer = partnerActionsFor(partner, "capital", { run }).find(a => "label" in a && a.label === "Transferir a otro socio")
+    const transfer = partnerActionsFor(partner, "capital", { run }).find(a => "label" in a && a.label === TRANSFER_ACTION_LABEL)
 
     return (
         <div className="space-y-8">
@@ -37,7 +37,7 @@ export function PartnerCapitalPanel({ partner, run }: { partner: Partner; run: P
                     action={transfer && "onClick" in transfer ? (
                         <Button type="button" size="sm" variant="outline" onClick={transfer.onClick}>
                             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
-                            Transferir capital
+                            {TRANSFER_ACTION_LABEL}
                         </Button>
                     ) : undefined}
                 />

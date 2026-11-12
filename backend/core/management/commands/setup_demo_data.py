@@ -2790,7 +2790,7 @@ class Command(BaseCommand):
 
         self.stdout.write("  ─────────────────────────────────────────────")
 
-        # ── SO-01: Transfer + Manufacturable (500 impresión a color) ──
+        # ── SO-01: Transfer + Manufacturable (5.000 impresión a color) ──
         impresion = Product.objects.get(code="PT-0001")
         if not SaleOrder.objects.filter(
             customer=c1, date=today, notes="Seed-Venta-Transfer-MFG"
@@ -2804,8 +2804,8 @@ class Command(BaseCommand):
             sl1 = SaleLine.objects.create(
                 order=so1,
                 product=impresion,
-                description="Impresión a color x 500",
-                quantity=500,
+                description="Impresión a color x 5.000",
+                quantity=5000,
                 uom=uoms["hoja"],
                 unit_price=Decimal("150"),
                 tax_rate=get_default_vat_rate(),
@@ -2817,7 +2817,7 @@ class Command(BaseCommand):
 
             ot = WorkOrderService.create_from_sale_line(sl1)
             WorkOrderService.finalize_production(ot, user=admin)
-            self.stdout.write(f"    ├ OT #{ot.id} finalizada ({impresion.name} x 500)")
+            self.stdout.write(f"    ├ OT #{ot.id} finalizada ({impresion.name} x 5.000)")
 
             delivery = SalesService.dispatch_order(so1, wh)
             SalesService.confirm_delivery(delivery)
@@ -2840,7 +2840,7 @@ class Command(BaseCommand):
                 reference="Cobro Venta Transfer",
             )
             self.stdout.write(
-                f"  ✓ OV-{so1.number}: {c1.name} → 500 {impresion.name} "
+                f"  ✓ OV-{so1.number}: {c1.name} → 5.000 {impresion.name} "
                 f"(${inv1.total:,.0f}) — Transferencia BCO-ESTADO"
             )
 
@@ -2860,8 +2860,8 @@ class Command(BaseCommand):
             sl2b = SaleLine.objects.create(
                 order=so2,
                 product=diseno,
-                description="Servicio Diseño Gráfico x 3",
-                quantity=3,
+                description="Servicio Diseño Gráfico x 15",
+                quantity=15,
                 uom=uoms["un"],
                 unit_price=Decimal("25000"),
                 tax_rate=get_default_vat_rate(),
@@ -2869,8 +2869,8 @@ class Command(BaseCommand):
             SaleLine.objects.create(
                 order=so2,
                 product=encuadernacion,
-                description="Servicio Encuadernación x 10",
-                quantity=10,
+                description="Servicio Encuadernación x 250",
+                quantity=250,
                 uom=uoms["un"],
                 unit_price=Decimal("1500"),
                 tax_rate=get_default_vat_rate(),
@@ -2900,11 +2900,11 @@ class Command(BaseCommand):
                 reference="Cobro Venta Efectivo",
             )
             self.stdout.write(
-                f"  ✓ OV-{so2.number}: {c2.name} → 3 Diseño + 10 Encuadernación "
+                f"  ✓ OV-{so2.number}: {c2.name} → 15 Diseño + 250 Encuadernación "
                 f"(${inv2.total:,.0f}) — Efectivo CAJA-TALLER"
             )
 
-        # ── SO-03: Check + Storable (10 resmas papel) ────────────────
+        # ── SO-03: Check + Storable (100 resmas papel) ────────────────
         papel = Product.objects.get(code="INS-0001")
         if not SaleOrder.objects.filter(
             customer=c_default, date=today, notes="Seed-Venta-Check"
@@ -2918,8 +2918,8 @@ class Command(BaseCommand):
             SaleLine.objects.create(
                 order=so3,
                 product=papel,
-                description="Resma de papel x 10",
-                quantity=10,
+                description="Resma de papel x 100",
+                quantity=100,
                 uom=uoms["resma"],
                 unit_price=Decimal("5000"),
                 tax_rate=get_default_vat_rate(),
@@ -2948,7 +2948,7 @@ class Command(BaseCommand):
                 created_by=admin,
             )
             self.stdout.write(
-                f"  ✓ OV-{so3.number}: {c_default.name} → 10 {papel.name} "
+                f"  ✓ OV-{so3.number}: {c_default.name} → 100 {papel.name} "
                 f"(${inv3.total:,.0f}) — Cheque #2001 recibido (IN_PORTFOLIO)"
             )
 
@@ -2969,6 +2969,10 @@ class Command(BaseCommand):
             (Product.objects.get(name="Banner Roller Up (80x200cm)"), uoms["un"]),
             (Product.objects.get(name="Calendario de Escritorio"), uoms["un"]),
             (Product.objects.get(name="Afiche Publicitario (Couché 170g)"), uoms["un"]),
+            (Product.objects.get(name="Flyer Promocional A5"), uoms["un"]),
+            (Product.objects.get(name="Tríptico Corporativo"), uoms["un"]),
+            (Product.objects.get(name="Carpeta Institucional"), uoms["un"]),
+            (Product.objects.get(name="Libreta de Notas (Bond 80g)"), uoms["un"]),
         ]
 
         customers = [c1, c2, c_default]
@@ -2977,17 +2981,32 @@ class Command(BaseCommand):
         for month in range(1, current_month + 1):
             num_days = calendar.monthrange(current_year, month)[1]
             max_day = num_days if month != current_month else today.day
-            if max_day < 1: max_day = 1
+            if max_day < 1:
+                max_day = 1
 
-            # Generate between 15 and 20 sales per month
-            num_sales = random.randint(15, 20)
+            # Genera entre 22 y 30 ventas por mes para volumen comercial realista y ganancias sólidas
+            num_sales = random.randint(22, 30)
 
             for sale_idx in range(num_sales):
                 order_date = _date(current_year, month, random.randint(1, max_day))
                 customer = random.choice(customers)
                 product, uom = random.choice(available_products)
 
-                target_value = Decimal(random.randint(1000, 150000))
+                # Segmentación realista de pedidos gráficos B2B para rentabilidad positiva en Estado de Resultados:
+                # - 20% pedidos express/menores: $350.000 - $750.000
+                # - 55% pedidos medianos/campañas: $800.000 - $2.200.000
+                # - 25% grandes contratos corporativos: $2.200.000 - $4.800.000
+                target_value = Decimal(
+                    random.choices(
+                        [
+                            random.randint(350000, 750000),
+                            random.randint(800000, 2200000),
+                            random.randint(2200000, 4800000),
+                        ],
+                        weights=[20, 55, 25],
+                        k=1,
+                    )[0]
+                )
                 price = product.sale_price if product.sale_price > 0 else Decimal("1000")
                 qty = max(1, int(target_value / price))
 

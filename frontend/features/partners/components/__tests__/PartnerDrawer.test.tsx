@@ -80,7 +80,7 @@ describe("PartnerDrawer", () => {
         await userEvent.click(screen.getByRole("button", { name: "Acciones" }))
         const items = screen.getAllByRole("menuitem")
         expect(items.map(i => i.textContent)).toEqual([
-            "Suscribir / reducir capital", "Registrar aporte", "Transferir a otro socio", "Registrar retiro", "Dar de baja",
+            "Suscribir / reducir capital", "Registrar aporte", "Transferir capital", "Registrar retiro", "Dar de baja",
         ])
         await userEvent.click(items[items.length - 1])
         expect(m.run).toHaveBeenCalledWith({ type: "demote", partnerId: 7 })

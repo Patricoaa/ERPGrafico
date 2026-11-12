@@ -3,6 +3,9 @@ import { TrendingUp, Banknote, ArrowRightLeft, Wallet, Scale, LogOut, UserMinus 
 import type { Partner } from '@/features/contacts'
 import type { PartnerActionRunner } from './partnerActionRequest'
 
+/** Nombre único de la transferencia: lo usan el menú «⋯» y el botón de Movimientos en Capital. */
+export const TRANSFER_ACTION_LABEL = "Transferir capital"
+
 export interface PartnerActionsCtx {
     run: PartnerActionRunner
 }
@@ -87,7 +90,7 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
     {
         action: "detail",
         icon: ArrowRightLeft,
-        label: "Transferir a otro socio",
+        label: TRANSFER_ACTION_LABEL,
         placement: "capital",
         onClick: () => ctx.run({ type: "transfer", fromPartnerId: item.id }),
     },

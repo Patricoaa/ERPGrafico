@@ -16,7 +16,7 @@ describe("partnerActionsFor", () => {
     it("capital incluye aporte y transferencia, y excluye retiro", () => {
         const l = labels(base, "capital")
         expect(l).toContain("Registrar aporte")
-        expect(l).toContain("Transferir a otro socio")
+        expect(l).toContain("Transferir capital")
         expect(l).not.toContain("Registrar retiro")
     })
     it("suscribir / reducir capital siempre está en Capital y abre la suscripción del socio", () => {
@@ -45,7 +45,7 @@ describe("partnerActionsFor", () => {
     })
     it("transferir pide la acción con el socio de origen", () => {
         const run = vi.fn()
-        const t = partnerActionsFor(base, "capital", { run }).find(a => "label" in a && a.label === "Transferir a otro socio")
+        const t = partnerActionsFor(base, "capital", { run }).find(a => "label" in a && a.label === "Transferir capital")
         if (!t || !("onClick" in t)) throw new Error("falta transferir")
         t.onClick({} as never)
         expect(run).toHaveBeenCalledWith({ type: "transfer", fromPartnerId: 7 })
