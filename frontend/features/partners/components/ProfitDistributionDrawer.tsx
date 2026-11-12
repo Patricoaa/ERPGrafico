@@ -71,6 +71,9 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
     )
   }, [lines])
 
+  const offsetTotal = lines.reduce((s, l) => s + (Number(l.provisional_withdrawals_offset) || 0), 0)
+  const offsetPartners = lines.filter(l => (Number(l.provisional_withdrawals_offset) || 0) > 0).length
+
   const hasDividends = !!distribution?.lines?.some((l) => l.destinations?.some((d) => d.destination === 'DIVIDEND') || l.destination === 'DIVIDEND')
   let primaryAction: DocumentActionItem | null = null
   const actions: DocumentActionItem[] = []
@@ -127,6 +130,12 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
           { label: "Año fiscal", value: distribution.fiscal_year ? String(distribution.fiscal_year) : null },
           { label: "Acta N°", value: distribution.acta_number ? String(distribution.acta_number) : null },
           { label: "Fecha", value: distribution.resolution_date ? formatPlainDate(distribution.resolution_date) : null },
+          {
+            label: "Retiros provisorios absorbidos",
+            value: <span className="tabular-nums font-semibold text-warning">{formatCurrency(offsetTotal)} · {offsetPartners === 1 ? "1 socio" : `${offsetPartners} socios`}</span>,
+            span: 2,
+            hidden: offsetTotal <= 0,
+          },
           { label: "Dividendos", value: <span className="tabular-nums">{formatCurrency(destTotals.dividends)}</span> },
           { label: "Reinversión", value: <span className="tabular-nums">{formatCurrency(destTotals.reinvest)}</span> },
           { label: "Ut. Retenidas", value: <span className="tabular-nums">{formatCurrency(destTotals.retained)}</span> },

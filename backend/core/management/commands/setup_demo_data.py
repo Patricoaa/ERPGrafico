@@ -326,6 +326,11 @@ class Command(BaseCommand):
                 self.stdout.write(f"\n{'─' * 50}")
                 self.stdout.write("  Historical Purchases & POS Demo...")
                 self._create_historical_purchases_and_pos(accounts, partners, inventory, uoms)
+
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Settling Pending Invoices...")
+                self._settle_pending_invoices()
             section_start = time.time()
             self.stdout.write(f"\n{'─' * 50}")
             self.stdout.write("  Company Settings...")
@@ -3189,6 +3194,53 @@ class Command(BaseCommand):
         scenario("Seed-Doc-Anticipo", "Anticipo repartido (D2)", advance_split)
         scenario("Seed-Doc-NC-Devolucion", "NC con devolución (D1.3)", credit_note_with_return)
         scenario("Seed-Doc-Compra-Parcial", "Compra facturada por recepción (D1.2)", purchase_partial)
+
+    def _settle_pending_invoices(self):
+        """
+        Deja el demo sin facturas pendientes de pago: toda factura/boleta emitida (no nota) con
+        saldo > 0 se salda con un movimiento de tesorería por el saldo (cobro en ventas, pago en
+        compras). Idempotente: solo actúa sobre saldos pendientes.
+        """
+        from treasury.services import TreasuryService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        bank = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        notes = {Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO}
+        settled = 0
+        invoices = Invoice.objects.exclude(status=Invoice.Status.CANCELLED).select_related(
+            "sale_order__customer", "purchase_order__supplier"
+        )
+        for inv in invoices:
+            if inv.dte_type in notes or inv.pending_amount <= 0:
+                continue
+            is_sale = inv.is_sale_document()
+            partner = (
+                inv.sale_order.customer if inv.sale_order_id
+                else inv.purchase_order.supplier if inv.purchase_order_id
+                else None
+            )
+            try:
+                with transaction.atomic():
+                    TreasuryService.create_movement(
+                        amount=inv.pending_amount,
+                        movement_type=(
+                            TreasuryMovement.Type.INBOUND if is_sale else TreasuryMovement.Type.OUTBOUND
+                        ),
+                        payment_method=TreasuryMovement.Method.TRANSFER,
+                        date=timezone.now().date(),
+                        created_by=admin,
+                        to_account=bank if is_sale else None,
+                        from_account=None if is_sale else bank,
+                        partner=partner,
+                        sale_order=inv.sale_order,
+                        purchase_order=inv.purchase_order,
+                        invoice=inv,
+                        reference=f"{'Cobro' if is_sale else 'Pago'} saldo demo {inv.display_id}",
+                    )
+                settled += 1
+            except Exception as e:  # un fallo puntual no debe detener el seed
+                self.stdout.write(self.style.WARNING(f"    ├ {inv.display_id}: omitida ({e})"))
+        self.stdout.write(f"  ✓ {settled} facturas saldadas")
 
     def _create_historical_purchases_and_pos(self, accounts, partners, inventory, uoms):
         import calendar

@@ -34,7 +34,7 @@ export const partnerDistributionEntity = defineEntity<PartnerDistributionRow>()(
         }), { ...fixed, label: "Estado" }),
         percentage: f.number("percentage", { ...fixed, label: "Participación", suffix: "%" }),
         gross: f.money("gross", { ...fixed, label: "Monto bruto" }),
-        offset: f.money("offset", { ...fixed, label: "Retiros compensados" }),
+        offset: f.money("offset", { ...fixed, label: "Retiros absorbidos" }),
         net: f.money("net", { ...fixed, label: "Monto neto" }),
         paid: f.money("paid", { ...fixed, label: "Pagado" }),
     },

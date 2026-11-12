@@ -39,6 +39,8 @@ export const profitDistributionLineEntity = defineEntity<ProfitDistributionLine>
             { ...fixed, label: "Socio", fallback: (l) => l.partner_name ?? undefined },
         ),
         percentage: f.number("percentage_at_date", { ...fixed, label: "Participación", suffix: "%" }),
+        gross_amount: f.money((l) => Number(l.gross_amount) || 0, { ...fixed, label: "Monto bruto" }),
+        offset: f.money((l) => Number(l.provisional_withdrawals_offset) || 0, { ...fixed, label: "Retiros absorbidos" }),
         net_amount: f.money("net_amount", { ...fixed, label: "Monto neto" }),
         dividends: f.money((l) => getDestAmount(l, 'DIVIDEND'), { ...fixed, label: "Dividendos" }),
         reinvest: f.money((l) => getDestAmount(l, 'REINVEST'), { ...fixed, label: "Reinversión" }),
@@ -47,5 +49,5 @@ export const profitDistributionLineEntity = defineEntity<ProfitDistributionLine>
 }))
 
 export const profitDistributionLineViews = profitDistributionLineEntity.views({
-    table: { columns: ["partner", "percentage", "net_amount", "dividends", "reinvest", "retained"] },
+    table: { columns: ["partner", "percentage", "gross_amount", "offset", "net_amount", "dividends", "reinvest", "retained"] },
 })

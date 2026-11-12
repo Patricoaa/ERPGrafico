@@ -8,7 +8,7 @@ import { ChartLegend, EmptyState, SkeletonShell, PieChart, StaleDataBanner } fro
 import { Button } from '@/components/ui/button'
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { usePartnerStatement } from "@/features/partners"
+import { usePartnerStatement, PartnerDistributionsPanel } from "@/features/partners"
 import { partnerTransactionEntity, partnerTransactionViews } from "../entity-view/partnerTransaction.entity"
 
 interface Props {
@@ -145,6 +145,16 @@ export function PartnerProfileTab({ contactId }: Props) {
                         </dl>
                     </section>
                 </div>
+
+                {/* Distribuciones de utilidades: incluye la absorción de retiros provisorios */}
+                <section>
+                    <header className="mb-3 border-b border-border/70 pb-3">
+                        <h2 className="text-base font-semibold text-foreground">Distribuciones de utilidades</h2>
+                    </header>
+                    <div className="h-[22rem] [&>div]:p-0">
+                        <PartnerDistributionsPanel partnerId={contactId} />
+                    </div>
+                </section>
 
                 {/* Bottom: Capital History — flows naturally, page scrolls */}
                 <section>

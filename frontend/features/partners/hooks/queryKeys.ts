@@ -14,6 +14,7 @@ export const PARTNER_KEYS = {
     evolution: (months: number, granularity: string) => [...ROOT, 'evolution', months, granularity] as const,
     distributions: () => [...ROOT, 'distributions'] as const,
     distribution: (id: number) => [...ROOT, 'distribution', id] as const,
+    distributionImpact: (id: number) => [...ROOT, 'distribution', id, 'impact'] as const,
     warehouses: () => [...ROOT, 'warehouses'] as const,
     product: (id: string) => [...ROOT, 'product', id] as const,
     uoms: (category: string) => [...ROOT, 'uoms', category] as const,

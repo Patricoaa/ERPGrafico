@@ -10,6 +10,7 @@ import { useFiscalYears } from "@/features/accounting"
 import { useProfitDistributionMutations } from "../hooks"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
+import { DistributionImpactStep } from "./DistributionImpactStep"
 
 import {
     PieChart,
@@ -268,6 +269,11 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
         amount: Object.values(lineDestinations).flat().filter(d => d.destination === t.key).reduce((acc, d) => acc + d.amount, 0),
     })), [lineDestinations])
 
+    const offsetTotal = useMemo(
+        () => lines.reduce((acc, l) => acc + (parseFloat(l.provisional_withdrawals_offset) || 0), 0),
+        [lines],
+    )
+
     const steps: WizardStep[] = useMemo(() => [
         {
             id: 1,
@@ -429,8 +435,8 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                         Bruto: <span className="font-mono">{formatCurrency(parseFloat(line.gross_amount))}</span>
                                                     </span>
                                                     {parseFloat(line.provisional_withdrawals_offset) > 0 && (
-                                                        <span className="text-destructive flex items-center gap-1 text-3xs">
-                                                            Retiros: <span className="font-mono">-{formatCurrency(parseFloat(line.provisional_withdrawals_offset))}</span>
+                                                        <span className="text-warning font-semibold flex items-center gap-1 text-3xs">
+                                                            Absorbe retiros provisorios: <span className="font-mono">-{formatCurrency(parseFloat(line.provisional_withdrawals_offset))}</span>
                                                         </span>
                                                     )}
                                                     <span className="font-bold text-primary flex items-center gap-1 text-xs">
@@ -511,7 +517,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                         <div className="flex flex-col items-end gap-1">
                                                             <div className={cn(
                                                                 "font-mono text-xs font-bold flex items-center justify-end gap-0.5",
-                                                                Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-amber-500"
+                                                                Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-warning"
                                                             )}>
                                                                 {remaining > 0 ? '+' : ''}
                                                                 {formatCurrency(remaining)}
@@ -551,6 +557,12 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
         },
         {
             id: 3,
+            title: "Impactos de la Distribución",
+            isValid: !!draftResolution,
+            component: draftResolution ? <DistributionImpactStep resolutionId={draftResolution.id} /> : null,
+        },
+        {
+            id: 4,
             title: "Confirmación y Ejecución",
             isValid: true,
             component: (
@@ -558,6 +570,9 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                     <SummarySection title="Resumen de la distribución">
                         <SummaryRow label="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
                         <SummaryRow label="Resultado a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0" />} strong />
+                        {offsetTotal > 0 && (
+                            <SummaryRow label="Retiros provisorios absorbidos" value={<DataCell.Currency value={offsetTotal} className="w-auto p-0" />} />
+                        )}
                         {draftResolution?.is_profit && totals.map(t => (
                             <SummaryRow key={t.key} label={t.label} value={<DataCell.Currency value={t.amount} className="w-auto p-0" />} />
                         ))}
@@ -571,7 +586,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                 </div>
             )
         }
-    ], [fiscalYears, formData, lines, lineDestinations, draftResolution, totals])
+    ], [fiscalYears, formData, lines, lineDestinations, draftResolution, totals, offsetTotal])
 
     // Tras ejecutar, el éxito es un paso más del mismo wizard (mismo modal, altura y footer).
     const doneStep: WizardStep = {

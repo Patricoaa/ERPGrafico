@@ -420,6 +420,7 @@ class ProfitDistributionLineSerializer(serializers.ModelSerializer):
 
 class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
     lines = ProfitDistributionLineSerializer(many=True, read_only=True)
+    provisional_offset_total = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     approved_by_name = serializers.CharField(
         source="approved_by.get_full_name", read_only=True, default=""
@@ -451,6 +452,7 @@ class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
             "acta_number",
             "notes",
             "lines",
+            "provisional_offset_total",
             "created_at",
             "updated_at",
         ]
@@ -462,3 +464,8 @@ class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
             "executed_at",
             "journal_entry",
         ]
+
+    def get_provisional_offset_total(self, obj):
+        # Usa las líneas prefetched (sin consultas extra por fila).
+        from decimal import Decimal
+        return sum((line.provisional_withdrawals_offset for line in obj.lines.all()), Decimal("0"))

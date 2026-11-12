@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import { type Partner, type PartnerEquityStake, type PartnerSummary, type PartnerStatement, type PartnerOverview, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
+import { type Partner, type PartnerEquityStake, type PartnerSummary, type PartnerStatement, type PartnerOverview, type PartnerTransactionPayload, type ProfitDistribution, type ProfitDistributionImpact, type PartnerEvolutionPeriod } from "../types/partner"
 
 export const partnersApi = {
     /**
@@ -93,6 +93,11 @@ export const partnersApi = {
 
     getProfitDistribution: async (id: number): Promise<ProfitDistribution> => {
         const response = await api.get<ProfitDistribution>(`/contacts/profit-distributions/${id}/`)
+        return response.data
+    },
+
+    getProfitDistributionImpact: async (id: number): Promise<ProfitDistributionImpact> => {
+        const response = await api.get<ProfitDistributionImpact>(`/contacts/profit-distributions/${id}/impact_preview/`)
         return response.data
     },
 

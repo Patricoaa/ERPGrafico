@@ -237,6 +237,113 @@ class ProfitDistributionService:
                 continue
 
     @staticmethod
+    def build_impact_preview(resolution: ProfitDistributionResolution) -> dict:
+        """
+        Proyección (sin escribir) de lo que provocará ejecutar la resolución: por socio, el reparto
+        por destino, la absorción de retiros provisorios y el cambio de participación (%) que
+        resulta de reinvertir / retener / absorber. Replica la regla de ``execute_resolution`` y de
+        ``PartnerService._recalculate_and_snapshot_stakes`` (% = patrimonio neto del socio / total).
+        """
+        from .partner_models import ProfitDistributionLineDestination as Dest
+
+        if resolution.status == ProfitDistributionResolution.Status.EXECUTED:
+            raise ValidationError("La resolución ya fue ejecutada: no hay impactos por proyectar.")
+
+        zero = Decimal("0")
+        rows = []
+        lines = resolution.lines.select_related("partner").prefetch_related("destinations")
+        for line in lines:
+            partner = line.partner
+            by_dest = {d.destination: d.amount for d in line.destinations.all()}
+            if resolution.is_loss and not by_dest:
+                by_dest = {Dest.Destination.LOSS_ABSORPTION: abs(line.net_amount)}
+            dividend = by_dest.get(Dest.Destination.DIVIDEND_PAYABLE, zero)
+            reinvest = by_dest.get(Dest.Destination.REINVEST, zero)
+            retained = by_dest.get(Dest.Destination.RETAINED, zero)
+            loss = by_dest.get(Dest.Destination.LOSS_ABSORPTION, zero)
+
+            # Mismo criterio que execute_resolution: se liquidan retiros completos, del más antiguo.
+            liquidated = zero
+            remaining = line.provisional_withdrawals_offset
+            if remaining > 0:
+                for tx in PartnerTransaction.objects.filter(
+                    partner=partner,
+                    transaction_type=PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL,
+                    distribution_resolution__isnull=True,
+                ).order_by("date"):
+                    if remaining <= 0:
+                        break
+                    liquidated += tx.amount
+                    remaining -= tx.amount
+
+            balance_before = partner.partner_provisional_withdrawals_balance
+            equity_before = partner.partner_net_equity
+            equity_after = equity_before + liquidated + reinvest + retained - loss
+            rows.append(
+                {
+                    "partner": partner.id,
+                    "partner_name": partner.name,
+                    "percentage_before": PartnerService.get_equity_percentage_at_date(
+                        partner, resolution.resolution_date
+                    ),
+                    "gross_amount": line.gross_amount,
+                    "provisional_withdrawals_offset": line.provisional_withdrawals_offset,
+                    "provisional_balance_before": balance_before,
+                    "provisional_balance_after": balance_before - liquidated,
+                    "net_amount": line.net_amount,
+                    "dividend": dividend,
+                    "reinvest": reinvest,
+                    "retained": retained,
+                    "loss": loss,
+                    "equity_before": equity_before,
+                    "equity_after": equity_after,
+                }
+            )
+
+        # Participaciones de socios fuera de la resolución también se rebalancean.
+        in_resolution = {r["partner"] for r in rows}
+        for p in Contact.objects.filter(is_partner=True).exclude(id__in=in_resolution):
+            eq = p.partner_net_equity
+            rows.append(
+                {
+                    "partner": p.id, "partner_name": p.name,
+                    "percentage_before": PartnerService.get_equity_percentage_at_date(p, resolution.resolution_date),
+                    "gross_amount": zero, "provisional_withdrawals_offset": zero,
+                    "provisional_balance_before": p.partner_provisional_withdrawals_balance,
+                    "provisional_balance_after": p.partner_provisional_withdrawals_balance,
+                    "net_amount": zero, "dividend": zero, "reinvest": zero, "retained": zero, "loss": zero,
+                    "equity_before": eq, "equity_after": eq,
+                }
+            )
+
+        total_after = sum((r["equity_after"] for r in rows), zero)
+        for r in rows:
+            r["percentage_after"] = (
+                (r["equity_after"] / total_after * 100).quantize(Decimal("0.01")) if total_after > 0 else zero
+            )
+            r["percentage_changes"] = r["percentage_after"] != r["percentage_before"]
+        rows.sort(key=lambda r: r["partner_name"])
+
+        def as_str(row):
+            return {k: (str(v) if isinstance(v, Decimal) else v) for k, v in row.items()}
+
+        return {
+            "resolution": resolution.id,
+            "is_profit": resolution.is_profit,
+            "partners": [as_str(r) for r in rows],
+            "totals": {k: str(v) for k, v in {
+                "gross": sum((r["gross_amount"] for r in rows), zero),
+                "provisional_offset": sum((r["provisional_withdrawals_offset"] for r in rows), zero),
+                "net": sum((r["net_amount"] for r in rows), zero),
+                "dividend": sum((r["dividend"] for r in rows), zero),
+                "reinvest": sum((r["reinvest"] for r in rows), zero),
+                "retained": sum((r["retained"] for r in rows), zero),
+                "loss": sum((r["loss"] for r in rows), zero),
+            }.items()},
+            "percentages_change": any(r["percentage_changes"] for r in rows),
+        }
+
+    @staticmethod
     @transaction.atomic
     def approve_resolution(resolution: ProfitDistributionResolution, approved_by):
         """Transitions resolution from DRAFT to APPROVED."""

@@ -155,6 +155,7 @@ export const profitDistributionEntity = defineEntity<ProfitDistribution>()((f) =
         dividends: f.money((r) => calcBreakdown(r).dividends, { ...fixed, label: "Dividendos" }),
         reinvest:  f.money((r) => calcBreakdown(r).reinvest,  { ...fixed, label: "Reinversión" }),
         retained:  f.money((r) => calcBreakdown(r).retained,  { ...fixed, label: "Ut. Retenidas" }),
+        offset:    f.money((r) => Number(r.provisional_offset_total) || 0, { ...fixed, label: "Retiros absorbidos" }),
         actaNumber: f.value("profitDistActa", (r) => ({ actaNumber: r.acta_number ?? null, date: r.resolution_date }), { ...fixed, label: "Acta N°" }),
         actaDate:   f.value("profitDistDate", (r) => r.resolution_date ?? null, { ...fixed, label: "Fecha" }),
         netResult:  f.value("profitDistResult", (r) => ({ amount: r.net_result, status: r.status }), { ...fixed, label: "Resultado Neto" }),
@@ -162,5 +163,5 @@ export const profitDistributionEntity = defineEntity<ProfitDistribution>()((f) =
 }))
 
 export const profitDistributionViews = profitDistributionEntity.views({
-    table: { columns: ["fiscalYear", "status", "dividends", "reinvest", "retained", "actaNumber", "actaDate", "netResult"] },
+    table: { columns: ["fiscalYear", "status", "offset", "dividends", "reinvest", "retained", "actaNumber", "actaDate", "netResult"] },
 })

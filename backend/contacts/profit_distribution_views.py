@@ -45,6 +45,12 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
         resolution.refresh_from_db()
         return Response(self.get_serializer(resolution).data)
 
+    @action(detail=True, methods=["get"])
+    def impact_preview(self, request, pk=None):
+        """Proyección de impactos de ejecutar la resolución (reparto, absorción de retiros, % de participación)"""
+        data = ProfitDistributionService.build_impact_preview(self.get_object())
+        return Response(data)
+
     @idempotent_endpoint(scope="contacts.distribution.approve")
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):

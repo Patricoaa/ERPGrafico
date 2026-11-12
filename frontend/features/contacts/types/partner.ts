@@ -99,7 +99,37 @@ export interface ProfitDistribution {
     fiscal_year_obj?: number;
     total_paid_dividend_amount?: string;
     total_unpaid_dividend_amount?: string;
+    /** Suma de retiros provisorios que la distribución absorbe (descuenta del bruto de los socios). */
+    provisional_offset_total?: string;
     notes?: string;
+}
+
+/** Proyección de una socio al ejecutar la distribución (GET impact_preview). Montos como string decimal. */
+export interface ProfitDistributionImpactPartner {
+    partner: number;
+    partner_name: string;
+    percentage_before: string;
+    percentage_after: string;
+    percentage_changes: boolean;
+    gross_amount: string;
+    provisional_withdrawals_offset: string;
+    provisional_balance_before: string;
+    provisional_balance_after: string;
+    net_amount: string;
+    dividend: string;
+    reinvest: string;
+    retained: string;
+    loss: string;
+    equity_before: string;
+    equity_after: string;
+}
+
+export interface ProfitDistributionImpact {
+    resolution: number;
+    is_profit: boolean;
+    partners: ProfitDistributionImpactPartner[];
+    totals: Record<'gross' | 'provisional_offset' | 'net' | 'dividend' | 'reinvest' | 'retained' | 'loss', string>;
+    percentages_change: boolean;
 }
 
 export interface PartnerEvolutionPeriod {

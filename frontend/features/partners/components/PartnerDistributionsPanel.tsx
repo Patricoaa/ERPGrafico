@@ -1,6 +1,8 @@
 "use client"
 
 import { useMemo } from "react"
+import { HandCoins } from "lucide-react"
+import { formatCurrency } from "@/lib/money"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { partnerDistributionEntity, partnerDistributionViews, type PartnerDistributionRow } from "../entity-view/partnerDistribution.entity"
 import { useProfitDistributions, usePartnerTableSearch } from "../hooks"
@@ -37,6 +39,7 @@ export function PartnerDistributionsPanel({ partnerId }: { partnerId: number }) 
             paid: Number(l.paid_dividend_amount) || 0,
         })),
     ), [distributions, partnerId])
+    const absorbed = useMemo(() => rows.reduce((acc, r) => acc + r.offset, 0), [rows])
     const filtered = useMemo(() => table.apply(rows), [table, rows])
     const collection = useEntityCollection(
         partnerDistributionEntity,
@@ -44,7 +47,16 @@ export function PartnerDistributionsPanel({ partnerId }: { partnerId: number }) 
         { pagination: { mode: "client", pageSize: 10 } },
     )
     return (
-        <div className="p-4 h-full min-h-0 flex flex-col">
+        <div className="p-4 h-full min-h-0 flex flex-col gap-3">
+            {absorbed > 0 && (
+                <div role="note" className="flex items-start gap-2 rounded-sm border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
+                    <HandCoins className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
+                    <span>
+                        Las distribuciones han absorbido <strong className="tabular-nums">{formatCurrency(absorbed)}</strong> de retiros provisorios de este socio:
+                        ese monto se descontó de su utilidad bruta y no se pagó como dividendo.
+                    </span>
+                </div>
+            )}
             <Collection.Root collection={collection}>
                 <Collection.Toolbar>
                     <PartnerTableSearchBar table={table} placeholder="Buscar distribución..." />
