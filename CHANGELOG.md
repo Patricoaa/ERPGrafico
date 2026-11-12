@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.106](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.105...v0.3.106) (2026-11-12)
+
+
+### ✨ Features
+
+* **partners:** absorción de retiros provisorios visible y paso de impactos en el wizard de distribución ([2c84706](https://github.com/Patricoaa/ERPGrafico/commit/2c84706c5b2a2e5af010f1293416549d3875af93))
+
 ### [0.3.105](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.104...v0.3.105) (2026-11-12)
 
 
