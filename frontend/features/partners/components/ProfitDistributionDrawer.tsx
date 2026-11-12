@@ -1,12 +1,16 @@
 'use client'
 
-import React, { useEffect } from 'react'
-import { Users } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { Users, Play, Wand2, Wallet, Trash2 } from 'lucide-react'
 import { Collection, useEntityCollection } from '@/components/entity-view'
 import { formatCurrency } from '@/lib/money'
 import { PrintableLayout, usePrintableDrawer, type TransactionDrawerProps } from '@/features/_shared'
 import { useProfitDistribution } from '../hooks'
 import { DocumentSheet } from '@/features/documents'
+import type { DocumentActionItem } from '@/components/shared'
+import { CreateDistributionWizard } from './CreateDistributionWizard'
+import { MassPaymentWizard } from './MassPaymentWizard'
+import { ProfitDistributionActionModal, type ProfitDistributionActionRequest } from './ProfitDistributionActionModal'
 import { useGlobalModalActions } from '@/components/providers/GlobalModalProvider'
 import { profitDistributionLineEntity, profitDistributionLineViews, type ProfitDistributionLine } from '../entity-view/profitDistributionLine.entity'
 
@@ -23,6 +27,8 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
   const { profitDistribution: distribution, isLoading } = useProfitDistribution(entityId)
   const { printRef, handlePrint } = usePrintableDrawer()
   const { setEntityDisplay } = useGlobalModalActions()
+  const [request, setRequest] = useState<ProfitDistributionActionRequest | null>(null)
+  const [wizard, setWizard] = useState<'retake' | 'pay' | null>(null)
   const displayId = distribution?.display_id ?? `#${entityId}`
 
   useEffect(() => {
@@ -33,6 +39,22 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
   const isProfit = distribution?.is_profit !== false
   const lines = (distribution?.lines as ProfitDistributionLine[] | undefined) ?? []
   const collection = useEntityCollection(profitDistributionLineEntity, { rows: lines }, { pagination: { mode: "none" } })
+
+  const hasDividends = !!distribution?.lines?.some((l) => l.destinations?.some((d) => d.destination === 'DIVIDEND') || l.destination === 'DIVIDEND')
+  let primaryAction: DocumentActionItem | null = null
+  const actions: DocumentActionItem[] = []
+  if (distribution) {
+    if (distribution.status === 'DRAFT') {
+      primaryAction = { id: 'retake', label: 'Retomar proceso', icon: Wand2, onClick: () => setWizard('retake') }
+    } else if (distribution.status === 'APPROVED') {
+      primaryAction = { id: 'execute', label: 'Ejecutar contablemente', icon: Play, onClick: () => setRequest({ kind: 'execute', distribution }) }
+    } else if (distribution.status === 'EXECUTED' && hasDividends) {
+      primaryAction = { id: 'pay', label: 'Pagar dividendos', icon: Wallet, onClick: () => setWizard('pay') }
+    }
+    if (distribution.status === 'DRAFT' || distribution.status === 'APPROVED') {
+      actions.push({ id: 'delete', label: 'Eliminar borrador', icon: Trash2, destructive: true, onClick: () => setRequest({ kind: 'delete', distribution }) })
+    }
+  }
 
   return (
     <>
@@ -62,6 +84,8 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         error={!isLoading && !distribution && entityId ? new Error("No se pudo cargar la distribución.") : undefined}
         loadingLabel="Cargando distribución"
         status={distribution?.status ?? null}
+        primaryAction={primaryAction}
+        actions={actions}
         onPrint={handlePrint}
         context={distribution ? [
           {
@@ -83,6 +107,18 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
           ),
         }]}
       />
+
+      <ProfitDistributionActionModal
+        request={request}
+        onClose={() => setRequest(null)}
+        onDeleted={() => onOpenChange(false)}
+      />
+      {distribution && wizard === 'retake' && (
+        <CreateDistributionWizard open onOpenChange={(v) => { if (!v) setWizard(null) }} initialResolution={distribution} />
+      )}
+      {distribution && wizard === 'pay' && (
+        <MassPaymentWizard open onOpenChange={(v) => { if (!v) setWizard(null) }} resolution={distribution} />
+      )}
     </>
   )
 }

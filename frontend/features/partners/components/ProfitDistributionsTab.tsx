@@ -3,15 +3,14 @@
 import React, { useState, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
-import { ActionConfirmModal } from '@/components/shared'
 import { profitDistributionActions, type ProfitDistributionActionsCtx } from './profitDistributionActions'
 
 import { type ProfitDistribution } from "@/features/contacts"
-import { toast } from "sonner"
-import { useProfitDistributions, useProfitDistributionMutations, useOnOpen } from "../hooks"
+import { useProfitDistributions, useOnOpen } from "../hooks"
 import { CreateDistributionWizard } from "./CreateDistributionWizard"
 import { MassPaymentWizard } from "./MassPaymentWizard"
 import { ProfitDistributionDrawer } from "./ProfitDistributionDrawer"
+import { ProfitDistributionActionModal, type ProfitDistributionActionRequest } from "./ProfitDistributionActionModal"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { profitDistributionEntity, profitDistributionViews } from "../entity-view/profitDistribution.entity"
 
@@ -35,14 +34,13 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
         }
     }, [searchParams, router, pathname])
     const { distributions, isLoading } = useProfitDistributions()
-    const { execute } = useProfitDistributionMutations()
     const [flow, setFlow] = useState({
         isFlowOpen: false,
         isMassPaymentOpen: false,
         selectedResolution: undefined as ProfitDistribution | undefined,
         viewingDist: undefined as ProfitDistribution | undefined
     })
-    const [confirmExecute, setConfirmExecute] = useState<ProfitDistribution | null>(null)
+    const [actionRequest, setActionRequest] = useState<ProfitDistributionActionRequest | null>(null)
 
     // Apertura del flujo desde la URL (?modal=new-distribution)
     useOnOpen(initialFlowOpen, () => setFlow(prev => ({ ...prev, selectedResolution: undefined, isFlowOpen: true })))
@@ -52,26 +50,12 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
         clearModalParam()
     }
 
-    const handleExecute = (resolution: ProfitDistribution) => setConfirmExecute(resolution)
-
     const actionsCtx: ProfitDistributionActionsCtx = {
         onViewDetail: (dist) => setFlow(prev => ({ ...prev, viewingDist: dist })),
         onRetake: (dist) => setFlow(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true })),
-        onExecute: handleExecute,
+        onExecute: (dist) => setActionRequest({ kind: 'execute', distribution: dist }),
+        onDelete: (dist) => setActionRequest({ kind: 'delete', distribution: dist }),
         onPayDividends: (dist) => setFlow(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true })),
-    }
-
-    const onConfirmExecute = async () => {
-        if (!confirmExecute) return
-        try {
-            await execute.mutateAsync(confirmExecute.id)
-            toast.success("Distribución ejecutada exitosamente.")
-        } catch (error: unknown) {
-            const errResponse = error as unknown as { response?: { data?: { detail?: string } } }
-            const detail = errResponse.response?.data?.detail || (error instanceof Error ? error.message : "Error al ejecutar la resolución")
-            toast.error(detail)
-            throw error
-        }
     }
 
     const collection = useEntityCollection(
@@ -124,15 +108,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 />
             )}
 
-            <ActionConfirmModal
-                open={!!confirmExecute}
-                onOpenChange={(open) => { if (!open) setConfirmExecute(null) }}
-                onConfirm={onConfirmExecute}
-                title="Ejecutar Distribución"
-                description={confirmExecute ? `¿Está seguro de ejecutar la resolución del año ${confirmExecute.fiscal_year}? Esto generará los asientos contables finales y las transacciones de los socios.` : ""}
-                variant="warning"
-                confirmText="Ejecutar"
-            />
+            <ProfitDistributionActionModal request={actionRequest} onClose={() => setActionRequest(null)} />
         </div>
     )
 }

@@ -1,5 +1,5 @@
 import { createEntityActions } from '@/components/shared'
-import { Wand2, Play, Wallet } from 'lucide-react'
+import { Wand2, Play, Wallet, Trash2 } from 'lucide-react'
 import type { ProfitDistribution } from '@/features/contacts'
 
 export interface ProfitDistributionActionsCtx {
@@ -7,6 +7,7 @@ export interface ProfitDistributionActionsCtx {
     onRetake: (dist: ProfitDistribution) => void
     onExecute: (dist: ProfitDistribution) => void
     onPayDividends: (dist: ProfitDistribution) => void
+    onDelete: (dist: ProfitDistribution) => void
 }
 
 export const profitDistributionActions = createEntityActions<
@@ -37,5 +38,12 @@ export const profitDistributionActions = createEntityActions<
         className: "text-primary",
         onClick: () => ctx.onPayDividends(item),
         visible: item.status === 'EXECUTED' && (item.lines?.some((l) => l.destination === 'DIVIDEND')),
+    },
+    {
+        action: "delete",
+        icon: Trash2,
+        label: "Eliminar borrador",
+        onClick: () => ctx.onDelete(item),
+        visible: item.status === 'DRAFT' || item.status === 'APPROVED',
     },
 ])

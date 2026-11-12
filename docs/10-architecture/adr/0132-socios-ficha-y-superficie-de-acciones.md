@@ -28,3 +28,8 @@ Las acciones de socio (suscripción, aporte, retiro, transferencia, dividendos, 
 ## Consecuencias
 
 Cambia la API pública de `/contacts/` (tres acciones eliminadas); no hay otros consumidores que la UI. Los datos ya cargados no se migran. Las URLs `?ledger=` se redirigen a la ficha.
+
+## Anulación de distribuciones `EXECUTED` (fuera de alcance, pendiente de ADR propio)
+
+La UI solo permite eliminar distribuciones `DRAFT`/`APPROVED` (el backend rechaza `EXECUTED` en `validate_can_delete`). Anular una ejecutada exige un asiento de reversa, revertir los `PartnerTransaction` generados y los pagos de dividendos ya hechos, y recalcular `PartnerEquityStake`; interactúa con ADR-0091 (inmutabilidad económica). No se implementa aquí: requiere su propio ADR.
+

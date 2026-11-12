@@ -88,12 +88,14 @@ Frontend:
 
 **Salida:** el socio es navegable desde contactos, búsqueda, asientos y distribuciones. **Riesgo:** medio-alto (UI nueva); entregar el drawer primero solo-lectura y sumar acciones por PR.
 
-## Fase 4 — Distribuciones: eliminar borrador y UX del flujo
+## Fase 4 — Distribuciones: eliminar borrador y UX del flujo — HECHA
 
-- [ ] Acción "Eliminar borrador" en fila y en drawer (visible `DRAFT`/`APPROVED`), con `ActionConfirmModal`; error del backend mostrado con `showApiError`.
-- [ ] Confirmación con resumen de impacto (asiento a generar, cuentas, totales por destino) en "Ejecutar" y "Pago masivo".
-- [ ] `ProfitDistributionDrawer`: mostrar acciones disponibles según estado (mismas que la fila) para no depender de volver a la lista.
-- [ ] Evaluar (sin implementar) anulación de `EXECUTED`: documentar en ADR futuro.
+- [x] Acción "Eliminar borrador" en fila y en drawer (visible `DRAFT`/`APPROVED`), con `ActionConfirmModal`; error del backend mostrado con `showApiError`.
+- [x] Confirmación con resumen de impacto (asiento a generar, cuentas, totales por destino) en "Ejecutar" y "Pago masivo".
+- [x] `ProfitDistributionDrawer`: mostrar acciones disponibles según estado (mismas que la fila) para no depender de volver a la lista.
+- [x] Evaluar (sin implementar) anulación de `EXECUTED`: documentar en ADR futuro.
+
+**Notas de ejecución:** el resumen de impacto se aplica a «Ejecutar»; «Pago masivo» ya muestra cuenta y montos por socio en su propio paso, no se duplicó. Confirmaciones centralizadas en `ProfitDistributionActionModal`, usado por la lista y el drawer.
 
 **Salida:** ciclo de vida completo gestionable desde UI. **Riesgo:** bajo.
 
