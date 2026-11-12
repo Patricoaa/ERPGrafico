@@ -1,12 +1,13 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Handshake, PieChart, TrendingUp, BookOpen, Landmark, Scale } from "lucide-react"
+import { Handshake, PieChart, TrendingUp, BookOpen, Landmark, Scale, Link2 } from "lucide-react"
 import { Drawer, DrawerLayout, SkeletonShell, DataCell, toMenuItems } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity } from "@/features/_shared"
 import { EntitySidebar } from "@/features/comments"
+import { DocumentRelationsTab } from "@/features/documents"
 import { usePartners } from "@/features/contacts"
 import { formatPlainDate } from "@/lib/utils"
 import { usePartnerOverview, useProfitDistributions } from "../hooks"
@@ -57,7 +58,8 @@ function DistributionsPanel({ partnerId }: { partnerId: number }) {
 }
 
 /**
- * Ficha del socio (`contacts.partner`, ADR-0132): resumen, capital, resultados y retiros, distribuciones y libro auxiliar.
+ * Ficha del socio (`contacts.partner`, ADR-0132/0133): resumen, capital, resultados y retiros, distribuciones,
+ * libro auxiliar y relaciones (contacto, asientos y distribuciones, vía el proveedor `contacts.partner`).
  * Las acciones salen de `partnerActionsFor`, la misma fuente que la fila de la lista.
  */
 export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDrawerProps) {
@@ -112,6 +114,7 @@ export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDraw
                             { value: "results", label: "Resultados y retiros", icon: Scale, content: <PartnerResultsPanel partner={partner} run={run} /> },
                             { value: "distributions", label: "Distribuciones", icon: PieChart, noPadding: true, content: <DistributionsPanel partnerId={id} /> },
                             { value: "ledger", label: "Libro", icon: BookOpen, noPadding: true, content: <PartnerLedgerPanel partnerId={id} /> },
+                            { value: "relations", label: "Relaciones", icon: Link2, content: <DocumentRelationsTab label="contacts.partner" id={id} sectionActions={{}} rowActions={() => []} /> },
                         ]}
                     />
                 ) : (

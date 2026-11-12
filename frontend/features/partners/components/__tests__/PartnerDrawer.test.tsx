@@ -17,6 +17,10 @@ vi.mock("@/features/contacts", () => ({
     netEquityPercentages: () => ({}),
 }))
 vi.mock("@/features/comments", () => ({ EntitySidebar: () => null }))
+vi.mock("@/features/documents", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@/features/documents")>(),
+    DocumentRelationsTab: ({ label, id }: { label: string; id: number }) => <div>relations-tab {label} #{id}</div>,
+}))
 vi.mock("@/features/_shared", () => ({
     useDrawerIdentity: () => ({ title: "Socio", subtitle: "", icon: null }),
 }))
@@ -52,10 +56,16 @@ beforeEach(() => {
 })
 
 describe("PartnerDrawer", () => {
-    it("muestra las 5 pestañas en orden", () => {
+    it("muestra las 6 pestañas en orden", () => {
         renderDrawer()
         const names = screen.getAllByRole("tab").map(t => t.textContent)
-        expect(names).toEqual(["Resumen", "Capital", "Resultados y retiros", "Distribuciones", "Libro"])
+        expect(names).toEqual(["Resumen", "Capital", "Resultados y retiros", "Distribuciones", "Libro", "Relaciones"])
+    })
+
+    it("Relaciones muestra los relacionados del socio (contacts.partner)", async () => {
+        renderDrawer()
+        await userEvent.click(screen.getByRole("tab", { name: "Relaciones" }))
+        expect(await screen.findByText("relations-tab contacts.partner #7")).toBeInTheDocument()
     })
 
     it("el Resumen cambia de pestaña con onGoToTab", async () => {
