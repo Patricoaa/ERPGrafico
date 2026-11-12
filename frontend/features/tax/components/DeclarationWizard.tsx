@@ -3,24 +3,39 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 
-import {Drawer, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep} from '@/components/shared'
+import {
+    Drawer,
+    FormSection,
+    GenericWizard,
+    LabeledInput,
+    MoneyDisplay,
+    SubmitButton,
+    type WizardRenderContext,
+    type WizardStep,
+} from '@/components/shared'
 import {
     Calculator,
     CheckCircle2,
     ArrowUpRight,
     ArrowDownLeft,
+    ChevronLeft,
+    ChevronRight,
     HandCoins,
     History,
+    Lock,
 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
-import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
+import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration } from "../hooks/useTaxMutations"
+import { useTaxPeriod, useTaxDeclarations } from "../hooks/useTaxQueries"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { type TaxPeriod, type TaxCalculationData } from "../types"
-import { taxApi } from "../api/taxApi"
+import { type TaxPeriod, type TaxPeriodDetail, type TaxDeclaration, type TaxCalculationData } from "../types"
+import { deriveF29Phase, type F29Phase } from "../utils/f29Phase"
+import { F29PaymentStep } from "./wizard/F29PaymentStep"
+import { F29CloseStep } from "./wizard/F29CloseStep"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { generateUuidV4 } from "@/lib/uuid"
@@ -35,24 +50,67 @@ interface DeclarationWizardProps {
     existingPeriods?: TaxPeriod[]
 }
 
+/** Declaration row from `GET /tax/declarations/` (F29DeclarationSerializer). */
+type DeclarationRecord = TaxDeclaration & { is_registered?: boolean }
+
+const SUMMARY_STEP_ID = "summary"
+/** Auditoría, Cargos manuales, Resumen. */
+const PRIOR_STEP_COUNT = 3
+
+function isAlreadyRegisteredError(error: unknown): boolean {
+    const message = (error as { response?: { data?: { error?: unknown } } })?.response?.data?.error
+    return typeof message === "string" && (message.includes("ya fue registrada") || message.includes("ya ha sido registrada"))
+}
+
+/** Declaración del período para los pasos Pago y Cierre (saldo según `declaration_summary`). */
+function toTaxDeclaration(period: TaxPeriodDetail, record: DeclarationRecord | null): TaxDeclaration | null {
+    const summary = period.declaration_summary
+    if (!summary) return null
+    return {
+        ppm_amount: 0,
+        withholding_tax: 0,
+        vat_credit_carryforward: 0,
+        vat_correction_amount: 0,
+        second_category_tax: 0,
+        loan_retention: 0,
+        ila_tax: 0,
+        vat_withholding: 0,
+        tax_rate: 0,
+        ...record,
+        id: summary.id,
+        vat_to_pay: summary.vat_to_pay,
+        total_paid: summary.total_paid,
+        is_fully_paid: summary.is_fully_paid,
+        payments: summary.payments ?? [],
+        folio_number: summary.folio_number,
+        document: summary.document ?? null,
+        tax_period: period.id,
+        tax_period_year: period.year,
+        tax_period_month: period.month,
+        tax_period_display: period.tax_period_display ?? `${period.month_display ?? period.month} ${period.year}`,
+    }
+}
+
 export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYear, month: propMonth, onSuccess, existingPeriods: existingPeriodsProp }: DeclarationWizardProps) {
-    const { year: currentYear, month: currentMonth, dateString, serverDate } = useServerDate()
+    const { year: currentYear, month: currentMonth, dateString } = useServerDate()
     const { openEntity } = useGlobalModals()
     const { rate } = useVatRate()
-    const [isLoading, setIsLoading] = useState(false)
+    const [isCalculating, setIsCalculating] = useState(false)
+    const [calcFailed, setCalcFailed] = useState(false)
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
-    const [taxPeriodId, setTaxPeriodId] = useState<number | null>(periodId || null)
-    const [isClosed, setIsClosed] = useState(false)
-    const [hadPaymentDue, setHadPaymentDue] = useState(false)
-    const idempotencyKeyRef = useRef<string | null>(null)
+    const [calcPeriodId, setCalcPeriodId] = useState<number | null>(null)
+    const [closedNow, setClosedNow] = useState(false)
+    const [isAdvancing, setIsAdvancing] = useState(false)
+    // One idempotency key per register operation; dropped after any outcome (ADR idempotency).
+    const registerKeyRef = useRef<string | null>(null)
+    const calcKeyRef = useRef<string | null>(null)
     const [period, setPeriod] = useState({
         year: currentYear || new Date().getFullYear(),
         month: currentMonth || new Date().getMonth() + 1
     })
-    const [wizardInitialStep, setWizardInitialStep] = useState(0)
     const existingPeriods = useMemo(() => existingPeriodsProp ?? [], [existingPeriodsProp]);
-    const isPreLoading = periodId != null && isOpen && calcData === null
-    const [manualFields, setManualFields] = useState({
+    // Editable draft; once a declaration is registered the declared values are shown instead.
+    const [draftFields, setManualFields] = useState({
         ppm_amount: 0,
         withholding_tax: 0,
         vat_credit_carryforward: 0,
@@ -67,122 +125,118 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
     const { calculateTax } = useTaxCalculation()
     const { createDeclaration } = useCreateDeclaration()
     const { registerDeclaration } = useRegisterDeclaration()
-    const { closePeriod } = useClosePeriod()
 
-    // Helper for direct calculation that uses params instead of state (since state might not have updated yet)
-    const calculateDataForPeriod = async (y: number, m: number) => {
-        setIsLoading(true)
-        try {
-            const data = await calculateTax({ year: y, month: m })
-            setCalcData(data)
-            if (data.tax_period_id) setTaxPeriodId(data.tax_period_id)
-            if (data.tax_rate) {
-                setManualFields(prev => ({
-                    ...prev,
-                    tax_rate: data.tax_rate,
-                    vat_credit_carryforward: data.vat_credit_carryforward || 0
-                }))
-            }
-            return true
-        } catch {
-            return false
-        } finally {
-            setIsLoading(false)
-        }
-    }
+    // Persisted state of the period drives the phase (no wizard step is persisted).
+    const resolvedPeriodId = periodId ?? calcPeriodId ?? undefined
+    const { taxPeriod, isLoading: isPeriodLoading, refetch: refetchPeriod } = useTaxPeriod(isOpen ? resolvedPeriodId : undefined)
+    const summary = taxPeriod?.declaration_summary
+    const declarationParams = useMemo<Record<string, unknown>>(
+        () => (taxPeriod && summary ? { tax_period__year: taxPeriod.year, tax_period__month: taxPeriod.month } : {}),
+        [taxPeriod, summary],
+    )
+    const { taxDeclarations } = useTaxDeclarations(declarationParams)
+    const declarationRecord = ((taxDeclarations?.results ?? []) as DeclarationRecord[])[0] ?? null
 
-    // Reset and initialize state when modal opens
+    const basePhase = deriveF29Phase(taxPeriod)
+    // A created-but-unregistered declaration (register failed earlier) still belongs to the prior steps.
+    const phase: F29Phase = (basePhase === "payment" || basePhase === "close") && declarationRecord?.is_registered === false
+        ? "prior"
+        : basePhase
+    const isDeclared = phase !== "prior"
+    const declaration = taxPeriod && isDeclared ? toTaxDeclaration(taxPeriod, declarationRecord) : null
+
+    const sourcePeriod = taxPeriod ?? existingPeriods.find(p => p.id === periodId) ?? null
+    const targetYear = periodId ? sourcePeriod?.year : (propYear ?? currentYear)
+    const targetMonth = periodId ? sourcePeriod?.month : (propMonth ?? currentMonth)
+
+    // Calculate once per open and target period.
     useEffect(() => {
-        const initializeWizard = async () => {
-            if (isOpen) {
-                setIsClosed(false)
-                setHadPaymentDue(false)
-                let targetPeriod: TaxPeriod | undefined
-                let year: number | undefined = propYear
-                let month: number | undefined = propMonth
+        if (!isOpen) {
+            calcKeyRef.current = null
+            return
+        }
+        if (!targetYear || !targetMonth) return
+        const key = `${targetYear}-${targetMonth}`
+        if (calcKeyRef.current === key) return
+        calcKeyRef.current = key
+        registerKeyRef.current = null
 
-                // If we have a periodId, resolve period and skip step 1
-                if (periodId) {
-                    // Try existingPeriods first (fast path), otherwise fetch from API
-                    targetPeriod = existingPeriods.find(p => p.id === periodId)
-                    if (!targetPeriod) {
-                        try {
-                            targetPeriod = await taxApi.getPeriod(periodId)
-                        } catch {
-                            // fall through to default below
-                        }
-                    }
-                    if (targetPeriod) {
-                        year = targetPeriod.year
-                        month = targetPeriod.month
-                    }
+        const run = async () => {
+            setPeriod({ year: targetYear, month: targetMonth })
+            setCalcData(null)
+            setCalcFailed(false)
+            setClosedNow(false)
+            setIsCalculating(true)
+            try {
+                const data = await calculateTax({ year: targetYear, month: targetMonth })
+                setCalcData(data)
+                if (data.tax_period_id) setCalcPeriodId(data.tax_period_id)
+                if (data.tax_rate) {
+                    setManualFields(prev => ({
+                        ...prev,
+                        tax_rate: data.tax_rate,
+                        vat_credit_carryforward: data.vat_credit_carryforward || 0
+                    }))
                 }
-
-                if (year && month) {
-                    setPeriod({ year, month })
-                    setCalcData(null)
-                    await calculateDataForPeriod(year, month)
-                    setWizardInitialStep(0)
-                }
+            } catch {
+                setCalcFailed(true)
+            } finally {
+                setIsCalculating(false)
             }
         }
+        void run()
+    }, [isOpen, targetYear, targetMonth, calculateTax])
 
-        initializeWizard()
-    }, [isOpen, periodId, propYear, propMonth, existingPeriods, serverDate, currentYear, currentMonth])
-
-    const handleSaveAndClose = async () => {
-        setIsLoading(true)
-        if (!idempotencyKeyRef.current) {
-            idempotencyKeyRef.current = generateUuidV4()
+    // Once registered, the prior steps show the declared values (read-only).
+    const manualFields = isDeclared && declarationRecord
+        ? {
+            ppm_amount: Number(declarationRecord.ppm_amount) || 0,
+            withholding_tax: Number(declarationRecord.withholding_tax) || 0,
+            vat_credit_carryforward: Number(declarationRecord.vat_credit_carryforward) || 0,
+            vat_correction_amount: Number(declarationRecord.vat_correction_amount) || 0,
+            second_category_tax: Number(declarationRecord.second_category_tax) || 0,
+            loan_retention: Number(declarationRecord.loan_retention) || 0,
+            ila_tax: Number(declarationRecord.ila_tax) || 0,
+            vat_withholding: Number(declarationRecord.vat_withholding) || 0,
+            tax_rate: Number(declarationRecord.tax_rate) || draftFields.tax_rate,
+            notes: declarationRecord.notes ?? "",
         }
+        : draftFields
+
+    /** Last prior step: create + register the declaration. Never closes the period. */
+    const handleRegister = async (): Promise<boolean> => {
+        if (isDeclared) return true
+        if (!registerKeyRef.current) registerKeyRef.current = generateUuidV4()
         try {
-            const declarationData = await createDeclaration({
+            const created = await createDeclaration({
                 tax_period_year: period.year,
                 tax_period_month: period.month,
                 ...manualFields
             })
-            const declarationId = declarationData.id
-            const currentTaxPeriodId = declarationData.tax_period || taxPeriodId
             try {
                 await registerDeclaration({
-                    id: declarationId,
+                    id: created.id,
                     data: { declaration_date: dateString || "" },
-                    idempotencyKey: idempotencyKeyRef.current
+                    idempotencyKey: registerKeyRef.current
                 })
             } catch (regError: unknown) {
-                const isAlreadyRegistered =
-                    (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya fue registrada") ||
-                    (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya ha sido registrada")
-                if (!isAlreadyRegistered) throw regError
+                if (!isAlreadyRegisteredError(regError)) throw regError
             }
-            // Determine if payment is needed before closing
-            const vatDebit = calcData?.vat_debit || 0
-            const vatCredit = calcData?.vat_credit || 0
-            const totalVATCredits = vatCredit + (manualFields.vat_credit_carryforward || 0) + (manualFields.vat_correction_amount || 0)
-            const computedVatToPay = Math.max(0, vatDebit - totalVATCredits)
-            const otherTaxes = (manualFields.withholding_tax || 0) + (manualFields.second_category_tax || 0) + (manualFields.ppm_amount || 0)
-            const finalToPay = computedVatToPay + otherTaxes
-            const needsPayment = finalToPay > 0
-
-            if (currentTaxPeriodId && !needsPayment) {
-                await closePeriod({
-                    id: currentTaxPeriodId,
-                    idempotencyKey: idempotencyKeyRef.current,
-                })
-                toast.success("Ciclo tributario finalizado exitosamente")
-            } else {
-                toast.success("Declaración F29 registrada correctamente. Debe realizar el pago antes de cerrar el período.")
-            }
-            setHadPaymentDue(needsPayment)
-            setIsClosed(true)
-            onSuccess();
+            registerKeyRef.current = null
+            if (created.tax_period) setCalcPeriodId(created.tax_period)
+            toast.success("Declaración F29 registrada correctamente")
             return true
         } catch (error: unknown) {
-            showApiError(error, "Error al finalizar el ciclo tributario")
+            registerKeyRef.current = null
+            showApiError(error, "Error al registrar la declaración F29")
             return false
-        } finally {
-            setIsLoading(false)
         }
+    }
+
+    const handleChanged = () => { void refetchPeriod() }
+    const handleClosed = () => {
+        setClosedNow(true)
+        void refetchPeriod()
     }
 
     // Calculations
@@ -192,11 +246,18 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
     const vatToPay = Math.max(0, vatDebit - totalVATCredits)
     const vatRemanent = Math.max(0, totalVATCredits - vatDebit)
     const otherTaxes = (manualFields.withholding_tax || 0) + (manualFields.second_category_tax || 0) + (manualFields.ppm_amount || 0)
-    const finalToPay = vatToPay + otherTaxes
+    const declaredDue = Number(summary?.vat_to_pay)
+    const finalToPay = isDeclared && Number.isFinite(declaredDue) ? declaredDue : vatToPay + otherTaxes
+    const includePayment = isDeclared ? (!Number.isFinite(declaredDue) || declaredDue > 0) : finalToPay > 0
+    const isPaid = declaration ? declaration.is_fully_paid || Number(declaration.vat_to_pay) - Number(declaration.total_paid) <= 0 : false
 
-    const steps: WizardStep[] = useMemo(() => [
+    const pendingDeclaration = (
+        <div className="py-16 text-center text-sm text-muted-foreground">Cargando la declaración registrada...</div>
+    )
+
+    const priorSteps: WizardStep[] = [
         {
-            id: 2,
+            id: "audit",
             title: "Auditoría de Documentos (IVA)",
             isValid: true,
             component: (
@@ -293,11 +354,17 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             )
         },
         {
-            id: 3,
+            id: "manual",
             title: "Cargos Manuales del Período",
             isValid: true,
             component: (
-                <div className="space-y-10 max-w-4xl mx-auto pb-6">
+                <fieldset disabled={isDeclared} className="space-y-6 max-w-4xl mx-auto pb-6 min-w-0 border-0 p-0 m-0">
+                    {isDeclared && (
+                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Lock className="h-3.5 w-3.5" />
+                            Declaración registrada: los cargos se muestran en modo lectura.
+                        </p>
+                    )}
                     <div className="grid grid-cols-2 gap-x-12 gap-y-8">
                         <div className="col-span-full">
                             <FormSection title="Retenciones" icon={HandCoins} />
@@ -355,13 +422,14 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             />
                         </div>
                     </div>
-                </div>
+                </fieldset>
             )
         },
         {
-            id: 4,
+            id: SUMMARY_STEP_ID,
             title: "Resumen y Declaración",
             isValid: true,
+            onNext: handleRegister,
             component: (
                 <div className="max-w-4xl mx-auto pb-6 space-y-8">
                     <FormSection title="Resumen de Impuestos" icon={Calculator} />
@@ -387,36 +455,103 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             </div>
                         </div>
                     </div>
+                    {isDeclared && (
+                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                            Declaración registrada{summary?.folio_number ? ` (folio ${summary.folio_number})` : ""}.
+                        </p>
+                    )}
                 </div>
             )
-        }
-    ], [calcData, manualFields, taxPeriodId, vatToPay, otherTaxes, vatRemanent, finalToPay])
+        },
+    ]
 
-    if (isClosed) {
+    const steps: WizardStep[] = [
+        ...priorSteps,
+        ...(includePayment ? [{
+            id: "payment",
+            title: "Pago",
+            isValid: isPaid,
+            component: declaration ? <F29PaymentStep declaration={declaration} onChanged={handleChanged} /> : pendingDeclaration,
+        }] : []),
+        {
+            id: "close",
+            title: "Cierre del Período",
+            isValid: true,
+            component: declaration ? <F29CloseStep declaration={declaration} onChanged={handleClosed} /> : pendingDeclaration,
+        },
+    ]
+
+    const paymentIndex = PRIOR_STEP_COUNT
+    const closeIndex = PRIOR_STEP_COUNT + (includePayment ? 1 : 0)
+    const initialStep = phase === "payment" ? paymentIndex : phase === "close" ? closeIndex : 0
+    const isPreLoading = isOpen && ((calcData === null && !calcFailed) || isPeriodLoading)
+
+    const renderFooter = ({ step, isFirstStep, isLastStep, goBack, goNext }: WizardRenderContext) => {
+        const current = steps[step]
+        const isRegisterStep = current?.id === SUMMARY_STEP_ID && !isDeclared
+        return (
+            <div className="flex items-center justify-between w-full">
+                <Button variant="ghost" onClick={goBack} disabled={isFirstStep || isAdvancing} className="gap-2">
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                {!isLastStep && (
+                    <SubmitButton
+                        type="button"
+                        onClick={async () => {
+                            setIsAdvancing(true)
+                            try { await goNext() } finally { setIsAdvancing(false) }
+                        }}
+                        disabled={current?.isValid === false || isPreLoading}
+                        loading={isAdvancing}
+                        icon={isRegisterStep ? CheckCircle2 : ChevronRight}
+                    >
+                        {isRegisterStep ? "Registrar Declaración" : "Siguiente"}
+                    </SubmitButton>
+                )}
+            </div>
+        )
+    }
+
+    if (phase === "done" && taxPeriod) {
+        const display = taxPeriod.tax_period_display ?? `${taxPeriod.month_display ?? taxPeriod.month} ${taxPeriod.year}`
         return (
             <Drawer
-                open={isOpen} 
-                onOpenChange={onOpenChange} 
+                open={isOpen}
+                onOpenChange={onOpenChange}
                 defaultSize={formDrawerWidth("complex", false)}
                 side="left"
                 boundary="embedded"
-                title={hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}
+                title={closedNow ? "Ciclo Finalizado" : "Período Cerrado"}
                 contentClassName="p-6"
             >
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-8 animate-in zoom-in-95 duration-500">
-                    <CheckCircle2 className="h-12 w-12" />
+                <div className="flex flex-col items-center justify-center py-16 text-center space-y-8 animate-in zoom-in-95 duration-500">
+                    <CheckCircle2 className="h-12 w-12 text-success" />
                     <div className="space-y-3">
                         <h3 className="text-3xl font-black uppercase tracking-tight">
-                            {hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}
+                            {closedNow ? "Ciclo Finalizado" : "Período Cerrado"}
                         </h3>
                         <p className="text-muted-foreground text-sm max-w-md px-10">
-                            {hadPaymentDue
-                                ? "La declaración F29 ha sido registrada. Para completar el cierre del período, debe realizar el pago desde la vista de Cierres."
-                                : "La declaración F29 del periodo ha sido registrada y el ciclo bloqueado para futuros cambios."
-                            }
+                            El período {display} quedó cerrado y bloqueado para futuros cambios.
                         </p>
                     </div>
-                    <Button onClick={() => onOpenChange(false)} className="px-10 h-11 font-medium uppercase tracking-widest text-2xs">Finalizar Proceso</Button>
+                    {summary && (
+                        <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm text-left">
+                            {summary.folio_number && (<><dt className="text-muted-foreground">Folio</dt><dd className="font-mono">{summary.folio_number}</dd></>)}
+                            <dt className="text-muted-foreground">Total declarado</dt>
+                            <dd><MoneyDisplay amount={summary.vat_to_pay} showColor={false} className="font-bold" /></dd>
+                            <dt className="text-muted-foreground">Total pagado</dt>
+                            <dd><MoneyDisplay amount={summary.total_paid} showColor={false} className="font-bold" /></dd>
+                            {taxPeriod.closed_by_name && (<><dt className="text-muted-foreground">Cerrado por</dt><dd>{taxPeriod.closed_by_name}</dd></>)}
+                        </dl>
+                    )}
+                    <Button
+                        onClick={() => (closedNow ? onSuccess() : onOpenChange(false))}
+                        className="px-10 h-11 font-medium uppercase tracking-widest text-2xs"
+                    >
+                        Finalizar
+                    </Button>
                 </div>
             </Drawer>
         )
@@ -428,8 +563,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             open={isOpen}
             onOpenChange={onOpenChange}
             onClose={() => onOpenChange(false)}
-            initialStep={wizardInitialStep}
-            isLoading={isLoading || isPreLoading}
+            initialStep={initialStep}
+            isLoading={isCalculating || isPreLoading}
             title={
                 <div className="flex items-center gap-3">
                     <Calculator className="h-5 w-5 text-primary" />
@@ -437,10 +572,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                 </div>
             }
             steps={steps}
-            onComplete={async () => { await handleSaveAndClose(); }}
-            isCompleting={isLoading}
-            completeButtonLabel="Registrar y Finalizar"
-            completeButtonIcon={<CheckCircle2 className="h-4 w-4 mr-2" />}
+            onComplete={async () => {}}
+            footer={renderFooter}
             size="md"
             surface="drawer"
             drawerSide="left"
