@@ -1095,9 +1095,11 @@ class AccountingPeriodService:
         from .models import TaxPeriod
 
         tax_closed = False
+        tax_period_id = None
         try:
             tax_period = TaxPeriod.objects.get(year=year, month=month)
             tax_closed = tax_period.status == TaxPeriod.Status.CLOSED
+            tax_period_id = tax_period.pk
         except TaxPeriod.DoesNotExist:
             pass
 
@@ -1139,8 +1141,64 @@ class AccountingPeriodService:
             status=BankStatement.Status.CONFIRMED,
         ).count()
 
+        # Pending documents (max `cap` per category, oldest first)
+        cap = 50
+
+        def _item(pk, label, amount, doc_date):
+            return {
+                "id": pk,
+                "label": label,
+                "amount": str(amount) if amount is not None else None,
+                "date": doc_date.isoformat() if doc_date else None,
+            }
+
+        draft_entries = [
+            _item(e.pk, f"{e.display_id} {e.description}".strip(), None, e.date)
+            for e in JournalEntry.objects.filter(
+                date__gte=start_date, date__lt=end_date, status=JournalEntry.State.DRAFT
+            ).order_by("date", "id")[:cap]
+        ]
+        draft_invoices = [
+            _item(i.pk, f"{i.get_dte_type_display()} {i.number}".strip(), i.total, i.date)
+            for i in Invoice.objects.filter(
+                date__gte=start_date, date__lt=end_date, status=Invoice.Status.DRAFT
+            ).only("id", "dte_type", "number", "total", "date").order_by("date", "id")[:cap]
+        ]
+        unposted_payrolls = [
+            _item(
+                p.pk,
+                f"{p.employee.contact.name if p.employee.contact else p.employee.code} "
+                f"{p.period_month:02d}/{p.period_year}",
+                p.net_salary,
+                date(p.period_year, p.period_month, 1),
+            )
+            for p in Payroll.objects.filter(period_year=year, period_month=month)
+            .exclude(status=Payroll.Status.POSTED)
+            .select_related("employee__contact")
+            .order_by("id")[:cap]
+        ]
+        unconfirmed_statements = [
+            _item(
+                b.pk,
+                f"{b.treasury_account.name} {b.statement_date.isoformat()}",
+                b.closing_balance,
+                b.statement_date,
+            )
+            for b in BankStatement.objects.filter(
+                statement_date__gte=start_date, statement_date__lt=end_date
+            )
+            .exclude(status=BankStatement.Status.CONFIRMED)
+            .select_related("treasury_account")
+            .order_by("statement_date", "id")[:cap]
+        ]
+
         # Build checklist
         checklist = {
+            "tax_period_id": tax_period_id,
+            "draft_entries": draft_entries,
+            "draft_invoices": draft_invoices,
+            "unposted_payrolls": unposted_payrolls,
+            "unconfirmed_statements": unconfirmed_statements,
             "period_exists": period is not None,
             "period_status": period.status if period else "NOT_CREATED",
             "tax_period_closed": tax_closed,
