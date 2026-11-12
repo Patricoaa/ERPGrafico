@@ -303,6 +303,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                             isDefaultCustomer={!!selectedCustomer?.is_default_customer}
                             onValidityChange={(isValid) => setIsFolioValid(isValid)}
                             onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
+                            touchMode={touchMode}
                         />
                     </div>
                 )

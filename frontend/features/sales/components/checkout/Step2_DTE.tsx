@@ -20,6 +20,8 @@ interface Step2_DTEProps {
     isDefaultCustomer?: boolean
     onValidityChange?: (isValid: boolean) => void
     onPeriodValidityChange?: (isValid: boolean) => void
+    /** POS touch: habilita el numpad para el folio. Fuera de POS se escribe con teclado. */
+    touchMode?: boolean
 }
 
 export function Step2_DTE({
@@ -28,6 +30,7 @@ export function Step2_DTE({
     isDefaultCustomer = false,
     onValidityChange,
     onPeriodValidityChange,
+    touchMode = false,
 }: Step2_DTEProps) {
     const { dateString } = useServerDate()
 
@@ -122,6 +125,7 @@ export function Step2_DTE({
                                 isPurchase={false}
                                 onValidityChange={onValidityChange}
                                 disabled={dteData.isPending}
+                                enableNumpad={touchMode}
                             />
 
                             <PeriodValidationDateInput

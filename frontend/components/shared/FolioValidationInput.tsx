@@ -5,7 +5,6 @@ import { AlertCircle, Loader2, CheckCircle, FileText } from "lucide-react"
 import { LabeledInput } from "./LabeledInput"
 import { useFolioValidation, type FolioValidationResult } from "@/hooks/useFolioValidation"
 import { cn } from "@/lib/utils"
-import { useTouchMode } from "@/hooks/useTouchMode"
 import { NumpadModal } from "./NumpadModal"
 
 interface FolioValidationInputProps {
@@ -21,6 +20,8 @@ interface FolioValidationInputProps {
     className?: string
     autoFocus?: boolean
     disabled?: boolean
+    /** Habilita el numpad táctil. Solo el checkout POS en modo touch lo activa. */
+    enableNumpad?: boolean
 }
 
 export function FolioValidationInput({
@@ -35,10 +36,10 @@ export function FolioValidationInput({
     placeholder = "Ej: 45223",
     className,
     autoFocus = false,
-    disabled = false
+    disabled = false,
+    enableNumpad = false
 }: FolioValidationInputProps) {
     const { validateFolio, isValidating, validationResult, clearValidation } = useFolioValidation()
-    const { isTouchMode } = useTouchMode()
     const [numpadOpen, setNumpadOpen] = useState(false)
     const [tempValue, setTempValue] = useState("")
 
@@ -77,13 +78,13 @@ export function FolioValidationInput({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onClick={(e) => {
-                    if (isTouchMode && !disabled) {
+                    if (enableNumpad && !disabled) {
                         e.preventDefault()
                         setTempValue(value)
                         setNumpadOpen(true)
                     }
                 }}
-                readOnly={isTouchMode}
+                readOnly={enableNumpad}
                 disabled={disabled}
                 autoFocus={autoFocus}
                 error={validationResult && !validationResult.is_unique ? validationResult.message : undefined}
@@ -106,7 +107,7 @@ export function FolioValidationInput({
                     </div>
                 }
             />
-            {isTouchMode && (
+            {enableNumpad && (
                 <NumpadModal
                     open={numpadOpen}
                     onOpenChange={setNumpadOpen}

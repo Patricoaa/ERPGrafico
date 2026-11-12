@@ -256,8 +256,11 @@ Text input with real-time DTE folio uniqueness validation.
 | `isPurchase` | `boolean` | ❌ | `false` |
 | `excludeId` | `number` | ❌ | — |
 | `onValidityChange` | `(isValid: boolean, result: FolioValidationResult \| null) => void` | ❌ | — |
+| `enableNumpad` | `boolean` | ❌ | `false` |
 
 States: validating (spinner), valid (check), duplicate (warning + alert).
+
+Por defecto el folio se escribe con teclado (editable, permite pegar). `enableNumpad` solo lo activa el checkout POS en modo touch; el resto de contextos no hereda el modo táctil.
 
 ### PeriodValidationDateInput 🟢
 
