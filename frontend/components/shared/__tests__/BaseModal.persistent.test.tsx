@@ -47,4 +47,18 @@ describe("BaseModal inside a workspace tab", () => {
         expect(screen.getByText("Confirmación")).toBeInTheDocument()
         expect(screen.getByText("¿Está seguro?")).toBeInTheDocument()
     })
+
+    it("renders React.Fragment description without throwing invalid prop id error", () => {
+        render(
+            <BaseModal
+                open
+                onOpenChange={() => {}}
+                title="Cerrar Periodo"
+                description={<>Descripción dentro de un Fragment</>}
+            >
+                <p>cuerpo</p>
+            </BaseModal>,
+        )
+        expect(screen.getByText("Descripción dentro de un Fragment")).toBeInTheDocument()
+    })
 })

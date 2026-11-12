@@ -34,11 +34,7 @@ export function F29CloseModal({ isOpen, onOpenChange, onConfirm, declaration, is
             onOpenChange={onOpenChange}
             icon={FileText}
             title="Cerrar Periodo F29"
-            description={
-                <>
-                    Para cerrar el periodo {declaration.tax_period_display}, por favor adjunta el comprobante o formulario F29 en PDF. (Obligatorio)
-                </>
-            }
+            description={`Para cerrar el periodo ${declaration.tax_period_display}, por favor adjunta el comprobante o formulario F29 en PDF. (Obligatorio)`}
             size="xs"
             footer={
                 <>

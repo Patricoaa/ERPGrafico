@@ -154,7 +154,7 @@ export function BaseModal({
                             centered={centered}
                             subtitle={description ? (
                                 <DialogDescription
-                                    asChild={typeof description !== "string"}
+                                    asChild={React.isValidElement(description) && description.type !== React.Fragment}
                                     className={descriptionStyles}
                                 >
                                     {description}
