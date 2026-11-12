@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { PendingChecklistSection, type PendingChecklistItem } from '@/features/tax';
 
 import {
-    ShieldCheck,
     CheckCircle2,
     AlertTriangle,
     Scale,
@@ -177,41 +176,42 @@ export function FiscalYearClosingWizard({
         ];
     }, [preview, year, isProfit, netResult]);
 
-    if (isClosed) {
-        return (
-            <BaseModal
-                open={isOpen}
-                onOpenChange={onClose}
-                icon={ShieldCheck}
-                title={`Ejercicio ${year} cerrado`}
-                size="lg"
-                variant="wizard"
-                hideScrollArea
-                className="bg-card"
-                footer={
-                    <div className="flex w-full items-center justify-end gap-2">
-                        <CancelButton onClick={onClose}>Finalizar</CancelButton>
-                        <SubmitButton
-                            onClick={() => {
-                                onClose();
-                                window.location.href = `/finances/partners/distributions?modal=new-distribution&yearId=${year}`;
-                            }}
-                            icon={<PieChart className="mr-2 h-4 w-4" />}
-                        >
-                            Iniciar Distribución de Utilidades
-                        </SubmitButton>
-                    </div>
-                }
+    // Tras el cierre el éxito es un paso más del mismo wizard (mismo modal, altura y footer), no otro modal.
+    const doneStep: WizardStep = {
+        id: 'done',
+        title: `Ejercicio ${year} cerrado`,
+        isValid: true,
+        component: (
+            <div className="space-y-8">
+                <SummarySection title="Cierre completado">
+                    <SummaryRow label="Ejercicio fiscal" value={String(year)} />
+                    <SummaryRow label="Transferencia patrimonial" value={formatCurrency(netResult)} strong />
+                    <li className="flex items-start gap-3 py-2.5 text-sm text-muted-foreground">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
+                        <span>La contabilidad quedó sellada y el asiento de cierre se generó con éxito.</span>
+                    </li>
+                </SummarySection>
+                <SummarySection title="Siguiente paso">
+                    <SummaryNote>Distribuye la utilidad entre los socios cuando corresponda.</SummaryNote>
+                </SummarySection>
+            </div>
+        ),
+    };
+
+    const doneFooter = (
+        <div className="flex w-full items-center justify-end gap-2">
+            <CancelButton onClick={onClose}>Finalizar</CancelButton>
+            <SubmitButton
+                onClick={() => {
+                    onClose();
+                    window.location.href = `/finances/partners/distributions?modal=new-distribution&yearId=${year}`;
+                }}
+                icon={<PieChart className="mr-2 h-4 w-4" />}
             >
-                <div className="flex-1 min-h-0 overflow-y-auto p-5">
-                    <p className="flex items-start gap-3 text-sm text-muted-foreground">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />
-                        La contabilidad ha sido sellada y el asiento de cierre se generó con éxito. Ahora puedes proceder con la distribución de utilidades a los socios.
-                    </p>
-                </div>
-            </BaseModal>
-        );
-    }
+                Iniciar Distribución de Utilidades
+            </SubmitButton>
+        </div>
+    );
 
     return (
         <>
@@ -221,7 +221,9 @@ export function FiscalYearClosingWizard({
                 onClose={onClose}
                 icon={Settings2}
                 title={`Cierre del Ejercicio ${year}`}
-                steps={steps}
+                steps={isClosed ? [doneStep] : steps}
+                subtitle={isClosed ? 'Cierre completado' : undefined}
+                footer={isClosed ? doneFooter : undefined}
                 onComplete={handleConfirm}
                 isCompleting={isLoading}
                 completeButtonLabel="Ejecutar Cierre Definitivo"
