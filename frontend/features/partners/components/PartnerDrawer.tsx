@@ -8,7 +8,8 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity } from "@/features/_shared"
 import { EntitySidebar } from "@/features/comments"
 import { usePartners } from "@/features/contacts"
-import { useProfitDistributions } from "../hooks"
+import { formatPlainDate } from "@/lib/utils"
+import { usePartnerOverview, useProfitDistributions } from "../hooks"
 import { partnerDistributionEntity, partnerDistributionViews, type PartnerDistributionRow } from "../entity-view/partnerDistribution.entity"
 import { partnerActionsFor } from "./partnerActions"
 import { usePartnerActions } from "./PartnerActionModal"
@@ -68,6 +69,14 @@ export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDraw
     })
 
     const identity = useDrawerIdentity("contacts.partner", "view", partner ?? (id ? { id } : undefined), { printable: false })
+    // Misma query que los paneles (mismo key): sin petición extra.
+    const { data: overview } = usePartnerOverview(id)
+    const taxId = overview?.info.tax_id || partner?.tax_id
+    const since = overview?.info.partner_since
+    const subtitle = taxId
+        ? (since ? `${taxId} · socio desde ${formatPlainDate(since)}` : taxId)
+        : identity.subtitle
+
     // Siempre el menú "⋯": la baja bloqueada sigue visible, deshabilitada y con su motivo.
     const menuActions = partner ? partnerActionsFor(partner, "menu", { run }) : []
     const headerActions = menuActions.length > 0
@@ -82,7 +91,7 @@ export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDraw
             side="left"
             icon={identity.icon ?? Handshake}
             title={identity.title}
-            subtitle={identity.subtitle}
+            subtitle={subtitle}
             headerActions={headerActions}
             defaultSize={formDrawerWidth("complex", true)}
             contentClassName="p-0"

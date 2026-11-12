@@ -26,7 +26,9 @@ export function demoteBlockedReason(p: Partner): string | null {
  * Única fuente de acciones de socio: la usan la fila de la lista y la ficha (`PartnerDrawer`).
  * La visibilidad depende del estado del socio; nada queda "tachado" por CSS.
  */
-const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedAction[] => [
+const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedAction[] => {
+    const demoteBlocked = demoteBlockedReason(item)
+    return [
     {
         action: "detail",
         icon: TrendingUp,
@@ -91,10 +93,11 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         placement: "menu",
         className: "text-destructive",
         onClick: () => ctx.run({ type: "demote", partnerId: item.id }),
-        disabled: demoteBlockedReason(item) !== null,
-        disabledReason: demoteBlockedReason(item) ?? undefined,
+        disabled: demoteBlocked !== null,
+        disabledReason: demoteBlocked ?? undefined,
     },
-]
+    ]
+}
 
 /** Única fuente de acciones de socio; `placement` decide en qué zona de la ficha se muestra. */
 export const partnerActions = createEntityActions<Partner, PartnerActionsCtx>(buildPartnerActions)

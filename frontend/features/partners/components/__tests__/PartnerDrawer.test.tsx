@@ -9,6 +9,7 @@ import { demoteBlockedReason } from "../partnerActions"
 const m = vi.hoisted(() => ({
     partners: [] as unknown[],
     run: vi.fn(),
+    overview: undefined as unknown,
 }))
 
 vi.mock("@/features/contacts", () => ({
@@ -21,7 +22,7 @@ vi.mock("@/features/_shared", () => ({
 }))
 vi.mock("../../hooks", () => ({
     useProfitDistributions: () => ({ distributions: [], isLoading: false, error: null, refetch: vi.fn() }),
-    usePartnerOverview: () => ({ data: undefined, isLoading: true, isError: false, refetch: vi.fn() }),
+    usePartnerOverview: () => ({ data: m.overview, isLoading: false, isError: false, refetch: vi.fn() }),
 }))
 vi.mock("../PartnerActionModal", () => ({
     usePartnerActions: () => ({ run: m.run, host: null }),
@@ -47,6 +48,7 @@ const renderDrawer = (id = 7) => render(<PartnerDrawer id={id} open onOpenChange
 beforeEach(() => {
     m.run.mockClear()
     m.partners = [partner]
+    m.overview = undefined
 })
 
 describe("PartnerDrawer", () => {
@@ -81,6 +83,16 @@ describe("PartnerDrawer", () => {
         expect(item).toHaveTextContent(demoteBlockedReason(blocked) ?? "")
         await userEvent.click(item)
         expect(m.run).not.toHaveBeenCalled()
+    })
+
+    it("subtítulo: ID fiscal y fecha de alta; solo ID fiscal mientras carga o sin fecha", () => {
+        m.overview = { info: { tax_id: "1-9", partner_since: "2025-01-02", contact_id: 7 } }
+        const { unmount } = renderDrawer()
+        expect(screen.getByText(/^1-9 · socio desde .*2025/)).toBeInTheDocument()
+        unmount()
+        m.overview = { info: { tax_id: "1-9", partner_since: null, contact_id: 7 } }
+        renderDrawer()
+        expect(screen.getByText("1-9")).toBeInTheDocument()
     })
 
     it("un id que no es socio muestra el aviso", () => {
