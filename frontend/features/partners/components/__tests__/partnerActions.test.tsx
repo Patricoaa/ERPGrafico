@@ -26,9 +26,15 @@ describe("partnerActionsFor", () => {
         expect(labels(base, "capital")).not.toContain("Formalizar exceso de capital")
         expect(labels({ ...base, partner_excess_capital: "5" }, "capital")).toContain("Formalizar exceso de capital")
     })
-    it("baja es del menú y solo si no está bloqueada", () => {
+    it("baja es del menú; bloqueada queda visible, deshabilitada y con el motivo", () => {
         expect(labels(base, "menu")).toEqual(["Dar de baja"])
-        expect(labels({ ...base, partner_total_contributions: "1" }, "menu")).toEqual([])
+        const blocked = { ...base, partner_total_contributions: "1" }
+        const [a] = partnerActionsFor(blocked, "menu", { run: vi.fn() })
+        if (!a || !("disabled" in a)) throw new Error("falta baja")
+        expect(a.disabled).toBe(true)
+        expect(a.disabledReason).toBe(demoteBlockedReason(blocked))
+        const [ok] = partnerActionsFor(base, "menu", { run: vi.fn() })
+        expect(ok && "disabled" in ok && ok.disabled).toBe(false)
     })
     it("transferir pide la acción con el socio de origen", () => {
         const run = vi.fn()

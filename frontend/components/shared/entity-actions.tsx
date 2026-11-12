@@ -20,6 +20,8 @@ export type StructuredAction =
         visible?: boolean
         /** Whether this action is visually disabled (dimmed, pointer-events-none). */
         disabled?: boolean
+        /** Why it is disabled; `toMenuItems` shows it under the label in the menu. */
+        disabledReason?: string
         /** Override label from registry. */
         label?: string
         /** Override icon from registry (for module-specific icons not in ROW_ACTIONS). */
@@ -92,6 +94,7 @@ export function toMenuItems(actions: StructuredAction[]): ActionMenuItem[] {
                 action: a.action,
                 onClick: a.onClick,
                 disabled: a.disabled,
+                disabledReason: a.disabledReason,
                 label: a.label,
                 icon: a.icon,
             }

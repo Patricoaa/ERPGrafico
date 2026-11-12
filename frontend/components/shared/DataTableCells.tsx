@@ -616,6 +616,7 @@ export const DataCell = {
                             const isDestructive = ('action' in item && item.action === 'delete') || def?.intent === 'destructive'
 
                             if (!Icon || !label) return null
+                            const disabledReason = 'disabledReason' in item && item.disabled ? item.disabledReason : undefined
 
                             return (
                                 <DropdownMenuItem
@@ -624,12 +625,18 @@ export const DataCell = {
                                     disabled={'disabled' in item ? item.disabled : false}
                                     onClick={(e) => {
                                         e.stopPropagation()
+                                        if ('disabled' in item && item.disabled) return
                                         if ('onClick' in item && item.onClick) item.onClick(e as unknown as React.MouseEvent)
                                     }}
                                     className="text-xs font-semibold uppercase tracking-widest rounded-sm cursor-pointer"
                                 >
                                     <Icon className="h-3.5 w-3.5" />
-                                    {label}
+                                    {disabledReason ? (
+                                        <span className="flex flex-col gap-0.5">
+                                            {label}
+                                            <span className="max-w-64 whitespace-normal text-2xs font-normal normal-case tracking-normal text-muted-foreground">{disabledReason}</span>
+                                        </span>
+                                    ) : label}
                                 </DropdownMenuItem>
                             )
                         })}
@@ -740,6 +747,8 @@ export type ActionMenuItem =
         action: RowActionKey
         onClick: (e: React.MouseEvent) => void
         disabled?: boolean
+        /** Why the item is disabled; shown as a second line in the menu (disabled items get no hover tooltip). */
+        disabledReason?: string
         /** Override label from registry */
         label?: string
         /** Override icon from registry */
@@ -750,6 +759,8 @@ export type ActionMenuItem =
         label: string
         onClick: (e: React.MouseEvent) => void
         disabled?: boolean
+        /** Why the item is disabled; shown as a second line in the menu. */
+        disabledReason?: string
     }
 
 // ─── Reusable Actions Column Factory ──────────────────────────────────────────

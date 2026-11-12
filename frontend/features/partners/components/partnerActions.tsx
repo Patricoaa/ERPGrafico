@@ -91,9 +91,9 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
         placement: "menu",
         className: "text-destructive",
         onClick: () => ctx.run({ type: "demote", partnerId: item.id }),
-        visible: demoteBlockedReason(item) === null,
+        disabled: demoteBlockedReason(item) !== null,
+        disabledReason: demoteBlockedReason(item) ?? undefined,
     },
-
 ]
 
 /** Única fuente de acciones de socio; `placement` decide en qué zona de la ficha se muestra. */
