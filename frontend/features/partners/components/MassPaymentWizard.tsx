@@ -5,13 +5,13 @@ import { shouldKeepIdempotencyKey } from "@/lib/idempotency"
 import { generateUuidV4 } from "@/lib/uuid"
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTreasuryAccounts } from "@/features/settings"
-import { LabeledSelect, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
+import { LabeledSelect, GenericWizard, type WizardStep, DataCell, SummarySection, SummaryRow, SummaryNote, SubmitButton } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useProfitDistributionMutations } from "../hooks"
 import { toast } from "sonner"
 
-import { Wallet, CheckCircle2, Banknote } from "lucide-react"
+import { Wallet } from "lucide-react"
 import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
 
 interface MassPaymentWizardProps {
@@ -23,6 +23,7 @@ interface MassPaymentWizardProps {
 
 export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }: MassPaymentWizardProps) {
     const [loading, setLoading] = useState(false)
+    const [paid, setPaid] = useState<{ total: number; count: number } | null>(null)
     const { massPayment } = useProfitDistributionMutations()
     const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [payments, setPayments] = useState<Record<number, number>>({})
@@ -49,6 +50,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
         if (open) {
             requestAnimationFrame(() => {
                 setSelectedAccountId("")
+                setPaid(null)
                 const initialPayments: Record<number, number> = {}
                 pendingLines.forEach(l => {
                     initialPayments[l.partner] = l.pendingAmount
@@ -74,8 +76,10 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
             })
             idempotencyKeyRef.current = generateUuidV4()
             toast.success("Pagos procesados correctamente.")
-            onSuccess?.()
-            onOpenChange(false)
+            setPaid({
+                total: paymentsData.reduce((sum, p) => sum + p.amount, 0),
+                count: paymentsData.length,
+            })
         } catch (error: unknown) {
             if (!shouldKeepIdempotencyKey(error)) idempotencyKeyRef.current = generateUuidV4()
             showApiError(error, "Error al procesar pagos")
@@ -95,7 +99,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                 isValid: totalToPay > 0 && pendingLines.every(l => (payments[l.partner] || 0) <= l.pendingAmount),
                 component: (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-end mb-2">
+                        <div className="flex justify-between items-end">
                             <div>
                                 <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Suma a Pagar</p>
                                 <DataCell.Currency value={totalToPay} weight="bold" className="justify-start text-2xl text-success mt-1" />
@@ -122,7 +126,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                             </div>
                         </div>
 
-                        <div className="border rounded-sm overflow-x-auto max-h-[300px] overflow-y-auto">
+                        <div className="border rounded-sm overflow-x-auto">
                             <table className="w-full text-2xs text-left">
                                 <thead className="bg-muted text-3xs font-bold uppercase text-muted-foreground tracking-wider border-b sticky top-0 z-10">
                                     <tr>
@@ -172,15 +176,10 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
             },
             {
                 id: 2,
-                title: "Cuenta de Origen",
+                title: "Cuenta de Origen y Confirmación",
                 isValid: !!selectedAccountId,
                 component: (
-                    <div className="space-y-4">
-                        <div className="bg-success/5 border border-success/20 rounded-sm p-4 flex flex-col items-center justify-center">
-                            <span className="text-3xs uppercase font-bold text-success tracking-widest opacity-80 mb-1">Monto de la Transacción ({partnersCount} pagos)</span>
-                            <DataCell.Currency value={totalToPay} weight="bold" className="justify-center text-3xl text-success w-auto" />
-                        </div>
-
+                    <div className="space-y-8">
                         <div>
                             <LabeledSelect
                                 label="Cuenta de Tesorería (Salida de Dinero)"
@@ -190,41 +189,38 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                 options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
                             />
                             <p className="text-3xs text-muted-foreground mt-1 pl-1 font-medium">
-                                Esta será la cuenta bancaria de donde se extraerán los fondos para liquidar los dividendos seleccionados.
+                                Cuenta de donde se extraerán los fondos para liquidar los dividendos seleccionados.
                             </p>
                         </div>
+                        <SummarySection title="Resumen del pago">
+                            <SummaryRow label="Socios a pagar" value={String(partnersCount)} />
+                            <SummaryRow label="Total neto a desembolsar" value={<DataCell.Currency value={totalToPay} weight="bold" className="w-auto p-0" />} strong />
+                        </SummarySection>
+                        <SummarySection title="Impactos contables">
+                            <SummaryNote tone="success">Salida del dinero de la cuenta de tesorería seleccionada</SummaryNote>
+                            <SummaryNote tone="success">Disminución de «Dividendos por Pagar» con {partnersCount} {partnersCount === 1 ? "socio" : "socios"}</SummaryNote>
+                        </SummarySection>
                     </div>
                 )
             },
-            {
-                id: 3,
-                title: "Confirmación",
-                isValid: true,
-                component: (
-                    <div className="space-y-6 py-4">
-                        <div className="flex flex-col items-center justify-center text-center space-y-4">
-                            <Banknote className="h-8 w-8" />
-                            <div>
-                                <h3 className="text-xl  font-black uppercase tracking-tighter">Ejecutar Pagos Masivos</h3>
-                                <p className="text-sm text-muted-foreground max-w-md mt-2">
-                                    Se registrará la salida del dinero de la tesorería y la disminución de la deuda de &quot;Dividendos por Pagar&quot; con {partnersCount} miembros.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
-                            <div className="flex items-center gap-3 text-xs font-medium">
-                                <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span className="flex items-center gap-1">Total Neto Desembolsado: <DataCell.Currency value={totalToPay} weight="bold" className="w-auto p-0 inline-flex" /></span>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
         ]
     }, [payments, pendingLines, selectedAccountId, treasuryAccounts])
 
     if (!resolution) return null
+
+    // Tras pagar, el éxito es un paso más del mismo wizard (mismo modal, altura y footer).
+    const doneStep: WizardStep = {
+        id: 'done',
+        title: 'Pagos procesados',
+        isValid: true,
+        component: (
+            <SummarySection title="Pago completado">
+                <SummaryRow label="Socios pagados" value={String(paid?.count ?? 0)} />
+                <SummaryRow label="Total desembolsado" value={<DataCell.Currency value={paid?.total ?? 0} weight="bold" className="w-auto p-0" />} strong />
+                <SummaryNote tone="success">Los pagos quedaron registrados en la tesorería y en la contabilidad.</SummaryNote>
+            </SummarySection>
+        ),
+    }
 
     return (
         <GenericWizard
@@ -237,11 +233,19 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                     <span>Pagos de Dividendos</span>
                 </div>
             }
-            steps={steps}
+            steps={paid ? [doneStep] : steps}
+            subtitle={paid ? 'Pago completado' : undefined}
+            footer={paid ? (
+                <div className="flex w-full justify-end">
+                    <SubmitButton type="button" onClick={() => { onSuccess?.(); onOpenChange(false) }}>Finalizar</SubmitButton>
+                </div>
+            ) : undefined}
             onComplete={handleExecutePayment}
             isCompleting={loading}
             completeButtonLabel="Firmar y Transferir"
             size="xl"
+            stableHeight
+            cardSurface
             initialStep={0}
         />
     )
