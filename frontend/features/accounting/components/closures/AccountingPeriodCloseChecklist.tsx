@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { BaseModal, CancelButton, SubmitButton, Skeleton, EmptyState } from '@/components/shared'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, ClipboardCheck } from 'lucide-react'
+import { AlertTriangle, ClipboardCheck, FileText } from 'lucide-react'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { getEntityMetadata } from '@/lib/entity-registry'
 import { DeclarationWizard, PendingChecklistSection, type PendingChecklistItem, type PendingDocumentLabel } from '@/features/tax'
@@ -33,9 +33,12 @@ function errorMessage(error: unknown): string {
     return typeof msg === 'string' && msg ? msg : 'Error al obtener el estado del período'
 }
 
+/** CTA de estado cero: enlace ghost a la lista de la entidad, con su icono a la izquierda. */
 function zeroStateAction(label: PendingDocumentLabel, text: string): PendingChecklistItem['action'] {
-    const href = getEntityMetadata(label)?.listUrl
-    return href ? { text, href } : undefined
+    const meta = getEntityMetadata(label)
+    return meta?.listUrl
+        ? { text, href: meta.listUrl, variant: 'ghost', icon: meta.icon }
+        : undefined
 }
 
 function buildItems(status: AccountingPeriodStatus, openF29: () => void): { required: PendingChecklistItem[]; suggested: PendingChecklistItem[] } {
@@ -49,7 +52,7 @@ function buildItems(status: AccountingPeriodStatus, openF29: () => void): { requ
                 title: 'Período tributario (F29) cerrado',
                 passed: status.tax_period_closed,
                 detail: status.tax_period_closed ? undefined : 'Declare, pague y cierre el F29 del mes',
-                action: status.tax_period_closed ? undefined : { text: 'Abrir F29', onClick: openF29 },
+                action: status.tax_period_closed ? undefined : { text: 'Abrir F29', onClick: openF29, variant: 'ghost', icon: FileText },
             },
             {
                 key: 'entries',
@@ -74,7 +77,7 @@ function buildItems(status: AccountingPeriodStatus, openF29: () => void): { requ
                 detail: status.payroll_count > 0
                     ? `${status.payroll_count} nómina(s) creadas, ${status.payroll_posted_count} contabilizada(s)`
                     : 'Sin nóminas creadas',
-                action: status.payroll_count === 0 ? zeroStateAction('hr.payroll', 'Crear nómina') : undefined,
+                action: status.payroll_count === 0 ? zeroStateAction('hr.payroll', 'Ir a liquidaciones de sueldo') : undefined,
                 pending: { label: 'hr.payroll', documents: status.unposted_payrolls, total: pendingPayrolls },
             },
             {

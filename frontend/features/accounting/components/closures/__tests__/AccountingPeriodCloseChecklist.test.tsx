@@ -236,7 +236,7 @@ describe("AccountingPeriodCloseChecklistModal", () => {
     it("offers a CTA to the list when there are no payrolls or bank statements", () => {
         m.status = makeStatus({ payroll_count: 0, payroll_posted_count: 0, reconciliation_count: 0, reconciliation_confirmed_count: 0 })
         mount()
-        const payroll = screen.getByRole("link", { name: "Crear nómina" })
+        const payroll = screen.getByRole("link", { name: "Ir a liquidaciones de sueldo" })
         const statements = screen.getByRole("link", { name: "Ir a conciliaciones" })
         expect(payroll.getAttribute("href")).toBeTruthy()
         expect(statements.getAttribute("href")).toBeTruthy()
