@@ -16,6 +16,26 @@ from workflow.services import WorkflowService
 from .models import F29Declaration, F29Payment, TaxPeriod
 
 
+def ensure_no_draft_invoices(year: int, month: int, action: str) -> None:
+    """Bloquea `action` si el mes tiene facturas en borrador.
+
+    Un borrador queda fuera del cálculo de IVA, por lo que declarar o cerrar con
+    borradores pendientes deja el período inconsistente.
+    """
+    if month == 12:
+        start, end = date(year, 12, 1), date(year + 1, 1, 1)
+    else:
+        start, end = date(year, month, 1), date(year, month + 1, 1)
+    count = Invoice.objects.filter(
+        date__gte=start, date__lt=end, status=Invoice.Status.DRAFT
+    ).count()
+    if count:
+        raise ValidationError(
+            f"Hay {count} factura(s) en borrador en {month:02d}/{year}. "
+            f"Emítalas o anúlelas antes de {action}."
+        )
+
+
 class F29CalculationService:
     """
     Service for calculating F29 tax declaration values from invoice data.
@@ -312,6 +332,10 @@ class F29CalculationService:
 
         if declaration.is_registered:
             raise ValidationError("Esta declaración ya fue registrada.")
+
+        ensure_no_draft_invoices(
+            declaration.tax_period.year, declaration.tax_period.month, "registrar el F29"
+        )
 
         # Accountant requirement: The tax clearing entry MUST be dated on the last day of the month
         # (accrual/devengo) to correctly zero out the accounts for the period, regardless
@@ -984,6 +1008,8 @@ class AccountingPeriodService:
                 f"Hay {draft_count} asientos en borrador. "
                 "Todos los asientos deben estar publicados antes de cerrar el periodo."
             )
+
+        ensure_no_draft_invoices(year, month, "cerrar el periodo contable")
 
         # Accountant requirement: Tax cycle MUST be finalized first
         # ensure all VAT journal entries are recorded.

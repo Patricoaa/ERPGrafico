@@ -58,7 +58,7 @@ vi.mock("@/hooks/useServerDate", () => ({
 }))
 vi.mock("@/hooks/useVatRate", () => ({ useVatRate: () => ({ rate: 19 }) }))
 vi.mock("@/components/providers/GlobalModalProvider", () => ({
-    useGlobalModals: () => ({ openEntity: vi.fn() }),
+    useGlobalModals: () => ({ openEntity: vi.fn(), tabs: [] as Array<{ active: boolean }> }),
 }))
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -303,5 +303,50 @@ describe("DeclarationWizard — fase estable y estado por apertura", () => {
         expect(buttonByText(/Confirmar Cierre/)).toBeDisabled()
         const input = document.querySelector("input[type=file]")
         expect(input?.getAttribute("accept")).toContain("application/pdf")
+    })
+})
+
+describe("DeclarationWizard — borradores y footer", () => {
+    const INVOICE_DRAFT = { id: 1, display_id: "F-1", total: 1190, date: "2026-10-05", type: "sale" as const }
+    const ENTRY_DRAFT = { id: 2, display_id: "A-2", description: "Ajuste", date: "2026-10-06" }
+
+    it("bloquea Siguiente en la auditoría mientras haya facturas en borrador", async () => {
+        m.period = makePeriod(null)
+        m.calculateTax.mockResolvedValue({ ...CALC, drafts_summary: { invoices: [INVOICE_DRAFT], entries: [] } })
+        await mount()
+        const required = screen.getByRole("region", { name: "Obligatorios" })
+        expect(required).toHaveTextContent("Sin facturas en borrador")
+        expect(buttonByText(/Siguiente/)).toBeDisabled()
+    })
+
+    it("los asientos en borrador solo se sugieren y no bloquean", async () => {
+        m.period = makePeriod(null)
+        m.calculateTax.mockResolvedValue({ ...CALC, drafts_summary: { invoices: [], entries: [ENTRY_DRAFT] } })
+        await mount()
+        expect(screen.getByRole("region", { name: "Sugeridos" })).toHaveTextContent("Sin asientos en borrador")
+        expect(buttonByText(/Siguiente/)).not.toBeDisabled()
+    })
+
+    it("con la declaración ya registrada los borradores no bloquean la revisión", async () => {
+        m.period = makePeriod({ vat_to_pay: 100000, total_paid: 0, is_fully_paid: false })
+        m.calculateTax.mockResolvedValue({ ...CALC, drafts_summary: { invoices: [INVOICE_DRAFT], entries: [] } })
+        await mount()
+        await press(buttonByText(/Anterior/))
+        await press(buttonByText(/Anterior/))
+        await press(buttonByText(/Anterior/)) // → Auditoría
+        expect(screen.getByText("01 / 05")).toBeInTheDocument()
+        expect(buttonByText(/Siguiente/)).not.toBeDisabled()
+    })
+
+    it("Confirmar Cierre y Finalizar viven en el footer del modal", async () => {
+        m.period = makePeriod({ vat_to_pay: 100000, total_paid: 100000, is_fully_paid: true })
+        const { unmount } = await mount()
+        const closeButton = buttonByText(/Confirmar Cierre/)
+        expect(closeButton?.closest('[data-slot="dialog-footer"]')).not.toBeNull()
+        unmount()
+
+        m.period = makePeriod({ vat_to_pay: 1000, total_paid: 1000, is_fully_paid: true, folio_number: "A-1" }, "CLOSED")
+        await mount()
+        expect(buttonByText(/Finalizar/)?.closest('[data-slot="dialog-footer"]')).not.toBeNull()
     })
 })

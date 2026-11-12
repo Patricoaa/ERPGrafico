@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 
 import {
-    Drawer,
+    BaseModal,
     FormSection,
     GenericWizard,
     LabeledInput,
@@ -25,7 +25,6 @@ import {
     Lock,
 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
-import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration } from "../hooks/useTaxMutations"
 import { useTaxPeriod, useTaxDeclarations } from "../hooks/useTaxQueries"
@@ -36,6 +35,8 @@ import { type TaxPeriod, type TaxPeriodDetail, type TaxDeclaration, type TaxCalc
 import { deriveF29Phase, type F29Phase } from "../utils/f29Phase"
 import { F29PaymentStep, F29PaymentHistory } from "./wizard/F29PaymentStep"
 import { F29CloseStep } from "./wizard/F29CloseStep"
+import { PendingChecklistSection, type PendingChecklistItem } from "./PendingChecklist"
+import { useF29Close } from "../hooks/useF29Close"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { generateUuidV4 } from "@/lib/uuid"
@@ -93,7 +94,7 @@ function toTaxDeclaration(period: TaxPeriodDetail, record: DeclarationRecord | n
 
 export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYear, month: propMonth, onSuccess, existingPeriods: existingPeriodsProp }: DeclarationWizardProps) {
     const { year: currentYear, month: currentMonth, dateString } = useServerDate()
-    const { openEntity } = useGlobalModals()
+    const { openEntity, tabs } = useGlobalModals()
     const { rate } = useVatRate()
     const [isCalculating, setIsCalculating] = useState(false)
     const [calcFailed, setCalcFailed] = useState(false)
@@ -253,6 +254,46 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
         setClosedNow(true)
         void refetchPeriod()
     }
+    const closeController = useF29Close(declaration, handleClosed)
+    const [expandedDrafts, setExpandedDrafts] = useState<ReadonlySet<string>>(() => new Set())
+    const toggleDraft = (key: string) => setExpandedDrafts(prev => {
+        const next = new Set(prev)
+        if (next.has(key)) next.delete(key)
+        else next.add(key)
+        return next
+    })
+    // Un documento abierto desde la auditoría es la pestaña activa del espacio de trabajo: el modal
+    // del wizard lo taparía, así que cede el paso (sin desmontarse) mientras siga a la vista.
+    const documentActive = isOpen && tabs.some(tab => tab.active)
+
+    // Borradores del mes: las facturas bloquean (no entran al IVA), los asientos solo se sugieren.
+    const draftInvoices = calcData?.drafts_summary?.invoices ?? []
+    const draftEntries = calcData?.drafts_summary?.entries ?? []
+    const draftChecklist: { required: PendingChecklistItem[]; suggested: PendingChecklistItem[] } = {
+        required: [{
+            key: "invoices",
+            title: "Sin facturas en borrador",
+            passed: draftInvoices.length === 0,
+            detail: draftInvoices.length > 0 ? `${draftInvoices.length} factura(s) en borrador: no entran al cálculo de IVA` : undefined,
+            pending: {
+                label: "billing.invoice",
+                total: draftInvoices.length,
+                documents: draftInvoices.map(inv => ({ id: inv.id, label: inv.display_id, amount: String(inv.total), date: inv.date })),
+            },
+        }],
+        suggested: [{
+            key: "entries",
+            title: "Sin asientos en borrador",
+            passed: draftEntries.length === 0,
+            detail: draftEntries.length > 0 ? `${draftEntries.length} asiento(s) en borrador` : undefined,
+            pending: {
+                label: "accounting.journalentry",
+                total: draftEntries.length,
+                documents: draftEntries.map(entry => ({ id: entry.id, label: `${entry.display_id} ${entry.description}`.trim(), amount: null, date: entry.date })),
+            },
+        }],
+    }
+    const hasBlockingDrafts = !isDeclared && draftInvoices.length > 0
 
     // Calculations
     const vatDebit = calcData?.vat_debit || 0
@@ -274,7 +315,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
         {
             id: "audit",
             title: "Auditoría de Documentos (IVA)",
-            isValid: true,
+            isValid: !hasBlockingDrafts,
             component: (
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
                     <div className="flex flex-col gap-12">
@@ -349,21 +390,16 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             </div>
                         </section>
                     </div>
-                    {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
-                        <Alert variant="warning">
-                            <div className="space-y-4 w-full">
-                                <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">Documentos en Borrador</AlertTitle>
-                                <AlertDescription className="text-xs text-warning/70 font-medium">Hay pendientes que no se incluyeron. Se recomienda procesarlos.</AlertDescription>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {calcData.drafts_summary.invoices.slice(0, 2).map(inv => (
-                                        <div key={inv.id} className="flex items-center justify-between bg-muted/50 p-3 rounded-md border border-warning/10">
-                                            <span className="text-2xs font-bold">{inv.display_id}</span>
-                                            <Button variant="ghost" size="sm" className="h-7 text-4xs font-medium" onClick={() => openEntity('billing.invoice', inv.id)}>Ver documento</Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </Alert>
+                    {!isDeclared && (
+                        <div className="space-y-5">
+                            <PendingChecklistSection title="Obligatorios" items={draftChecklist.required} critical expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                            <PendingChecklistSection title="Sugeridos" items={draftChecklist.suggested} critical={false} expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                            {hasBlockingDrafts && (
+                                <p className="text-xs text-muted-foreground">
+                                    Emita o anule las facturas en borrador del mes para continuar: un borrador no entra al cálculo de IVA.
+                                </p>
+                            )}
+                        </div>
                     )}
                 </div>
             )
@@ -493,7 +529,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             id: "close",
             title: "Cierre del Período",
             isValid: true,
-            component: declaration ? <F29CloseStep declaration={declaration} onChanged={handleClosed} /> : pendingDeclaration,
+            component: declaration ? <F29CloseStep declaration={declaration} close={closeController} /> : pendingDeclaration,
         },
     ]
 
@@ -516,6 +552,17 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                     <ChevronLeft className="h-4 w-4" />
                     Anterior
                 </Button>
+                {isLastStep && current?.id === "close" && (
+                    <SubmitButton
+                        type="button"
+                        onClick={() => { void closeController.close() }}
+                        disabled={!closeController.canClose || isPreLoading}
+                        loading={closeController.isBusy}
+                        icon={Lock}
+                    >
+                        {closeController.isBusy ? "Cerrando..." : "Confirmar Cierre"}
+                    </SubmitButton>
+                )}
                 {!isLastStep && (
                     <SubmitButton
                         type="button"
@@ -537,14 +584,19 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
     if (phase === "done" && taxPeriod && !isPreLoading) {
         const display = taxPeriod.tax_period_display ?? `${taxPeriod.month_display ?? taxPeriod.month} ${taxPeriod.year}`
         return (
-            <Drawer
-                open={isOpen}
+            <BaseModal
+                open={isOpen && !documentActive}
                 onOpenChange={onOpenChange}
-                defaultSize={formDrawerWidth("complex", false)}
-                side="left"
-                boundary="embedded"
+                icon={CheckCircle2}
                 title={closedNow ? "Ciclo Finalizado" : "Período Cerrado"}
-                contentClassName="p-6"
+                size="lg"
+                footer={
+                    <div className="flex justify-end w-full">
+                        <SubmitButton type="button" onClick={() => (closedNow ? onSuccess() : onOpenChange(false))} icon={CheckCircle2}>
+                            Finalizar
+                        </SubmitButton>
+                    </div>
+                }
             >
                 <div className="flex flex-col items-center justify-center py-16 text-center space-y-8 animate-in zoom-in-95 duration-500">
                     <CheckCircle2 className="h-12 w-12 text-success" />
@@ -571,21 +623,15 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             <F29PaymentHistory payments={summary.payments ?? []} />
                         </div>
                     )}
-                    <Button
-                        onClick={() => (closedNow ? onSuccess() : onOpenChange(false))}
-                        className="px-10 h-11 font-medium uppercase tracking-widest text-2xs"
-                    >
-                        Finalizar
-                    </Button>
                 </div>
-            </Drawer>
+            </BaseModal>
         )
     }
 
     return (
         <GenericWizard
             key={`wizard-${isOpen}-${periodId}`}
-            open={isOpen}
+            open={isOpen && !documentActive}
             onOpenChange={onOpenChange}
             onClose={() => onOpenChange(false)}
             initialStep={initialStep}
@@ -599,10 +645,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             steps={steps}
             onComplete={async () => {}}
             footer={renderFooter}
-            size="md"
-            surface="drawer"
-            drawerSide="left"
-            drawerBoundary="embedded"
+            size="xl"
+            surface="modal"
         />
     )
 }

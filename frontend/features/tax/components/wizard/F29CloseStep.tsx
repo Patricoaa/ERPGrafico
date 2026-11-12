@@ -1,59 +1,22 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { FileText, Lock } from "lucide-react"
-import { toast } from "sonner"
+import { FileText } from "lucide-react"
 
-import { DocumentAttachmentDropzone, SubmitButton } from "@/components/shared"
-import { showApiError } from "@/lib/errors"
-import { generateUuidV4 } from "@/lib/uuid"
-import { useClosePeriod, useUploadF29Document } from "../../hooks/useTaxMutations"
+import { DocumentAttachmentDropzone } from "@/components/shared"
+import type { F29CloseController } from "../../hooks/useF29Close"
 import type { TaxDeclaration } from "../../types"
 
 interface F29CloseStepProps {
     declaration: TaxDeclaration
-    onChanged: () => void
+    /** Estado del cierre (`useF29Close`); la acción "Confirmar Cierre" vive en el footer del wizard. */
+    close: Pick<F29CloseController, "file" | "setFile" | "hasDocument">
 }
 
 /**
- * Paso "Cierre" del wizard F29: exige el comprobante PDF (salvo que ya esté
- * adjunto) y cierra el período tributario. Una clave de idempotencia por
- * operación, regenerada tras cualquier fallo: el endpoint cachea también las
- * respuestas 400 por clave.
+ * Paso "Cierre" del wizard F29: adjuntar el comprobante PDF. El botón que cierra el período está en
+ * el footer del wizard, igual que el resto de las acciones de avance.
  */
-export function F29CloseStep({ declaration, onChanged }: F29CloseStepProps) {
-    const [file, setFile] = useState<File | null>(null)
-    const { uploadF29Document, isUploadingF29Document } = useUploadF29Document(declaration.id)
-    const { closePeriod, isClosingPeriod } = useClosePeriod()
-    const idempotencyKeyRef = useRef<string | null>(null)
-
-    const hasDocument = Boolean(declaration.document)
-    const isBusy = isClosingPeriod || isUploadingF29Document
-    const canClose = (file !== null || hasDocument) && declaration.tax_period != null
-
-    const handleClose = async () => {
-        if (!canClose || declaration.tax_period == null) return
-        if (file) {
-            try {
-                await uploadF29Document(file)
-            } catch {
-                // El hook ya mostró el error.
-                return
-            }
-        }
-        if (!idempotencyKeyRef.current) idempotencyKeyRef.current = generateUuidV4()
-        try {
-            await closePeriod({ id: declaration.tax_period, idempotencyKey: idempotencyKeyRef.current })
-        } catch (error: unknown) {
-            idempotencyKeyRef.current = null
-            showApiError(error, "Error al cerrar el período tributario")
-            return
-        }
-        idempotencyKeyRef.current = null
-        toast.success("Período tributario cerrado")
-        onChanged()
-    }
-
+export function F29CloseStep({ declaration, close }: F29CloseStepProps) {
     return (
         <div className="max-w-4xl mx-auto pb-6 space-y-6">
             <div className="flex items-start gap-3">
@@ -62,23 +25,12 @@ export function F29CloseStep({ declaration, onChanged }: F29CloseStepProps) {
                     Para cerrar el período {declaration.tax_period_display}, adjunta el comprobante o formulario F29 en PDF. (Obligatorio)
                 </p>
             </div>
-            {hasDocument && !file && (
+            {close.hasDocument && !close.file && (
                 <p className="text-xs text-muted-foreground">
                     Ya hay un comprobante adjunto; puedes reemplazarlo o cerrar con el actual.
                 </p>
             )}
-            <DocumentAttachmentDropzone file={file} onFileChange={setFile} accept="application/pdf,.pdf" />
-            <div className="flex justify-end">
-                <SubmitButton
-                    type="button"
-                    onClick={() => { void handleClose() }}
-                    disabled={!canClose}
-                    loading={isBusy}
-                    icon={Lock}
-                >
-                    {isBusy ? "Cerrando..." : "Confirmar Cierre"}
-                </SubmitButton>
-            </div>
+            <DocumentAttachmentDropzone file={close.file} onFileChange={close.setFile} accept="application/pdf,.pdf" />
         </div>
     )
 }

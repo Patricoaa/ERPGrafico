@@ -45,7 +45,8 @@ vi.mock("@/components/providers/GlobalModalProvider", () => ({
     useGlobalModals: () => ({ openEntity: m.openEntity, tabs: m.tabs }),
 }))
 
-vi.mock("@/features/tax", () => ({
+vi.mock("@/features/tax", async () => ({
+    PendingChecklistSection: (await import("@/features/tax/components/PendingChecklist")).PendingChecklistSection,
     DeclarationWizard: (props: WizardProps) => {
         m.wizardProps = props
         return props.isOpen ? <div data-testid="declaration-wizard" /> : null
@@ -134,17 +135,21 @@ describe("AccountingPeriodCloseChecklistModal", () => {
 
         expect(within(required).getByText("Período tributario (F29) cerrado")).toBeInTheDocument()
         expect(within(required).getByText("Sin asientos en borrador")).toBeInTheDocument()
-        expect(within(suggested).getByText("Sin facturas en borrador")).toBeInTheDocument()
+        expect(within(required).getByText("Sin facturas en borrador")).toBeInTheDocument()
         expect(within(suggested).getByText("Nóminas del mes contabilizadas")).toBeInTheDocument()
         expect(within(suggested).getByText("Conciliaciones bancarias confirmadas")).toBeInTheDocument()
     })
 
-    it("keeps the close button gated on F29 closed and no draft entries", () => {
-        m.status = makeStatus({ tax_period_closed: true, draft_invoices_count: 3, draft_invoices: docs(3, "Factura") })
+    it("gates the close button on F29 closed, no draft entries and no draft invoices", () => {
+        m.status = makeStatus({ tax_period_closed: true })
         const { rerender } = mount()
         expect(buttonByText(/Confirmar Cierre/)).not.toBeDisabled()
 
         m.status = makeStatus({ tax_period_closed: true, draft_entries_count: 1, draft_entries: docs(1, "Asiento") })
+        rerender(<AccountingPeriodCloseChecklistModal {...baseProps} />)
+        expect(buttonByText(/Revisar Pendientes/)).toBeDisabled()
+
+        m.status = makeStatus({ tax_period_closed: true, draft_invoices_count: 3, draft_invoices: docs(3, "Factura") })
         rerender(<AccountingPeriodCloseChecklistModal {...baseProps} />)
         expect(buttonByText(/Revisar Pendientes/)).toBeDisabled()
     })
@@ -192,6 +197,14 @@ describe("AccountingPeriodCloseChecklistModal", () => {
         expect(screen.getByTestId("declaration-wizard")).toBeInTheDocument()
         const props = m.wizardProps as WizardProps
         expect(props.periodId).toBe(9)
+    })
+
+    it("keeps the checklist mounted under the wizard modal (stacked, not hidden)", async () => {
+        mount()
+        await press(buttonByText(/Abrir F29/))
+
+        expect(screen.getByTestId("declaration-wizard")).toBeInTheDocument()
+        expect(screen.getByRole("region", { name: "Obligatorios" })).toBeInTheDocument()
     })
 
     it("opens the F29 wizard by year/month when there is no tax period", async () => {
