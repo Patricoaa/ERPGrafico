@@ -510,6 +510,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "treasury.tasks.accrue_monthly_loan_interest",
         "schedule": crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
     },
+    # ── Treasury / Ventas de terminal (TUU) ─────────────────────────────────
+    # Cada hora revisa si corresponde la sincronización diaria (una por proveedor
+    # y día local, pasada la hora configurada en TerminalSyncSettings).
+    "dispatch_terminal_sales_sync_hourly": {
+        "task": "treasury.tasks.dispatch_terminal_sales_sync",
+        "schedule": crontab(minute=10),  # Hourly at XX:10
+    },
     # ── Core / Idempotency ───────────────────────────────────────────────────
     # Purges IdempotencyRecord rows older than the 24h TTL defined by contract
     # (docs/20-contracts/idempotency.md). Runs off-peak so a reused key after
