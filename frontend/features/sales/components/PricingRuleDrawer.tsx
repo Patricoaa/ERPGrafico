@@ -21,7 +21,7 @@ import { PricingUtils } from '@/lib/pricing-utils'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { useSingleProduct } from "@/features/inventory"
-import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, SubmitButton } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormFooter, FormSplitLayout, SkeletonShell, SubmitButton, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
@@ -167,7 +167,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
     const renderGeneralTab = () => (
         <div className="space-y-6">
-            <FormSection title="Alcance y Referencia" icon={Layers} />
+            <Section.Header spaced title="Alcance y Referencia" icon={Layers} />
             <div className="grid grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
@@ -225,7 +225,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
     const renderConditionsTab = () => (
         <div className="space-y-6">
-            <FormSection title="Condición de Activación" icon={Zap} />
+            <Section.Header spaced title="Condición de Activación" icon={Zap} />
             <div className="grid grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
@@ -269,7 +269,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
     const renderActionsTab = () => (
         <div className="space-y-6">
-            <FormSection title="Efecto / Precio Final" icon={DollarSign} />
+            <Section.Header spaced title="Efecto / Precio Final" icon={DollarSign} />
             <div className="grid grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
@@ -352,7 +352,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
     const renderValidityTab = () => (
         <div className="space-y-6">
-            <FormSection title="Vigencia y Estado" icon={Calendar} />
+            <Section.Header spaced title="Vigencia y Estado" icon={Calendar} />
             <FormField
                 control={form.control}
                 name="active"

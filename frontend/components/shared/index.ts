@@ -27,7 +27,6 @@ export * from './CollapsibleSheet';
 export * from './SheetCloseButton';
 
 export * from './GenericWizard';
-export * from './SummaryList';
 
 // Buttons & Actions
 export * from './ActionFoldButton';
@@ -86,10 +85,10 @@ export * from './DrawerLayout';
 export * from './DrawerResizableRail';
 export * from './EmptyState';
 export * from './SectionHeader';
+export * from './Section';
 export * from './ModuleLauncher';
 
 export * from './Separators';
-export * from './FormSection';
 
 // Loading States
 export * from './LoadingFallback';

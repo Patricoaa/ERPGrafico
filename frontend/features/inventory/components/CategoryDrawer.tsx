@@ -8,7 +8,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { SubmitButton, CancelButton, Drawer, FormFooter, FormSection, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch, SelectorTrigger } from "@/components/shared"
+import { SubmitButton, CancelButton, Drawer, FormFooter, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch, SelectorTrigger, Section } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -345,7 +345,7 @@ export function CategoryDrawer({
                         </div>
 
                         <div className="space-y-4">
-                            <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
+                            <Section.Header spaced title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
 
                             <FormField
                                 control={form.control}

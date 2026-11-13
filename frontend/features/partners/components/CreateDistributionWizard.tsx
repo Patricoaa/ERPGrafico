@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo, useCallback } from "react"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, SummarySection, SummaryRow, SummaryNote, SubmitButton, NumpadModal } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, SubmitButton, NumpadModal, Section } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
@@ -350,11 +350,11 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                         />
                     </div>
 
-                    <SummarySection>
-                        <SummaryNote tone="success">
+                    <Section>
+                        <Section.Note tone="success">
                             El sistema calculará la participación exacta a la fecha de resolución y descontará automáticamente los retiros provisorios detectados en la contabilidad del ejercicio.
-                        </SummaryNote>
-                    </SummarySection>
+                        </Section.Note>
+                    </Section>
                 </div>
             )
         },
@@ -371,10 +371,10 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
             onNext: handleUpdateDestinations,
             component: (
                 <div className="space-y-4">
-                    <SummarySection>
-                        <SummaryRow label="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
-                        <SummaryRow label="Monto a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0 text-primary" />} strong />
-                    </SummarySection>
+                    <Section>
+                        <Section.Row variant="stat" title="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
+                        <Section.Row variant="stat" title="Monto a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0 text-primary" />} strong />
+                    </Section>
 
                     <div className="border rounded-sm overflow-hidden">
                         <table className="w-full text-sm text-left">
@@ -567,22 +567,22 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
             isValid: true,
             component: (
                 <div className="space-y-8">
-                    <SummarySection title="Resumen de la distribución">
-                        <SummaryRow label="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
-                        <SummaryRow label="Resultado a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0" />} strong />
+                    <Section title="Resumen de la distribución">
+                        <Section.Row variant="stat" title="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
+                        <Section.Row variant="stat" title="Resultado a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0" />} strong />
                         {offsetTotal > 0 && (
-                            <SummaryRow label="Retiros provisorios absorbidos" value={<DataCell.Currency value={offsetTotal} className="w-auto p-0" />} />
+                            <Section.Row variant="stat" title="Retiros provisorios absorbidos" value={<DataCell.Currency value={offsetTotal} className="w-auto p-0" />} />
                         )}
                         {draftResolution?.is_profit && totals.map(t => (
-                            <SummaryRow key={t.key} label={t.label} value={<DataCell.Currency value={t.amount} className="w-auto p-0" />} />
+                            <Section.Row variant="stat" key={t.key} title={t.label} value={<DataCell.Currency value={t.amount} className="w-auto p-0" />} />
                         ))}
-                    </SummarySection>
-                    <SummarySection title="Impactos contables automatizados">
-                        <SummaryNote tone="success">Cierre de la cuenta «Utilidades del Ejercicio»</SummaryNote>
-                        <SummaryNote tone="success">Liquidación contable de retiros provisorios de socios</SummaryNote>
-                        <SummaryNote tone="success">Creación de pasivos en «Dividendos por Pagar»</SummaryNote>
-                        <SummaryNote tone="success">Aumento de Capital si hubo Reinversión</SummaryNote>
-                    </SummarySection>
+                    </Section>
+                    <Section title="Impactos contables automatizados">
+                        <Section.Note tone="success">Cierre de la cuenta «Utilidades del Ejercicio»</Section.Note>
+                        <Section.Note tone="success">Liquidación contable de retiros provisorios de socios</Section.Note>
+                        <Section.Note tone="success">Creación de pasivos en «Dividendos por Pagar»</Section.Note>
+                        <Section.Note tone="success">Aumento de Capital si hubo Reinversión</Section.Note>
+                    </Section>
                 </div>
             )
         }
@@ -595,14 +595,14 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
         isValid: true,
         component: (
             <div className="space-y-8">
-                <SummarySection title="Distribución completada">
-                    <SummaryRow label="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
-                    <SummaryRow label="Resultado distribuido" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0" />} strong />
+                <Section title="Distribución completada">
+                    <Section.Row variant="stat" title="Ejercicio" value={String(draftResolution?.fiscal_year ?? "")} />
+                    <Section.Row variant="stat" title="Resultado distribuido" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0" />} strong />
                     {draftResolution?.is_profit && totals.filter(t => t.amount > 0).map(t => (
-                        <SummaryRow key={t.key} label={t.label} value={<DataCell.Currency value={t.amount} className="w-auto p-0" />} />
+                        <Section.Row variant="stat" key={t.key} title={t.label} value={<DataCell.Currency value={t.amount} className="w-auto p-0" />} />
                     ))}
-                    <SummaryNote tone="success">La contabilidad de la distribución quedó registrada.</SummaryNote>
-                </SummarySection>
+                    <Section.Note tone="success">La contabilidad de la distribución quedó registrada.</Section.Note>
+                </Section>
             </div>
         ),
     }

@@ -1,7 +1,7 @@
 "use client"
 
 import { Package } from "lucide-react"
-import { DataCell, DocumentFieldGrid, FormSection } from "@/components/shared"
+import { DataCell, DocumentFieldGrid, Section } from "@/components/shared"
 import { DocumentRefLink } from "@/features/documents"
 import type { Order, OrderLine } from "../../types"
 import { DocumentTotalsBox, toNumber } from "./DocumentTotalsBox"
@@ -89,7 +89,7 @@ export function InvoiceSummaryTab({
             </section>
 
             <section className="space-y-4">
-                <FormSection title="Productos" icon={Package} />
+                <Section.Header spaced title="Productos" icon={Package} />
                 <DocumentLinesTable lines={lines} kind="invoice" onCreateWorkOrder={onCreateWorkOrder} />
                 <DocumentTotalsBox
                     subtotal={subtotal}

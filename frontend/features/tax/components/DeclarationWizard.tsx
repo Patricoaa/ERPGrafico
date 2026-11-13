@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button"
 
 import {
     BaseModal,
-    FormSection,
     GenericWizard,
     LabeledInput,
     MoneyDisplay,
     SubmitButton,
     type WizardRenderContext,
     type WizardStep,
+    Section,
+    type SectionChecklistItem,
 } from '@/components/shared'
 import {
     Calculator,
@@ -33,7 +34,6 @@ import { type TaxPeriod, type TaxPeriodDetail, type TaxDeclaration, type TaxCalc
 import { deriveF29Phase, type F29Phase } from "../utils/f29Phase"
 import { F29PaymentStep, F29PaymentHistory } from "./wizard/F29PaymentStep"
 import { F29CloseStep } from "./wizard/F29CloseStep"
-import { PendingChecklistSection, type PendingChecklistItem } from "./PendingChecklist"
 import { useF29Close } from "../hooks/useF29Close"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { generateUuidV4 } from "@/lib/uuid"
@@ -266,7 +266,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
     // Borradores del mes: las facturas bloquean (no entran al IVA), los asientos solo se sugieren.
     const draftInvoices = calcData?.drafts_summary?.invoices ?? []
     const draftEntries = calcData?.drafts_summary?.entries ?? []
-    const draftChecklist: { required: PendingChecklistItem[]; suggested: PendingChecklistItem[] } = {
+    const draftChecklist: { required: SectionChecklistItem[]; suggested: SectionChecklistItem[] } = {
         required: [{
             key: "invoices",
             title: "Sin facturas en borrador",
@@ -317,7 +317,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                 <div className="space-y-10 pb-6">
                     <div className="grid gap-6 md:grid-cols-2">
                         <section className="space-y-8">
-                            <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
+                            <Section.Header spaced title="Débito Fiscal" icon={ArrowUpRight} />
                             <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
                                 <div>
                                     <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
@@ -352,7 +352,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             </div>
                         </section>
                         <section className="space-y-8">
-                            <FormSection title="Crédito Fiscal" icon={ArrowDownLeft} />
+                            <Section.Header spaced title="Crédito Fiscal" icon={ArrowDownLeft} />
                             <div className="space-y-4 bg-transparent p-6 rounded-md border border-border/50">
                                 <div>
                                     <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
@@ -389,8 +389,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                     </div>
                     {!isDeclared && (
                         <div className="space-y-5">
-                            <PendingChecklistSection title="Obligatorios" items={draftChecklist.required} critical expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
-                            <PendingChecklistSection title="Sugeridos" items={draftChecklist.suggested} critical={false} expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                            <Section.Checklist title="Obligatorios" items={draftChecklist.required} critical expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
+                            <Section.Checklist title="Sugeridos" items={draftChecklist.suggested} critical={false} expanded={expandedDrafts} onToggle={toggleDraft} onOpenDocument={openEntity} />
                             {hasBlockingDrafts && (
                                 <p className="text-xs text-muted-foreground">
                                     Emita o anule las facturas en borrador del mes para continuar: un borrador no entra al cálculo de IVA.
@@ -601,14 +601,12 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                         </p>
                     </div>
                     {summary && (
-                        <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm text-left">
-                            {summary.folio_number && (<><dt className="text-muted-foreground">Folio</dt><dd className="font-mono">{summary.folio_number}</dd></>)}
-                            <dt className="text-muted-foreground">Total declarado</dt>
-                            <dd><MoneyDisplay amount={summary.vat_to_pay} showColor={false} className="font-bold" /></dd>
-                            <dt className="text-muted-foreground">Total pagado</dt>
-                            <dd><MoneyDisplay amount={summary.total_paid} showColor={false} className="font-bold" /></dd>
-                            {taxPeriod.closed_by_name && (<><dt className="text-muted-foreground">Cerrado por</dt><dd>{taxPeriod.closed_by_name}</dd></>)}
-                        </dl>
+                        <Section className="w-full max-w-sm text-left">
+                            {summary.folio_number && <Section.Row variant="stat" title="Folio" value={summary.folio_number} />}
+                            <Section.Row variant="stat" title="Total declarado" value={<MoneyDisplay amount={summary.vat_to_pay} showColor={false} className="font-bold" />} />
+                            <Section.Row variant="stat" title="Total pagado" value={<MoneyDisplay amount={summary.total_paid} showColor={false} className="font-bold" />} />
+                            {taxPeriod.closed_by_name && <Section.Row variant="stat" plain title="Cerrado por" value={taxPeriod.closed_by_name} />}
+                        </Section>
                     )}
                     {summary && (
                         <div className="w-full max-w-xl text-left">

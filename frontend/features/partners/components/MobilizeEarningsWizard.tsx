@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
+import { LabeledInput, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, Section } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { usePartners } from "@/features/contacts"
 import { usePartnerMutations } from "../hooks"
@@ -213,7 +213,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         </div>
 
                         <div className="space-y-3 pt-2">
-                            <span className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Opciones Adicionales</span>
+                            <Section.Header title="Opciones Adicionales" />
 
                             <PeriodValidationDateInput
                                 label="Fecha Contable"

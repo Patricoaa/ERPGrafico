@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import { Form, FormField } from '@/components/ui/form'
-import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, CancelButton, SubmitButton, FormSplitLayout } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, FormSplitLayout, Section } from "@/components/shared"
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Banknote, Calculator } from 'lucide-react'
@@ -259,7 +259,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
             <FormSplitLayout className="space-y-4 p-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <FormSection title="Entidad" icon={Banknote} />
+                    <Section.Header spaced title="Entidad" icon={Banknote} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
@@ -289,7 +289,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                         />
                     </div>
 
-                    <FormSection title="Condiciones" icon={Banknote} />
+                    <Section.Header spaced title="Condiciones" icon={Banknote} />
                     <div className="grid grid-cols-3 gap-4">
                         <FormField
                             control={form.control}
@@ -398,7 +398,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                         />
                     </div>
 
-                    <FormSection title="Cargos del Contrato (opcional)" icon={Banknote} />
+                    <Section.Header spaced title="Cargos del Contrato (opcional)" icon={Banknote} />
                     <div className="grid grid-cols-3 gap-4">
                         <FormField
                             control={form.control}
@@ -441,7 +441,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                         />
                     </div>
 
-                    <FormSection title="Fechas y cuentas" icon={Banknote} />
+                    <Section.Header spaced title="Fechas y cuentas" icon={Banknote} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
                             control={form.control}

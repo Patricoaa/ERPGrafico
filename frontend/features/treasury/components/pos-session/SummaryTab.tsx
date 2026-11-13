@@ -3,7 +3,7 @@
 import { AlertTriangle, Banknote, Info, Receipt, Timer, TrendingUp, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { DocumentFieldGrid, EntityBadge, FormSection, SkeletonShell, StatCard, type DocumentField } from "@/components/shared"
+import { DocumentFieldGrid, EntityBadge, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
 import type { POSSession, POSSessionOverview } from "../../types"
 import { formatCurrency } from "@/lib/money"
 import { AmountCell, GRID_LEFT, dateTime, formatDuration, type SessionTab } from "./shared"
@@ -49,12 +49,12 @@ export function SummaryTab({ session, overview, isLoading, onGoTab }: SummaryTab
                     <IndicatorCards session={session} overview={overview} />
 
                     <section aria-label="Información operativa" className="space-y-4">
-                        <FormSection title="Información operativa" icon={Info} />
+                        <Section.Header spaced title="Información operativa" icon={Info} />
                         <DocumentFieldGrid className={GRID_LEFT} fields={operational(session, overview)} />
                     </section>
 
                     <section aria-label="Cobros por métodos" className="space-y-4">
-                        <FormSection title="Cobros por métodos" icon={Wallet} />
+                        <Section.Header spaced title="Cobros por métodos" icon={Wallet} />
                         <CollectionsBar collections={overview.collections} />
                     </section>
                 </div>

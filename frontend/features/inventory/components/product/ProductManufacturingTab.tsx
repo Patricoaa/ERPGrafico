@@ -2,7 +2,7 @@
 "use client"
 
 import { type UoM, type Product } from "@/types/entities"
-import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, FormSelectionGroup, Badge} from '@/components/shared'
+import { ActionConfirmModal, FormLineItemsTable, LabeledContainer, LabeledSeparator, LabeledSwitch, FormSelectionGroup, Badge, Section } from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
@@ -45,7 +45,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="space-y-4">
-                <FormSection title="Ajustes de Producción" icon={Settings2} />
+                <Section.Header spaced title="Ajustes de Producción" icon={Settings2} />
 
                 <div className="space-y-6">
 
@@ -173,7 +173,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
 
             {hasBom && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-600">
-                    <FormSection title="Lista de materiales (LdM)" icon={Layers} />
+                    <Section.Header spaced title="Lista de materiales (LdM)" icon={Layers} />
 
                     {/* Contextual note for templates with variants */}
                     {hasVariants && (

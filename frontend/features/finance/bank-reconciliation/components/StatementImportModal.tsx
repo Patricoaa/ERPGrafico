@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/errors"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, DrawerResizableRail, FadeIn, FormSection, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
+import { DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, DrawerResizableRail, FadeIn, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep, Section } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal, Calendar } from "lucide-react"
@@ -339,7 +339,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             title: 'Carga de Archivo',
             component: (
                 <FadeIn className="px-4 pb-4 pt-2 space-y-6">
-                    <FormSection title="Cuenta de Destino" icon={Landmark} />
+                    <Section.Header spaced title="Cuenta de Destino" icon={Landmark} />
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-3">
                             <TreasuryAccountSelector
@@ -363,7 +363,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         </div>
                     </div>
 
-                    <FormSection title="Período de la Cartola" icon={Calendar} />
+                    <Section.Header spaced title="Período de la Cartola" icon={Calendar} />
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledSelect
                             label="Mes *"
@@ -379,7 +379,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         />
                     </div>
 
-                    <FormSection title="Archivo de Cartola" icon={FileUp} />
+                    <Section.Header spaced title="Archivo de Cartola" icon={FileUp} />
                     <div className="space-y-6">
                         <DocumentAttachmentDropzone
                             file={file as File | null}
@@ -414,7 +414,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             title: 'Mapeo de Columnas',
             component: (
                 <FadeIn className="px-4 pb-4 pt-2 space-y-6">
-                    <FormSection title="Mapeo de Columnas" icon={Columns} />
+                    <Section.Header spaced title="Mapeo de Columnas" icon={Columns} />
 
                     {/* S3.7: Parse options */}
                     {bankFormat === 'GENERIC_CSV' && (
@@ -513,7 +513,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         </div>
                     )}
 
-                    <FormSection title="Estado de Mapeo" icon={TableIcon} />
+                    <Section.Header spaced title="Estado de Mapeo" icon={TableIcon} />
 
                     <div className="flex flex-wrap gap-3 items-center justify-center py-2">
                         {REQUIRED_FIELDS.map(f => {

@@ -12,7 +12,7 @@ import { usePaymentMethods, useTerminalDevices, type Terminal, type TerminalCrea
 import { treasuryApi } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, DrawerLayout, FormSelectionGroup, SubmitButton } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormFooter, DrawerLayout, FormSelectionGroup, SubmitButton, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { EntitySidebar } from "@/features/comments"
 import { DocumentRelationsTab, useDocumentRelations, type DocumentDomain } from "@/features/documents"
@@ -350,7 +350,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
 
                                 <div className="space-y-6">
-                                    <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
+                                    <Section.Header spaced title="Métodos de Pago Permitidos" icon={CreditCard} />
 
                                     <div className="space-y-6">
                                         {typeOrder.map(type => {

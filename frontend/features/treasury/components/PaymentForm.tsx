@@ -5,7 +5,7 @@ import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
+import { LabeledInput, LabeledSelect, Section } from "@/components/shared"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {User, FileText} from "lucide-react"
@@ -104,7 +104,7 @@ export function PaymentForm({
                         />
                     )}
 
-                    <FormSection title="Método de Pago" icon={paymentType === "INBOUND" ? User : FileText} />
+                    <Section.Header spaced title="Método de Pago" icon={paymentType === "INBOUND" ? User : FileText} />
 
                     <PaymentMethodSelector
                         operation={paymentType === "INBOUND" ? "sales" : "purchases"}
@@ -120,7 +120,7 @@ export function PaymentForm({
                         }}
                     />
 
-                    <FormSection title="Contacto" icon={paymentType === "INBOUND" ? User : FileText} />
+                    <Section.Header spaced title="Contacto" icon={paymentType === "INBOUND" ? User : FileText} />
 
                     {paymentType === "INBOUND" ? (
                         <FormField

@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Paintbrush, Printer, FileText, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { LabeledInput, FormSection } from "@/components/shared"
+import { LabeledInput, Section } from "@/components/shared"
 import { DesignFilesField } from "./DesignFilesField"
 
 // ── Canonical shape ───────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ export function ManufacturingSpecsEditor({
         />
       )}
 
-      <FormSection title="Especificaciones Técnicas" icon={Wrench} />
+      <Section.Header spaced title="Especificaciones Técnicas" icon={Wrench} />
 
       <div className={cn(
         "grid grid-cols-1 gap-4",
@@ -177,7 +177,7 @@ export function ManufacturingSpecsEditor({
 
         {/* ── Pre-Impresión ─────────────────────────────────────────────── */}
         <div className={phaseCardClass(value.phases.prepress)}>
-          <FormSection title="Pre-Impresión" icon={Paintbrush} className="pt-0 pb-4" />
+          <Section.Header spaced title="Pre-Impresión" icon={Paintbrush} className="pt-0 pb-4" />
 
           {phaseToggle('prepress')}
 
@@ -241,7 +241,7 @@ export function ManufacturingSpecsEditor({
 
         {/* ── Impresión ─────────────────────────────────────────────────── */}
         <div className={phaseCardClass(value.phases.press)}>
-          <FormSection title="Impresión" icon={Printer} className="pt-0 pb-4" />
+          <Section.Header spaced title="Impresión" icon={Printer} className="pt-0 pb-4" />
 
           {phaseToggle('press')}
 
@@ -286,7 +286,7 @@ export function ManufacturingSpecsEditor({
 
         {/* ── Post-Impresión ────────────────────────────────────────────── */}
         <div className={phaseCardClass(value.phases.postpress)}>
-          <FormSection title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
+          <Section.Header spaced title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
 
           {phaseToggle('postpress')}
 
@@ -309,7 +309,7 @@ export function ManufacturingSpecsEditor({
       {/* Optional: Internal notes (wizard/production context) */}
       {showInternalNotes && (
         <div className="space-y-2">
-          <FormSection title="Instrucciones de Taller" icon={FileText} />
+          <Section.Header spaced title="Instrucciones de Taller" icon={FileText} />
           <LabeledInput
             as="textarea"
             label=""

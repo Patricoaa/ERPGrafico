@@ -13,7 +13,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { Drawer, CancelButton, SubmitButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledInput, FormFooter, FormSplitLayout, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 
@@ -175,7 +175,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                     <FormSplitLayout className="space-y-6 p-6">
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
-                                <FormSection title="Información General" icon={Building2} />
+                                <Section.Header spaced title="Información General" icon={Building2} />
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Controller
@@ -213,7 +213,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                                     </div>
                                 </div>
 
-                                <FormSection title="Configuración Contable" icon={Settings} className="my-4" />
+                                <Section.Header spaced title="Configuración Contable" icon={Settings} className="my-4" />
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">

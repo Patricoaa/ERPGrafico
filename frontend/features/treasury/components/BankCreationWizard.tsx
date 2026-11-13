@@ -5,7 +5,7 @@ import {
     Landmark, CreditCard, Banknote, Plus, Info,
 } from "lucide-react"
 import { DataCell } from "@/components/shared"
-import { GenericWizard, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
+import { GenericWizard, LabeledInput, LabeledSelect, MultiSelectTagInput, Section } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 import type { WizardStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -275,7 +275,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                 onNext: handleCreateBank,
                 component: (
                     <div className="space-y-5 pt-2">
-                        <FormSection title="Identificación" icon={Landmark} />
+                        <Section.Header spaced title="Identificación" icon={Landmark} />
                         <LabeledInput
                             label="Nombre del Banco *"
                             placeholder="Ej: Banco de Chile"
@@ -308,7 +308,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                 isValid: checkingAccounts.every((a) => a.name.trim() && a.accountNumber.trim() && a.accountId),
                 component: (
                     <div className="space-y-4 pt-2">
-                        <FormSection title="Cuentas Corrientes" icon={Landmark} />
+                        <Section.Header spaced title="Cuentas Corrientes" icon={Landmark} />
                         <SkipHint text="Opcional. Agregue las cuentas bancarias de este banco. Por cada cuenta puede habilitar chequera y tarjeta de débito." />
                         <div className="space-y-3">
                             {checkingAccounts.map((acc, i) => (
@@ -369,7 +369,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                 isValid: creditCards.every((c) => c.name.trim()),
                 component: (
                     <div className="space-y-4 pt-2">
-                        <FormSection title="Tarjetas de Crédito Empresa" icon={CreditCard} />
+                        <Section.Header spaced title="Tarjetas de Crédito Empresa" icon={CreditCard} />
                         <SkipHint text="Opcional. Agregue tarjetas de crédito corporativas asociadas a este banco. Las tarjetas de débito se configuran en las cuentas corrientes anteriores." />
                         <div className="space-y-3">
                             {creditCards.map((card, i) => (
@@ -419,7 +419,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                 isValid: loans.length === 0 || loansValid,
                 component: (
                     <div className="space-y-4 pt-2">
-                        <FormSection title="Créditos Bancarios" icon={Banknote} />
+                        <Section.Header spaced title="Créditos Bancarios" icon={Banknote} />
                         <SkipHint text="Opcional. Registre préstamos vigentes con este banco. Se requieren cuentas de tesorería existentes para el desembolso y la cuenta pasivo." />
                         <div className="space-y-3">
                             {loans.map((loan, i) => (
@@ -539,8 +539,8 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                         <p className="text-sm text-center text-muted-foreground">
                             Revise lo que se creará al confirmar.
                         </p>
-                        <div className="rounded-md border border-border/50 divide-y divide-border/40 overflow-hidden text-sm">
-                            <SummaryRow icon={Landmark} label="Banco" value={bankName} />
+                        <Section>
+                            <Section.Row leading={<Landmark className="h-4 w-4 text-muted-foreground" aria-hidden />} title={bankName} meta="Banco" />
                             {checkingAccounts.filter((a) => a.name).map((a, i) => {
                                 const matchedAccount = a.accountId
                                     ? allAccountingAccounts.find((acc) => acc.id.toString() === a.accountId)
@@ -549,33 +549,21 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                     ? `${matchedAccount.code} - ${matchedAccount.name}`
                                     : null
                                 return (
-                                    <SummaryRow
-                                        key={i}
-                                        icon={Landmark}
-                                        label="Cuenta corriente"
-                                        value={a.name}
-                                        badge={accountingLabel || (a.tenders.length > 0 ? a.tenders.map((t) => TENDER_OPTIONS.find((o) => o.value === t)?.label ?? t).join(", ") : undefined)}
-                                    />
+                                    <Section.Row key={i} leading={<Landmark className="h-4 w-4 text-muted-foreground" aria-hidden />} title={a.name} meta="Cuenta corriente" description={accountingLabel || (a.tenders.length > 0 ? a.tenders.map((t) => TENDER_OPTIONS.find((o) => o.value === t)?.label ?? t).join(", ") : undefined)} />
                                 )
                             })}
                             {creditCards.filter((c) => c.name).map((c, i) => (
-                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} badge={c.creditLimit ? `Cupo: ${formatMoney(c.creditLimit)}` : undefined} />
+                                <Section.Row key={i} leading={<CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden />} title={c.name} meta="Tarjeta crédito" description={c.creditLimit ? `Cupo: ${formatMoney(c.creditLimit)}` : undefined} />
                             ))}
                             {loans.filter((l) => l.principal).map((l, i) => (
-                                <SummaryRow
-                                    key={i}
-                                    icon={Banknote}
-                                    label="Préstamo"
-                                    value={l.loan_number || `Crédito ${i + 1}`}
-                                    badge={`${l.currency} ${l.principal} · ${l.term_months} meses`}
-                                />
+                                <Section.Row key={i} leading={<Banknote className="h-4 w-4 text-muted-foreground" aria-hidden />} title={l.loan_number || `Crédito ${i + 1}`} meta="Préstamo" description={`${l.currency} ${l.principal} · ${l.term_months} meses`} />
                             ))}
                             {checkingAccounts.length === 0 && creditCards.length === 0 && loans.length === 0 && (
-                                <div className="px-4 py-3 text-xs text-muted-foreground italic text-center">
+                                <Section.Note tone="success">
                                     Solo se creará el banco. Puede agregar cuentas y productos desde el detalle del banco.
-                                </div>
+                                </Section.Note>
                             )}
-                        </div>
+                        </Section>
                     </div>
                 ),
             },
@@ -599,27 +587,3 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
     )
 }
 
-function SummaryRow({
-    icon: Icon,
-    label,
-    value,
-    badge,
-}: {
-    icon: React.ComponentType<{ className?: string }>
-    label: string
-    value: string
-    badge?: string
-}) {
-    return (
-        <div className="px-4 py-3 flex items-start gap-3">
-            <Icon className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60 block">
-                    {label}
-                </span>
-                <span className="font-bold text-sm truncate block">{value}</span>
-                {badge && <span className="text-xs text-muted-foreground">{badge}</span>}
-            </div>
-        </div>
-    )
-}

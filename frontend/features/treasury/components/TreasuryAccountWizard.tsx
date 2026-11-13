@@ -7,7 +7,12 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-    GenericWizard, LabeledInput, LabeledSelect, MultiSelectTagInput, FormSection, MoneyDisplay,
+    Section,
+    GenericWizard,
+    LabeledInput,
+    LabeledSelect,
+    MultiSelectTagInput,
+    MoneyDisplay,
 } from "@/components/shared"
 import type { WizardStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -151,7 +156,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                     && (!requiresAccountNumber || !!accountNumber.trim()),
                 component: (
                     <div className="space-y-5 pt-2">
-                        <FormSection title="Identificación" icon={Landmark} />
+                        <Section.Header spaced title="Identificación" icon={Landmark} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <LabeledInput
                                 label="Nombre de la Cuenta"
@@ -275,21 +280,21 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                 component: (
                     <div className="space-y-5 pt-2">
                         <p className="text-center text-sm text-muted-foreground">Revise antes de crear la cuenta.</p>
-                        <div className="bg-transparent border rounded-md divide-y overflow-hidden text-sm">
-                            <SummaryRow label="Tipo" value={ACCOUNT_TYPE_CARDS.find((c) => c.type === accountType)?.label ?? "—"} />
-                            <SummaryRow label="Nombre" value={name || "—"} />
+                        <Section>
+                            <Section.Row variant="stat" title="Tipo" value={ACCOUNT_TYPE_CARDS.find((c) => c.type === accountType)?.label ?? "—"} />
+                            <Section.Row variant="stat" title="Nombre" value={name || "—"} />
                             {requiresBank && (
-                                <SummaryRow label="Banco" value={banks?.find((b) => String(b.id) === bank)?.name ?? "—"} />
+                                <Section.Row variant="stat" title="Banco" value={banks?.find((b) => String(b.id) === bank)?.name ?? "—"} />
                             )}
-                            <SummaryRow
-                                label="Formas de pago"
+                            <Section.Row variant="stat"
+                                title="Formas de pago"
                                 value={fixedTenderLabel ?? (tenders.length ? tenders.map((t) => TENDER_LABELS[t] ?? t).join(", ") : "—")}
                             />
-                            <SummaryRow label="Uso" value={USAGE_CARDS.find((u) => u.value === usage)?.label ?? "—"} />
+                            <Section.Row variant="stat" title="Uso" value={USAGE_CARDS.find((u) => u.value === usage)?.label ?? "—"} />
                             {accountType === "CREDIT_CARD" && creditLimit && (
-                                <SummaryRow label="Cupo Total" value={<MoneyDisplay amount={Number(creditLimit)} />} />
+                                <Section.Row variant="stat" title="Cupo Total" value={<MoneyDisplay amount={Number(creditLimit)} />} />
                             )}
-                        </div>
+                        </Section>
                     </div>
                 ),
             },
@@ -333,15 +338,6 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             completeButtonIcon={<CheckCircle2 className="h-4 w-4" />}
             size="md"
         />
-    )
-}
-
-function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div className="p-3 flex justify-between items-center">
-            <span className="text-muted-foreground font-medium">{label}:</span>
-            <span className="font-bold text-right max-w-[220px] truncate">{value}</span>
-        </div>
     )
 }
 

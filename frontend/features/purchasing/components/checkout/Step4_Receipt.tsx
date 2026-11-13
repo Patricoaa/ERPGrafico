@@ -1,7 +1,7 @@
 "use client"
 
 import {useState, useEffect} from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, ChoiceCard, ChoiceGroup, StepHeader } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, ChoiceCard, ChoiceGroup, StepHeader, Section } from "@/components/shared"
 import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -227,7 +227,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
             {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                    <h4 className="text-xs font-black uppercase tracking-tighter text-primary/70">Cantidades a Recibir</h4>
+                    <Section.Header title="Cantidades a Recibir" />
                     <div className="rounded-md border">
                         <Table>
                             <TableHeader>
@@ -280,7 +280,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
             {hasSubscriptions && (receiptData.type as string) !== 'DEFERRED' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                    <h4 className="text-xs font-black uppercase tracking-tighter text-primary/70">Fechas de Inicio de Suscripciones</h4>
+                    <Section.Header title="Fechas de Inicio de Suscripciones" />
                     <div className="rounded-md border">
                         <Table>
                             <TableHeader>

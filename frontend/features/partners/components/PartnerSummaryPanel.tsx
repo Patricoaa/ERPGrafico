@@ -3,7 +3,7 @@
 import { AlertTriangle, Info, PieChart as PieChartIcon, History } from "lucide-react"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { EmptyState, FormSection, SkeletonShell, DocumentFieldGrid, type DocumentField } from "@/components/shared"
+import { EmptyState, SkeletonShell, DocumentFieldGrid, type DocumentField, Section } from "@/components/shared"
 import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { formatCurrency } from "@/lib/money"
 import { formatPlainDate } from "@/lib/utils"
@@ -74,17 +74,17 @@ export function PartnerSummaryPanel({ partner, onGoToTab }: PartnerSummaryPanelP
                     )}
 
                     <section aria-label="Datos del socio" className="space-y-4">
-                        <FormSection title="Datos del socio" icon={Info} />
+                        <Section.Header spaced title="Datos del socio" icon={Info} />
                         <DocumentFieldGrid className="w-auto justify-start text-left" fields={partnerFields(partner, overview.info, openEntity)} />
                     </section>
 
                     <div className="grid gap-8 lg:grid-cols-2">
                         <section aria-label="Distribución de capital" className="min-w-0 space-y-4">
-                            <FormSection title="Distribución de capital" icon={PieChartIcon} />
+                            <Section.Header spaced title="Distribución de capital" icon={PieChartIcon} />
                             <PartnerParticipationPanel partner={partner} />
                         </section>
                         <section aria-label="Participación histórica" className="min-w-0 space-y-4">
-                            <FormSection title="Participación histórica" icon={History} />
+                            <Section.Header spaced title="Participación histórica" icon={History} />
                             <PartnerStakesTable partnerId={partner.id} />
                         </section>
                     </div>

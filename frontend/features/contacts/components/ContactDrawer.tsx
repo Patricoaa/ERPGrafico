@@ -35,7 +35,7 @@ import { contactCreditDocumentEntity, contactCreditDocumentViews, type ContactCr
 import { type LucideIcon } from "lucide-react"
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, FormSelectionGroup, DrawerLayout, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { LabeledInput, FormSelectionGroup, DrawerLayout, FormFooter, SkeletonShell, Section } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -267,7 +267,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                     content: (
                                         <div className="space-y-6">
                                         <div className="space-y-4">
-                                            <FormSection title="Roles" icon={Scale} />
+                                            <Section.Header spaced title="Roles" icon={Scale} />
 
                                             {(() => {
                                                 const isDefaultCustomer = form.watch('is_default_customer')
@@ -336,7 +336,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         </div>
 
                                         <div className="space-y-4">
-                                            <FormSection title="Identidad del Contacto" icon={User} />
+                                            <Section.Header spaced title="Identidad del Contacto" icon={User} />
                                             <div className="grid grid-cols-4 gap-4">
                                                 <FormField
                                                     control={form.control}
@@ -378,7 +378,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         </div>
 
                                         <div className="space-y-4">
-                                            <FormSection title="Información de Contacto" icon={Mail} />
+                                            <Section.Header spaced title="Información de Contacto" icon={Mail} />
                                             <div className="grid grid-cols-4 gap-4">
                                                 <FormField
                                                     control={form.control}
@@ -418,7 +418,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         </div>
 
                                         <div className="space-y-4">
-                                            <FormSection title="Ubicación" icon={MapPin} />
+                                            <Section.Header spaced title="Ubicación" icon={MapPin} />
                                             <div className="grid grid-cols-4 gap-4">
                                                 <FormField
                                                     control={form.control}
@@ -673,7 +673,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                 )}
             </div>
 
-            <FormSection title={title} icon={Icon} className="pb-6" />
+            <Section.Header spaced title={title} icon={Icon} className="pb-6" />
             <div className="flex-1 overflow-hidden p-0">
                 {type === 'sale' && (
                     <Collection.Root collection={saleCollection} label={title}>

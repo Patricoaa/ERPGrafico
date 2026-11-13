@@ -36,7 +36,7 @@ const shell = {
   modulePanel: read('../../components/layout/ModuleSidebarPanel.tsx'),
   panelHeader: read('../../components/shared/PanelHeader.tsx'),
   sectionHeader: read('../../components/shared/SectionHeader.tsx'),
-  formSection: read('../../components/shared/FormSection.tsx'),
+  sectionHeaderN1: read('../../components/shared/Section/SectionHeader.tsx'),
   actionButtons: read('../../components/shared/ActionButtons.tsx'),
 };
 
@@ -121,9 +121,9 @@ describe('typography contract', () => {
 
   it('N1 section headings are font-bold (not font-black), tracking-[0.25em]', () => {
     expect(/text-2xs font-bold uppercase tracking-\[0\.25em\]/.test(shell.sectionHeader)).toBe(true);
-    expect(/text-2xs font-bold uppercase tracking-\[0\.25em\]/.test(shell.formSection)).toBe(true);
+    expect(/text-2xs font-bold uppercase tracking-\[0\.25em\]/.test(shell.sectionHeaderN1)).toBe(true);
     expect(/font-black/.test(shell.sectionHeader)).toBe(false);
-    expect(/font-black/.test(shell.formSection)).toBe(false);
+    expect(/font-black/.test(shell.sectionHeaderN1)).toBe(false);
   });
 
   it('action buttons use font-black (Submit/Danger/Cancel share the scale)', () => {

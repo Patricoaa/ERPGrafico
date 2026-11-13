@@ -5,7 +5,7 @@ import { shouldKeepIdempotencyKey } from "@/lib/idempotency"
 import { generateUuidV4 } from "@/lib/uuid"
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTreasuryAccounts } from "@/features/settings"
-import { LabeledSelect, GenericWizard, type WizardStep, DataCell, SummarySection, SummaryRow, SummaryNote, SubmitButton } from "@/components/shared"
+import { LabeledSelect, GenericWizard, type WizardStep, DataCell, SubmitButton, Section } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useProfitDistributionMutations } from "../hooks"
@@ -192,14 +192,14 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                 Cuenta de donde se extraerán los fondos para liquidar los dividendos seleccionados.
                             </p>
                         </div>
-                        <SummarySection title="Resumen del pago">
-                            <SummaryRow label="Socios a pagar" value={String(partnersCount)} />
-                            <SummaryRow label="Total neto a desembolsar" value={<DataCell.Currency value={totalToPay} weight="bold" className="w-auto p-0" />} strong />
-                        </SummarySection>
-                        <SummarySection title="Impactos contables">
-                            <SummaryNote tone="success">Salida del dinero de la cuenta de tesorería seleccionada</SummaryNote>
-                            <SummaryNote tone="success">Disminución de «Dividendos por Pagar» con {partnersCount} {partnersCount === 1 ? "socio" : "socios"}</SummaryNote>
-                        </SummarySection>
+                        <Section title="Resumen del pago">
+                            <Section.Row variant="stat" title="Socios a pagar" value={String(partnersCount)} />
+                            <Section.Row variant="stat" title="Total neto a desembolsar" value={<DataCell.Currency value={totalToPay} weight="bold" className="w-auto p-0" />} strong />
+                        </Section>
+                        <Section title="Impactos contables">
+                            <Section.Note tone="success">Salida del dinero de la cuenta de tesorería seleccionada</Section.Note>
+                            <Section.Note tone="success">Disminución de «Dividendos por Pagar» con {partnersCount} {partnersCount === 1 ? "socio" : "socios"}</Section.Note>
+                        </Section>
                     </div>
                 )
             },
@@ -214,11 +214,11 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
         title: 'Pagos procesados',
         isValid: true,
         component: (
-            <SummarySection title="Pago completado">
-                <SummaryRow label="Socios pagados" value={String(paid?.count ?? 0)} />
-                <SummaryRow label="Total desembolsado" value={<DataCell.Currency value={paid?.total ?? 0} weight="bold" className="w-auto p-0" />} strong />
-                <SummaryNote tone="success">Los pagos quedaron registrados en la tesorería y en la contabilidad.</SummaryNote>
-            </SummarySection>
+            <Section title="Pago completado">
+                <Section.Row variant="stat" title="Socios pagados" value={String(paid?.count ?? 0)} />
+                <Section.Row variant="stat" title="Total desembolsado" value={<DataCell.Currency value={paid?.total ?? 0} weight="bold" className="w-auto p-0" />} strong />
+                <Section.Note tone="success">Los pagos quedaron registrados en la tesorería y en la contabilidad.</Section.Note>
+            </Section>
         ),
     }
 

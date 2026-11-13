@@ -5,7 +5,7 @@ import { ProductInventoryTab } from "../ProductInventoryTab"
 import type { ProductFormValues } from "../schema"
 
 vi.mock("@/components/shared", () => ({
-    FormSection: ({ title }: { title: string }) => <h2>{title}</h2>,
+    Section: { Header: ({ title }: { title: string }) => <h2>{title}</h2> },
     LabeledSwitch: ({ label }: { label: string }) => <div>{label}</div>,
     MultiSelectTagInput: ({ label }: { label: string }) => <div>{label}</div>,
 }))

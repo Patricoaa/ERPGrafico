@@ -158,7 +158,7 @@ graph TD
 
 - **`TabBar`**: Obligatorio en Complejo/Ficha Maestra, y en Estándar con ≥5 dominios. Horizontal para 2–4 tabs; Vertical (sawtooth) para ≥5 tabs o modal `xl`+. Ver [component-form-patterns.md §3](./component-form-patterns.md).
 - **`FormSplitLayout`**: Obligatorio en modo edición para integrar `ActivitySidebar`.
-- **`FormSection`**: Separador visual dentro de un tab o formulario sin tabs.
+- **`Section`** ([contrato](./component-section.md)): cabecera + filas (checklists, resúmenes, tabs de perfil/drawers). `Section.Header` es el separador visual dentro de un tab o formulario sin tabs (sustituye a `FormSection`).
 - **`FormFooter`**: **Obligatorio** en todo formulario modal. Layout de botones: danger (izquierda) + cancel/submit (derecha). Nunca `<div>` raw.
 - **`Drawer`**: Para subvistas que se superponen sobre la página sin perder su contexto. Compatible con formularios CRUD y subvistas de solo lectura (tablas, históricos). Ancho recomendado: `40%–75%` según categoría del formulario (ver [component-drawer.md](./component-drawer.md)).
 

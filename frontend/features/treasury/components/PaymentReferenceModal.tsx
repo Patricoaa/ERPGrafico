@@ -8,7 +8,7 @@ import { Hash, Landmark, CreditCard } from "lucide-react"
 import { usePaymentReference } from "@/features/treasury/hooks/usePayments"
 
 import { formatPlainDate } from "@/lib/utils"
-import { EmptyState, MoneyDisplay, CancelButton, SubmitButton, FormSection } from "@/components/shared"
+import { EmptyState, MoneyDisplay, CancelButton, SubmitButton, Section } from "@/components/shared"
 import { Card } from "@/components/ui/card"
 
 export interface Payment {
@@ -99,7 +99,7 @@ export function PaymentReferenceModal({
             <div className="py-2 space-y-6">
                 {pendingPayments.length > 1 && (
                     <div className="grid gap-2">
-                        <FormSection title="Seleccionar Pago" icon={Hash} />
+                        <Section.Header spaced title="Seleccionar Pago" icon={Hash} />
                         <div className="flex flex-col gap-2">
                             {pendingPayments.map((p) => (
                                 <Button

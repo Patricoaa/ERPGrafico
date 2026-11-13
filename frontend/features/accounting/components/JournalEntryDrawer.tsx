@@ -36,7 +36,6 @@ import {
     SubmitButton,
     FormFooter,
     FormSplitLayout,
-    FormSection,
     AccountingLinesTable,
     SkeletonShell,
     StatusBadge,
@@ -48,6 +47,7 @@ import {
     type DocumentField,
     type DocumentSheetTab,
     type LifecycleStep,
+    Section,
 } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { EntitySidebar } from "@/features/comments"
@@ -367,7 +367,7 @@ function JournalEntrySummaryTab({ entry }: { entry: JournalEntry }) {
             </section>
 
             <section className="space-y-4">
-                <FormSection title="Líneas del Asiento" icon={FileText} />
+                <Section.Header spaced title="Líneas del Asiento" icon={FileText} />
                 <Collection.Root collection={collection}>
                     <Collection.View
                         table={journalEntryLineSheetViews.table}
@@ -628,7 +628,7 @@ function JournalEntryFormContent({
                         </div>
                     </div>
 
-                    <FormSection title="Líneas del Asiento" className="space-y-2" />
+                    <Section.Header spaced title="Líneas del Asiento" className="space-y-2" />
 
                     <AccountingLinesTable
                         control={form.control as unknown as Control<FieldValues>}

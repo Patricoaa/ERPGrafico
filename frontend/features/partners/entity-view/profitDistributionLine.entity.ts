@@ -25,7 +25,7 @@ function getDestAmount(line: ProfitDistributionLine, dest: 'DIVIDEND' | 'REINVES
         return item ? parseFloat(item.amount) || 0 : 0
     }
     if (line.destination === dest) {
-        return typeof line.net_amount === 'number' ? line.net_amount : parseFloat(line.net_amount as unknown as string) || 0
+        return Number(line.net_amount) || 0
     }
     return 0
 }

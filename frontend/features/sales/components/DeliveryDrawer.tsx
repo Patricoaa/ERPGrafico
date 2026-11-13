@@ -7,7 +7,7 @@ import { useGuardedOpenChange } from "@/hooks/useGuardedOpenChange"
 import { useDirtyGuard } from "@/hooks/useDirtyGuard"
 import { zodResolver } from "@hookform/resolvers/zod"
 
-import { SubmitButton, CancelButton, BaseModal, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput, StatusBadge } from "@/components/shared"
+import { SubmitButton, CancelButton, BaseModal, FormFooter, LabeledSelect, PeriodValidationDateInput, StatusBadge, Section } from "@/components/shared"
 import { EditableCollection, editableErrorsFromForm, focusFirstEditableError, initialEditableValues } from "@/components/entity-view"
 import { deliveryLinesEditable, hasPartialLines, matchesLineType, serviceDeliveryLinesEditable, toLineQuantities, type LineTypeFilter } from "@/features/orders"
 import type { Warehouse } from "@/features/inventory"
@@ -178,7 +178,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                 })}
                 className="space-y-4"
             >
-                <FormSection title={isServiceMode ? "Configuración de Entrega de Servicios" : "Configuración de Entrega"} icon={Package} />
+                <Section.Header spaced title={isServiceMode ? "Configuración de Entrega de Servicios" : "Configuración de Entrega"} icon={Package} />
                 <div className={isServiceMode ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 gap-4 sm:grid-cols-2"}>
                     {!isServiceMode && (
                         <LabeledSelect
@@ -215,7 +215,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                     />
                 </div>
 
-                <FormSection title={isServiceMode ? "Detalle de Servicios" : "Detalle de Productos"} icon={Package} />
+                <Section.Header spaced title={isServiceMode ? "Detalle de Servicios" : "Detalle de Productos"} icon={Package} />
                 <Controller
                     control={form.control}
                     name="lines"

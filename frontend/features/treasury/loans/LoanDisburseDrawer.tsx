@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import { Form, FormField } from '@/components/ui/form'
-import { Drawer, LabeledInput, FormSection, FormFooter, CancelButton, SubmitButton, MoneyDisplay, FormSplitLayout } from "@/components/shared"
+import { Drawer, LabeledInput, FormFooter, CancelButton, SubmitButton, MoneyDisplay, FormSplitLayout, Section } from "@/components/shared"
 import { Send, AlertCircle, Settings } from 'lucide-react'
 import { useLoanMutations } from '../hooks/useLoans'
 import { showApiError } from '@/lib/errors'
@@ -158,7 +158,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
             <FormSplitLayout className="space-y-6 p-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <FormSection title="Datos del Desembolso" icon={Send} />
+                    <Section.Header spaced title="Datos del Desembolso" icon={Send} />
                     <div className="grid grid-cols-1 gap-4">
                         <FormField
                             control={form.control}
@@ -175,7 +175,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                         />
                     </div>
 
-                    <FormSection title="Cargos Materializados" icon={Send} />
+                    <Section.Header spaced title="Cargos Materializados" icon={Send} />
                     <p className="text-xs text-muted-foreground -mt-2">
                         Edita los cargos que se aplicarán <strong>en este desembolso</strong>.
                         Si difieren del contrato original ({loan.opening_fee} apertura, {loan.stamp_tax} timbres),
@@ -213,7 +213,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                     </div>
 
                     {anySelectorShown && (
-                        <FormSection title="Cuentas de Gasto (escape)" icon={Settings} />
+                        <Section.Header spaced title="Cuentas de Gasto (escape)" icon={Settings} />
                     )}
                     {anySelectorShown && (
                         <p className="text-xs text-muted-foreground -mt-2">

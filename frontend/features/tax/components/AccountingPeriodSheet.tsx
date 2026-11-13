@@ -8,7 +8,6 @@ import {
     DocumentActionsMenu,
     DocumentLifecycle,
     DocumentFieldGrid,
-    FormSection,
     StatusBadge,
     type DocumentActionItem,
     type DocumentField,

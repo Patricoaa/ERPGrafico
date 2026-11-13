@@ -15,7 +15,7 @@ import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { MonitorSmartphone, Landmark } from "lucide-react"
 import * as LucideIcons from "lucide-react"
-import { CancelButton, LabeledInput, LabeledSelect, FormSelectionGroup, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSelectionGroup, FormFooter, FormSplitLayout, SkeletonShell, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { EntitySidebar } from "@/features/comments"
@@ -254,7 +254,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                 <fieldset disabled={isView} className="contents">
                                     {/* Section 1: Device Identity */}
                                     <div className="space-y-4">
-                                        <FormSection title="Identificación de la caja POS" icon={MonitorSmartphone} />
+                                        <Section.Header spaced title="Identificación de la caja POS" icon={MonitorSmartphone} />
                                         <div className="grid grid-cols-2 gap-4">
                                             <FormField
                                                 control={form.control}
@@ -288,7 +288,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
 
                                     {/* Section 2: Connectivity & Location */}
                                     <div className="space-y-4">
-                                        <FormSection title="Conectividad y Ubicación" icon={LucideIcons.Wifi || MonitorSmartphone} />
+                                        <Section.Header spaced title="Conectividad y Ubicación" icon={LucideIcons.Wifi || MonitorSmartphone} />
                                         <div className="grid grid-cols-2 gap-4">
                                             <FormField
                                                 control={form.control}
@@ -333,7 +333,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
 
                                     {/* Section 3: Treasury Accounts */}
                                     <div className="space-y-4">
-                                        <FormSection title="Tesorería y Cuentas" icon={LucideIcons.Library || MonitorSmartphone} />
+                                        <Section.Header spaced title="Tesorería y Cuentas" icon={LucideIcons.Library || MonitorSmartphone} />
 
                                         <FormField
                                             control={form.control}

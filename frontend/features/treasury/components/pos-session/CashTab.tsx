@@ -3,7 +3,7 @@
 import { AlertTriangle, Banknote, Calculator, CheckCheck, Coins, Scale } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { DocumentFieldGrid, FormSection, SkeletonShell, StatCard, type DocumentField } from "@/components/shared"
+import { DocumentFieldGrid, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
 import { usePOSSessionSummary, type POSReportData } from "@/features/pos"
 import { posSessionMovementViews } from "../../entity-view/posSessionSheet.views"
 import { treasuryMovementEntity } from "../../entity-view/treasuryMovement.entity"
@@ -57,12 +57,12 @@ export function CashTab({ session, overview }: CashTabProps) {
                     </section>
 
                     <section aria-label="Cálculo del saldo" className="shrink-0 space-y-4">
-                        <FormSection title="Cálculo del saldo" icon={Calculator} />
+                        <Section.Header spaced title="Cálculo del saldo" icon={Calculator} />
                         <DocumentFieldGrid className={GRID_LEFT} fields={balanceFields(data)} />
                     </section>
 
                     <section aria-label="Movimientos de tesorería" className="flex flex-1 min-h-0 flex-col gap-4">
-                        <FormSection title="Movimientos de tesorería" icon={Banknote} className="shrink-0" />
+                        <Section.Header spaced title="Movimientos de tesorería" icon={Banknote} className="shrink-0" />
                         {own.length === 0 ? (
                             <p className="text-xs text-muted-foreground">Sin movimientos de tesorería asociados a esta sesión.</p>
                         ) : (
@@ -78,7 +78,7 @@ export function CashTab({ session, overview }: CashTabProps) {
 
                     {(data.out_of_session_movements?.length ?? 0) > 0 && (
                         <section aria-label="Fuera de la sesión" className="shrink-0 space-y-4">
-                            <FormSection title="Fuera de la sesión" icon={AlertTriangle} />
+                            <Section.Header spaced title="Fuera de la sesión" icon={AlertTriangle} />
                             <DocumentFieldGrid
                                 className={GRID_LEFT}
                                 fields={(data.out_of_session_movements ?? []).map((mv) => ({

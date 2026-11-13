@@ -2,7 +2,7 @@
 
 import { HandCoins, Hash, Receipt, TrendingUp, Undo2, Wallet } from "lucide-react"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { FormSection, SkeletonShell, StatCard } from "@/components/shared"
+import { SkeletonShell, StatCard, Section } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { posSessionSaleRowEntity, posSessionSaleRowViews } from "../../entity-view/posSessionDetail.entity"
 import type { POSSessionOverview } from "../../types"
@@ -59,7 +59,7 @@ export function SalesTab({ overview, isLoading }: SalesTabProps) {
                     </div>
 
                     <section aria-label="Movimientos comerciales" className="flex flex-1 min-h-0 flex-col gap-4">
-                        <FormSection title="Movimientos comerciales" icon={Receipt} className="shrink-0" />
+                        <Section.Header spaced title="Movimientos comerciales" icon={Receipt} className="shrink-0" />
                         <Collection.Root
                             collection={collection}
                             label="Ventas y devoluciones de la sesión"

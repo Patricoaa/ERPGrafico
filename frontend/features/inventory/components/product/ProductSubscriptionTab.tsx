@@ -1,7 +1,7 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import {LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, LabeledSwitch} from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, LabeledSwitch, Section } from "@/components/shared"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import {CalendarClock, DollarSign, Calendar, Wallet} from "lucide-react"
@@ -19,7 +19,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
             <div className="grid grid-cols-4 gap-x-8 gap-y-10 items-start">
                 {/* 1. Subscription Setup */}
                 <div className="col-span-2 space-y-4">
-                    <FormSection title="Configuración de Servicio" icon={CalendarClock} />
+                    <Section.Header spaced title="Configuración de Servicio" icon={CalendarClock} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-1">
                             <FormField
@@ -146,7 +146,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
 
                 {/* 2. Financials */}
                 <div className="col-span-2 space-y-4">
-                    <FormSection title="Condiciones y Cuentas" icon={Wallet} />
+                    <Section.Header spaced title="Condiciones y Cuentas" icon={Wallet} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-1">
                             <FormField
@@ -206,7 +206,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
 
 {/* Validity Section integrated into Grid */}
                         <div className="col-span-2 mt-4 space-y-4">
-                            <FormSection title="Vigencia de Contrato" icon={Calendar} />
+                            <Section.Header spaced title="Vigencia de Contrato" icon={Calendar} />
                             <FormField
                                 control={form.control}
                                 name="is_indefinite"

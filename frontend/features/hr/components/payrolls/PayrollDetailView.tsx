@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { ActionConfirmModal, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge, MoneyDisplay } from "@/components/shared"
+import { ActionConfirmModal, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge, MoneyDisplay, Section } from "@/components/shared"
 
 import {
     BookOpen,
@@ -464,28 +464,25 @@ function PaymentsSection({ payments, onChanged }: { payments: PayrollPayment[], 
     const [toAnnul, setToAnnul] = useState<PayrollPayment | null>(null)
 
     return (
-        <div className="mt-6 border rounded-md p-4 space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Pagos registrados</span>
-            <div className="space-y-1.5">
+        <>
+            <Section className="mt-6" title="Pagos registrados" count={payments.length}>
                 {payments.map(p => (
-                    <div key={p.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
-                        <span className="text-muted-foreground">{p.date}</span>
-                        <span>{p.payment_type_display}</span>
-                        <MoneyDisplay amount={p.amount} className="font-medium text-xs" />
-                        <StatusBadge status={p.status} size="sm" variant="badge" />
-                        {p.status === 'POSTED' && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 text-xs text-muted-foreground hover:text-destructive"
-                                onClick={() => setToAnnul(p)}
-                            >
-                                Anular
-                            </Button>
-                        )}
-                    </div>
+                    <Section.Row
+                        key={p.id}
+                        title={p.payment_type_display}
+                        description={p.date}
+                        value={<MoneyDisplay amount={p.amount} />}
+                        actions={
+                            <>
+                                <StatusBadge status={p.status} size="sm" variant="badge" />
+                                {p.status === 'POSTED' && (
+                                    <Section.Action text="Anular" onClick={() => setToAnnul(p)} />
+                                )}
+                            </>
+                        }
+                    />
                 ))}
-            </div>
+            </Section>
 
             <ActionConfirmModal
                 open={toAnnul !== null}
@@ -507,7 +504,7 @@ function PaymentsSection({ payments, onChanged }: { payments: PayrollPayment[], 
                     }
                 }}
             />
-        </div>
+        </>
     )
 }
 
@@ -563,42 +560,42 @@ function AdvancesSection({ payrollId, employeeId, advances, isPosted, onChanged 
     }
 
     return (
-        <div className="mt-6 border rounded-md p-4 space-y-3">
-            <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Anticipos vinculados</span>
-                {!isPosted && (
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 rounded-sm" onClick={openLinkModal}>
-                        <Link2 className="h-3.5 w-3.5" />
-                        Vincular anticipo
-                    </Button>
-                )}
-            </div>
-
-            {advances.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Sin anticipos vinculados.</p>
-            ) : (
-                <div className="space-y-1.5">
-                    {advances.map(adv => (
-                        <div key={adv.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
-                            <span className="text-muted-foreground">{adv.date}</span>
-                            <MoneyDisplay amount={adv.amount} className="font-medium text-xs" />
-                            <StatusBadge status={adv.status} size="sm" variant="badge" />
-                            {!isPosted && adv.status === "PAID" && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                                    onClick={() => handleUnlink(adv.id)}
-                                    disabled={unlinking === adv.id}
-                                    aria-label="Desvincular"
-                                >
-                                    <X className="h-3.5 w-3.5" />
-                                </Button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
+        <>
+            <Section
+                className="mt-6"
+                title="Anticipos vinculados"
+                count={advances.length}
+                isEmpty={advances.length === 0}
+                emptyTitle="Sin anticipos vinculados."
+                actions={!isPosted ? (
+                    <Section.Action text="Vincular anticipo" icon={Link2} variant="outline" onClick={openLinkModal} />
+                ) : undefined}
+            >
+                {advances.map(adv => (
+                    <Section.Row
+                        key={adv.id}
+                        title={adv.date}
+                        value={<MoneyDisplay amount={adv.amount} />}
+                        actions={
+                            <>
+                                <StatusBadge status={adv.status} size="sm" variant="badge" />
+                                {!isPosted && adv.status === "PAID" && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                                        onClick={() => handleUnlink(adv.id)}
+                                        disabled={unlinking === adv.id}
+                                        aria-label="Desvincular"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </Button>
+                                )}
+                            </>
+                        }
+                    />
+                ))}
+            </Section>
 
             <BaseModal
                 open={linkOpen}
@@ -639,7 +636,7 @@ function AdvancesSection({ payrollId, employeeId, advances, isPosted, onChanged 
                     )}
                 </div>
             </BaseModal>
-        </div>
+        </>
     )
 }
 

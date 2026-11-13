@@ -2,18 +2,21 @@
 
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { SkeletonShell, CancelButton, SubmitButton, BaseModal, GenericWizard, SummarySection, SummaryRow, SummaryNote, type WizardStep } from '@/components/shared';
+import { SkeletonShell, CancelButton, SubmitButton, BaseModal, GenericWizard, Section, type SectionChecklistItem, type WizardStep } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
-import { PendingChecklistSection, type PendingChecklistItem } from '@/features/tax';
 
 import {
+    ShieldCheck,
+    CheckCircle2,
+    AlertTriangle,
     Scale,
     Settings2,
     PieChart,
     Wallet,
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
+import { cn } from '@/lib/utils';
 
 // Lazy load FinancialStatementsReport
 const FinancialStatementsReport = lazy(() => import('@/features/finance/components/FinancialStatementsReport').then(m => ({ default: m.FinancialStatementsReport })));
@@ -21,7 +24,7 @@ const FinancialStatementsReport = lazy(() => import('@/features/finance/componen
 interface FiscalYearClosingWizardProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: () => void | Promise<void>;
+    onConfirm: () => void;
     year: number;
     preview: FiscalYearPreviewResult | null;
     isLoading: boolean;
@@ -51,12 +54,7 @@ export function FiscalYearClosingWizard({
     }, [isOpen]);
 
     const handleConfirm = async () => {
-        try {
-            await onConfirm();
-        } catch {
-            // El hook de cierre ya mostró el error; el wizard sigue abierto para reintentar.
-            return;
-        }
+        await onConfirm();
         setIsClosed(true);
     };
 
@@ -65,20 +63,20 @@ export function FiscalYearClosingWizard({
     const noop = () => { };
 
     const steps: WizardStep[] = useMemo(() => {
-        const validationItems: PendingChecklistItem[] = preview
+        const validationItems: SectionChecklistItem[] = preview
             ? Object.entries(preview.validations).map(([key, val]) => ({
                 key,
                 title: val.message,
                 passed: val.passed,
             }))
             : [];
-        const balanceItem: PendingChecklistItem | null = preview
+        const balanceItem: SectionChecklistItem | null = preview
             ? {
                 key: 'balance',
                 title: 'Balance de comprobación cuadrado',
                 detail: preview.is_balanced ? undefined : 'El balance presenta descuadres; no se puede proceder con el cierre.',
                 passed: preview.is_balanced,
-                action: { text: 'Ver balance', variant: 'ghost', icon: Scale, onClick: () => setShowTrialBalance(true) },
+                action: { text: 'Ver balance',  variant: 'ghost', onClick: () => setShowTrialBalance(true) },
             }
             : null;
         const warningKeys = new Set(
@@ -94,9 +92,9 @@ export function FiscalYearClosingWizard({
                 isValid: !!preview?.can_close && !!preview?.is_balanced,
                 component: (
                     <div className="space-y-8">
-                        <PendingChecklistSection title="Obligatorios" items={required} critical expanded={new Set()} onToggle={noop} onOpenDocument={noop} />
+                        <Section.Checklist title="Obligatorios" items={required} critical expanded={new Set()} onToggle={noop} onOpenDocument={noop} />
                         {suggested.length > 0 && (
-                            <PendingChecklistSection title="Sugeridos" items={suggested} critical={false} expanded={new Set()} onToggle={noop} onOpenDocument={noop} />
+                            <Section.Checklist title="Sugeridos" items={suggested} critical={false} expanded={new Set()} onToggle={noop} onOpenDocument={noop} />
                         )}
                     </div>
                 )
@@ -107,75 +105,77 @@ export function FiscalYearClosingWizard({
                 isValid: !!preview?.can_close,
                 component: preview ? (
                     <div className="space-y-8">
-                        <SummarySection title="Resultado del ejercicio" action={
+                        <Section title="Resultado del ejercicio" actions={
                             <Button variant="ghost" size="sm" className="h-6 gap-1 text-xs" onClick={() => setShowIncomeStatement(true)}>
                                 <PieChart className="h-3.5 w-3.5" aria-hidden /> Ver Estado de Resultados
                             </Button>
                         }>
-                            <SummaryRow label="Ingresos" value={formatCurrency(parseFloat(preview.income_total || '0'))} />
-                            <SummaryRow label="Gastos y costos" value={formatCurrency(parseFloat(preview.expense_total || '0'))} />
-                            <SummaryRow
-                                label={isProfit ? "Utilidad del ejercicio" : "Pérdida del ejercicio"}
+                            <Section.Row variant="stat" title="Ingresos" value={formatCurrency(parseFloat(preview.income_total || '0'))} />
+                            <Section.Row variant="stat" title="Gastos y costos" value={formatCurrency(parseFloat(preview.expense_total || '0'))} />
+                            <Section.Row variant="stat"
+                                title={isProfit ? "Utilidad del ejercicio" : "Pérdida del ejercicio"}
                                 value={formatCurrency(netResult)}
                                 strong
                                 valueClassName={isProfit ? "text-success" : "text-destructive"}
                             />
-                        </SummarySection>
+                        </Section>
 
-                        <SummarySection title="Asiento de cierre">
-                            <SummaryRow label="Ejercicio fiscal a cerrar" value={String(year)} />
-                            <SummaryRow
-                                label="Cuenta que recibe el resultado"
+                        <Section title="Asiento de cierre">
+                            <Section.Row variant="stat" title="Ejercicio fiscal a cerrar" value={String(year)} />
+                            <Section.Row variant="stat"
+                                title="Cuenta que recibe el resultado"
                                 value={preview.result_account_code ? `${preview.result_account_code} · ${preview.result_account_name ?? ''}` : "Sin configurar"}
                                 valueClassName={preview.result_account_code ? undefined : "text-destructive"}
                             />
-                            <SummaryRow label="Transferencia patrimonial" value={formatCurrency(netResult)} strong />
-                        </SummarySection>
+                            <Section.Row variant="stat" title="Transferencia patrimonial" value={formatCurrency(netResult)} strong />
+                        </Section>
 
-                        <SummarySection title="Efectos del cierre">
-                            <SummaryNote>Se genera el asiento de cierre y se bloquean todos los períodos del año {year}.</SummaryNote>
-                            <SummaryNote>Reabrir períodos queda registrado en el historial de auditoría.</SummaryNote>
-                            {isProfit && <SummaryNote>Después podrás distribuir la utilidad a los socios.</SummaryNote>}
-                        </SummarySection>
+                        <Section title="Efectos del cierre">
+                            <Section.Note>Se genera el asiento de cierre y se bloquean todos los períodos del año {year}.</Section.Note>
+                            <Section.Note>Reabrir períodos queda registrado en el historial de auditoría.</Section.Note>
+                            {isProfit && <Section.Note>Después podrás distribuir la utilidad a los socios.</Section.Note>}
+                        </Section>
                     </div>
                 ) : null
             },
         ];
     }, [preview, year, isProfit, netResult]);
 
-    // Tras el cierre el éxito es un paso más del mismo wizard (mismo modal, altura y footer), no otro modal.
-    const doneStep: WizardStep = {
-        id: 'done',
-        title: `Ejercicio ${year} cerrado`,
-        isValid: true,
-        component: (
-            <div className="space-y-8">
-                <SummarySection title="Cierre completado">
-                    <SummaryRow label="Ejercicio fiscal" value={String(year)} />
-                    <SummaryRow label="Transferencia patrimonial" value={formatCurrency(netResult)} strong />
-                    <SummaryNote tone="success">La contabilidad quedó sellada y el asiento de cierre se generó con éxito.</SummaryNote>
-                </SummarySection>
-                <SummarySection title="Siguiente paso">
-                    <SummaryNote>Distribuye la utilidad entre los socios cuando corresponda.</SummaryNote>
-                </SummarySection>
-            </div>
-        ),
-    };
-
-    const doneFooter = (
-        <div className="flex w-full items-center justify-end gap-2">
-            <CancelButton onClick={onClose}>Finalizar</CancelButton>
-            <SubmitButton
-                onClick={() => {
-                    onClose();
-                    window.location.href = `/finances/partners/distributions?modal=new-distribution&yearId=${year}`;
-                }}
-                icon={<PieChart className="mr-2 h-4 w-4" />}
+    if (isClosed) {
+        return (
+            <BaseModal
+                open={isOpen}
+                onOpenChange={onClose}
+                icon={ShieldCheck}
+                title={`Ejercicio ${year} cerrado`}
+                size="lg"
+                variant="wizard"
+                hideScrollArea
+                className="bg-card"
+                footer={
+                    <div className="flex w-full items-center justify-end gap-2">
+                        <CancelButton onClick={onClose}>Finalizar</CancelButton>
+                        <SubmitButton
+                            onClick={() => {
+                                onClose();
+                                window.location.href = `/finances/partners/distributions?modal=new-distribution&yearId=${year}`;
+                            }}
+                            icon={<PieChart className="mr-2 h-4 w-4" />}
+                        >
+                            Iniciar Distribución de Utilidades
+                        </SubmitButton>
+                    </div>
+                }
             >
-                Iniciar Distribución de Utilidades
-            </SubmitButton>
-        </div>
-    );
+                <div className="flex-1 min-h-0 overflow-y-auto p-5">
+                    <p className="flex items-start gap-3 text-sm text-muted-foreground">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />
+                        La contabilidad ha sido sellada y el asiento de cierre se generó con éxito. Ahora puedes proceder con la distribución de utilidades a los socios.
+                    </p>
+                </div>
+            </BaseModal>
+        );
+    }
 
     return (
         <>
@@ -185,9 +185,7 @@ export function FiscalYearClosingWizard({
                 onClose={onClose}
                 icon={Settings2}
                 title={`Cierre del Ejercicio ${year}`}
-                steps={isClosed ? [doneStep] : steps}
-                subtitle={isClosed ? 'Cierre completado' : undefined}
-                footer={isClosed ? doneFooter : undefined}
+                steps={steps}
                 onComplete={handleConfirm}
                 isCompleting={isLoading}
                 completeButtonLabel="Ejecutar Cierre Definitivo"

@@ -8,12 +8,12 @@ import {
     DocumentDrawerShell,
     DocumentFieldGrid,
     DocumentLifecycle,
-    FormSection,
     StatusBadge,
     type DocumentActionItem,
     type DocumentField,
     type DocumentSheetTab,
     type LifecycleStep,
+    Section,
 } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity } from "@/features/_shared"
@@ -94,7 +94,7 @@ export function DocumentSheet({
                     <section aria-label="Contexto"><DocumentFieldGrid fields={context} /></section>
                     {sections.map((section) => (
                         <section key={section.title} className="space-y-4">
-                            <FormSection title={section.title} icon={section.icon} />
+                            <Section.Header spaced title={section.title} icon={section.icon} />
                             {section.content}
                         </section>
                     ))}

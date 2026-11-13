@@ -11,7 +11,7 @@ import { useMyProfile } from '../context/ProfileProvider'
 import type { MyProfile } from "@/types/profile"
 import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { SubmitButton, FadeIn, MoneyDisplay, type BulkAction } from "@/components/shared"
+import { SubmitButton, FadeIn, MoneyDisplay, Section, type BulkAction } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import {
@@ -114,55 +114,29 @@ function ThemeSelectionSection() {
         { value: "system", label: "Preferencia del sistema", description: "Usar automáticamente el tema de su dispositivo", icon: Monitor },
     ] as const
 
-    const handleThemeKeyDown = (e: React.KeyboardEvent, next: "light" | "dark" | "system") => {
-        if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault()
-            changeTheme(next)
-        }
-    }
-
     return (
-        <section className="w-full max-w-none">
-            <header className="flex items-start justify-between gap-4 border-b border-border/70 pb-4">
-                <div className="space-y-1">
-                    <h2 className="text-base font-semibold text-foreground">Tema y apariencia</h2>
-                    <p className="text-sm text-muted-foreground">Personalice su entorno de trabajo visual.</p>
-                </div>
-                {isSyncing && <span role="status" className="shrink-0 text-xs text-muted-foreground">Guardando…</span>}
-            </header>
-            <div className="divide-y divide-border/70">
-                {options.map(({ value, label, description, icon: Icon }) => {
-                    const selected = theme === value
-                    return (
-                        <div
-                            key={value}
-                            role="button"
-                            tabIndex={0}
-                            aria-pressed={selected}
-                            onClick={() => changeTheme(value)}
-                            onKeyDown={(event) => handleThemeKeyDown(event, value)}
-                            className="flex min-h-16 cursor-pointer items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-                        >
-                            <Icon className={cn("h-4 w-4 shrink-0", selected ? "text-foreground" : "text-muted-foreground")} aria-hidden="true" />
-                            <span className="min-w-0 flex-1">
-                                <span className="block text-sm font-medium text-foreground">{label}</span>
-                                <span className="block text-xs text-muted-foreground">{description}</span>
-                            </span>
-                            {selected && <Check className="h-4 w-4 shrink-0 text-foreground" aria-label="Seleccionado" />}
-                        </div>
-                    )
-                })}
-            </div>
-        </section>
-    )
-}
-
-function InfoField({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div className="flex min-w-0 flex-col gap-1 py-2 sm:flex-row sm:items-baseline sm:gap-8">
-            <dt className="w-48 shrink-0 text-xs text-muted-foreground">{label}</dt>
-            <dd className="min-w-0 break-words text-sm font-medium text-foreground">{value}</dd>
-        </div>
+        <Section
+            as="h2"
+            title="Tema y apariencia"
+            description="Personalice su entorno de trabajo visual."
+            actions={isSyncing ? <span role="status" className="shrink-0 text-xs font-normal normal-case tracking-normal text-muted-foreground">Guardando…</span> : undefined}
+        >
+            {options.map(({ value, label, description, icon: Icon }) => {
+                const selected = theme === value
+                return (
+                    <Section.Row
+                        key={value}
+                        leading={<Icon className={cn("h-4 w-4", selected ? "text-foreground" : "text-muted-foreground")} aria-hidden="true" />}
+                        title={label}
+                        description={description}
+                        onClick={() => changeTheme(value)}
+                        pressed={selected}
+                        actions={selected ? <Check className="h-4 w-4 shrink-0 text-foreground" aria-label="Seleccionado" /> : undefined}
+                        className="min-h-16"
+                    />
+                )
+            })}
+        </Section>
     )
 }
 
@@ -172,57 +146,39 @@ function RolesSection() {
     const roles = user?.groups?.filter(g => g.kind === "ROLE") ?? []
     const teams = user?.groups?.filter(g => g.kind === "TEAM") ?? []
 
+    const chip = "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/10 text-foreground"
+
     return (
-        <section className="w-full max-w-none">
-            <header className="border-b border-border/70 pb-4">
-                <h2 className="text-base font-semibold text-foreground">Roles y equipos</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Accesos y grupos asignados a su cuenta.</p>
-            </header>
-            <dl className="divide-y divide-border/60">
-                <div className="flex min-w-0 flex-col gap-1 py-2 sm:flex-row sm:items-start sm:gap-8">
-                    <dt className="flex items-center gap-1.5 w-48 shrink-0 text-xs text-muted-foreground pt-0.5">
-                        <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        Roles
-                    </dt>
-                    <dd className="min-w-0">
-                        {user?.is_superuser ? (
-                            <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/10 text-foreground">
-                                Superusuario
-                            </span>
-                        ) : roles.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                                {roles.map(r => (
-                                    <span key={r.id} className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/8 text-foreground">
-                                        {r.name}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <span className="text-xs text-muted-foreground">Sin roles asignados</span>
-                        )}
-                    </dd>
-                </div>
-                <div className="flex min-w-0 flex-col gap-1 py-2 sm:flex-row sm:items-start sm:gap-8">
-                    <dt className="flex items-center gap-1.5 w-48 shrink-0 text-xs text-muted-foreground pt-0.5">
-                        <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        Equipos
-                    </dt>
-                    <dd className="min-w-0">
-                        {teams.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                                {teams.map(t => (
-                                    <span key={t.id} className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-foreground/8 text-foreground">
-                                        {t.name}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <span className="text-xs text-muted-foreground">Sin equipos asignados</span>
-                        )}
-                    </dd>
-                </div>
-            </dl>
-        </section>
+        <Section as="h2" title="Roles y equipos" description="Accesos y grupos asignados a su cuenta.">
+            <Section.Row
+                leading={<ShieldCheck className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+                title="Roles"
+                description={
+                    user?.is_superuser ? (
+                        <span className={chip}>Superusuario</span>
+                    ) : roles.length > 0 ? (
+                        <span className="flex flex-wrap gap-1.5 pt-1">
+                            {roles.map(r => <span key={r.id} className={chip}>{r.name}</span>)}
+                        </span>
+                    ) : (
+                        "Sin roles asignados"
+                    )
+                }
+            />
+            <Section.Row
+                leading={<Users className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+                title="Equipos"
+                description={
+                    teams.length > 0 ? (
+                        <span className="flex flex-wrap gap-1.5 pt-1">
+                            {teams.map(t => <span key={t.id} className={chip}>{t.name}</span>)}
+                        </span>
+                    ) : (
+                        "Sin equipos asignados"
+                    )
+                }
+            />
+        </Section>
     )
 }
 
@@ -252,10 +208,7 @@ function PasswordChangeSection() {
 
     return (
         <section className="w-full max-w-none">
-            <header className="border-b border-border/70 pb-4">
-                <h2 className="text-base font-semibold text-foreground">Cambiar contraseña</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Actualice sus credenciales de acceso.</p>
-            </header>
+            <Section.Header as="h2" title="Cambiar contraseña" description="Actualice sus credenciales de acceso." />
             <div className="pt-5">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -395,41 +348,31 @@ function PersonalTab({
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
                     <section className="w-full min-w-0 space-y-6">
-                        <header className="flex items-start justify-between gap-4 border-border/70 pb-4">
-                            <div>
-                                <h2 className="text-base font-semibold text-foreground">Ficha de Personal</h2>
-                                <p className="mt-1 text-sm text-muted-foreground">{employee.display_id}</p>
-                            </div>
-                            <StatusBadge status={employee.status} label={employee.status_display} />
-                        </header>
-                        <section aria-labelledby="employee-contact-heading" className="space-y-1">
-                            <h3 id="employee-contact-heading" className="text-sm font-semibold text-foreground">Datos personales</h3>
-                            <dl className="divide-y divide-border/60">
-                                <InfoField label="Nombre" value={contact?.name || "—"} />
-                                <InfoField label="RUT" value={contact?.tax_id || "—"} />
-                                <InfoField label="Correo electrónico" value={contact?.email || "—"} />
-                            </dl>
-                        </section>
+                        <Section.Header
+                            as="h2"
+                            title="Ficha de Personal"
+                            description={employee.display_id}
+                            actions={<StatusBadge status={employee.status} label={employee.status_display} />}
+                        />
+                        <Section title="Datos personales">
+                            <Section.Row variant="stat" plain title="Nombre" value={contact?.name || "—"} />
+                            <Section.Row variant="stat" plain title="RUT" value={contact?.tax_id || "—"} />
+                            <Section.Row variant="stat" plain title="Correo electrónico" value={contact?.email || "—"} />
+                        </Section>
 
-                        <section aria-labelledby="employee-work-heading" className="space-y-1">
-                            <h3 id="employee-work-heading" className="text-sm font-semibold text-foreground">Información laboral</h3>
-                            <dl className="divide-y divide-border/60">
-                                <InfoField label="Cargo" value={employee.position || "—"} />
-                                <InfoField label="Departamento" value={employee.department || "—"} />
-                                <InfoField label="Fecha de ingreso" value={employee.start_date ? formatPlainDate(employee.start_date) : "—"} />
-                                <InfoField label="Tipo de contrato" value={employee.contract_type_display || "—"} />
-                            </dl>
-                        </section>
+                        <Section title="Información laboral">
+                            <Section.Row variant="stat" plain title="Cargo" value={employee.position || "—"} />
+                            <Section.Row variant="stat" plain title="Departamento" value={employee.department || "—"} />
+                            <Section.Row variant="stat" plain title="Fecha de ingreso" value={employee.start_date ? formatPlainDate(employee.start_date) : "—"} />
+                            <Section.Row variant="stat" plain title="Tipo de contrato" value={employee.contract_type_display || "—"} />
+                        </Section>
 
-                        <section aria-labelledby="employee-benefits-heading" className="space-y-1">
-                            <h3 id="employee-benefits-heading" className="text-sm font-semibold text-foreground">Previsión y remuneración</h3>
-                            <dl className="divide-y divide-border/60">
-                                <InfoField label="AFP" value={employee.afp_detail?.name || "—"} />
-                                <InfoField label="Sistema de salud" value={employee.salud_type_display || "—"} />
-                                <InfoField label="Sueldo base" value={<MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />} />
-                                <InfoField label="Jornada" value={employee.jornada_type_display || "—"} />
-                            </dl>
-                        </section>
+                        <Section title="Previsión y remuneración">
+                            <Section.Row variant="stat" plain title="AFP" value={employee.afp_detail?.name || "—"} />
+                            <Section.Row variant="stat" plain title="Sistema de salud" value={employee.salud_type_display || "—"} />
+                            <Section.Row variant="stat" title="Sueldo base" value={<MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />} />
+                            <Section.Row variant="stat" plain title="Jornada" value={employee.jornada_type_display || "—"} />
+                        </Section>
                     </section>
                 </FadeIn>
             )}
@@ -438,10 +381,7 @@ function PersonalTab({
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
                     <section className="flex flex-1 min-h-0 flex-col">
-                        <header className="mb-4 border-b border-border/70 pb-4">
-                            <h2 className="text-base font-semibold text-foreground">Liquidaciones</h2>
-                            <p className="mt-1 text-sm text-muted-foreground">Consulta y descarga tus liquidaciones emitidas.</p>
-                        </header>
+                        <Section.Header as="h2" title="Liquidaciones" description="Consulta y descarga tus liquidaciones emitidas." className="mb-4" />
                         <div className="min-w-0 flex flex-1 flex-col gap-8 [&>div>div]:rounded-none [&>div>div]:border-0">
                             <Collection.Root
                                 collection={payrollCollection}
@@ -458,10 +398,7 @@ function PersonalTab({
                             </Collection.Root>
 
                             <div className="flex min-h-0 flex-1 flex-col [&>div>div]:rounded-none [&>div>div]:border-0">
-                                <header className="mb-3 border-b border-border/70 pb-3">
-                                    <h3 className="text-sm font-semibold text-foreground">Pagos y anticipos</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">{unifiedPayments.length} transacción(es) registrada(s)</p>
-                                </header>
+                                <Section.Header title="Pagos y anticipos" count={`${unifiedPayments.length} transacción(es)`} className="mb-3" />
                                 <Collection.Root collection={paymentCollection} label="Pagos y anticipos">
                                     <Collection.View
                                         table={unifiedPaymentViews.table}

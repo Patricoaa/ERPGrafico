@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import { Layers, ArrowRightLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { FormSection } from "@/components/shared"
+import { Section } from "@/components/shared"
 import type { Partner } from "@/features/contacts"
 import { usePartnerStatement } from "../hooks"
 import { isListedMovement } from "../entity-view/partnerMovement.entity"
@@ -23,12 +23,12 @@ export function PartnerCapitalPanel({ partner, run }: { partner: Partner; run: P
     return (
         <div className="space-y-8">
             <section aria-label="Composición del patrimonio" className="space-y-4">
-                <FormSection title="Composición del patrimonio" icon={Layers} />
+                <Section.Header spaced title="Composición del patrimonio" icon={Layers} />
                 <PartnerEquityPanel partner={partner} run={run} />
             </section>
 
             <section aria-label="Movimientos" className="space-y-4">
-                <FormSection title="Movimientos" icon={ArrowRightLeft} />
+                <Section.Header spaced title="Movimientos" icon={ArrowRightLeft} />
                 <PartnerMovementsTable
                     rows={rows}
                     isLoading={statement.isLoading}

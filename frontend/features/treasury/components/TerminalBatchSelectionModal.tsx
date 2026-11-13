@@ -20,7 +20,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 import type { TreasuryMovement } from "@/features/treasury/types"
 
-import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, FormSelectionGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, FormSelectionGroup, FormFooter, SkeletonShell, Section } from "@/components/shared"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -147,7 +147,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
             <form id="terminal-batch-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
                 <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-6">
-                        <FormSection title="Configuración de Lote" icon={Landmark} className="pt-0" />
+                        <Section.Header spaced title="Configuración de Lote" icon={Landmark} className="pt-0" />
 
                         <div className="space-y-4">
                             <LabeledContainer label="Proveedor de terminal de cobro">
@@ -247,7 +247,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
 
                     <div className="space-y-6">
                         <div className="flex justify-between items-center h-8">
-                            <FormSection title="Liquidación y Cálculos" icon={Calculator} className="flex-1 pt-0" />
+                            <Section.Header spaced title="Liquidación y Cálculos" icon={Calculator} className="flex-1 pt-0" />
                         </div>
 
                         <div className="space-y-4">

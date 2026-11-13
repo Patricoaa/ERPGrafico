@@ -46,7 +46,6 @@ vi.mock("@/components/providers/GlobalModalProvider", () => ({
 }))
 
 vi.mock("@/features/tax", async () => ({
-    PendingChecklistSection: (await import("@/features/tax/components/PendingChecklist")).PendingChecklistSection,
     DeclarationWizard: (props: WizardProps) => {
         m.wizardProps = props
         return props.isOpen ? <div data-testid="declaration-wizard" /> : null

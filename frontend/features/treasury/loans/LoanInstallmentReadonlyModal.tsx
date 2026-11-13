@@ -4,6 +4,7 @@ import React from 'react'
 import { FileText, Coins, Calendar } from 'lucide-react'
 import {
     BaseModal, FormFooter, CancelButton, MoneyDisplay, StatusBadge,
+    Section,
 } from '@/components/shared'
 import type { LoanInstallment, BankLoanCurrency } from './types'
 import { formatPlainDate } from '@/lib/utils'
@@ -41,79 +42,35 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
             }
         >
             <div className="space-y-4">
-                {/* Montos pagados */}
-                <div className="rounded-md border border-border p-4 space-y-3">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Coins className="h-4 w-4" />
-                        Montos Pagados
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Capital</span>
-                            <MoneyDisplay amount={parseFloat(installment.principal_amount)} />
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Interés</span>
-                            <MoneyDisplay amount={parseFloat(installment.interest_amount)} />
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Seguro</span>
-                            <MoneyDisplay amount={parseFloat(installment.insurance_amount)} />
-                        </div>
-                        {parseFloat(installment.penalty_paid) > 0 && (
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Multa por mora</span>
-                                <MoneyDisplay amount={parseFloat(installment.penalty_paid)} />
-                            </div>
-                        )}
-                        <div className="flex justify-between font-bold border-t border-border pt-2 col-span-2">
-                            <span>Total {loanCurrency === 'UF' ? '(UF)' : ''}</span>
-                            <MoneyDisplay amount={parseFloat(installment.total_amount)} />
-                        </div>
-                    </div>
-                </div>
+                <Section title="Montos Pagados" icon={Coins}>
+                    <Section.Row variant="stat" title="Capital" value={<MoneyDisplay amount={parseFloat(installment.principal_amount)} />} />
+                    <Section.Row variant="stat" title="Interés" value={<MoneyDisplay amount={parseFloat(installment.interest_amount)} />} />
+                    <Section.Row variant="stat" title="Seguro" value={<MoneyDisplay amount={parseFloat(installment.insurance_amount)} />} />
+                    {parseFloat(installment.penalty_paid) > 0 && (
+                        <Section.Row variant="stat" title="Multa por mora" value={<MoneyDisplay amount={parseFloat(installment.penalty_paid)} />} />
+                    )}
+                    <Section.Row variant="stat" strong title={`Total ${loanCurrency === 'UF' ? '(UF)' : ''}`} value={<MoneyDisplay amount={parseFloat(installment.total_amount)} />} />
+                </Section>
 
-                {/* Información del pago */}
                 {installment.paid_at && (
-                    <div className="rounded-md border border-border p-4 space-y-3">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            Información del Pago
-                        </h3>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Fecha de pago</span>
-                                <span>{formatPlainDate(installment.paid_at)}</span>
-                            </div>
-                            {installment.uf_value_used && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">UF utilizada</span>
-                                    <span className="font-mono">{installment.uf_value_used}</span>
-                                </div>
-                            )}
-                            {installment.clp_amount_paid && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Total CLP</span>
-                                    <MoneyDisplay amount={parseFloat(installment.clp_amount_paid)} />
-                                </div>
-                            )}
-                            {installment.payment_movement && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Movimiento</span>
-                                    <span className="font-mono">#{installment.payment_movement}</span>
-                                </div>
-                            )}
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Estado</span>
-                                <StatusBadge status={installment.status} variant="badge" />
-                            </div>
-                        </div>
-                    </div>
+                    <Section title="Información del Pago" icon={Calendar}>
+                        <Section.Row variant="stat" plain title="Fecha de pago" value={formatPlainDate(installment.paid_at)} />
+                        {installment.uf_value_used && (
+                            <Section.Row variant="stat" title="UF utilizada" value={installment.uf_value_used} />
+                        )}
+                        {installment.clp_amount_paid && (
+                            <Section.Row variant="stat" title="Total CLP" value={<MoneyDisplay amount={parseFloat(installment.clp_amount_paid)} />} />
+                        )}
+                        {installment.payment_movement && (
+                            <Section.Row variant="stat" title="Movimiento" value={`#${installment.payment_movement}`} />
+                        )}
+                        <Section.Row variant="stat" plain title="Estado" value={<StatusBadge status={installment.status} variant="badge" />} />
+                    </Section>
                 )}
 
                 {installment.notes && (
-                    <div className="rounded-md border border-border p-4">
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas</h4>
+                    <div>
+                        <Section.Header title="Notas" className="mb-2" />
                         <p className="text-sm whitespace-pre-wrap">{installment.notes}</p>
                     </div>
                 )}

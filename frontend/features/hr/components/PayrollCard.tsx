@@ -18,7 +18,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { FormSection } from "@/components/shared"
+import { Section } from "@/components/shared"
 
 const LABEL_STYLE = "text-3xs font-bold uppercase text-muted-foreground tracking-widest"
 
@@ -228,7 +228,7 @@ export function PayrollCard({
 
             <CardContent className="px-10 py-8">
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
-                <FormSection title="Detalle de Conceptos" icon={Clock} className="pb-6" />
+                <Section.Header spaced title="Detalle de Conceptos" icon={Clock} className="pb-6" />
 
                 <div className="surface-panel overflow-hidden shadow-card transition-all">
                     <Table>
@@ -294,7 +294,7 @@ export function PayrollCard({
                         {/* APORTES PATRONALES (ONLY IF ALLOWED) */}
                         {showEmployerContributions && employerContributions.length > 0 && (
                             <div className="space-y-4 p-5 bg-muted/50 rounded-md border border/60">
-                                <FormSection title="Costo Empresa / Aportes Patronales" icon={AlertCircle} className="mb-2" />
+                                <Section.Header spaced title="Costo Empresa / Aportes Patronales" icon={AlertCircle} className="mb-2" />
                                 <div className="space-y-2.5">
                                     {employerContributions.map(c => (
                                         <div key={c.id} className="flex justify-between items-center text-xs group/item">
@@ -330,7 +330,7 @@ export function PayrollCard({
                         {/* HISTORIAL DE PAGOS (Moved to right column) */}
                         {(unifiedPayments.length > 0) && (
                             <div className="bg-muted/50 rounded-md border border/60 p-5 space-y-4">
-                                <FormSection title="Historial de Pagos" icon={History} />
+                                <Section.Header spaced title="Historial de Pagos" icon={History} />
                                 <div className="space-y-3">
                                     {unifiedPayments.map(p => (
                                         <div key={p.id} className="flex justify-between items-center group/pay">

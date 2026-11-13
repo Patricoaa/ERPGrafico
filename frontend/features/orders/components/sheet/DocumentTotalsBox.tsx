@@ -1,7 +1,7 @@
 "use client"
 
 import { formatCurrency } from "@/lib/money"
-import { cn } from "@/lib/utils"
+import { Section } from "@/components/shared"
 
 /**
  * Recuadro de totales bajo la tabla de productos de la ficha documental (ADR-0083):
@@ -16,23 +16,13 @@ export function DocumentTotalsBox({ subtotal, tax, total, paid, pending }: {
     pending: number
 }) {
     return (
-        <dl className="ml-auto w-full max-w-xs space-y-1.5 rounded-md border px-4 py-3 text-xs tabular-nums">
-            <TotalRow label="Subtotal (neto)" value={subtotal} />
-            <TotalRow label="IVA" value={tax} />
-            <TotalRow label="Total" value={total} strong />
-            <div className="border-t pt-1.5" />
-            <TotalRow label="Pagado" value={paid} />
-            <TotalRow label="Saldo pendiente" value={pending} strong={pending > 0} />
-        </dl>
-    )
-}
-
-function TotalRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
-    return (
-        <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className={cn("font-medium", strong && "font-bold text-foreground")}>{formatCurrency(value)}</dd>
-        </div>
+        <Section className="ml-auto w-full max-w-xs rounded-md border px-4">
+            <Section.Row variant="stat" title="Subtotal (neto)" value={formatCurrency(subtotal)} />
+            <Section.Row variant="stat" title="IVA" value={formatCurrency(tax)} />
+            <Section.Row variant="stat" strong title="Total" value={formatCurrency(total)} />
+            <Section.Row variant="stat" title="Pagado" value={formatCurrency(paid)} />
+            <Section.Row variant="stat" strong={pending > 0} title="Saldo pendiente" value={formatCurrency(pending)} />
+        </Section>
     )
 }
 

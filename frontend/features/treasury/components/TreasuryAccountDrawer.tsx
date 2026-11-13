@@ -17,7 +17,7 @@ import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDra
 import type { Bank, TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from "../types"
 import type { CreditLine } from "../credit-lines/types"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SubmitButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormFooter, FormSplitLayout, SubmitButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Form, FormField } from "@/components/ui/form"
 
@@ -274,7 +274,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
 
                                     {/* Section 1: General Info */}
                                     <div className="space-y-4">
-                                        <FormSection title="Datos Generales" icon={Landmark} />
+                                        <Section.Header spaced title="Datos Generales" icon={Landmark} />
                                         <FormField
                                             control={form.control}
                                             name="name"
@@ -333,7 +333,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     {/* Credit limit (solo CREDIT_CARD) */}
                                     {type === "CREDIT_CARD" && (
                                         <div className="space-y-4">
-                                            <FormSection title="Datos de la Tarjeta" icon={CreditCard} />
+                                            <Section.Header spaced title="Datos de la Tarjeta" icon={CreditCard} />
                                             <FormField
                                                 control={form.control}
                                                 name="card_number"
@@ -366,7 +366,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     {/* Section 2: Bank Info (Conditional) */}
                                     {requiresBank(type) && (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <FormSection title="Configuración Bancaria" icon={CreditCard} />
+                                            <Section.Header spaced title="Configuración Bancaria" icon={CreditCard} />
                                             <FormField
                                                 control={form.control}
                                                 name="bank"
@@ -403,7 +403,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     {/* Credit Line Section (solo CHECKING) */}
                                     {type === "CHECKING" && (
                                         <div className="space-y-4">
-                                            <FormSection title="Línea de Crédito (Sobregiro)" icon={ScrollText} />
+                                            <Section.Header spaced title="Línea de Crédito (Sobregiro)" icon={ScrollText} />
                                             {creditLineData ? (
                                                 <div className="rounded-lg border p-4 space-y-3">
                                                     <div className="grid grid-cols-2 gap-3 text-sm">
@@ -468,7 +468,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
 
                                     {/* Section 3: Accounting */}
                                     <div className="space-y-4">
-                                        <FormSection title="Integración Contable" icon={Lock} />
+                                        <Section.Header spaced title="Integración Contable" icon={Lock} />
                                         <FormField
                                             control={form.control}
                                             name="account"

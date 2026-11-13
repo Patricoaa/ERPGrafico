@@ -1,7 +1,7 @@
 "use client"
 
 import { Package } from "lucide-react"
-import { DataCell, DocumentFieldGrid, FormSection } from "@/components/shared"
+import { DataCell, DocumentFieldGrid, Section } from "@/components/shared"
 import { DocumentLinesTable } from "./DocumentLinesTable"
 import { DocumentTotalsBox } from "./DocumentTotalsBox"
 import type { Order, OrderLine } from "../../types"
@@ -79,7 +79,7 @@ export function OrderSummaryTab({ order, kind, onCreateWorkOrder }: OrderSummary
             </section>
 
             <section className="space-y-4">
-                <FormSection title="Productos" icon={Package} />
+                <Section.Header spaced title="Productos" icon={Package} />
                 <DocumentLinesTable lines={lines} kind={kind} onCreateWorkOrder={onCreateWorkOrder} />
                 <DocumentTotalsBox
                     subtotal={subtotal}

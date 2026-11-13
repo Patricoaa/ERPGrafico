@@ -4,7 +4,7 @@ import { FormField } from "@/components/ui/form"
 import {Package, Warehouse} from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
-import {FormSection, LabeledSwitch, MultiSelectTagInput} from "@/components/shared"
+import { LabeledSwitch, MultiSelectTagInput, Section } from "@/components/shared"
 import { UoMSelector, WarehouseSelector, AdvancedContactSelector } from "@/components/selectors"
 import { cn } from "@/lib/utils"
 import { frozenFieldsOf } from "@/lib/edit-policy"
@@ -41,7 +41,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
             <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10 items-start">
                 {/* Units Section */}
                 <div className={cn("col-span-1 space-y-4", isService ? "md:col-span-4" : "md:col-span-2")}>
-                    <FormSection title="Unidades y Conversión" icon={Package} />
+                    <Section.Header spaced title="Unidades y Conversión" icon={Package} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                             <FormField
@@ -120,7 +120,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
 
                 {/* Inventory and supply controls are not applicable to one-off services. */}
                 {!isService && <div className="col-span-1 md:col-span-2 space-y-2">
-                    <FormSection title="Control y Abastecimiento" icon={Warehouse} />
+                    <Section.Header spaced title="Control y Abastecimiento" icon={Warehouse} />
                     <FormField
                         control={form.control}
                         name="track_inventory"

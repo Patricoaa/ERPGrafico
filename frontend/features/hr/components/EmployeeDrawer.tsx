@@ -20,7 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn, toDateOnlyISO } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, DatePicker, LabeledContainer, SkeletonShell, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -413,7 +413,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                             content: (
                                                 <>
                                                     <div className="space-y-8">
-                                                        <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
+                                                        <Section.Header spaced title="Detalles de Jornada" icon={CalendarCheck2} />
                                                         <div className="grid grid-cols-4 gap-6 items-start">
                                                             <div className="col-span-2">
                                                                 <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
@@ -482,7 +482,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                     </div>
 
                                                     <div className="space-y-8 pt-6 border-t border-dashed">
-                                                        <FormSection title="Previsión y Salud" icon={ShieldCheck} />
+                                                        <Section.Header spaced title="Previsión y Salud" icon={ShieldCheck} />
                                                         <div className="grid grid-cols-4 gap-6 items-start">
                                                             <div className="col-span-2">
                                                                 <FormField control={form.control} name="afp" render={({ field, fieldState }) => (

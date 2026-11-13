@@ -8,7 +8,7 @@ import { type PurchaseOrderInitialData, type PurchaseOrderLine } from "@/types/f
 import { type ProductMinimal, type UoM } from "@/types/entities"
 import * as z from "zod"
 import { Plus, DollarSign, ShoppingCart } from "lucide-react"
-import { BaseModal, SubmitButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton, SkeletonShell, FormSplitLayout } from "@/components/shared"
+import { BaseModal, SubmitButton, DataCell, MoneyDisplay, LabeledInput, FormFooter, CancelButton, SkeletonShell, FormSplitLayout, Section } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
 import { Button } from "@/components/ui/button"
 import {
@@ -238,7 +238,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                             <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <div className="space-y-4">
                                     <div className="space-y-4">
-                                        <FormSection title="Líneas de Compra" icon={Plus} />
+                                        <Section.Header spaced title="Líneas de Compra" icon={Plus} />
 
                                         <div className="flex justify-end">
                                             <Button
@@ -382,7 +382,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                     )}
                                 />
                                 <div className="space-y-4">
-                                    <FormSection title="Resumen de Valores" icon={DollarSign} />
+                                    <Section.Header spaced title="Resumen de Valores" icon={DollarSign} />
                                     <OrderTotals control={form.control} />
                                 </div>
                             </div>
@@ -397,7 +397,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                         <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <div className="space-y-4">
                                 <div className="space-y-4">
-                                    <FormSection title="Líneas de Compra" icon={Plus} />
+                                    <Section.Header spaced title="Líneas de Compra" icon={Plus} />
 
                                     <div className="flex justify-end">
                                         <Button
@@ -541,7 +541,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                     )}
                                 />
                                 <div className="space-y-4">
-                                    <FormSection title="Resumen de Valores" icon={DollarSign} />
+                                    <Section.Header spaced title="Resumen de Valores" icon={DollarSign} />
                                     <OrderTotals control={form.control} />
                                 </div>
                             </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Banknote, ArrowRight, Coins, Calculator } from 'lucide-react'
-import { BaseModal, FormFooter, CancelButton, DangerButton, MoneyDisplay, LabeledInput } from "@/components/shared"
+import { BaseModal, FormFooter, CancelButton, DangerButton, MoneyDisplay, LabeledInput, Section } from "@/components/shared"
 import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountSelector'
 import { useServerDate } from '@/hooks/useServerDate'
 import { useLoanMutations } from '../hooks/useLoans'
@@ -95,55 +95,25 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
             }
         >
             <div className="space-y-5">
-                <div className="rounded-md border border-border p-4 space-y-2">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Coins className="h-4 w-4" />
-                        Saldo Insoluto
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Capital total</span>
-                            <MoneyDisplay amount={totalPrincipal} />
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Interés total</span>
-                            <MoneyDisplay amount={totalInterest} />
-                        </div>
-                        <div className="flex justify-between font-bold border-t border-border pt-2">
-                            <span>Total {isUF ? '(UF)' : ''}</span>
-                            <MoneyDisplay amount={totalPrincipal + totalInterest} />
-                        </div>
-                    </div>
+                <div className="space-y-2">
+                    <Section title="Saldo Insoluto" icon={Coins}>
+                        <Section.Row variant="stat" title="Capital total" value={<MoneyDisplay amount={totalPrincipal} />} />
+                        <Section.Row variant="stat" title="Interés total" value={<MoneyDisplay amount={totalInterest} />} />
+                        <Section.Row variant="stat" strong title={`Total ${isUF ? '(UF)' : ''}`} value={<MoneyDisplay amount={totalPrincipal + totalInterest} />} />
+                    </Section>
                     <p className="text-2xs text-muted-foreground">
                         Capital e interés se pagan completos (no editables).
                     </p>
                 </div>
 
-                <div className="rounded-md border border-border p-4 space-y-3">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Calculator className="h-4 w-4" />
-                        Desglose del Pago
-                    </h3>
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Capital</span>
-                                <MoneyDisplay amount={totalPrincipal} />
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Interés</span>
-                                <MoneyDisplay amount={totalInterest} />
-                            </div>
-                        </div>
-                        <LabeledInput label="Seguro (editable)" type="number" value={insuranceAmount} onChange={(e) => setInsuranceAmount(e.target.value)} placeholder="0" />
-                        <LabeledInput label="Impuestos (editable)" type="number" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} placeholder="0" />
-                        <LabeledInput label="Multa por mora (editable)" type="number" value={penaltyAmount} onChange={(e) => setPenaltyAmount(e.target.value)} placeholder="0" />
-                        <div className="flex justify-between font-bold border-t border-border pt-2 text-sm">
-                            <span>Total a pagar {isUF ? '(UF)' : ''}</span>
-                            <MoneyDisplay amount={totalWithPenalty} />
-                        </div>
-                    </div>
-                </div>
+                <Section title="Desglose del Pago" icon={Calculator}>
+                    <Section.Row variant="stat" title="Capital" value={<MoneyDisplay amount={totalPrincipal} />} />
+                    <Section.Row variant="stat" title="Interés" value={<MoneyDisplay amount={totalInterest} />} />
+                    <Section.Row control={<LabeledInput label="Seguro (editable)" type="number" value={insuranceAmount} onChange={(e) => setInsuranceAmount(e.target.value)} placeholder="0" />} />
+                    <Section.Row control={<LabeledInput label="Impuestos (editable)" type="number" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} placeholder="0" />} />
+                    <Section.Row control={<LabeledInput label="Multa por mora (editable)" type="number" value={penaltyAmount} onChange={(e) => setPenaltyAmount(e.target.value)} placeholder="0" />} />
+                    <Section.Row variant="stat" strong title={`Total a pagar ${isUF ? '(UF)' : ''}`} value={<MoneyDisplay amount={totalWithPenalty} />} />
+                </Section>
 
                 {isUF && (
                     <div className="rounded-md border border-info/30 bg-info/5 p-4 space-y-2">

@@ -1,7 +1,7 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledContainer, FormSection, LabeledSwitch, NotchedButton } from "@/components/shared"
+import { LabeledInput, LabeledContainer, LabeledSwitch, NotchedButton, Section } from "@/components/shared"
 import { ShoppingCart, Truck, Barcode, Fingerprint, Layers } from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
@@ -29,7 +29,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
         <div className="space-y-8">
             {/* Identification and Classification Section - 4-Column Refined Layout */}
             <div className="space-y-4">
-                <FormSection title="Identificación y Clasificación" icon={Fingerprint} />
+                <Section.Header spaced title="Identificación y Clasificación" icon={Fingerprint} />
                 <div className="grid grid-cols-4 gap-4 items-stretch">
                     {/* Fila 1: Nombre (3) / Imagen (1) */}
                     <div className="col-span-3">

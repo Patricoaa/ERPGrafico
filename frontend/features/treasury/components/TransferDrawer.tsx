@@ -15,7 +15,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
 import { useTransfer } from "@/features/treasury/hooks/useTransfer"
 import { Form, FormField } from "@/components/ui/form"
-import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, SubmitButton, Drawer, MoneyDisplay, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, FormFooter, FormSplitLayout, SubmitButton, Drawer, MoneyDisplay, SkeletonShell, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const transferSchema = z.object({
@@ -148,7 +148,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                 <fieldset disabled={isView} className="contents">
                                     {/* Section 1: Accounts */}
                                     <div className="space-y-4">
-                                        <FormSection title="Flujo de Fondos" icon={ArrowLeftRight} />
+                                        <Section.Header spaced title="Flujo de Fondos" icon={ArrowLeftRight} />
                                         <FormField
                                             control={form.control}
                                             name="from_account_id"
@@ -190,7 +190,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
 
                                     {/* Section 2: Transaction Details */}
                                     <div className="space-y-4">
-                                        <FormSection title="Detalles de la Transacción" icon={DollarSign} />
+                                        <Section.Header spaced title="Detalles de la Transacción" icon={DollarSign} />
                                         <FormField
                                             control={form.control}
                                             name="amount"

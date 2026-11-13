@@ -1,7 +1,7 @@
 "use client"
 
 import { AlertTriangle, Banknote, CheckCircle2, ClipboardCheck, ListChecks, MessageSquareText, Scale, UserCheck } from "lucide-react"
-import { DocumentFieldGrid, EmptyState, FormSection, SkeletonShell, StatCard, type DocumentField } from "@/components/shared"
+import { DocumentFieldGrid, EmptyState, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { formatCurrency } from "@/lib/money"
@@ -60,17 +60,17 @@ export function ClosingTab({ session, overview, isLoading }: ClosingTabProps) {
                     </div>
 
                     <section aria-label="Arqueo de efectivo" className="space-y-4">
-                        <FormSection title="Arqueo de efectivo" icon={Banknote} />
+                        <Section.Header spaced title="Arqueo de efectivo" icon={Banknote} />
                         <DocumentFieldGrid className={GRID_LEFT} fields={cashCount(overview, openEntity)} />
                     </section>
 
                     <section aria-label="Cobros por método" className="space-y-4">
-                        <FormSection title="Cobros por método" icon={Scale} />
+                        <Section.Header spaced title="Cobros por método" icon={Scale} />
                         <DocumentFieldGrid className={GRID_LEFT} fields={otherMethods(overview)} />
                     </section>
 
                     <section aria-label="Observaciones del cierre" className="space-y-4">
-                        <FormSection title="Observaciones del cierre" icon={MessageSquareText} />
+                        <Section.Header spaced title="Observaciones del cierre" icon={MessageSquareText} />
                         {closing.notes ? (
                             <div className="space-y-1">
                                 <p className="whitespace-pre-line text-xs text-foreground">{closing.notes}</p>

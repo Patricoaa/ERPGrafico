@@ -9,7 +9,7 @@ import { Smartphone } from "lucide-react"
 import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalDevice } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledInput, LabeledSelect, FormFooter, FormSplitLayout, MultiSelectTagInput, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 
@@ -150,7 +150,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                     <FormSplitLayout className="space-y-6 p-6">
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
-                                <FormSection title="Información General" icon={Smartphone} />
+                                <Section.Header spaced title="Información General" icon={Smartphone} />
                                 <div className="space-y-4">
                                     <FormField
                                         control={form.control}

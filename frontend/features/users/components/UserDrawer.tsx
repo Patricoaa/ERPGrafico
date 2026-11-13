@@ -16,9 +16,17 @@ import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Users, AlertTriangle, Crown } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
 import {
-    Drawer, CancelButton, SubmitButton, LabeledInput,
-    DrawerLayout, FormFooter, LabeledSwitch, SkeletonShell, FormSection, FormSelectionGroup,
+    Drawer,
+    CancelButton,
+    SubmitButton,
+    LabeledInput,
+    DrawerLayout,
+    FormFooter,
+    LabeledSwitch,
+    SkeletonShell,
+    FormSelectionGroup,
     type FormSelectionOption,
+    Section,
 } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
@@ -385,7 +393,7 @@ export function UserDrawer({
                                             content: (
                                                 <div className="space-y-8">
                                                     <div className="space-y-4">
-                                                        <FormSection title="Vinculación y Cuenta" icon={User} />
+                                                        <Section.Header spaced title="Vinculación y Cuenta" icon={User} />
                                                         <div className="grid grid-cols-4 gap-6">
                                                             <FormField
                                                                 control={form.control}
@@ -429,7 +437,7 @@ export function UserDrawer({
                                                         </div>
                                                     </div>
                                                     <div className="space-y-4">
-                                                        <FormSection title="Seguridad y Acceso" icon={ShieldCheck} />
+                                                        <Section.Header spaced title="Seguridad y Acceso" icon={ShieldCheck} />
                                                         <div className="grid grid-cols-4 gap-6">
                                                             <div className="col-span-2">
                                                                 <FormField

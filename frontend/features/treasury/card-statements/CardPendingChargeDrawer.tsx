@@ -10,7 +10,7 @@ import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_s
 import { useServerDate } from "@/hooks/useServerDate"
 import { toDateOnlyISO } from "@/lib/utils"
 import { Form, FormField } from "@/components/ui/form"
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SubmitButton, Drawer, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormFooter, FormSplitLayout, SubmitButton, Drawer, SkeletonShell, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from '@/components/ui/button'
 import { showApiError } from "@/lib/errors"
@@ -190,7 +190,7 @@ export function CardPendingChargeDrawer({
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                             <fieldset disabled={isView} className="contents">
                                 <div className="space-y-4">
-                                    <FormSection title="Detalles del Cargo" icon={Tag} />
+                                    <Section.Header spaced title="Detalles del Cargo" icon={Tag} />
 
                                     <FormField
                                         control={form.control}

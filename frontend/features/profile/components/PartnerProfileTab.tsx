@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import { getChartPalette } from "@/lib/chart-colors"
 
 import { useMemo } from "react"
-import { ChartLegend, EmptyState, SkeletonShell, PieChart, StaleDataBanner } from '@/components/shared'
+import { ChartLegend, EmptyState, SkeletonShell, PieChart, StaleDataBanner, Section } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { Collection, useEntityCollection } from "@/components/entity-view"
@@ -84,11 +84,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Resumen de capital */}
                 <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)] lg:gap-10">
                     <section className="flex min-w-0 flex-col">
-                        <header className="mb-2 flex items-start justify-between gap-4 border-b border-border/70 pb-3">
-                            <div>
-                                <h2 className="text-base font-semibold text-foreground">Distribución de capital</h2>
-                            </div>
-                        </header>
+                        <Section.Header as="h2" title="Distribución de capital" className="mb-2" />
                         <div className="min-h-[200px] flex-1 sm:min-h-[200px]">
                             <PieChart
                                 data={pieData}
@@ -118,39 +114,18 @@ export function PartnerProfileTab({ contactId }: Props) {
                             <ChartLegend items={pieData.map((d) => ({ label: String(d.id), color: d.color }))} />
                         </div>
                     </section>
-                    <section aria-labelledby="partner-summary-heading" className="flex min-w-0 flex-col">
-                        <h2 id="partner-summary-heading" className="border-b border-border/70 pb-3 text-base font-semibold text-foreground">Resumen</h2>
-                        <dl className="flex flex-1 flex-col divide-y divide-border/70">
-                        <div className="flex items-center justify-between gap-3 py-3">
-                            <dt className="text-xs text-muted-foreground">Socio</dt>
-                            <dd className="text-sm font-medium tabular-nums text-foreground">{partnerSince ? `Desde ${formatPlainDate(partnerSince)}` : "Desde —"}</dd>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 py-3">
-                            <dt className="text-sm text-muted-foreground">Capital suscrito</dt>
-                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.total_contributions)}</dd>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 py-3">
-                            <dt className="text-sm text-muted-foreground">Capital pagado</dt>
-                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.total_paid_in)}</dd>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 py-3">
-                            <dt className="text-sm text-muted-foreground">Retiro provisorio</dt>
-                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.provisional_withdrawals)}</dd>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 py-3">
-                            <dt className="text-sm text-muted-foreground">Utilidades retenidas</dt>
-                            <dd className="text-sm font-medium tabular-nums text-foreground">{formatCurrency(summary.earnings_balance)}</dd>
-                        </div>
-                        <div className="flex-1" aria-hidden="true" />
-                        </dl>
-                    </section>
+                    <Section as="h2" title="Resumen" className="flex min-w-0 flex-col">
+                        <Section.Row variant="stat" plain title="Socio" value={partnerSince ? `Desde ${formatPlainDate(partnerSince)}` : "Desde —"} />
+                        <Section.Row variant="stat" title="Capital suscrito" value={formatCurrency(summary.total_contributions)} />
+                        <Section.Row variant="stat" title="Capital pagado" value={formatCurrency(summary.total_paid_in)} />
+                        <Section.Row variant="stat" title="Retiro provisorio" value={formatCurrency(summary.provisional_withdrawals)} />
+                        <Section.Row variant="stat" title="Utilidades retenidas" value={formatCurrency(summary.earnings_balance)} />
+                    </Section>
                 </div>
 
                 {/* Distribuciones de utilidades: incluye la absorción de retiros provisorios */}
                 <section>
-                    <header className="mb-3 border-b border-border/70 pb-3">
-                        <h2 className="text-base font-semibold text-foreground">Distribuciones de utilidades</h2>
-                    </header>
+                    <Section.Header as="h2" title="Distribuciones de utilidades" className="mb-3" />
                     <div className="h-[22rem] [&>div]:p-0">
                         <PartnerDistributionsPanel partnerId={contactId} />
                     </div>
@@ -158,9 +133,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
                 {/* Bottom: Capital History — flows naturally, page scrolls */}
                 <section>
-                    <header className="mb-3 border-b border-border/70 pb-3">
-                        <h2 className="text-base font-semibold text-foreground">Historial de capital</h2>
-                    </header>
+                    <Section.Header as="h2" title="Historial de capital" className="mb-3" />
                     <div className="[&>div>div]:rounded-none [&>div>div]:border-0">
                     <Collection.Root collection={txCollection} label="Historial de Capital">
                         <Collection.View

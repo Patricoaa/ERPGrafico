@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye } from 'lucide-react'
-import { BaseModal, FormFooter, DangerButton, StatCard, Skeleton, EmptyState, StaleDataBanner, Chip } from "@/components/shared"
+import { BaseModal, FormFooter, DangerButton, StatCard, Skeleton, EmptyState, StaleDataBanner, Chip, Section } from "@/components/shared"
 import { Button } from '@/components/ui/button'
 import { useLoan } from '../hooks/useLoans'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
@@ -137,12 +137,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
 
                     {/* Amortization table */}
                     <div className="overflow-hidden">
-                        <div className="px-4 py-3 bg-muted/50">
-                            <h3 className="text-sm font-semibold flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                Tabla de Amortización
-                            </h3>
-                        </div>
+                        <Section.Header icon={Calendar} title="Tabla de Amortización" className="mb-2" />
                         <Collection.Root
                             collection={amortizationCollection}
                             label="Tabla de amortización"
@@ -180,8 +175,8 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     </div>
 
                     {loan.notes && (
-                        <div className="rounded-md border border-border p-4">
-                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas</h4>
+                        <div>
+                            <Section.Header title="Notas" className="mb-2" />
                             <p className="text-sm whitespace-pre-wrap">{loan.notes}</p>
                         </div>
                     )}

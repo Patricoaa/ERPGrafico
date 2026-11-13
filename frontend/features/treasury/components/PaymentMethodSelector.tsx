@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck, cardAnatomy, selectableCardClass } from '@/components/shared'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { FormSection, LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
+import { LabeledInput, LabeledSelect, MoneyDisplay, Section } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 
 export interface PaymentAllocation {
@@ -329,7 +329,7 @@ export function PaymentMethodSelector({
 
         return (
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                <FormSection title="Datos Adicionales" />
+                <Section.Header spaced title="Datos Adicionales" />
 
                 {method === 'CHECK' && (
                     <>

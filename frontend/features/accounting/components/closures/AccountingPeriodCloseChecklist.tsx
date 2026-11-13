@@ -2,13 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { BaseModal, CancelButton, SubmitButton, Skeleton, EmptyState } from '@/components/shared'
+import { BaseModal, CancelButton, SubmitButton, Skeleton, EmptyState, Section, type SectionChecklistItem, type SectionChecklistDocumentLabel } from '@/components/shared'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, ClipboardCheck, FileText } from 'lucide-react'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { getEntityMetadata } from '@/lib/entity-registry'
-import { DeclarationWizard, PendingChecklistSection, type PendingChecklistItem, type PendingDocumentLabel } from '@/features/tax'
+import { DeclarationWizard } from '@/features/tax'
 import { useAccountingPeriodStatus } from '../../hooks/useAccountingPeriodStatus'
 import type { AccountingPeriodStatus } from '../../api/accountingApi'
 
@@ -34,14 +34,14 @@ function errorMessage(error: unknown): string {
 }
 
 /** CTA de estado cero: enlace ghost a la lista de la entidad, con su icono a la izquierda. */
-function zeroStateAction(label: PendingDocumentLabel, text: string): PendingChecklistItem['action'] {
+function zeroStateAction(label: SectionChecklistDocumentLabel, text: string): SectionChecklistItem['action'] {
     const meta = getEntityMetadata(label)
     return meta?.listUrl
         ? { text, href: meta.listUrl, variant: 'ghost', icon: meta.icon }
         : undefined
 }
 
-function buildItems(status: AccountingPeriodStatus, openF29: () => void): { required: PendingChecklistItem[]; suggested: PendingChecklistItem[] } {
+function buildItems(status: AccountingPeriodStatus, openF29: () => void): { required: SectionChecklistItem[]; suggested: SectionChecklistItem[] } {
     const pendingPayrolls = Math.max(status.payroll_count - status.payroll_posted_count, 0)
     const pendingStatements = Math.max(status.reconciliation_count - status.reconciliation_confirmed_count, 0)
 
@@ -189,8 +189,8 @@ export function AccountingPeriodCloseChecklistModal({
                         </Alert>
                     ) : items ? (
                         <>
-                            <PendingChecklistSection title="Obligatorios" items={items.required} critical expanded={expanded} onToggle={toggle} onOpenDocument={openEntity} />
-                            <PendingChecklistSection title="Sugeridos" items={items.suggested} critical={false} expanded={expanded} onToggle={toggle} onOpenDocument={openEntity} />
+                            <Section.Checklist title="Obligatorios" items={items.required} critical expanded={expanded} onToggle={toggle} onOpenDocument={openEntity} />
+                            <Section.Checklist title="Sugeridos" items={items.suggested} critical={false} expanded={expanded} onToggle={toggle} onOpenDocument={openEntity} />
                             <p className="text-xs text-muted-foreground">
                                 {canClose
                                     ? 'Los requisitos obligatorios están cumplidos. Puede cerrar el período contable.'

@@ -4,7 +4,7 @@ import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { CheckCircle2, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { FormSection } from "@/components/shared"
+import { Section } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { importWarningEntity, importWarningViews, type ImportWarning } from "../entity-view/importWarning.entity"
 
@@ -62,7 +62,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
 
     return (
         <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-            <FormSection title="Resumen de la Cartola" icon={FileText} />
+            <Section.Header spaced title="Resumen de la Cartola" icon={FileText} />
 
             {data.is_duplicate && (
                 <Alert variant="warning">
@@ -100,7 +100,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
                 />
             </div>
 
-            <FormSection title="Resultados de Validación" icon={CheckCircle2} />
+            <Section.Header spaced title="Resultados de Validación" icon={CheckCircle2} />
 
             {hasErrors ? (
                 <Alert variant="destructive">
