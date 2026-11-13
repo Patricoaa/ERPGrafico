@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Exists, ExpressionWrapper, OuterRef
 from django.utils.translation import gettext_lazy as _
@@ -3792,3 +3792,269 @@ class Checkbook(models.Model):
         from core.prefix_registry import EntityPrefix
 
         return f"{EntityPrefix.CHECK}-{self.id}"
+
+
+# ── Sincronización de ventas de terminal (TUU) ───────────────────────────────
+
+
+class TerminalSyncSettings(TimeStampedModel):
+    """Configuración singleton de la sincronización de ventas de terminal."""
+
+    enabled = models.BooleanField(_("Habilitada"), default=False)
+    run_hour = models.PositiveSmallIntegerField(
+        _("Hora de ejecución"),
+        default=3,
+        validators=[MinValueValidator(0), MaxValueValidator(23)],
+    )
+    lookback_days = models.PositiveSmallIntegerField(
+        _("Días hacia atrás"),
+        default=7,
+        validators=[MinValueValidator(1), MaxValueValidator(60)],
+    )
+    history_start_date = models.DateField(_("Inicio del historial"), null=True, blank=True)
+    max_retries = models.PositiveSmallIntegerField(
+        _("Reintentos máximos"),
+        default=3,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+    )
+    retry_delay_minutes = models.PositiveSmallIntegerField(
+        _("Espera entre reintentos (min)"),
+        default=10,
+        validators=[MinValueValidator(1), MaxValueValidator(120)],
+    )
+
+    class Meta:
+        verbose_name = _("Configuración de Sincronización de Terminal")
+        verbose_name_plural = _("Configuración de Sincronización de Terminal")
+
+    class FormMeta:
+        exclude_fields = []  # Sin campos sensibles — horario y límites numéricos.
+
+    def __str__(self):
+        return "Configuración de Sincronización de Terminal"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Force singleton
+        super().save(*args, **kwargs)
+        from core.cache import CACHE_KEY_TERMINAL_SYNC_SETTINGS, invalidate_singleton
+
+        invalidate_singleton(CACHE_KEY_TERMINAL_SYNC_SETTINGS)
+
+    @classmethod
+    def get_settings(cls):
+        from core.cache import CACHE_KEY_TERMINAL_SYNC_SETTINGS, cached_singleton
+
+        return cached_singleton(cls, CACHE_KEY_TERMINAL_SYNC_SETTINGS)
+
+
+class TerminalSyncRun(TimeStampedModel):
+    """Una ejecución de sincronización de ventas contra un proveedor de terminal."""
+
+    class Trigger(models.TextChoices):
+        SCHEDULED = "SCHEDULED", _("Programada")
+        MANUAL = "MANUAL", _("Manual")
+
+    class Status(models.TextChoices):
+        RUNNING = "RUNNING", _("En curso")
+        SUCCESS = "SUCCESS", _("Exitosa")
+        PARTIAL = "PARTIAL", _("Parcial")
+        FAILED = "FAILED", _("Fallida")
+
+    provider = models.ForeignKey(
+        PaymentTerminalProvider,
+        on_delete=models.PROTECT,
+        related_name="sync_runs",
+        verbose_name=_("Proveedor"),
+    )
+    trigger = models.CharField(_("Origen"), max_length=12, choices=Trigger.choices)
+    status = models.CharField(
+        _("Estado"), max_length=10, choices=Status.choices, default=Status.RUNNING
+    )
+    start_date = models.DateField(_("Desde"))
+    end_date = models.DateField(_("Hasta"))
+    attempts = models.PositiveIntegerField(_("Intentos"), default=0)
+    started_at = models.DateTimeField(_("Inicio"))
+    finished_at = models.DateTimeField(_("Fin"), null=True, blank=True)
+    error_message = models.TextField(_("Mensaje de error"), blank=True)
+    warnings = models.JSONField(_("Advertencias"), default=list, blank=True)
+    fetched_count = models.PositiveIntegerField(_("Recibidas"), default=0)
+    created_count = models.PositiveIntegerField(_("Creadas"), default=0)
+    updated_count = models.PositiveIntegerField(_("Actualizadas"), default=0)
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("Disparada por"),
+    )
+
+    class Meta:
+        verbose_name = _("Ejecución de Sincronización")
+        verbose_name_plural = _("Ejecuciones de Sincronización")
+        ordering = ["-started_at"]
+        indexes = [
+            models.Index(
+                fields=["provider", "trigger", "started_at"],
+                name="terminalsyncrun_prov_trg_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Sync {self.provider_id} {self.start_date}..{self.end_date} [{self.status}]"
+
+
+class TerminalSyncPayload(TimeStampedModel):
+    """Respuesta cruda del proveedor, conservada para auditoría y reproceso."""
+
+    class Report(models.TextChoices):
+        BRANCH_CARD = "BRANCH_CARD", _("Sucursal - tarjeta")
+        BRANCH_CASH = "BRANCH_CASH", _("Sucursal - efectivo")
+        GENERAL = "GENERAL", _("General")
+
+    run = models.ForeignKey(
+        TerminalSyncRun,
+        on_delete=models.CASCADE,
+        related_name="payloads",
+        verbose_name=_("Ejecución"),
+    )
+    report = models.CharField(_("Reporte"), max_length=12, choices=Report.choices)
+    chunk_start = models.DateField(_("Tramo desde"))
+    chunk_end = models.DateField(_("Tramo hasta"))
+    page = models.PositiveIntegerField(_("Página"), default=1)
+    http_status = models.PositiveIntegerField(_("Estado HTTP"))
+    request_body = models.JSONField(_("Solicitud"), default=dict, blank=True)
+    response_body = models.JSONField(_("Respuesta"), default=dict, blank=True)
+
+    class Meta:
+        verbose_name = _("Respuesta cruda de Sincronización")
+        verbose_name_plural = _("Respuestas crudas de Sincronización")
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Payload {self.report} {self.chunk_start}..{self.chunk_end} p{self.page}"
+
+
+class TerminalSale(TimeStampedModel):
+    """Venta de terminal sincronizada desde el proveedor (espejo de solo lectura)."""
+
+    class Status(models.TextChoices):
+        COMPLETED = "COMPLETED", _("Completada")
+        REVERSED = "REVERSED", _("Anulada")
+        OTHER = "OTHER", _("Otro")
+
+    class PaymentType(models.TextChoices):
+        CASH = "CASH", _("Efectivo")
+        DEBIT = "DEBIT", _("Débito")
+        CREDIT = "CREDIT", _("Crédito")
+        PREPAID = "PREPAID", _("Prepago")
+        UNKNOWN = "UNKNOWN", _("Desconocido")
+
+    DOCUMENT_TYPE_LABELS = {
+        33: "Factura afecta",
+        34: "Factura exenta",
+        39: "Boleta",
+        41: "Boleta exenta",
+        48: "Comprobante de pago",
+    }
+
+    provider = models.ForeignKey(
+        PaymentTerminalProvider,
+        on_delete=models.PROTECT,
+        related_name="sales",
+        verbose_name=_("Proveedor"),
+    )
+    device = models.ForeignKey(
+        PaymentTerminalDevice,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sales",
+        verbose_name=_("Dispositivo"),
+    )
+    natural_key = models.CharField(_("Clave natural"), max_length=64)
+    serial_number = models.CharField(_("N° de serie"), max_length=64)
+    sale_id = models.CharField(_("ID de venta"), max_length=64)
+    sequence_number = models.CharField(_("N° de secuencia"), max_length=64)
+    location_id = models.CharField(_("Local"), max_length=64, blank=True)
+    transaction_at = models.DateTimeField(_("Fecha de transacción"), db_index=True)
+    status = models.CharField(
+        _("Estado"), max_length=12, choices=Status.choices, default=Status.COMPLETED
+    )
+    raw_status = models.CharField(_("Estado original"), max_length=64, blank=True)
+    payment_type = models.CharField(
+        _("Medio de pago"),
+        max_length=10,
+        choices=PaymentType.choices,
+        default=PaymentType.UNKNOWN,
+    )
+    document_type = models.PositiveSmallIntegerField(
+        _("Tipo de documento"), null=True, blank=True, db_index=True
+    )
+    instance = models.SmallIntegerField(_("Instancia"), null=True, blank=True)
+    card_brand = models.CharField(_("Marca"), max_length=64, blank=True)
+    card_bin = models.CharField(_("BIN"), max_length=16, blank=True)
+    card_issuer = models.CharField(_("Emisor"), max_length=64, blank=True)
+    card_origin = models.CharField(_("Origen tarjeta"), max_length=64, blank=True)
+    installment_type = models.CharField(
+        _("Tipo de cuotas"), max_length=64, null=True, blank=True
+    )
+    installment_count = models.SmallIntegerField(_("Cuotas"), null=True, blank=True)
+    acquirer_id = models.CharField(_("Adquirente"), max_length=64, null=True, blank=True)
+    currency = models.CharField(_("Moneda"), max_length=3, default="CLP")
+    sale_amount = models.DecimalField(_("Monto venta"), max_digits=14, decimal_places=0, default=0)
+    tip_amount = models.DecimalField(_("Propina"), max_digits=14, decimal_places=0, default=0)
+    cashback_amount = models.DecimalField(
+        _("Cashback"), max_digits=14, decimal_places=0, default=0
+    )
+    total_amount = models.DecimalField(_("Total"), max_digits=14, decimal_places=0, default=0)
+    commission_amount = models.DecimalField(
+        _("Comisión"), max_digits=14, decimal_places=0, null=True, blank=True
+    )
+    net_amount = models.DecimalField(
+        _("Neto"), max_digits=14, decimal_places=0, null=True, blank=True
+    )
+    settlement_date = models.DateField(_("Fecha de abono"), null=True, blank=True)
+    settlement_id = models.CharField(_("ID de abono"), max_length=64, null=True, blank=True)
+    settlement_amount = models.DecimalField(
+        _("Monto abonado"), max_digits=14, decimal_places=0, null=True, blank=True
+    )
+    reconciliations = models.JSONField(_("Conciliaciones"), default=list, blank=True)
+    items = models.JSONField(_("Ítems"), default=list, blank=True)
+    raw = models.JSONField(_("Datos originales"), default=dict, blank=True)
+    sources = models.JSONField(_("Fuentes"), default=list, blank=True)
+    first_seen_run = models.ForeignKey(
+        TerminalSyncRun,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("Primera ejecución"),
+    )
+    last_seen_run = models.ForeignKey(
+        TerminalSyncRun,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("Última ejecución"),
+    )
+
+    class Meta:
+        verbose_name = _("Venta de Terminal")
+        verbose_name_plural = _("Ventas de Terminal")
+        ordering = ["-transaction_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provider", "natural_key"], name="uniq_terminal_sale_provider_key"
+            ),
+        ]
+
+    def __str__(self):
+        return f"Venta {self.sale_id} ({self.serial_number})"
+
+    @property
+    def document_type_label(self) -> str:
+        if self.document_type is None:
+            return ""
+        return self.DOCUMENT_TYPE_LABELS.get(self.document_type, f"DTE {self.document_type}")
