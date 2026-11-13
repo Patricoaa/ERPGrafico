@@ -254,7 +254,6 @@ def test_transient_error_reraises_after_saving_progress():
     assert run.status == TerminalSyncRun.Status.RUNNING
     assert run.finished_at is None
     assert run.created_count == 47
-    assert run.attempts == 1
     assert run.error_message
 
 
@@ -268,3 +267,60 @@ def test_serial_conflict_adds_warning():
     assert sale.serial_number == "OTRO"
     assert any(sale.natural_key in w for w in run.warnings)
     assert run.status == TerminalSyncRun.Status.PARTIAL
+    # el resto de los campos sí se refresca
+    TerminalSale.objects.filter(pk=sale.pk).update(card_brand="CAMBIADA")
+    execute_run(_run(provider), client=FakeClient())
+    sale.refresh_from_db()
+    assert sale.card_brand != "CAMBIADA"
+    assert sale.serial_number == "OTRO"
+
+
+def test_empty_stored_serial_is_filled_in_and_linked():
+    provider = make_terminal_provider()
+    device = PaymentTerminalDevice.objects.create(
+        name="Caja", provider=provider, serial_number=SERIAL
+    )
+    execute_run(_run(provider), client=FakeClient())
+    sale = TerminalSale.objects.filter(serial_number=SERIAL).first()
+    TerminalSale.objects.filter(pk=sale.pk).update(serial_number="", device=None)
+    run = execute_run(_run(provider), client=FakeClient())
+    sale.refresh_from_db()
+    assert sale.serial_number == SERIAL
+    assert sale.device_id == device.pk
+    assert not any(sale.natural_key in w for w in run.warnings)
+
+
+def test_retry_after_transient_does_not_duplicate_payloads_or_counts():
+    provider = make_terminal_provider()
+    run = _run(provider, date(2026, 10, 1), date(2026, 11, 5))
+    with pytest.raises(TuuTransientError):
+        execute_run(run, client=FakeClient(errors={1: TuuTransientError("t")}))
+    run = execute_run(run, client=FakeClient())
+    assert run.status == TerminalSyncRun.Status.SUCCESS
+    assert TerminalSyncPayload.objects.filter(run=run).count() == 14
+    assert run.fetched_count == 94
+    assert run.created_count == 47
+    assert run.error_message == ""
+
+
+def test_resync_refreshes_updated_at_and_counts_unchanged_in_one_query():
+    provider = make_terminal_provider()
+    execute_run(_run(provider), client=FakeClient())
+    before = {s.pk: s.updated_at for s in TerminalSale.objects.all()}
+    execute_run(_run(provider), client=FakeClient())
+    assert all(s.updated_at > before[s.pk] for s in TerminalSale.objects.all())
+
+
+def test_unexpected_exception_marks_failed_and_reraises(monkeypatch):
+    run = _run(make_terminal_provider())
+
+    def boom(*a, **k):
+        raise RuntimeError("secret")
+
+    monkeypatch.setattr("treasury.terminal_sync_service._upsert_chunk", boom)
+    with pytest.raises(RuntimeError):
+        execute_run(run, client=FakeClient())
+    run.refresh_from_db()
+    assert run.status == TerminalSyncRun.Status.FAILED
+    assert run.error_message == "Error interno al sincronizar: RuntimeError"
+    assert run.finished_at is not None

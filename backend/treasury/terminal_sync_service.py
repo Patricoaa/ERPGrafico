@@ -189,6 +189,8 @@ def _upsert_chunk(
     }
     to_create: list[TerminalSale] = []
     to_update: list[TerminalSale] = []
+    unchanged: list[int] = []
+    now = timezone.now()
     for sale in sales:
         values = _sale_values(sale)
         current = existing.get(sale.natural_key)
@@ -205,23 +207,35 @@ def _upsert_chunk(
                 )
             )
             continue
-        if current.serial_number != sale.serial_number:
-            _warn(
-                run,
-                f"Venta {sale.natural_key}: el N° de serie cambió "
-                f"({current.serial_number or '-'} -> {sale.serial_number or '-'}); se conserva el guardado.",
-            )
+        if not current.serial_number and sale.serial_number:
+            current.serial_number = sale.serial_number
+            current.device = devices.get(sale.serial_number)
+            fill_in = True
+        else:
+            fill_in = False
+            if current.serial_number != sale.serial_number and sale.serial_number:
+                _warn(
+                    run,
+                    f"Venta {sale.natural_key}: el N° de serie cambió "
+                    f"({current.serial_number} -> {sale.serial_number}); se conserva el guardado.",
+                )
         changed = [n for n, v in values.items() if getattr(current, n) != v]
         for name in changed:
             setattr(current, name, values[name])
         current.last_seen_run = run
-        if changed:
+        if changed or fill_in:
+            current.updated_at = now
             to_update.append(current)
         else:
-            TerminalSale.objects.filter(pk=current.pk).update(last_seen_run=run)
+            unchanged.append(current.pk)
     TerminalSale.objects.bulk_create(to_create)
     if to_update:
-        TerminalSale.objects.bulk_update(to_update, [*_SALE_FIELDS, "last_seen_run"])
+        TerminalSale.objects.bulk_update(
+            to_update,
+            [*_SALE_FIELDS, "serial_number", "device", "last_seen_run", "updated_at"],
+        )
+    if unchanged:
+        TerminalSale.objects.filter(pk__in=unchanged).update(last_seen_run=run, updated_at=now)
     return len(to_create), len(to_update)
 
 
@@ -246,8 +260,26 @@ def execute_run(run: TerminalSyncRun, client: TuuClient | None = None) -> Termin
     """
     if client is None:
         client = TuuClient(run.provider.get_api_key())
-    run.attempts += 1
-    run.save(update_fields=["attempts", "updated_at"])
+    # Cada llamada es un intento nuevo: se descarta lo registrado por intentos previos.
+    TerminalSyncPayload.objects.filter(run=run).delete()
+    run.warnings = []
+    run.fetched_count = 0
+    run.updated_count = 0
+    run.error_message = ""
+    try:
+        return _execute(run, client)
+    except TuuTransientError:
+        raise
+    except Exception as exc:
+        _finish(
+            run,
+            TerminalSyncRun.Status.FAILED,
+            f"Error interno al sincronizar: {type(exc).__name__}",
+        )
+        raise
+
+
+def _execute(run: TerminalSyncRun, client: TuuClient) -> TerminalSyncRun:
     devices = {
         d.serial_number: d for d in PaymentTerminalDevice.objects.filter(provider=run.provider)
     }
@@ -272,9 +304,9 @@ def execute_run(run: TerminalSyncRun, client: TuuClient | None = None) -> Termin
         for warning in warnings:
             _warn(run, warning)
         with transaction.atomic():
-            created, updated = _upsert_chunk(run, sales, devices)
+            _, updated = _upsert_chunk(run, sales, devices)
         run.fetched_count += len(sales)
-        run.created_count += created
+        run.created_count = TerminalSale.objects.filter(first_seen_run=run).count()
         run.updated_count += updated
         ok_chunks += 1
         run.save()
