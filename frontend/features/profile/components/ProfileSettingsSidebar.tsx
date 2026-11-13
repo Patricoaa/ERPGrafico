@@ -29,7 +29,7 @@ const navigationSections = [
         label: "Personal",
         items: [
             { label: "Ficha de Personal", value: "employee", icon: BadgeCheck },
-            { label: "Liquidaciones y pagos", value: "payrolls", icon: FileText },
+            { label: "Liquidaciones", value: "payrolls", icon: FileText },
         ],
     },
 ]
