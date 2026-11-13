@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.107](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.106...v0.3.107) (2026-11-13)
+
+
+### ⚙️ Refactors
+
+* **shared:** Section reutilizable reemplaza FormSection, SummaryList y PendingChecklist (ADR-0136) ([9f1e075](https://github.com/Patricoaa/ERPGrafico/commit/9f1e0752dd9137f6a764d6a9af4dfe2a76746984))
+
 ### [0.3.106](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.105...v0.3.106) (2026-11-12)
 
 
