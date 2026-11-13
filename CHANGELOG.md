@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.111](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.110...v0.3.111) (2026-11-13)
+
+
+### ✨ Features
+
+* **orders:** kebab con acciones de la ficha en listas con HubStatus; devolver pago en tesorería y como diálogo ([55f4510](https://github.com/Patricoaa/ERPGrafico/commit/55f45103ffe15e6bd5179ac13a2a2eb267fe4039))
+
 ### [0.3.110](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.109...v0.3.110) (2026-11-13)
 
 
