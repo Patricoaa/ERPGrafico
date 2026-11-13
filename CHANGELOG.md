@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.110](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.109...v0.3.110) (2026-11-13)
+
+
+### ✨ Features
+
+* **partners:** ficha de socio y distribución con secciones, detalle y PDF del resultado ([c9362b7](https://github.com/Patricoaa/ERPGrafico/commit/c9362b7b5a148c0147c7ca12292e92ed3c4dd36d))
+
 ### [0.3.109](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.108...v0.3.109) (2026-11-13)
 
 
