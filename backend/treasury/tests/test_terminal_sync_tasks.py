@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -101,7 +101,7 @@ def test_dispatcher_skips_inactive_and_keyless_providers(monkeypatch, enqueued):
 
 
 def test_dispatcher_skips_when_no_daily_range(monkeypatch, enqueued):
-    _configure(run_hour=3, history_start_date=date(2026, 11, 13))
+    _configure(run_hour=3, history_start_date=timezone.localtime().date() + timedelta(days=1))
     _keyed_provider()
     _freeze(monkeypatch, 3)
     assert tasks.dispatch_terminal_sales_sync() == 0
