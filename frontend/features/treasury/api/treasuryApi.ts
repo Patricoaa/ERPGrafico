@@ -35,6 +35,16 @@ import type {
     UpcomingInstallment,
     PendingChargeRow,
     UnbilledForecast,
+    TerminalSale,
+    TerminalSaleDetail,
+    TerminalSaleFilters,
+    TerminalSalesSummary,
+    TerminalSalesSummaryFilters,
+    TerminalSyncRun,
+    TerminalSyncRunFilters,
+    TerminalSyncSettings,
+    TerminalSyncSettingsPatch,
+    ManualSyncPayload,
 } from '../types'
 import type { BillChargesResponse } from '@/features/treasury/card-statements/types'
 import type { TcHubAnalyticsResponse } from '@/features/treasury/card-statements/analyticsTypes'
@@ -120,6 +130,45 @@ export const treasuryApi = {
     getTerminalBatches: async (params?: Record<string, string>): Promise<TerminalBatch[]> => {
         const response = await api.get<{ results: TerminalBatch[] }>('/treasury/terminal-batches/', { params })
         return response.data.results
+    },
+
+    // ========== Terminal sales sync (TUU) ==========
+
+    getTerminalSales: async (params: TerminalSaleFilters = {}, signal?: AbortSignal): Promise<Page<TerminalSale>> => {
+        const response = await api.get('/treasury/terminal-sales/', { params, signal })
+        return toPage<TerminalSale>(response.data, Number(params.page ?? 1), Number(params.page_size ?? 50))
+    },
+
+    getTerminalSale: async (id: number): Promise<TerminalSaleDetail> => {
+        const { data } = await api.get<TerminalSaleDetail>(`/treasury/terminal-sales/${id}/`)
+        return data
+    },
+
+    getTerminalSalesSummary: async (params: TerminalSalesSummaryFilters = {}): Promise<TerminalSalesSummary> => {
+        const { data } = await api.get<TerminalSalesSummary>('/treasury/terminal-sales/summary/', { params })
+        return data
+    },
+
+    getTerminalSyncRuns: async (params: TerminalSyncRunFilters = {}): Promise<Page<TerminalSyncRun>> => {
+        const response = await api.get('/treasury/terminal-sync-runs/', { params })
+        return toPage<TerminalSyncRun>(response.data, Number(params.page ?? 1), Number(params.page_size ?? 50))
+    },
+
+    startTerminalSync: async (payload: ManualSyncPayload, idempotencyKey: string): Promise<TerminalSyncRun[]> => {
+        const { data } = await api.post<TerminalSyncRun[]>('/treasury/terminal-sync-runs/sync/', payload, {
+            headers: { 'Idempotency-Key': idempotencyKey },
+        })
+        return data
+    },
+
+    getTerminalSyncSettings: async (): Promise<TerminalSyncSettings> => {
+        const { data } = await api.get<TerminalSyncSettings>('/treasury/terminal-sync-settings/current/')
+        return data
+    },
+
+    updateTerminalSyncSettings: async (patch: TerminalSyncSettingsPatch): Promise<TerminalSyncSettings> => {
+        const { data } = await api.patch<TerminalSyncSettings>('/treasury/terminal-sync-settings/current/', patch)
+        return data
     },
 
     createTerminalBatch: async (payload: TerminalBatchCreatePayload): Promise<TerminalBatch> => {
