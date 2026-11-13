@@ -29,7 +29,7 @@ import { useInvoiceDocument } from "../../hooks/useCommercialDocument"
 import { useOrderActionEngine } from "../../hooks/useOrderActionEngine"
 import { useOrderRelatedActions } from "../../hooks/useOrderRelatedActions"
 import { getInvoiceLifecycle } from "../../utils/lifecycle"
-import { CATEGORY_DOMAIN, PRIMARY_PRIORITY } from "../../utils/orderSheetActions"
+import { CATEGORY_DOMAIN, INVOICE_ACTIONS, NOTE_ACTIONS, PRIMARY_PRIORITY } from "../../utils/orderSheetActions"
 import type { Order, OrderLine } from "../../types"
 import { InvoiceSummaryTab } from "./InvoiceSummaryTab"
 
@@ -47,16 +47,6 @@ export interface InvoiceSheetProps {
 
 const LABEL = "billing.invoice"
 
-/**
- * Acciones del registro de OV/OC que aplican a una factura o nota (ADR-0083). En el Hub era el
- * "modo nota": el mismo motor actúa sobre la factura (pagos imputados a ella, folio, NC/ND,
- * logística propia de la nota).
- */
-const INVOICE_ACTIONS = new Set(["invoice-by-lines", "complete-folio", "register-payment", "register-payment-return", "create-credit-note", "create-debit-note"])
-const NOTE_ACTIONS = new Set([
-    "complete-folio", "register-payment", "register-payment-return",
-    "register-delivery", "register-reception", "confirm-service-delivery", "register-merchandise-return",
-])
 
 /**
  * Ficha documental de factura/nota (ADR-0083). Reemplaza el Order Hub en "modo nota" y el

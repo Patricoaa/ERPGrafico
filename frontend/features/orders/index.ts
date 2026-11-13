@@ -14,6 +14,7 @@ export { ordersApi } from './api/ordersApi'
 
 export { getHubStatuses, getNoteHubStatuses } from './utils/status'
 export { OrderSheet, type OrderSheetProps } from './components/sheet/OrderSheet'
+export { DocumentRowActions, type DocumentRowActionsProps, type DocumentRowKind } from './components/DocumentRowActions'
 export { InvoiceSheet, type InvoiceSheetProps } from './components/sheet/InvoiceSheet'
 export { orderLineEntity, orderLineViews, linePending, lineQty, matchesLineType, type LineTypeFilter } from './entity-view/orderLine.entity'
 export {

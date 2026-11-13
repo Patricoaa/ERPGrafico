@@ -13,6 +13,7 @@ import {
     type FieldId,
     type SortSpec,
 } from "@/components/entity-view"
+import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSalesNotes, useSalesOrders } from "@/features/sales"
 import { AlertTriangle } from "lucide-react"
@@ -50,11 +51,11 @@ export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOr
 
     // One collection per mode, each with its own hook: the hidden mode no longer fetches.
     return viewMode === "orders"
-        ? <SaleOrderCollection selection={selection} />
-        : <SaleNoteCollection selection={selection} />
+        ? <SaleOrderCollection selection={selection} withActions={!onSelectOrder} />
+        : <SaleNoteCollection selection={selection} withActions={!onSelectOrder} />
 }
 
-function SaleOrderCollection({ selection }: { selection: SheetSelection }) {
+function SaleOrderCollection({ selection, withActions }: { selection: SheetSelection; withActions: boolean }) {
     const search = useUnifiedSearch(salesOrderUnifiedSearchDef)
     const groupBy = search.groupBy ? ORDER_GROUPS[search.groupBy] ?? null : null
     const [sort, setSort] = useState<SortSpec<FieldId<typeof saleOrderEntity.fields>> | null>(null)
@@ -97,6 +98,7 @@ function SaleOrderCollection({ selection }: { selection: SheetSelection }) {
                 selection="panel"
                 selectedId={selection.selectedId}
                 onOpen={(order) => selection.toggle(order.id)}
+                actions={withActions ? (order) => <DocumentRowActions id={order.id} kind="sale-order" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}
             >
@@ -135,7 +137,7 @@ function SaleOrderCollection({ selection }: { selection: SheetSelection }) {
     )
 }
 
-function SaleNoteCollection({ selection }: { selection: SheetSelection }) {
+function SaleNoteCollection({ selection, withActions }: { selection: SheetSelection; withActions: boolean }) {
     const search = useUnifiedSearch(salesNoteUnifiedSearchDef)
     const groupBy = search.groupBy ? NOTE_GROUPS[search.groupBy] ?? null : null
     const filters = search.filters as Record<string, string>
@@ -167,6 +169,7 @@ function SaleNoteCollection({ selection }: { selection: SheetSelection }) {
                 selection="panel"
                 selectedId={selection.selectedId}
                 onOpen={(note) => selection.toggle(note.id)}
+                actions={withActions ? (note) => <DocumentRowActions id={note.id} kind="invoice" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}
             >

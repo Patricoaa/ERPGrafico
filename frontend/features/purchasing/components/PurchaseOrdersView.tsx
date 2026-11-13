@@ -13,6 +13,7 @@ import {
     type FieldId,
     type SortSpec,
 } from "@/components/entity-view"
+import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { AlertTriangle } from "lucide-react"
 import type { OrderFilters } from "../api/purchasingApi"
@@ -85,6 +86,7 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
                 onOpen={(order) => sheet.toggle(order.id)}
+                actions={(order) => <DocumentRowActions id={order.id} kind="purchase-order" onOpen={sheet.toggle} />}
                 view={view}
                 onViewChange={onViewChange}
             >
@@ -155,6 +157,7 @@ function PurchaseNoteCollection() {
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
                 onOpen={(note) => sheet.toggle(note.id)}
+                actions={(note) => <DocumentRowActions id={note.id} kind="invoice" onOpen={sheet.toggle} />}
                 view={view}
                 onViewChange={onViewChange}
             >

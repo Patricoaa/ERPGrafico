@@ -5,6 +5,7 @@ import { Collection, GROUP_ROW_LIMIT, useCollectionViewMode, useEntityCollection
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type InvoiceFilters } from "@/features/billing/types"
+import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { salesInvoiceEntity, salesInvoiceViews } from "../entity-view/salesInvoice.entity"
@@ -45,6 +46,7 @@ export function SalesInvoicesClientView() {
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
                 onOpen={(inv) => sheet.toggle(inv.id)}
+                actions={(inv) => <DocumentRowActions id={inv.id} kind="invoice" onOpen={sheet.toggle} />}
                 view={view}
                 onViewChange={onViewChange}
             >

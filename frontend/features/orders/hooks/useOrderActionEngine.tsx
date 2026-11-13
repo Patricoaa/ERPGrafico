@@ -282,6 +282,7 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
                         onConfirm={handlePaymentConfirm}
                         isPurchase={isPurchase}
                         isRefund={activeModal === 'register-payment-return'}
+                        asDialog={activeModal === 'register-payment-return'}
                         title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                         posSessionId={posSessionId}
                         customerCreditBalance={((order.customer as { credit_balance?: number } | undefined)?.credit_balance) || 0}

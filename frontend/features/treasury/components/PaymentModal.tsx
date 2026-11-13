@@ -44,6 +44,8 @@ interface PaymentModalProps {
     posSessionId?: number | null
     customerCreditBalance?: number
     allowCreditBalanceAccumulation?: boolean
+    /** Floating dialog even inside a workspace tab (e.g. opened over a document sheet). */
+    asDialog?: boolean
 }
 
 export function PaymentModal({
@@ -59,7 +61,8 @@ export function PaymentModal({
     title,
     posSessionId = null,
     customerCreditBalance = 0,
-    allowCreditBalanceAccumulation = false
+    allowCreditBalanceAccumulation = false,
+    asDialog = false,
 }: PaymentModalProps) {
     const { dateString } = useServerDate()
     const [dteType, setDteType] = useState("NONE")
@@ -115,6 +118,7 @@ export function PaymentModal({
 
     return (
         <BaseModal
+            asDialog={asDialog}
             open={open}
             onOpenChange={onOpenChange}
             title={

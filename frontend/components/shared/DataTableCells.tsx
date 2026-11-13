@@ -577,15 +577,21 @@ export const DataCell = {
         title = "Más acciones",
         className,
         align = "end",
+        defaultOpen,
+        loading = false,
     }: {
         items: ActionMenuItem[],
         title?: string,
         className?: string,
         align?: "start" | "center" | "end",
+        /** Mount already open (lazy menus that arm on the first click). */
+        defaultOpen?: boolean,
+        /** Items still resolving (e.g. the full document is being fetched): shows a disabled placeholder. */
+        loading?: boolean,
     }) => (
         <TooltipProvider delayDuration={400}>
             <Tooltip>
-                <DropdownMenu>
+                <DropdownMenu defaultOpen={defaultOpen}>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
                             <div className="flex justify-center items-center">
@@ -606,6 +612,7 @@ export const DataCell = {
                         className="rounded-lg border-sidebar-border min-w-[10rem]"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        {loading && <DropdownMenuItem disabled className="text-xs font-semibold uppercase tracking-widest">Cargando acciones…</DropdownMenuItem>}
                         {items.map((item, idx) => {
                             if ('separator' in item && item.separator) {
                                 return <DropdownMenuSeparator key={`sep-${idx}`} />

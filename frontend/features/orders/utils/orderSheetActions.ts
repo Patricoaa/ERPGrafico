@@ -56,3 +56,14 @@ export function planOrderSheetActions<T>(resolved: ResolvedDocumentAction<T>[]):
     }
     return { primary, secondary, overflow, byDomain }
 }
+
+/**
+ * Acciones del registro de OV/OC que aplican a una factura o nota (ADR-0083). En el Hub era el
+ * "modo nota": el mismo motor actúa sobre la factura (pagos imputados a ella, folio, NC/ND,
+ * logística propia de la nota).
+ */
+export const INVOICE_ACTIONS = new Set(["invoice-by-lines", "complete-folio", "register-payment", "register-payment-return", "create-credit-note", "create-debit-note"])
+export const NOTE_ACTIONS = new Set([
+    "complete-folio", "register-payment", "register-payment-return",
+    "register-delivery", "register-reception", "confirm-service-delivery", "register-merchandise-return",
+])

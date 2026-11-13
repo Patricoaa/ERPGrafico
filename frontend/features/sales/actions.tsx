@@ -263,7 +263,9 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                             const hasPendingAmount = (Number(activeDoc.pending_amount ?? 0) || 0) > 0
                             return hasPendingAmount && activeDoc.status !== 'CANCELLED'
                         }
-                        return false
+                        // Invoice itself in DRAFT (folio pending) with posted payments
+                        return activeDoc.status === 'DRAFT'
+                            && (activeDoc.serialized_payments || []).some((pay: { status?: string }) => pay.status === 'POSTED')
                     }
 
                     // Only if invoice is DRAFT
@@ -380,26 +382,6 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     ) ?? false
 
                     return hasDraftInvoice && hasStockableDelivered
-                },
-                badge: { type: 'info', label: 'Solo DRAFT' }
-            },
-            {
-                id: 'register-payment-return',
-                label: 'Devolver Pago',
-                icon: DollarSign,
-                requiredPermissions: ['treasury.add_treasurymovement'],
-                 checkAvailability: (order) => {
-                    // Only if invoice is DRAFT
-                    const hasDraftInvoice = order.invoices?.some(
-                        (inv: Record<string, unknown>) => inv.status === 'DRAFT'
-                    ) ?? false
-
-                    // Only if has posted payments
-                    const hasPostedPayments = order.serialized_payments?.some(
-                        (pay: Record<string, unknown>) => pay.status === 'POSTED'
-                    ) ?? false
-
-                    return hasDraftInvoice && hasPostedPayments
                 },
                 badge: { type: 'info', label: 'Solo DRAFT' }
             }
