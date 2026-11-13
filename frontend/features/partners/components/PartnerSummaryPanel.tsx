@@ -32,7 +32,7 @@ interface PartnerSummaryPanelProps {
     onGoToTab: (tab: "capital") => void
 }
 
-/** Pestaña Resumen: alertas que llevan a Capital, datos del socio junto a su participación y su evolución anual. */
+/** Pestaña Resumen: alertas que llevan a Capital, datos del socio junto a su participación y su evolución histórica. */
 export function PartnerSummaryPanel({ partner, onGoToTab }: PartnerSummaryPanelProps) {
     const { data: overview, isLoading, isError, refetch } = usePartnerOverview(partner.id)
     const openEntity = useOptionalGlobalModalActions()?.openEntity

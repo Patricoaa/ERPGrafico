@@ -51,6 +51,7 @@ function lineRow(line: Line, partner: Partner, run: PartnerActionRunner) {
                             text={action.label ?? ROW_ACTIONS[action.action].label}
                             icon={action.icon ?? ROW_ACTIONS[action.action].icon}
                             onClick={action.onClick}
+                            variant="outline"
                         />
                     )}
                 </ActionSlot>
@@ -77,7 +78,7 @@ export function PartnerEquityPanel({ partner, run }: { partner: Partner; run: Pa
                     actions={
                         <ActionSlot>
                             {transfer && "onClick" in transfer && (
-                                <Section.Action text={TRANSFER_ACTION_LABEL} icon={transfer.icon} onClick={transfer.onClick} />
+                                <Section.Action text={TRANSFER_ACTION_LABEL} icon={transfer.icon} onClick={transfer.onClick} variant="outline" />
                             )}
                         </ActionSlot>
                     }

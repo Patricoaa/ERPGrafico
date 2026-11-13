@@ -5,7 +5,7 @@ import type { Partner, PartnerEquityStake, PartnerOverview, PartnerTransaction }
 import { PartnerSummaryPanel } from "../PartnerSummaryPanel"
 import { PartnerCapitalPanel } from "../PartnerCapitalPanel"
 import { PartnerCapitalMovementsPanel } from "../PartnerCapitalMovementsPanel"
-import { annualParticipationSeries, PartnerParticipationHistory } from "../PartnerParticipationHistory"
+import { participationSeries, participationAxisFormat, PartnerParticipationHistory } from "../PartnerParticipationHistory"
 import { NuqsTestingAdapter } from "nuqs/adapters/testing"
 import type { ReactElement } from "react"
 
@@ -83,21 +83,27 @@ describe("PartnerSummaryPanel", () => {
 })
 
 describe("PartnerParticipationHistory", () => {
-    it("arma una serie anual con la participación vigente al cierre de cada ejercicio", () => {
-        const series = annualParticipationSeries([
+    it("arma la serie con un punto por cambio y uno de cierre en la última fecha", () => {
+        const series = participationSeries([
             stake(1, "50", "2024-03-01", "2025-06-30"),
             stake(2, "60", "2025-07-01", null),
-        ], 2026)
+        ], "2026-02-10")
         expect(series).toEqual([
-            { x: "2024", y: 50 },
-            { x: "2025", y: 60 },
-            { x: "2026", y: 60 },
+            { x: "2024-03-01", y: 50 },
+            { x: "2025-07-01", y: 60 },
+            { x: "2026-02-10", y: 60 },
         ])
     })
+    it("el rango de la serie define el formato del eje", () => {
+        const at = (from: string, to: string) => [{ x: from, y: 1 }, { x: to, y: 1 }]
+        expect(participationAxisFormat(at("2026-01-01", "2026-03-01"))).toEqual({ day: "2-digit", month: "short" })
+        expect(participationAxisFormat(at("2024-01-01", "2026-03-01"))).toEqual({ month: "short", year: "2-digit" })
+        expect(participationAxisFormat(at("2015-01-01", "2026-03-01"))).toEqual({ year: "numeric" })
+    })
     it("sin vigencias no hay serie y muestra el aviso", () => {
-        expect(annualParticipationSeries([])).toEqual([])
+        expect(participationSeries([])).toEqual([])
         renderIn(<PartnerParticipationHistory partnerId={7} />)
-        expect(screen.getByText(/aún no tiene evolución anual/)).toBeInTheDocument()
+        expect(screen.getByText(/aún no tiene evolución registrada/)).toBeInTheDocument()
     })
     it("con más de un ejercicio dibuja la evolución", () => {
         hooks.usePartnerStakes.mockReturnValue({
@@ -105,7 +111,7 @@ describe("PartnerParticipationHistory", () => {
             isLoading: false, isError: false, refetch: vi.fn(),
         })
         renderIn(<PartnerParticipationHistory partnerId={7} />)
-        expect(screen.getByRole("img", { name: /Evolución anual de la participación: 2024 50%/ })).toBeInTheDocument()
+        expect(screen.getByRole("img", { name: /Evolución de la participación: 01\/03\/2024 50%/ })).toBeInTheDocument()
     })
 })
 

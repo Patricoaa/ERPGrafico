@@ -38,7 +38,7 @@ const buildPartnerActions = (item: Partner, ctx: PartnerActionsCtx): PlacedActio
     {
         action: "detail",
         icon: TrendingUp,
-        label: "Formalizar exceso de capital",
+        label: "Formalizar exceso",
         placement: "capital",
         line: "excess",
         onClick: () => ctx.run({ type: "subscription", partnerId: item.id, amount: item.partner_excess_capital }),

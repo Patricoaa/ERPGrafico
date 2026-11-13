@@ -476,7 +476,7 @@ function PaymentsSection({ payments, onChanged }: { payments: PayrollPayment[], 
                             <>
                                 <StatusBadge status={p.status} size="sm" variant="badge" />
                                 {p.status === 'POSTED' && (
-                                    <Section.Action text="Anular" onClick={() => setToAnnul(p)} />
+                                    <Section.Action text="Anular" variant="outline" onClick={() => setToAnnul(p)} />
                                 )}
                             </>
                         }

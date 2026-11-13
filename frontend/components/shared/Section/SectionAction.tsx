@@ -20,7 +20,7 @@ export interface SectionActionProps {
 /** Acción compacta de una cabecera o fila de `Section`: botón o enlace, ghost por defecto, con icono opcional. */
 export function SectionAction({ text, icon: Icon, href, onClick, variant = "ghost", disabled }: SectionActionProps) {
     const content = <>{Icon && <Icon className="h-3.5 w-3.5" aria-hidden />}{text}</>
-    const className = "h-7 shrink-0 gap-1 text-xs"
+    const className = "h-7 shrink-0 gap-1 text-xs bg-transparent shadow-none dark:bg-transparent"
     if (href) {
         return (
             <Button variant={variant} size="sm" className={className} asChild>

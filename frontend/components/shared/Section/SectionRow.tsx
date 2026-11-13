@@ -98,7 +98,7 @@ export function SectionRow({
                     <div className="min-w-0 flex-1">
                         {title && (
                             <div className="flex items-baseline gap-2">
-                                <span className="text-sm font-medium text-foreground">{title}</span>
+                                <span className="text-sm text-foreground">{title}</span>
                                 {meta && <span className="text-2xs text-muted-foreground">{meta}</span>}
                             </div>
                         )}
@@ -108,7 +108,7 @@ export function SectionRow({
                 {control && <div className={cn(!(title || description) && "min-w-0 flex-1")}>{control}</div>}
                 {value != null && <span className={cn("shrink-0 text-sm", plain ? "text-right" : "font-mono tabular-nums", strong && "font-bold", valueClassName)}>{value}</span>}
                 {expand && (
-                    <Button type="button" variant="outline" size="sm" className="h-7 shrink-0 gap-1 text-xs" onClick={expand.onToggle} aria-expanded={expand.expanded}>
+                    <Button type="button" variant="outline" size="sm" className="h-7 shrink-0 gap-1 bg-transparent text-xs shadow-none dark:bg-transparent" onClick={expand.onToggle} aria-expanded={expand.expanded}>
                         <Chevron className="h-3.5 w-3.5" aria-hidden />
                         {expand.label}
                     </Button>
