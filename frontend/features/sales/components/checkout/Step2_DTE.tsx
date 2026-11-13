@@ -6,11 +6,10 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import {DocumentAttachmentDropzone, FolioValidationInput, StepHeader, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, ChoiceCard, ChoiceGroup} from "@/components/shared"
+import {Banner, DocumentAttachmentDropzone, FolioValidationInput, StepHeader, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, ChoiceCard, ChoiceGroup} from "@/components/shared"
 
 import type { CheckoutDTEData } from "../../types"
 
@@ -170,20 +169,16 @@ export function Step2_DTE({
             )}
 
             {isDefaultCustomer && (
-                <Alert variant="info">
-                    <AlertDescription className="text-xs font-medium">
-                        El cliente por defecto solo permite emisión de{" "}
-                        <strong>Boleta Electrónica</strong>.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="info" bleed="lg">
+                    El cliente por defecto solo permite emisión de{" "}
+                    <strong>Boleta Electrónica</strong>.
+                </Banner>
             )}
 
             {dteData.type !== "BOLETA" && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <Alert variant="warning">
-                    <AlertDescription className="text-xs font-medium">
-                        El folio y el adjunto son requeridos para registrar este tipo de documento.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="warning" bleed="lg">
+                    El folio y el adjunto son requeridos para registrar este tipo de documento.
+                </Banner>
             )}
         </div>
     )

@@ -3,14 +3,13 @@ import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useMemo } from "react"
-import { BaseModal, CancelButton, SubmitButton, Chip, LabeledInput, LabeledContainer, PeriodValidationDateInput } from '@/components/shared'
+import { BaseModal, Banner, CancelButton, SubmitButton, Chip, LabeledInput, LabeledContainer, PeriodValidationDateInput } from '@/components/shared'
 import { usePartners, subscribedPercentages } from "@/features/contacts"
 import { usePartnerMutations, useOnOpen } from "../hooks"
 import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import { UserPlus, TrendingDown } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { projectionRowEntity, projectionRowViews, type ProjectionRow } from "../entity-view/projectionRow.entity"
 
@@ -152,11 +151,9 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess, initialContactI
                     />
                 </div>
 
-                <Alert variant="primary">
-                    <AlertDescription className="text-xs">
-                        Esta acción registrará la suscripción formal de capital. Los aportes reales (efectivo/activos) deben cargarse a través del Libro Auxiliar o Tesorería.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="info">
+                    Esta acción registrará la suscripción formal de capital. Los aportes reales (efectivo/activos) deben cargarse a través del Libro Auxiliar o Tesorería.
+                </Banner>
             </div>
         </BaseModal>
     )

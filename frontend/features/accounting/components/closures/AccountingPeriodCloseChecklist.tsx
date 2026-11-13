@@ -1,11 +1,9 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import { BaseModal, CancelButton, SubmitButton, Skeleton, EmptyState, Section, type SectionChecklistItem, type SectionChecklistDocumentLabel } from '@/components/shared'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { BaseModal, Banner, CancelButton, SubmitButton, Skeleton, EmptyState, Section, type SectionChecklistItem, type SectionChecklistDocumentLabel } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, ClipboardCheck, FileText } from 'lucide-react'
+import { ClipboardCheck, FileText } from 'lucide-react'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { getEntityMetadata } from '@/lib/entity-registry'
 import { DeclarationWizard } from '@/features/tax'
@@ -177,16 +175,17 @@ export function AccountingPeriodCloseChecklistModal({
                             ))}
                         </div>
                     ) : error ? (
-                        <Alert variant="destructive">
-                            <AlertTriangle className="w-4 h-4" />
-                            <AlertTitle className="text-xs font-bold uppercase">Error</AlertTitle>
-                            <AlertDescription className="text-xs">
-                                <p>{errorMessage(error)}</p>
-                                <Button variant="outline" size="sm" className="mt-2 h-7 text-xs" onClick={() => { void refetch() }}>
+                        <Banner
+                            tone="destructive"
+                            title="Error"
+                            actions={
+                                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { void refetch() }}>
                                     Reintentar
                                 </Button>
-                            </AlertDescription>
-                        </Alert>
+                            }
+                        >
+                            {errorMessage(error)}
+                        </Banner>
                     ) : items ? (
                         <>
                             <Section.Checklist title="Obligatorios" items={items.required} critical expanded={expanded} onToggle={toggle} onOpenDocument={openEntity} />

@@ -11,8 +11,7 @@ import {Banknote, CreditCard, Landmark, Smartphone, FileCheck, CircleHelp, Link2
 import { usePaymentMethods, useTerminalDevices, type Terminal, type TerminalCreatePayload, type TerminalUpdatePayload } from "@/features/treasury"
 import { treasuryApi } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormFooter, DrawerLayout, FormSelectionGroup, SubmitButton, Section } from "@/components/shared"
+import { Drawer, Banner, CancelButton, LabeledInput, LabeledSelect, FormFooter, DrawerLayout, FormSelectionGroup, SubmitButton, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { EntitySidebar } from "@/features/comments"
 import { DocumentRelationsTab, useDocumentRelations, type DocumentDomain } from "@/features/documents"
@@ -269,14 +268,10 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                     content: (
                                         <div className="space-y-6 p-6">
                                             {sessionLocked && (
-                                                <Alert variant="warning">
-                                                    <Lock className="h-4 w-4" />
-                                                    <AlertTitle>Sesión POS abierta</AlertTitle>
-                                                    <AlertDescription>
-                                                        Esta caja no se puede modificar ni archivar hasta cerrar su sesión. Lo mismo vale para sus
-                                                        métodos de pago, cuentas de tesorería y cuentas contables vinculadas.
-                                                    </AlertDescription>
-                                                </Alert>
+                                                <Banner tone="warning" icon={Lock} bleed="lg" title="Sesión POS abierta">
+                                                    Esta caja no se puede modificar ni archivar hasta cerrar su sesión. Lo mismo vale para sus
+                                                    métodos de pago, cuentas de tesorería y cuentas contables vinculadas.
+                                                </Banner>
                                             )}
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField

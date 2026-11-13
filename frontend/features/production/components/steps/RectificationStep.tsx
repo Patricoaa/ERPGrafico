@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import type { ReactNode } from "react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -15,7 +14,7 @@ import {
     Info,
     Scale
 } from "lucide-react"
-import { Chip, QuantityDisplay, LabeledInput, StepHeader } from "@/components/shared"
+import { Banner, Chip, QuantityDisplay, LabeledInput, StepHeader } from "@/components/shared"
 import { EditableCollection, initialEditableValues, type EditableRowValue } from "@/components/entity-view"
 import { stockMatEditable, outsourcedMatEditable } from '../../entity-view/workOrderMaterial.entity'
 
@@ -210,11 +209,9 @@ export function RectificationStep({ order, headerActions, onChange }: Rectificat
             />
 
             {hasMeaningfulChanges && (
-                <Alert variant="warning">
-                    <AlertDescription className="text-sm text-warning font-medium">
-                        Las cantidades han sido modificadas. Al finalizar, se crearán movimientos de inventario compensatorios y se recalcularán los costos de producción.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="warning">
+                    Las cantidades han sido modificadas. Al finalizar, se crearán movimientos de inventario compensatorios y se recalcularán los costos de producción.
+                </Banner>
             )}
 
             {hasMeaningfulChanges && (
@@ -245,12 +242,9 @@ export function RectificationStep({ order, headerActions, onChange }: Rectificat
                     />
                 </div>
             ) : (
-                <Alert className="border-border bg-muted/20">
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                    <AlertDescription className="text-sm text-muted-foreground">
-                        Esta OT no tiene materiales de stock a rectificar.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="neutral" icon={Info}>
+                    Esta OT no tiene materiales de stock a rectificar.
+                </Banner>
             )}
 
             {/* Outsourced Materials */}
@@ -307,11 +301,9 @@ export function RectificationStep({ order, headerActions, onChange }: Rectificat
                     </div>
 
                     {parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty) && actualProducedQty !== "" && (
-                        <Alert variant="warning">
-                            <AlertDescription className="text-xs text-warning font-medium">
-                                El cambio en la cantidad producida recalculará el <strong>Costo Promedio Ponderado (WAC)</strong> del producto terminado en inventario.
-                            </AlertDescription>
-                        </Alert>
+                        <Banner tone="warning">
+                            El cambio en la cantidad producida recalculará el <strong>Costo Promedio Ponderado (WAC)</strong> del producto terminado en inventario.
+                        </Banner>
                     )}
                 </div>
             )}

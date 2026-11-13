@@ -10,14 +10,12 @@ import {
     Banknote,
     Lock
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, ChoiceCard, ChoiceGroup, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
+import { Banner, LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, ChoiceCard, ChoiceGroup, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
 import { useTreasuryAccounts } from "@/features/settings"
 import { usePartnerMutations, usePartnerWarehouses, usePartnerInventoryAdjustment, usePartnerAssetEntry, useOnOpen } from "../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-
-import {Alert} from "@/components/ui/alert"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -222,15 +220,13 @@ export function PartnerContributionWizard({
             component: method === "CASH" ? (
                 <FadeIn className="space-y-4 py-4">
                     {lockAmount && (
-                        <Alert variant="info" className="py-2" icon={null}>
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2 text-info">
-                                    <Lock className="h-3.5 w-3.5" />
-                                    <span className="text-3xs font-bold uppercase tracking-widest">Pago total del capital pendiente</span>
-                                </div>
-                                <span className="text-sm font-black text-info font-mono">{formatCurrency(parseFloat(cashData.amount) || 0)}</span>
-                            </div>
-                        </Alert>
+                        <Banner
+                            tone="info"
+                            icon={Lock}
+                            bleed="lg"
+                            title="Pago total del capital pendiente"
+                            value={<span className="text-sm font-black font-mono">{formatCurrency(parseFloat(cashData.amount) || 0)}</span>}
+                        />
                     )}
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledInput
@@ -321,15 +317,13 @@ export function PartnerContributionWizard({
                     </div>
 
                     {assetTotalValue > 0 && (
-                        <Alert variant="success" className="py-2" icon={null}>
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2 text-success">
-                                    <ArrowDownCircle className="h-4 w-4" />
-                                    <span className="text-3xs font-bold uppercase tracking-widest">Valorización Total del Aporte</span>
-                                </div>
-                                <span className="text-sm font-black text-success font-mono">{formatCurrency(assetTotalValue)}</span>
-                            </div>
-                        </Alert>
+                        <Banner
+                            tone="success"
+                            icon={ArrowDownCircle}
+                            bleed="lg"
+                            title="Valorización total del aporte"
+                            value={<span className="text-sm font-black font-mono">{formatCurrency(assetTotalValue)}</span>}
+                        />
                     )}
                 </FadeIn>
             )

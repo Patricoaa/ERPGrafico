@@ -50,6 +50,7 @@ For legacy and modern pages, all data display should be routed through centraliz
 ### Consuming Base Components (Shadcn/UI)
 - **Immutability:** The `components/ui/` directory contains auto-generated components and must never be manually modified to add domain or business logic.
 - **Extensibility:** If you need to alter the behavior or fixed styles of a base component, create a *wrapper* or a new specialization inside `components/shared/` that imports and consumes the primitive from `ui/`.
+- **Notices:** every warning, error, info or success band in the product is `Banner` (flat band, tinted `/5` background, no radius, no border). Never import `Alert` outside `components/ui/`; see [component-banner.md](../20-contracts/component-banner.md).
 
 ### Visual Regressions to Avoid
 - **Black Primary:** Ensure `primary` is correctly mapped to a raw color that supports opacity.

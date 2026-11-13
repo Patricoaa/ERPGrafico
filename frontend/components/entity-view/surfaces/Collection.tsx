@@ -2,8 +2,7 @@
 
 import * as React from "react"
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
-import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
@@ -331,11 +330,9 @@ function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription,
     return (
         <div className="flex flex-1 flex-col gap-2 min-h-0">
             {/* Persistent notice, not an interruption: role="status" instead of the Alert default "alert". */}
-            <Alert variant="warning" role="status">
-                <AlertDescription className="text-xs">
-                    Agrupando los primeros {model.getCoreRowModel().rows.length} de {total} resultados. Refina la búsqueda para ver grupos completos.
-                </AlertDescription>
-            </Alert>
+            <Banner tone="warning" live="status">
+                Agrupando los primeros {model.getCoreRowModel().rows.length} de {total} resultados. Refina la búsqueda para ver grupos completos.
+            </Banner>
             {surface}
         </div>
     )

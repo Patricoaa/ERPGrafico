@@ -35,7 +35,7 @@ export function POSApprovalCard({
     return (
         <ApprovalRequestBanner
             state={state}
-            title={state === 'approved' ? "Crédito Aprobado" : undefined}
+            title={state === 'approved' ? "Crédito aprobado" : undefined}
             description={description}
             canDirectApprove={canDirectApprove}
             approvalTaskId={approvalTaskId}

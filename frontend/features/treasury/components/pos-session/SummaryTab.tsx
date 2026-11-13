@@ -1,9 +1,8 @@
 "use client"
 
-import { AlertTriangle, Banknote, Info, Receipt, Timer, TrendingUp, Wallet } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Banknote, Info, Receipt, Timer, TrendingUp, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DocumentFieldGrid, EntityBadge, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
+import { Banner, DocumentFieldGrid, EntityBadge, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
 import type { POSSession, POSSessionOverview } from "../../types"
 import { formatCurrency } from "@/lib/money"
 import { AmountCell, GRID_LEFT, dateTime, formatDuration, type SessionTab } from "./shared"
@@ -29,19 +28,20 @@ export function SummaryTab({ session, overview, isLoading, onGoTab }: SummaryTab
                     {overview.alerts.length > 0 && (
                         <section aria-label="Alertas" className="space-y-2">
                             {overview.alerts.map((alert) => (
-                                <Alert key={alert.code} variant={alert.severity === "destructive" ? "destructive" : "warning"}>
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertTitle>
-                                        {alert.code === "CASH_DIFFERENCE" ? "Diferencia de caja" : "Cobros pendientes"}
-                                        {alert.amount !== undefined && <> · <AmountCell value={alert.amount} signed /></>}
-                                    </AlertTitle>
-                                    <AlertDescription className="flex items-center justify-between gap-3">
-                                        <span>{alert.message}</span>
+                                <Banner
+                                    key={alert.code}
+                                    tone={alert.severity === "destructive" ? "destructive" : "warning"}
+                                    bleed="lg"
+                                    title={alert.code === "CASH_DIFFERENCE" ? "Diferencia de caja" : "Cobros pendientes"}
+                                    value={alert.amount !== undefined ? <AmountCell value={alert.amount} signed /> : undefined}
+                                    actions={
                                         <Button type="button" size="sm" variant="outline" onClick={() => onGoTab(alert.tab)}>
                                             {TAB_LABEL[alert.tab] ?? "Ver detalle"}
                                         </Button>
-                                    </AlertDescription>
-                                </Alert>
+                                    }
+                                >
+                                    {alert.message}
+                                </Banner>
                             ))}
                         </section>
                     )}

@@ -48,12 +48,12 @@ Elevación: no sumar `shadow-*` a un `surface-item`. Las utilidades de Tailwind 
 |---|---|
 | `CardLead` | Slot inicial (icono / foto / avatar). `size` `md` 40px · `sm` 32px; `stretch` para headers de entidad; tono por `className`. Siempre `rounded-sm`, recortado. |
 | `CardRail` | Columna lateral completa. `tone` `warning\|success\|neutral\|primary`, `size` `md` (w-14, estado con icono) · `sm` (w-9, marcador de selección), `side` `left` (documento, estado) · `right` (default, selección o icono de identidad compacto), `decorative` (default `true`, `aria-hidden`). El color nunca es el único portador del estado: acompáñalo con icono y con `StatusBadge`/texto. |
-| `InfoBlock` | Aviso o banner de estado con acciones ("Autorización requerida", "Crédito aprobado"). **No es una card**: nada se abre desde él ni se selecciona. `tone` `info\|success\|warning\|destructive\|neutral` tiñe solo el icono (`CardLead`); el texto va en tokens neutros. `live` `status` (default) / `alert` / `none` define cómo se anuncia. |
+| `Banner` | Aviso o banda de estado con acciones ("Autorización requerida", "Crédito aprobado", "Diferencia de caja"). **No es una card**: nada se abre desde él ni se selecciona. Banda plana sin radio ni borde; `tone` `info\|success\|warning\|destructive\|neutral` tiñe solo icono y fondo, el texto va en tokens neutros. `bleed` la lleva de borde a borde. Ver [component-banner.md](./component-banner.md). |
 | `cardAnatomy` | Tokens de clase: `body/code/title/description/footer/caption/amount/glyph`, `lead*`, `entityTitle/entitySubtitle`, `eyebrow` (etiqueta de un par etiqueta/valor), `fieldValue`, `rail/railSize`. Cambiar el diseño = editar este archivo. |
 
 ## 5. Prohibido
 
-- `<div className="border rounded-… ">` con forma de card: usa el rol que corresponda. Los avisos y grupos de campos no son cards (usan `InfoBlock`).
+- `<div className="border rounded-… ">` con forma de card: usa el rol que corresponda. Los avisos y grupos de campos no son cards (usan `Banner`).
 - Duplicar el bloque lead/avatar o las clases de etiqueta (`uppercase tracking-… text-4xs`) dentro de una feature: usa `CardLead` y `cardAnatomy.eyebrow`.
 - Estado solo por color de rail. `StatusBadge` sigue siendo el único renderer de estado (invariante 7).
 

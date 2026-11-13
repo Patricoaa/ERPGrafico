@@ -1,9 +1,8 @@
 "use client"
 
 import { AlertTriangle, Info, PieChart as PieChartIcon, History } from "lucide-react"
-import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { EmptyState, SkeletonShell, DocumentFieldGrid, type DocumentField, Section } from "@/components/shared"
+import { Banner, EmptyState, SkeletonShell, DocumentFieldGrid, type DocumentField, Section } from "@/components/shared"
 import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { formatCurrency } from "@/lib/money"
 import { formatPlainDate } from "@/lib/utils"
@@ -58,17 +57,20 @@ export function PartnerSummaryPanel({ partner, onGoToTab }: PartnerSummaryPanelP
                     {overview.alerts.length > 0 && (
                         <section aria-label="Alertas" className="space-y-2">
                             {overview.alerts.map(alert => (
-                                <Alert key={alert.code} variant={alert.severity === "warning" ? "warning" : "info"} className="items-center py-3">
-                                    <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-medium leading-snug">{ALERT_TITLE[alert.code]} · <span className="tabular-nums">{money(alert.amount)}</span></p>
-                                            <p className="text-xs leading-snug text-muted-foreground">{ALERT_HINT[alert.code]}</p>
-                                        </div>
+                                <Banner
+                                    key={alert.code}
+                                    tone={alert.severity === "warning" ? "warning" : "info"}
+                                    bleed="lg"
+                                    title={ALERT_TITLE[alert.code]}
+                                    value={money(alert.amount)}
+                                    actions={
                                         <Button type="button" size="sm" variant="outline" className="shrink-0" onClick={() => onGoToTab(alert.target_tab)}>
                                             Ver en Capital
                                         </Button>
-                                    </div>
-                                </Alert>
+                                    }
+                                >
+                                    {ALERT_HINT[alert.code]}
+                                </Banner>
                             ))}
                         </section>
                     )}

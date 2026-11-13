@@ -19,10 +19,9 @@ import { getTask } from "@/features/workflow"
 import { formatMoney } from "@/lib/money"
 
 import {Factory, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
-import {BaseModal, StepHeader} from '@/components/shared'
+import { Banner, BaseModal, StepHeader } from '@/components/shared'
 
 import { useAuth } from "@/contexts/AuthContext"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 import { generateUuidV4 } from "@/lib/uuid"
 
@@ -851,56 +850,44 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                         )}
 
                         {securityErrorMessage && (
-                            <Alert variant="destructive" className="mb-4 border-l-[3px] shadow-card" icon={null}>
-                                <div className="flex items-start gap-4">
-                                    <div className="p-2 rounded-sm bg-destructive/10">
-                                        <ShieldAlert className="h-4 w-4 text-destructive" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-destructive">Alerta de Seguridad</AlertTitle>
-                                        <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                            <span className="text-sm text-destructive/80 leading-relaxed">{securityErrorMessage}</span>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setSecurityErrorMessage(null)
-                                                    setApprovalTaskId(null)
-                                                    setIsApproved(false)
-                                                    setIsWaitingApproval(false)
-                                                    setCreditApprovalRequired(false)
-                                                }}
-                                                className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-medium text-3xs"
-                                            >
-                                                Entendido
-                                            </Button>
-                                        </AlertDescription>
-                                    </div>
-                                </div>
-                            </Alert>
+                            <Banner
+                                tone="destructive"
+                                icon={ShieldAlert}
+                                title="Alerta de seguridad"
+                                bleed="lg"
+                                className="mb-4"
+                                actions={
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setSecurityErrorMessage(null)
+                                            setApprovalTaskId(null)
+                                            setIsApproved(false)
+                                            setIsWaitingApproval(false)
+                                            setCreditApprovalRequired(false)
+                                        }}
+                                        className="h-8 shrink-0 uppercase font-medium text-3xs"
+                                    >
+                                        Entendido
+                                    </Button>
+                                }
+                            >
+                                {securityErrorMessage}
+                            </Banner>
                         )}
 
                         {stepError && (
-                            <Alert variant="destructive" className="mb-4 border-l-[3px] shadow-card" icon={null}>
-                                <div className="flex items-start gap-4">
-                                    <div className="p-2 rounded-sm bg-destructive/10">
-                                        <FileWarning className="h-4 w-4 text-destructive" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-destructive">Verificación requerida</AlertTitle>
-                                        <AlertDescription className="text-sm text-destructive/80 leading-relaxed">{stepError}</AlertDescription>
-                                    </div>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => setStepError(null)}
-                                        className="h-8 shrink-0 uppercase font-medium text-3xs text-destructive hover:bg-destructive/10"
-                                        aria-label="Descartar aviso"
-                                    >
-                                        X
-                                    </Button>
-                                </div>
-                            </Alert>
+                            <Banner
+                                tone="destructive"
+                                icon={FileWarning}
+                                title="Verificación requerida"
+                                bleed="lg"
+                                className="mb-4"
+                                onDismiss={() => setStepError(null)}
+                            >
+                                {stepError}
+                            </Banner>
                         )}
 
                         <div className={((creditApprovalRequired || isWaitingApproval) && !isApproved) || securityErrorMessage ? "opacity-30 pointer-events-none" : ""}>

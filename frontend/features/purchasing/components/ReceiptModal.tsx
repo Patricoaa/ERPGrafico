@@ -5,7 +5,7 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { showApiError } from "@/lib/errors"
 
-import { BaseModal, CancelButton, Chip, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
+import { BaseModal, Banner, CancelButton, Chip, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
 import { EditableCollection, editableErrorsFromForm, focusFirstEditableError, initialEditableValues } from "@/components/entity-view"
 import { hasPartialLines, matchesLineType, receiptLinesEditable, returnLinesEditable, toReceiptLineData, type LineTypeFilter, type OrderLine } from "@/features/orders"
 import type { Warehouse } from "@/features/inventory"
@@ -13,8 +13,7 @@ import { purchasingApi } from "../api/purchasingApi"
 import { useReceiptData } from "../hooks/useReceiptData"
 import { receiptFormSchema, type ReceiptFormValues } from "../schema"
 import { toast } from "sonner"
-import { Package, AlertTriangle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Package } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useServerDate } from "@/hooks/useServerDate"
 import { generateUuidV4 } from "@/lib/uuid"
@@ -230,12 +229,9 @@ function ReceiptForm({ order, warehouses, isRefund, filterType, onSubmittingChan
             {rootError && <p role="alert" className="text-xs text-destructive">{rootError}</p>}
 
             {isPartial && (
-                <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                        Recepción parcial: La orden permanecerá abierta hasta completar las cantidades.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="warning">
+                    Recepción parcial: La orden permanecerá abierta hasta completar las cantidades.
+                </Banner>
             )}
         </form>
     )

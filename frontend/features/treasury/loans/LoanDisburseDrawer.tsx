@@ -7,12 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
 import { Form, FormField } from '@/components/ui/form'
-import { Drawer, LabeledInput, FormFooter, CancelButton, SubmitButton, MoneyDisplay, FormSplitLayout, Section } from "@/components/shared"
+import { Drawer, Banner, LabeledInput, FormFooter, CancelButton, SubmitButton, MoneyDisplay, FormSplitLayout, Section } from "@/components/shared"
 import { Send, AlertCircle, Settings } from 'lucide-react'
 import { useLoanMutations } from '../hooks/useLoans'
 import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasurySettings } from '@/features/settings'
 import type { BankLoan } from './types'
@@ -256,15 +255,11 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                     )}
 
                     {(showCommissionSelector || showStampTaxSelector) && (
-                        <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Escape por desembolso</AlertTitle>
-                            <AlertDescription>
-                                Está configurando las cuentas sólo para este desembolso.
-                                Para que el sistema las use siempre, configúrelas en
-                                Configuración &rsaquo; Tesorería &rsaquo; Cuentas de Gasto Financiero.
-                            </AlertDescription>
-                        </Alert>
+                        <Banner tone="info" icon={AlertCircle} title="Escape por desembolso">
+                            Está configurando las cuentas sólo para este desembolso.
+                            Para que el sistema las use siempre, configúrelas en
+                            Configuración &rsaquo; Tesorería &rsaquo; Cuentas de Gasto Financiero.
+                        </Banner>
                     )}
                 </form>
             </Form>

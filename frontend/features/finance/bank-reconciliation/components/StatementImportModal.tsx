@@ -7,8 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { getErrorMessage } from "@/lib/errors"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, DrawerResizableRail, FadeIn, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep, Section } from "@/components/shared"
+import { Banner, DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, DrawerResizableRail, FadeIn, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep, Section } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal, Calendar } from "lucide-react"
@@ -390,11 +389,9 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                         {error && (
                             <FadeIn>
-                                <Alert variant="destructive" className="rounded-md">
-                                    <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
-                                        {error}
-                                    </AlertDescription>
-                                </Alert>
+                                <Banner tone="destructive" bleed="md">
+                                    {error}
+                                </Banner>
                             </FadeIn>
                         )}
                     </div>
@@ -544,11 +541,9 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                     {error && (
                         <FadeIn className="max-w-xl mx-auto">
-                            <Alert variant="destructive" className="rounded-md">
-                                <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
-                                    {error}
-                                </AlertDescription>
-                            </Alert>
+                            <Banner tone="destructive">
+                                {error}
+                            </Banner>
                         </FadeIn>
                     )}
                 </FadeIn>

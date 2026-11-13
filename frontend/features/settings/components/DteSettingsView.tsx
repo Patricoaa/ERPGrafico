@@ -4,12 +4,11 @@ import React from "react"
 import { useForm, type UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField, FormItem } from "@/components/ui/form"
-import { AutoSaveStatusBadge, SkeletonShell } from "@/components/shared"
+import { AutoSaveStatusBadge, Banner, SkeletonShell } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
@@ -86,15 +85,18 @@ export function DteSettingsView({ side }: DteSettingsViewProps) {
 
     if (isError) {
         return (
-            <Alert variant="destructive" className="max-w-3xl mx-auto">
-                <div className="space-y-3">
-                    <AlertTitle>No se pudo cargar la configuración DTE</AlertTitle>
-                    <AlertDescription>Los cambios están deshabilitados para evitar sobrescribir una configuración que no se pudo leer.</AlertDescription>
+            <Banner
+                tone="destructive"
+                className="max-w-3xl mx-auto"
+                title="No se pudo cargar la configuración DTE"
+                actions={
                     <Button type="button" variant="outline" onClick={() => void refetch()}>
                         Reintentar
                     </Button>
-                </div>
-            </Alert>
+                }
+            >
+                Los cambios están deshabilitados para evitar sobrescribir una configuración que no se pudo leer.
+            </Banner>
         )
     }
 

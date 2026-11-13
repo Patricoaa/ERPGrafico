@@ -2,8 +2,7 @@
 
 import { useDeviceContext } from "@/hooks/useDeviceContext"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { ContactCardGrid, MoneyDisplay } from "@/components/shared"
-import { Alert } from "@/components/ui/alert"
+import { ContactCardGrid, Banner, MoneyDisplay } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -49,23 +48,13 @@ export function Step1_Customer({
         <div className="space-y-6">
             {/* Pending Debts Banner */}
             {pendingDebts && pendingDebts.length > 0 && (
-                <Alert variant="warning" icon={null}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <FileWarning className="h-3.5 w-3.5 text-muted-foreground" />
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                <span className="text-sm font-bold text-warning-foreground shrink-0">
-                                    Deudas Pendientes ({pendingDebts.length})
-                                </span>
-                                <span className="text-xs text-warning-foreground/80 leading-none">
-                                    Total:{" "}
-                                    <span className="font-bold font-mono">
-                                        <MoneyDisplay amount={pendingDebts.reduce((sum, d) => sum + Number(d.balance || 0), 0)} inline />
-                                    </span>
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 ml-8 sm:ml-0">
+                <Banner
+                    tone="warning"
+                    icon={FileWarning}
+                    bleed="lg"
+                    title={`Deudas pendientes (${pendingDebts.length})`}
+                    actions={
+                        <div className="flex flex-wrap items-center gap-1.5">
                             {pendingDebts.slice(0, 4).map((debt) => (
                                 <Button
                                     key={debt.id}
@@ -91,8 +80,13 @@ export function Step1_Customer({
                                 </div>
                             )}
                         </div>
-                    </div>
-                </Alert>
+                    }
+                >
+                    Total:{" "}
+                    <span className="font-bold font-mono">
+                        <MoneyDisplay amount={pendingDebts.reduce((sum, d) => sum + Number(d.balance || 0), 0)} inline />
+                    </span>
+                </Banner>
             )}
 
             {/* Customer Selector */}

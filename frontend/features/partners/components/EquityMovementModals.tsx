@@ -4,8 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, { useMemo, useState } from "react"
 
-import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ActionConfirmModal, Banner, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { usePartnerMutations, useOnOpen } from "../hooks"
 import { useTreasuryAccounts } from "@/features/settings"
@@ -531,11 +530,9 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
                         placeholder="0"
                     />
                     {isOverflow && (
-                        <Alert variant="warning">
-                            <AlertDescription className="text-4xs text-warning leading-tight">
-                                El monto excede el saldo de dividendos. El excedente de <strong>{formatCurrency(amountNum - dividendBalance)}</strong> se registrará como un <strong>Retiro Provisorio</strong>.
-                            </AlertDescription>
-                        </Alert>
+                        <Banner tone="warning">
+                            El monto excede el saldo de dividendos. El excedente de <strong>{formatCurrency(amountNum - dividendBalance)}</strong> se registrará como un <strong>Retiro Provisorio</strong>.
+                        </Banner>
                     )}
                 </div>
                 <PeriodValidationDateInput

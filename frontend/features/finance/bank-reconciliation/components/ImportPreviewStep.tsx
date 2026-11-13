@@ -3,8 +3,7 @@
 import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { CheckCircle2, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Section } from "@/components/shared"
+import { Banner, Section } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { importWarningEntity, importWarningViews, type ImportWarning } from "../entity-view/importWarning.entity"
 
@@ -65,12 +64,9 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             <Section.Header spaced title="Resumen de la Cartola" icon={FileText} />
 
             {data.is_duplicate && (
-                <Alert variant="warning">
-                    <AlertTitle className="text-xs font-black uppercase">Archivo Duplicado</AlertTitle>
-                    <AlertDescription className="text-xs font-medium">
-                        Este archivo exacto ya ha sido importado anteriormente. Puedes continuar si se trata de una rectificación, pero ten cuidado con duplicar transacciones.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="warning" bleed="md" title="Archivo duplicado">
+                    Este archivo exacto ya ha sido importado anteriormente. Puedes continuar si se trata de una rectificación, pero ten cuidado con duplicar transacciones.
+                </Banner>
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -103,29 +99,20 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             <Section.Header spaced title="Resultados de Validación" icon={CheckCircle2} />
 
             {hasErrors ? (
-                <Alert variant="destructive">
-                    <AlertTitle className="text-xs font-black uppercase tracking-wider">Error Bloqueante</AlertTitle>
-                    <AlertDescription className="text-xs mt-1">
-                        La cartola contiene errores críticos y no puede ser importada en su estado actual.
-                        <ul className="list-disc pl-5 mt-2 space-y-1">
-                            {data.errors.map((err, i) => <li key={i}>{err}</li>)}
-                        </ul>
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="destructive" bleed="md" title="Error bloqueante">
+                    La cartola contiene errores críticos y no puede ser importada en su estado actual.
+                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                        {data.errors.map((err, i) => <li key={i}>{err}</li>)}
+                    </ul>
+                </Banner>
             ) : hasWarnings ? (
-                <Alert variant="warning">
-                    <AlertTitle className="text-xs font-black uppercase tracking-wider">Advertencias</AlertTitle>
-                    <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
-                        La cartola puede ser importada, pero se encontraron inconsistencias menores. Verifica la tabla de abajo.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="warning" bleed="md" title="Advertencias">
+                    La cartola puede ser importada, pero se encontraron inconsistencias menores. Verifica la tabla de abajo.
+                </Banner>
             ) : (
-                <Alert variant="success">
-                    <AlertTitle className="text-xs font-black uppercase tracking-wider">Validación Exitosa</AlertTitle>
-                    <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
-                        Todo parece estar en orden. La cartola puede ser importada.
-                    </AlertDescription>
-                </Alert>
+                <Banner tone="success" bleed="md" title="Validación exitosa">
+                    Todo parece estar en orden. La cartola puede ser importada.
+                </Banner>
             )}
 
             {hasWarnings && (

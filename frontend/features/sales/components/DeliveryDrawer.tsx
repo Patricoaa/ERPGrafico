@@ -7,7 +7,7 @@ import { useGuardedOpenChange } from "@/hooks/useGuardedOpenChange"
 import { useDirtyGuard } from "@/hooks/useDirtyGuard"
 import { zodResolver } from "@hookform/resolvers/zod"
 
-import { SubmitButton, CancelButton, BaseModal, FormFooter, LabeledSelect, PeriodValidationDateInput, StatusBadge, Section } from "@/components/shared"
+import { SubmitButton, Banner, CancelButton, BaseModal, FormFooter, LabeledSelect, PeriodValidationDateInput, StatusBadge, Section } from "@/components/shared"
 import { EditableCollection, editableErrorsFromForm, focusFirstEditableError, initialEditableValues } from "@/components/entity-view"
 import { deliveryLinesEditable, hasPartialLines, matchesLineType, serviceDeliveryLinesEditable, toLineQuantities, type LineTypeFilter } from "@/features/orders"
 import type { Warehouse } from "@/features/inventory"
@@ -15,8 +15,7 @@ import { useSalesOrders } from "../hooks/useSalesOrders"
 import { useDeliveryData, useDeliveryStock, type DeliveryOrder } from "../hooks/useDeliveryData"
 import { deliveryFormSchema, type DeliveryFormValues } from "../schema"
 import { toast } from "sonner"
-import { Loader2, Package, AlertTriangle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, Package } from "lucide-react"
 
 import { useServerDate } from "@/hooks/useServerDate"
 
@@ -233,12 +232,9 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                 {rootError && <p role="alert" className="text-xs text-destructive">{rootError}</p>}
 
                 {isPartial && (
-                    <Alert>
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                            Se realizará un despacho parcial. Podrás crear despachos adicionales para las cantidades restantes.
-                        </AlertDescription>
-                    </Alert>
+                    <Banner tone="warning">
+                        Se realizará un despacho parcial. Podrás crear despachos adicionales para las cantidades restantes.
+                    </Banner>
                 )}
             </form>
         </div>

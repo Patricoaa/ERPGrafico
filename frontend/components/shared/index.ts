@@ -136,7 +136,7 @@ export * from './FacetedFilter'
 export * from './SelectableCard';
 export * from './ChoiceCard';
 export * from './CardSurface';
-export * from './InfoBlock';
+export * from './Banner';
 export * from './ApprovalRequestBanner';
 export * from './CardRow';
 export * from './card-anatomy';

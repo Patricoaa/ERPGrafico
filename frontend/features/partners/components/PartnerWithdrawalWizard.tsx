@@ -7,17 +7,15 @@ import {
     Package,
     Users,
     ArrowUpCircle,
-    Banknote,
-    AlertTriangle
+    Banknote
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, DataCell, ChoiceCard, ChoiceGroup, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
+import { Banner, LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, DataCell, ChoiceCard, ChoiceGroup, GenericWizard, FadeIn, type WizardStep } from "@/components/shared"
 import { usePartners } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
 import { useTreasuryAccounts } from "@/features/settings"
 import { usePartnerMutations, usePartnerWarehouses, usePartnerInventoryAdjustment, usePartnerAssetEntry, useOnOpen } from "../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
-import {Alert} from "@/components/ui/alert"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -284,12 +282,7 @@ export function PartnerWithdrawalWizard({
                         />
                     </div>
 
-                    <Alert variant="destructive" className="py-2" icon={null}>
-                        <div className="flex items-center gap-2 text-destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <span className="text-3xs font-bold uppercase tracking-widest">Atención: Esta operación disminuye el stock disponible.</span>
-                        </div>
-                    </Alert>
+                    <Banner tone="destructive" bleed="lg" title="Atención: esta operación disminuye el stock disponible" />
                 </FadeIn>
             )
         }
