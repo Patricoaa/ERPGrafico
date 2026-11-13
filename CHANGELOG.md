@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.108](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.107...v0.3.108) (2026-11-13)
+
+
+### ✨ Features
+
+* **entity-view:** variante embebida de Collection y conteo en Section (ADR-0137) ([b643934](https://github.com/Patricoaa/ERPGrafico/commit/b643934d1960678f4ce8cd03682e06decf36155a))
+
 ### [0.3.107](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.106...v0.3.107) (2026-11-13)
 
 
