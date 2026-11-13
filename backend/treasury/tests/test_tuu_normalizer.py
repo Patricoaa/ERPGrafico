@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from treasury.integrations.tuu_normalizer import build_sales
+from treasury.integrations.tuu_normalizer import build_sales, build_sales_report
 
 FIXTURES = Path(__file__).parent / "fixtures" / "tuu"
 
@@ -157,3 +157,53 @@ def test_transaction_at_is_santiago_aware():
         sale.transaction_at.utcoffset().total_seconds() == -3 * 3600
     )  # octubre: horario de verano
     assert sale.transaction_at.hour == 18
+
+
+def test_rows_without_key_are_skipped_with_warning_and_not_merged():
+    a1 = _a(sequenceNumber="N/A")
+    a2 = _a(sequenceNumber=None)
+    sales, warnings = build_sales_report([a1, a2], [], [])
+    assert sales == []
+    assert len(warnings) == 2
+    assert warnings[0].startswith("Fila omitida (sucursal tarjeta sin sequenceNumber)")
+    assert "monto=3200" in warnings[0]
+    assert "fecha=2026-10-26T18:22:10" in warnings[0]
+
+
+def test_cash_and_general_rows_without_key_are_skipped():
+    cash = _a(saleId="", transactionType="Cash", sequenceNumber=None)
+    gen = _c(sequenceNumber="")
+    sales, warnings = build_sales_report([], [cash], [gen])
+    assert sales == []
+    assert warnings[0].startswith("Fila omitida (sucursal efectivo sin saleId)")
+    assert warnings[1].startswith("Fila omitida (general sin sequenceNumber)")
+
+
+def test_sale_without_timestamp_is_skipped_with_warning():
+    sales, warnings = build_sales_report(
+        [_a(transactionDateTime=None)], [], [_c(sequenceNumber="9", paymentDataTime="")]
+    )
+    assert [s.natural_key for s in sales] == []
+    assert "Venta card:700000000001 omitida: sin fecha" in warnings
+    assert "Venta card:9 omitida: sin fecha" in warnings
+
+
+def test_general_items_used_when_branch_items_empty():
+    gen = _c()
+    gen["extraData"]["items"] = [{"code": "", "name": "\u0002Item C", "quantity": 1, "price": 1}]
+    (sale,) = build_sales([_a(items=[])], [], [gen])
+    assert [i["name"] for i in sale.items] == ["Item C"]
+    assert sale.items[0]["code"] is None
+
+
+def test_general_cash_row_keys_as_cash_sale_id():
+    gen = _c(saleId="55", typeTransaction="cash", sequenceNumber="N/A")
+    (sale,) = build_sales([], [], [gen])
+    assert sale.natural_key == "cash:55"
+    assert sale.payment_type == "CASH"
+
+
+def test_duplicate_key_in_one_report_last_wins():
+    sales = build_sales([_a(totalAmount=100), _a(totalAmount=200)], [], [])
+    assert len(sales) == 1
+    assert sales[0].total_amount == Decimal("200")

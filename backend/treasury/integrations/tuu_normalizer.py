@@ -97,6 +97,14 @@ def _payment_type(branch: dict | None, general: dict | None) -> str:
     return "UNKNOWN"
 
 
+def _timestamp(branch: dict | None, general: dict | None) -> str:
+    return (
+        _text((branch or {}).get("transactionDateTime"))
+        or _text((general or {}).get("paymentDataTime"))
+        or ""
+    )
+
+
 def _aware(value: str) -> datetime:
     parsed = datetime.fromisoformat(value)
     return parsed.replace(tzinfo=SANTIAGO) if parsed.tzinfo is None else parsed
@@ -119,8 +127,25 @@ def _is_cash_general(row: dict) -> bool:
     return str(row.get("typeTransaction") or "").upper() == "CASH"
 
 
-def _index(rows: list[dict], key_fn) -> dict[str, dict]:
-    return {key_fn(row): row for row in rows}  # última ocurrencia gana
+def _key_of(row: dict, kind: str) -> str | None:
+    """`kind` es 'card' (sequenceNumber) o 'cash' (saleId); None si falta la parte clave."""
+    part = _text(row.get("sequenceNumber" if kind == "card" else "saleId"))
+    return None if part is None else f"{kind}:{part}"
+
+
+def _index(rows: list[dict], kind_fn, label: str, warnings: list[str]) -> dict[str, dict]:
+    result: dict[str, dict] = {}
+    for row in rows:
+        kind = kind_fn(row)
+        key = _key_of(row, kind)
+        if key is None:
+            part = "sequenceNumber" if kind == "card" else "saleId"
+            amount = _clean(row.get("totalAmount", row.get("amount")))
+            when = _clean(row.get("transactionDateTime") or row.get("paymentDataTime"))
+            warnings.append(f"Fila omitida ({label} sin {part}): monto={amount}, fecha={when}")
+            continue
+        result[key] = row  # última ocurrencia gana
+    return result
 
 
 def _build(key: str, branch: dict | None, general: dict | None) -> NormalizedSale:
@@ -143,7 +168,7 @@ def _build(key: str, branch: dict | None, general: dict | None) -> NormalizedSal
         sale_id=_text(b.get("saleId")) or _text(g.get("saleId")) or "",
         sequence_number=_text(b.get("sequenceNumber")) or _text(g.get("sequenceNumber")),
         location_id=_text(b.get("locationId")) or "",
-        transaction_at=_aware(b.get("transactionDateTime") or g.get("paymentDataTime")),
+        transaction_at=_aware(_timestamp(branch, general)),
         status=_status(raw_status),
         raw_status=raw_status,
         payment_type=_payment_type(branch, general),
@@ -167,24 +192,37 @@ def _build(key: str, branch: dict | None, general: dict | None) -> NormalizedSal
         settlement_id=settlement_id,
         settlement_amount=_dec(first_rec.get("amount")),
         reconciliations=list(recs),
-        items=_items(b.get("items") if branch else extra.get("items")),
+        items=_items(b.get("items") or extra.get("items")),
         raw={"branch": branch, "general": general},
         sources=[s for s, row in ((SOURCE_BRANCH, branch), (SOURCE_GENERAL, general)) if row],
     )
 
 
+def build_sales_report(
+    branch_card: list[dict], branch_cash: list[dict], general: list[dict]
+) -> tuple[list[NormalizedSale], list[str]]:
+    """Une los tres reportes por clave natural; devuelve (ventas, advertencias)."""
+    warnings: list[str] = []
+    branch = _index(branch_card, lambda r: "card", "sucursal tarjeta", warnings)
+    branch.update(_index(branch_cash, lambda r: "cash", "sucursal efectivo", warnings))
+    gen = _index(
+        general,
+        lambda r: "cash" if _is_cash_general(r) else "card",
+        "general",
+        warnings,
+    )
+    keys = list(branch) + [k for k in gen if k not in branch]
+    sales: list[NormalizedSale] = []
+    for key in keys:
+        b, g = branch.get(key), gen.get(key)
+        if not _timestamp(b, g):
+            warnings.append(f"Venta {key} omitida: sin fecha")
+            continue
+        sales.append(_build(key, b, g))
+    return sales, warnings
+
+
 def build_sales(
     branch_card: list[dict], branch_cash: list[dict], general: list[dict]
 ) -> list[NormalizedSale]:
-    """Une los tres reportes por clave natural (`card:<sequence>` / `cash:<saleId>`)."""
-    branch: dict[str, dict] = {}
-    branch.update(_index(branch_card, lambda r: f"card:{r.get('sequenceNumber')}"))
-    branch.update(_index(branch_cash, lambda r: f"cash:{r.get('saleId')}"))
-    gen = _index(
-        general,
-        lambda r: (
-            f"cash:{r.get('saleId')}" if _is_cash_general(r) else f"card:{r.get('sequenceNumber')}"
-        ),
-    )
-    keys = list(branch) + [k for k in gen if k not in branch]
-    return [_build(k, branch.get(k), gen.get(k)) for k in keys]
+    return build_sales_report(branch_card, branch_cash, general)[0]
