@@ -150,6 +150,8 @@ export interface PaymentTerminalProvider {
     commission_product: number | null
     commission_product_name?: string
     config?: Record<string, unknown>
+    /** True when an encrypted API key is stored. The key itself is never returned. */
+    has_api_key: boolean
     is_active: boolean
 }
 
@@ -388,6 +390,8 @@ export interface PaymentTerminalProviderCreatePayload {
     /** TreasuryAccount (CHECKING/CASH) used as default deposit destination for batches. */
     default_deposit_account?: number | null
     config?: Record<string, unknown>
+    /** Write-only. Omit to keep the stored key. */
+    api_key?: string
     is_active?: boolean
 }
 

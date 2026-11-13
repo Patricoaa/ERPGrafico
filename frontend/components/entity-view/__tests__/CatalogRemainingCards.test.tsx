@@ -169,6 +169,7 @@ const TERMINAL_PROVIDERS: PaymentTerminalProvider[] = [
         bank_treasury_account: null,
         default_deposit_account: null,
         commission_product: null,
+        has_api_key: false,
         is_active: true,
     },
     {
@@ -184,6 +185,7 @@ const TERMINAL_PROVIDERS: PaymentTerminalProvider[] = [
         bank_treasury_account: null,
         default_deposit_account: null,
         commission_product: null,
+        has_api_key: false,
         is_active: false,
     },
 ]
