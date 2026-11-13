@@ -32,7 +32,7 @@ export function SectionHeader({ title, description, icon: Icon, count, actions, 
     return (
         <div className={cn("flex items-start justify-between gap-3 border-b border-border pb-1 select-none", spaced && "pt-4", className)}>
             <div className="min-w-0">
-                <Heading id={id ?? contextId} className="flex min-w-0 items-center gap-2 text-2xs font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                <Heading id={id ?? contextId} className="flex min-w-0 items-center gap-2 text-2xs font-semibold uppercase tracking-[0.25em] text-muted-foreground">
                     {Icon && <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />}
                     <span className="truncate">{title}</span>
                 </Heading>

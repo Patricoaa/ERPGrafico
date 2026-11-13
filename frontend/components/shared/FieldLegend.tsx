@@ -43,7 +43,7 @@ export function FieldLegend({
     if (!label) return null
 
     const legendBase = cn(
-        "px-1.5 text-2xs font-bold uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
+        "px-1.5 text-3xs font-bold uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
         hasError
             ? "text-destructive"
             : isFocused
