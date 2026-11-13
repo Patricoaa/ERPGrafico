@@ -1,13 +1,15 @@
 """API de ventas de terminal y sincronización TUU (Task 6)."""
 
 import json
-from datetime import date, datetime, timedelta, timezone as dt_tz
+from datetime import date, datetime, timedelta
+from datetime import timezone as dt_tz
 from decimal import Decimal
 from unittest import mock
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from core.rbac.bundles import expand
@@ -157,7 +159,7 @@ def test_manual_sync_enqueues_runs(db, provider):
     other = make_terminal_provider()  # sin api key → no elegible
     user = get_user_model().objects.create_superuser(username="syncer", password="x")
     client = _client(user)
-    with mock.patch("treasury.views.sync_terminal_run.delay") as delay:
+    with mock.patch("treasury.tasks.sync_terminal_run.delay") as delay:
         r = client.post("/api/treasury/terminal-sync-runs/sync/", {}, format="json",
                         HTTP_IDEMPOTENCY_KEY="k-1")
     assert r.status_code == 202, r.content
@@ -171,8 +173,8 @@ def test_manual_sync_enqueues_runs(db, provider):
 
 @pytest.mark.django_db
 def test_manual_sync_rejects_future_end_date(admin_client, provider):
-    future = (date.today() + timedelta(days=5)).isoformat()
-    with mock.patch("treasury.views.sync_terminal_run.delay") as delay:
+    future = (timezone.localdate() + timedelta(days=5)).isoformat()
+    with mock.patch("treasury.tasks.sync_terminal_run.delay") as delay:
         r = admin_client.post("/api/treasury/terminal-sync-runs/sync/", {"end_date": future},
                               format="json", HTTP_IDEMPOTENCY_KEY="k-2")
     assert r.status_code == 400
@@ -226,8 +228,56 @@ def test_api_never_exposes_api_key(admin_client, provider):
     for url in urls:
         text = admin_client.get(url).content.decode()
         assert SECRET not in text and "api_key_encrypted" not in text
-    with mock.patch("treasury.views.sync_terminal_run.delay"):
+    with mock.patch("treasury.tasks.sync_terminal_run.delay"):
         r = admin_client.post("/api/treasury/terminal-sync-runs/sync/", {}, format="json",
                               HTTP_IDEMPOTENCY_KEY="k-5")
     text = json.dumps(r.json())
     assert SECRET not in text and "api_key_encrypted" not in text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "url,params",
+    [
+        ("/api/treasury/terminal-sales/", {"provider": "abc"}),
+        ("/api/treasury/terminal-sales/", {"document_type": "x"}),
+        ("/api/treasury/terminal-sales/", {"date_from": "2026-13-45"}),
+        ("/api/treasury/terminal-sales/", {"payment_type": "BITCOIN"}),
+        ("/api/treasury/terminal-sales/", {"status": "NOPE"}),
+        ("/api/treasury/terminal-sales/summary/", {"device": "zz"}),
+        ("/api/treasury/terminal-sync-runs/", {"provider": "abc"}),
+        ("/api/treasury/terminal-sync-runs/", {"status": "NOPE"}),
+    ],
+)
+def test_malformed_filters_return_400(admin_client, url, params):
+    assert admin_client.get(url, params).status_code == 400
+
+
+@pytest.mark.django_db
+def test_manual_sync_enqueue_failure_marks_run_failed(db):
+    first, second = make_terminal_provider(), make_terminal_provider()
+    for p in (first, second):
+        p.gateway_config = {"api_key_encrypted": SECRET}
+        p.save()
+    client = _client(get_user_model().objects.create_superuser(username="enq", password="x"))
+    calls = []
+
+    def flaky(run_id):
+        calls.append(run_id)
+        if len(calls) == 1:
+            raise RuntimeError("broker down")
+
+    with mock.patch("treasury.tasks.sync_terminal_run.delay", side_effect=flaky):
+        r = client.post("/api/treasury/terminal-sync-runs/sync/", {}, format="json", HTTP_IDEMPOTENCY_KEY="k-6")
+    assert r.status_code == 202
+    assert len(calls) == 2
+    failed = TerminalSyncRun.objects.get(pk=calls[0])
+    assert failed.status == "FAILED" and failed.finished_at is not None
+    assert failed.error_message == "No se pudo encolar la sincronización"
+    assert TerminalSyncRun.objects.get(pk=calls[1]).status == "RUNNING"
+
+
+@pytest.mark.django_db
+def test_settings_viewset_exposes_only_current(admin_client):
+    assert admin_client.get("/api/treasury/terminal-sync-settings/").status_code == 404
+    assert admin_client.get("/api/treasury/terminal-sync-settings/1/").status_code == 404

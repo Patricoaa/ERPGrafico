@@ -324,3 +324,16 @@ def start_manual_runs(user, start: date | None, end: date | None) -> list[Termin
         raise ValidationError("No hay proveedores TUU activos con API key configurada.")
     start, end = manual_range(TerminalSyncSettings.get_settings(), timezone.localdate(), start, end)
     return [create_run(p, start, end, TerminalSyncRun.Trigger.MANUAL, user) for p in providers]
+
+
+def enqueue_runs(runs: list[TerminalSyncRun], delay) -> None:
+    """Encola cada run; si el broker falla, marca ese run FAILED y continúa con el resto."""
+    for run in runs:
+        try:
+            delay(run.id)
+        except Exception:
+            logger.exception("No se pudo encolar el run de sincronización %s", run.id)
+            run.status = TerminalSyncRun.Status.FAILED
+            run.error_message = "No se pudo encolar la sincronización"
+            run.finished_at = timezone.now()
+            run.save(update_fields=["status", "error_message", "finished_at", "updated_at"])

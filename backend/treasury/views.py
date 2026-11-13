@@ -45,7 +45,6 @@ from .models import (
     TreasuryAccount,
     TreasuryMovement,
 )
-from . import terminal_sync_service
 from .reconciliation_service import ReconciliationService
 
 # from .rule_service import RuleService
@@ -79,8 +78,10 @@ from .serializers import (
     ReconciliationSettingsSerializer,
     TerminalBatchSerializer,
     TerminalManualSyncSerializer,
+    TerminalSaleFilterSerializer,
     TerminalSaleListSerializer,
     TerminalSaleSerializer,
+    TerminalSyncRunFilterSerializer,
     TerminalSyncRunSerializer,
     TerminalSyncSettingsSerializer,
     TreasuryAccountSerializer,
@@ -89,7 +90,6 @@ from .serializers import (
     TreasuryMovementWriteSerializer,
 )
 from .services import BankStatementService, TerminalBatchService, TreasuryService
-from .tasks import sync_terminal_run
 
 
 def apply_archivo_is_active_filter(qs, request, action):
@@ -1802,8 +1802,8 @@ class CreditCardStatementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHi
         return Response(self.get_serializer(stmt).data)
 
 
-class TerminalSyncSettingsViewSet(viewsets.ModelViewSet):
-    """Configuración singleton de la sincronización de ventas de terminal."""
+class TerminalSyncSettingsViewSet(viewsets.GenericViewSet):
+    """Configuración singleton de la sincronización de ventas de terminal (solo ``current``)."""
 
     queryset = TerminalSyncSettings.objects.all()
     serializer_class = TerminalSyncSettingsSerializer
@@ -1815,12 +1815,9 @@ class TerminalSyncSettingsViewSet(viewsets.ModelViewSet):
             return [require_perms(f"treasury.{verb}_terminalsyncsettings")()]
         return super().get_permissions()
 
-    def get_object(self):
-        return TerminalSyncSettings.get_settings()
-
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        settings = self.get_object()
+        settings = TerminalSyncSettings.get_settings()
         if request.method == "GET":
             return Response(self.get_serializer(settings).data)
         serializer = self.get_serializer(settings, data=request.data, partial=request.method == "PATCH")
@@ -1836,7 +1833,11 @@ class TerminalSaleViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TerminalSale.objects.none()  # permisos por modelo; datos en get_queryset
 
     def get_queryset(self):
-        return terminal_sales_queryset(self.request.query_params)
+        if self.action == "retrieve":
+            return terminal_sales_queryset({})
+        filters = TerminalSaleFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
+        return terminal_sales_queryset(filters.validated_data)
 
     def get_serializer_class(self):
         return TerminalSaleSerializer if self.action == "retrieve" else TerminalSaleListSerializer
@@ -1855,11 +1856,18 @@ class TerminalSyncRunViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, v
     action_permissions = {"sync": "treasury.add_terminalsyncrun"}
 
     def get_queryset(self):
-        return terminal_sync_runs_queryset(self.request.query_params)
+        if self.action != "list":
+            return terminal_sync_runs_queryset({})
+        filters = TerminalSyncRunFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
+        return terminal_sync_runs_queryset(filters.validated_data)
 
     @idempotent_endpoint(scope="treasury.terminal_sync.manual")
     @action(detail=False, methods=["post"])
     def sync(self, request):
+        from . import terminal_sync_service
+        from .tasks import sync_terminal_run
+
         body = TerminalManualSyncSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         try:
@@ -1867,7 +1875,6 @@ class TerminalSyncRunViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, v
                 request.user, body.validated_data.get("start_date"), body.validated_data.get("end_date")
             )
         except ValidationError as e:
-            return Response({"error": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
-        for run in runs:
-            sync_terminal_run.delay(run.id)
+            return Response({"detail": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        terminal_sync_service.enqueue_runs(runs, sync_terminal_run.delay)
         return Response(self.get_serializer(runs, many=True).data, status=status.HTTP_202_ACCEPTED)

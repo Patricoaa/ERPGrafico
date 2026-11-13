@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from django.contrib.auth.models import Permission
 from django.db.models import Count, Q, QuerySet, Sum
-from django.utils.dateparse import parse_date
 from django.utils import timezone
 
 from core.prefix_registry import EntityPrefix
@@ -1335,23 +1334,20 @@ class ReconciliationMatchSelector:
 
 
 def terminal_sales_queryset(filters: dict) -> QuerySet[TerminalSale]:
-    """Ventas de terminal filtradas; ``date_*`` aplican sobre la fecha local de ``transaction_at``."""
+    """Ventas filtradas con valores ya validados; ``date_*`` aplican a la fecha local de ``transaction_at``."""
     qs = TerminalSale.objects.select_related("provider", "device")
-    if d := parse_date(filters.get("date_from") or ""):
-        qs = qs.filter(transaction_at__date__gte=d)
-    if d := parse_date(filters.get("date_to") or ""):
-        qs = qs.filter(transaction_at__date__lte=d)
+    if filters.get("date_from"):
+        qs = qs.filter(transaction_at__date__gte=filters["date_from"])
+    if filters.get("date_to"):
+        qs = qs.filter(transaction_at__date__lte=filters["date_to"])
     for field in ("provider", "device"):
         if filters.get(field):
             qs = qs.filter(**{f"{field}_id": filters[field]})
     for field in ("payment_type", "document_type", "status"):
-        if filters.get(field):
+        if filters.get(field) is not None:
             qs = qs.filter(**{field: filters[field]})
-    settled = (filters.get("settled") or "").lower()
-    if settled in ("true", "1"):
-        qs = qs.filter(settlement_id__isnull=False)
-    elif settled in ("false", "0"):
-        qs = qs.filter(settlement_id__isnull=True)
+    if filters.get("settled"):
+        qs = qs.filter(settlement_id__isnull=filters["settled"] == "false")
     return qs
 
 

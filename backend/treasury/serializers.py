@@ -1897,3 +1897,21 @@ class TerminalSaleSerializer(TerminalSaleListSerializer):
 class TerminalManualSyncSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=False)
     end_date = serializers.DateField(required=False)
+
+
+class TerminalSaleFilterSerializer(serializers.Serializer):
+    """Valida los query params de ventas de terminal (400 ante valores malformados)."""
+
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+    provider = serializers.IntegerField(required=False, min_value=1)
+    device = serializers.IntegerField(required=False, min_value=1)
+    document_type = serializers.IntegerField(required=False, min_value=0)
+    payment_type = serializers.ChoiceField(choices=TerminalSale.PaymentType.choices, required=False)
+    status = serializers.ChoiceField(choices=TerminalSale.Status.choices, required=False)
+    settled = serializers.ChoiceField(choices=["true", "false"], required=False)
+
+
+class TerminalSyncRunFilterSerializer(serializers.Serializer):
+    provider = serializers.IntegerField(required=False, min_value=1)
+    status = serializers.ChoiceField(choices=TerminalSyncRun.Status.choices, required=False)
