@@ -315,3 +315,12 @@ def _execute(run: TerminalSyncRun, client: TuuClient) -> TerminalSyncRun:
         return _finish(run, status, " | ".join(failures))
     status = TerminalSyncRun.Status.PARTIAL if run.warnings else TerminalSyncRun.Status.SUCCESS
     return _finish(run, status)
+
+
+def start_manual_runs(user, start: date | None, end: date | None) -> list[TerminalSyncRun]:
+    """Crea un run MANUAL por proveedor elegible. ``ValidationError`` si no hay o el rango es inválido."""
+    providers = list(eligible_providers())
+    if not providers:
+        raise ValidationError("No hay proveedores TUU activos con API key configurada.")
+    start, end = manual_range(TerminalSyncSettings.get_settings(), timezone.localdate(), start, end)
+    return [create_run(p, start, end, TerminalSyncRun.Trigger.MANUAL, user) for p in providers]

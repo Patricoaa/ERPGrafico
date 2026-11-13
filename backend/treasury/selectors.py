@@ -2,7 +2,8 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import Permission
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, QuerySet, Sum
+from django.utils.dateparse import parse_date
 from django.utils import timezone
 
 from core.prefix_registry import EntityPrefix
@@ -16,6 +17,8 @@ from .models import (
     CreditCardStatement,
     LoanInstallment,
     POSSession,
+    TerminalSale,
+    TerminalSyncRun,
     TreasuryAccount,
     TreasuryMovement,
 )
@@ -1326,3 +1329,63 @@ class ReconciliationMatchSelector:
             "difference_type_display": match.difference_reason,
             "difference_journal_entry": match.difference_journal_entry_id,
         }
+
+
+# ── Ventas de terminal y sincronización ──────────────────────────────────────
+
+
+def terminal_sales_queryset(filters: dict) -> QuerySet[TerminalSale]:
+    """Ventas de terminal filtradas; ``date_*`` aplican sobre la fecha local de ``transaction_at``."""
+    qs = TerminalSale.objects.select_related("provider", "device")
+    if d := parse_date(filters.get("date_from") or ""):
+        qs = qs.filter(transaction_at__date__gte=d)
+    if d := parse_date(filters.get("date_to") or ""):
+        qs = qs.filter(transaction_at__date__lte=d)
+    for field in ("provider", "device"):
+        if filters.get(field):
+            qs = qs.filter(**{f"{field}_id": filters[field]})
+    for field in ("payment_type", "document_type", "status"):
+        if filters.get(field):
+            qs = qs.filter(**{field: filters[field]})
+    settled = (filters.get("settled") or "").lower()
+    if settled in ("true", "1"):
+        qs = qs.filter(settlement_id__isnull=False)
+    elif settled in ("false", "0"):
+        qs = qs.filter(settlement_id__isnull=True)
+    return qs
+
+
+def terminal_sales_summary(qs: QuerySet[TerminalSale]) -> dict:
+    """Totales de ventas; montos solo de COMPLETED, el resto se informa aparte."""
+    completed = qs.filter(status=TerminalSale.Status.COMPLETED)
+    totals = completed.aggregate(
+        gross=Sum("total_amount"), commission=Sum("commission_amount"), net=Sum("net_amount")
+    )
+    other = qs.exclude(status=TerminalSale.Status.COMPLETED).aggregate(
+        count=Count("id"), total=Sum("total_amount")
+    )
+    by_type = (
+        completed.order_by("payment_type")
+        .values("payment_type")
+        .annotate(count=Count("id"), gross=Sum("total_amount"))
+    )
+    return {
+        "count": qs.count(),
+        "gross": str(totals["gross"] or 0),
+        "commission": str(totals["commission"] or 0),
+        "net": str(totals["net"] or 0),
+        "by_payment_type": [
+            {"payment_type": r["payment_type"], "count": r["count"], "gross": str(r["gross"] or 0)}
+            for r in by_type
+        ],
+        "non_completed": {"count": other["count"], "total": str(other["total"] or 0)},
+    }
+
+
+def terminal_sync_runs_queryset(filters: dict) -> QuerySet[TerminalSyncRun]:
+    qs = TerminalSyncRun.objects.select_related("provider", "triggered_by")
+    if filters.get("provider"):
+        qs = qs.filter(provider_id=filters["provider"])
+    if filters.get("status"):
+        qs = qs.filter(status=filters["status"])
+    return qs

@@ -22,6 +22,7 @@ def test_all_list_viewsets_have_pagination():
         "AccountingSettingsViewSet",
         "SalesSettingsViewSet",
         "ReconciliationSettingsViewSet",
+        "TerminalSyncSettingsViewSet",
         "CompanySettingsViewSet",
         "WorkflowSettingsViewSet",
         "GlobalHRSettingsViewSet",

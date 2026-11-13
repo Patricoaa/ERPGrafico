@@ -223,6 +223,9 @@ OVERRIDES: dict[str, list[str]] = {
     "treasury.change_paymentterminalprovider":  ["treasury.manage"],
     "treasury.add_paymentterminaldevice":       ["treasury.manage"],
     "treasury.change_paymentterminaldevice":    ["treasury.manage"],
+    "treasury.add_terminalsyncsettings":        ["treasury.manage"],
+    "treasury.change_terminalsyncsettings":     ["treasury.manage"],
+    "treasury.add_terminalsyncrun":             ["treasury.manage"],
     "treasury.add_posterminal":                 ["treasury.manage"],
     "treasury.change_posterminal":              ["treasury.manage"],
 

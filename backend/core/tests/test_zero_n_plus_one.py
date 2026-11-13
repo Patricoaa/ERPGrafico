@@ -261,6 +261,27 @@ class TestTreasuryNPlusOne:
             resp = api_client.get("/api/treasury/terminal-batches/")
         assert resp.status_code == 200
 
+    def test_terminal_sales_list(self, api_client, django_assert_max_num_queries):
+        from datetime import datetime, timezone as dt_tz
+
+        from treasury.models import PaymentTerminalDevice, TerminalSale
+        from treasury.tests.helpers import make_terminal_provider
+
+        provider = make_terminal_provider()
+        for i in range(N):
+            device = PaymentTerminalDevice.objects.create(
+                name=f"Caja {i}", serial_number=f"SNX-{i}", provider=provider,
+            )
+            TerminalSale.objects.create(
+                provider=provider, device=device, natural_key=f"nk-{i}",
+                serial_number=f"SNX-{i}", sale_id=f"S{i}", sequence_number=str(i),
+                transaction_at=datetime(2026, 11, 10, 15, 0, tzinfo=dt_tz.utc),
+            )
+        with django_assert_max_num_queries(5):
+            resp = api_client.get("/api/treasury/terminal-sales/")
+        assert resp.status_code == 200
+        assert len(resp.json()["results"]) == N
+
     def test_bank_loan_list(self, api_client, django_assert_max_num_queries):
         from accounting.models import Account, AccountType
         from treasury.models import Bank, BankLoan, TreasuryAccount

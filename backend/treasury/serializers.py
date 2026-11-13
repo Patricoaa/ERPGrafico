@@ -13,6 +13,9 @@ from .models import (
     POSSessionAudit,
     POSTerminal,
     ReconciliationSettings,
+    TerminalSale,
+    TerminalSyncRun,
+    TerminalSyncSettings,
     TreasuryAccount,
     TreasuryMovement,
 )
@@ -1765,3 +1768,132 @@ class ApplyChargesActionSerializer(serializers.Serializer):
 
     interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
     fees_expense_account = serializers.IntegerField(required=False, allow_null=True)
+
+
+class TerminalSyncLastRunSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source="provider.name", read_only=True)
+
+    class Meta:
+        model = TerminalSyncRun
+        fields = ["id", "provider_name", "status", "started_at", "finished_at", "error_message"]
+        read_only_fields = fields
+
+
+class TerminalSyncSettingsSerializer(serializers.ModelSerializer):
+    last_run = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TerminalSyncSettings
+        fields = [
+            "id",
+            "enabled",
+            "run_hour",
+            "lookback_days",
+            "history_start_date",
+            "max_retries",
+            "retry_delay_minutes",
+            "last_run",
+        ]
+        read_only_fields = ["id", "last_run"]
+
+    def get_last_run(self, obj):
+        run = TerminalSyncRun.objects.select_related("provider").order_by("-started_at").first()
+        return TerminalSyncLastRunSerializer(run).data if run else None
+
+
+class TerminalSyncRunSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source="provider.name", read_only=True)
+    triggered_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TerminalSyncRun
+        fields = [
+            "id",
+            "provider",
+            "provider_name",
+            "trigger",
+            "status",
+            "start_date",
+            "end_date",
+            "attempts",
+            "started_at",
+            "finished_at",
+            "error_message",
+            "warnings",
+            "fetched_count",
+            "created_count",
+            "updated_count",
+            "triggered_by",
+            "triggered_by_name",
+        ]
+        read_only_fields = fields
+
+    def get_triggered_by_name(self, obj) -> str | None:
+        user = obj.triggered_by
+        return (user.get_full_name() or user.username) if user else None
+
+
+class TerminalSaleListSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source="provider.name", read_only=True)
+    device_name = serializers.CharField(source="device.name", read_only=True, default=None)
+    document_type_label = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = TerminalSale
+        fields = [
+            "id",
+            "provider",
+            "provider_name",
+            "device",
+            "device_name",
+            "serial_number",
+            "sale_id",
+            "sequence_number",
+            "location_id",
+            "transaction_at",
+            "status",
+            "raw_status",
+            "payment_type",
+            "document_type",
+            "document_type_label",
+            "instance",
+            "card_brand",
+            "card_issuer",
+            "installment_count",
+            "currency",
+            "sale_amount",
+            "tip_amount",
+            "cashback_amount",
+            "total_amount",
+            "commission_amount",
+            "net_amount",
+            "settlement_date",
+            "settlement_id",
+            "settlement_amount",
+        ]
+        read_only_fields = fields
+
+
+class TerminalSaleSerializer(TerminalSaleListSerializer):
+    class Meta(TerminalSaleListSerializer.Meta):
+        fields = TerminalSaleListSerializer.Meta.fields + [
+            "natural_key",
+            "card_bin",
+            "card_origin",
+            "installment_type",
+            "acquirer_id",
+            "reconciliations",
+            "items",
+            "raw",
+            "sources",
+            "first_seen_run",
+            "last_seen_run",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class TerminalManualSyncSerializer(serializers.Serializer):
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False)

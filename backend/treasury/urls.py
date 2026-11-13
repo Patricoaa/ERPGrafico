@@ -17,6 +17,9 @@ from .views import (
     POSTerminalViewSet,
     ReconciliationSettingsViewSet,
     TerminalBatchViewSet,
+    TerminalSaleViewSet,
+    TerminalSyncRunViewSet,
+    TerminalSyncSettingsViewSet,
     TreasuryAccountViewSet,
     TreasuryDashboardViewSet,
     TreasuryMovementViewSet,
@@ -32,6 +35,9 @@ router.register(r"payment-methods", PaymentMethodViewSet, basename="paymentmetho
 router.register(r"terminal-batches", TerminalBatchViewSet, basename="terminalbatch")
 router.register(r"terminal-providers", PaymentTerminalProviderViewSet, basename="terminalprovider")
 router.register(r"terminal-devices", PaymentTerminalDeviceViewSet, basename="terminaldevice")
+router.register(r"terminal-sales", TerminalSaleViewSet, basename="terminalsale")
+router.register(r"terminal-sync-runs", TerminalSyncRunViewSet, basename="terminalsyncrun")
+router.register(r"terminal-sync-settings", TerminalSyncSettingsViewSet, basename="terminalsyncsettings")
 
 router.register(r"statements", BankStatementViewSet, basename="bankstatement")
 router.register(r"statement-lines", BankStatementLineViewSet, basename="bankstatementline")
