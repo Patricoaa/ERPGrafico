@@ -1,0 +1,615 @@
+{
+  "code": "200",
+  "message": "Report generated successfully.",
+  "content": {
+    "commerce": {
+      "partnerId": "1",
+      "commerceName": "COMERCIO DEMO"
+    },
+    "reports": [
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "700076154941",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 3200.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T18:22:10",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 3200
+            }
+          ],
+          "amountCommission": 107.0,
+          "amountWithoutCommission": 3093.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 3200,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "110018874550",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 11000.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T18:19:34",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 11000
+            }
+          ],
+          "amountCommission": 181.0,
+          "amountWithoutCommission": 10819.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 11000,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "600076161703",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 6800.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T18:06:11",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 6800
+            }
+          ],
+          "amountCommission": 142.0,
+          "amountWithoutCommission": 6658.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 6800,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "13390",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 800.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T18:01:20",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 800
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 800.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      },
+      {
+        "saleId": "13389",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 1100.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T17:43:36",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 1100
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 1100.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      },
+      {
+        "saleId": "13388",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 1800.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T17:31:01",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 1800
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 1800.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "110018860330",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 4300.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T17:25:20",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 4300
+            }
+          ],
+          "amountCommission": 118.0,
+          "amountWithoutCommission": 4182.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 4300,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "110018859498",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 7000.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T17:22:47",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 7000
+            }
+          ],
+          "amountCommission": 143.0,
+          "amountWithoutCommission": 6857.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 7000,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "110018857697",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 4050.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T17:14:24",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 4050
+            }
+          ],
+          "amountCommission": 450.0,
+          "amountWithoutCommission": 3600.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 4050,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "900084836119",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 20000.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T16:52:59",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 20000
+            }
+          ],
+          "amountCommission": 265.0,
+          "amountWithoutCommission": 19735.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 20000,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "900084835335",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 2000.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T16:49:11",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 2000
+            }
+          ],
+          "amountCommission": 96.0,
+          "amountWithoutCommission": 1904.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 2000,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "13382",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 3200.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T16:44:48",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 3200
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 3200.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "110018849330",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 2400.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T16:34:24",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 2400
+            }
+          ],
+          "amountCommission": 100.0,
+          "amountWithoutCommission": 2300.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 2400,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "13380",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 800.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T16:29:00",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 800
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 800.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      },
+      {
+        "saleId": "13379",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 3840.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T16:23:57",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 3840
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 3840.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "600076135839",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 8250.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T16:12:02",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 8250
+            }
+          ],
+          "amountCommission": 155.0,
+          "amountWithoutCommission": 8095.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 8250,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "13377",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 2600.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T16:08:35",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 2600
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 2600.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "900084826652",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 35000.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T16:04:57",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 35000
+            }
+          ],
+          "amountCommission": 407.0,
+          "amountWithoutCommission": 34593.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 35000,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "N/A",
+        "sequenceNumber": "700076120035",
+        "posSerialNumber": "",
+        "status": "Completed",
+        "amount": 13000.0,
+        "currency": "CLP",
+        "typeTransaction": "DEBIT",
+        "paymentDataTime": "2026-10-26T15:47:20",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 13000
+            }
+          ],
+          "amountCommission": 200.0,
+          "amountWithoutCommission": 12800.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "2026-10-27",
+            "installmentNumber": 1,
+            "amount": 13000,
+            "reconciliationId": "19720426"
+          }
+        ]
+      },
+      {
+        "saleId": "13374",
+        "sequenceNumber": "N/A",
+        "posSerialNumber": "6010B232530402079",
+        "status": "Completed",
+        "amount": 900.0,
+        "currency": "CLP",
+        "typeTransaction": "CASH",
+        "paymentDataTime": "2026-10-26T15:10:13",
+        "extraData": {
+          "items": [
+            {
+              "code": "",
+              "quantity": 1.0,
+              "name": "\u0002Nombre \u00edtem 1",
+              "price": 900
+            }
+          ],
+          "amountCommission": 0.0,
+          "amountWithoutCommission": 900.0
+        },
+        "reconciliations": [
+          {
+            "paymentDate": "",
+            "installmentNumber": 0,
+            "amount": 0,
+            "reconciliationId": "No reconciliation"
+          }
+        ]
+      }
+    ],
+    "totalItems": 47,
+    "totalPages": 3,
+    "page": 1
+  }
+}

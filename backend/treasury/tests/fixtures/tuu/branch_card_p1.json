@@ -1,0 +1,667 @@
+{
+  "metadata": {
+    "code": "BR-00",
+    "message": "Success"
+  },
+  "data": {
+    "commerce": {
+      "partnerId": "1",
+      "taxId": "11111111",
+      "commerceName": "COMERCIO DEMO"
+    },
+    "transactions": [
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13347",
+        "sequenceNumber": "110018764842",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T07:47:49",
+        "transactionType": "PREPAID",
+        "documentType": 48,
+        "cardBrand": "MASTERCARD",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "MERCADO_PAGO",
+        "currencyCode": "CLP",
+        "saleAmount": 2600,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2600,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2600
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13348",
+        "sequenceNumber": "600076056393",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T07:56:15",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 1650,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 1650,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 1650
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13350",
+        "sequenceNumber": "900084749466",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T08:10:07",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 3800,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 3800,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 3800
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13353",
+        "sequenceNumber": "700076048034",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T08:32:28",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "MASTERCARD",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "SANTANDER",
+        "currencyCode": "CLP",
+        "saleAmount": 5000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 5000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2200
+          },
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 2",
+            "quantity": 1,
+            "price": 2800
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13355",
+        "sequenceNumber": "700076048160",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T08:34:06",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "VISA",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "CHILE",
+        "currencyCode": "CLP",
+        "saleAmount": 2250,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2250,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2250
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13356",
+        "sequenceNumber": "600076062692",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T09:13:58",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 7250,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 7250,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 7250
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13357",
+        "sequenceNumber": "700076051541",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T09:14:34",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 7200,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 7200,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 7200
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13363",
+        "sequenceNumber": "600076079589",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T11:27:07",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 2240,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2240,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2240
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13366",
+        "sequenceNumber": "600076086132",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T12:05:09",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 7850,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 7850,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 7850
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13367",
+        "sequenceNumber": "600076087428",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T12:12:03",
+        "transactionType": "DEBIT",
+        "documentType": 33,
+        "cardBrand": "MASTERCARD",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "CMR",
+        "currencyCode": "CLP",
+        "saleAmount": 6000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 6000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 6000
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13368",
+        "sequenceNumber": "700076078576",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T12:23:25",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 1900,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 1900,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 1900
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13375",
+        "sequenceNumber": "700076120035",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T15:47:16",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "VISA",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "SCOTIABANK",
+        "currencyCode": "CLP",
+        "saleAmount": 13000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 13000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 13000
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13376",
+        "sequenceNumber": "900084826652",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T16:04:54",
+        "transactionType": "DEBIT",
+        "documentType": 33,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 35000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 35000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 35000
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13378",
+        "sequenceNumber": "600076135839",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T16:11:59",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 8250,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 8250,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 8250
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13381",
+        "sequenceNumber": "110018849330",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T16:34:21",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 2400,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2400,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2400
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13383",
+        "sequenceNumber": "900084835335",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T16:49:10",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "VISA",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "ESTADO",
+        "currencyCode": "CLP",
+        "saleAmount": 2000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2000
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13384",
+        "sequenceNumber": "900084836119",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T16:52:56",
+        "transactionType": "PREPAID",
+        "documentType": 33,
+        "cardBrand": "MASTERCARD",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "MERCADO_PAGO",
+        "currencyCode": "CLP",
+        "saleAmount": 20000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 20000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 20000
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13385",
+        "sequenceNumber": "110018857697",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T17:14:21",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 4050,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 4050,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 4050
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13386",
+        "sequenceNumber": "110018859498",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T17:21:57",
+        "transactionType": "debit",
+        "documentType": 48,
+        "cardBrand": "MASTERCARD",
+        "cardBin": "00000000",
+        "cardOrigin": "Nacional",
+        "cardIssuer": "Banco Santander Chile",
+        "currencyCode": "CLP",
+        "saleAmount": 7000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 7000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 7000
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13387",
+        "sequenceNumber": "110018860330",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T17:25:18",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 4300,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 4300,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 4300
+          }
+        ]
+      }
+    ]
+  },
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalItems": 23,
+    "totalPages": 2
+  }
+}

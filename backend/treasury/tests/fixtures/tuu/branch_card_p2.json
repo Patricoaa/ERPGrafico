@@ -1,0 +1,117 @@
+{
+  "metadata": {
+    "code": "BR-00",
+    "message": "Success"
+  },
+  "data": {
+    "commerce": {
+      "partnerId": "1",
+      "taxId": "11111111",
+      "commerceName": "COMERCIO DEMO"
+    },
+    "transactions": [
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13391",
+        "sequenceNumber": "600076161703",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T18:06:08",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 6800,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 6800,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 6800
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13392",
+        "sequenceNumber": "110018874550",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T18:19:31",
+        "transactionType": "DEBIT",
+        "documentType": 48,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "Internacional",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 11000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 11000,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 11000
+          }
+        ]
+      },
+      {
+        "locationId": "",
+        "address": "",
+        "saleId": "13393",
+        "sequenceNumber": "700076154941",
+        "serialNumber": "6010B232530402079",
+        "status": "completed",
+        "transactionDateTime": "2026-10-26T18:22:07",
+        "transactionType": "debit",
+        "documentType": 48,
+        "cardBrand": "MASTERCARD",
+        "cardBin": "00000000",
+        "cardOrigin": "Nacional",
+        "cardIssuer": "Banco Falabella",
+        "currencyCode": "CLP",
+        "saleAmount": 3200,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 3200,
+        "installmentType": "BANCO",
+        "installmentCount": 1,
+        "acquirerId": "N/A",
+        "instance": 3,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 3200
+          }
+        ]
+      }
+    ]
+  },
+  "pagination": {
+    "page": 2,
+    "pageSize": 20,
+    "totalItems": 23,
+    "totalPages": 2
+  }
+}

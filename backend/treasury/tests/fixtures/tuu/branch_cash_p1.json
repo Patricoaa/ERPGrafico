@@ -1,0 +1,661 @@
+{
+  "metadata": {
+    "code": "BR-00",
+    "message": "Success"
+  },
+  "data": {
+    "commerce": {
+      "partnerId": "1",
+      "taxId": "11111111",
+      "commerceName": "COMERCIO DEMO"
+    },
+    "transactions": [
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13349",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T07:58:43",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 600,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 600,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 600
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13351",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T08:23:36",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 1800,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 1800,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 1800
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13352",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T08:25:22",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 800,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 800,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 800
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13354",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T08:32:42",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 4500,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 4500,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 4500
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13358",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T09:36:52",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 7400,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 7400,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 7400
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13359",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T09:41:56",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 1080,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 1080,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 1080
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13360",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T10:29:53",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 2500,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2500,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2500
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13361",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T10:34:07",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 1500,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 1500,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 1500
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13362",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T11:07:56",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 2800,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2800,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2800
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13364",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T11:32:24",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 10500,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 10500,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 10500
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13365",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T11:52:44",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 14000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 14000,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 14000
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13369",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T12:36:02",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 8500,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 8500,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 8500
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13370",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T13:19:34",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 2700,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2700,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2700
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13371",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T14:40:43",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 4000,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 4000,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 4000
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13372",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T14:56:07",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 1200,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 1200,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 1200
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13373",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T14:56:24",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 1200,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 1200,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 1200
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13374",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T15:10:13",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 900,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 900,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 900
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13377",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T16:08:35",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 2600,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 2600,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 2600
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13379",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T16:23:57",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 3840,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 3840,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 3840
+          }
+        ]
+      },
+      {
+        "locationId": "64639",
+        "address": "N/A",
+        "saleId": "13380",
+        "sequenceNumber": null,
+        "serialNumber": "6010B232530402079",
+        "status": "Completed",
+        "transactionDateTime": "2026-10-26T16:29:00",
+        "transactionType": "Cash",
+        "documentType": 39,
+        "cardBrand": "N/A",
+        "cardBin": "00000000",
+        "cardOrigin": "N/A",
+        "cardIssuer": "N/A",
+        "currencyCode": "CLP",
+        "saleAmount": 800,
+        "tipAmount": 0,
+        "cashbackAmount": 0,
+        "totalAmount": 800,
+        "installmentType": "N/A",
+        "installmentCount": 0,
+        "acquirerId": "N/A",
+        "instance": 0,
+        "items": [
+          {
+            "code": null,
+            "name": "\u0002Nombre \u00edtem 1",
+            "quantity": 1,
+            "price": 800
+          }
+        ]
+      }
+    ]
+  },
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalItems": 24,
+    "totalPages": 2
+  }
+}
