@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from core.crypto import CryptoError
 from core.serializers.mixins import FrozenFieldsField, IsEditableField
 
 from .models import (
@@ -886,10 +887,54 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
         source="get_provider_type_display", read_only=True
     )
 
+    # La API key es solo escritura: gateway_config (con el token cifrado) nunca se expone.
+    api_key = serializers.CharField(write_only=True, required=False, allow_blank=True, trim_whitespace=True)
+    has_api_key = serializers.SerializerMethodField()
+
     class Meta:
         model = PaymentTerminalProvider
-        fields = "__all__"
+        exclude = ("gateway_config",)
         read_only_fields = ("bank_treasury_account",)
+
+    def get_has_api_key(self, obj) -> bool:
+        return bool((obj.gateway_config or {}).get(PaymentTerminalProvider._API_KEY_FIELD))
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        api_key = attrs.get("api_key") or ""
+        instance = self.instance
+        provider_type = attrs.get("provider_type", instance.provider_type if instance else None)
+        is_active = attrs.get("is_active", instance.is_active if instance else True)
+        if api_key and provider_type == PaymentTerminalProvider.ProviderType.TUU and is_active:
+            others = PaymentTerminalProvider.objects.filter(
+                provider_type=PaymentTerminalProvider.ProviderType.TUU, is_active=True
+            )
+            if instance:
+                others = others.exclude(pk=instance.pk)
+            for other in others:
+                try:
+                    other_key = other.get_api_key()
+                except CryptoError:
+                    continue  # credencial ilegible: no puede colisionar
+                if other_key == api_key:
+                    raise serializers.ValidationError(
+                        {"api_key": f"Esta API key ya está asignada al proveedor {other.name}."}
+                    )
+        return attrs
+
+    def create(self, validated_data):
+        api_key = validated_data.pop("api_key", "")
+        instance = PaymentTerminalProvider(**validated_data)
+        if api_key:
+            instance.set_api_key(api_key)
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        api_key = validated_data.pop("api_key", "")
+        if api_key:
+            instance.set_api_key(api_key)
+        return super().update(instance, validated_data)
 
     def validate_default_deposit_account(self, value):
         if value and value.account_type in ("BRIDGE", "CHECK_PORTFOLIO", "ISSUED_CHECKS"):
