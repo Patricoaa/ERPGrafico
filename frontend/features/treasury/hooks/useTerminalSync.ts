@@ -1,11 +1,9 @@
-import { useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
-import { shouldKeepIdempotencyKey } from '@/lib/idempotency'
-import { generateUuidV4 } from '@/lib/uuid'
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey'
 import { treasuryApi } from '../api/treasuryApi'
 import { TERMINAL_SALES_KEYS, TERMINAL_SYNC_KEYS } from './queryKeys'
 import type { ManualSyncPayload, TerminalSyncRunFilters, TerminalSyncSettingsPatch } from '../types'
@@ -39,22 +37,20 @@ export function useTerminalSyncRuns(filters: TerminalSyncRunFilters = {}) {
 export function useStartTerminalSync() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    const keyRef = useRef<{ key: string; signature: string } | null>(null)
+    const { keyFor, succeeded, failed } = useIdempotencyKey()
 
     const mutation = useMutation({
         mutationFn: (payload: ManualSyncPayload = {}) => {
-            const signature = JSON.stringify(payload)
-            if (keyRef.current?.signature !== signature) keyRef.current = { key: generateUuidV4(), signature }
-            return treasuryApi.startTerminalSync(payload, keyRef.current.key)
+            return treasuryApi.startTerminalSync(payload, keyFor(payload))
         },
         onSuccess: () => {
             markLocalMutation()
-            keyRef.current = null
+            succeeded()
             invalidateCrossFeature(queryClient, [TERMINAL_SALES_KEYS.all, TERMINAL_SYNC_KEYS.runs()])
             toast.success('Sincronización en curso')
         },
         onError: (err) => {
-            if (!shouldKeepIdempotencyKey(err)) keyRef.current = null
+            failed(err)
             showApiError(err, 'Error al iniciar la sincronización')
         },
     })
