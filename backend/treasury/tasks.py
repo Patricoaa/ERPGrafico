@@ -293,13 +293,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
 
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description=GlosaBuilder.build(
-                GlosaBuilder.DEVENGO_INTERESES,
-                inst.loan.display_id,
-                "",
-                total_interest_clp,
-                extra=[f"{month:02d}/{year}"],
-            ),
+            description=GlosaBuilder.build(GlosaBuilder.DEVENGO_INTERESES, inst.loan.display_id, "", total_interest_clp, extra=[f"{month:02d}/{year}"]),
             reference=ref,
             status=JournalEntry.Status.DRAFT,
         )
@@ -951,7 +945,9 @@ def sync_terminal_run(self, run_id: int) -> str:
     except TuuTransientError:
         config = TerminalSyncSettings.get_settings()
         if self.request.retries < config.max_retries:
-            raise self.retry(countdown=config.retry_delay_minutes * 60) from None
+            raise self.retry(
+                countdown=config.retry_delay_minutes * 60, max_retries=config.max_retries
+            ) from None
         run.status = TerminalSyncRun.Status.FAILED
         run.error_message = f"TUU no respondió tras {run.attempts} intentos"
         run.finished_at = timezone.now()

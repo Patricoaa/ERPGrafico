@@ -3,11 +3,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from django.conf import settings as django_settings
+from django.utils import timezone
 
 from config.celery import app as celery_app
 from treasury import tasks
 from treasury.integrations.tuu_client import TuuAuthError, TuuTransientError
 from treasury.models import TerminalSyncRun, TerminalSyncSettings
+from treasury.terminal_sync_service import AUTH_MESSAGE
 from treasury.tests.helpers import make_terminal_provider
 
 pytestmark = pytest.mark.django_db
@@ -16,9 +18,10 @@ SANTIAGO = ZoneInfo("America/Santiago")
 
 
 def _freeze(monkeypatch, hour, minute=10):
-    monkeypatch.setattr(
-        tasks, "_now", lambda: datetime(2026, 11, 13, hour, minute, tzinfo=SANTIAGO)
-    )
+    # Fecha local real (create_run usa timezone.now()); solo se fija la hora del día.
+    today = timezone.localtime().date()
+    frozen = datetime(today.year, today.month, today.day, hour, minute, tzinfo=SANTIAGO)
+    monkeypatch.setattr(tasks, "_now", lambda: frozen)
 
 
 def _configure(**kwargs):
@@ -130,7 +133,8 @@ def test_auth_error_fails_without_retry_and_hides_key(monkeypatch):
     run.refresh_from_db()
     assert run.status == TerminalSyncRun.Status.FAILED
     assert run.attempts == 1
-    assert "k" != run.error_message and "bad key" not in run.error_message
+    assert run.error_message == AUTH_MESSAGE
+    assert "bad key" not in run.error_message
 
 
 def test_transient_error_retries_then_fails(monkeypatch):
@@ -150,6 +154,24 @@ def test_transient_error_retries_then_fails(monkeypatch):
     assert run.status == TerminalSyncRun.Status.FAILED
     assert run.error_message == "TUU no respondió tras 3 intentos"
     assert run.finished_at is not None
+
+
+def test_transient_error_honors_max_retries_above_celery_default(monkeypatch):
+    _configure(max_retries=5, retry_delay_minutes=1)
+    calls = []
+
+    def boom(run, client=None):
+        calls.append(1)
+        raise TuuTransientError("timeout")
+
+    monkeypatch.setattr(tasks, "execute_run", boom)
+    run = _scheduled_run()
+    tasks.sync_terminal_run.apply(args=[run.id])
+    run.refresh_from_db()
+    assert len(calls) == 6
+    assert run.attempts == 6
+    assert run.status == TerminalSyncRun.Status.FAILED
+    assert run.error_message == "TUU no respondió tras 6 intentos"
 
 
 def test_transient_error_then_success_returns_final_status(monkeypatch):
