@@ -61,6 +61,7 @@ export function DistributionImpactStep({ resolutionId }: { resolutionId: number 
 
             <Collection.Root collection={collection} label="Impactos por socio">
                 <Collection.View
+                    variant="default"
                     table={(isProfit ? profitDistributionImpactViews : profitDistributionLossImpactViews).table}
                     emptyTitle="Sin socios"
                     emptyDescription="La distribución no tiene líneas."

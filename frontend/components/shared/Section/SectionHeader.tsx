@@ -5,13 +5,14 @@ import { type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { useSectionTitleId } from "./SectionContext"
+import { formatRecordCount, useRecordCount } from "./RecordCountContext"
 
 export interface SectionHeaderProps {
     title: string
     /** Texto de apoyo bajo el título. */
     description?: React.ReactNode
     icon?: LucideIcon | React.ElementType
-    /** Conteo o resumen junto al título (`3`, `"2 de 5"`, un monto…). */
+    /** Conteo o resumen junto al título (`3`, `"2 de 5"`, un monto…). Sin él, muestra el total de la `Collection` del ámbito (`Section.Scope`). */
     count?: React.ReactNode
     /** Acciones a la derecha (por defecto botones ghost: ver `Section.Action`). */
     actions?: React.ReactNode
@@ -29,6 +30,8 @@ export interface SectionHeaderProps {
  */
 export function SectionHeader({ title, description, icon: Icon, count, actions, as: Heading = "h3", spaced, id, className }: SectionHeaderProps) {
     const contextId = useSectionTitleId()
+    const recordCount = useRecordCount()
+    const shownCount = count ?? (recordCount !== null ? formatRecordCount(recordCount) : undefined)
     return (
         <div className={cn("flex items-start justify-between gap-3 border-b border-border pb-1 select-none", spaced && "pt-4", className)}>
             <div className="min-w-0">
@@ -36,11 +39,11 @@ export function SectionHeader({ title, description, icon: Icon, count, actions, 
                     {Icon && <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />}
                     <span className="truncate">{title}</span>
                 </Heading>
-                {description && <div className="mt-1 text-sm font-normal normal-case tracking-normal text-muted-foreground">{description}</div>}
+                {description && <div className="mt-1 text-2xs font-normal normal-case tracking-normal text-muted-foreground">{description}</div>}
             </div>
-            {(count != null || actions) && (
+            {(shownCount != null || actions) && (
                 <div className="flex shrink-0 items-center gap-2 select-text">
-                    {count != null && <span className="text-2xs tabular-nums text-muted-foreground">{count}</span>}
+                    {shownCount != null && <span className="text-2xs tabular-nums text-muted-foreground">{shownCount}</span>}
                     {actions}
                 </div>
             )}

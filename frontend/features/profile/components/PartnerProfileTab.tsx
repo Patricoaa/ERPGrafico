@@ -134,10 +134,11 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Bottom: Capital History — flows naturally, page scrolls */}
                 <section>
                     <Section.Header as="h2" title="Historial de capital" className="mb-3" />
-                    <div className="[&>div>div]:rounded-none [&>div>div]:border-0">
+                    <div>
                     <Collection.Root collection={txCollection} label="Historial de Capital">
                         <Collection.View
                             table={partnerTransactionViews.table}
+                            variant="embedded"
                             emptyTitle="Sin movimientos"
                             emptyDescription="No hay movimientos de capital registrados."
                         />

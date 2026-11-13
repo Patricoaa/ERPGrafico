@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 import { PersistentPanelContext, usePersistentPanel } from "./PersistentPanelContext"
+import { EmbeddedSurfaceProvider } from "./EmbeddedSurfaceContext"
 import {ScrollArea} from "@/components/ui/scroll-area"
 
 type DrawerMode = 'create' | 'edit' | 'view'
@@ -346,6 +347,7 @@ export function Drawer({
                 )}
 
                 <PersistentPanelContext.Provider value={false}>
+                <EmbeddedSurfaceProvider>
                 {fillContent ? (
                     <div className={cn(
                         "flex-1 flex flex-col overflow-hidden",
@@ -363,6 +365,7 @@ export function Drawer({
                         {children}
                     </ScrollArea>
                 )}
+                </EmbeddedSurfaceProvider>
                 </PersistentPanelContext.Provider>
 
                 {footer && (

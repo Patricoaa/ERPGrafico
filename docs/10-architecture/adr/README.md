@@ -199,5 +199,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0134](0134-wizard-f29-unificado-y-checklist-accionable.md) | El F29 se resuelve en un wizard unificado (fase derivada del estado) y el checklist de cierre contable es accionable | Accepted |
 | [0135](0135-subcuentas-contables-por-socio.md) | Toda cuenta contable de socio se contabiliza en una subcuenta por socio | Accepted |
 | [0136](0136-section-compartida.md) | `Section` compartida reemplaza FormSection, SummarySection y PendingChecklist | Accepted |
+| [0137](0137-variante-embebida-collection.md) | Variante embebida de `Collection` (marco, vacío en columnas y «Mostrar más») | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

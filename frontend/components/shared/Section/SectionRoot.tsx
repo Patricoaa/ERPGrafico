@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "../EmptyState"
 import { SkeletonShell } from "../SkeletonShell"
+import { RecordCountScope } from "./RecordCountContext"
 import { SectionTitleIdContext } from "./SectionContext"
 import { SectionHeader, type SectionHeaderProps } from "./SectionHeader"
 
@@ -54,11 +55,13 @@ export function SectionRoot({
     }
 
     return (
-        <SectionTitleIdContext.Provider value={title ? titleId : undefined}>
-            <section aria-labelledby={title ? titleId : undefined} className={cn(className)}>
-                {title && <SectionHeader title={title} description={description} icon={icon} count={count} actions={actions} as={as} />}
-                {body}
-            </section>
-        </SectionTitleIdContext.Provider>
+        <RecordCountScope>
+            <SectionTitleIdContext.Provider value={title ? titleId : undefined}>
+                <section aria-labelledby={title ? titleId : undefined} className={cn(className)}>
+                    {title && <SectionHeader title={title} description={description} icon={icon} count={count} actions={actions} as={as} />}
+                    {body}
+                </section>
+            </SectionTitleIdContext.Provider>
+        </RecordCountScope>
     )
 }

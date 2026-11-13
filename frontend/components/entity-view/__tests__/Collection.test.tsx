@@ -8,6 +8,8 @@ import {
     useEntityCollection,
     type CollectionSource,
 } from "@/components/entity-view"
+import { EmbeddedSurfaceProvider, Section } from "@/components/shared"
+import type { CollectionOptions, CollectionSurfaceOptions } from "@/components/entity-view"
 
 interface Uom {
     id: number
@@ -161,5 +163,125 @@ describe("Derived rows without identity", () => {
         } finally {
             error.mockRestore()
         }
+    })
+})
+
+// ─── Embedded variant (ADR-0137) ─────────────────────────────────────────────
+
+const manyRows: Uom[] = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, name: `Unidad ${i + 1}`, abbreviation: `u${i + 1}`, ratio: "1" }))
+
+function EmbeddedHarness({
+    rows: data,
+    options,
+    surface,
+    inOverlay = false,
+    isFiltered,
+}: {
+    rows: Uom[]
+    options?: CollectionOptions<"name" | "abbreviation" | "ratio">
+    surface?: CollectionSurfaceOptions
+    inOverlay?: boolean
+    isFiltered?: boolean
+}) {
+    const collection = useEntityCollection(entity, { rows: data, isFiltered }, options)
+    const body = (
+        <Collection.Root collection={collection} label="Unidades de medida">
+            <Collection.View table={views.table} emptyTitle="Sin unidades" {...surface} />
+        </Collection.Root>
+    )
+    return inOverlay ? <EmbeddedSurfaceProvider>{body}</EmbeddedSurfaceProvider> : body
+}
+
+const frameOf = () => screen.getByRole("table").parentElement?.parentElement as HTMLElement
+
+describe("Collection embedded variant", () => {
+    it("keeps the frame outside an overlay and drops it inside one", () => {
+        const { unmount } = render(<EmbeddedHarness rows={rows} />)
+        expect(frameOf().className).toContain("border")
+        unmount()
+        render(<EmbeddedHarness rows={rows} inOverlay />)
+        expect(frameOf().className).not.toContain("border")
+    })
+
+    it("lets frame be forced either way", () => {
+        render(<EmbeddedHarness rows={rows} inOverlay surface={{ frame: "card" }} />)
+        expect(frameOf().className).toContain("border")
+    })
+
+    it("renders the empty state as bare columns inside an overlay", () => {
+        render(<EmbeddedHarness rows={[]} inOverlay />)
+        expect(screen.queryByText("Sin unidades")).not.toBeInTheDocument()
+        const table = screen.getByRole("table")
+        expect(within(table).getAllByRole("columnheader")).toHaveLength(3)
+        expect(within(table).getByText("Sin registros")).toBeInTheDocument()
+    })
+
+    it("keeps the empty message outside an overlay, when filtered, and when there is an action", () => {
+        const { unmount } = render(<EmbeddedHarness rows={[]} />)
+        expect(screen.getByText("Sin unidades")).toBeInTheDocument()
+        unmount()
+        const filtered = render(<EmbeddedHarness rows={[]} inOverlay isFiltered />)
+        expect(screen.getByText("Ningún resultado para el filtro")).toBeInTheDocument()
+        filtered.unmount()
+        render(<EmbeddedHarness rows={[]} inOverlay surface={{ empty: "message" }} />)
+        expect(screen.getByText("Sin unidades")).toBeInTheDocument()
+    })
+
+    it("pages with Mostrar más inside an overlay and reveals step rows per click", async () => {
+        const user = userEvent.setup()
+        render(<EmbeddedHarness rows={manyRows} inOverlay options={{ pagination: { mode: "more", step: 10 } }} />)
+        const shown = () => screen.getAllByText(/^Unidad \d+$/).length
+        expect(shown()).toBe(10)
+        await user.click(screen.getByRole("button", { name: "Mostrar más (15 restantes)" }))
+        expect(shown()).toBe(20)
+        await user.click(screen.getByRole("button", { name: "Mostrar más (5 restantes)" }))
+        expect(shown()).toBe(25)
+        expect(screen.queryByRole("button", { name: /Mostrar más/ })).not.toBeInTheDocument()
+    })
+
+    it("turns default client pagination into Mostrar más only when embedded", () => {
+        const { unmount } = render(<EmbeddedHarness rows={manyRows} inOverlay />)
+        expect(screen.getByRole("button", { name: "Mostrar más (5 restantes)" })).toBeInTheDocument()
+        unmount()
+        render(<EmbeddedHarness rows={manyRows} />)
+        expect(screen.queryByRole("button", { name: /Mostrar más/ })).not.toBeInTheDocument()
+    })
+
+    it("caps the height with maxHeight", () => {
+        render(<EmbeddedHarness rows={rows} surface={{ maxHeight: 240 }} />)
+        expect(frameOf().style.maxHeight).toBe("240px")
+    })
+})
+
+describe("Embedded header and record count", () => {
+    it("drops the sticky header background only when embedded", () => {
+        const { unmount } = render(<EmbeddedHarness rows={rows} />)
+        expect(screen.getAllByRole("rowgroup")[0].className).toContain("bg-background")
+        unmount()
+        render(<EmbeddedHarness rows={rows} inOverlay />)
+        expect(screen.getAllByRole("rowgroup")[0].className).not.toContain("bg-background")
+    })
+
+    it("shows the collection total in a sibling Section.Header inside Section.Scope", () => {
+        function Scoped({ data, count }: { data: Uom[]; count?: string }) {
+            const collection = useEntityCollection(entity, { rows: data })
+            return (
+                <Section.Scope>
+                    <Section.Header title="Unidades" count={count} />
+                    <Collection.Root collection={collection} label="Unidades de medida">
+                        <Collection.View table={views.table} />
+                    </Collection.Root>
+                </Section.Scope>
+            )
+        }
+        const first = render(<Scoped data={manyRows} />)
+        expect(screen.getByText("25 registros")).toBeInTheDocument()
+        first.unmount()
+        const second = render(<Scoped data={rows.slice(0, 1)} />)
+        expect(screen.getByText("1 registro")).toBeInTheDocument()
+        second.unmount()
+        render(<Scoped data={rows} count="manual" />)
+        expect(screen.getByText("manual")).toBeInTheDocument()
+        expect(screen.queryByText("2 registros")).not.toBeInTheDocument()
     })
 })

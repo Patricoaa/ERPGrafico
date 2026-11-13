@@ -26,6 +26,8 @@ Sirve para checklists, resúmenes de wizard, pestañas de perfil/drawers (datos 
 
 `Section`: `title?` `description?` `icon?` `count?` `actions?` `as?` (`h2|h3|h4`) `isLoading?` `isError?` `isEmpty?` `emptyTitle?` `emptyDescription?` `onRetry?` `className?`.
 
+**Conteo automático (ADR-0137):** sin `count`, `Section` / `Section.Header` muestran «N registro(s)» con el total de la `Collection` de su ámbito. `Section` es un ámbito; para una `Section.Header` suelta junto a una `Collection` hermana se envuelven en `<Section.Scope>`. Un `count` explícito prevalece.
+
 `Section.Row`: `title` `description?` `meta?` `leading?` `value?` `valueClassName?` `strong?` `plain?` `control?` `actions?` `expand?` `onClick?` `pressed?` `variant?`.
 
 - `control`: selector o input **con etiqueta y lógica propia**, controlado por quien lo usa (la fila no guarda estado ni valida).

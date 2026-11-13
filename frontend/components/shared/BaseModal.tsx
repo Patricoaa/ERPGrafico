@@ -17,6 +17,7 @@ import type * as DialogPrimitive from "@radix-ui/react-dialog"
 
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 import { Drawer } from "./Drawer"
+import { EmbeddedSurfaceProvider } from "./EmbeddedSurfaceContext"
 import { usePersistentPanel } from "./PersistentPanelContext"
 
 export type BaseModalVariant = "default" | "transaction" | "wizard" | "form-tabs" | "raw"
@@ -168,6 +169,7 @@ export function BaseModal({
                 )}
 
                 {/* Content Area */}
+                <EmbeddedSurfaceProvider>
                 {hideScrollArea || isRaw ? (
                     <div className={cn(
                         "flex-1 flex flex-col min-h-0",
@@ -181,6 +183,7 @@ export function BaseModal({
                         {children}
                     </ScrollArea>
                 )}
+                </EmbeddedSurfaceProvider>
 
                 {/* Footer Area */}
                 {footer && (

@@ -28,7 +28,7 @@ import { PayrollPaymentsModal } from './PayrollPaymentsModal'
 
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { payrollEntity, payrollViews } from "../entity-view/payroll.entity"
-import { unifiedPaymentEntity, unifiedPaymentViews, type UnifiedPayment } from "../entity-view/unifiedPayment.entity"
+import type { UnifiedPayment } from "../entity-view/unifiedPayment.entity"
 
 import { useTheme } from "next-themes"
 import { useThemeSync } from "../hooks/useThemeSync"
@@ -296,7 +296,6 @@ function PersonalTab({
     ].sort((a, b) => b.date.localeCompare(a.date)), [advances, payments])
 
     const payrollCollection = useEntityCollection(payrollEntity, { rows: payrolls }, { pagination: { mode: "client", pageSize: 10 } })
-    const paymentCollection = useEntityCollection(unifiedPaymentEntity, { rows: unifiedPayments }, { pagination: { mode: "client", pageSize: 10 } })
 
     const profilePayrollActionsCtx: ProfilePayrollActionsCtx = {
         onViewDetail: (id) => { setPreviewPayrollId(id); setPreviewOpen(true) },
@@ -380,35 +379,27 @@ function PersonalTab({
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <section className="flex flex-1 min-h-0 flex-col">
-                        <Section.Header as="h2" title="Liquidaciones" description="Consulta y descarga tus liquidaciones emitidas." className="mb-4" />
-                        <div className="min-w-0 flex flex-1 flex-col gap-8 [&>div>div]:rounded-none [&>div>div]:border-0">
-                            <Collection.Root
-                                collection={payrollCollection}
-                                selection="bulk"
-                                actions={profilePayrollActions.forCollection(profilePayrollActionsCtx)}
-                                onOpen={(payroll) => { setPreviewPayrollId(payroll.id); setPreviewOpen(true) }}
-                            >
-                                <Collection.View
-                                    table={payrollViews.table}
-                                    emptyTitle="No tiene liquidaciones"
-                                    emptyDescription="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
-                                />
-                                <Collection.BulkBar actions={bulkDownloadAction} />
-                            </Collection.Root>
-
-                            <div className="flex min-h-0 flex-1 flex-col [&>div>div]:rounded-none [&>div>div]:border-0">
-                                <Section.Header title="Pagos y anticipos" count={`${unifiedPayments.length} transacción(es)`} className="mb-3" />
-                                <Collection.Root collection={paymentCollection} label="Pagos y anticipos">
+                    <Section.Scope>
+                        <section className="flex flex-1 min-h-0 flex-col">
+                            <Section.Header as="h2" title="Liquidaciones" description="Consulta y descarga tus liquidaciones emitidas." className="mb-4" />
+                            <div className="min-w-0 flex flex-1 min-h-0 flex-col">
+                                <Collection.Root
+                                    collection={payrollCollection}
+                                    selection="bulk"
+                                    actions={profilePayrollActions.forCollection(profilePayrollActionsCtx)}
+                                    onOpen={(payroll) => { setPreviewPayrollId(payroll.id); setPreviewOpen(true) }}
+                                >
                                     <Collection.View
-                                        table={unifiedPaymentViews.table}
-                                        emptyTitle="No tiene transacciones"
-                                        emptyDescription="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
+                                        table={payrollViews.table}
+                                        variant="embedded"
+                                        emptyTitle="No tiene liquidaciones"
+                                        emptyDescription="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
                                     />
+                                    <Collection.BulkBar actions={bulkDownloadAction} />
                                 </Collection.Root>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+                    </Section.Scope>
                 </FadeIn>
             )}
 

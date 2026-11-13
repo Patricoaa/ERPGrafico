@@ -35,6 +35,8 @@ export interface CollectionSource<T> {
 
 export type CollectionPagination =
     | { mode: "client"; pageSize?: number }
+    /** Client-side "Mostrar más" (ADR-0137): the first `step` rows, then `step` more per click. Never server-driven. */
+    | { mode: "more"; step?: number }
     | { mode: "server"; state: PaginationState; onChange: (next: PaginationState) => void }
     | { mode: "none" }
 
@@ -68,6 +70,12 @@ export interface CollectionGroup<T> {
     rows: Row<T>[]
 }
 
+/** How the collection is paged: drives the footer each surface renders (`pages` paginator vs "Mostrar más"). */
+export type CollectionPaging = "none" | "server" | "client" | "more"
+
+/** Rows revealed per "Mostrar más" click when the collection does not declare its own step. */
+export const DEFAULT_MORE_STEP = 10
+
 export type CollectionStatus = "loading" | "error" | "empty" | "ready"
 
 export interface EntityCollection<T, F extends FieldMap<T>> {
@@ -78,6 +86,10 @@ export interface EntityCollection<T, F extends FieldMap<T>> {
     /** Total rows (server total when paginating on the server). */
     total: number
     paginated: boolean
+    /** Paging flavour (`paginated` is `paging !== "none"`). */
+    paging: CollectionPaging
+    /** Rows added per "Mostrar más" click. */
+    moreStep: number
     refetch?: () => void
     isFiltered: boolean
     /** Row groups when `groupBy` is set (in display order), otherwise `null`. */
@@ -143,9 +155,10 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     const tree = entity.tree
     // `true` = every branch open (TanStack's "all expanded"); toggling a row switches to a per-row map.
     const [expanded, setExpanded] = React.useState<ExpandedState>(() => (tree && tree.defaultExpanded !== false ? true : {}))
+    const moreStep = pagination.mode === "more" ? pagination.step ?? DEFAULT_MORE_STEP : DEFAULT_MORE_STEP
     const [clientPagination, setClientPagination] = React.useState<PaginationState>({
         pageIndex: 0,
-        pageSize: pagination.mode === "client" ? pagination.pageSize ?? 20 : 20,
+        pageSize: pagination.mode === "client" ? pagination.pageSize ?? 20 : pagination.mode === "more" ? moreStep : 20,
     })
 
     const isServer = pagination.mode === "server"
@@ -184,7 +197,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
                 onExpandedChange: setExpanded,
                 // A client page holds whole branches (children render on their parent's page). TanStack then
                 // expands inside its pagination model, so this only applies when that model exists.
-                paginateExpandedRows: pagination.mode !== "client",
+                paginateExpandedRows: pagination.mode !== "client" && pagination.mode !== "more",
             }
             : {}),
         onSortingChange: (updater) => {
@@ -203,7 +216,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
-        ...(pagination.mode === "client" ? { getPaginationRowModel: getPaginationRowModel() } : {}),
+        ...(pagination.mode === "client" || pagination.mode === "more" ? { getPaginationRowModel: getPaginationRowModel() } : {}),
         manualPagination: isServer,
         autoResetPageIndex: false,
         rowCount: isServer ? source.rowCount : undefined,
@@ -247,6 +260,8 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         // A tree counts every row, not only its roots.
         total: source.rowCount ?? (tree ? table.getCoreRowModel().flatRows.length : rows.length),
         paginated: pagination.mode !== "none",
+        paging: pagination.mode,
+        moreStep,
         refetch: source.refetch,
         isFiltered: !!source.isFiltered,
     }

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
-import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, type BulkAction, type CardRailTone } from "@/components/shared"
+import { BulkActionButtons, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -28,8 +28,8 @@ import {
 } from "../core/define-entity"
 import { toNumber } from "../core/formatters"
 import { getValueKind, type Align, type Surface, type ValueKind } from "../core/value-kinds"
-import type { EntityCollection } from "../core/use-entity-collection"
-import type { Row } from "@tanstack/react-table"
+import type { CollectionPaging, EntityCollection } from "../core/use-entity-collection"
+import type { Row, Table as TanstackTable } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
 import { useSavedRowFlash } from "./useSavedRowFlash"
@@ -107,6 +107,8 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
 
 function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, label }: CollectionRootProps<T, F>) {
     const opener = useEntityOpener()
+    // The enclosing `Section` / `Section.Scope` header shows this collection's total (ADR-0137).
+    useRegisterRecordCount(collection.status === "loading" ? null : collection.total)
     const [localView, setLocalView] = React.useState<CollectionViewMode>(defaultView)
     // Known at render time (no registration effect, no first-render flicker). Without an analytics
     // child, a stored "analytics" view (e.g. ?view=analytics on a list that has none) falls back to the table.
@@ -239,7 +241,67 @@ function ExportButtons({ spec, filters }: { spec: NonNullable<Entity<unknown, Fi
 
 // ─── View (switch + states) ──────────────────────────────────────────────────
 
-export interface CollectionViewProps<T, Id extends string> {
+/**
+ * Embedded variant (ADR-0137): the look of a collection that lives inside a modal or drawer. It bundles
+ * `frame="none"`, `empty="columns"` and the "Mostrar más" pager, each overridable on its own.
+ * Default: `embedded` inside `BaseModal` / `Drawer`, `default` elsewhere.
+ */
+export type CollectionVariant = "default" | "embedded"
+
+export interface CollectionSurfaceOptions {
+    variant?: CollectionVariant
+    /** `card` = bordered, rounded container; `none` = bare (also applies to the error / empty message). */
+    frame?: "card" | "none"
+    /** Truly-empty state: `message` = `EmptyState` box; `columns` = the header row alone (table view only). */
+    empty?: "message" | "columns"
+    /** Footer of a client-paged collection: `pages` = paginator; `more` = "Mostrar más". */
+    pager?: "pages" | "more"
+    /** Caps the surface height (px or CSS length); rows scroll inside, the header stays sticky. */
+    maxHeight?: number | string
+}
+
+interface ResolvedSurface {
+    embedded: boolean
+    frame: "card" | "none"
+    empty: "message" | "columns"
+    pager: "pages" | "more"
+    maxHeight?: number | string
+}
+
+function useResolvedSurface(options: CollectionSurfaceOptions, paging: CollectionPaging): ResolvedSurface {
+    const inOverlay = useEmbeddedSurface()
+    const embedded = (options.variant ?? (inOverlay ? "embedded" : "default")) === "embedded"
+    const wantsMore = paging === "more" || (embedded && paging === "client")
+    return {
+        embedded,
+        frame: options.frame ?? (embedded ? "none" : "card"),
+        empty: options.empty ?? (embedded ? "columns" : "message"),
+        pager: options.pager ?? (wantsMore ? "more" : "pages"),
+        maxHeight: options.maxHeight,
+    }
+}
+
+/** Page footer: paginator, or "Mostrar más (N restantes)" for client-paged collections. */
+function Pager<T>({ table, paging, moreStep, pager }: { table: TanstackTable<T>; paging: CollectionPaging; moreStep: number; pager: "pages" | "more" }) {
+    if (paging === "none") return null
+    if (pager === "more" && paging !== "server") return <ShowMore table={table} step={moreStep} />
+    return <DataTablePagination table={table} />
+}
+
+function ShowMore<T>({ table, step }: { table: TanstackTable<T>; step: number }) {
+    const pageSize = table.getState().pagination.pageSize
+    const remaining = Math.max(0, table.getPrePaginationRowModel().rows.length - pageSize)
+    if (remaining === 0) return null
+    return (
+        <div className="flex justify-center py-1">
+            <Button variant="ghost" size="sm" onClick={() => table.setPageSize(pageSize + step)}>
+                Mostrar más ({remaining} {remaining === 1 ? "restante" : "restantes"})
+            </Button>
+        </div>
+    )
+}
+
+export interface CollectionViewProps<T, Id extends string> extends CollectionSurfaceOptions {
     table?: TableLayout<Id>
     card?: CardLayout<T, Id>
     emptyTitle?: string
@@ -250,15 +312,21 @@ export interface CollectionViewProps<T, Id extends string> {
     onResetFilters?: () => void
 }
 
-function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription, emptyAction, onResetFilters }: CollectionViewProps<T, Id>) {
+function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription, emptyAction, onResetFilters, ...surfaceOptions }: CollectionViewProps<T, Id>) {
     const ctx = useCollectionContext<T>()
-    const { status, truncated, total, table: model } = ctx.collection
+    const { status, truncated, total, table: model, paging, isFiltered } = ctx.collection
+    const resolved = useResolvedSurface(surfaceOptions, paging)
     // `Collection.Analytics` renders the analytics view itself.
     if (ctx.view === "analytics" || ctx.view === "kanban" || ctx.view === "timeline") return null
+    const showsCards = ctx.view === "card" && !!card
     if (status === "error" || status === "empty") {
-        return <CollectionMessage status={status} {...{ emptyTitle, emptyDescription, emptyAction, onResetFilters }} />
+        // Embedded empty state: the bare header row. Errors, filtered-empty and an empty state with an action keep their message.
+        if (status === "empty" && !isFiltered && resolved.empty === "columns" && !showsCards && table && !emptyAction) {
+            return <TableSurface layout={table} {...surfaceOptions} />
+        }
+        return <CollectionMessage status={status} frame={resolved.frame} {...{ emptyTitle, emptyDescription, emptyAction, onResetFilters }} />
     }
-    const surface = ctx.view === "card" && card ? <Grid layout={card} /> : table ? <TableSurface layout={table} /> : null
+    const surface = showsCards && card ? <Grid layout={card} {...surfaceOptions} /> : table ? <TableSurface layout={table} {...surfaceOptions} /> : null
     if (!truncated) return surface
     return (
         <div className="flex flex-1 flex-col gap-2 min-h-0">
@@ -277,15 +345,15 @@ function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription,
  * Error and empty states keep the collection frame (no layout jump) and offer a way out:
  * retry on error, operational copy instead of raw server messages, filtered vs truly empty.
  */
-type CollectionMessageProps = Pick<CollectionViewProps<unknown, string>, "emptyTitle" | "emptyDescription" | "emptyAction" | "onResetFilters"> & { status: "error" | "empty" }
+type CollectionMessageProps = Pick<CollectionViewProps<unknown, string>, "emptyTitle" | "emptyDescription" | "emptyAction" | "onResetFilters"> & { status: "error" | "empty"; frame: "card" | "none" }
 
-function CollectionMessage({ status, emptyTitle, emptyDescription, emptyAction, onResetFilters }: CollectionMessageProps) {
+function CollectionMessage({ status, frame, emptyTitle, emptyDescription, emptyAction, onResetFilters }: CollectionMessageProps) {
     const ctx = useCollectionContext<unknown>()
     const { refetch, isFiltered, entity } = ctx.collection
     const noun = ctx.label.toLowerCase()
     return (
         // Fills the space a flex-column host gives it (e.g. a wizard step), centring the message.
-        <div className="flex flex-1 flex-col justify-center rounded-md border">
+        <div className={cn("flex flex-1 flex-col justify-center", frame === "card" && "rounded-md border")}>
             {status === "error" ? (
                 <EmptyState
                     icon={AlertTriangle}
@@ -412,9 +480,10 @@ function TreeToggleAll<T>({ table }: { table: EntityCollection<T, FieldMap<T>>["
     )
 }
 
-function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id> }) {
+function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { layout: TableLayout<Id> } & CollectionSurfaceOptions) {
     const ctx = useCollectionContext<T>()
-    const { table, status, isRefetching, total, groups } = ctx.collection
+    const { table, status, isRefetching, total, groups, paging, moreStep } = ctx.collection
+    const { embedded, frame, pager, maxHeight } = useResolvedSurface(surfaceOptions, paging)
     const entity = ctx.collection.entity
     const primary = layout.primary ?? layout.columns[0]
     const rows = table.getRowModel().rows
@@ -488,8 +557,12 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
 
     return (
         // Fills the available height (Root is flex-1); rows scroll inside, header sticky, pagination fixed below.
-        <div className="flex flex-1 flex-col min-h-0 overflow-hidden rounded-md border">
-            <div className="relative flex-1 min-h-0 overflow-auto pb-2">
+        // With `maxHeight` the surface hugs its rows up to the cap instead of filling the host.
+        <div
+            className={cn("flex flex-col min-h-0 overflow-hidden", maxHeight === undefined && "flex-1", frame === "card" && "rounded-md border")}
+            style={maxHeight === undefined ? undefined : { maxHeight }}
+        >
+            <div className={cn("relative flex-1 min-h-0 pb-2", status === "loading" ? "overflow-hidden" : "overflow-auto")}>
                 <table
                     // The last row's rule would double the container border (the tfoot has its own border-t).
                     className="w-full text-sm [&>tbody:last-of-type>tr:last-child]:border-b-0"
@@ -498,7 +571,8 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
                     aria-busy={status === "loading" || isRefetching}
                     aria-rowcount={isTree ? undefined : total + 1}
                 >
-                    <thead className="sticky top-0 z-10 bg-background">
+                    {status === "empty" && <caption className="sr-only">Sin registros</caption>}
+                    <thead className={cn("sticky top-0 z-10", !embedded && "bg-background")}>
                         <tr className="border-b">
                             {isBulk && (
                                 <th scope="col" className="w-8 px-(--table-header-px) py-(--table-header-py)">
@@ -591,7 +665,7 @@ function TableSurface<T, Id extends string>({ layout }: { layout: TableLayout<Id
             </div>
             {ctx.collection.paginated && status !== "loading" && (
                 <div className="px-1.5 py-1">
-                    <DataTablePagination table={table} />
+                    <Pager table={table} paging={paging} moreStep={moreStep} pager={pager} />
                 </div>
             )}
         </div>
@@ -672,9 +746,10 @@ const GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-[repeat(2,
 /** Catalog grids (media on top) are denser: 4 or 5 columns by the width of the grid itself (container queries). */
 const CATALOG_GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 @md:grid-cols-[repeat(2,minmax(0,1fr))] @2xl:grid-cols-[repeat(3,minmax(0,1fr))] @4xl:grid-cols-[repeat(4,minmax(0,1fr))] @7xl:grid-cols-[repeat(5,minmax(0,1fr))]"
 
-function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
+function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: CardLayout<T, Id> } & CollectionSurfaceOptions) {
     const ctx = useCollectionContext<T>()
-    const { table, status, groups } = ctx.collection
+    const { table, status, groups, paging, moreStep } = ctx.collection
+    const { pager, maxHeight } = useResolvedSurface(surfaceOptions, paging)
     const entity = ctx.collection.entity
     const isBulk = ctx.selection === "bulk"
     const isCatalog = layout.media?.placement === "top"
@@ -902,7 +977,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
 
     return (
         // Same frame as the table: the cards scroll inside the available height, pagination stays below.
-        <div className="flex flex-1 flex-col gap-2 min-h-0">
+        <div className={cn("flex flex-col gap-2 min-h-0", maxHeight === undefined && "flex-1")} style={maxHeight === undefined ? undefined : { maxHeight }}>
             {/* p-0.5 keeps focus rings and the selected-card accent visible at the scroll edges. */}
             <div className="@container flex flex-1 min-h-0 flex-col gap-4 overflow-auto p-0.5">
                 {groups ? (
@@ -918,7 +993,7 @@ function Grid<T, Id extends string>({ layout }: { layout: CardLayout<T, Id> }) {
                     <ul className={gridClass} aria-label={ctx.label}>{table.getRowModel().rows.map(renderCard)}</ul>
                 )}
             </div>
-            {ctx.collection.paginated && <DataTablePagination table={table} />}
+            {ctx.collection.paginated && <Pager table={table} paging={paging} moreStep={moreStep} pager={pager} />}
         </div>
     )
 }

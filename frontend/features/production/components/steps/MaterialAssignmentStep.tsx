@@ -129,6 +129,7 @@ export function MaterialAssignmentStep({
             }}
           >
             <Collection.View
+              variant="default"
               table={workOrderMaterialViews.table}
               emptyTitle={PLANNING_EMPTY_COPY.materials.title}
               emptyDescription={PLANNING_EMPTY_COPY.materials.description}

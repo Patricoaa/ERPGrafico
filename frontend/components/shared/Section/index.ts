@@ -2,6 +2,7 @@ import { SectionAction } from "./SectionAction"
 import { SectionChecklist } from "./SectionChecklist"
 import { SectionHeader } from "./SectionHeader"
 import { SectionNote } from "./SectionNote"
+import { RecordCountScope } from "./RecordCountContext"
 import { SectionRoot } from "./SectionRoot"
 import { SectionRow } from "./SectionRow"
 
@@ -15,7 +16,11 @@ export const Section = Object.assign(SectionRoot, {
     Note: SectionNote,
     Action: SectionAction,
     Checklist: SectionChecklist,
+    /** Ámbito de conteo para una cabecera suelta y su `Collection` hermanas. */
+    Scope: RecordCountScope,
 })
+
+export { useRegisterRecordCount } from "./RecordCountContext"
 
 export type { SectionProps, SectionStateProps } from "./SectionRoot"
 export type { SectionHeaderProps } from "./SectionHeader"

@@ -7,6 +7,8 @@ import { Collection, useEntityCollection } from "@/components/entity-view"
 import { unifiedPaymentEntity, unifiedPaymentViews, type UnifiedPayment } from "../entity-view/unifiedPayment.entity"
 import type { Payroll } from "@/types/hr"
 
+const PAYROLL_PAYMENT_TYPES: readonly UnifiedPayment["type"][] = ["SALARIO", "ANTICIPO"]
+
 interface PayrollPaymentsModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -16,7 +18,8 @@ interface PayrollPaymentsModalProps {
 
 export function PayrollPaymentsModal({ open, onOpenChange, payroll, allPayments }: PayrollPaymentsModalProps) {
     const payments = React.useMemo(
-        () => (payroll ? allPayments.filter((payment) => payment.payroll_display_id === payroll.display_id) : []),
+        // Solo remuneraciones y anticipos: los pagos de Previred u otros no se listan aquí.
+        () => (payroll ? allPayments.filter((payment) => payment.payroll_display_id === payroll.display_id && PAYROLL_PAYMENT_TYPES.includes(payment.type)) : []),
         [payroll, allPayments],
     )
     const collection = useEntityCollection(unifiedPaymentEntity, { rows: payments }, { pagination: { mode: "none" } })
@@ -34,12 +37,12 @@ export function PayrollPaymentsModal({ open, onOpenChange, payroll, allPayments 
             className="min-h-[min(60dvh,600px)] max-h-[85dvh] rounded-md p-0"
             contentClassName="overflow-hidden p-4 sm:p-6"
         >
-            <div className="flex min-h-0 flex-1 flex-col [&>div>div]:rounded-none [&>div>div]:border-0">
+            <div className="flex min-h-0 flex-1 flex-col">
                 <Collection.Root collection={collection} label="Pagos de liquidación">
                     <Collection.View
                         table={unifiedPaymentViews.table}
                         emptyTitle="Sin pagos registrados"
-                        emptyDescription="Esta liquidación no tiene pagos ni anticipos vinculados."
+                        emptyDescription="Esta liquidación no tiene pagos de remuneración ni anticipos vinculados."
                     />
                 </Collection.Root>
             </div>

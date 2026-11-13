@@ -112,7 +112,7 @@ Reglas:
 
 | `options` | Valores |
 |---|---|
-| `pagination` | `{ mode: "client", pageSize? }` (defecto, 20) · `{ mode: "server", state, onChange }` · `{ mode: "none" }` |
+| `pagination` | `{ mode: "client", pageSize? }` (defecto, 20) · `{ mode: "more", step? }` («Mostrar más», solo cliente, `step` 10; ADR-0137) · `{ mode: "server", state, onChange }` · `{ mode: "none" }` |
 | `sorting` | `{ mode: "local" }` (defecto con paginación cliente o sin paginar: ordena las filas cargadas con la clave semántica del kind) · `{ mode: "server", state: SortSpec \| null, onChange }`. Con paginación en servidor y sin `sorting`, **ninguna cabecera se puede ordenar** |
 | `defaultSort` | `"id"` o `"-id"` (ids tipados; solo en orden local) |
 | `groupBy` | id de campo o `null`: agrupa las filas cargadas por el texto formateado del campo |
@@ -140,10 +140,28 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 |---|---|
 | `Collection.Root` | `collection`, `children`, `actions?: (row, surface: "table" \| "card") => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?`, `view?` + `onViewChange?` (vista controlada), `label?` |
 | `Collection.Toolbar` | `children?` (búsqueda `UnifiedSearchBar`), `action?` (acción primaria, p. ej. crear; en pantallas angostas baja bajo la búsqueda en vez de taparla — lote 2c), `views?`, `exportFilters?` |
-| `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`, `emptyAction?` (p. ej. crear), `onResetFilters?` ("Limpiar filtros" en el vacío filtrado): elige la superficie activa |
+| `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`, `emptyAction?` (p. ej. crear), `onResetFilters?` ("Limpiar filtros" en el vacío filtrado), más `variant?`, `frame?`, `empty?`, `pager?`, `maxHeight?` (§6.1a): elige la superficie activa |
 | `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista. Con `groupBy` pintan un `<tbody>` por grupo con su cabecera `th scope="rowgroup"` (tabla) o una sección con encabezado (cards) |
 | `Collection.BulkBar` | `actions: BulkAction<T>[]`: el mismo tipo y la misma barra (`SelectionDock`) que el sistema antiguo; aparece con la selección (`selection="bulk"`) |
 | `Collection.Analytics` | `children`: añade la vista "Analítica" al selector de la barra (modo `analytics`, `?view=analytics`). Mientras está activa, su contenido reemplaza la tabla o las cards. El contenido es de la feature (p. ej. `AnalyticsPanelContent`) |
+
+#### 6.1a Variante embebida (ADR-0137)
+
+`Collection.View` / `Table` / `Grid` aceptan `variant?: "default" | "embedded"`. **Por defecto es `embedded` dentro de `BaseModal` / `Drawer`** (contexto `EmbeddedSurfaceProvider` de `components/shared`) y `default` fuera.
+
+| Prop | Valores | `default` | `embedded` |
+|---|---|---|---|
+| `frame` | `card` \| `none` | `card` (`rounded-md border`) | `none` (también en el mensaje de error/vacío) |
+| `empty` | `message` \| `columns` | `message` (`EmptyState`) | `columns`: solo la cabecera, con `caption` `sr-only` «Sin registros» |
+| `pager` | `pages` \| `more` | `pages` (`DataTablePagination`) | `more` si la paginación es cliente: «Mostrar más (N restantes)» |
+| `maxHeight` | `number \| string` | sin tope (rellena el host) | tope de altura; la superficie se ajusta a las filas, hace scroll interno y mantiene la cabecera fija |
+
+Reglas:
+- `empty="columns"` aplica solo al **vacío real** de la vista tabla. Error, vacío filtrado (`isFiltered`), vacío con `emptyAction` y la vista de cards conservan el mensaje.
+- «Mostrar más» es solo cliente (`pagination: { mode: "more" }` o cliente por defecto en superficie embebida). Con paginación en servidor se mantiene el paginador. El contador no se reinicia al cambiar las filas.
+- **Cabecera fija sin fondo:** en la variante embebida el `<thead>` sticky no pinta `bg-background` (las filas que hacen scroll pasan por detrás del texto). Con `variant="default"` conserva el fondo.
+- **Conteo en `Section`:** `Collection.Root` publica su total (`total`, el del servidor si lo hay) al ámbito de conteo más cercano. `Section` es un ámbito; para una `Section.Header` suelta que es hermana de la colección se envuelve ambas en `<Section.Scope>`. Una `Section.Header` sin `count` muestra «N registro(s)»; un `count` explícito gana. Un ámbito, una colección. Contrato de `Section` en [component-section.md](component-section.md).
+- Wizards y vistas con varios bloques que necesiten el marco fijan `variant="default"`. No se usan selectores CSS sobre el DOM interno de `Collection` para cambiar el marco.
 
 **Ancho de columnas (sin scroll horizontal):** un kind declara `shrink: true` si su valor puede encogerse con elipsis (`text`, `contact`; el renderer trunca y deja el texto completo en `title`). En la tabla, esas columnas encogen (`max-w-0`) y las demás se ajustan a su contenido (`w-px`, `nowrap`). La columna principal conserva un mínimo (`min-w-28`), así encogen antes las otras. Solo hay scroll horizontal si las columnas fijas no caben.
 
@@ -229,7 +247,7 @@ No existe inferencia por rol, por regex de nombre de clave ni por capacidad de z
 |---|---|
 | loading | skeleton por columna con la altura real de la fila (sin salto de layout); en cards, skeleton de card |
 | error | dentro del marco, con copy operativo y "Reintentar" si hay `refetch` |
-| empty | `EmptyState`; copy distinto si `isFiltered` |
+| empty | `EmptyState`; copy distinto si `isFiltered`. En superficie embebida (§6.1a), solo las columnas |
 | ready | la superficie elegida |
 
 **Accesibilidad por construcción:**
