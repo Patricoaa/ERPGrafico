@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { useMemo } from "react"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import type { PartnerTransaction } from "@/features/contacts"
 import { partnerMovementEntity, partnerMovementViews } from "../entity-view/partnerMovement.entity"
@@ -15,15 +15,13 @@ interface PartnerMovementsTableProps {
     isLoading: boolean
     isError: boolean
     refetch: () => void
-    /** Acción secundaria a la derecha de la barra de búsqueda (p. ej. transferir capital). */
-    action?: ReactNode
 }
 
 const textOf = (tx: PartnerTransaction) => `${tx.transaction_type_display} ${tx.description ?? ""} ${tx.date}`
 const select = { label: "Tipo", options: PARTNER_TRANSACTION_TYPE_OPTIONS, valueOf: (tx: PartnerTransaction) => tx.transaction_type }
 
 /** Todos los movimientos del socio con búsqueda, filtro por tipo y paginación; loading/empty/error los resuelve `Collection`. */
-export function PartnerMovementsTable({ rows, isLoading, isError, refetch, action }: PartnerMovementsTableProps) {
+export function PartnerMovementsTable({ rows, isLoading, isError, refetch }: PartnerMovementsTableProps) {
     const openEntity = useOptionalGlobalModalActions()?.openEntity
     const table = usePartnerTableSearch({ prefix: "mov", textOf, select })
     const filtered = useMemo(() => table.apply(rows), [table, rows])
@@ -37,7 +35,7 @@ export function PartnerMovementsTable({ rows, isLoading, isError, refetch, actio
             collection={collection}
             actions={partnerTransactionActions.forCollection({ onViewDocument: (label, id) => openEntity?.(label, id) })}
         >
-            <Collection.Toolbar action={action}>
+            <Collection.Toolbar>
                 <PartnerTableSearchBar table={table} placeholder="Buscar movimiento..." />
             </Collection.Toolbar>
             <Collection.View

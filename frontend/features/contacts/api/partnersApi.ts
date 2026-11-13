@@ -101,6 +101,12 @@ export const partnersApi = {
         return response.data
     },
 
+    /** PDF del estado de resultados del ejercicio, desde la copia congelada al cierre. */
+    getProfitDistributionResultPdf: async (id: number): Promise<Blob> => {
+        const response = await api.get<Blob>(`/contacts/profit-distributions/${id}/result_pdf/`, { responseType: 'blob' })
+        return response.data
+    },
+
     createProfitDistribution: async (data: { fiscal_year_id: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }): Promise<ProfitDistribution> => {
         const response = await api.post<ProfitDistribution>('/contacts/profit-distributions/', data)
         return response.data

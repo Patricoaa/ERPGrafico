@@ -108,7 +108,7 @@ export function SectionRow({
                 {control && <div className={cn(!(title || description) && "min-w-0 flex-1")}>{control}</div>}
                 {value != null && <span className={cn("shrink-0 text-sm", plain ? "text-right" : "font-mono tabular-nums", strong && "font-bold", valueClassName)}>{value}</span>}
                 {expand && (
-                    <Button type="button" variant="ghost" size="sm" className="h-7 shrink-0 gap-1 text-xs" onClick={expand.onToggle} aria-expanded={expand.expanded}>
+                    <Button type="button" variant="outline" size="sm" className="h-7 shrink-0 gap-1 text-xs" onClick={expand.onToggle} aria-expanded={expand.expanded}>
                         <Chevron className="h-3.5 w-3.5" aria-hidden />
                         {expand.label}
                     </Button>

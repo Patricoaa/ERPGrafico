@@ -71,3 +71,25 @@ def test_preview_rejects_executed_resolution():
         fiscal_year=2024, resolution_date=date(2026, 4, 30), net_result=Decimal("1"), status="EXECUTED"
     )
     assert client.get(f"/api/contacts/profit-distributions/{res.pk}/impact_preview/").status_code == 400
+
+
+@pytest.mark.django_db
+def test_executed_lines_expose_percentage_after():
+    from contacts.partner_models import PartnerEquityStake
+
+    client = APIClient()
+    client.force_authenticate(User.objects.create_superuser("prev3", "p@x.cl", "x"))
+    a = _partner("Ana2", "500000")
+    b = _partner("Beto2", "500000")
+    res = ProfitDistributionResolution.objects.create(
+        fiscal_year=2023, resolution_date=date(2026, 4, 30), net_result=Decimal("100000"), status="EXECUTED"
+    )
+    for p, pct in ((a, "50"), (b, "50")):
+        ProfitDistributionLine.objects.create(
+            resolution=res, partner=p, percentage_at_date=Decimal(pct), gross_amount=Decimal("50000"), net_amount=Decimal("50000"),
+        )
+    PartnerEquityStake.objects.create(partner=b, percentage=Decimal("54.55"), effective_from=date(2026, 4, 30))
+
+    data = client.get(f"/api/contacts/profit-distributions/{res.pk}/").json()
+    by_name = {line["partner_name"]: line["percentage_after"] for line in data["lines"]}
+    assert by_name == {"Ana2": None, "Beto2": "54.55"}

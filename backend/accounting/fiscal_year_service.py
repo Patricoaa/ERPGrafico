@@ -89,6 +89,21 @@ class FiscalYearClosingService:
             "is_balanced": FinanceService.get_trial_balance(start_date, end_date)["is_balanced"],
         }
 
+    @staticmethod
+    def _build_income_statement_snapshot(start_date, end_date) -> dict:
+        """Estado de resultados del ejercicio en forma serializable, con las fechas y el momento de captura."""
+        import json
+
+        from django.core.serializers.json import DjangoJSONEncoder
+
+        statement = FinanceService.get_income_statement(start_date, end_date)
+        return json.loads(json.dumps({
+            "start_date": start_date,
+            "end_date": end_date,
+            "captured_at": timezone.now(),
+            "statement": statement,
+        }, cls=DjangoJSONEncoder))
+
     # ---------------------------------------------------------------
     # 2. CLOSE — Execute fiscal year closing
     # ---------------------------------------------------------------
@@ -167,6 +182,10 @@ class FiscalYearClosingService:
         total_income = sum(Decimal(str(a["balance"])) for a in income_accounts)
         total_expenses = sum(Decimal(str(a["balance"])) for a in expense_accounts)
         net_result = total_income - total_expenses
+
+        # Copia congelada del estado de resultados: se toma antes del asiento de cierre, que lleva las
+        # cuentas de resultado a cero. Es la fuente del PDF del resultado del periodo.
+        income_statement_snapshot = FiscalYearClosingService._build_income_statement_snapshot(start_date, end_date)
 
         # ------- Generate Closing Entry -------
         closing_entry = JournalEntry(
@@ -265,6 +284,7 @@ class FiscalYearClosingService:
         fiscal_year.status = FiscalYear.Status.CLOSED
         fiscal_year.closing_entry = closing_entry
         fiscal_year.net_result = net_result
+        fiscal_year.income_statement_snapshot = income_statement_snapshot
         fiscal_year.closed_at = timezone.now()
         fiscal_year.closed_by = user
         fiscal_year.notes = notes
@@ -360,6 +380,7 @@ class FiscalYearClosingService:
 
         # Clean up metadata
         fiscal_year.net_result = None
+        fiscal_year.income_statement_snapshot = None
         fiscal_year.closed_at = None
         fiscal_year.closed_by = None
         fiscal_year.save()

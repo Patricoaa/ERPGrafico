@@ -157,7 +157,7 @@ export function PieChart({
                     } : undefined}
                 >
                     <div className="text-center">
-                        <div className="text-xl font-black tracking-tighter text-foreground">
+                        <div className="text-md font-black tracking-tighter text-foreground">
                             {centerLabel.value}
                         </div>
                         {centerLabel.label && (

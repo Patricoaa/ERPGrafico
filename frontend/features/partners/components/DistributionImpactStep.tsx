@@ -1,10 +1,11 @@
 "use client"
 
+import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { ModalContentSkeleton, Section } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { profitDistributionImpactEntity, profitDistributionImpactViews, profitDistributionLossImpactViews } from "../entity-view/profitDistributionImpact.entity"
+import { distributionPartnerEntity, impactLossViews, impactProfitViews, impactPartnerToRow } from "../entity-view/distributionPartner.entity"
 import { useProfitDistributionImpact } from "../hooks"
 
 const num = (v: string | undefined) => Number(v) || 0
@@ -15,7 +16,8 @@ const num = (v: string | undefined) => Number(v) || 0
  */
 export function DistributionImpactStep({ resolutionId }: { resolutionId: number }) {
     const { impact, isLoading, isError, refetch } = useProfitDistributionImpact(resolutionId)
-    const collection = useEntityCollection(profitDistributionImpactEntity, { rows: impact?.partners ?? [] }, { pagination: { mode: "none" } })
+    const rows = useMemo(() => (impact?.partners ?? []).map(impactPartnerToRow), [impact])
+    const collection = useEntityCollection(distributionPartnerEntity, { rows }, { pagination: { mode: "none" } })
 
     if (isLoading) return <ModalContentSkeleton fields={4} />
     if (isError || !impact) {
@@ -52,7 +54,20 @@ export function DistributionImpactStep({ resolutionId }: { resolutionId: number 
                 )}
                 {impact.percentages_change ? (
                     <Section.Note>
-                        <strong className="text-foreground">Cambian los porcentajes de participación</strong> de {changed.length} de {partners.length} socios al ejecutar.
+                        <strong className="text-foreground">Cambian los porcentajes de participación</strong> de {changed.length} de {partners.length} socios al ejecutar:
+                        <ul className="mt-1 space-y-0.5">
+                            {changed.map(p => {
+                                const delta = num(p.percentage_after) - num(p.percentage_before)
+                                return (
+                                    <li key={p.partner} className="flex justify-between gap-4">
+                                        <span>{p.partner_name}</span>
+                                        <span className="tabular-nums">
+                                            {p.percentage_before}% → {p.percentage_after}% ({delta > 0 ? "+" : ""}{delta.toFixed(2)})
+                                        </span>
+                                    </li>
+                                )
+                            })}
+                        </ul>
                     </Section.Note>
                 ) : (
                     <Section.Note tone="success">Los porcentajes de participación no cambian.</Section.Note>
@@ -62,7 +77,7 @@ export function DistributionImpactStep({ resolutionId }: { resolutionId: number 
             <Collection.Root collection={collection} label="Impactos por socio">
                 <Collection.View
                     variant="default"
-                    table={(isProfit ? profitDistributionImpactViews : profitDistributionLossImpactViews).table}
+                    table={(isProfit ? impactProfitViews : impactLossViews).table}
                     emptyTitle="Sin socios"
                     emptyDescription="La distribución no tiene líneas."
                 />

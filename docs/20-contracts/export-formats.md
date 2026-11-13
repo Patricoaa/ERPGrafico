@@ -11,6 +11,7 @@ stability: beta
 
 > **Estado de implementación al 2026-08-04 (reconciliado con código):**
 > - **WeasyPrint → IMPLEMENTADO** (sync): PDFs de órdenes de producción (`production.services.WorkOrderPdfService.generate_pdf` / `generate_bulk_pdf`, [production/services.py:2159](../../backend/production/services.py#L2159)) y reportes POS de tesorería (`treasury/pos_report_pdf.render_pos_report_pdf`, [treasury/views.py:869](../../backend/treasury/views.py#L869)). `weasyprint` en [requirements.txt:33](../../backend/requirements.txt#L33).
+> - **WeasyPrint → resultado del periodo:** `contacts/period_result_pdf.render_period_result_pdf` imprime `FiscalYear.income_statement_snapshot` (copia congelada del estado de resultados, tomada en `close_fiscal_year` antes del asiento de cierre y descartada al reabrir). Endpoint `GET /api/contacts/profit-distributions/{id}/result_pdf/`.
 > - **openpyxl → presente** en [requirements.txt:21](../../backend/requirements.txt#L21) (sin export xlsx en producción todavía).
 > - **NO implementado:** el pipeline async (`ExportJob`, `/api/jobs/`, subida a storage + signed URL, cron de purge de 7 días) y `core/excel.py` helpers. Los PDFs actuales son sync.
 > - Este doc sigue siendo la convención canónica: cualquier export nuevo debe seguir esto o levantar ADR.

@@ -1,9 +1,11 @@
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { Partner, PartnerOverview, PartnerTransaction } from "@/features/contacts"
+import type { Partner, PartnerEquityStake, PartnerOverview, PartnerTransaction } from "@/features/contacts"
 import { PartnerSummaryPanel } from "../PartnerSummaryPanel"
 import { PartnerCapitalPanel } from "../PartnerCapitalPanel"
+import { PartnerCapitalMovementsPanel } from "../PartnerCapitalMovementsPanel"
+import { annualParticipationSeries, PartnerParticipationHistory } from "../PartnerParticipationHistory"
 import { NuqsTestingAdapter } from "nuqs/adapters/testing"
 import type { ReactElement } from "react"
 
@@ -39,6 +41,11 @@ const overview: PartnerOverview = {
 
 const statement = (transactions: PartnerTransaction[]) => ({ data: { transactions }, isLoading: false, isError: false, refetch: vi.fn() })
 
+const stake = (id: number, percentage: string, from: string, until: string | null): PartnerEquityStake => ({
+    id, partner: 7, partner_name: "Ana Socia", percentage, effective_from: from, effective_until: until,
+    is_active: until === null, source_transaction: null, notes: "", created_at: `${from}T10:00:00Z`,
+})
+
 beforeEach(() => {
     hooks.usePartnerOverview.mockReturnValue({ data: overview, isLoading: false, isError: false, refetch: vi.fn() })
     hooks.usePartnerStakes.mockReturnValue({ data: [], isLoading: false, isError: false, refetch: vi.fn() })
@@ -59,8 +66,10 @@ describe("PartnerSummaryPanel", () => {
         hooks.usePartnerOverview.mockReturnValue({ data: { ...overview, alerts: [] }, isLoading: false, isError: false, refetch: vi.fn() })
         renderIn(<PartnerSummaryPanel partner={partner} onGoToTab={vi.fn()} />)
         expect(screen.queryByRole("region", { name: "Alertas" })).not.toBeInTheDocument()
-        expect(screen.getByText("RUT")).toBeInTheDocument()
-        expect(screen.getByRole("region", { name: "Distribución de capital" })).toBeInTheDocument()
+        const datos = screen.getByRole("region", { name: "Datos del socio" })
+        expect(within(datos).getByText("RUT")).toBeInTheDocument()
+        expect(within(datos).getByText("Socio desde")).toBeInTheDocument()
+        expect(within(datos).getByRole("region", { name: "Distribución de capital" })).toBeInTheDocument()
         expect(screen.getByRole("region", { name: "Participación histórica" })).toBeInTheDocument()
         expect(screen.queryByText("Capital suscrito")).not.toBeInTheDocument()
     })
@@ -70,6 +79,33 @@ describe("PartnerSummaryPanel", () => {
         renderIn(<PartnerSummaryPanel partner={partner} onGoToTab={vi.fn()} />)
         await userEvent.click(screen.getByRole("button", { name: "Reintentar" }))
         expect(refetch).toHaveBeenCalled()
+    })
+})
+
+describe("PartnerParticipationHistory", () => {
+    it("arma una serie anual con la participación vigente al cierre de cada ejercicio", () => {
+        const series = annualParticipationSeries([
+            stake(1, "50", "2024-03-01", "2025-06-30"),
+            stake(2, "60", "2025-07-01", null),
+        ], 2026)
+        expect(series).toEqual([
+            { x: "2024", y: 50 },
+            { x: "2025", y: 60 },
+            { x: "2026", y: 60 },
+        ])
+    })
+    it("sin vigencias no hay serie y muestra el aviso", () => {
+        expect(annualParticipationSeries([])).toEqual([])
+        renderIn(<PartnerParticipationHistory partnerId={7} />)
+        expect(screen.getByText(/aún no tiene evolución anual/)).toBeInTheDocument()
+    })
+    it("con más de un ejercicio dibuja la evolución", () => {
+        hooks.usePartnerStakes.mockReturnValue({
+            data: [stake(1, "50", "2024-03-01", "2025-06-30"), stake(2, "60", "2025-07-01", null)],
+            isLoading: false, isError: false, refetch: vi.fn(),
+        })
+        renderIn(<PartnerParticipationHistory partnerId={7} />)
+        expect(screen.getByRole("img", { name: /Evolución anual de la participación: 2024 50%/ })).toBeInTheDocument()
     })
 })
 
@@ -96,28 +132,38 @@ describe("PartnerCapitalPanel", () => {
         expect(screen.queryByRole("button", { name: "Distribuir utilidades retenidas" })).not.toBeInTheDocument()
         expect(screen.queryByRole("button", { name: "Pagar dividendos" })).not.toBeInTheDocument()
     })
-    it("lista todos los movimientos salvo el seguimiento interno duplicado; transferir pide el origen", async () => {
+    it("transferir capital está en la fila de Patrimonio neto y pide el origen", async () => {
+        const run = vi.fn()
+        renderIn(<PartnerCapitalPanel partner={partner} run={run} />)
+        await userEvent.click(screen.getByRole("button", { name: "Transferir capital" }))
+        expect(run).toHaveBeenCalledWith({ type: "transfer", fromPartnerId: 7 })
+    })
+    it("no dibuja el gráfico de composición", () => {
+        renderIn(<PartnerCapitalPanel partner={partner} run={vi.fn()} />)
+        expect(screen.queryByRole("img")).not.toBeInTheDocument()
+    })
+})
+
+describe("PartnerCapitalMovementsPanel", () => {
+    it("lista todos los movimientos salvo el seguimiento interno duplicado", () => {
         hooks.usePartnerStatement.mockReturnValue(statement([
             tx(1, "CAPITAL_CASH", "Aporte Efectivo UNICO"), tx(2, "PROV_WITHDRAWAL", "Retiro Provisorio X"),
             tx(3, "DIVIDEND_PAY", "Pago Dividendo Y"), tx(4, "CONTRIB_TRANSFER_IN", "Seguimiento interno Z"),
         ]))
-        const run = vi.fn()
-        renderIn(<PartnerCapitalPanel partner={partner} run={run} />)
+        renderIn(<PartnerCapitalMovementsPanel partner={partner} />)
         expect(screen.getByText("Aporte Efectivo UNICO")).toBeInTheDocument()
         expect(screen.getByText("Retiro Provisorio X")).toBeInTheDocument()
         expect(screen.getByText("Pago Dividendo Y")).toBeInTheDocument()
         expect(screen.queryByText("Seguimiento interno Z")).not.toBeInTheDocument()
-        await userEvent.click(screen.getByRole("button", { name: "Transferir capital" }))
-        expect(run).toHaveBeenCalledWith({ type: "transfer", fromPartnerId: 7 })
     })
     it("empty sin movimientos", () => {
-        renderIn(<PartnerCapitalPanel partner={partner} run={vi.fn()} />)
+        renderIn(<PartnerCapitalMovementsPanel partner={partner} />)
         expect(screen.getByText("Sin movimientos")).toBeInTheDocument()
     })
     it("error con reintento", async () => {
         const refetch = vi.fn()
         hooks.usePartnerStatement.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch })
-        renderIn(<PartnerCapitalPanel partner={partner} run={vi.fn()} />)
+        renderIn(<PartnerCapitalMovementsPanel partner={partner} />)
         await userEvent.click(screen.getAllByRole("button", { name: "Reintentar" })[0])
         expect(refetch).toHaveBeenCalled()
     })

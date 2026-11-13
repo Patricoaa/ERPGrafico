@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import type * as React from "react"
 import { type LucideIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,7 @@ export interface SectionActionProps {
     icon?: LucideIcon
     /** Navegación (redirección); sin `href` actúa como botón. */
     href?: string
-    onClick?: () => void
+    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
     /** `ghost` por defecto; `outline` para una acción que debe destacar. */
     variant?: "ghost" | "outline"
     disabled?: boolean

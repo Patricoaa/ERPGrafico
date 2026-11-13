@@ -1,3 +1,6 @@
+from django.core.exceptions import ValidationError
+from django.db.models import BooleanField, Case, Value, When
+from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -26,8 +29,12 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
 
     def get_queryset(self):
         qs = super().get_queryset().prefetch_related(
-            "lines", "lines__partner", "lines__destinations", "payments"
+            "lines", "lines__partner", "lines__partner__equity_stakes", "lines__destinations", "payments"
         )
+        qs = qs.annotate(result_snapshot_available=Case(
+            When(fiscal_year_obj__income_statement_snapshot__isnull=False, then=Value(True)),
+            default=Value(False), output_field=BooleanField(),
+        ))
         fiscal_year = self.request.query_params.get("fiscal_year")
         if fiscal_year:
             qs = qs.filter(fiscal_year=fiscal_year)
@@ -36,6 +43,20 @@ class ProfitDistributionResolutionViewSet(EditPolicyMixin, viewsets.ModelViewSet
     def create(self, request, *args, **kwargs):
         res = ProfitDistributionService.create_draft_from_request(request)
         return Response(self.get_serializer(res).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"])
+    def result_pdf(self, request, pk=None):
+        """PDF del estado de resultados del ejercicio, desde la copia congelada al cierre."""
+        from .period_result_pdf import render_period_result_pdf
+
+        resolution = self.get_object()
+        try:
+            pdf = render_period_result_pdf(resolution, request)
+        except ValidationError as e:
+            return Response({"error": e.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
+        response = HttpResponse(pdf, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="resultado-{resolution.fiscal_year}.pdf"'
+        return response
 
     @action(detail=True, methods=["patch"])
     def update_destinations(self, request, pk=None):

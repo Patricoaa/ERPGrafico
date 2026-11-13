@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Handshake, PieChart, TrendingUp, Landmark, Link2 } from "lucide-react"
+import { Handshake, PieChart, TrendingUp, Landmark, ArrowRightLeft, Link2 } from "lucide-react"
 import { Drawer, DrawerLayout, SkeletonShell, DataCell, toMenuItems } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity } from "@/features/_shared"
@@ -15,6 +15,7 @@ import { usePartnerActions } from "./PartnerActionModal"
 import { PartnerDistributionsPanel } from "./PartnerDistributionsPanel"
 import { PartnerSummaryPanel } from "./PartnerSummaryPanel"
 import { PartnerCapitalPanel } from "./PartnerCapitalPanel"
+import { PartnerCapitalMovementsPanel } from "./PartnerCapitalMovementsPanel"
 
 interface PartnerDrawerProps {
     /** Id del contacto-socio. */
@@ -25,7 +26,7 @@ interface PartnerDrawerProps {
 }
 
 /**
- * Ficha del socio (`contacts.partner`, ADR-0132/0133): resumen, capital (composición y movimientos), distribuciones
+ * Ficha del socio (`contacts.partner`, ADR-0132/0133): resumen, capital (composición), movimientos de capital, distribuciones
  * y relaciones (contacto, asientos y distribuciones, vía el proveedor `contacts.partner`).
  * Las acciones salen de `partnerActionsFor`, la misma fuente que la fila de la lista.
  */
@@ -78,7 +79,8 @@ export function PartnerDrawer({ id, open, onOpenChange, onSuccess }: PartnerDraw
                         tabs={[
                             { value: "summary", label: "Resumen", icon: TrendingUp, content: <PartnerSummaryPanel partner={partner} onGoToTab={setActiveTab} /> },
                             { value: "capital", label: "Capital", icon: Landmark, content: <PartnerCapitalPanel partner={partner} run={run} /> },
-                            { value: "distributions", label: "Distribuciones", icon: PieChart, noPadding: true, content: <PartnerDistributionsPanel partnerId={id} /> },
+                            { value: "movements", label: "Movimientos de capital", icon: ArrowRightLeft, content: <PartnerCapitalMovementsPanel partner={partner} /> },
+                            { value: "distributions", label: "Utilidades", icon: PieChart, noPadding: true, content: <PartnerDistributionsPanel partnerId={id} /> },
                             { value: "relations", label: "Relaciones", icon: Link2, content: <DocumentRelationsTab label="contacts.partner" id={id} sectionActions={{}} rowActions={() => []} /> },
                         ]}
                     />

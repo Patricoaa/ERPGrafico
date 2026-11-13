@@ -78,6 +78,8 @@ export interface ProfitDistributionLine {
     percentage_at_date: string;
     paid_dividend_amount?: string;
     unpaid_dividend_amount?: string;
+    /** Participación tras ejecutar la distribución; solo si el socio tuvo un nuevo porcentaje vigente en esa fecha. */
+    percentage_after?: string | null;
     destinations?: {
         id: number;
         destination: 'DIVIDEND' | 'REINVEST' | 'RETAINED';
@@ -101,6 +103,8 @@ export interface ProfitDistribution {
     total_unpaid_dividend_amount?: string;
     /** Suma de retiros provisorios que la distribución absorbe (descuenta del bruto de los socios). */
     provisional_offset_total?: string;
+    /** El ejercicio guardó la copia congelada de su estado de resultados: se puede descargar el PDF. */
+    result_snapshot_available?: boolean;
     notes?: string;
 }
 

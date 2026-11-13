@@ -139,6 +139,48 @@ class FiscalYearMappingSnapshotTest(TransactionTestCase):
         FiscalYearClosingService.reopen_fiscal_year(2025, self.user)
         self.assertFalse(FiscalYearAccountMapping.objects.filter(fiscal_year=fy).exists())
 
+    def test_income_statement_snapshot_taken_before_closing_entry(self):
+        """La copia congelada conserva el resultado del año (el asiento de cierre lo dejaría en cero)."""
+        fy = FiscalYearClosingService.close_fiscal_year(2025, self.user)
+        snap = fy.income_statement_snapshot
+        self.assertEqual(snap["statement"]["net_income"], 40000)
+        self.assertEqual(snap["start_date"], "2025-01-01")
+        self.assertEqual(snap["end_date"], "2025-12-31")
+        # El reporte en vivo del mismo rango ya está neteado por el cierre: por eso hace falta la copia.
+        live = FinanceService.get_income_statement(date(2025, 1, 1), date(2025, 12, 31))
+        self.assertEqual(live["net_income"], 0)
+
+    def test_income_statement_snapshot_cleared_on_reopen(self):
+        fy = FiscalYearClosingService.close_fiscal_year(2025, self.user)
+        self.assertIsNotNone(fy.income_statement_snapshot)
+        FiscalYearClosingService.reopen_fiscal_year(2025, self.user)
+        fy.refresh_from_db()
+        self.assertIsNone(fy.income_statement_snapshot)
+
+    def test_result_pdf_endpoint_uses_snapshot(self):
+        from rest_framework.test import APIClient
+
+        from contacts.partner_models import ProfitDistributionResolution
+
+        fy = FiscalYearClosingService.close_fiscal_year(2025, self.user)
+        res = ProfitDistributionResolution.objects.create(
+            fiscal_year=2025, fiscal_year_obj=fy, resolution_date=date(2026, 4, 30),
+            net_result=Decimal("40000"), status="DRAFT",
+        )
+        orphan = ProfitDistributionResolution.objects.create(
+            fiscal_year=2024, resolution_date=date(2025, 4, 30), net_result=Decimal("1"), status="DRAFT",
+        )
+        client = APIClient()
+        client.force_authenticate(User.objects.create_superuser("pdfadmin", "p@x.cl", "x"))
+        base = "/api/contacts/profit-distributions"
+        self.assertTrue(client.get(f"{base}/{res.pk}/").json()["result_snapshot_available"])
+        self.assertFalse(client.get(f"{base}/{orphan.pk}/").json()["result_snapshot_available"])
+        ok = client.get(f"{base}/{res.pk}/result_pdf/")
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(ok["Content-Type"], "application/pdf")
+        self.assertTrue(ok.content.startswith(b"%PDF"))
+        self.assertEqual(client.get(f"{base}/{orphan.pk}/result_pdf/").status_code, 400)
+
 
 class HistoricalCategoryResolutionTest(TransactionTestCase):
     def setUp(self):

@@ -34,6 +34,7 @@ vi.mock("../PartnerActionModal", () => ({
 }))
 vi.mock("../PartnerDistributionsPanel", () => ({ PartnerDistributionsPanel: () => <div>distributions-panel</div> }))
 vi.mock("../PartnerCapitalPanel", () => ({ PartnerCapitalPanel: () => <div>capital-panel</div> }))
+vi.mock("../PartnerCapitalMovementsPanel", () => ({ PartnerCapitalMovementsPanel: () => <div>movements-panel</div> }))
 vi.mock("../PartnerSummaryPanel", () => ({
     PartnerSummaryPanel: ({ onGoToTab }: { onGoToTab: (t: "capital") => void }): ReactNode => (
         <button onClick={() => onGoToTab("capital")}>Ver capital</button>
@@ -57,10 +58,10 @@ beforeEach(() => {
 })
 
 describe("PartnerDrawer", () => {
-    it("muestra las 6 pestañas en orden", () => {
+    it("muestra las 5 pestañas en orden", () => {
         renderDrawer()
         const names = screen.getAllByRole("tab").map(t => t.textContent)
-        expect(names).toEqual(["Resumen", "Capital", "Distribuciones", "Relaciones"])
+        expect(names).toEqual(["Resumen", "Capital", "Movimientos de capital", "Utilidades", "Relaciones"])
     })
 
     it("Relaciones muestra los relacionados del socio (contacts.partner)", async () => {

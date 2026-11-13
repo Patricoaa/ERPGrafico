@@ -1559,6 +1559,17 @@ class FiscalYear(models.Model):
         help_text=_("Utilidad (+) o Pérdida (-) del ejercicio al momento del cierre."),
     )
 
+    income_statement_snapshot = models.JSONField(
+        _("Estado de resultados al cierre"),
+        null=True,
+        blank=True,
+        editable=False,
+        help_text=_(
+            "Copia congelada del estado de resultados del ejercicio, tomada antes del asiento de cierre. "
+            "Se descarta al reabrir el ejercicio."
+        ),
+    )
+
     closed_at = models.DateTimeField(_("Cerrado el"), null=True, blank=True)
     closed_by = models.ForeignKey(
         "core.User",

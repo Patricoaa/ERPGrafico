@@ -389,6 +389,7 @@ class ProfitDistributionLineSerializer(serializers.ModelSerializer):
     total_destined = serializers.DecimalField(max_digits=16, decimal_places=0, read_only=True)
     remaining_to_destine = serializers.DecimalField(max_digits=16, decimal_places=0, read_only=True)
     paid_dividend_amount = serializers.SerializerMethodField()
+    percentage_after = serializers.SerializerMethodField()
 
     class Meta:
         model = ProfitDistributionLine
@@ -404,7 +405,19 @@ class ProfitDistributionLineSerializer(serializers.ModelSerializer):
             "total_destined",
             "remaining_to_destine",
             "paid_dividend_amount",
+            "percentage_after",
         ]
+
+    def get_percentage_after(self, obj):
+        """Participación del socio tras ejecutar (stake creado al fecha de la resolución); None si no hubo cambio."""
+        resolution = obj.resolution
+        if resolution.status != "EXECUTED":
+            return None
+        # Usa los stakes precargados por el viewset (sin consulta por línea).
+        stakes = [s for s in obj.partner.equity_stakes.all() if s.effective_from == resolution.resolution_date]
+        if not stakes:
+            return None
+        return str(max(stakes, key=lambda s: s.id).percentage)
 
     def get_paid_dividend_amount(self, obj):
         from decimal import Decimal
@@ -419,8 +432,13 @@ class ProfitDistributionLineSerializer(serializers.ModelSerializer):
 
 
 class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
+    def get_result_snapshot_available(self, obj):
+        """Anotado por el viewset (sin cargar el JSON); en respuestas de creación no aplica."""
+        return bool(getattr(obj, "result_snapshot_available", False))
+
     lines = ProfitDistributionLineSerializer(many=True, read_only=True)
     provisional_offset_total = serializers.SerializerMethodField()
+    result_snapshot_available = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     approved_by_name = serializers.CharField(
         source="approved_by.get_full_name", read_only=True, default=""
@@ -453,6 +471,7 @@ class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
             "notes",
             "lines",
             "provisional_offset_total",
+            "result_snapshot_available",
             "created_at",
             "updated_at",
         ]

@@ -91,7 +91,7 @@ export function DocumentSheet({
             value: "summary", label: "Resumen", icon: FileText,
             content: (
                 <div className="space-y-8">
-                    <section aria-label="Contexto"><DocumentFieldGrid fields={context} /></section>
+                    {context.length > 0 && <section aria-label="Contexto"><DocumentFieldGrid fields={context} /></section>}
                     {sections.map((section) => (
                         <section key={section.title} className="space-y-4">
                             <Section.Header spaced title={section.title} icon={section.icon} />

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm;
+            @bottom-right { content: "Pág. " counter(page); font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #71717a; }
+            @bottom-left { content: "Copia del cierre: {{ captured_at|date:'d/m/Y H:i' }} · Generado el {{ generated_at|date:'d/m/Y H:i' }}"; font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #71717a; }
+        }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #18181b; }
+        h1 { font-size: 16pt; margin: 0; }
+        .sub { color: #71717a; font-size: 9pt; margin: 2px 0 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 3px 0; }
+        td.amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        td.code { color: #71717a; width: 12%; }
+        tr.section td { font-weight: bold; text-transform: uppercase; font-size: 8pt; letter-spacing: 0.08em; padding-top: 12px; border-bottom: 1px solid #d4d4d8; }
+        tr.total td { font-weight: bold; border-top: 1px solid #18181b; padding-top: 6px; }
+        tr.net td { font-size: 12pt; border-top: 2px solid #18181b; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <p class="sub">{{ company_name }} · Del {{ start_date|date:'d/m/Y' }} al {{ end_date|date:'d/m/Y' }} · {{ display_id }}</p>
+    <table>
+        {% for section in sections %}
+            {% if section.is_total %}
+                <tr class="total{% if section.name == 'Utilidad Neta' %} net{% endif %}"><td colspan="2">{{ section.name }}</td><td class="amount">${{ section.total|floatformat:0 }}</td></tr>
+            {% else %}
+                <tr class="section"><td colspan="2">{{ section.name }}</td><td class="amount">${{ section.total|floatformat:0 }}</td></tr>
+                {% for row in section.rows %}
+                    <tr><td class="code">{{ row.code }}</td><td style="padding-left: {{ row.depth }}em">{{ row.name }}</td><td class="amount">${{ row.balance|floatformat:0 }}</td></tr>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </table>
+</body>
+</html>
