@@ -39,7 +39,7 @@ export const terminalSyncRunEntity = defineEntity<TerminalSyncRun>()((f) => ({
         fetched: f.number("fetched_count", { ...fixed, label: "Traídas" }),
         created: f.number("created_count", { ...fixed, label: "Nuevas" }),
         updated: f.number("updated_count", { ...fixed, label: "Actualizadas" }),
-        error: f.text((r) => r.error_message, { ...fixed, label: "Error" }),
+        error: f.text((r) => r.error_message, { ...fixed, label: "Error", truncate: true }),
     },
 }))
 

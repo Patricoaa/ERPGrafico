@@ -6,9 +6,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { parseISO } from "date-fns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Alert } from "@/components/ui/alert"
 import { Form, FormField } from "@/components/ui/form"
-import { AutoSaveStatusBadge, DatePicker, FadeIn, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell, StatusBadge } from "@/components/shared"
+import { AutoSaveStatusBadge, DatePicker, FadeIn, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, Banner, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Collection, formatDate, useEntityCollection } from "@/components/entity-view"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
@@ -24,7 +25,7 @@ import {
 } from "@/features/treasury"
 import type { TerminalSyncLastRun, TerminalSyncSettings } from "@/features/treasury"
 
-import { terminalSyncSettingsSchema, type TerminalSyncSettingsFormValues } from "./TreasurySettingsView.schema"
+import { terminalSyncSettingsSchema, validateTerminalSyncSettings, type TerminalSyncSettingsFormValues } from "./TreasurySettingsView.schema"
 
 const RUNS_PAGE_SIZE = 10
 
@@ -88,6 +89,7 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
 
     const form = useForm<TerminalSyncSettingsFormValues>({
         resolver: zodResolver(terminalSyncSettingsSchema),
+        mode: "onChange",
         defaultValues: toFormValues(settings),
     })
 
@@ -98,6 +100,7 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
         onSave,
+        validate: validateTerminalSyncSettings,
     })
 
     useUnsavedChangesGuard(status)
@@ -252,7 +255,23 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
 }
 
 export function TreasurySettingsView() {
-    const { settings, isLoading } = useTerminalSyncSettings()
+    const { settings, isLoading, isError, refetch } = useTerminalSyncSettings()
+    if (isError && !settings) {
+        return (
+            <Banner
+                tone="destructive"
+                className="max-w-3xl mx-auto mt-6"
+                title="No se pudo cargar la configuración del terminal de cobro"
+                actions={
+                    <Button type="button" variant="outline" onClick={() => void refetch()}>
+                        Reintentar
+                    </Button>
+                }
+            >
+                Los cambios están deshabilitados para evitar sobrescribir una configuración que no se pudo leer.
+            </Banner>
+        )
+    }
     return (
         <SkeletonShell isLoading={isLoading || !settings} ariaLabel="Cargando configuración del terminal de cobro">
             {settings && <TerminalSyncSettingsPanel settings={settings} />}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { terminalSyncSettingsSchema, type TerminalSyncSettingsFormValues } from "./TreasurySettingsView.schema"
+import { terminalSyncSettingsSchema, validateTerminalSyncSettings, type TerminalSyncSettingsFormValues } from "./TreasurySettingsView.schema"
 
 const valid: TerminalSyncSettingsFormValues = {
     enabled: false,
@@ -32,5 +32,19 @@ describe("terminalSyncSettingsSchema", () => {
     it("rejects retry_delay_minutes 0 and max_retries 11", () => {
         expect(terminalSyncSettingsSchema.safeParse({ ...valid, retry_delay_minutes: 0 }).success).toBe(false)
         expect(terminalSyncSettingsSchema.safeParse({ ...valid, max_retries: 11 }).success).toBe(false)
+    })
+})
+
+describe("validateTerminalSyncSettings", () => {
+    it("returns true for valid values", () => {
+        expect(validateTerminalSyncSettings(valid)).toBe(true)
+    })
+
+    it("returns the first issue message for out-of-range values", () => {
+        expect(validateTerminalSyncSettings({ ...valid, lookback_days: 61 })).toBe("Entre 1 y 60")
+    })
+
+    it("rejects NaN from an emptied number input", () => {
+        expect(validateTerminalSyncSettings({ ...valid, retry_delay_minutes: Number.NaN })).not.toBe(true)
     })
 })

@@ -46,7 +46,7 @@ export function useStartTerminalSync() {
         onSuccess: () => {
             markLocalMutation()
             succeeded()
-            invalidateCrossFeature(queryClient, [TERMINAL_SALES_KEYS.all, TERMINAL_SYNC_KEYS.runs()])
+            invalidateCrossFeature(queryClient, [TERMINAL_SALES_KEYS.all, TERMINAL_SYNC_KEYS.runs(), TERMINAL_SYNC_KEYS.settings()])
             toast.success('Sincronización en curso')
         },
         onError: (err) => {

@@ -11,3 +11,9 @@ export const terminalSyncSettingsSchema = z.object({
 })
 
 export type TerminalSyncSettingsFormValues = z.infer<typeof terminalSyncSettingsSchema>
+
+/** Gate for autosave: first issue message when invalid (NaN from empty inputs included), otherwise `true`. */
+export function validateTerminalSyncSettings(values: TerminalSyncSettingsFormValues): true | string {
+    const result = terminalSyncSettingsSchema.safeParse(values)
+    return result.success ? true : result.error.issues[0]?.message ?? "Revise los valores ingresados."
+}
