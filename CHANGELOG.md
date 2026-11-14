@@ -2,6 +2,56 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.112](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.111...v0.3.112) (2026-11-14)
+
+
+### 🧪 Testing
+
+* **treasury:** rango diario vacío independiente de la fecha real ([f9aa200](https://github.com/Patricoaa/ERPGrafico/commit/f9aa2000a8d0a5f085f92bbb6baab30dba54f1bd))
+
+
+### ⚙️ Refactors
+
+* promover useIdempotencyKey a hooks compartidos ([fac585d](https://github.com/Patricoaa/ERPGrafico/commit/fac585ded1ad3920cd275373575bcaa48f2a3be8))
+
+
+### 📚 Documentation
+
+* **treasury:** contratos actualizados para sincronización TUU ([a027606](https://github.com/Patricoaa/ERPGrafico/commit/a027606c4a161afba9fa8439dba8e932a7881aa6))
+* **treasury:** diseño y plan de sincronización de ventas TUU ([c20235f](https://github.com/Patricoaa/ERPGrafico/commit/c20235f7c4c6009d1022f4306d302a9995f5efd6))
+
+
+### ✨ Features
+
+* **treasury:** API de ventas y sincronización TUU ([d040cd0](https://github.com/Patricoaa/ERPGrafico/commit/d040cd076e0d50be57f6f35e53c3ba06eb9b8da5))
+* **treasury:** campo API key TUU en ProviderDrawer ([e83307a](https://github.com/Patricoaa/ERPGrafico/commit/e83307a40086ee677befdc4c7560232e655fe624))
+* **treasury:** cliente HTTP para reportes TUU ([d0a3911](https://github.com/Patricoaa/ERPGrafico/commit/d0a3911d74572fde3d96d6bcc0acdce0a1c8ea5a))
+* **treasury:** exponer código SII y tipo DTE del ERP en ventas de terminal ([e877bce](https://github.com/Patricoaa/ERPGrafico/commit/e877bce2c58df597809aa853e99a0a2b19778fcc))
+* **treasury:** ficha de venta de terminal con pestañas y relaciones; listado sin resumen ni período por defecto ([71c2aed](https://github.com/Patricoaa/ERPGrafico/commit/71c2aede348344ddf4c4cc2ed8aa7a7ba85cc920))
+* **treasury:** hooks y API de ventas TUU (frontend) ([e9d75f4](https://github.com/Patricoaa/ERPGrafico/commit/e9d75f467fcbb7ba6c0a0bd4ce195716ba6764e6))
+* **treasury:** impedir API key TUU duplicada entre proveedores activos ([3d01744](https://github.com/Patricoaa/ERPGrafico/commit/3d01744019d5834f57775912a04d0721ad212324))
+* **treasury:** modelos de sincronización de ventas TUU ([79f52dd](https://github.com/Patricoaa/ERPGrafico/commit/79f52dd59d45c701aab199cf1a38062a1711106a))
+* **treasury:** normalizador que une los reportes TUU por venta ([bc2723c](https://github.com/Patricoaa/ERPGrafico/commit/bc2723c432578342e02f458a78949597e4a1b0bd))
+* **treasury:** pestaña Configuración con sincronización TUU ([4264796](https://github.com/Patricoaa/ERPGrafico/commit/4264796a6aed3d47ad14f5b5d672ec7535709cd0))
+* **treasury:** pestaña Ventas del terminal de cobro ([30c3b66](https://github.com/Patricoaa/ERPGrafico/commit/30c3b663e08fdd9fa264a0d2655d3e4bf1a9a95a))
+* **treasury:** servicio de sincronización de ventas TUU ([d898372](https://github.com/Patricoaa/ERPGrafico/commit/d898372d804bea09c986bf849311eba23580b501))
+* **treasury:** tareas Celery de sincronización TUU (despachador horario) ([4c018a5](https://github.com/Patricoaa/ERPGrafico/commit/4c018a5fab0374b9f08398074eac565efc18c4a7))
+
+
+### 🐛 Bug Fixes
+
+* **sales:** get_document_summary usa InvoicingService.invoices_of() para facturas multi-orden ([eb9ad4a](https://github.com/Patricoaa/ERPGrafico/commit/eb9ad4a0d6d758cf5ff7ff3bdc1d657a6e964997))
+* **treasury:** avisos de ejecución visibles, mensajes en español y Meta.fields explícito ([49f6614](https://github.com/Patricoaa/ERPGrafico/commit/49f66147ff5c455b2981197a4c055f6085da3950))
+* **treasury:** desplazamiento interno del panel de configuración del terminal de cobro ([d4d1fcd](https://github.com/Patricoaa/ERPGrafico/commit/d4d1fcd864fdc08336be3295bd509805bfdc9c4f))
+* **treasury:** normalizador omite filas sin clave o fecha con advertencias ([90076cc](https://github.com/Patricoaa/ERPGrafico/commit/90076cc894ed2c3378f8dd3951e560ed8ed8c7d2))
+* **treasury:** período por defecto visible en ventas del terminal, error del resumen y selector de fecha ([5ff91fe](https://github.com/Patricoaa/ERPGrafico/commit/5ff91feb7d94f53460c06125066d1211c68f24a0))
+* **treasury:** reintentos idempotentes y updated_at en sincronización TUU ([ad6fdd0](https://github.com/Patricoaa/ERPGrafico/commit/ad6fdd025e93b25a1185fa3208de3ee0b6f817c6))
+* **treasury:** respetar max_retries configurado y tests independientes de la fecha ([0d06711](https://github.com/Patricoaa/ERPGrafico/commit/0d06711cefa4912cf36227581ec6e58353ad25d8))
+* **treasury:** robustez del sync TUU (run colgado, N+1, clave duplicada, cliente HTTP, dispatcher) ([5d23910](https://github.com/Patricoaa/ERPGrafico/commit/5d2391095cbfc01b088b5d99881719d12b4b2790))
+* **treasury:** usar Banner en aviso de configuración TUU ([1601907](https://github.com/Patricoaa/ERPGrafico/commit/160190706f9819a86838c0b3d6e9c0df23d021e9))
+* **treasury:** validar autosave de sincronización, estado de error y refresco de última ejecución ([7d1d552](https://github.com/Patricoaa/ERPGrafico/commit/7d1d55224e3297646d3647474a2b07a9c196cdf7))
+* **treasury:** validar filtros, fallo de encolado y settings solo current ([0d67b4d](https://github.com/Patricoaa/ERPGrafico/commit/0d67b4d09e1a01303c25f898473a69ac00bad5b2))
+
 ### [0.3.111](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.110...v0.3.111) (2026-11-13)
 
 
