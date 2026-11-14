@@ -11,3 +11,14 @@ export const ACCOUNT_KEYS = {
     detail: (id: string | number) => [...ACCOUNT_KEYS.all, 'detail', id] as const,
 }
 export const FISCAL_YEARS_QUERY_KEY = ['fiscal-years'] as const
+
+/** Registro de Compras y Ventas (SII). `RCV_KEYS.all` cubre documentos, importaciones y configuración. */
+export const RCV_KEYS = {
+    all: ['accounting-rcv'] as const,
+    documents: () => [...RCV_KEYS.all, 'documents'] as const,
+    document: (id: number) => [...RCV_KEYS.documents(), id] as const,
+    imports: () => [...RCV_KEYS.all, 'imports'] as const,
+    import: (id: number) => [...RCV_KEYS.imports(), id] as const,
+    settings: () => [...RCV_KEYS.all, 'settings'] as const,
+    apiKeys: () => [...RCV_KEYS.all, 'api-keys'] as const,
+}

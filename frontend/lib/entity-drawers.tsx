@@ -183,6 +183,16 @@ const TerminalBatchDrawer = dynamic(
     { ssr: false, loading: () => skeleton("lote de terminal de cobro") }
 )
 
+const RcvDocumentDrawer = dynamic(
+    () => import("@/features/accounting").then((m) => m.RcvDocumentDrawer),
+    { ssr: false, loading: () => skeleton("documento RCV") }
+)
+
+const RcvImportDrawer = dynamic(
+    () => import("@/features/accounting").then((m) => m.RcvImportDrawer),
+    { ssr: false, loading: () => skeleton("importación RCV") }
+)
+
 const TerminalSaleDrawer = dynamic(
     () => import("@/features/treasury").then((m) => m.TerminalSaleDrawer),
     { ssr: false, loading: () => skeleton("venta de terminal de cobro") }
@@ -653,6 +663,20 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
     "treasury.terminalbatch": ({ id, open, onOpenChange }) => (
         <TerminalBatchDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "accounting.rcvdocument": ({ id, open, onOpenChange }) => (
+        <RcvDocumentDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "accounting.rcvimport": ({ id, open, onOpenChange }) => (
+        <RcvImportDrawer
             id={id}
             open={open}
             onOpenChange={onOpenChange}

@@ -40,6 +40,7 @@ Patrón: un único objeto en BD (`get_or_create(pk=1)`), modificado vía `PUT /a
 | `hr` | `GlobalHRSettings` | `GlobalHRSettingsViewSet` | `hr.view_globalhrsettings` | `hr.change_globalhrsettings` |
 | `workflow` | `WorkflowSettings` | `WorkflowSettingsViewSet` | `workflow.view_workflowsettings` | `workflow.change_workflowsettings` |
 | `treasury` | `ReconciliationSettings` | `ReconciliationSettingsViewSet` | `treasury.view_reconciliationsettings` | `treasury.change_reconciliationsettings` |
+| `accounting` | `RCVSettings` | `RCVSettingsViewSet` | `accounting.view_rcvsettings` | `accounting.change_rcvsettings` |
 | `core` | `CompanySettings` | `CompanySettingsViewSet` | `core.view_companysettings` | `core.change_companysettings` |
 | `production` | `ProductionSettings` | *(sin ViewSet expuesto — deuda técnica)* | — | — |
 
@@ -85,6 +86,14 @@ Tablas de referencia consumidas por entidades operacionales. Modificarlas tiene 
 | `POSTerminal` | `POSTerminalViewSet` | `treasury.read` | `treasury.manage` |
 
 **Roles con acceso de escritura:** Tesorero (`treasury.manage`), Gerencia, Administrador del sistema.
+
+### Contabilidad
+
+| Modelo | ViewSet | Lectura | Escritura |
+|---|---|---|---|
+| `RCVApiKey` | `RCVApiKeyViewSet` | `accounting.read` → `accounting.view_rcvapikey` | `accounting.manage` → `accounting.add/change/delete_rcvapikey` |
+
+**Roles con acceso de escritura:** Contabilidad (`accounting.manage`), Gerencia, Administrador del sistema. La disparada manual de importaciones (`accounting.add_rcvimport`) también es `manage`.
 
 ### RRHH
 

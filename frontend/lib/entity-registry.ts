@@ -7,7 +7,7 @@ import {
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
   BarChart3, Scale, Monitor,
-  ScrollText, RefreshCw,
+  ScrollText, RefreshCw, FileSpreadsheet, Download,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -529,6 +529,30 @@ const REGISTRY = {
     listUrl: '/accounting/closures',
     detailUrlPattern: '/accounting/closures/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+  },
+  'accounting.rcvdocument': {
+    label: 'accounting.rcvdocument',
+    title: 'Documento RCV',
+    titlePlural: 'Documentos RCV',
+    icon: FileSpreadsheet,
+    iconName: 'FileSpreadsheet',
+    feminine: false,
+    description: 'Documento del Registro de Compras y Ventas del SII (solo lectura)',
+    listUrl: '/accounting/rcv/purchases',
+    detailUrlPattern: '/accounting/rcv/purchases?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+  },
+  'accounting.rcvimport': {
+    label: 'accounting.rcvimport',
+    title: 'Importación RCV',
+    titlePlural: 'Importaciones RCV',
+    icon: Download,
+    iconName: 'Download',
+    feminine: true,
+    description: 'Importación del Registro de Compras y Ventas desde el SII (solo lectura)',
+    listUrl: '/accounting/rcv/imports',
+    detailUrlPattern: '/accounting/rcv/imports?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'accounting.account': {
     label: 'accounting.account',

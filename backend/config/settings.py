@@ -517,6 +517,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "treasury.tasks.dispatch_terminal_sales_sync",
         "schedule": crontab(minute=10),  # Hourly at XX:10
     },
+    # ── Accounting / Importación RCV (SimpleAPI) ────────────────────────────
+    # Cada hora revisa si corresponde la importación automática (intervalo y hora
+    # configurados en RCVSettings).
+    "dispatch_rcv_imports_hourly": {
+        "task": "accounting.tasks.dispatch_rcv_imports",
+        "schedule": crontab(minute=20),  # Hourly at XX:20
+    },
     # ── Core / Idempotency ───────────────────────────────────────────────────
     # Purges IdempotencyRecord rows older than the 24h TTL defined by contract
     # (docs/20-contracts/idempotency.md). Runs off-peak so a reused key after

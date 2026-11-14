@@ -226,6 +226,12 @@ OVERRIDES: dict[str, list[str]] = {
     "treasury.add_terminalsyncsettings":        ["treasury.manage"],
     "treasury.change_terminalsyncsettings":     ["treasury.manage"],
     "treasury.add_terminalsyncrun":             ["treasury.manage"],
+    "accounting.add_rcvsettings":               ["accounting.manage"],
+    "accounting.change_rcvsettings":            ["accounting.manage"],
+    "accounting.add_rcvapikey":                 ["accounting.manage"],
+    "accounting.change_rcvapikey":              ["accounting.manage"],
+    "accounting.delete_rcvapikey":              ["accounting.manage"],
+    "accounting.add_rcvimport":                 ["accounting.manage"],
     "treasury.add_posterminal":                 ["treasury.manage"],
     "treasury.change_posterminal":              ["treasury.manage"],
 

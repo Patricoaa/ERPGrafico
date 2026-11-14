@@ -71,6 +71,7 @@ CACHE_KEY_WORKFLOW_SETTINGS = "settings:workflow"
 CACHE_KEY_COMPANY_SETTINGS = "settings:company"
 CACHE_KEY_HR_SETTINGS = "settings:hr"
 CACHE_KEY_TERMINAL_SYNC_SETTINGS = "settings:terminal_sync"
+CACHE_KEY_RCV_SETTINGS = "settings:rcv"
 
 # ── Report Cache Keys ────────────────────────────────────────────────────────
 # Format: report:{module}:{endpoint}:{params_hash}
