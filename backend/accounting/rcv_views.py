@@ -25,6 +25,7 @@ from .rcv_serializers import (
 )
 from .selectors import (
     rcv_api_keys_queryset,
+    rcv_document_detail_queryset,
     rcv_documents_queryset,
     rcv_import_detail_queryset,
     rcv_imports_queryset,
@@ -40,7 +41,7 @@ class RCVDocumentViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         if self.action != "list":
-            return rcv_documents_queryset({})
+            return rcv_document_detail_queryset()
         filters = RCVDocumentFilterSerializer(data=self.request.query_params)
         filters.is_valid(raise_exception=True)
         return rcv_documents_queryset(filters.validated_data)

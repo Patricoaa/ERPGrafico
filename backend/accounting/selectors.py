@@ -187,8 +187,11 @@ def _filter_period(qs: QuerySet, filters: dict) -> QuerySet:
 
 
 def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
-    """Documentos RCV con filtros ya validados (``RCVDocumentFilterSerializer``)."""
-    qs = RCVDocument.objects.select_related("first_import", "last_import", "missing_since_import")
+    """Listado de documentos RCV con filtros ya validados (``RCVDocumentFilterSerializer``).
+
+    Sin joins a importaciones (``is_missing`` usa solo la FK) y sin ``raw``.
+    """
+    qs = RCVDocument.objects.defer("raw")
     year, month = filters.get("year"), filters.get("month")
     if year is not None and month is not None:
         qs = qs.filter(period=f"{year:04d}{month:02d}")
@@ -213,6 +216,16 @@ def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
             term |= Q(folio=int(search))
         qs = qs.filter(term)
     return qs
+
+
+_IMPORT_REFS = ("first_import", "last_import", "missing_since_import")
+
+
+def rcv_document_detail_queryset() -> QuerySet[RCVDocument]:
+    """Detalle: importaciones relacionadas sin su ``raw_response`` (solo se lee id + período)."""
+    return RCVDocument.objects.select_related(*_IMPORT_REFS).defer(
+        *(f"{ref}__raw_response" for ref in _IMPORT_REFS)
+    )
 
 
 def rcv_imports_queryset(filters: dict) -> QuerySet[RCVImport]:

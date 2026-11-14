@@ -377,3 +377,25 @@ def test_list_endpoints_query_count(reader, url):
     small = _count_queries(reader, url)
     _seed(27)
     assert _count_queries(reader, url) == small
+
+
+@pytest.mark.django_db
+def test_documents_sql_skips_raw_payloads(reader):
+    imp = _import(raw_response={"cuerpo": "CRUDO-MES"})
+    doc = _doc(imp, missing_since_import=imp)
+    with CaptureQueriesContext(connection) as ctx:
+        r = reader.get("/api/accounting/rcv-documents/")
+    assert r.status_code == 200
+    assert r.json()["results"][0]["is_missing"] is True
+    sql = " ".join(q["sql"] for q in ctx.captured_queries)
+    assert "raw_response" not in sql
+    assert '"accounting_rcvdocument"."raw"' not in sql
+
+    with CaptureQueriesContext(connection) as ctx:
+        r = reader.get(f"/api/accounting/rcv-documents/{doc.id}/")
+    assert r.status_code == 200
+    assert "raw_response" not in " ".join(q["sql"] for q in ctx.captured_queries)
+    body = r.json()
+    assert body["raw"] == {"campo_original": "VALOR-CRUDO"}
+    ref = {"id": imp.id, "period": "202610"}
+    assert body["first_import"] == ref == body["last_import"] == body["missing_since_import"]
