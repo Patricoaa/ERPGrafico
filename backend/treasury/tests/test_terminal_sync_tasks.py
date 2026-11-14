@@ -197,3 +197,18 @@ def test_transient_error_then_success_returns_final_status(monkeypatch):
 def test_beat_entry_matches_registered_task():
     entry = django_settings.CELERY_BEAT_SCHEDULE["dispatch_terminal_sales_sync_hourly"]
     assert entry["task"] in celery_app.tasks
+
+
+def test_dispatcher_marks_run_failed_when_broker_down(monkeypatch):
+    _freeze(monkeypatch, 9)
+    _configure(run_hour=3)
+    _keyed_provider()
+
+    def boom(run_id):
+        raise ConnectionError("broker down")
+
+    monkeypatch.setattr(tasks.sync_terminal_run, "delay", boom)
+    assert tasks.dispatch_terminal_sales_sync() == 1
+    run = TerminalSyncRun.objects.get()
+    assert run.status == TerminalSyncRun.Status.FAILED
+    assert run.finished_at is not None

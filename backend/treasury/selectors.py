@@ -1385,3 +1385,7 @@ def terminal_sync_runs_queryset(filters: dict) -> QuerySet[TerminalSyncRun]:
     if filters.get("status"):
         qs = qs.filter(status=filters["status"])
     return qs
+
+
+def last_terminal_sync_run() -> TerminalSyncRun | None:
+    return TerminalSyncRun.objects.select_related("provider").order_by("-started_at").first()

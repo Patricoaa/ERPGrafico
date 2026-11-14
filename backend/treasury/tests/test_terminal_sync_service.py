@@ -324,3 +324,19 @@ def test_unexpected_exception_marks_failed_and_reraises(monkeypatch):
     assert run.status == TerminalSyncRun.Status.FAILED
     assert run.error_message == "Error interno al sincronizar: RuntimeError"
     assert run.finished_at is not None
+
+
+@pytest.mark.django_db
+def test_unreadable_api_key_fails_run_instead_of_staying_running():
+    from treasury.tests.helpers import make_terminal_provider
+
+    provider = make_terminal_provider()
+    provider.gateway_config = {"api_key_encrypted": "garbage-token"}
+    provider.save()
+    run = _run(provider)
+    result = execute_run(run)
+    run.refresh_from_db()
+    assert result.pk == run.pk
+    assert run.status == TerminalSyncRun.Status.FAILED
+    assert run.error_message == "No se pudo leer la API key del proveedor. Vuelva a ingresarla."
+    assert run.finished_at is not None

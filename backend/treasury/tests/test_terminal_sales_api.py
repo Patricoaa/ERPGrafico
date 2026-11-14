@@ -152,6 +152,7 @@ def test_settings_includes_last_run(admin_client, provider):
     )
     last = admin_client.get("/api/treasury/terminal-sync-settings/current/").json()["last_run"]
     assert last["id"] == run.id and last["provider_name"] == provider.name and last["status"] == "SUCCESS"
+    assert last["warnings"] == []
 
 
 @pytest.mark.django_db

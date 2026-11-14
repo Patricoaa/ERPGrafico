@@ -50,6 +50,7 @@ from .reconciliation_service import ReconciliationService
 # from .rule_service import RuleService
 from .selectors import (
     BankStatementSelector,
+    last_terminal_sync_run,
     terminal_sales_queryset,
     terminal_sales_summary,
     terminal_sync_runs_queryset,
@@ -1818,9 +1819,12 @@ class TerminalSyncSettingsViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
         settings = TerminalSyncSettings.get_settings()
+        context = {**self.get_serializer_context(), "last_run": last_terminal_sync_run()}
         if request.method == "GET":
-            return Response(self.get_serializer(settings).data)
-        serializer = self.get_serializer(settings, data=request.data, partial=request.method == "PATCH")
+            return Response(TerminalSyncSettingsSerializer(settings, context=context).data)
+        serializer = TerminalSyncSettingsSerializer(
+            settings, data=request.data, partial=request.method == "PATCH", context=context
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)

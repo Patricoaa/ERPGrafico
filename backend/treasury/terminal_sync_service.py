@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
+from core.crypto import CryptoError
 from treasury.integrations.tuu_client import (
     TuuAuthError,
     TuuClient,
@@ -86,6 +87,27 @@ def split_range(start: date, end: date, max_days: int = MAX_CHUNK_DAYS) -> list[
         chunks.append((cursor, chunk_end))
         cursor = chunk_end + timedelta(days=1)
     return chunks
+
+
+CRYPTO_MESSAGE = "No se pudo leer la API key del proveedor. Vuelva a ingresarla."
+
+
+def find_provider_with_same_key(api_key: str, exclude_pk: int | None = None):
+    """Otro proveedor TUU activo que ya usa ``api_key`` (o ``None``)."""
+    if not api_key:
+        return None
+    others = PaymentTerminalProvider.objects.filter(
+        provider_type=PaymentTerminalProvider.ProviderType.TUU, is_active=True
+    )
+    if exclude_pk is not None:
+        others = others.exclude(pk=exclude_pk)
+    for other in others:
+        try:
+            if other.get_api_key() == api_key:
+                return other
+        except CryptoError:
+            continue  # credencial ilegible: no puede colisionar
+    return None
 
 
 def eligible_providers() -> models.QuerySet[PaymentTerminalProvider]:
@@ -258,8 +280,6 @@ def execute_run(run: TerminalSyncRun, client: TuuClient | None = None) -> Termin
     ``TuuTransientError`` se relanza tras guardar el progreso para que la tarea
     decida reintentar; credenciales/plan inválidos dejan la ejecución FAILED.
     """
-    if client is None:
-        client = TuuClient(run.provider.get_api_key())
     # Cada llamada es un intento nuevo: se descarta lo registrado por intentos previos.
     TerminalSyncPayload.objects.filter(run=run).delete()
     run.warnings = []
@@ -267,9 +287,13 @@ def execute_run(run: TerminalSyncRun, client: TuuClient | None = None) -> Termin
     run.updated_count = 0
     run.error_message = ""
     try:
+        if client is None:
+            client = TuuClient(run.provider.get_api_key())
         return _execute(run, client)
     except TuuTransientError:
         raise
+    except CryptoError:
+        return _finish(run, TerminalSyncRun.Status.FAILED, CRYPTO_MESSAGE)
     except Exception as exc:
         _finish(
             run,

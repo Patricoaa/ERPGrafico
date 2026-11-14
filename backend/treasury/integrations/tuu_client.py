@@ -17,6 +17,7 @@ BASE_URL = "https://integrations.payment.haulmer.com"
 BRANCH_PATH = "/BranchReport/branch-report"
 GENERAL_PATH = "/Report/get-report"
 PAGE_SIZE = 20
+MAX_PAGES = 500
 
 REPORT_BRANCH_CARD = "BRANCH_CARD"
 REPORT_BRANCH_CASH = "BRANCH_CASH"
@@ -130,6 +131,8 @@ class TuuClient:
             result = self._fetch_page(report, path, build(page), page, general)
             pages.append(result)
             total_pages = max(result.total_pages, 1)
+            if total_pages > MAX_PAGES:
+                raise TuuError("Paginación inesperada de TUU")
             page += 1
         return pages
 
@@ -141,7 +144,7 @@ class TuuClient:
                 headers={"X-API-Key": self._api_key, "Content-Type": "application/json"},
                 timeout=self._timeout,
             )
-        except (requests.Timeout, requests.ConnectionError) as exc:
+        except requests.RequestException as exc:
             # No se propaga el texto original: podría contener datos de la petición.
             raise TuuTransientError(f"TUU {report}: {type(exc).__name__}") from None
 
@@ -152,13 +155,14 @@ class TuuClient:
         label = f"TUU {report} HTTP {status}" + (f" [{code}]" if code else "")
         if detail:
             label += f": {detail}"
-        label = label.replace(self._api_key, "***")
+        if self._api_key:
+            label = label.replace(self._api_key, "***")
 
         if status == 401 or code in _AUTH_CODES:
             raise TuuAuthError(label, status, code)
         if code in _PLAN_CODES:
             raise TuuPlanError(label, status, code)
-        if status >= 500 or code in _TRANSIENT_CODES:
+        if status >= 500 or status in (408, 429) or code in _TRANSIENT_CODES:
             raise TuuTransientError(label, status, code)
 
         if (general and status == 404) or code == _NO_DATA_CODE:
@@ -171,11 +175,14 @@ class TuuClient:
         if general and code not in (None, "200"):
             raise TuuError(label, status, code)
 
-        if general:
-            content = data.get("content") or {}
-            rows = content.get("reports") or []
-            total_pages = int(content.get("totalPages") or 1)
-        else:
-            rows = (data.get("data") or {}).get("transactions") or []
-            total_pages = int((data.get("pagination") or {}).get("totalPages") or 1)
+        try:
+            if general:
+                content = data.get("content") or {}
+                rows = content.get("reports") or []
+                total_pages = int(content.get("totalPages") or 1)
+            else:
+                rows = (data.get("data") or {}).get("transactions") or []
+                total_pages = int((data.get("pagination") or {}).get("totalPages") or 1)
+        except (TypeError, ValueError, AttributeError):
+            raise TuuError(f"TUU {report}: respuesta con formato inesperado", status, code) from None
         return TuuPage(report, page, total_pages, status, body, data, list(rows))

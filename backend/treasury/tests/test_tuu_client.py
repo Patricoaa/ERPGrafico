@@ -185,3 +185,41 @@ def test_header_and_no_key_in_messages(calls):
         with pytest.raises(TuuError) as info:
             TuuClient(API_KEY).fetch_branch(DAY, DAY, cash=False)
         assert API_KEY not in str(info.value)
+
+
+@pytest.mark.parametrize("status", [408, 429])
+def test_throttle_and_timeout_statuses_are_transient(calls, status):
+    calls["queue"].append(FakeResponse(status, None))
+    with pytest.raises(TuuTransientError):
+        TuuClient(API_KEY).fetch_branch(DAY, DAY, cash=False)
+
+
+def test_any_requests_exception_is_transient_and_key_free(calls):
+    calls["queue"].append(requests.exceptions.ChunkedEncodingError(f"broken {API_KEY}"))
+    with pytest.raises(TuuTransientError) as info:
+        TuuClient(API_KEY).fetch_branch(DAY, DAY, cash=False)
+    assert API_KEY not in str(info.value)
+
+
+def test_malformed_total_pages_is_tuu_error(calls):
+    page = load("branch_card_p2")
+    page["pagination"]["totalPages"] = "abc"
+    calls["queue"].append(FakeResponse(200, page))
+    with pytest.raises(TuuError) as info:
+        TuuClient(API_KEY).fetch_branch(DAY, DAY, cash=False)
+    assert type(info.value) is TuuError
+
+
+def test_pagination_capped(calls):
+    page = load("branch_card_p2")
+    page["pagination"]["totalPages"] = 100000
+    calls["queue"] += [FakeResponse(200, page) for _ in range(501)]
+    with pytest.raises(TuuError, match="Paginación inesperada de TUU"):
+        TuuClient(API_KEY).fetch_branch(DAY, DAY, cash=False)
+
+
+def test_empty_api_key_does_not_mangle_messages(calls):
+    calls["queue"].append(FakeResponse(400, {"metadata": {"code": "BR-99", "message": "bad"}}))
+    with pytest.raises(TuuError) as info:
+        TuuClient("").fetch_branch(DAY, DAY, cash=False)
+    assert str(info.value) == "TUU BRANCH_CARD HTTP 400 [BR-99]: bad"

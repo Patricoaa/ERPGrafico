@@ -21,6 +21,7 @@ from .models import (
     TreasuryMovement,
 )
 from .pos_lock import PosSessionLockedField
+from .terminal_sync_service import find_provider_with_same_key
 
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
@@ -901,25 +902,21 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        api_key = attrs.get("api_key") or ""
         instance = self.instance
         provider_type = attrs.get("provider_type", instance.provider_type if instance else None)
         is_active = attrs.get("is_active", instance.is_active if instance else True)
-        if api_key and provider_type == PaymentTerminalProvider.ProviderType.TUU and is_active:
-            others = PaymentTerminalProvider.objects.filter(
-                provider_type=PaymentTerminalProvider.ProviderType.TUU, is_active=True
-            )
-            if instance:
-                others = others.exclude(pk=instance.pk)
-            for other in others:
+        if provider_type == PaymentTerminalProvider.ProviderType.TUU and is_active:
+            api_key = attrs.get("api_key") or ""
+            if not api_key and instance:
                 try:
-                    other_key = other.get_api_key()
+                    api_key = instance.get_api_key()
                 except CryptoError:
-                    continue  # credencial ilegible: no puede colisionar
-                if other_key == api_key:
-                    raise serializers.ValidationError(
-                        {"api_key": f"Esta API key ya está asignada al proveedor {other.name}."}
-                    )
+                    api_key = ""
+            other = find_provider_with_same_key(api_key, instance.pk if instance else None)
+            if other:
+                raise serializers.ValidationError(
+                    {"api_key": f"Esta API key ya está asignada al proveedor {other.name}."}
+                )
         return attrs
 
     def create(self, validated_data):
@@ -1820,7 +1817,15 @@ class TerminalSyncLastRunSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TerminalSyncRun
-        fields = ["id", "provider_name", "status", "started_at", "finished_at", "error_message"]
+        fields = [
+            "id",
+            "provider_name",
+            "status",
+            "started_at",
+            "finished_at",
+            "error_message",
+            "warnings",
+        ]
         read_only_fields = fields
 
 
@@ -1842,7 +1847,7 @@ class TerminalSyncSettingsSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "last_run"]
 
     def get_last_run(self, obj):
-        run = TerminalSyncRun.objects.select_related("provider").order_by("-started_at").first()
+        run = self.context.get("last_run")
         return TerminalSyncLastRunSerializer(run).data if run else None
 
 

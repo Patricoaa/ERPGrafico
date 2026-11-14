@@ -11,7 +11,13 @@ from django.utils import timezone
 from .integrations.tuu_client import TuuTransientError
 from .matching_service import MatchingService
 from .models import TerminalSyncRun, TerminalSyncSettings
-from .terminal_sync_service import create_run, daily_range, eligible_providers, execute_run
+from .terminal_sync_service import (
+    create_run,
+    daily_range,
+    eligible_providers,
+    enqueue_runs,
+    execute_run,
+)
 
 # Rust native extension for batch scoring (graceful fallback)
 try:
@@ -929,7 +935,7 @@ def dispatch_terminal_sales_sync() -> int:
         if already_ran:
             continue
         run = create_run(provider, *date_range, TerminalSyncRun.Trigger.SCHEDULED)
-        sync_terminal_run.delay(run.id)
+        enqueue_runs([run], sync_terminal_run.delay)
         queued += 1
     return queued
 

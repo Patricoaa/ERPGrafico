@@ -85,3 +85,11 @@ def test_blank_api_key_keeps_existing(client):
     mine.refresh_from_db()
     assert mine.get_api_key() == KEY
     assert resp.json()["has_api_key"] is True
+
+
+def test_reactivating_inactive_provider_with_duplicate_stored_key_rejected(client):
+    other = _tuu(KEY, name="TUU Activo")
+    dormant = _tuu(KEY, active=False, name="TUU Dormido")
+    resp = client.patch(f"{URL}{dormant.pk}/", {"is_active": True}, format="json")
+    assert resp.status_code == 400
+    assert resp.json()["error"]["details"]["api_key"] == [f"Esta API key ya está asignada al proveedor {other.name}."]
