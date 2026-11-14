@@ -1,3 +1,5 @@
+"use client"
+
 import { useQuery } from '@tanstack/react-query'
 import { staleTime } from '@/lib/query-config'
 import { rcvApi } from '../api/rcvApi'
