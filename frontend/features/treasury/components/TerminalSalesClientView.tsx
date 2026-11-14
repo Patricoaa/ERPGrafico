@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { RefreshCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { MoneyDisplay, StatCard, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
@@ -26,13 +27,13 @@ const toId = (v: string | undefined): number | undefined => {
     return v && Number.isInteger(n) && n >= 0 ? n : undefined
 }
 
-/** URL search params → typed API filters. Without a date in the URL the period is the last 7 days. */
+const hasDateParam = (params: Record<string, string>) => !!(params.date_from || params.date_to)
+
+/** URL search params → typed API filters. */
 function toSalesFilters(params: Record<string, string>): TerminalSalesSummaryFilters {
-    const hasDate = !!(params.date_from || params.date_to)
-    const range = hasDate ? { from: params.date_from, to: params.date_to } : lastSevenDays()
     return {
-        date_from: range.from || undefined,
-        date_to: range.to || undefined,
+        date_from: params.date_from || undefined,
+        date_to: params.date_to || undefined,
         provider: toId(params.provider),
         document_type: toId(params.document_type),
         payment_type: isPaymentType(params.payment_type) ? params.payment_type : undefined,
@@ -52,7 +53,29 @@ export function TerminalSalesClientView() {
         [providers],
     )
     const search = useUnifiedSearch(terminalSaleUnifiedSearchDef, { provider: providerOptions })
-    const filters = useMemo(() => toSalesFilters(search.filters), [search.filters])
+    const { applyFilter } = search
+
+    // First load without a period in the URL: write the last 7 days as ordinary (removable) date filters.
+    // Only once per mount, so clearing the filters afterwards really clears them.
+    const [pendingDefault, setPendingDefault] = useState(() => !hasDateParam(search.filters))
+    const injected = useRef(false)
+    useEffect(() => {
+        if (!pendingDefault || injected.current) return
+        injected.current = true
+        const { from, to } = lastSevenDays()
+        void applyFilter("date_from", from)
+            .then(() => applyFilter("date_to", to))
+            .finally(() => setPendingDefault(false))
+    }, [pendingDefault, applyFilter])
+
+    // While the default is being written, query the same range so the request (and cache key) do not change.
+    const effectiveParams = useMemo(() => {
+        if (!pendingDefault || hasDateParam(search.filters)) return search.filters
+        const { from, to } = lastSevenDays()
+        return { ...search.filters, date_from: from, date_to: to }
+    }, [pendingDefault, search.filters])
+    const filters = useMemo(() => toSalesFilters(effectiveParams), [effectiveParams])
+    const isFiltered = search.isFiltered || pendingDefault
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalsale")
     const panel = useEntityPanelRoute({ create: false })
 
@@ -66,7 +89,7 @@ export function TerminalSalesClientView() {
 
     const collection = useEntityCollection(
         terminalSaleEntity,
-        { rows: sales, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows: sales, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered },
         { pagination: { mode: "server", state: pageState, onChange: setPageState } },
     )
 
@@ -96,7 +119,7 @@ export function TerminalSalesClientView() {
                         placeholder="Filtrar ventas..."
                     />
                 </Collection.Toolbar>
-                <TerminalSalesSummaryCards summary={summary.summary} isLoading={summary.isLoading} isError={summary.isError} />
+                <TerminalSalesSummaryCards summary={summary.summary} isLoading={summary.isLoading} isError={summary.isError} onRetry={summary.refetch} />
                 <Collection.View
                     table={terminalSaleViews.table}
                     card={terminalSaleViews.card}
@@ -121,15 +144,23 @@ interface SummaryCardsProps {
     summary: TerminalSalesSummary | undefined
     isLoading: boolean
     isError: boolean
+    onRetry: () => void
 }
 
 /** Period totals (only COMPLETED sales add up; the rest are shown apart when present). */
-function TerminalSalesSummaryCards({ summary, isLoading, isError }: SummaryCardsProps) {
-    if (isError) return null
+function TerminalSalesSummaryCards({ summary, isLoading, isError, onRetry }: SummaryCardsProps) {
+    if (isError) {
+        return (
+            <div role="alert" className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm text-muted-foreground">
+                <span>No se pudo cargar el resumen del período.</span>
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={onRetry}>Reintentar</Button>
+            </div>
+        )
+    }
     const commission = summary ? -Math.abs(Number(summary.commission)) : 0
     const nonCompleted = summary?.non_completed
     return (
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-5" aria-label="Resumen del período">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-5" role="group" aria-label="Resumen del período">
             <StatCard variant="compact" accent="muted" label="Ventas" loading={isLoading} value={summary?.count ?? 0} />
             <StatCard variant="compact" accent="muted" label="Bruto" loading={isLoading} value={<MoneyDisplay amount={summary?.gross ?? 0} showColor={false} />} />
             <StatCard variant="compact" accent="muted" label="Comisión" loading={isLoading} value={<MoneyDisplay amount={commission} />} />

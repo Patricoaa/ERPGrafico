@@ -3,9 +3,11 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { RefreshCw } from "lucide-react"
-import { BaseModal, FormFooter, CancelButton, SubmitButton, LabeledInput } from "@/components/shared"
+import { parseISO } from "date-fns"
+import { BaseModal, FormFooter, CancelButton, SubmitButton, LabeledContainer, DatePicker } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { getFieldErrorMessage } from "@/lib/errors"
+import { toDateOnlyISO } from "@/lib/utils"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useStartTerminalSync } from "../hooks/useTerminalSync"
 import { terminalSyncSchema, toManualSyncPayload, type TerminalSyncFormValues } from "./TerminalSyncModal.schema"
@@ -75,14 +77,28 @@ export function TerminalSyncModal({ open, onOpenChange }: TerminalSyncModalProps
                         control={form.control}
                         name="start_date"
                         render={({ field, fieldState }) => (
-                            <LabeledInput label="Fecha inicial" type="date" {...field} value={field.value ?? ""} error={fieldState.error?.message} />
+                            <LabeledContainer label="Fecha inicial" error={fieldState.error?.message}>
+                                <DatePicker
+                                    date={field.value ? parseISO(field.value) : undefined}
+                                    onDateChange={(d) => field.onChange(d ? toDateOnlyISO(d) : "")}
+                                    placeholder="Rango configurado"
+                                    className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                />
+                            </LabeledContainer>
                         )}
                     />
                     <FormField
                         control={form.control}
                         name="end_date"
                         render={({ field, fieldState }) => (
-                            <LabeledInput label="Fecha final" type="date" {...field} value={field.value ?? ""} error={fieldState.error?.message} />
+                            <LabeledContainer label="Fecha final" error={fieldState.error?.message}>
+                                <DatePicker
+                                    date={field.value ? parseISO(field.value) : undefined}
+                                    onDateChange={(d) => field.onChange(d ? toDateOnlyISO(d) : "")}
+                                    placeholder="Hoy"
+                                    className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                />
+                            </LabeledContainer>
                         )}
                     />
                 </form>

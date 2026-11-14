@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react"
+import { render, screen, within, fireEvent, waitFor } from "@testing-library/react"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
 import { format, subDays } from "date-fns"
@@ -8,6 +8,10 @@ const m = vi.hoisted(() => ({
     sales: [] as unknown[],
     summary: undefined as unknown,
     useTerminalSales: vi.fn(),
+    filters: {} as Record<string, string>,
+    applyFilter: vi.fn(() => Promise.resolve()),
+    summaryError: false,
+    summaryRefetch: vi.fn(),
 }))
 
 vi.mock("next/navigation", () => ({
@@ -24,7 +28,13 @@ vi.mock("@/components/shared", async (importOriginal) => {
     return {
         ...actual,
         UnifiedSearchBar: () => null,
-        useUnifiedSearch: () => ({ filters: {}, filterFn: (x: unknown[]) => x, isFiltered: false, clearAll: vi.fn() }),
+        useUnifiedSearch: () => ({
+            filters: m.filters,
+            filterFn: (x: unknown[]) => x,
+            isFiltered: Object.keys(m.filters).length > 0,
+            applyFilter: m.applyFilter,
+            clearAll: vi.fn(),
+        }),
         bindUnifiedSearch: () => ({}),
     }
 })
@@ -33,7 +43,7 @@ vi.mock("../../hooks/useTerminalSales", () => ({
         m.useTerminalSales(filters)
         return { page: { count: m.sales.length, results: m.sales }, sales: m.sales, totalCount: m.sales.length, isLoading: false, isRefetching: false, isError: false, refetch: vi.fn() }
     },
-    useTerminalSalesSummary: () => ({ summary: m.summary, isLoading: false, isRefetching: false, isError: false, refetch: vi.fn() }),
+    useTerminalSalesSummary: () => ({ summary: m.summary, isLoading: false, isRefetching: false, isError: m.summaryError, refetch: m.summaryRefetch }),
     useTerminalSale: () => ({ sale: undefined, isLoading: false, isError: false }),
 }))
 vi.mock("../../hooks/useTerminalProviders", () => ({ useTerminalProviders: () => ({ providers: [] }) }))
@@ -59,28 +69,40 @@ const sale: TerminalSale = {
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,
 }
 
+const fmt = (d: Date) => format(d, "yyyy-MM-dd")
+const PERIOD = { date_from: fmt(subDays(new Date(), 6)), date_to: fmt(new Date()) }
+
 describe("TerminalSalesClientView", () => {
     beforeEach(() => {
         m.sales = []
         m.summary = undefined
+        m.filters = {}
+        m.summaryError = false
         m.useTerminalSales.mockClear()
+        m.applyFilter.mockClear()
+        m.summaryRefetch.mockClear()
     })
 
-    it("consulta por defecto los últimos 7 días", () => {
+    it("sin período en la URL escribe los últimos 7 días como filtros y consulta ese rango", async () => {
         render(<TerminalSalesClientView />)
-        const now = new Date()
-        expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining({
-            date_from: format(subDays(now, 6), "yyyy-MM-dd"),
-            date_to: format(now, "yyyy-MM-dd"),
-            page: 1,
-        }))
+        expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining({ ...PERIOD, page: 1 }))
+        await waitFor(() => expect(m.applyFilter).toHaveBeenCalledWith("date_to", PERIOD.date_to))
+        expect(m.applyFilter).toHaveBeenCalledWith("date_from", PERIOD.date_from)
+    })
+
+    it("con período en la URL no inyecta el rango por defecto", () => {
+        m.filters = { date_from: "2026-10-01", date_to: "2026-10-31" }
+        render(<TerminalSalesClientView />)
+        expect(m.applyFilter).not.toHaveBeenCalled()
+        expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining({ date_from: "2026-10-01", date_to: "2026-10-31" }))
     })
 
     it("muestra el resumen del período con los montos del hook", () => {
+        m.filters = { ...PERIOD }
         m.summary = summary
         m.sales = [sale]
         render(<TerminalSalesClientView />)
-        const panel = screen.getByLabelText("Resumen del período")
+        const panel = screen.getByRole("group", { name: "Resumen del período" })
         expect(within(panel).getByText("12")).toBeInTheDocument()
         expect(within(panel).getByText("$120.000")).toBeInTheDocument()
         expect(within(panel).getByText("$-3.500")).toBeInTheDocument()
@@ -91,13 +113,35 @@ describe("TerminalSalesClientView", () => {
     })
 
     it("oculta las no completadas cuando no hay", () => {
+        m.filters = { ...PERIOD }
         m.summary = { ...summary, non_completed: { count: 0, total: "0" } }
         render(<TerminalSalesClientView />)
         expect(screen.queryByText("No completadas")).not.toBeInTheDocument()
     })
 
-    it("muestra el estado vacío sin ventas sincronizadas", () => {
+    it("si el resumen falla muestra un aviso con reintento", () => {
+        m.filters = { ...PERIOD }
+        m.summaryError = true
         render(<TerminalSalesClientView />)
+        expect(screen.getByText("No se pudo cargar el resumen del período.")).toBeInTheDocument()
+        fireEvent.click(screen.getByRole("button", { name: "Reintentar" }))
+        expect(m.summaryRefetch).toHaveBeenCalled()
+    })
+
+    it("con período aplicado y sin filas muestra el vacío filtrado, no el de sin sincronizaciones", () => {
+        m.filters = { ...PERIOD }
+        render(<TerminalSalesClientView />)
+        expect(screen.getByText("Ningún resultado para el filtro")).toBeInTheDocument()
+        expect(screen.queryByText("Aún no hay ventas sincronizadas")).not.toBeInTheDocument()
+    })
+
+    it("tras limpiar los filtros no reinyecta el período y muestra el estado vacío sin sincronizaciones", () => {
+        m.filters = { ...PERIOD }
+        const { rerender } = render(<TerminalSalesClientView />)
+        m.filters = {}
+        rerender(<TerminalSalesClientView />)
+        expect(m.applyFilter).not.toHaveBeenCalled()
+        expect(m.useTerminalSales).toHaveBeenLastCalledWith(expect.objectContaining({ date_from: undefined, date_to: undefined }))
         expect(screen.getByText("Aún no hay ventas sincronizadas")).toBeInTheDocument()
         expect(screen.getByText("Activa la sincronización en Tesorería → Configuración o usa «Sincronizar ahora».")).toBeInTheDocument()
     })
