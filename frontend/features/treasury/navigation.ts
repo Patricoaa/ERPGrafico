@@ -82,6 +82,15 @@ export const TERMINAL_COBRO_SUB_TABS: NavTabConfig[] = [
     headerDescription: "Gestión de cierres diarios y liquidaciones de tarjetas.",
     metadataTitle: "Lotes de terminal de cobro | ERPGrafico",
   },
+  {
+    value: "sales",
+    label: "Ventas",
+    href: "/treasury/terminal-cobro/sales",
+    iconName: "receipt",
+    headerTitle: "Ventas del terminal de cobro",
+    headerDescription: "Ventas sincronizadas desde los proveedores TUU.",
+    metadataTitle: "Ventas del terminal de cobro | ERPGrafico",
+  },
 ]
 
 // ============================================
@@ -255,7 +264,7 @@ export const TREASURY_TABS: NavTabConfig[] = [
     href: "/treasury/terminal-cobro/providers",
     iconName: "credit-card",
     headerTitle: "Terminal de cobro",
-    headerDescription: "Proveedores, terminales de cobro y lotes de liquidación de pagos con tarjeta.",
+    headerDescription: "Proveedores, terminales de cobro, lotes de liquidación y ventas sincronizadas.",
     metadataTitle: "Terminal de cobro | ERPGrafico",
     subTabs: TERMINAL_COBRO_SUB_TABS,
   },
