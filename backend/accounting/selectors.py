@@ -1,8 +1,10 @@
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from django.db.models import Count, F, Q, QuerySet, Sum, Window
+from django.utils import timezone
 
-from .models import Account, AccountType, JournalEntry
+from .models import Account, AccountType, JournalEntry, RCVImportAttempt
 
 
 def balance_affecting_statuses():
@@ -148,3 +150,15 @@ def get_account_ledger(
         "movements": movements,
         "truncated": full_count > page_size,
     }
+
+
+def rcv_key_usage(month_start: date) -> dict[int, int]:
+    """Peticiones HTTP por API key RCV desde ``month_start`` (hora local), en una query."""
+    since = timezone.make_aware(datetime.combine(month_start, time.min))
+    rows = (
+        RCVImportAttempt.objects.filter(created_at__gte=since, api_key__isnull=False)
+        .values("api_key_id")
+        .annotate(uses=Count("id"))
+        .order_by()
+    )
+    return {row["api_key_id"]: row["uses"] for row in rows}
