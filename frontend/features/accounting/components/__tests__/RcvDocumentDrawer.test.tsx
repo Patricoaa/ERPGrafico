@@ -25,14 +25,14 @@ vi.mock("@/features/_shared", async (importOriginal) => ({
 import { RcvDocumentDrawer } from "../rcv/RcvDocumentDrawer"
 
 const doc: RcvDocumentDetail = {
-    id: 9, direction: "PURCHASES", company_rut: "11111111-1", period: "2026-10", dte_type: 33, dte_type_label: "Factura Electrónica",
+    id: 9, direction: "PURCHASES", company_rut: "11111111-1", period: "202610", dte_type: 33, dte_type_label: "Factura Electrónica",
     folio: 4521, counterparty_rut: "76000000-0", counterparty_name: "Proveedor de Prueba", issue_date: "2026-10-05",
     received_at: "2026-10-06T10:00:00-03:00", acknowledged_at: null, operation_type: "", status: "Confirmada",
-    acknowledgement: "Recibo otorgado por el receptor", service_indicator: "", exempt_amount: "0", net_amount: "10000",
+    acknowledgement: "Recibo otorgado por el receptor", service_indicator: null, exempt_amount: "0", net_amount: "10000",
     vat_amount: "1900", vat_recoverable: "1900", vat_non_recoverable: "0", total_amount: "11900", other_taxes_total: "0",
     reference_dte_type: null, reference_folio: "", is_missing: false,
     raw: { folio: 4521 },
-    first_import: { id: 3, period: "2026-10" }, last_import: { id: 5, period: "2026-11" }, missing_since_import: null,
+    first_import: { id: 3, period: "202610" }, last_import: { id: 5, period: "202611" }, missing_since_import: null,
     created_at: "2026-11-01T10:00:00-03:00", updated_at: "2026-11-01T10:00:00-03:00",
 }
 
@@ -52,14 +52,31 @@ describe("RcvDocumentDrawer", () => {
         expect(screen.getByText(/"folio": 4521/)).toBeInTheDocument()
     })
 
+    it("no serializa los datos originales mientras están plegados", async () => {
+        const stringify = vi.spyOn(JSON, "stringify")
+        try {
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(stringify.mock.calls.some(([value]) => value === doc.raw)).toBe(false)
+            await userEvent.click(screen.getByRole("button", { name: /Mostrar/ }))
+            expect(stringify.mock.calls.some(([value]) => value === doc.raw)).toBe(true)
+        } finally {
+            stringify.mockRestore()
+        }
+    })
+
+    it("muestra el período de la ficha con nombre de mes", () => {
+        render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+        expect(screen.getByText("Octubre 2026")).toBeInTheDocument()
+    })
+
     it("enlaza a la importación que trajo el documento", async () => {
         render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
-        await userEvent.click(screen.getByRole("button", { name: "Importación 2026-11" }))
+        await userEvent.click(screen.getByRole("button", { name: "Importación Noviembre 2026" }))
         expect(m.openEntity).toHaveBeenCalledWith("accounting.rcvimport", 5)
     })
 
     it("avisa si el documento no vino en la última importación", () => {
-        m.doc = { ...doc, is_missing: true, missing_since_import: { id: 7, period: "2026-11" } }
+        m.doc = { ...doc, is_missing: true, missing_since_import: { id: 7, period: "202611" } }
         render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
         expect(screen.getByText("No vino en la última importación")).toBeInTheDocument()
     })

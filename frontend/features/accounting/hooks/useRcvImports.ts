@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { invalidateCrossFeature } from '@/lib/invalidation'
@@ -16,6 +17,24 @@ function isInProgress(status: RcvImportStatus | undefined): boolean {
     return status === 'QUEUED' || status === 'RUNNING'
 }
 
+/**
+ * Cuando una importación observada pasa de en cola/en curso a terminada, refresca lo que pudo
+ * cambiar: documentos (Compras/Ventas), uso de las API keys y la configuración.
+ */
+function useRefreshOnFinish(rows: ReadonlyArray<{ id: number; status: RcvImportStatus }> | undefined) {
+    const queryClient = useQueryClient()
+    const active = useRef<Set<number>>(new Set())
+
+    useEffect(() => {
+        if (!rows) return
+        const finished = rows.some((row) => active.current.has(row.id) && !isInProgress(row.status))
+        active.current = new Set(rows.filter((row) => isInProgress(row.status)).map((row) => row.id))
+        if (finished) {
+            invalidateCrossFeature(queryClient, [RCV_KEYS.documents(), RCV_KEYS.apiKeys(), RCV_KEYS.settings()])
+        }
+    }, [rows, queryClient])
+}
+
 export function useRcvImports(filters: RcvImportFilters = {}) {
     const { page = 1, page_size = 20, ...rest } = filters
     const params: RcvImportFilters = { ...rest, page, page_size }
@@ -26,6 +45,7 @@ export function useRcvImports(filters: RcvImportFilters = {}) {
         staleTime: staleTime.volatile,
         refetchInterval: (query) => (query.state.data?.results.some((row) => isInProgress(row.status)) ? POLL_INTERVAL_MS : false),
     })
+    useRefreshOnFinish(data?.results)
 
     return {
         page: data,
@@ -46,6 +66,8 @@ export function useRcvImport(id: number | null | undefined) {
         staleTime: staleTime.volatile,
         refetchInterval: (query) => (isInProgress(query.state.data?.status) ? POLL_INTERVAL_MS : false),
     })
+    const observed = useMemo(() => (data ? [data] : undefined), [data])
+    useRefreshOnFinish(observed)
 
     return { rcvImport: data, isLoading, isError, refetch }
 }

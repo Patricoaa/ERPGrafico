@@ -56,7 +56,7 @@ const doc: RcvDocument = {
     id: 1, direction: "PURCHASES", company_rut: "11111111-1", period: "2026-10", dte_type: 33, dte_type_label: "Factura Electrónica",
     folio: 4521, counterparty_rut: "76000000-0", counterparty_name: "Proveedor de Prueba", issue_date: "2026-10-05",
     received_at: "2026-10-06T10:00:00-03:00", acknowledged_at: null, operation_type: "", status: "Confirmada",
-    acknowledgement: "Recibo otorgado por el receptor", service_indicator: "", exempt_amount: "0", net_amount: "10000",
+    acknowledgement: "Recibo otorgado por el receptor", service_indicator: null, exempt_amount: "0", net_amount: "10000",
     vat_amount: "1900", vat_recoverable: "1900", vat_non_recoverable: "0", total_amount: "11900", other_taxes_total: "0",
     reference_dte_type: null, reference_folio: "", is_missing: false,
 }
@@ -97,6 +97,20 @@ describe("RcvDocumentsClientView", () => {
         expect(m.useRcvDocuments).toHaveBeenCalledWith(
             expect.objectContaining({ year: 2026, month: 10, dte_type: 33, missing: "true", acknowledgement: "No reclamado en plazo" }),
         )
+    })
+
+    it("traduce estado y rango de fecha de emisión", () => {
+        m.filters = { status: "Confirmada", issue_date_from: "2026-10-01", issue_date_to: "2026-10-31" }
+        render(<RcvDocumentsClientView direction="PURCHASES" />)
+        expect(m.useRcvDocuments).toHaveBeenCalledWith(
+            expect.objectContaining({ status: "Confirmada", issue_date_from: "2026-10-01", issue_date_to: "2026-10-31" }),
+        )
+    })
+
+    it("descarta fechas de emisión mal formadas", () => {
+        m.filters = { issue_date_from: "ayer" }
+        render(<RcvDocumentsClientView direction="PURCHASES" />)
+        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ issue_date_from: undefined }))
     })
 
     it("ventas ignora el filtro de acuse", () => {

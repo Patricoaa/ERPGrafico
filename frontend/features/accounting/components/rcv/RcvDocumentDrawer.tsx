@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { FileText } from "lucide-react"
 import { Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
 import { formatDate } from "@/components/entity-view"
@@ -10,6 +10,7 @@ import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_s
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useRcvDocument } from "../../hooks/useRcvDocuments"
 import { formatRcvDteType, rcvAcknowledgementStatus } from "../../entity-view/rcvDocument.entity"
+import { formatRcvPeriod } from "../../entity-view/rcvImport.entity"
 import type { RcvDirection, RcvDocumentDetail, RcvImportRef } from "../../types"
 
 export interface RcvDocumentDrawerProps {
@@ -21,6 +22,12 @@ export interface RcvDocumentDrawerProps {
 }
 
 const DIRECTION_LABELS: Record<RcvDirection, string> = { PURCHASES: "Compra", SALES: "Venta" }
+
+/** "202610" (período del SII) → "Octubre 2026"; otro formato se muestra tal cual. */
+function formatRcvPeriodCode(period: string): string {
+    const match = /^(\d{4})(\d{2})$/.exec(period)
+    return match ? formatRcvPeriod(Number(match[1]), Number(match[2])) : period
+}
 
 /**
  * Ficha de solo lectura de un documento del RCV (`accounting.rcvdocument`), cargada por id.
@@ -65,6 +72,8 @@ export function RcvDocumentDrawer({ id, open, onOpenChange, mode: modeProp }: Rc
 
 function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
     const [rawOpen, setRawOpen] = useState(false)
+    // Solo se serializa al desplegar: la copia cruda puede ser grande.
+    const rawText = useMemo(() => (rawOpen ? JSON.stringify(doc.raw, null, 2) : ""), [rawOpen, doc.raw])
     const purchases = doc.direction === "PURCHASES"
     const ack = rcvAcknowledgementStatus(doc.acknowledgement)
     const money = (amount: string) => <MoneyDisplay amount={amount} currency="CLP" />
@@ -76,7 +85,7 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
                 <Stat title="Folio" value={doc.folio} />
                 <Stat title={purchases ? "RUT proveedor" : "RUT cliente"} value={doc.counterparty_rut} />
                 <Stat title={purchases ? "Proveedor" : "Cliente"} value={doc.counterparty_name} plain />
-                <Stat title="Período" value={doc.period} />
+                <Stat title="Período" value={formatRcvPeriodCode(doc.period)} plain />
                 <Stat title="RUT empresa" value={doc.company_rut} />
             </Section>
 
@@ -118,9 +127,9 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
                         label: rawOpen ? "Ocultar" : "Mostrar",
                         expanded: rawOpen,
                         onToggle: () => setRawOpen((v) => !v),
-                        content: (
+                        content: rawOpen && (
                             <pre className="max-h-96 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-2xs text-muted-foreground whitespace-pre">
-                                {JSON.stringify(doc.raw, null, 2)}
+                                {rawText}
                             </pre>
                         ),
                     }}
@@ -155,7 +164,7 @@ function ImportLink({ importRef }: { importRef: RcvImportRef | null }) {
     if (!importRef) return null
     return (
         <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("accounting.rcvimport", importRef.id)}>
-            {`Importación ${importRef.period}`}
+            {`Importación ${formatRcvPeriodCode(importRef.period)}`}
         </Button>
     )
 }

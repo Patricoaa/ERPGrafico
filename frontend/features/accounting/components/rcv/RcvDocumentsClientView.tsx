@@ -21,6 +21,8 @@ const toInt = (v: string | undefined): number | undefined => {
     return v && Number.isInteger(n) && n > 0 ? n : undefined
 }
 
+const isIsoDate = (v: string | undefined): v is string => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v)
+
 /** URL search params → typed API filters. */
 function toRcvFilters(direction: RcvDirection, params: Record<string, string>): RcvDocumentFilters {
     return {
@@ -30,6 +32,9 @@ function toRcvFilters(direction: RcvDirection, params: Record<string, string>): 
         month: toInt(params.month),
         dte_type: toInt(params.dte_type),
         acknowledgement: direction === "PURCHASES" ? params.acknowledgement || undefined : undefined,
+        status: direction === "PURCHASES" ? params.status || undefined : undefined,
+        issue_date_from: isIsoDate(params.issue_date_from) ? params.issue_date_from : undefined,
+        issue_date_to: isIsoDate(params.issue_date_to) ? params.issue_date_to : undefined,
         missing: params.missing === "true" || params.missing === "false" ? params.missing : undefined,
     }
 }

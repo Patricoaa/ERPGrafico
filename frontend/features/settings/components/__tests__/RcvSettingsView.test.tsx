@@ -67,6 +67,8 @@ describe("RcvSettingsView", () => {
         expect(input.value).toBe("")
         const save = screen.getByRole("button", { name: "Guardar clave" }) as HTMLButtonElement
         expect(save.disabled).toBe(true)
+        fireEvent.change(input, { target: { value: "   " } })
+        expect(save.disabled).toBe(true)
         fireEvent.change(input, { target: { value: "clave-de-prueba" } })
         expect(save.disabled).toBe(false)
         fireEvent.click(save)
@@ -91,6 +93,11 @@ describe("RcvSettingsView", () => {
         render(<RcvSettingsView />)
         expect(screen.getByText("3/10 este mes")).toBeTruthy()
         expect(screen.getByText("••••-4472")).toBeTruthy()
+    })
+
+    it("explica la rotación de keys por menor uso", () => {
+        render(<RcvSettingsView />)
+        expect(screen.getByText(/Se usa primero la key con menos consultas este mes; al agotarse una, se pasa a la siguiente\./)).toBeTruthy()
     })
 
     it("sin permisos de escritura no ofrece cambiar la clave ni agregar keys", () => {

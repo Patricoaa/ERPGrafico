@@ -1,4 +1,5 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
+import { periodPresets } from '@/lib/date-presets'
 
 export const accountUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -142,6 +143,19 @@ export const rcvDocumentUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
     {
+      // Texto del SII (coincidencia exacta). Solo "Confirmada" observado; el resto según el RCV de compras.
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Confirmada', value: 'Confirmada' },
+        { label: 'Pendiente', value: 'Pendiente' },
+        { label: 'Reclamada', value: 'Reclamada' },
+        { label: 'No incluir', value: 'No incluir' },
+      ],
+    },
+    {
       type: 'single',
       key: 'missing',
       label: 'Vigencia',
@@ -152,12 +166,20 @@ export const rcvDocumentUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  dateFilters: [
+    {
+      type: 'date',
+      key: 'issue_date',
+      label: 'Fecha de emisión',
+      options: periodPresets('issue_date_from', 'issue_date_to'),
+    },
+  ],
 }
 
-/** Las ventas no tienen acuse de recibo. */
+/** Las ventas no tienen acuse de recibo ni estado (el SII lo envía vacío). */
 export const rcvSaleUnifiedSearchDef: UnifiedSearchConfig = {
   ...rcvDocumentUnifiedSearchDef,
-  filters: (rcvDocumentUnifiedSearchDef.filters ?? []).filter((f) => f.key !== 'acknowledgement'),
+  filters: (rcvDocumentUnifiedSearchDef.filters ?? []).filter((f) => f.key !== 'acknowledgement' && f.key !== 'status'),
 }
 
 /** Filtros del historial de importaciones del RCV. */

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { FileText } from "lucide-react"
 import { Banner, Drawer, DrawerLayout, EmptyState, Section, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Collection, formatDate, useEntityCollection } from "@/components/entity-view"
@@ -71,6 +71,11 @@ export function RcvImportDrawer({ id, open, onOpenChange, mode: modeProp }: RcvI
 
 function RcvImportDetailBody({ rcvImport }: { rcvImport: RcvImportDetail }) {
     const [rawOpen, setRawOpen] = useState(false)
+    // Solo se serializa al desplegar: la respuesta cruda puede ser grande.
+    const rawText = useMemo(
+        () => (rawOpen ? JSON.stringify(rcvImport.raw_response, null, 2) : ""),
+        [rawOpen, rcvImport.raw_response],
+    )
     const status = rcvImportStatus(rcvImport)
 
     return (
@@ -120,9 +125,9 @@ function RcvImportDetailBody({ rcvImport }: { rcvImport: RcvImportDetail }) {
                         label: rawOpen ? "Ocultar" : "Mostrar",
                         expanded: rawOpen,
                         onToggle: () => setRawOpen((v) => !v),
-                        content: (
+                        content: rawOpen && (
                             <pre className="max-h-96 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-2xs text-muted-foreground whitespace-pre">
-                                {JSON.stringify(rcvImport.raw_response, null, 2)}
+                                {rawText}
                             </pre>
                         ),
                     }}

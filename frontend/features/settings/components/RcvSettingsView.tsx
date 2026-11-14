@@ -95,7 +95,7 @@ function SiiPasswordField({ hasPassword }: { hasPassword: boolean }) {
             </div>
             <Can permission={SETTINGS_PERMISSION}>
                 <div className="flex gap-2 pt-1">
-                    <SubmitButton type="button" loading={isUpdating} disabled={password === ""} onClick={() => void save()}>
+                    <SubmitButton type="button" loading={isUpdating} disabled={password.trim() === ""} onClick={() => void save()}>
                         Guardar clave
                     </SubmitButton>
                     {hasPassword && (
@@ -124,7 +124,7 @@ function ApiKeysCard() {
             <CardHeader className="flex flex-row items-start justify-between gap-3">
                 <div className="space-y-1.5">
                     <CardTitle className="text-lg text-primary">API keys de SimpleAPI</CardTitle>
-                    <CardDescription>Cada key tiene un cupo mensual de consultas; se usan en orden hasta agotarlas.</CardDescription>
+                    <CardDescription>Cada key tiene un cupo mensual de consultas. Se usa primero la key con menos consultas este mes; al agotarse una, se pasa a la siguiente.</CardDescription>
                 </div>
                 <Can permission="accounting.add_rcvapikey">
                     <Button type="button" onClick={() => setCreating(true)}>

@@ -14,7 +14,7 @@ export type RcvAttemptOutcome = 'OK' | 'QUOTA_EXHAUSTED' | 'RATE_LIMITED' | 'AUT
 /** Referencia liviana a una importación ({ id, period }). */
 export interface RcvImportRef {
     id: number
-    /** `YYYY-MM` */
+    /** Período del SII `YYYYMM` (p. ej. `"202610"`). */
     period: string
 }
 
@@ -37,7 +37,7 @@ export interface RcvDocument {
     operation_type: string
     status: string
     acknowledgement: string
-    service_indicator: string
+    service_indicator: number | null
     exempt_amount: string
     net_amount: string
     vat_amount: string
