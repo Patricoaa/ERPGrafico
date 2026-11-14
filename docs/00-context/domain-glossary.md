@@ -35,6 +35,8 @@ Definitive vocabulary. When a term appears in code or docs, use this meaning —
 | **Terminal de cobro** | Card-payment device (e.g. TUU) linked to a provider; captures card sales | `treasury.PaymentTerminalDevice` |
 | **Proveedor de terminal de cobro** | Company operating the terminals; owns the bridge/settlement account and commissions | `treasury.PaymentTerminalProvider` |
 | **Lote de terminal de cobro** | Daily settlement batch reported by the provider | `treasury.TerminalBatch` |
+| **Venta de terminal de cobro** | One sale captured by a TUU terminal, synced read-only from the TUU report APIs (cash or card, DTE type, commission, settlement) | `treasury.TerminalSale` |
+| **Sincronización TUU** | One execution that downloads the TUU reports for a provider and date range, storing raw responses and upserting sales | `treasury.TerminalSyncRun` (+ `TerminalSyncPayload`, settings `TerminalSyncSettings`) |
 | **Tarjeta (terminal de cobro)** | Payment method type for card sales through a terminal de cobro | `PaymentMethod.Type.CARD_TERMINAL` |
 | **Caja POS** | Point-of-sale register (cash drawer + allowed payment methods). NOT a terminal de cobro | `treasury.POSTerminal` |
 | **Sesión de POS** | Open/close period of a Caja POS (apertura, cierre, arqueo). Use "sesión de POS" in wizards, toasts and errors — never bare "Cerrar sesión" (reads as logout) nor "sesión de caja". Only the opener or a superuser can close it | `treasury.POSSession` |

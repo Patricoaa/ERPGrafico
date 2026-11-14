@@ -191,6 +191,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `treasury.treasuryaccount` | `/treasury/operaciones/accounts` | `/treasury/operaciones/accounts/{id}` | ❌ (vía `?selected`) | No |
 | `treasury.possession` | `/treasury/sessions` | `/treasury/sessions/{id}` | ✅ | **Sí** (cerrada) |
 | `treasury.bankstatement` | `/treasury/statements` | `/treasury/statements/{id}` | ✅ | **Sí** |
+| `treasury.terminalsale` | `/treasury/terminal-cobro/sales` | `/treasury/terminal-cobro/sales?selected={id}` | ❌ (vía `?selected`) | **Sí** (espejo de solo lectura de TUU) |
 | `hr.employee` | `/hr/employees` | `/hr/employees/{id}` | ✅ | No |
 | `hr.payroll` | `/hr/payrolls` | `/hr/payrolls/{id}` | ✅ | No |
 | `production.workorder` | `/production/orders` | `/production/orders/{id}` | ✅ | No |

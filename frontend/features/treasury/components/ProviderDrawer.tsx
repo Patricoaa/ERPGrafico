@@ -4,8 +4,7 @@ import { useState } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Building2, Settings } from "lucide-react"
+import { Building2, KeyRound, Settings } from "lucide-react"
 import { useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalProviderCreatePayload, type PaymentTerminalProviderUpdatePayload } from "@/features/treasury"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
@@ -16,19 +15,7 @@ import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, 
 import { Drawer, CancelButton, SubmitButton, LabeledInput, FormFooter, FormSplitLayout, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
-
-const providerSchema = z.object({
-    name: z.string().min(1, "El nombre es requerido"),
-    provider_type: z.string().min(1, "El tipo es requerido"),
-    supplier: z.string().nullable().optional(),
-    receivable_account: z.string().nullable().optional(),
-    commission_expense_account: z.string().nullable().optional(),
-    commission_iva_account: z.string().nullable().optional(),
-    commission_product: z.string().nullable().optional(),
-    default_deposit_account: z.string().nullable().optional(),
-})
-
-type ProviderFormValues = z.infer<typeof providerSchema>
+import { providerSchema, type ProviderFormValues } from "./providerDrawerSchema"
 
 interface ProviderDrawerProps {
     open: boolean
@@ -55,8 +42,11 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             commission_iva_account: null,
             commission_product: null,
             default_deposit_account: null,
+            api_key: "",
         }
     })
+
+    const isTuu = form.watch("provider_type") === "TUU"
 
     useInitializeDrawerForm({
         form,
@@ -71,6 +61,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             commission_iva_account: null,
             commission_product: null,
             default_deposit_account: null,
+            api_key: "",
         }),
         mapData: (data) => ({
             name: data.name,
@@ -81,6 +72,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             commission_iva_account: data.commission_iva_account?.toString() || null,
             commission_product: data.commission_product?.toString() || null,
             default_deposit_account: data.default_deposit_account?.toString() || null,
+            api_key: "",
         }),
     })
 
@@ -101,6 +93,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 commission_iva_account: values.commission_iva_account ? Number(values.commission_iva_account) : undefined,
                 commission_product: values.commission_product ? Number(values.commission_product) : undefined,
                 default_deposit_account: values.default_deposit_account ? Number(values.default_deposit_account) : null,
+                ...(values.api_key?.trim() ? { api_key: values.api_key.trim() } : {}),
                 is_active: true,
             }
 
@@ -212,6 +205,27 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                                         />
                                     </div>
                                 </div>
+
+                                {isTuu && (
+                                    <>
+                                        <Section.Header spaced title="Integración TUU" icon={KeyRound} className="my-4" />
+                                        <FormField
+                                            control={form.control}
+                                            name="api_key"
+                                            render={({ field }) => (
+                                                <LabeledInput
+                                                    label="API key"
+                                                    type="password"
+                                                    autoComplete="off"
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                    placeholder={provider?.has_api_key ? "Configurada" : "Pegue la API key de TUU"}
+                                                    hint="Se guarda cifrada. Déjela vacía para mantener la actual."
+                                                />
+                                            )}
+                                        />
+                                    </>
+                                )}
 
                                 <Section.Header spaced title="Configuración Contable" icon={Settings} className="my-4" />
 

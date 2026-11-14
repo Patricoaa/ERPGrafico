@@ -150,6 +150,8 @@ export interface PaymentTerminalProvider {
     commission_product: number | null
     commission_product_name?: string
     config?: Record<string, unknown>
+    /** True when an encrypted API key is stored. The key itself is never returned. */
+    has_api_key: boolean
     is_active: boolean
 }
 
@@ -388,6 +390,8 @@ export interface PaymentTerminalProviderCreatePayload {
     /** TreasuryAccount (CHECKING/CASH) used as default deposit destination for batches. */
     default_deposit_account?: number | null
     config?: Record<string, unknown>
+    /** Write-only. Omit to keep the stored key. */
+    api_key?: string
     is_active?: boolean
 }
 
@@ -672,4 +676,146 @@ export interface PaymentDetail {
     treasury_account_name?: string | null
     partner_name?: string | null
     [key: string]: unknown
+}
+
+// ─── TUU terminal sales sync ─────────────────────────────────────────────────
+
+export type TerminalSaleStatus = 'COMPLETED' | 'REVERSED' | 'OTHER'
+export type TerminalSalePaymentType = 'CASH' | 'DEBIT' | 'CREDIT' | 'PREPAID' | 'UNKNOWN'
+export type TerminalSaleSource = 'BRANCH' | 'GENERAL'
+export type TerminalSyncTrigger = 'SCHEDULED' | 'MANUAL'
+export type TerminalSyncRunStatus = 'RUNNING' | 'SUCCESS' | 'PARTIAL' | 'FAILED'
+
+export interface TerminalSale {
+    id: number
+    provider: number
+    provider_name: string
+    device: number | null
+    device_name: string | null
+    serial_number: string
+    sale_id: string
+    sequence_number: string
+    location_id: string
+    /** ISO datetime */
+    transaction_at: string
+    status: TerminalSaleStatus
+    raw_status: string
+    payment_type: TerminalSalePaymentType
+    document_type: number | null
+    document_type_label: string
+    instance: number | null
+    card_brand: string
+    card_issuer: string
+    installment_count: number | null
+    currency: string
+    sale_amount: string
+    tip_amount: string
+    cashback_amount: string
+    total_amount: string
+    commission_amount: string | null
+    net_amount: string | null
+    /** ISO date */
+    settlement_date: string | null
+    settlement_id: string | null
+    settlement_amount: string | null
+}
+
+export interface TerminalSaleDetail extends TerminalSale {
+    natural_key: string
+    card_bin: string
+    card_origin: string
+    installment_type: string | null
+    acquirer_id: string | null
+    reconciliations: Record<string, unknown>[]
+    items: Record<string, unknown>[]
+    raw: Record<string, unknown>
+    sources: TerminalSaleSource[]
+    first_seen_run: number | null
+    last_seen_run: number | null
+    created_at: string
+    updated_at: string
+}
+
+export interface TerminalSalesSummary {
+    count: number
+    gross: string
+    commission: string
+    net: string
+    by_payment_type: { payment_type: TerminalSalePaymentType; count: number; gross: string }[]
+    non_completed: { count: number; total: string }
+}
+
+export interface TerminalSyncRun {
+    id: number
+    provider: number
+    provider_name: string
+    trigger: TerminalSyncTrigger
+    status: TerminalSyncRunStatus
+    /** ISO date */
+    start_date: string
+    end_date: string
+    attempts: number
+    /** ISO datetime */
+    started_at: string
+    finished_at: string | null
+    error_message: string
+    warnings: string[]
+    fetched_count: number
+    created_count: number
+    updated_count: number
+    triggered_by: number | null
+    triggered_by_name: string | null
+}
+
+export interface TerminalSyncLastRun {
+    id: number
+    provider_name: string
+    status: TerminalSyncRunStatus
+    started_at: string
+    finished_at: string | null
+    error_message: string
+    warnings: string[]
+}
+
+export interface TerminalSyncSettings {
+    id: number
+    enabled: boolean
+    run_hour: number
+    lookback_days: number
+    /** ISO date */
+    history_start_date: string | null
+    max_retries: number
+    retry_delay_minutes: number
+    last_run: TerminalSyncLastRun | null
+}
+
+export type TerminalSyncSettingsPatch = Partial<Omit<TerminalSyncSettings, 'id' | 'last_run'>>
+
+export interface TerminalSaleFilters {
+    date_from?: string
+    date_to?: string
+    provider?: number
+    device?: number
+    document_type?: number
+    payment_type?: TerminalSalePaymentType
+    status?: TerminalSaleStatus
+    settled?: 'true' | 'false'
+    page?: number
+    page_size?: number
+}
+
+/** Filters accepted by `/terminal-sales/summary/` (no pagination). */
+export type TerminalSalesSummaryFilters = Omit<TerminalSaleFilters, 'page' | 'page_size'>
+
+export interface TerminalSyncRunFilters {
+    provider?: number
+    status?: TerminalSyncRunStatus
+    page?: number
+    page_size?: number
+}
+
+/** Both dates optional (ISO); backend rejects with `{detail}` when invalid. */
+export interface ManualSyncPayload {
+    start_date?: string
+    end_date?: string
 }

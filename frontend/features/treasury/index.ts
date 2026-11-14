@@ -3,7 +3,7 @@ export {
   TERMINALS_KEYS, BATCHES_KEYS, MOVEMENTS_KEYS, TREASURY_ACCOUNTS_KEYS,
   PAYMENT_REFERENCES_KEYS, MONTHLY_INVOICES_KEYS, BANKS_KEYS, PAYMENT_METHODS_KEYS,
   TERMINAL_PROVIDERS_KEYS, TERMINAL_DEVICES_KEYS, PAYMENTS_KEYS, BANK_STATEMENTS_KEYS,
-  CREDIT_LINES_KEYS,
+  CREDIT_LINES_KEYS, TERMINAL_SALES_KEYS, TERMINAL_SYNC_KEYS,
 } from './hooks/queryKeys'
 export type {
   Terminal, TerminalCreatePayload, TerminalUpdatePayload,
@@ -16,6 +16,10 @@ export type {
   PaymentTerminalDevice, PaymentTerminalDeviceCreatePayload,
   PaymentTerminalDeviceUpdatePayload,
   TerminalBatch, TerminalBatchCreatePayload,
+  TerminalSale, TerminalSaleDetail, TerminalSalesSummary, TerminalSalesSummaryFilters,
+  TerminalSaleFilters, TerminalSaleStatus, TerminalSalePaymentType, TerminalSaleSource,
+  TerminalSyncRun, TerminalSyncRunFilters, TerminalSyncRunStatus, TerminalSyncTrigger,
+  TerminalSyncLastRun, TerminalSyncSettings, TerminalSyncSettingsPatch, ManualSyncPayload,
   CardPurchaseGroup, UpcomingInstallment, PendingChargeRow,
   UnbilledItemSource, UnbilledItemRow,
   ByMonthItem, UnbilledForecast,
@@ -34,6 +38,10 @@ export { treasuryApi } from './api/treasuryApi'
 export { useProvisionAccount, useTreasuryAccounts } from './hooks/useTreasuryAccounts'
 export type { TreasuryAccountFilters } from './hooks/useTreasuryAccounts'
 export { useTerminalBatches } from './hooks/useTerminalBatches'
+export { useTerminalSales, useTerminalSalesSummary, useTerminalSale } from './hooks/useTerminalSales'
+export {
+  useTerminalSyncRuns, useStartTerminalSync, useTerminalSyncSettings, useUpdateTerminalSyncSettings,
+} from './hooks/useTerminalSync'
 export { useTerminalBatchMutations } from './hooks/useTerminalBatchMutations'
 export { useTerminalProviders, useTerminalDevices } from './hooks/useTerminalProviders'
 export { useBanks, usePaymentMethods } from './hooks/useMasterData'
@@ -66,6 +74,9 @@ export { PaymentFormDrawer } from './components/PaymentFormDrawer'
 export { paymentActions } from './paymentActions'
 export { BankStatementSheet } from './components/BankStatementSheet'
 export { TerminalBatchesClientView } from './components/TerminalBatchesClientView'
+export { TerminalSalesClientView } from './components/TerminalSalesClientView'
+export { TerminalSaleDrawer } from './components/TerminalSaleDrawer'
+export type { TerminalSaleDrawerProps } from './components/TerminalSaleDrawer'
 export { PaymentHardwareClientView } from './components/PaymentHardwareClientView'
 /** @deprecated Use TerminalBatchSelectionModal */
 export { default as TerminalBatchForm } from './components/TerminalBatchSelectionModal'
@@ -113,5 +124,6 @@ export { BankUpcomingMaturitiesPanel } from './components/BankUpcomingMaturities
 export { BankRecentActivity } from './components/BankRecentActivity'
 export { statementLineUnmatchActions } from './components/statementLineUnmatchActions'
 export type { StatementLineUnmatchActionsCtx } from './components/statementLineUnmatchActions'
+export { terminalSyncRunEntity, terminalSyncRunViews, terminalSyncRunStatus, terminalSyncRunDetail } from './entity-view/terminalSyncRun.entity'
 export { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from './entity-view/loanInstallment.entity'
 export { POSExternalReasonModal } from './components/POSExternalReasonModal'

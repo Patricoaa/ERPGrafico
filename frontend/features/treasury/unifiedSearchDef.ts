@@ -1,5 +1,6 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { format, subDays } from 'date-fns'
+import { today, thisWeek, thisMonth, thisQuarter, thisYear, periodPresets } from '@/lib/date-presets'
 
 export const bankUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -247,4 +248,63 @@ export const posSessionActivitySearchDef: UnifiedSearchConfig = {
     },
     { type: 'multi', key: 'actor', label: 'Responsable', serverParam: 'actor', options: [], dynamic: true },
   ],
+}
+
+/** "Últimos 7 días" date preset of the terminal sales tab: the last 7 days ending today (local). */
+function lastSevenDays() {
+  const now = new Date()
+  return { from: format(subDays(now, 6), 'yyyy-MM-dd'), to: format(now, 'yyyy-MM-dd') }
+}
+
+export const terminalSaleUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [],
+  filters: [
+    { type: 'single', key: 'provider', label: 'Proveedor', serverParam: 'provider', options: [], dynamic: true },
+    {
+      type: 'single',
+      key: 'payment_type',
+      label: 'Tipo de pago',
+      serverParam: 'payment_type',
+      options: [
+        { label: 'Efectivo', value: 'CASH' },
+        { label: 'Débito', value: 'DEBIT' },
+        { label: 'Crédito', value: 'CREDIT' },
+        { label: 'Prepago', value: 'PREPAID' },
+        { label: 'Sin tipo', value: 'UNKNOWN' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'document_type',
+      label: 'Tipo de documento',
+      serverParam: 'document_type',
+      options: [
+        { label: 'Factura afecta', value: '33' },
+        { label: 'Factura exenta', value: '34' },
+        { label: 'Boleta', value: '39' },
+        { label: 'Boleta exenta', value: '41' },
+        { label: 'Comprobante de pago', value: '48' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Completada', value: 'COMPLETED' },
+        { label: 'Anulada', value: 'REVERSED' },
+        { label: 'Otro', value: 'OTHER' },
+      ],
+    },
+  ],
+  dateFilters: [{
+    type: 'date',
+    key: 'date',
+    label: 'Fecha',
+    options: [
+      { label: 'Últimos 7 días', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: lastSevenDays },
+      ...periodPresets('date_from', 'date_to'),
+    ],
+  }],
 }

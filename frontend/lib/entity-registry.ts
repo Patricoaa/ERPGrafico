@@ -974,6 +974,18 @@ const REGISTRY = {
     detailUrlPattern: '/treasury/bank-center?batch={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
+  'treasury.terminalsale': {
+    label: 'treasury.terminalsale',
+    title: 'Venta de terminal de cobro',
+    titlePlural: 'Ventas de terminal de cobro',
+    icon: Receipt,
+    iconName: 'Receipt',
+    feminine: true,
+    description: 'Venta sincronizada desde el proveedor del terminal de cobro (solo lectura)',
+    listUrl: '/treasury/terminal-cobro/sales',
+    detailUrlPattern: '/treasury/terminal-cobro/sales?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+  },
   'treasury.transfer': {
     label: 'treasury.transfer',
     title: 'Traspaso',

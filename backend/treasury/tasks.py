@@ -8,7 +8,16 @@ from datetime import timedelta
 from celery import shared_task
 from django.utils import timezone
 
+from .integrations.tuu_client import TuuTransientError
 from .matching_service import MatchingService
+from .models import TerminalSyncRun, TerminalSyncSettings
+from .terminal_sync_service import (
+    create_run,
+    daily_range,
+    eligible_providers,
+    enqueue_runs,
+    execute_run,
+)
 
 # Rust native extension for batch scoring (graceful fallback)
 try:
@@ -891,3 +900,62 @@ def check_credit_line_expirations():
     if count:
         logger.info("check_credit_line_expirations: %d línea(s) marcada(s) como EXPIRED.", count)
     return {"expired_count": count}
+
+
+# ── Sincronización de ventas de terminal (TUU) ───────────────────────────
+
+
+def _now():
+    """Hora local actual; punto único para poder fijarla en tests."""
+    return timezone.localtime()
+
+
+@shared_task(name="treasury.tasks.dispatch_terminal_sales_sync")
+def dispatch_terminal_sales_sync() -> int:
+    """Crea una ejecución programada diaria por proveedor TUU elegible y la encola.
+
+    Corre cada hora; solo actúa pasada la hora configurada y una vez por día local.
+    Retorna la cantidad de ejecuciones encoladas.
+    """
+    config = TerminalSyncSettings.get_settings()
+    now = _now()
+    if not config.enabled or now.hour < config.run_hour:
+        return 0
+    today = now.date()
+    date_range = daily_range(config, today)
+    if date_range is None:
+        return 0
+    queued = 0
+    for provider in eligible_providers():
+        already_ran = TerminalSyncRun.objects.filter(
+            provider=provider,
+            trigger=TerminalSyncRun.Trigger.SCHEDULED,
+            started_at__date=today,
+        ).exists()
+        if already_ran:
+            continue
+        run = create_run(provider, *date_range, TerminalSyncRun.Trigger.SCHEDULED)
+        enqueue_runs([run], sync_terminal_run.delay)
+        queued += 1
+    return queued
+
+
+@shared_task(bind=True, name="treasury.tasks.sync_terminal_run")
+def sync_terminal_run(self, run_id: int) -> str:
+    """Ejecuta una sincronización; reintenta ante errores transitorios de TUU."""
+    run = TerminalSyncRun.objects.select_related("provider").get(pk=run_id)
+    run.attempts += 1
+    run.save(update_fields=["attempts"])
+    try:
+        return execute_run(run).status
+    except TuuTransientError:
+        config = TerminalSyncSettings.get_settings()
+        if self.request.retries < config.max_retries:
+            raise self.retry(
+                countdown=config.retry_delay_minutes * 60, max_retries=config.max_retries
+            ) from None
+        run.status = TerminalSyncRun.Status.FAILED
+        run.error_message = f"TUU no respondió tras {run.attempts} intentos"
+        run.finished_at = timezone.now()
+        run.save(update_fields=["status", "error_message", "finished_at"])
+        return run.status

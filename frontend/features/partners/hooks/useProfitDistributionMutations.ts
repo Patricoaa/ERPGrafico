@@ -7,7 +7,7 @@ import { MOVEMENTS_KEYS, TREASURY_ACCOUNTS_KEYS } from '@/features/treasury'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { PARTNER_KEYS } from './queryKeys'
-import { useIdempotencyKey } from './useIdempotencyKey'
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey'
 
 type CreateInput = Parameters<typeof partnersApi.createProfitDistribution>[0]
 type LinesInput = Parameters<typeof partnersApi.updateProfitDistributionLines>[1]

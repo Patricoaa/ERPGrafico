@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from core.crypto import CryptoError
 from core.serializers.mixins import FrozenFieldsField, IsEditableField
 
 from .models import (
@@ -13,10 +14,14 @@ from .models import (
     POSSessionAudit,
     POSTerminal,
     ReconciliationSettings,
+    TerminalSale,
+    TerminalSyncRun,
+    TerminalSyncSettings,
     TreasuryAccount,
     TreasuryMovement,
 )
 from .pos_lock import PosSessionLockedField
+from .terminal_sync_service import find_provider_with_same_key
 
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
@@ -883,10 +888,74 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
         source="get_provider_type_display", read_only=True
     )
 
+    # La API key es solo escritura: gateway_config (con el token cifrado) nunca se expone.
+    api_key = serializers.CharField(write_only=True, required=False, allow_blank=True, trim_whitespace=True)
+    has_api_key = serializers.SerializerMethodField()
+
     class Meta:
         model = PaymentTerminalProvider
-        fields = "__all__"
+        fields = (
+            "id",
+            "name",
+            "provider_type",
+            "supplier",
+            "is_active",
+            "notes",
+            "receivable_account",
+            "commission_expense_account",
+            "commission_iva_account",
+            "commission_product",
+            "bank_treasury_account",
+            "default_deposit_account",
+            "created_at",
+            "updated_at",
+            "supplier_name",
+            "receivable_account_name",
+            "commission_expense_account_name",
+            "commission_iva_account_name",
+            "bank_treasury_account_name",
+            "default_deposit_account_name",
+            "provider_type_display",
+            "api_key",
+            "has_api_key",
+        )
         read_only_fields = ("bank_treasury_account",)
+
+    def get_has_api_key(self, obj) -> bool:
+        return bool((obj.gateway_config or {}).get(PaymentTerminalProvider._API_KEY_FIELD))
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        instance = self.instance
+        provider_type = attrs.get("provider_type", instance.provider_type if instance else None)
+        is_active = attrs.get("is_active", instance.is_active if instance else True)
+        if provider_type == PaymentTerminalProvider.ProviderType.TUU and is_active:
+            api_key = attrs.get("api_key") or ""
+            if not api_key and instance:
+                try:
+                    api_key = instance.get_api_key()
+                except CryptoError:
+                    api_key = ""
+            other = find_provider_with_same_key(api_key, instance.pk if instance else None)
+            if other:
+                raise serializers.ValidationError(
+                    {"api_key": f"Esta API key ya está asignada al proveedor {other.name}."}
+                )
+        return attrs
+
+    def create(self, validated_data):
+        api_key = validated_data.pop("api_key", "")
+        instance = PaymentTerminalProvider(**validated_data)
+        if api_key:
+            instance.set_api_key(api_key)
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        api_key = validated_data.pop("api_key", "")
+        if api_key:
+            instance.set_api_key(api_key)
+        return super().update(instance, validated_data)
 
     def validate_default_deposit_account(self, value):
         if value and value.account_type in ("BRIDGE", "CHECK_PORTFOLIO", "ISSUED_CHECKS"):
@@ -1765,3 +1834,158 @@ class ApplyChargesActionSerializer(serializers.Serializer):
 
     interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
     fees_expense_account = serializers.IntegerField(required=False, allow_null=True)
+
+
+class TerminalSyncLastRunSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source="provider.name", read_only=True)
+
+    class Meta:
+        model = TerminalSyncRun
+        fields = [
+            "id",
+            "provider_name",
+            "status",
+            "started_at",
+            "finished_at",
+            "error_message",
+            "warnings",
+        ]
+        read_only_fields = fields
+
+
+class TerminalSyncSettingsSerializer(serializers.ModelSerializer):
+    last_run = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TerminalSyncSettings
+        fields = [
+            "id",
+            "enabled",
+            "run_hour",
+            "lookback_days",
+            "history_start_date",
+            "max_retries",
+            "retry_delay_minutes",
+            "last_run",
+        ]
+        read_only_fields = ["id", "last_run"]
+
+    def get_last_run(self, obj):
+        run = self.context.get("last_run")
+        return TerminalSyncLastRunSerializer(run).data if run else None
+
+
+class TerminalSyncRunSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source="provider.name", read_only=True)
+    triggered_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TerminalSyncRun
+        fields = [
+            "id",
+            "provider",
+            "provider_name",
+            "trigger",
+            "status",
+            "start_date",
+            "end_date",
+            "attempts",
+            "started_at",
+            "finished_at",
+            "error_message",
+            "warnings",
+            "fetched_count",
+            "created_count",
+            "updated_count",
+            "triggered_by",
+            "triggered_by_name",
+        ]
+        read_only_fields = fields
+
+    def get_triggered_by_name(self, obj) -> str | None:
+        user = obj.triggered_by
+        return (user.get_full_name() or user.username) if user else None
+
+
+class TerminalSaleListSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source="provider.name", read_only=True)
+    device_name = serializers.CharField(source="device.name", read_only=True, default=None)
+    document_type_label = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = TerminalSale
+        fields = [
+            "id",
+            "provider",
+            "provider_name",
+            "device",
+            "device_name",
+            "serial_number",
+            "sale_id",
+            "sequence_number",
+            "location_id",
+            "transaction_at",
+            "status",
+            "raw_status",
+            "payment_type",
+            "document_type",
+            "document_type_label",
+            "instance",
+            "card_brand",
+            "card_issuer",
+            "installment_count",
+            "currency",
+            "sale_amount",
+            "tip_amount",
+            "cashback_amount",
+            "total_amount",
+            "commission_amount",
+            "net_amount",
+            "settlement_date",
+            "settlement_id",
+            "settlement_amount",
+        ]
+        read_only_fields = fields
+
+
+class TerminalSaleSerializer(TerminalSaleListSerializer):
+    class Meta(TerminalSaleListSerializer.Meta):
+        fields = TerminalSaleListSerializer.Meta.fields + [
+            "natural_key",
+            "card_bin",
+            "card_origin",
+            "installment_type",
+            "acquirer_id",
+            "reconciliations",
+            "items",
+            "raw",
+            "sources",
+            "first_seen_run",
+            "last_seen_run",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class TerminalManualSyncSerializer(serializers.Serializer):
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False)
+
+
+class TerminalSaleFilterSerializer(serializers.Serializer):
+    """Valida los query params de ventas de terminal (400 ante valores malformados)."""
+
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+    provider = serializers.IntegerField(required=False, min_value=1)
+    device = serializers.IntegerField(required=False, min_value=1)
+    document_type = serializers.IntegerField(required=False, min_value=0)
+    payment_type = serializers.ChoiceField(choices=TerminalSale.PaymentType.choices, required=False)
+    status = serializers.ChoiceField(choices=TerminalSale.Status.choices, required=False)
+    settled = serializers.ChoiceField(choices=["true", "false"], required=False)
+
+
+class TerminalSyncRunFilterSerializer(serializers.Serializer):
+    provider = serializers.IntegerField(required=False, min_value=1)
+    status = serializers.ChoiceField(choices=TerminalSyncRun.Status.choices, required=False)

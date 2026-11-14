@@ -94,6 +94,20 @@ export const CREDIT_LINES_KEYS = {
     detail: (id: number) => [...CREDIT_LINES_KEYS.details(), id] as const,
 }
 
+export const TERMINAL_SALES_KEYS = {
+    all: ['terminal-sales'] as const,
+    lists: () => [...TERMINAL_SALES_KEYS.all, 'list'] as const,
+    summaries: () => [...TERMINAL_SALES_KEYS.all, 'summary'] as const,
+    details: () => [...TERMINAL_SALES_KEYS.all, 'detail'] as const,
+    detail: (id: number) => [...TERMINAL_SALES_KEYS.details(), id] as const,
+}
+
+export const TERMINAL_SYNC_KEYS = {
+    all: ['terminal-sync'] as const,
+    runs: () => [...TERMINAL_SYNC_KEYS.all, 'runs'] as const,
+    settings: () => [...TERMINAL_SYNC_KEYS.all, 'settings'] as const,
+}
+
 // ─── Legacy flat constants (deprecated — kept for backward compat) ────────────
 
 /** @deprecated Use MOVEMENTS_KEYS.* */

@@ -183,6 +183,11 @@ const TerminalBatchDrawer = dynamic(
     { ssr: false, loading: () => skeleton("lote de terminal de cobro") }
 )
 
+const TerminalSaleDrawer = dynamic(
+    () => import("@/features/treasury").then((m) => m.TerminalSaleDrawer),
+    { ssr: false, loading: () => skeleton("venta de terminal de cobro") }
+)
+
 const CheckDrawer = dynamic(
     () => import("@/features/treasury").then((m) => m.CheckDrawer),
     { ssr: false, loading: () => skeleton("cheque") }
@@ -648,6 +653,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
     "treasury.terminalbatch": ({ id, open, onOpenChange }) => (
         <TerminalBatchDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "treasury.terminalsale": ({ id, open, onOpenChange }) => (
+        <TerminalSaleDrawer
             id={id}
             open={open}
             onOpenChange={onOpenChange}

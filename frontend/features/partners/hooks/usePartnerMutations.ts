@@ -8,7 +8,7 @@ import { DOCUMENTS_KEYS } from '@/features/documents'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { PARTNER_KEYS } from './queryKeys'
-import { useIdempotencyKey } from './useIdempotencyKey'
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey'
 
 type SubscriptionInput = Parameters<typeof partnersApi.recordSubscription>[0]
 type TransferInput = Parameters<typeof partnersApi.recordTransfer>[0]

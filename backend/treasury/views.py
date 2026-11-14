@@ -39,13 +39,22 @@ from .models import (
     POSTerminal,
     ReconciliationSettings,
     TerminalBatch,
+    TerminalSale,
+    TerminalSyncRun,
+    TerminalSyncSettings,
     TreasuryAccount,
     TreasuryMovement,
 )
 from .reconciliation_service import ReconciliationService
 
 # from .rule_service import RuleService
-from .selectors import BankStatementSelector
+from .selectors import (
+    BankStatementSelector,
+    last_terminal_sync_run,
+    terminal_sales_queryset,
+    terminal_sales_summary,
+    terminal_sync_runs_queryset,
+)
 from .serializers import (
     BankLoanSerializer,
     BankLoanWriteSerializer,
@@ -69,6 +78,13 @@ from .serializers import (
     PrepayLoanActionSerializer,
     ReconciliationSettingsSerializer,
     TerminalBatchSerializer,
+    TerminalManualSyncSerializer,
+    TerminalSaleFilterSerializer,
+    TerminalSaleListSerializer,
+    TerminalSaleSerializer,
+    TerminalSyncRunFilterSerializer,
+    TerminalSyncRunSerializer,
+    TerminalSyncSettingsSerializer,
     TreasuryAccountSerializer,
     TreasuryMovementListSerializer,
     TreasuryMovementSerializer,
@@ -1785,3 +1801,84 @@ class CreditCardStatementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHi
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         stmt.refresh_from_db()
         return Response(self.get_serializer(stmt).data)
+
+
+class TerminalSyncSettingsViewSet(viewsets.GenericViewSet):
+    """Configuración singleton de la sincronización de ventas de terminal (solo ``current``)."""
+
+    queryset = TerminalSyncSettings.objects.all()
+    serializer_class = TerminalSyncSettingsSerializer
+    action_permissions = {"current": None}
+
+    def get_permissions(self):
+        if self.action == "current":
+            verb = "view" if self.request.method in ("GET", "HEAD", "OPTIONS") else "change"
+            return [require_perms(f"treasury.{verb}_terminalsyncsettings")()]
+        return super().get_permissions()
+
+    @action(detail=False, methods=["get", "put", "patch"])
+    def current(self, request):
+        settings = TerminalSyncSettings.get_settings()
+        context = {**self.get_serializer_context(), "last_run": last_terminal_sync_run()}
+        if request.method == "GET":
+            return Response(TerminalSyncSettingsSerializer(settings, context=context).data)
+        serializer = TerminalSyncSettingsSerializer(
+            settings, data=request.data, partial=request.method == "PATCH", context=context
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class TerminalSaleViewSet(viewsets.ReadOnlyModelViewSet):
+    """Ventas de terminal sincronizadas (solo lectura)."""
+
+    pagination_class = StandardResultsSetPagination
+    queryset = TerminalSale.objects.none()  # permisos por modelo; datos en get_queryset
+
+    def get_queryset(self):
+        if self.action == "retrieve":
+            return terminal_sales_queryset({})
+        filters = TerminalSaleFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
+        return terminal_sales_queryset(filters.validated_data)
+
+    def get_serializer_class(self):
+        return TerminalSaleSerializer if self.action == "retrieve" else TerminalSaleListSerializer
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        return Response(terminal_sales_summary(self.get_queryset()))
+
+
+class TerminalSyncRunViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Historial de ejecuciones de sincronización y disparo manual."""
+
+    pagination_class = StandardResultsSetPagination
+    queryset = TerminalSyncRun.objects.none()
+    serializer_class = TerminalSyncRunSerializer
+    action_permissions = {"sync": "treasury.add_terminalsyncrun"}
+
+    def get_queryset(self):
+        if self.action != "list":
+            return terminal_sync_runs_queryset({})
+        filters = TerminalSyncRunFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
+        return terminal_sync_runs_queryset(filters.validated_data)
+
+    @idempotent_endpoint(scope="treasury.terminal_sync.manual")
+    @action(detail=False, methods=["post"])
+    def sync(self, request):
+        from . import terminal_sync_service
+        from .tasks import sync_terminal_run
+
+        body = TerminalManualSyncSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        try:
+            runs = terminal_sync_service.start_manual_runs(
+                request.user, body.validated_data.get("start_date"), body.validated_data.get("end_date")
+            )
+        except ValidationError as e:
+            return Response({"detail": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+        terminal_sync_service.enqueue_runs(runs, sync_terminal_run.delay)
+        return Response(self.get_serializer(runs, many=True).data, status=status.HTTP_202_ACCEPTED)

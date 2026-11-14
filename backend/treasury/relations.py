@@ -157,6 +157,24 @@ def check_relations(check):
             yield Link("association", "outgoing", role, getattr(check, field), is_dependency=False)
 
 
+DocumentTypeRegistry.register(DocumentType(
+    label="treasury.terminalsale",
+    date_field="transaction_at",
+    amount_field="total_amount",
+))
+
+
+@relation_provider("treasury.terminalsale")
+def terminal_sale_relations(sale):
+    """Venta sincronizada desde el proveedor del terminal (copia de solo lectura).
+
+    Aún no tiene vínculos tipados con otros documentos, así que no genera relaciones. Se agregarán
+    cuando existan las FKs: la venta o nota de venta que respalda, el movimiento de tesorería
+    (transferencia/abono) que la liquida y el lote de liquidación del terminal que la incluye.
+    """
+    return iter(())
+
+
 @relation_provider("treasury.terminalbatch")
 def terminal_batch_relations(batch):
     for payment in batch.payments.all():
