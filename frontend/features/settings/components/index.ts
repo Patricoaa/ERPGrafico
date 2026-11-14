@@ -3,6 +3,7 @@ export * from './DteSettingsView';
 export * from './CompanySettingsView';
 export * from './GroupsClientView';
 export * from './HRSettingsView';
+export * from './RcvSettingsView';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';
 export * from './TreasurySettingsView';
