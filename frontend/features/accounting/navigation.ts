@@ -21,6 +21,49 @@ export const ACCOUNTING_CONFIG_SUB_TABS: NavTabConfig[] = [
     headerDescription: "Configuración de tasas de IVA y retenciones aplicables.",
     metadataTitle: "Tasas de IVA | ERPGrafico",
   },
+  {
+    value: "rcv",
+    label: "RCV / SII",
+    href: "/accounting/settings/rcv",
+    iconName: "file-spreadsheet",
+    headerTitle: "RCV / SII",
+    headerDescription: "Credenciales del SII, API keys de SimpleAPI y programación de la importación del RCV.",
+    metadataTitle: "RCV / SII | ERPGrafico",
+  },
+]
+
+// ============================================
+// SUB-TABS: REGISTRO DE COMPRAS Y VENTAS
+// ============================================
+
+export const RCV_SUB_TABS: NavTabConfig[] = [
+  {
+    value: "purchases",
+    label: "Compras",
+    href: "/accounting/rcv/purchases",
+    iconName: "shopping-cart",
+    headerTitle: "Registro de Compras",
+    headerDescription: "Documentos recibidos según el Registro de Compras del SII.",
+    metadataTitle: "Registro de Compras | ERPGrafico",
+  },
+  {
+    value: "sales",
+    label: "Ventas",
+    href: "/accounting/rcv/sales",
+    iconName: "receipt",
+    headerTitle: "Registro de Ventas",
+    headerDescription: "Documentos emitidos según el Registro de Ventas del SII.",
+    metadataTitle: "Registro de Ventas | ERPGrafico",
+  },
+  {
+    value: "imports",
+    label: "Importaciones",
+    href: "/accounting/rcv/imports",
+    iconName: "download",
+    headerTitle: "Importaciones RCV",
+    headerDescription: "Historial de importaciones del RCV desde el SII.",
+    metadataTitle: "Importaciones RCV | ERPGrafico",
+  },
 ]
 
 // ============================================
@@ -59,12 +102,22 @@ export const ACCOUNTING_TABS: NavTabConfig[] = [
     subTabs: [],
   },
   {
+    value: "rcv",
+    label: "Registro de Compras y Ventas",
+    href: "/accounting/rcv",
+    iconName: "file-spreadsheet",
+    headerTitle: "Registro de Compras y Ventas",
+    headerDescription: "Documentos tributarios importados desde el SII y su historial de importaciones.",
+    metadataTitle: "Registro de Compras y Ventas | ERPGrafico",
+    subTabs: RCV_SUB_TABS,
+  },
+  {
     value: "config",
     label: "Configuración",
     href: "/accounting/settings",
     iconName: "settings",
     headerTitle: "Configuración",
-    headerDescription: "Gestión de tasas de IVA y parámetros contables.",
+    headerDescription: "Gestión de tasas de IVA, integración RCV / SII y parámetros contables.",
     metadataTitle: "Configuración | ERPGrafico",
     subTabs: ACCOUNTING_CONFIG_SUB_TABS,
   },
@@ -79,6 +132,11 @@ import { findTabConfig, findSubTabConfig } from "@/lib/navigation-helpers"
 /** Busca tab principal de contabilidad */
 export function getAccountingTab(value: string): NavTabConfig | undefined {
   return findTabConfig(ACCOUNTING_TABS, value)
+}
+
+/** Busca sub-tab del Registro de Compras y Ventas */
+export function getRcvSubTab(value: string): NavTabConfig | undefined {
+  return findTabConfig(RCV_SUB_TABS, value)
 }
 
 /** Busca sub-tab de Configuración */
