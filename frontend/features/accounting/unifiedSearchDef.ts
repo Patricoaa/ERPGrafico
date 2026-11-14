@@ -89,13 +89,13 @@ export const fiscalYearUnifiedSearchDef: UnifiedSearchConfig = {
   ],
 }
 
-const RCV_FIRST_YEAR = 2017
-const RCV_MONTH_NAMES = [
+export const RCV_FIRST_YEAR = 2017
+export const RCV_MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
-function rcvYearOptions() {
+export function rcvYearOptions() {
   const current = new Date().getFullYear()
   return Array.from({ length: current - RCV_FIRST_YEAR + 1 }, (_, i) => {
     const year = String(current - i)
@@ -158,4 +158,51 @@ export const rcvDocumentUnifiedSearchDef: UnifiedSearchConfig = {
 export const rcvSaleUnifiedSearchDef: UnifiedSearchConfig = {
   ...rcvDocumentUnifiedSearchDef,
   filters: (rcvDocumentUnifiedSearchDef.filters ?? []).filter((f) => f.key !== 'acknowledgement'),
+}
+
+/** Filtros del historial de importaciones del RCV. */
+export const rcvImportUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [],
+  filters: [
+    {
+      type: 'single',
+      key: 'direction',
+      label: 'Dirección',
+      serverParam: 'direction',
+      options: [
+        { label: 'Compras', value: 'PURCHASES' },
+        { label: 'Ventas', value: 'SALES' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'En cola', value: 'QUEUED' },
+        { label: 'En curso', value: 'RUNNING' },
+        { label: 'Exitosa', value: 'SUCCESS' },
+        { label: 'Fallida', value: 'FAILED' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'trigger',
+      label: 'Origen',
+      serverParam: 'trigger',
+      options: [
+        { label: 'Automática', value: 'SCHEDULED' },
+        { label: 'Manual', value: 'MANUAL' },
+      ],
+    },
+    { type: 'single', key: 'year', label: 'Año', serverParam: 'year', options: rcvYearOptions() },
+    {
+      type: 'single',
+      key: 'month',
+      label: 'Mes',
+      serverParam: 'month',
+      options: RCV_MONTH_NAMES.map((label, i) => ({ label, value: String(i + 1) })),
+    },
+  ],
 }
