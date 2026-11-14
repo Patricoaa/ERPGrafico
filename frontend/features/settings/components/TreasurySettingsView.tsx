@@ -109,9 +109,9 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
     useUnsavedChangesGuard(status)
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col flex-1 min-h-0 space-y-6">
-            <FadeIn>
-                <div className="space-y-6 mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            <FadeIn className="max-w-6xl mx-auto">
+                <div className="space-y-6 mt-6 pb-6">
                     <div className="flex justify-end">
                         <AutoSaveStatusBadge status={status} invalidReason={invalidReason} lastSavedAt={lastSavedAt} onRetry={retry} />
                     </div>
