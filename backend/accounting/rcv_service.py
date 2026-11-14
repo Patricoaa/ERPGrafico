@@ -11,10 +11,11 @@ respuesta cruda se limpia antes de guardarla.
 from __future__ import annotations
 
 import logging
+import math
 import time
 from collections.abc import Callable
 from dataclasses import fields
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -126,6 +127,77 @@ def create_imports(
             )
             for direction in dict.fromkeys(directions)
         ]
+
+
+# ── Programación ─────────────────────────────────────────────────────────────
+
+PERIOD_LAG_DAYS = 3
+
+
+def period_for(run_date: date) -> tuple[int, int]:
+    """Período automático: mes/año de ``run_date`` menos 3 días."""
+    ref = run_date - timedelta(days=PERIOD_LAG_DAYS)
+    return ref.year, ref.month
+
+
+def is_scheduled_run_due(
+    settings: RCVSettings, now_local: datetime, last_scheduled: date | None
+) -> bool:
+    """Corresponde correr: habilitado, pasada la hora y cumplido el intervalo."""
+    if not settings.enabled or now_local.hour < settings.run_hour:
+        return False
+    if last_scheduled is None:
+        return True
+    return (now_local.date() - last_scheduled).days >= settings.interval_days
+
+
+def scheduled_targets(today: date, directions: list[str]) -> list[tuple[int, int, str]]:
+    """Período vigente por dirección, más el mes anterior si aún no se cerró.
+
+    El mes anterior se da por cerrado cuando hay una importación SUCCESS (de
+    cualquier origen) iniciada a partir del primer día del mes siguiente.
+    """
+    year, month = period_for(today)
+    prev = date(year - 1, 12, 1) if month == 1 else date(year, month - 1, 1)
+    closed_from = timezone.make_aware(datetime.combine(next_month_start(prev), datetime.min.time()))
+    closed = set(
+        RCVImport.objects.filter(
+            year=prev.year,
+            month=prev.month,
+            direction__in=directions,
+            status=RCVImport.Status.SUCCESS,
+            started_at__gte=closed_from,
+        ).values_list("direction", flat=True)
+    )
+    targets = [(prev.year, prev.month, d) for d in directions if d not in closed]
+    targets.extend((year, month, d) for d in directions)
+    return targets
+
+
+def estimated_monthly_queries(settings: RCVSettings) -> int:
+    """Consultas/mes estimadas: ``ceil(30 / intervalo) * n + n`` con n = direcciones activas."""
+    n = int(settings.include_purchases) + int(settings.include_sales)
+    interval = max(settings.interval_days, 1)
+    return math.ceil(30 / interval) * n + n
+
+
+def enqueue_imports(imports: list[RCVImport], delay: Callable[[list[int]], Any]) -> None:
+    """Encola todas las importaciones en una sola tarea; si el broker falla las marca FAILED."""
+    if not imports:
+        return
+    ids = [i.id for i in imports]
+    try:
+        delay(ids)
+    except Exception as exc:
+        logger.error("No se pudo encolar la importación RCV: %s", type(exc).__name__)
+        now = timezone.now()
+        RCVImport.objects.filter(pk__in=ids).update(
+            status=RCVImport.Status.FAILED,
+            error_code="ENQUEUE",
+            error_message="No se pudo encolar la importación.",
+            finished_at=now,
+            updated_at=now,
+        )
 
 
 # ── API keys ─────────────────────────────────────────────────────────────────
