@@ -245,19 +245,25 @@ def execute_import(
     sleep: Callable[[float], None] = time.sleep,
 ) -> RCVImport:
     """Ejecuta la importación: rota keys sin cupo, reintenta rate limit, aplica el reporte."""
-    rcv_import.status = RCVImport.Status.RUNNING
-    rcv_import.started_at = timezone.now()
-    rcv_import.finished_at = None
-    rcv_import.error_code = ""
-    rcv_import.error_message = ""
-    rcv_import.warnings = []
-    rcv_import.save()
+    started_at = timezone.now()
+    claimed = RCVImport.objects.filter(pk=rcv_import.pk, status=RCVImport.Status.QUEUED).update(
+        status=RCVImport.Status.RUNNING, started_at=started_at, updated_at=started_at
+    )
+    if not claimed:
+        # Ya tomada o terminada (p. ej. tarea Celery reentregada): no gastar cupo otra vez.
+        logger.info("Importación RCV %s no está en cola; se omite.", rcv_import.pk)
+        rcv_import.refresh_from_db()
+        return rcv_import
+    rcv_import.refresh_from_db()
     try:
         _execute(rcv_import, client_factory, sleep)
     except _Failed as failure:
         return _finish(rcv_import, RCVImport.Status.FAILED, failure.code, failure.message)
     except Exception as exc:
-        logger.exception("Importación RCV %s falló inesperadamente", rcv_import.pk)
+        # Solo el tipo: el mensaje o el traceback podrían contener secretos.
+        logger.error(
+            "Importación RCV %s falló inesperadamente: %s", rcv_import.pk, type(exc).__name__
+        )
         _finish(
             rcv_import,
             RCVImport.Status.FAILED,
@@ -374,9 +380,14 @@ def _save_summaries(
     rcv_import: RCVImport,
     report: NormalizedReport,
     documents: dict[DocKey, NormalizedDocument],
+    stored_types: set[int],
     warnings: list[str],
 ) -> bool:
-    """Recrea los resúmenes; devuelve ``True`` si todo tipo con detalle cuadra."""
+    """Recrea los resúmenes; devuelve ``True`` si todo tipo con detalle cuadra.
+
+    Un tipo sin filas en el detalle pero con documentos ya guardados del período
+    también cuenta como descuadre (detalle truncado), no como "solo resumen".
+    """
     detail: dict[int, tuple[int, Decimal]] = {}
     for doc in documents.values():
         count, total = detail.get(doc.dte_type, (0, Decimal("0")))
@@ -385,7 +396,12 @@ def _save_summaries(
     rows = []
     for summary in report.summaries:
         count, total = detail.get(summary.dte_type, (0, Decimal("0")))
-        if count and (count != summary.document_count or total != summary.total_amount):
+        mismatch = (
+            count != summary.document_count or total != summary.total_amount
+            if count
+            else summary.document_count > 0 and summary.dte_type in stored_types
+        )
+        if mismatch:
             complete = False
             _warn(
                 warnings,
@@ -428,8 +444,6 @@ def apply_report(rcv_import: RCVImport, report: NormalizedReport) -> None:
     if len(documents) < len(report.documents):
         _warn(warnings, DUPLICATE_WARNING.format(count=len(report.documents) - len(documents)))
 
-    complete = _save_summaries(rcv_import, report, documents, warnings)
-
     folios = {key[1] for key in documents}
     existing = {
         _doc_key(doc): doc
@@ -438,6 +452,9 @@ def apply_report(rcv_import: RCVImport, report: NormalizedReport) -> None:
         )
     }
     absent = [d for k, d in existing.items() if d.period == period and k not in documents]
+    stored_types = {d.dte_type for d in existing.values() if d.period == period}
+
+    complete = _save_summaries(rcv_import, report, documents, stored_types, warnings)
 
     now = timezone.now()
     to_create: list[RCVDocument] = []

@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timedelta
 from datetime import timezone as dt_timezone
 from decimal import Decimal
@@ -177,6 +178,25 @@ def test_truncated_detail_warns_and_skips_missing():
 
 
 @pytest.mark.django_db
+def test_type_with_empty_detail_but_stored_docs_warns_and_skips_missing():
+    make_rcv_settings()
+    make_api_key()
+    _run(_ventas())
+
+    body = _drop_folio(_drop_folio(_ventas(), 72012), 72013)  # resumen 39 sigue en 2
+    second = _run(body)
+    assert second.status == RCVImport.Status.SUCCESS
+    assert second.warnings == [
+        "El detalle del tipo 39 no cuadra con el resumen del SII (0/2 documentos)."
+    ]
+    assert second.missing_count == 0
+    assert not RCVDocument.objects.filter(missing_since_import__isnull=False).exists()
+    summary = RCVImportSummary.objects.get(rcv_import=second, dte_type=39)
+    assert summary.has_detail is False
+    assert summary.detail_count == 0
+
+
+@pytest.mark.django_db
 def test_company_rut_mismatch_warns_but_imports_with_configured_rut():
     make_rcv_settings()
     make_api_key()
@@ -346,7 +366,8 @@ def test_transient_fails_without_retry():
 
 
 @pytest.mark.django_db
-def test_unexpected_exception_marks_internal_and_reraises():
+def test_unexpected_exception_marks_internal_and_reraises(caplog):
+    caplog.set_level(logging.DEBUG)
     make_rcv_settings()
     make_api_key()
 
@@ -364,6 +385,24 @@ def test_unexpected_exception_marks_internal_and_reraises():
     assert imp.error_code == "INTERNAL"
     assert SII_PASSWORD not in imp.error_message
     assert imp.finished_at is not None
+    assert caplog.records
+    for record in caplog.records:
+        assert SII_PASSWORD not in record.getMessage()
+        assert record.exc_info is None
+    assert SII_PASSWORD not in caplog.text
+
+
+@pytest.mark.django_db
+def test_execute_import_skips_non_queued_import():
+    make_rcv_settings()
+    make_api_key()
+    imp = _import(status=RCVImport.Status.SUCCESS)
+    fake = FakeClient({"TEST-KEY-1": [ok(_ventas())]})
+    result = rcv_service.execute_import(imp, client_factory=fake, sleep=_no_sleep())
+    assert result.status == RCVImport.Status.SUCCESS
+    assert fake.calls == []
+    assert RCVImportAttempt.objects.count() == 0
+    assert result.started_at is None
 
 
 @pytest.mark.django_db
