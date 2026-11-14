@@ -7,6 +7,7 @@ import {
   ACCOUNTING_TABS,
   getAccountingTab,
   getAccountingConfigSubTab,
+  getRcvSubTab,
 } from "@/features/accounting/navigation"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
@@ -19,7 +20,10 @@ export function AccountingHeader() {
   const currentSegment = segments[1] || "ledger"
 
   const activeValue = currentSegment === "settings" ? "config" : currentSegment
-  const subActiveValue = currentSegment === "settings" ? (segments[2] || "vat-rates") : undefined
+  const subActiveValue =
+    currentSegment === "settings" ? (segments[2] || "vat-rates")
+      : currentSegment === "rcv" ? (segments[2] || "purchases")
+        : undefined
 
   // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("accounting")
@@ -56,6 +60,11 @@ export function AccountingHeader() {
     // Sub-tabs handling (config)
     if (activeValue === "config" && subActiveValue) {
       const subTab = getAccountingConfigSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
+    }
+
+    if (activeValue === "rcv" && subActiveValue) {
+      const subTab = getRcvSubTab(subActiveValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
