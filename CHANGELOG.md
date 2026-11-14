@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.113](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.112...v0.3.113) (2026-11-14)
+
+
+### ✨ Features
+
+* **billing:** mostrar orden de origen en tabla de líneas de factura antes de OT ([c8a5c2a](https://github.com/Patricoaa/ERPGrafico/commit/c8a5c2a83d47f3f1b472df322da9904464344e62))
+
 ### [0.3.112](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.111...v0.3.112) (2026-11-14)
 
 
