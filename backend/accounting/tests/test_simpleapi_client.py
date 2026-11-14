@@ -10,6 +10,7 @@ from accounting.integrations.simpleapi_client import (
     SimpleApiError,
     SimpleApiRcvClient,
     classify_error,
+    redact_secrets,
 )
 from accounting.models import RCVImportAttempt
 
@@ -164,3 +165,31 @@ def test_error_keeps_rate_limit_headers(post):
         fetch()
     assert exc.value.outcome == Outcome.RATE_LIMITED
     assert exc.value.rate_limit_remaining == 0
+
+
+def test_error_message_hides_json_escaped_secrets(post):
+    password = 'clave"de\\prueba-ñ'
+    forms = (
+        password,
+        json.dumps(password)[1:-1],
+        json.dumps(password, ensure_ascii=False)[1:-1],
+    )
+    text = " ".join(
+        [json.dumps({"PasswordSII": password}), json.dumps({"eco": password}, ensure_ascii=False)]
+    )
+    post["result"] = FakeResponse(500, None, text=text)
+    client = SimpleApiRcvClient(API_KEY)
+    with pytest.raises(SimpleApiError) as exc:
+        client.fetch("SALES", 2026, 3, "11111111-1", "22222222-2", password)
+    message = str(exc.value)
+    for form in forms:
+        assert form not in message
+    assert "***" in message
+
+
+def test_redact_secrets_skips_empty_and_escapes():
+    password = 'a"b\\c-ñ'
+    text = f"{password} {json.dumps(password)} {json.dumps(password, ensure_ascii=False)}"
+    redacted = redact_secrets(text, (password, "", None))
+    assert "ñ" not in redacted and "\\u00f1" not in redacted
+    assert redact_secrets("abc", ("", None)) == "abc"

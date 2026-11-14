@@ -10,6 +10,7 @@ import json
 import re
 import time
 import unicodedata
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -52,6 +53,22 @@ class SimpleApiError(Exception):
         self.duration_ms = duration_ms
         self.rate_limit_remaining = rate_limit_remaining
         self.rate_limit_reset = rate_limit_reset
+
+
+def redact_secrets(text: str, secrets: Iterable[str | None]) -> str:
+    """Reemplaza por ``***`` cada secreto, también en sus formas escapadas como JSON."""
+    for secret in secrets:
+        if not secret:
+            continue
+        forms = {
+            secret,
+            json.dumps(secret)[1:-1],
+            json.dumps(secret, ensure_ascii=False)[1:-1],
+        }
+        # Las formas más largas primero: una puede contener a otra.
+        for form in sorted(forms, key=len, reverse=True):
+            text = text.replace(form, "***")
+    return text
 
 
 def _normalize(text: str) -> str:
@@ -166,7 +183,5 @@ class SimpleApiRcvClient:
         return int((time.monotonic() - started) * 1000)
 
     def _message(self, status: int, text: str, password: str) -> str:
-        for secret in (self._api_key, password):
-            if secret:
-                text = text.replace(secret, "***")
+        text = redact_secrets(text, (self._api_key, password))
         return f"SimpleAPI HTTP {status}: {text[:_MESSAGE_LIMIT]}"
