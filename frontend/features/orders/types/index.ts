@@ -66,6 +66,9 @@ export interface OrderLine {
     /** Stock disponible en la bodega elegida; no viene del backend, lo agrega el despacho al consultar la bodega. */
     available_stock?: number
     work_order_summary?: WorkOrderSummary
+    order?: { label: string; id: number; display?: string | null; url?: string | null } | null
+    order_id?: number | null
+    order_display?: string | null
     [key: string]: unknown
 }
 

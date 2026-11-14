@@ -11,19 +11,6 @@ import { localDayOf } from '@/lib/utils'
 /** Las celdas DataCell se centran por defecto; en la ficha van a la izquierda. */
 const LEFT = "w-auto justify-start text-left"
 
-/** Título de la fila de origen según el tipo del DocumentRef (`origin_document`, ADR-0086). */
-const ORIGIN_TITLE: Record<string, string> = {
-    "billing.invoice": "Documento corregido",
-    "sales.saleorder": "Orden de venta",
-    "purchasing.purchaseorder": "Orden de compra",
-}
-
-function originTitle(invoice: Order): string {
-    const ref = invoice.origin_document as { label?: unknown } | null | undefined
-    if (ref && typeof ref.label === "string") return ORIGIN_TITLE[ref.label] ?? "Origen"
-    return "Origen"
-}
-
 /** Fecha del documento con hora de creación cuando coinciden (mismo criterio que la OV). */
 function dateTime(invoice: Order): { value: string; showTime: boolean } | null {
     const created = typeof invoice.created_at === "string" ? invoice.created_at : null
@@ -47,6 +34,10 @@ export function InvoiceSummaryTab({
     const partnerId = typeof invoice.partner_id === "number" ? invoice.partner_id : undefined
     const when = dateTime(invoice)
     const hasFolio = !!invoice.number && invoice.number !== "Draft"
+    const originRef = invoice.origin_document as { label?: unknown } | null | undefined
+    // Las órdenes de origen (OV/OC) viven en la tabla por línea (antes de OT).
+    // Solo las notas que corrigen otra factura muestran "Documento corregido" en el resumen.
+    const isCorrectedInvoice = originRef?.label === "billing.invoice"
 
     const lines: OrderLine[] = invoice.lines ?? invoice.items ?? []
     const subtotal = lines.reduce((sum, line) => sum + toNumber(line.subtotal_net ?? line.subtotal), 0)
@@ -80,10 +71,14 @@ export function InvoiceSummaryTab({
                                 </span>
                             ),
                         },
-                        {
-                            label: originTitle(invoice),
-                            value: invoice.origin_document ? <DocumentRefLink documentRef={invoice.origin_document} /> : null,
-                        },
+                        ...(isCorrectedInvoice
+                            ? [
+                                  {
+                                      label: "Documento corregido",
+                                      value: invoice.origin_document ? <DocumentRefLink documentRef={invoice.origin_document} /> : null,
+                                  },
+                              ]
+                            : []),
                     ]}
                 />
             </section>

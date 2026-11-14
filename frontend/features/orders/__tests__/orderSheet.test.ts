@@ -108,9 +108,9 @@ describe("orderLineViews", () => {
         expect(orderLineEntity.field("received").label).toBe("Recibido")
     })
 
-    it("invoice: product · quantity · unit price · OT · subtotal last", async () => {
+    it("invoice: product · quantity · unit price · order · OT · subtotal last", async () => {
         const { orderLineViews } = await import("../entity-view/orderLine.entity")
-        expect(orderLineViews.invoice.columns).toEqual(["product", "quantity", "unitPrice", "workOrder", "subtotal"])
+        expect(orderLineViews.invoice.columns).toEqual(["product", "quantity", "unitPrice", "order", "workOrder", "subtotal"])
     })
 })
 

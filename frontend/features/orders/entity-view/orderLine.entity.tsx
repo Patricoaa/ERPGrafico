@@ -148,6 +148,30 @@ export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
         ),
         pending: f.quantity((l) => linePending(l), { ...fixed, label: "Pendiente", uom: uomOf }),
         availability: f.status((l) => availability(l), { ...fixed, label: "Stock" }),
+        order: docRef(
+            f,
+            (l) => {
+                const o = l.order
+                if (o && typeof o === "object" && "label" in o && "id" in o) {
+                    const ref = o as { label: string; id: number; display?: string | null; url?: string | null }
+                    return {
+                        label: ref.label,
+                        id: Number(ref.id),
+                        display: String(ref.display ?? ref.id),
+                        url: ref.url,
+                    }
+                }
+                if (l.order_id) {
+                    return {
+                        label: "sales.saleorder",
+                        id: Number(l.order_id),
+                        display: String(l.order_display ?? `OV-${l.order_id}`),
+                    }
+                }
+                return null
+            },
+            { ...fixed, label: "Orden", fallback: "—" },
+        ),
         workOrder: f.value(
             "orderLineWorkOrder",
             (l) => {
@@ -182,5 +206,7 @@ export const orderLineViews = {
     purchase: orderLineEntity.views({
         table: { columns: ["product", "quantity", "unitPrice", "received", "invoiced", "subtotal"] },
     }).table,
-    invoice: saleTable.without("delivered", "invoiced"),
+    invoice: orderLineEntity.views({
+        table: { columns: ["product", "quantity", "unitPrice", "order", "workOrder", "subtotal"] },
+    }).table,
 }

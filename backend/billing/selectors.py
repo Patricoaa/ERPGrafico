@@ -109,18 +109,39 @@ class InvoiceSelectorExt:
         from purchasing.serializers import PurchaseLineSerializer
         from sales.serializers import SaleLineSerializer
 
-        invoice_lines = list(invoice.lines.select_related("sale_line", "purchase_line"))
+        invoice_lines = list(invoice.lines.select_related("sale_line__order", "purchase_line__order"))
         if invoice_lines:
             data = []
             for il in invoice_lines:
+                order_ref = None
+                order_id = None
+                order_display = None
                 if il.sale_line_id:
                     item = dict(SaleLineSerializer(il.sale_line).data)
+                    order = il.sale_line.order
+                    if order:
+                        order_id = order.id
+                        order_display = order.display_id
+                        order_ref = {"label": "sales.saleorder", "id": order.id, "display": order.display_id}
                 elif il.purchase_line_id:
                     item = dict(PurchaseLineSerializer(il.purchase_line).data)
+                    order = il.purchase_line.order
+                    if order:
+                        order_id = order.id
+                        order_display = order.display_id
+                        order_ref = {"label": "purchasing.purchaseorder", "id": order.id, "display": order.display_id}
                 else:
                     item = {"id": None, "product": il.product_id, "product_id": il.product_id,
                             "product_name": il.description, "description": il.description,
                             "unit_price": il.unit_price, "tax_rate": il.tax_rate}
+                    if invoice.sale_order_id:
+                        order_id = invoice.sale_order_id
+                        order_display = invoice.sale_order.display_id
+                        order_ref = {"label": "sales.saleorder", "id": order_id, "display": order_display}
+                    elif invoice.purchase_order_id:
+                        order_id = invoice.purchase_order_id
+                        order_display = invoice.purchase_order.display_id
+                        order_ref = {"label": "purchasing.purchaseorder", "id": order_id, "display": order_display}
                 item.update({
                     "invoice_line_id": il.id,
                     "corrected_line": il.corrected_line_id,
@@ -128,6 +149,9 @@ class InvoiceSelectorExt:
                     "subtotal": il.subtotal,
                     "delivery_line": il.delivery_line_id,
                     "receipt_line": il.receipt_line_id,
+                    "order": order_ref,
+                    "order_id": order_id,
+                    "order_display": order_display,
                 })
                 data.append(item)
             InvoiceSelectorExt._add_net_amounts(invoice, invoice_lines, data)
@@ -140,11 +164,23 @@ class InvoiceSelectorExt:
         if invoice.sale_order_id:
             lines = invoice.sale_order.lines.all()
             lines = lines.filter(related_note=invoice) if is_note else lines.filter(related_note__isnull=True)
-            return SaleLineSerializer(lines, many=True).data
+            data = SaleLineSerializer(lines, many=True).data
+            order_ref = {"label": "sales.saleorder", "id": invoice.sale_order_id, "display": invoice.sale_order.display_id}
+            for row in data:
+                row["order"] = order_ref
+                row["order_id"] = invoice.sale_order_id
+                row["order_display"] = invoice.sale_order.display_id
+            return data
         if invoice.purchase_order_id:
             lines = invoice.purchase_order.lines.all()
             lines = lines.filter(related_note=invoice) if is_note else lines.filter(related_note__isnull=True)
-            return PurchaseLineSerializer(lines, many=True).data
+            data = PurchaseLineSerializer(lines, many=True).data
+            order_ref = {"label": "purchasing.purchaseorder", "id": invoice.purchase_order_id, "display": invoice.purchase_order.display_id}
+            for row in data:
+                row["order"] = order_ref
+                row["order_id"] = invoice.purchase_order_id
+                row["order_display"] = invoice.purchase_order.display_id
+            return data
         return []
 
     @staticmethod
