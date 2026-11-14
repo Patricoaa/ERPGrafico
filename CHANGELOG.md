@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.114](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.113...v0.3.114) (2026-11-14)
+
+
+### ✨ Features
+
+* **billing:** renombrar columnas de orden a OV y OCS y ubicar OV/OCS y OT luego de subtotal neto ([2cb47f1](https://github.com/Patricoaa/ERPGrafico/commit/2cb47f160451e63a33613600c423e8be79d19d2f))
+
 ### [0.3.113](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.112...v0.3.113) (2026-11-14)
 
 
