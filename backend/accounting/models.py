@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Exists, OuterRef
 from django.utils.translation import gettext_lazy as _
@@ -1781,3 +1781,327 @@ class FiscalYearClosingChecklist(models.Model):
 
     def __str__(self):
         return f"Checklist {self.fiscal_year}"
+
+
+# ── RCV (SII vía SimpleAPI) ──────────────────────────────────────────────────
+
+_RCV_AMOUNT = {"max_digits": 14, "decimal_places": 0, "default": 0}
+
+
+class RCVSettings(TimeStampedModel):
+    """Configuración singleton de la importación del Registro de Compras y Ventas."""
+
+    company_rut = models.CharField(_("RUT empresa"), max_length=12, blank=True)
+    user_rut = models.CharField(_("RUT usuario SII"), max_length=12, blank=True)
+    sii_password_encrypted = models.TextField(_("Clave SII (cifrada)"), blank=True)
+    enabled = models.BooleanField(_("Importación automática"), default=False)
+    interval_days = models.PositiveSmallIntegerField(
+        _("Cada cuántos días"),
+        default=7,
+        validators=[MinValueValidator(1), MaxValueValidator(60)],
+    )
+    run_hour = models.PositiveSmallIntegerField(
+        _("Hora de ejecución"),
+        default=6,
+        validators=[MinValueValidator(0), MaxValueValidator(23)],
+    )
+    include_purchases = models.BooleanField(_("Incluir compras"), default=True)
+    include_sales = models.BooleanField(_("Incluir ventas"), default=True)
+
+    class Meta:
+        verbose_name = _("Configuración de Importación RCV")
+        verbose_name_plural = _("Configuración de Importación RCV")
+
+    class FormMeta:
+        exclude_fields = ["sii_password_encrypted"]
+
+    def __str__(self):
+        return "Configuración de Importación RCV"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Force singleton
+        super().save(*args, **kwargs)
+        from core.cache import CACHE_KEY_RCV_SETTINGS, invalidate_singleton
+
+        invalidate_singleton(CACHE_KEY_RCV_SETTINGS)
+
+    @classmethod
+    def get_settings(cls):
+        from core.cache import CACHE_KEY_RCV_SETTINGS, cached_singleton
+
+        return cached_singleton(cls, CACHE_KEY_RCV_SETTINGS)
+
+    def set_sii_password(self, plain: str) -> None:
+        """Cifra la clave SII. Llamar save() aparte."""
+        from core.crypto import encrypt_secret
+
+        self.sii_password_encrypted = encrypt_secret(plain) if plain else ""
+
+    def get_sii_password(self) -> str:
+        from core.crypto import decrypt_secret
+
+        token = self.sii_password_encrypted
+        return decrypt_secret(token) if token else ""
+
+    @property
+    def has_sii_password(self) -> bool:
+        return bool(self.sii_password_encrypted)
+
+
+class RCVApiKey(TimeStampedModel):
+    """API key de SimpleAPI (cupo mensual limitado), cifrada en reposo."""
+
+    label = models.CharField(_("Etiqueta"), max_length=60, blank=True)
+    key_encrypted = models.TextField(_("API key (cifrada)"))
+    key_last4 = models.CharField(_("Últimos 4"), max_length=4, blank=True)
+    is_active = models.BooleanField(_("Activa"), default=True)
+    monthly_limit = models.PositiveSmallIntegerField(
+        _("Límite mensual"),
+        default=10,
+        validators=[MinValueValidator(1), MaxValueValidator(1000)],
+    )
+    exhausted_until = models.DateField(_("Sin cupo hasta"), null=True, blank=True)
+    last_used_at = models.DateTimeField(_("Último uso"), null=True, blank=True)
+    last_error = models.TextField(_("Último error"), blank=True)
+
+    class Meta:
+        verbose_name = _("API key RCV")
+        verbose_name_plural = _("API keys RCV")
+        ordering = ["id"]
+
+    class FormMeta:
+        exclude_fields = ["key_encrypted"]
+
+    def __str__(self):
+        return self.label or self.masked_key
+
+    def set_key(self, plain: str) -> None:
+        """Cifra la key y fija key_last4. Llamar save() aparte."""
+        from core.crypto import encrypt_secret
+
+        self.key_encrypted = encrypt_secret(plain) if plain else ""
+        self.key_last4 = plain[-4:] if plain else ""
+
+    def get_key(self) -> str:
+        from core.crypto import decrypt_secret
+
+        return decrypt_secret(self.key_encrypted) if self.key_encrypted else ""
+
+    @property
+    def masked_key(self) -> str:
+        return "••••-" + self.key_last4
+
+
+class RCVImport(TimeStampedModel):
+    """Una consulta al RCV: período + dirección."""
+
+    class Direction(models.TextChoices):
+        PURCHASES = "PURCHASES", _("Compras")
+        SALES = "SALES", _("Ventas")
+
+    class Trigger(models.TextChoices):
+        SCHEDULED = "SCHEDULED", _("Automática")
+        MANUAL = "MANUAL", _("Manual")
+
+    class Status(models.TextChoices):
+        QUEUED = "QUEUED", _("En cola")
+        RUNNING = "RUNNING", _("En curso")
+        SUCCESS = "SUCCESS", _("Exitosa")
+        FAILED = "FAILED", _("Fallida")
+
+    direction = models.CharField(_("Tipo"), max_length=10, choices=Direction.choices)
+    year = models.PositiveSmallIntegerField(_("Año"))
+    month = models.PositiveSmallIntegerField(_("Mes"))
+    trigger = models.CharField(_("Origen"), max_length=10, choices=Trigger.choices)
+    status = models.CharField(
+        _("Estado"), max_length=10, choices=Status.choices, default=Status.QUEUED
+    )
+    triggered_by = models.ForeignKey(
+        "core.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("Disparada por"),
+    )
+    started_at = models.DateTimeField(_("Inicio"), null=True, blank=True)
+    finished_at = models.DateTimeField(_("Fin"), null=True, blank=True)
+    error_code = models.CharField(_("Código de error"), max_length=20, blank=True)
+    error_message = models.TextField(_("Mensaje de error"), blank=True)
+    warnings = models.JSONField(_("Advertencias"), default=list, blank=True)
+    received_count = models.PositiveIntegerField(_("Recibidos"), default=0)
+    created_count = models.PositiveIntegerField(_("Creados"), default=0)
+    updated_count = models.PositiveIntegerField(_("Actualizados"), default=0)
+    missing_count = models.PositiveIntegerField(_("Ausentes"), default=0)
+    api_key = models.ForeignKey(
+        RCVApiKey,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("API key"),
+    )
+    raw_response = models.JSONField(_("Respuesta cruda"), default=dict, blank=True)
+
+    class Meta:
+        verbose_name = _("Importación RCV")
+        verbose_name_plural = _("Importaciones RCV")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["direction", "year", "month", "status"],
+                name="rcvimport_dir_per_st_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"RCV {self.get_direction_display()} {self.period} [{self.status}]"
+
+    @property
+    def period(self) -> str:
+        return f"{self.year:04d}{self.month:02d}"
+
+
+class RCVImportAttempt(TimeStampedModel):
+    """Cada petición HTTP de una importación; base del conteo de cupo."""
+
+    class Outcome(models.TextChoices):
+        OK = "OK", _("Correcto")
+        QUOTA_EXHAUSTED = "QUOTA_EXHAUSTED", _("Cupo agotado")
+        RATE_LIMITED = "RATE_LIMITED", _("Límite de frecuencia")
+        AUTH_KEY = "AUTH_KEY", _("API key inválida")
+        AUTH_SII = "AUTH_SII", _("Credenciales SII inválidas")
+        TRANSIENT = "TRANSIENT", _("Error transitorio")
+        OTHER = "OTHER", _("Otro")
+
+    rcv_import = models.ForeignKey(
+        RCVImport,
+        on_delete=models.CASCADE,
+        related_name="attempts",
+        verbose_name=_("Importación"),
+    )
+    api_key = models.ForeignKey(
+        RCVApiKey,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="attempts",
+        verbose_name=_("API key"),
+    )
+    http_status = models.PositiveSmallIntegerField(_("Estado HTTP"), null=True, blank=True)
+    outcome = models.CharField(_("Resultado"), max_length=20, choices=Outcome.choices)
+    duration_ms = models.PositiveIntegerField(_("Duración (ms)"), default=0)
+    error_message = models.TextField(_("Mensaje de error"), blank=True)
+    rate_limit_remaining = models.IntegerField(_("Cupo restante"), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Intento de Importación RCV")
+        verbose_name_plural = _("Intentos de Importación RCV")
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Intento {self.rcv_import_id} [{self.outcome}]"
+
+
+class RCVImportSummary(TimeStampedModel):
+    """Fila de resumen por tipo de documento, tal como la vio una importación."""
+
+    rcv_import = models.ForeignKey(
+        RCVImport,
+        on_delete=models.CASCADE,
+        related_name="summaries",
+        verbose_name=_("Importación"),
+    )
+    dte_type = models.PositiveSmallIntegerField(_("Tipo DTE"))
+    dte_type_label = models.CharField(_("Descripción tipo DTE"), max_length=120, blank=True)
+    document_count = models.PositiveIntegerField(_("Documentos"), default=0)
+    exempt_amount = models.DecimalField(_("Exento"), **_RCV_AMOUNT)
+    net_amount = models.DecimalField(_("Neto"), **_RCV_AMOUNT)
+    vat_recoverable = models.DecimalField(_("IVA recuperable"), **_RCV_AMOUNT)
+    vat_common_use = models.DecimalField(_("IVA uso común"), **_RCV_AMOUNT)
+    vat_non_recoverable = models.DecimalField(_("IVA no recuperable"), **_RCV_AMOUNT)
+    total_amount = models.DecimalField(_("Total"), **_RCV_AMOUNT)
+    status = models.CharField(_("Estado"), max_length=30, blank=True)
+    has_detail = models.BooleanField(_("Tiene detalle"), default=False)
+    detail_count = models.PositiveIntegerField(_("Documentos en detalle"), default=0)
+    detail_total = models.DecimalField(_("Total del detalle"), **_RCV_AMOUNT)
+
+    class Meta:
+        verbose_name = _("Resumen de Importación RCV")
+        verbose_name_plural = _("Resúmenes de Importación RCV")
+        ordering = ["dte_type"]
+
+    def __str__(self):
+        return f"Resumen {self.rcv_import_id} tipo {self.dte_type}"
+
+
+class RCVDocument(TimeStampedModel):
+    """Documento del detalle del RCV (compra o venta) importado del SII."""
+
+    direction = models.CharField(_("Tipo"), max_length=10, choices=RCVImport.Direction.choices)
+    company_rut = models.CharField(_("RUT empresa"), max_length=12)
+    period = models.CharField(_("Período"), max_length=6)
+    dte_type = models.PositiveSmallIntegerField(_("Tipo DTE"))
+    dte_type_label = models.CharField(_("Descripción tipo DTE"), max_length=120, blank=True)
+    folio = models.BigIntegerField(_("Folio"))
+    counterparty_rut = models.CharField(_("RUT contraparte"), max_length=12, blank=True)
+    counterparty_name = models.CharField(_("Razón social contraparte"), max_length=255, blank=True)
+    issue_date = models.DateField(_("Fecha de emisión"))
+    received_at = models.DateTimeField(_("Fecha de recepción"), null=True, blank=True)
+    acknowledged_at = models.DateTimeField(_("Fecha de acuse"), null=True, blank=True)
+    operation_type = models.CharField(_("Tipo de operación"), max_length=60, blank=True)
+    status = models.CharField(_("Estado"), max_length=60, blank=True)
+    acknowledgement = models.CharField(_("Acuse de recibo"), max_length=60, blank=True)
+    service_indicator = models.PositiveSmallIntegerField(
+        _("Indicador de servicio"), null=True, blank=True
+    )
+    exempt_amount = models.DecimalField(_("Exento"), **_RCV_AMOUNT)
+    net_amount = models.DecimalField(_("Neto"), **_RCV_AMOUNT)
+    vat_amount = models.DecimalField(_("IVA"), **_RCV_AMOUNT)
+    vat_recoverable = models.DecimalField(_("IVA recuperable"), **_RCV_AMOUNT)
+    vat_non_recoverable = models.DecimalField(_("IVA no recuperable"), **_RCV_AMOUNT)
+    total_amount = models.DecimalField(_("Total"), **_RCV_AMOUNT)
+    other_taxes_total = models.DecimalField(_("Otros impuestos"), **_RCV_AMOUNT)
+    reference_dte_type = models.PositiveSmallIntegerField(
+        _("Tipo DTE referenciado"), null=True, blank=True
+    )
+    reference_folio = models.CharField(_("Folio referenciado"), max_length=30, blank=True)
+    raw = models.JSONField(_("Registro original"), default=dict, blank=True)
+    first_import = models.ForeignKey(
+        RCVImport,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("Primera importación"),
+    )
+    last_import = models.ForeignKey(
+        RCVImport,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("Última importación"),
+    )
+    missing_since_import = models.ForeignKey(
+        RCVImport,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("Ausente desde"),
+    )
+
+    class Meta:
+        verbose_name = _("Documento RCV")
+        verbose_name_plural = _("Documentos RCV")
+        ordering = ["-issue_date", "-folio"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company_rut", "direction", "dte_type", "folio", "counterparty_rut"],
+                name="rcvdocument_natural_key_uniq",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["direction", "period"], name="rcvdoc_dir_period_idx"),
+            models.Index(fields=["direction", "issue_date"], name="rcvdoc_dir_issue_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.dte_type}-{self.folio} ({self.counterparty_rut})"
