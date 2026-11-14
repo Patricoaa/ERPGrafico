@@ -17,7 +17,7 @@ export function DocumentLinesTable({ lines, kind, onCreateWorkOrder }: DocumentL
 
     return (
         <OrderLineActionsProvider onCreateWorkOrder={onCreateWorkOrder}>
-            <Collection.Root collection={collection} label={kind === "invoice" ? "Productos del documento" : "Productos de la orden"}>
+            <Collection.Root collection={collection} label={kind === "sale" || kind === "purchase" ? "Productos de la orden" : "Productos del documento"}>
                 <Collection.View table={orderLineViews[kind]} emptyTitle="Sin productos" emptyDescription="El documento no tiene líneas." />
             </Collection.Root>
         </OrderLineActionsProvider>

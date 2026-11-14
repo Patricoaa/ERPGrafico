@@ -148,6 +148,51 @@ export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
         ),
         pending: f.quantity((l) => linePending(l), { ...fixed, label: "Pendiente", uom: uomOf }),
         availability: f.status((l) => availability(l), { ...fixed, label: "Stock" }),
+        ov: docRef(
+            f,
+            (l) => {
+                const o = l.order
+                if (o && typeof o === "object" && "label" in o && "id" in o) {
+                    const ref = o as { label: string; id: number; display?: string | null; url?: string | null }
+                    if (ref.label === "sales.saleorder" || !ref.label) {
+                        return {
+                            label: "sales.saleorder",
+                            id: Number(ref.id),
+                            display: String(ref.display ?? `OV-${ref.id}`),
+                            url: ref.url,
+                        }
+                    }
+                }
+                if (l.order_id) {
+                    return {
+                        label: "sales.saleorder",
+                        id: Number(l.order_id),
+                        display: String(l.order_display ?? `OV-${l.order_id}`),
+                    }
+                }
+                return null
+            },
+            { ...fixed, label: "OV", header: "OV", fallback: "—" },
+        ),
+        ocs: docRef(
+            f,
+            (l) => {
+                const o = l.order
+                if (o && typeof o === "object" && "label" in o && "id" in o) {
+                    const ref = o as { label: string; id: number; display?: string | null; url?: string | null }
+                    if (ref.label === "purchasing.purchaseorder") {
+                        return {
+                            label: "purchasing.purchaseorder",
+                            id: Number(ref.id),
+                            display: String(ref.display ?? `OCS-${ref.id}`),
+                            url: ref.url,
+                        }
+                    }
+                }
+                return null
+            },
+            { ...fixed, label: "OCS", header: "OCS", fallback: "—" },
+        ),
         order: docRef(
             f,
             (l) => {
@@ -170,7 +215,7 @@ export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
                 }
                 return null
             },
-            { ...fixed, label: "Orden", fallback: "—" },
+            { ...fixed, label: "OV / OCS", header: "OV / OCS", fallback: "—" },
         ),
         workOrder: f.value(
             "orderLineWorkOrder",
@@ -199,6 +244,14 @@ const saleTable = orderLineEntity.views({
     table: { columns: ["product", "quantity", "unitPrice", "delivered", "invoiced", "workOrder", "subtotal"] },
 }).table
 
+const saleInvoiceTable = orderLineEntity.views({
+    table: { columns: ["product", "quantity", "unitPrice", "subtotal", "ov", "workOrder"] },
+}).table
+
+const purchaseInvoiceTable = orderLineEntity.views({
+    table: { columns: ["product", "quantity", "unitPrice", "subtotal", "ocs"] },
+}).table
+
 /** Read-only line tables of the document sheets. The totals live in `DocumentTotalsBox`, so no footer. */
 export const orderLineViews = {
     sale: saleTable,
@@ -206,7 +259,7 @@ export const orderLineViews = {
     purchase: orderLineEntity.views({
         table: { columns: ["product", "quantity", "unitPrice", "received", "invoiced", "subtotal"] },
     }).table,
-    invoice: orderLineEntity.views({
-        table: { columns: ["product", "quantity", "unitPrice", "order", "workOrder", "subtotal"] },
-    }).table,
+    invoice: saleInvoiceTable,
+    saleInvoice: saleInvoiceTable,
+    purchaseInvoice: purchaseInvoiceTable,
 }

@@ -85,7 +85,7 @@ export function InvoiceSummaryTab({
 
             <section className="space-y-4">
                 <Section.Header spaced title="Productos" icon={Package} />
-                <DocumentLinesTable lines={lines} kind="invoice" onCreateWorkOrder={onCreateWorkOrder} />
+                <DocumentLinesTable lines={lines} kind={isSale ? "saleInvoice" : "purchaseInvoice"} onCreateWorkOrder={onCreateWorkOrder} />
                 <DocumentTotalsBox
                     subtotal={subtotal}
                     tax={toNumber(invoice.total_tax)}
