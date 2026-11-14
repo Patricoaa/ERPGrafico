@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 from accounting.models import Account, AccountType
+from billing.models import SII_CODE_TO_DTE_TYPE, SII_DOCUMENT_CODE_CHOICES
 from core.edit_policy import EditPolicy
 from core.models import TimeStampedModel
 from core.storages import PrivateMediaStorage
@@ -3950,14 +3951,6 @@ class TerminalSale(TimeStampedModel):
         PREPAID = "PREPAID", _("Prepago")
         UNKNOWN = "UNKNOWN", _("Desconocido")
 
-    DOCUMENT_TYPE_LABELS = {
-        33: "Factura afecta",
-        34: "Factura exenta",
-        39: "Boleta",
-        41: "Boleta exenta",
-        48: "Comprobante de pago",
-    }
-
     provider = models.ForeignKey(
         PaymentTerminalProvider,
         on_delete=models.PROTECT,
@@ -4057,4 +4050,11 @@ class TerminalSale(TimeStampedModel):
     def document_type_label(self) -> str:
         if self.document_type is None:
             return ""
-        return self.DOCUMENT_TYPE_LABELS.get(self.document_type, f"DTE {self.document_type}")
+        return dict(SII_DOCUMENT_CODE_CHOICES).get(self.document_type, f"DTE {self.document_type}")
+
+    @property
+    def dte_type(self) -> str | None:
+        """Valor de `Invoice.DTEType` equivalente al código SII, o None si no mapea."""
+        if self.document_type is None:
+            return None
+        return SII_CODE_TO_DTE_TYPE.get(self.document_type)

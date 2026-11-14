@@ -1911,6 +1911,7 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
     provider_name = serializers.CharField(source="provider.name", read_only=True)
     device_name = serializers.CharField(source="device.name", read_only=True, default=None)
     document_type_label = serializers.CharField(read_only=True)
+    dte_type = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = TerminalSale
@@ -1930,6 +1931,7 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "payment_type",
             "document_type",
             "document_type_label",
+            "dte_type",
             "instance",
             "card_brand",
             "card_issuer",

@@ -10,6 +10,7 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { useTerminalSale } from "../hooks/useTerminalSales"
 import type { TerminalSaleDetail } from "../types"
 import {
+    formatDteType,
     terminalSaleItemEntity,
     terminalSaleItemViews,
     terminalSalePaymentType,
@@ -99,7 +100,8 @@ function TerminalSaleDetailBody({ sale }: { sale: TerminalSaleDetail }) {
                 <Stat title="Terminal" value={sale.device_name ?? sale.serial_number} plain />
                 <Stat title="N° de serie" value={sale.serial_number} />
                 <Stat title="Sucursal" value={sale.location_id} />
-                <Stat title="Documento" value={sale.document_type_label} plain />
+                <Stat title="Documento" value={formatDteType(sale.document_type, sale.document_type_label)} plain />
+                <Stat title="Tipo DTE (ERP)" value={sale.dte_type} />
                 <Stat title="Instancia" value={sale.instance} />
                 <Stat title="Estado original" value={sale.raw_status} />
                 <Stat title="Clave natural" value={sale.natural_key} />

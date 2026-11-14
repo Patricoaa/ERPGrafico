@@ -60,10 +60,24 @@ def test_document_type_label():
     p = _provider()
     s = _sale(p)
     for n, label in [
-        (33, "Factura afecta"),
-        (48, "Comprobante de pago"),
+        (33, "Factura Electrónica"),
+        (48, "Comprobante de Pago Electrónico"),
         (99, "DTE 99"),
         (None, ""),
     ]:
         s.document_type = n
         assert s.document_type_label == label
+
+
+def test_dte_type_property():
+    p = _provider()
+    s = _sale(p)
+    for n, dte in [
+        (33, "FACTURA"),
+        (39, "BOLETA"),
+        (48, "COMPROBANTE_PAGO"),
+        (99, None),
+        (None, None),
+    ]:
+        s.document_type = n
+        assert s.dte_type == dte

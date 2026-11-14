@@ -31,7 +31,7 @@ import { TerminalSaleDrawer } from "../TerminalSaleDrawer"
 const sale: TerminalSaleDetail = {
     id: 9, provider: 1, provider_name: "TUU Local", device: null, device_name: null, serial_number: "SN1",
     sale_id: "13347", sequence_number: "", location_id: "", transaction_at: "2026-11-12T10:00:00-03:00",
-    status: "COMPLETED", raw_status: "Completed", payment_type: "CASH", document_type: 39, document_type_label: "Boleta",
+    status: "COMPLETED", raw_status: "Completed", payment_type: "CASH", document_type: 39, document_type_label: "Boleta Electrónica", dte_type: "BOLETA",
     instance: null, card_brand: "", card_issuer: "", installment_count: null, currency: "CLP",
     sale_amount: "3200", tip_amount: "0", cashback_amount: "0", total_amount: "3200",
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,
@@ -57,6 +57,9 @@ describe("TerminalSaleDrawer", () => {
     it("Detalle muestra los campos, ítems, abonos y los datos originales plegados", async () => {
         render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
         expect(screen.getByText("cash:13347")).toBeInTheDocument()
+        expect(screen.getByText("39 · Boleta Electrónica")).toBeInTheDocument()
+        expect(screen.getByText("Tipo DTE (ERP)")).toBeInTheDocument()
+        expect(screen.getByText("BOLETA")).toBeInTheDocument()
         expect(screen.getByText("Ítems")).toBeInTheDocument()
         expect(screen.getByText("Abonos (conciliaciones)")).toBeInTheDocument()
         expect(screen.queryByText(/"saleId": "13347"/)).not.toBeInTheDocument()

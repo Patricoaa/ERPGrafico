@@ -12,6 +12,28 @@ from core.validators import validate_file_extension, validate_file_size
 from purchasing.models import PurchaseOrder
 from sales.models import SaleOrder
 
+# Códigos oficiales de DTE según SII de Chile (fuente única de nombres).
+SII_DOCUMENT_CODE_CHOICES = [
+    (33, "Factura Electrónica"),
+    (34, "Factura Exenta"),
+    (39, "Boleta Electrónica"),
+    (41, "Boleta Exenta"),
+    (48, "Comprobante de Pago Electrónico"),
+    (56, "Nota de Débito"),
+    (61, "Nota de Crédito"),
+]
+
+# Código SII -> valor de `Invoice.DTEType`.
+SII_CODE_TO_DTE_TYPE = {
+    33: "FACTURA",
+    34: "FACTURA_EXENTA",
+    39: "BOLETA",
+    41: "BOLETA_EXENTA",
+    48: "COMPROBANTE_PAGO",
+    56: "NOTA_DEBITO",
+    61: "NOTA_CREDITO",
+}
+
 
 class Invoice(TransactionalDocument):
     edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
@@ -61,15 +83,7 @@ class Invoice(TransactionalDocument):
         _("Código SII"),
         null=True,
         blank=True,
-        choices=[
-            (33, "Factura Electrónica"),
-            (34, "Factura Exenta"),
-            (39, "Boleta Electrónica"),
-            (41, "Boleta Exenta"),
-            (48, "Comprobante de Pago Electrónico"),
-            (56, "Nota de Débito"),
-            (61, "Nota de Crédito"),
-        ],
+        choices=SII_DOCUMENT_CODE_CHOICES,
         help_text=_("Código oficial del tipo de DTE según SII de Chile"),
     )
     document_attachment = models.FileField(

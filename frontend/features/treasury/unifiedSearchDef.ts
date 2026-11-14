@@ -279,11 +279,13 @@ export const terminalSaleUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Tipo de documento',
       serverParam: 'document_type',
       options: [
-        { label: 'Factura afecta', value: '33' },
-        { label: 'Factura exenta', value: '34' },
-        { label: 'Boleta', value: '39' },
-        { label: 'Boleta exenta', value: '41' },
-        { label: 'Comprobante de pago', value: '48' },
+        { label: '33 · Factura Electrónica', value: '33' },
+        { label: '34 · Factura Exenta', value: '34' },
+        { label: '39 · Boleta Electrónica', value: '39' },
+        { label: '41 · Boleta Exenta', value: '41' },
+        { label: '48 · Comprobante de Pago Electrónico', value: '48' },
+        { label: '56 · Nota de Débito', value: '56' },
+        { label: '61 · Nota de Crédito', value: '61' },
       ],
     },
     {

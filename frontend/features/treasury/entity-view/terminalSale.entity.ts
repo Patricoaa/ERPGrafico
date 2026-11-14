@@ -10,6 +10,12 @@ export const TERMINAL_SALE_PAYMENT_TYPE_LABELS: Record<TerminalSalePaymentType, 
     UNKNOWN: "Sin tipo",
 }
 
+/** "<código SII> · <nombre>" (p. ej. "39 · Boleta Electrónica"); vacío sin código. */
+export function formatDteType(code: number | null, label: string): string {
+    if (code === null) return ""
+    return label ? `${code} · ${label}` : String(code)
+}
+
 export const TERMINAL_SALE_STATUS_LABELS: Record<TerminalSaleStatus, string> = {
     COMPLETED: "Completada",
     REVERSED: "Anulada",
@@ -49,7 +55,7 @@ export const terminalSaleEntity = defineEntity<TerminalSale>()((f) => ({
         provider: f.text("provider_name", { label: "Proveedor" }),
         device: f.text((s) => s.device_name ?? s.serial_number, { label: "Terminal" }),
         paymentType: f.status((s) => terminalSalePaymentType(s.payment_type), { label: "Tipo de pago" }),
-        documentType: f.text("document_type_label", { label: "Documento" }),
+        documentType: f.text((s) => formatDteType(s.document_type, s.document_type_label), { label: "Documento" }),
         cardBrand: f.text("card_brand", { label: "Marca" }),
         cardIssuer: f.text("card_issuer", { label: "Emisor" }),
         totalAmount: f.money("total_amount", { label: "Total" }),

@@ -67,7 +67,7 @@ import { TerminalSalesClientView } from "../TerminalSalesClientView"
 const sale: TerminalSale = {
     id: 1, provider: 1, provider_name: "TUU Local", device: null, device_name: null, serial_number: "SN1",
     sale_id: "13347", sequence_number: "", location_id: "", transaction_at: "2026-11-12T10:00:00-03:00",
-    status: "COMPLETED", raw_status: "Completed", payment_type: "CASH", document_type: 39, document_type_label: "Boleta",
+    status: "COMPLETED", raw_status: "Completed", payment_type: "CASH", document_type: 39, document_type_label: "Boleta Electrónica", dte_type: "BOLETA",
     instance: null, card_brand: "", card_issuer: "", installment_count: null, currency: "CLP",
     sale_amount: "3200", tip_amount: "0", cashback_amount: "0", total_amount: "3200",
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,

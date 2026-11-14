@@ -105,8 +105,11 @@ def test_sales_list_excludes_raw_detail_includes_it(admin_client, provider):
         assert k not in row
     assert row["provider_name"] == provider.name
     assert row["device_name"] == "Caja 1"
-    assert row["document_type_label"] == "Boleta"
+    assert row["document_type"] == 39
+    assert row["document_type_label"] == "Boleta Electrónica"
+    assert row["dte_type"] == "BOLETA"
     detail = admin_client.get(f"/api/treasury/terminal-sales/{sale.id}/").json()
+    assert detail["dte_type"] == "BOLETA"
     assert detail["raw"] == {"secret_raw": "RAWDATA"}
     assert detail["items"] and detail["reconciliations"]
 

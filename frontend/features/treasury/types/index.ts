@@ -703,6 +703,7 @@ export interface TerminalSale {
     payment_type: TerminalSalePaymentType
     document_type: number | null
     document_type_label: string
+    dte_type: string | null
     instance: number | null
     card_brand: string
     card_issuer: string
