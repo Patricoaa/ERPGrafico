@@ -5,6 +5,7 @@ export * from './GroupsClientView';
 export * from './HRSettingsView';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';
+export * from './TreasurySettingsView';
 export * from './UsersSettingsClientView';
 export * from './UnifiedAccountsView';
 export * from './VatRatesView';

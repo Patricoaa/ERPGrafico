@@ -94,6 +94,22 @@ export const TERMINAL_COBRO_SUB_TABS: NavTabConfig[] = [
 ]
 
 // ============================================
+// SUB-TABS: CONFIGURACIÓN
+// ============================================
+
+export const TREASURY_CONFIG_SUB_TABS: NavTabConfig[] = [
+  {
+    value: "terminal-cobro",
+    label: "Terminal de cobro",
+    href: "/treasury/settings/terminal-cobro",
+    iconName: "credit-card",
+    headerTitle: "Configuración del terminal de cobro",
+    headerDescription: "Sincronización automática de ventas con TUU.",
+    metadataTitle: "Configuración del terminal de cobro | ERPGrafico",
+  },
+]
+
+// ============================================
 // SUB-VISTAS: BANK CENTER (por banco)
 // ============================================
 
@@ -268,6 +284,16 @@ export const TREASURY_TABS: NavTabConfig[] = [
     metadataTitle: "Terminal de cobro | ERPGrafico",
     subTabs: TERMINAL_COBRO_SUB_TABS,
   },
+  {
+    value: "config",
+    label: "Configuración",
+    href: "/treasury/settings",
+    iconName: "settings",
+    headerTitle: "Configuración",
+    headerDescription: "Parámetros del módulo de Tesorería.",
+    metadataTitle: "Configuración | ERPGrafico",
+    subTabs: TREASURY_CONFIG_SUB_TABS,
+  },
 ]
 
 /**
@@ -369,6 +395,11 @@ export function getOperacionesSubTab(value: string): NavTabConfig | undefined {
 /** Busca sub-tab de Terminal de Cobro */
 export function getTerminalCobroSubTab(value: string): NavTabConfig | undefined {
   return findTabConfig(TERMINAL_COBRO_SUB_TABS, value)
+}
+
+/** Busca sub-tab de Configuración */
+export function getTreasuryConfigSubTab(value: string): NavTabConfig | undefined {
+  return findSubTabConfig(TREASURY_TABS, "config", value)
 }
 
 /** Busca sub-vista de banco (dentro de bankTabs dinámicos) */

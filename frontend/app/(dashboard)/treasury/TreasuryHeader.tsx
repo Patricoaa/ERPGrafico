@@ -11,6 +11,7 @@ import {
   getTreasuryTab,
   getOperacionesSubTab,
   getTerminalCobroSubTab,
+  getTreasuryConfigSubTab,
   getBankSubView,
 } from "@/features/treasury/navigation"
 import { buildHeaderConfigFromTab, overrideHeaderConfig } from "@/lib/navigation-helpers"
@@ -28,6 +29,7 @@ export function TreasuryHeader() {
     operaciones: "operaciones",
     "bank-center": "bank-center",
     "terminal-cobro": "terminal-cobro",
+    settings: "config",
   }
 
   const activeValue = segmentToTab[currentSegment] || "operaciones"
@@ -35,6 +37,7 @@ export function TreasuryHeader() {
   const subActiveValue = useMemo(() => {
     if (activeValue === "operaciones") return segments[2] || "movements"
     if (activeValue === "terminal-cobro") return segments[2] || "providers"
+    if (activeValue === "config") return segments[2] || "terminal-cobro"
     if (activeValue === "bank-center") {
       const bankIdSegment = segments[2]
       if (bankIdSegment && !isNaN(Number(bankIdSegment))) return `bank-${bankIdSegment}`
@@ -75,6 +78,11 @@ export function TreasuryHeader() {
 
     if (activeValue === "terminal-cobro" && subActiveValue) {
       const subTab = getTerminalCobroSubTab(subActiveValue)
+      if (subTab) return buildHeaderConfigFromTab(subTab)
+    }
+
+    if (activeValue === "config" && subActiveValue) {
+      const subTab = getTreasuryConfigSubTab(subActiveValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
