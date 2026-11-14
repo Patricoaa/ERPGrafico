@@ -45,7 +45,7 @@ export function DocumentRefLink({ documentRef, label, id, display, url, mono = t
         <Button
             variant="link"
             size="sm"
-            className={cn("h-auto p-0 text-left text-xs font-medium whitespace-normal", mono && "font-mono", className)}
+            className={cn("h-auto p-0 text-left text-xs font-medium whitespace-normal cursor-pointer", mono && "font-mono", className)}
             onClick={onClick}
         >
             {target.display}
