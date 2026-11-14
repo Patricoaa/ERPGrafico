@@ -5,3 +5,5 @@ export * from './LedgerSummaryPanel';
 export * from './accountActions';
 export * from '@/features/accounting/journalEntryActions';
 export * from './closures';
+export * from './rcv/RcvDocumentsClientView';
+export * from './rcv/RcvDocumentDrawer';

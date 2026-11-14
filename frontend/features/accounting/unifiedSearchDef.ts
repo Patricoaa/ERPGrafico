@@ -88,3 +88,74 @@ export const fiscalYearUnifiedSearchDef: UnifiedSearchConfig = {
     { key: 'status', label: 'Estado', field: 'status' },
   ],
 }
+
+const RCV_FIRST_YEAR = 2017
+const RCV_MONTH_NAMES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+
+function rcvYearOptions() {
+  const current = new Date().getFullYear()
+  return Array.from({ length: current - RCV_FIRST_YEAR + 1 }, (_, i) => {
+    const year = String(current - i)
+    return { label: year, value: year }
+  })
+}
+
+/** Filtros del RCV (compras y ventas). Sin período por defecto: lista todo lo importado. */
+export const rcvDocumentUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [{ key: 'search', label: 'RUT / Razón social / Folio', serverParam: 'search' }],
+  filters: [
+    { type: 'single', key: 'year', label: 'Año', serverParam: 'year', options: rcvYearOptions() },
+    {
+      type: 'single',
+      key: 'month',
+      label: 'Mes',
+      serverParam: 'month',
+      options: RCV_MONTH_NAMES.map((label, i) => ({ label, value: String(i + 1) })),
+    },
+    {
+      type: 'single',
+      key: 'dte_type',
+      label: 'Tipo de documento',
+      serverParam: 'dte_type',
+      options: [
+        { label: '33 · Factura Electrónica', value: '33' },
+        { label: '34 · Factura Exenta', value: '34' },
+        { label: '39 · Boleta Electrónica', value: '39' },
+        { label: '41 · Boleta Exenta', value: '41' },
+        { label: '46 · Factura de Compra', value: '46' },
+        { label: '52 · Guía de Despacho', value: '52' },
+        { label: '56 · Nota de Débito', value: '56' },
+        { label: '61 · Nota de Crédito', value: '61' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'acknowledgement',
+      label: 'Acuse',
+      serverParam: 'acknowledgement',
+      options: [
+        { label: 'Recibo otorgado por el receptor', value: 'Recibo otorgado por el receptor' },
+        { label: 'No reclamado en plazo', value: 'No reclamado en plazo' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'missing',
+      label: 'Vigencia',
+      serverParam: 'missing',
+      options: [
+        { label: 'No vino en la última importación', value: 'true' },
+        { label: 'Vigentes', value: 'false' },
+      ],
+    },
+  ],
+}
+
+/** Las ventas no tienen acuse de recibo. */
+export const rcvSaleUnifiedSearchDef: UnifiedSearchConfig = {
+  ...rcvDocumentUnifiedSearchDef,
+  filters: (rcvDocumentUnifiedSearchDef.filters ?? []).filter((f) => f.key !== 'acknowledgement'),
+}
