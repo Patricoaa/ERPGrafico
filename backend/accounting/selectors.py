@@ -4,7 +4,17 @@ from decimal import Decimal
 from django.db.models import Count, F, Q, QuerySet, Sum, Window
 from django.utils import timezone
 
-from .models import Account, AccountType, JournalEntry, RCVImportAttempt
+from core.crypto import CryptoError
+
+from .models import (
+    Account,
+    AccountType,
+    JournalEntry,
+    RCVApiKey,
+    RCVDocument,
+    RCVImport,
+    RCVImportAttempt,
+)
 
 
 def balance_affecting_statuses():
@@ -162,3 +172,89 @@ def rcv_key_usage(month_start: date) -> dict[int, int]:
         .order_by()
     )
     return {row["api_key_id"]: row["uses"] for row in rows}
+
+
+def _local_start(day: date) -> datetime:
+    return timezone.make_aware(datetime.combine(day, time.min))
+
+
+def _filter_period(qs: QuerySet, filters: dict) -> QuerySet:
+    if filters.get("year") is not None:
+        qs = qs.filter(year=filters["year"])
+    if filters.get("month") is not None:
+        qs = qs.filter(month=filters["month"])
+    return qs
+
+
+def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
+    """Documentos RCV con filtros ya validados (``RCVDocumentFilterSerializer``)."""
+    qs = RCVDocument.objects.select_related("first_import", "last_import", "missing_since_import")
+    year, month = filters.get("year"), filters.get("month")
+    if year is not None and month is not None:
+        qs = qs.filter(period=f"{year:04d}{month:02d}")
+    elif year is not None:
+        qs = qs.filter(period__startswith=f"{year:04d}")
+    elif month is not None:
+        qs = qs.filter(period__endswith=f"{month:02d}")
+    for field in ("direction", "dte_type", "status", "acknowledgement"):
+        if filters.get(field) not in (None, ""):
+            qs = qs.filter(**{field: filters[field]})
+    if filters.get("missing"):
+        qs = qs.filter(missing_since_import__isnull=filters["missing"] == "false")
+    if filters.get("issue_date_from"):
+        qs = qs.filter(issue_date__gte=filters["issue_date_from"])
+    if filters.get("issue_date_to"):
+        qs = qs.filter(issue_date__lte=filters["issue_date_to"])
+    if search := (filters.get("search") or "").strip():
+        term = Q(counterparty_rut__icontains=search.replace(".", "")) | Q(
+            counterparty_name__icontains=search
+        )
+        if search.isdigit():
+            term |= Q(folio=int(search))
+        qs = qs.filter(term)
+    return qs
+
+
+def rcv_imports_queryset(filters: dict) -> QuerySet[RCVImport]:
+    """Listado de importaciones sin la respuesta cruda."""
+    qs = RCVImport.objects.select_related("api_key", "triggered_by").defer("raw_response")
+    for field in ("direction", "status", "trigger"):
+        if filters.get(field):
+            qs = qs.filter(**{field: filters[field]})
+    return _filter_period(qs, filters)
+
+
+def rcv_import_detail_queryset() -> QuerySet[RCVImport]:
+    return RCVImport.objects.select_related("api_key", "triggered_by").prefetch_related(
+        "summaries", "attempts__api_key"
+    )
+
+
+def rcv_api_keys_queryset(month_start: date) -> QuerySet[RCVApiKey]:
+    """API keys con ``used_this_month`` (intentos desde ``month_start`` local) anotado."""
+    since = _local_start(month_start)
+    return RCVApiKey.objects.annotate(
+        used_this_month=Count("attempts", filter=Q(attempts__created_at__gte=since))
+    ).order_by("id")
+
+
+def rcv_total_monthly_quota() -> int:
+    """Suma de ``monthly_limit`` de las API keys activas."""
+    total = RCVApiKey.objects.filter(is_active=True).aggregate(total=Sum("monthly_limit"))["total"]
+    return total or 0
+
+
+def rcv_api_key_with_same_key(plain: str, exclude_pk: int | None = None) -> RCVApiKey | None:
+    """Otra API key RCV cuyo valor descifrado es ``plain`` (o ``None``)."""
+    if not plain:
+        return None
+    others = RCVApiKey.objects.all()
+    if exclude_pk is not None:
+        others = others.exclude(pk=exclude_pk)
+    for other in others:
+        try:
+            if other.get_key() == plain:
+                return other
+        except CryptoError:
+            continue  # key ilegible: no puede colisionar
+    return None
