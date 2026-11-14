@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import date, datetime, timedelta
 from datetime import timezone as dt_timezone
@@ -194,6 +195,56 @@ def test_type_with_empty_detail_but_stored_docs_warns_and_skips_missing():
     summary = RCVImportSummary.objects.get(rcv_import=second, dte_type=39)
     assert summary.has_detail is False
     assert summary.detail_count == 0
+
+
+@pytest.mark.django_db
+def test_empty_summary_and_detail_warns_and_flags_nothing():
+    make_rcv_settings()
+    make_api_key()
+    _run(_ventas())
+
+    body = _ventas()
+    body["ventas"]["resumenes"] = []
+    body["ventas"]["detalleVentas"] = []
+    second = _run(body)
+    assert second.status == RCVImport.Status.SUCCESS
+    assert second.warnings == [
+        "El tipo 33 no viene en el resumen del SII; no se marcaron faltantes.",
+        "El tipo 39 no viene en el resumen del SII; no se marcaron faltantes.",
+    ]
+    assert second.missing_count == 0
+    assert not RCVDocument.objects.filter(missing_since_import__isnull=False).exists()
+
+
+@pytest.mark.django_db
+def test_detail_type_without_summary_row_warns_and_flags_nothing():
+    make_rcv_settings()
+    make_api_key()
+    _run(_ventas())
+
+    body = _drop_folio(_ventas(), 6447)
+    body["ventas"]["resumenes"] = [s for s in body["ventas"]["resumenes"] if s["tipoDte"] != 33]
+    second = _run(body)
+    assert second.status == RCVImport.Status.SUCCESS
+    assert second.warnings == [
+        "El tipo 33 no viene en el resumen del SII; no se marcaron faltantes."
+    ]
+    assert second.missing_count == 0
+    assert not RCVDocument.objects.filter(missing_since_import__isnull=False).exists()
+
+
+@pytest.mark.django_db
+def test_period_mismatch_warns_but_imports():
+    make_rcv_settings()
+    make_api_key()
+    body = _ventas()
+    body["caratula"]["periodo"] = "202609"
+    imp = _run(body)
+    assert imp.status == RCVImport.Status.SUCCESS
+    assert imp.warnings == [
+        "El período de la respuesta (202609) no coincide con el solicitado (202610)."
+    ]
+    assert RCVDocument.objects.count() == 4
 
 
 @pytest.mark.django_db
@@ -465,6 +516,66 @@ def test_create_imports_rejects_running_duplicate():
 
 
 @pytest.mark.django_db
+def test_stale_running_import_no_longer_blocks_create_imports():
+    stale_at = FIXED_NOW - timedelta(minutes=rcv_service.STALE_IMPORT_MINUTES + 1)
+    stale = _import(SALES, status=RCVImport.Status.RUNNING, started_at=stale_at)
+    created = rcv_service.create_imports(2026, 10, [SALES], RCVImport.Trigger.MANUAL)
+    assert len(created) == 1
+    stale.refresh_from_db()
+    assert stale.status == RCVImport.Status.FAILED
+    assert stale.error_code == "INTERRUPTED"
+    assert stale.error_message == "La importación se interrumpió y se marcó como fallida."
+    assert stale.finished_at == FIXED_NOW
+
+
+@pytest.mark.django_db
+def test_fresh_running_import_still_blocks_create_imports():
+    fresh = _import(
+        SALES, status=RCVImport.Status.RUNNING, started_at=FIXED_NOW - timedelta(minutes=5)
+    )
+    with pytest.raises(ValidationError):
+        rcv_service.create_imports(2026, 10, [SALES], RCVImport.Trigger.MANUAL)
+    fresh.refresh_from_db()
+    assert fresh.status == RCVImport.Status.RUNNING
+
+
+@pytest.mark.django_db
+def test_stale_queued_import_is_recovered_by_created_at():
+    old = _import(SALES)
+    RCVImport.objects.filter(pk=old.pk).update(
+        created_at=FIXED_NOW - timedelta(minutes=rcv_service.STALE_IMPORT_MINUTES + 1)
+    )
+    fresh_queued = _import(PURCHASES)
+    assert rcv_service.recover_stale_imports() == 1
+    old.refresh_from_db()
+    fresh_queued.refresh_from_db()
+    assert old.status == RCVImport.Status.FAILED
+    assert fresh_queued.status == RCVImport.Status.QUEUED
+
+
+@pytest.mark.django_db
+def test_enqueue_imports_waits_for_commit(django_capture_on_commit_callbacks):
+    imp = _import()
+    delay = mock.Mock()
+    with django_capture_on_commit_callbacks(execute=False) as callbacks:
+        rcv_service.enqueue_imports([imp], delay)
+    delay.assert_not_called()
+    assert len(callbacks) == 1
+    callbacks[0]()
+    delay.assert_called_once_with([imp.id])
+
+
+@pytest.mark.django_db
+def test_enqueue_imports_marks_failed_when_broker_down(django_capture_on_commit_callbacks):
+    imp = _import()
+    with django_capture_on_commit_callbacks(execute=True):
+        rcv_service.enqueue_imports([imp], mock.Mock(side_effect=ConnectionError("down")))
+    imp.refresh_from_db()
+    assert imp.status == RCVImport.Status.FAILED
+    assert imp.error_code == "ENQUEUE"
+
+
+@pytest.mark.django_db
 def test_create_imports_allows_after_finished_and_rejects_future():
     _import(SALES, status=RCVImport.Status.SUCCESS)
     _import(SALES, status=RCVImport.Status.FAILED)
@@ -522,6 +633,26 @@ def test_secrets_never_persisted():
             assert secret_key not in text
             assert SII_PASSWORD not in text
     assert secret_key not in str(RCVApiKey.objects.values_list("last_error", flat=True))
+
+
+@pytest.mark.django_db
+def test_json_escaped_password_is_redacted_from_raw_response():
+    password = 'clave"de\\prueba-ñ'
+    make_rcv_settings(password=password)
+    make_api_key()
+    body = _ventas()
+    body["eco"] = {"input": json.dumps({"PasswordSII": password})}
+    imp = _run(body)
+    assert imp.status == RCVImport.Status.SUCCESS
+    imp.refresh_from_db()
+    text = imp.raw_response["eco"]["input"]
+    assert "***" in text
+    for form in (
+        password,
+        json.dumps(password)[1:-1],
+        json.dumps(password, ensure_ascii=False)[1:-1],
+    ):
+        assert form not in text
 
 
 # ── Sin N+1 ──────────────────────────────────────────────────────────────────

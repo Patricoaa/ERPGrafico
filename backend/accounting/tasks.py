@@ -23,6 +23,7 @@ def _now():
 @shared_task(name="accounting.tasks.dispatch_rcv_imports")
 def dispatch_rcv_imports() -> int:
     """Crea y encola las importaciones automáticas si corresponde; retorna cuántas."""
+    rcv_service.recover_stale_imports()
     config = RCVSettings.get_settings()
     now = _now()
     last = (

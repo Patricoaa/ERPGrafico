@@ -184,12 +184,20 @@ def test_imports_list_filters(reader):
 
 
 @pytest.mark.django_db
-def test_start_import_enqueues(manager, reader):
+def test_start_import_enqueues(manager, reader, django_capture_on_commit_callbacks):
     body = {"year": 2026, "month": 10, "directions": ["PURCHASES", "SALES"]}
     with mock.patch("accounting.tasks.run_rcv_imports.delay") as delay:
-        r = manager.post(
-            "/api/accounting/rcv-imports/start/", body, format="json", HTTP_IDEMPOTENCY_KEY="rcv-1"
-        )
+        with django_capture_on_commit_callbacks(execute=False) as callbacks:
+            r = manager.post(
+                "/api/accounting/rcv-imports/start/",
+                body,
+                format="json",
+                HTTP_IDEMPOTENCY_KEY="rcv-1",
+            )
+        # Nada se encola antes del commit: el worker no vería las filas.
+        delay.assert_not_called()
+        assert len(callbacks) == 1
+        callbacks[0]()
     assert r.status_code == 202, r.content
     rows = r.json()
     assert len(rows) == 2
@@ -399,3 +407,22 @@ def test_documents_sql_skips_raw_payloads(reader):
     assert body["raw"] == {"campo_original": "VALOR-CRUDO"}
     ref = {"id": imp.id, "period": "202610"}
     assert body["first_import"] == ref == body["last_import"] == body["missing_since_import"]
+
+
+@pytest.mark.django_db
+def test_api_key_new_value_clears_exhaustion(manager):
+    key = make_api_key(SECRET_KEY, exhausted_until=date(2026, 12, 1), last_error="sin cupo")
+    r = manager.patch(f"{KEYS_URL}{key.id}/", {"label": "Otra"}, format="json")
+    assert r.status_code == 200, r.content
+    key.refresh_from_db()
+    assert key.exhausted_until == date(2026, 12, 1)
+    assert key.last_error == "sin cupo"
+
+    r = manager.patch(f"{KEYS_URL}{key.id}/", {"key": "TEST-KEY-NUEVA-0001"}, format="json")
+    assert r.status_code == 200, r.content
+    assert r.json()["exhausted_until"] is None
+    assert r.json()["last_error"] == ""
+    key.refresh_from_db()
+    assert key.get_key() == "TEST-KEY-NUEVA-0001"
+    assert key.exhausted_until is None
+    assert key.last_error == ""

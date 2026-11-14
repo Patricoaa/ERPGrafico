@@ -89,12 +89,13 @@ def _fix_now(monkeypatch, day=20, hour=7):
     monkeypatch.setattr(timezone, "localdate", lambda *a, **k: frozen.date())
 
 
-def test_dispatch_creates_and_enqueues(monkeypatch):
+def test_dispatch_creates_and_enqueues(monkeypatch, django_capture_on_commit_callbacks):
     _fix_now(monkeypatch)
     make_rcv_settings(enabled=True, run_hour=6)
     delay = MagicMock()
     monkeypatch.setattr(tasks.run_rcv_imports, "delay", delay)
-    assert tasks.dispatch_rcv_imports() == 4
+    with django_capture_on_commit_callbacks(execute=True):
+        assert tasks.dispatch_rcv_imports() == 4
     delay.assert_called_once()
     assert len(delay.call_args.args[0]) == 4
     assert RCVImport.objects.filter(trigger=RCVImport.Trigger.SCHEDULED).count() == 4
@@ -117,7 +118,7 @@ def test_dispatch_skips_duplicates(monkeypatch):
     assert tasks.dispatch_rcv_imports() == 1  # solo octubre
 
 
-def test_dispatch_marks_failed_when_broker_down(monkeypatch):
+def test_dispatch_marks_failed_when_broker_down(monkeypatch, django_capture_on_commit_callbacks):
     _fix_now(monkeypatch)
     make_rcv_settings(enabled=True, run_hour=6, include_purchases=False)
 
@@ -125,10 +126,26 @@ def test_dispatch_marks_failed_when_broker_down(monkeypatch):
         raise ConnectionError("broker down")
 
     monkeypatch.setattr(tasks.run_rcv_imports, "delay", boom)
-    assert tasks.dispatch_rcv_imports() == 2
+    with django_capture_on_commit_callbacks(execute=True):
+        assert tasks.dispatch_rcv_imports() == 2
     assert set(RCVImport.objects.values_list("status", "error_code")) == {
         (RCVImport.Status.FAILED, "ENQUEUE")
     }
+
+
+def test_dispatch_recovers_stale_imports_first(monkeypatch):
+    make_rcv_settings(enabled=False)
+    stale = RCVImport.objects.create(
+        direction=SALES, year=2026, month=10, trigger=RCVImport.Trigger.SCHEDULED
+    )
+    RCVImport.objects.filter(pk=stale.pk).update(
+        created_at=timezone.now() - timedelta(minutes=rcv_service.STALE_IMPORT_MINUTES + 1)
+    )
+    assert tasks.dispatch_rcv_imports() == 0
+    stale.refresh_from_db()
+    assert stale.status == RCVImport.Status.FAILED
+    assert stale.error_code == "INTERRUPTED"
+    assert stale.finished_at is not None
 
 
 def _queued(month=11):

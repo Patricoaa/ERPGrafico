@@ -31,7 +31,11 @@ from accounting.integrations.rcv_normalizer import (
     normalize_report,
     normalize_rut,
 )
-from accounting.integrations.simpleapi_client import SimpleApiError, SimpleApiRcvClient
+from accounting.integrations.simpleapi_client import (
+    SimpleApiError,
+    SimpleApiRcvClient,
+    redact_secrets,
+)
 from accounting.models import (
     RCVApiKey,
     RCVDocument,
@@ -65,11 +69,18 @@ DETAIL_MISMATCH_WARNING = (
     "({detail_count}/{document_count} documentos)."
 )
 DUPLICATE_WARNING = "La respuesta trae {count} documento(s) repetido(s); se conservó el último."
+NO_SUMMARY_WARNING = "El tipo {dte_type} no viene en el resumen del SII; no se marcaron faltantes."
+PERIOD_MISMATCH_WARNING = (
+    "El período de la respuesta ({received}) no coincide con el solicitado ({requested})."
+)
+INTERRUPTED_MESSAGE = "La importación se interrumpió y se marcó como fallida."
 
 RATE_LIMIT_RETRIES = 2
 RATE_LIMIT_DEFAULT_WAIT = 60
 # Pausa mínima entre dos consultas consecutivas a SimpleAPI.
 MIN_PAUSE_SECONDS = 15
+# Una importación activa más antigua que esto quedó huérfana (p. ej. reinicio del worker).
+STALE_IMPORT_MINUTES = 30
 
 _ACTIVE_STATUSES = (RCVImport.Status.QUEUED, RCVImport.Status.RUNNING)
 _DOC_FIELDS = tuple(f.name for f in fields(NormalizedDocument))
@@ -99,6 +110,28 @@ def next_month_start(d: date) -> date:
 # ── Creación ─────────────────────────────────────────────────────────────────
 
 
+def recover_stale_imports() -> int:
+    """Marca FAILED las importaciones activas que nunca terminaron; retorna cuántas.
+
+    QUEUED se mide desde ``created_at`` y RUNNING desde ``started_at``.
+    """
+    now = timezone.now()
+    cutoff = now - timedelta(minutes=STALE_IMPORT_MINUTES)
+    stale = Q(status=RCVImport.Status.QUEUED, created_at__lt=cutoff) | Q(
+        status=RCVImport.Status.RUNNING, started_at__lt=cutoff
+    )
+    count = RCVImport.objects.filter(stale).update(
+        status=RCVImport.Status.FAILED,
+        error_code="INTERRUPTED",
+        error_message=INTERRUPTED_MESSAGE,
+        finished_at=now,
+        updated_at=now,
+    )
+    if count:
+        logger.warning("%s importación(es) RCV interrumpidas marcadas como fallidas.", count)
+    return count
+
+
 def create_imports(
     year: int, month: int, directions: list[str], trigger: str, user=None
 ) -> list[RCVImport]:
@@ -111,6 +144,7 @@ def create_imports(
     if (year, month) > (today.year, today.month):
         raise ValidationError("No se puede importar un período futuro.")
     with transaction.atomic():
+        recover_stale_imports()
         busy = set(
             RCVImport.objects.filter(
                 year=year, month=month, direction__in=directions, status__in=_ACTIVE_STATUSES
@@ -182,10 +216,18 @@ def estimated_monthly_queries(settings: RCVSettings) -> int:
 
 
 def enqueue_imports(imports: list[RCVImport], delay: Callable[[list[int]], Any]) -> None:
-    """Encola todas las importaciones en una sola tarea; si el broker falla las marca FAILED."""
+    """Encola todas las importaciones en una sola tarea al confirmar la transacción.
+
+    Si se encolara antes del commit, el worker podría no ver las filas QUEUED y
+    omitirlas. Si el broker falla, se marcan FAILED.
+    """
     if not imports:
         return
     ids = [i.id for i in imports]
+    transaction.on_commit(lambda: _send(ids, delay))
+
+
+def _send(ids: list[int], delay: Callable[[list[int]], Any]) -> None:
     try:
         delay(ids)
     except Exception as exc:
@@ -301,9 +343,7 @@ def _rate_limit_wait(err: SimpleApiError) -> float:
 
 def _redact(value: Any, secrets: tuple[str, ...]) -> Any:
     if isinstance(value, str):
-        for secret in secrets:
-            value = value.replace(secret, "***")
-        return value
+        return redact_secrets(value, secrets)
     if isinstance(value, dict):
         return {k: _redact(v, secrets) for k, v in value.items()}
     if isinstance(value, list):
@@ -458,13 +498,21 @@ def _save_summaries(
     """Recrea los resúmenes; devuelve ``True`` si todo tipo con detalle cuadra.
 
     Un tipo sin filas en el detalle pero con documentos ya guardados del período
-    también cuenta como descuadre (detalle truncado), no como "solo resumen".
+    también cuenta como descuadre (detalle truncado), no como "solo resumen". Un
+    tipo con detalle o documentos guardados que no viene en el resumen (resumen
+    vacío o parcial) deja la importación incompleta.
     """
     detail: dict[int, tuple[int, Decimal]] = {}
     for doc in documents.values():
         count, total = detail.get(doc.dte_type, (0, Decimal("0")))
         detail[doc.dte_type] = (count + 1, total + doc.total_amount)
     complete = True
+    summary_types = {summary.dte_type for summary in report.summaries}
+    # Un tipo sin fila de resumen (con detalle o con documentos guardados) no
+    # permite saber si el detalle está completo: no se marcan faltantes.
+    for dte_type in sorted((stored_types | detail.keys()) - summary_types):
+        complete = False
+        _warn(warnings, NO_SUMMARY_WARNING.format(dte_type=dte_type))
     rows = []
     for summary in report.summaries:
         count, total = detail.get(summary.dte_type, (0, Decimal("0")))
@@ -504,6 +552,9 @@ def apply_report(rcv_import: RCVImport, report: NormalizedReport) -> None:
     direction = rcv_import.direction
     period = report.period
     warnings = list(rcv_import.warnings)
+    requested = f"{rcv_import.year}{rcv_import.month:02d}"
+    if period != requested:
+        _warn(warnings, PERIOD_MISMATCH_WARNING.format(received=period, requested=requested))
     if report.company_rut and report.company_rut != company_rut:
         _warn(
             warnings,

@@ -340,4 +340,7 @@ class RCVApiKeySerializer(serializers.ModelSerializer):
         key = validated_data.pop("key", "")
         if key:
             instance.set_key(key)
+            # Una key nueva no hereda el agotamiento ni el error de la anterior.
+            instance.exhausted_until = None
+            instance.last_error = ""
         return super().update(instance, validated_data)
