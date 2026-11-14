@@ -155,12 +155,17 @@ class SaleOrderSelector:
         (ADR-0083 U6; reemplaza los buckets `related_documents`): facturas, notas y despachos.
         Los pagos van en `serialized_payments`; las relaciones completas, en el endpoint de
         relaciones (ADR-0080).
+
+        Usa InvoicingService.invoices_of() en lugar de order.invoices.all() para incluir
+        facturas multi-orden donde la FK principal apunta a otra OV pero las líneas sí
+        cubren esta orden (escenario D1 de ADR-0081).
         """
+        from billing.invoicing import InvoicingService
         from billing.models import Invoice
 
         note_types = (Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO)
         summary: dict = {"invoices": [], "notes": [], "deliveries": []}
-        for inv in order.invoices.all():
+        for inv in InvoicingService.invoices_of(order):
             summary["notes" if inv.dte_type in note_types else "invoices"].append(invoice_summary(inv))
         for deliv in order.deliveries.all():
             if getattr(deliv, "related_note_id", None) is not None:
