@@ -894,7 +894,31 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PaymentTerminalProvider
-        exclude = ("gateway_config",)
+        fields = (
+            "id",
+            "name",
+            "provider_type",
+            "supplier",
+            "is_active",
+            "notes",
+            "receivable_account",
+            "commission_expense_account",
+            "commission_iva_account",
+            "commission_product",
+            "bank_treasury_account",
+            "default_deposit_account",
+            "created_at",
+            "updated_at",
+            "supplier_name",
+            "receivable_account_name",
+            "commission_expense_account_name",
+            "commission_iva_account_name",
+            "bank_treasury_account_name",
+            "default_deposit_account_name",
+            "provider_type_display",
+            "api_key",
+            "has_api_key",
+        )
         read_only_fields = ("bank_treasury_account",)
 
     def get_has_api_key(self, obj) -> bool:

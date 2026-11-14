@@ -774,6 +774,7 @@ export interface TerminalSyncLastRun {
     started_at: string
     finished_at: string | null
     error_message: string
+    warnings: string[]
 }
 
 export interface TerminalSyncSettings {

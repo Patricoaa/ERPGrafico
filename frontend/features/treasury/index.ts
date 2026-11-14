@@ -122,6 +122,6 @@ export { BankUpcomingMaturitiesPanel } from './components/BankUpcomingMaturities
 export { BankRecentActivity } from './components/BankRecentActivity'
 export { statementLineUnmatchActions } from './components/statementLineUnmatchActions'
 export type { StatementLineUnmatchActionsCtx } from './components/statementLineUnmatchActions'
-export { terminalSyncRunEntity, terminalSyncRunViews, terminalSyncRunStatus } from './entity-view/terminalSyncRun.entity'
+export { terminalSyncRunEntity, terminalSyncRunViews, terminalSyncRunStatus, terminalSyncRunDetail } from './entity-view/terminalSyncRun.entity'
 export { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from './entity-view/loanInstallment.entity'
 export { POSExternalReasonModal } from './components/POSExternalReasonModal'

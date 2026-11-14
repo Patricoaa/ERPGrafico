@@ -16,6 +16,7 @@ import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { toDateOnlyISO } from "@/lib/utils"
 import {
     terminalSyncRunStatus,
+    terminalSyncRunDetail,
     terminalSyncRunViews,
     terminalSyncRunEntity,
     useTerminalProviders,
@@ -60,6 +61,9 @@ function LastRunBlock({ lastRun }: { lastRun: TerminalSyncLastRun | null }) {
                 <span className="text-sm text-muted-foreground">{formatDate(lastRun.started_at, true)}</span>
             </div>
             {lastRun.error_message && <p className="text-sm text-destructive">{lastRun.error_message}</p>}
+            {!lastRun.error_message && lastRun.warnings.length > 0 && (
+                <p className="text-sm text-muted-foreground">{terminalSyncRunDetail(lastRun)}</p>
+            )}
         </div>
     )
 }

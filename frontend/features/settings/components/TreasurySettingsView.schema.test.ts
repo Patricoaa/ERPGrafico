@@ -48,3 +48,10 @@ describe("validateTerminalSyncSettings", () => {
         expect(validateTerminalSyncSettings({ ...valid, retry_delay_minutes: Number.NaN })).not.toBe(true)
     })
 })
+
+describe("Spanish validation messages", () => {
+    it("reports NaN and non-integers in Spanish", () => {
+        expect(validateTerminalSyncSettings({ ...valid, lookback_days: Number.NaN })).toBe("Ingrese un número")
+        expect(validateTerminalSyncSettings({ ...valid, run_hour: 3.5 })).toBe("Debe ser un número entero")
+    })
+})

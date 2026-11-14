@@ -25,6 +25,13 @@ export function terminalSyncRunStatus(status: TerminalSyncRunStatus): StatusValu
     return { status: status.toLowerCase(), label: TERMINAL_SYNC_RUN_STATUS_LABELS[status], intent: STATUS_INTENTS[status] }
 }
 
+/** Error message, or (when empty) the run warnings summarized; empty string when neither. */
+export function terminalSyncRunDetail(run: { error_message: string; warnings: string[] }): string {
+    if (run.error_message) return run.error_message
+    if (run.warnings.length === 0) return ""
+    return `${run.warnings.length} aviso(s): ${run.warnings.join(" · ")}`
+}
+
 const fixed = { sortable: false } as const
 
 /** Read-only history of TUU sync runs (spec 2026-11-13). */
@@ -39,7 +46,7 @@ export const terminalSyncRunEntity = defineEntity<TerminalSyncRun>()((f) => ({
         fetched: f.number("fetched_count", { ...fixed, label: "Traídas" }),
         created: f.number("created_count", { ...fixed, label: "Nuevas" }),
         updated: f.number("updated_count", { ...fixed, label: "Actualizadas" }),
-        error: f.text((r) => r.error_message, { ...fixed, label: "Error", truncate: true }),
+        error: f.text((r) => terminalSyncRunDetail(r), { ...fixed, label: "Detalle", truncate: true }),
     },
 }))
 
