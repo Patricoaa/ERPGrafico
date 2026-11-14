@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { parseISO } from "date-fns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Alert } from "@/components/ui/alert"
 import { Form, FormField } from "@/components/ui/form"
 import { AutoSaveStatusBadge, DatePicker, FadeIn, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, Banner, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Collection, formatDate, useEntityCollection } from "@/components/entity-view"
@@ -118,14 +117,12 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
                     </div>
 
                     {!hasTuuProvider && (
-                        <Alert variant="warning">
-                            <p className="text-sm">
-                                No hay proveedores TUU con API key configurada, por lo que no hay ventas que sincronizar.{" "}
-                                <Link href="/treasury/terminal-cobro/providers" className="font-medium text-primary underline underline-offset-2">
-                                    Configurar proveedores
-                                </Link>
-                            </p>
-                        </Alert>
+                        <Banner tone="warning">
+                            No hay proveedores TUU con API key configurada, por lo que no hay ventas que sincronizar.{" "}
+                            <Link href="/treasury/terminal-cobro/providers" className="font-medium text-primary underline underline-offset-2">
+                                Configurar proveedores
+                            </Link>
+                        </Banner>
                     )}
 
                     <Form {...form}>
