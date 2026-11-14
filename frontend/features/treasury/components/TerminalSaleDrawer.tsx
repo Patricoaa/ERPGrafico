@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
+import { FileText, Link2 } from "lucide-react"
 import { Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Collection, formatDate, useEntityCollection } from "@/components/entity-view"
-import { useDrawerIdentity } from "@/features/_shared"
+import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
+import { DocumentRelationsTab } from "@/features/documents"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useTerminalSale } from "../hooks/useTerminalSales"
 import type { TerminalSaleDetail } from "../types"
@@ -19,24 +21,36 @@ import {
     toTerminalSaleReconciliationRows,
 } from "../entity-view/terminalSale.entity"
 
-interface TerminalSaleDrawerProps {
-    saleId: number | null
+export interface TerminalSaleDrawerProps {
+    id: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    /** Solo lectura: la venta es una copia de TUU, el modo efectivo siempre es `view`. */
+    mode?: DrawerMode
 }
 
 const SOURCE_LABELS: Record<string, string> = { BRANCH: "Reporte de sucursal", GENERAL: "Reporte general" }
 
 /**
- * Detalle de solo lectura de una venta TUU sincronizada: todos los campos, ítems, abonos y la copia cruda
- * de los reportes que la trajeron ("Datos originales", plegable).
+ * Ficha de solo lectura de una venta TUU sincronizada (`treasury.terminalsale`), cargada por id.
+ * "Detalle": todos los campos, ítems, abonos y la copia cruda de los reportes ("Datos originales",
+ * plegable). "Relacionados": relaciones documentales de la venta (`DocumentRelationsTab`).
  */
-export function TerminalSaleDrawer({ saleId, open, onOpenChange }: TerminalSaleDrawerProps) {
-    const { sale, isLoading, isError } = useTerminalSale(saleId)
-    const identity = useDrawerIdentity("treasury.terminalsale", "view", sale, {
+export function TerminalSaleDrawer({ id, open, onOpenChange, mode: modeProp }: TerminalSaleDrawerProps) {
+    const { mode } = useDrawerMode({ mode: modeProp, initialData: id ? { id } : undefined, defaultMode: "view" })
+    const { sale, isLoading, isError } = useTerminalSale(id)
+    const identity = useDrawerIdentity("treasury.terminalsale", mode, sale, {
         overrideTitle: sale ? `Venta ${sale.sale_id || sale.sequence_number || `#${sale.id}`}` : "Venta de terminal de cobro",
         overrideSubtitle: sale ? `${sale.provider_name} · ${formatDate(sale.transaction_at, true)}` : undefined,
     })
+
+    const detail = isError ? (
+        <EmptyState context="generic" title="No se pudo cargar la venta" description="Revisa tu conexión e intenta nuevamente." variant="compact" />
+    ) : (
+        <SkeletonShell isLoading={isLoading || !sale} ariaLabel="Cargando venta de terminal de cobro">
+            {sale && <TerminalSaleDetailBody sale={sale} />}
+        </SkeletonShell>
+    )
 
     return (
         <Drawer
@@ -51,15 +65,19 @@ export function TerminalSaleDrawer({ saleId, open, onOpenChange }: TerminalSaleD
             title={identity.title}
             subtitle={identity.subtitle}
         >
-            <DrawerLayout>
-                {isError ? (
-                    <EmptyState context="generic" title="No se pudo cargar la venta" description="Revisa tu conexión e intenta nuevamente." variant="compact" />
-                ) : (
-                    <SkeletonShell isLoading={isLoading || !sale} ariaLabel="Cargando venta de terminal de cobro">
-                        {sale && <TerminalSaleDetailBody sale={sale} />}
-                    </SkeletonShell>
-                )}
-            </DrawerLayout>
+            <DrawerLayout
+                className="min-w-0 h-full overflow-hidden"
+                tabs={[
+                    { value: "detail", label: "Detalle", icon: FileText, content: detail },
+                    {
+                        value: "relations",
+                        label: "Relacionados",
+                        icon: Link2,
+                        hidden: !id,
+                        content: <DocumentRelationsTab label="treasury.terminalsale" id={id} sectionActions={{}} rowActions={() => []} />,
+                    },
+                ]}
+            />
         </Drawer>
     )
 }

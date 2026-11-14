@@ -250,8 +250,8 @@ export const posSessionActivitySearchDef: UnifiedSearchConfig = {
   ],
 }
 
-/** Default period of the terminal sales tab: the last 7 days ending today (local). */
-export function lastSevenDays() {
+/** "Últimos 7 días" date preset of the terminal sales tab: the last 7 days ending today (local). */
+function lastSevenDays() {
   const now = new Date()
   return { from: format(subDays(now, 6), 'yyyy-MM-dd'), to: format(now, 'yyyy-MM-dd') }
 }
