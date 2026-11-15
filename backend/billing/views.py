@@ -157,7 +157,8 @@ class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet
     def pos_checkout(self, request):
         try:
             invoice = BillingService.pos_checkout_from_request(request)
-            return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+            data = {**InvoiceSerializer(invoice).data, "documents": BillingService.checkout_documents_summary(invoice)}
+            return Response(data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, "messages") and e.messages else str(e)
             return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)

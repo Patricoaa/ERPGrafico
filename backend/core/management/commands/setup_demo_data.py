@@ -2891,6 +2891,7 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.BOLETA,
                 payment_method="CASH",
                 date=today,
+                folio_exempt=True,  # ADR-0138 D3: la boleta la emite el proveedor, sin folio local
             )
             TreasuryService.create_movement(
                 amount=inv2.total,

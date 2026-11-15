@@ -168,3 +168,13 @@ def test_link_advances_default_links_advance(env):
 
     advance.refresh_from_db()
     assert advance.invoice_id == inv.id
+
+
+@pytest.mark.django_db
+def test_share_invoice_rejects_advances_above_amount(env):
+    order = _order(env)
+    _advance(env, order, "7000")
+    shares, ntd = _portions(order, [Decimal("6000"), order.total - Decimal("6000")])[0]
+
+    with pytest.raises(ValidationError, match="anticipos"):
+        _share_invoice(order, Decimal("6000"), shares, ntd)
