@@ -149,7 +149,8 @@ def _rcv_family(doc: RCVDocument) -> "models.QuerySet[Invoice]":
     )
 
 
-def _rut_body(field: str) -> Upper:
+def rut_body(field: str) -> Upper:
+    """RUT sin puntos, espacios ni guion, en mayúscula, como expresión ORM."""
     expr = models.F(field)
     for char in (".", " ", "-"):
         expr = Replace(expr, models.Value(char), models.Value(""))
@@ -163,7 +164,7 @@ def rcv_document_candidates(doc: RCVDocument) -> "models.QuerySet[Invoice]":
     total = abs(doc.total_amount)
     rows = (
         _rcv_family(doc)
-        .annotate(snapshot_rut=_rut_body("partner_tax_id_snapshot"), contact_rut=_rut_body("contact__tax_id"))
+        .annotate(snapshot_rut=rut_body("partner_tax_id_snapshot"), contact_rut=rut_body("contact__tax_id"))
         .filter(Q(snapshot_rut=body) | Q(partner_tax_id_snapshot="", contact_rut=body))
         .filter(Q(total=total) | ~Q(number=""))
         .filter(~Exists(RCVDocument.objects.filter(matched_invoice=OuterRef("pk")).exclude(pk=doc.pk)))
@@ -183,10 +184,14 @@ def rcv_document_candidates(doc: RCVDocument) -> "models.QuerySet[Invoice]":
 
 
 @transaction.atomic
-def match_rcv_document(doc: RCVDocument, invoice: Invoice) -> RCVDocument:
-    """Vínculo manual: queda protegido del recálculo (`matched_manually`)."""
+def match_rcv_document(doc: RCVDocument, invoice: Invoice, *, allow_draft: bool = False) -> RCVDocument:
+    """Vínculo manual: queda protegido del recálculo (`matched_manually`).
+
+    ``allow_draft`` solo lo usa el borrador recién creado desde el RCV (feeding.py).
+    """
+    statuses = [Invoice.Status.POSTED, Invoice.Status.DRAFT] if allow_draft else [Invoice.Status.POSTED]
     same_direction = Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression()).filter(
-        pk=invoice.pk, status=Invoice.Status.POSTED, fiscal_direction=RCV_TO_FISCAL_DIRECTION[doc.direction]
+        pk=invoice.pk, status__in=statuses, fiscal_direction=RCV_TO_FISCAL_DIRECTION[doc.direction]
     )
     if not same_direction.exists():
         raise ValidationError(_("El documento no es un documento emitido de la misma dirección."))

@@ -4,13 +4,20 @@ import calendar
 from datetime import date
 
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from accounting.models import RCVDocument, RCVImport
+from core.idempotency import idempotent_endpoint
 from treasury.models import TerminalSale
 
+from .reconciliation.feeding import (
+    confirm_draft_from_rcv,
+    create_draft_from_rcv,
+    draft_suggestions,
+    supplier_purchase_orders,
+)
 from .reconciliation.rcv import (
     match_rcv_document,
     rcv_document_candidates,
@@ -27,6 +34,9 @@ from .reconciliation.terminal import (
 from .reconciliation_serializers import (
     InvoiceCandidateSerializer,
     PeriodSerializer,
+    PurchaseOrderOptionSerializer,
+    RcvConfirmDraftSerializer,
+    RcvCreateDraftSerializer,
     TerminalCandidateSerializer,
     TerminalMatchSerializer,
     TerminalRunSerializer,
@@ -43,15 +53,19 @@ def _period(data) -> tuple[int, int]:
     return body.validated_data["year"], body.validated_data["month"]
 
 
-def _rcv_link(doc: RCVDocument) -> Response:
-    return Response({"id": doc.pk, "match_status": doc.match_status, "matched_invoice": doc.matched_invoice_id})
+def _rcv_link(doc: RCVDocument, code: int = status.HTTP_200_OK) -> Response:
+    data = {"id": doc.pk, "match_status": doc.match_status, "matched_invoice": doc.matched_invoice_id}
+    return Response(data, status=code)
 
 
 class TerminalReconciliationViewSet(viewsets.ViewSet):
     action_permissions = {
         "list": "tax.view_taxperiod",
         **dict.fromkeys(
-            ("run", "candidates", "match", "unmatch", "rcv_run", "rcv_candidates", "rcv_match", "rcv_unmatch"),
+            (
+                "run", "candidates", "match", "unmatch", "rcv_run", "rcv_candidates", "rcv_match", "rcv_unmatch",
+                "rcv_draft_suggestions", "rcv_purchase_orders", "rcv_confirm_draft", "rcv_create_draft",
+            ),
             _PERM,
         ),
     }
@@ -108,3 +122,31 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path=f"{_DOC}/unmatch")
     def rcv_unmatch(self, request, doc_id=None):
         return _rcv_link(unmatch_rcv_document(get_object_or_404(RCVDocument, pk=doc_id)))
+
+    @action(detail=False, methods=["get"], url_path=f"{_DOC}/draft-suggestions")
+    def rcv_draft_suggestions(self, request, doc_id=None):
+        doc = get_object_or_404(RCVDocument, pk=doc_id)
+        return Response(InvoiceCandidateSerializer(draft_suggestions(doc), many=True).data)
+
+    @action(detail=False, methods=["get"], url_path=f"{_DOC}/purchase-orders")
+    def rcv_purchase_orders(self, request, doc_id=None):
+        doc = get_object_or_404(RCVDocument, pk=doc_id)
+        return Response(PurchaseOrderOptionSerializer(supplier_purchase_orders(doc), many=True).data)
+
+    @idempotent_endpoint(scope="tax.reconciliation.rcv.confirm_draft")
+    @action(detail=False, methods=["post"], url_path=f"{_DOC}/confirm-draft")
+    def rcv_confirm_draft(self, request, doc_id=None):
+        doc = get_object_or_404(RCVDocument, pk=doc_id)
+        body = RcvConfirmDraftSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        confirm_draft_from_rcv(doc, body.validated_data["invoice"], body.validated_data.get("attachment"))
+        return _rcv_link(doc)
+
+    @idempotent_endpoint(scope="tax.reconciliation.rcv.create_draft")
+    @action(detail=False, methods=["post"], url_path=f"{_DOC}/create-draft")
+    def rcv_create_draft(self, request, doc_id=None):
+        doc = get_object_or_404(RCVDocument, pk=doc_id)
+        body = RcvCreateDraftSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        create_draft_from_rcv(doc, body.validated_data["purchase_order"])
+        return _rcv_link(doc, status.HTTP_201_CREATED)
