@@ -27,7 +27,7 @@ author: backend-team
 5. **Issued requires folio.** `create_sale_invoice` with `POSTED` and no number creates a `DRAFT` (folio pending; its journal entry stays draft until `confirm_invoice`), the same as the POS checkout with pending registration. Before, these were `POSTED` without folio and payment turned them `PAID`. `audit_document_integrity` checks "POSTED without folio = 0".
 6. **Data migration** (`billing/0020`, `sales/0019`, `purchasing/0014`): invoice `PAID` → `POSTED` with folio, `DRAFT` without; OV `INVOICED`/`PAID` → `CONFIRMED`; OC `RECEIVED`/`INVOICED`/`PAID` → `CONFIRMED`. Not reversible in data (no-op reverse).
 
-> **Excepción (ADR-0138):** las boletas y comprobantes sin folio (`BOLETA` 39, `BOLETA_EXENTA` 41 y `COMPROBANTE_PAGO`; `FOLIO_EXEMPT_DTE_TYPES`) pueden quedar `POSTED` sin folio, porque su folio no existe en el registro local y se cuadra contra TUU/RCV. El punto 5 («Issued requires folio») no les aplica. Ver [ADR-0138](0138-registro-dte-local-con-control-fiscal-externo.md).
+> **Excepción (ADR-0138):** las boletas y comprobantes sin folio (`BOLETA` 39, `BOLETA_EXENTA` 41 y `COMPROBANTE_PAGO`; `FOLIO_EXEMPT_DTE_TYPES`) pueden quedar `POSTED` sin folio, porque su folio no existe en el registro local y se cuadra contra TUU/RCV. El punto 5 («Issued requires folio») no les aplica. En consecuencia, el chequeo «POSTED sin folio = 0» de `audit_document_integrity` excluye esos tipos cuando tienen al menos un `TreasuryMovement` con `pos_session` (cobro en caja POS); una boleta sin folio fuera del POS sigue contando como falla. Ver [ADR-0138](0138-registro-dte-local-con-control-fiscal-externo.md).
 
 ## Consequences
 

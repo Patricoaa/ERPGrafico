@@ -10,9 +10,10 @@ cualquier carga de datos reales o puesta en marcha.
 """
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 
 from billing.models import Invoice
+from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from inventory.models import StockMove
 from purchasing.models import PurchaseReceiptLine
 from sales.models import SaleDeliveryLine, SaleLine
@@ -29,6 +30,17 @@ def _stock_moves_without_document():
         sale_return_line__isnull=True,
         purchase_return_line__isnull=True,
         production_consumption__isnull=True,
+    )
+
+
+def _posted_without_folio():
+    """Emitidas sin folio, salvo boletas y comprobantes cobrados en caja POS (ADR-0138):
+    su folio lo asigna TUU/SII y no existe en el registro local."""
+    pos_payment = TreasuryMovement.objects.filter(invoice=OuterRef("pk"), pos_session__isnull=False)
+    return (
+        Invoice.objects.filter(status=Invoice.Status.POSTED)
+        .filter(Q(number__isnull=True) | Q(number__in=["", "Draft"]))
+        .exclude(Q(dte_type__in=FOLIO_EXEMPT_DTE_TYPES) & Exists(pos_payment))
     )
 
 
@@ -72,8 +84,7 @@ class Command(BaseCommand):
             (
                 # ADR-0084: emitida = con folio; sin folio debe estar en borrador
                 "ADR-0084 facturas emitidas (POSTED) sin folio",
-                Invoice.objects.filter(status=Invoice.Status.POSTED)
-                .filter(Q(number__isnull=True) | Q(number__in=["", "Draft"])).count(), "= 0", None,
+                _posted_without_folio().count(), "= 0", None,
             ),
             (
                 # Asiento de devolución duplicado por anulación anterior al fix INT-15
