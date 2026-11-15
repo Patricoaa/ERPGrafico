@@ -1954,6 +1954,7 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "match_status_display",
             "matched_invoice",
             "matched_invoice_display",
+            "matched_manually",
         ]
         read_only_fields = fields
 

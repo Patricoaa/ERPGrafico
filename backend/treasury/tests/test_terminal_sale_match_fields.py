@@ -76,6 +76,7 @@ def test_list_exposes_match_fields_without_n_plus_one(admin_client, provider):
         assert row["match_status_display"] == "Cuadrado"
         assert row["matched_invoice"]
         assert row["matched_invoice_display"]
+        assert row["matched_manually"] is False
 
 
 @pytest.mark.django_db
@@ -85,3 +86,4 @@ def test_unlinked_sale_has_empty_match_fields(admin_client, provider):
     assert row["match_status"] == ""
     assert row["matched_invoice"] is None
     assert row["matched_invoice_display"] is None
+    assert row["matched_manually"] is False
