@@ -10,12 +10,26 @@ const m = vi.hoisted(() => ({
     candidates: [] as unknown[],
     match: vi.fn(),
     unmatch: vi.fn(),
+    suggestions: [] as unknown[],
+    suggestionsError: false,
+    orders: [] as unknown[],
+    ordersError: false,
+    confirmDraft: vi.fn(),
+    createDraft: vi.fn(),
+    feedingEnabled: [] as boolean[],
 }))
 
 vi.mock("@/features/tax", () => ({
     useRcvDocumentCandidates: () => ({ candidates: m.candidates, isLoading: false, isError: false }),
     useMatchRcvDocument: () => ({ mutateAsync: m.match, isPending: false }),
     useUnmatchRcvDocument: () => ({ mutateAsync: m.unmatch, isPending: false }),
+    useRcvDraftSuggestions: (_id: number, enabled: boolean) => {
+        m.feedingEnabled.push(enabled)
+        return { suggestions: m.suggestions, isLoading: false, isError: m.suggestionsError }
+    },
+    useRcvSupplierPurchaseOrders: () => ({ orders: m.orders, isLoading: false, isError: m.ordersError }),
+    useConfirmRcvDraft: () => ({ mutateAsync: m.confirmDraft, isPending: false }),
+    useCreateRcvDraft: () => ({ mutateAsync: m.createDraft, isPending: false }),
 }))
 
 vi.mock("../../hooks/useRcvDocuments", () => ({
@@ -51,8 +65,15 @@ beforeEach(() => {
     m.isError = false
     m.openEntity.mockClear()
     m.candidates = []
-    m.match.mockReset()
-    m.unmatch.mockReset()
+    m.match.mockReset().mockResolvedValue(undefined)
+    m.unmatch.mockReset().mockResolvedValue(undefined)
+    m.suggestions = []
+    m.suggestionsError = false
+    m.orders = []
+    m.ordersError = false
+    m.confirmDraft.mockReset().mockResolvedValue(undefined)
+    m.createDraft.mockReset().mockResolvedValue(undefined)
+    m.feedingEnabled = []
 })
 
 describe("RcvDocumentDrawer", () => {
@@ -131,6 +152,57 @@ describe("RcvDocumentDrawer", () => {
             render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
             await userEvent.click(screen.getByRole("button", { name: "Desvincular" }))
             expect(m.unmatch).toHaveBeenCalledWith(9)
+        })
+    })
+
+    describe("Registrar en el ERP", () => {
+        const missing = { ...doc, match_status: "ONLY_EXTERNAL", match_status_display: "Falta en el ERP" }
+
+        it("solo aparece en compras que faltan en el ERP", () => {
+            const { unmount } = render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.queryByText("Registrar en el ERP")).not.toBeInTheDocument()
+            unmount()
+            m.doc = { ...missing, direction: "SALES" }
+            const sales = render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.queryByText("Registrar en el ERP")).not.toBeInTheDocument()
+            sales.unmount()
+            expect(m.feedingEnabled.every((enabled) => !enabled)).toBe(true)
+            m.doc = missing
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("Registrar en el ERP")).toBeInTheDocument()
+            expect(screen.getByText("Sin borradores parecidos")).toBeInTheDocument()
+            expect(screen.getByText("Sin OC del proveedor")).toBeInTheDocument()
+        })
+
+        it("asigna folio y emite el borrador sugerido", async () => {
+            m.doc = missing
+            m.suggestions = [{ id: 31, display_id: "FACC-B31", dte_type: "FACTURA", total: "11800", date: "2026-10-01" }]
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("FACC-B31")).toBeInTheDocument()
+            expect(m.confirmDraft).not.toHaveBeenCalled()
+            await userEvent.click(screen.getByRole("button", { name: "Asignar folio y emitir" }))
+            expect(m.confirmDraft).toHaveBeenCalledWith({ docId: 9, invoiceId: 31 })
+        })
+
+        it("crea un borrador desde la OC elegida", async () => {
+            m.doc = missing
+            m.orders = [
+                { id: 40, display_id: "OC-40", date: "2026-10-02", total: "11900" },
+                { id: 41, display_id: "OC-41", date: "2026-10-03", total: "5000" },
+            ]
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            await userEvent.click(screen.getByRole("button", { name: "Crear borrador desde OC OC-41" }))
+            expect(m.createDraft).toHaveBeenCalledWith({ docId: 9, purchaseOrderId: 41 })
+            expect(m.createDraft).toHaveBeenCalledTimes(1)
+        })
+
+        it("si las consultas fallan muestra el error", () => {
+            m.doc = missing
+            m.suggestionsError = true
+            m.ordersError = true
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("No se pudieron cargar los borradores")).toBeInTheDocument()
+            expect(screen.getByText("No se pudieron cargar las OC")).toBeInTheDocument()
         })
     })
 })

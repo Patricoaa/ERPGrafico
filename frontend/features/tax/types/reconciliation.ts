@@ -64,3 +64,12 @@ export interface RcvMatchResult {
     match_status: MatchStatus
     matched_invoice: number | null
 }
+
+/** OC no anulada del proveedor de un documento RCV de compras (para crear un borrador). */
+export interface RcvPurchaseOrderOption {
+    id: number
+    display_id: string
+    /** ISO date */
+    date: string
+    total: string
+}

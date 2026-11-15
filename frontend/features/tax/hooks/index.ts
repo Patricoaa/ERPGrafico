@@ -12,4 +12,5 @@ export {
 export { TAX_KEYS } from './queryKeys'
 export { useFiscalReconciliation, useRunReconciliation } from './useFiscalReconciliation'
 export { useRcvDocumentCandidates, useMatchRcvDocument, useUnmatchRcvDocument } from './useRcvMatch'
+export { useRcvDraftSuggestions, useRcvSupplierPurchaseOrders, useConfirmRcvDraft, useCreateRcvDraft } from './useRcvFeeding'
 export { RECONCILIATION_KEYS } from './reconciliationKeys'

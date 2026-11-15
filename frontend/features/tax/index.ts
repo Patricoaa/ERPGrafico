@@ -13,6 +13,7 @@ export type {
     OnlyErpDocument,
     ReconciliationSource,
     RcvDocumentCandidate,
+    RcvPurchaseOrderOption,
 } from './types/reconciliation'
 export {
     useFiscalReconciliation,
@@ -20,4 +21,8 @@ export {
     useRcvDocumentCandidates,
     useMatchRcvDocument,
     useUnmatchRcvDocument,
+    useRcvDraftSuggestions,
+    useRcvSupplierPurchaseOrders,
+    useConfirmRcvDraft,
+    useCreateRcvDraft,
 } from './hooks'

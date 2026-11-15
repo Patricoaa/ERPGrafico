@@ -9,7 +9,15 @@ import { Button } from "@/components/ui/button"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { matchStatusValue } from "@/lib/fiscal-match"
-import { useMatchRcvDocument, useRcvDocumentCandidates, useUnmatchRcvDocument } from "@/features/tax"
+import {
+    useConfirmRcvDraft,
+    useCreateRcvDraft,
+    useMatchRcvDocument,
+    useRcvDocumentCandidates,
+    useRcvDraftSuggestions,
+    useRcvSupplierPurchaseOrders,
+    useUnmatchRcvDocument,
+} from "@/features/tax"
 import { useRcvDocument } from "../../hooks/useRcvDocuments"
 import { formatRcvDteType, rcvAcknowledgementStatus } from "../../entity-view/rcvDocument.entity"
 import { formatRcvPeriod } from "../../entity-view/rcvImport.entity"
@@ -122,6 +130,8 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
 
             <RcvErpDocumentSection doc={doc} />
 
+            {purchases && doc.match_status === "ONLY_EXTERNAL" && <RcvRegisterSection docId={doc.id} />}
+
             <RcvImportSection doc={doc} />
 
             <Section title="Datos originales">
@@ -191,6 +201,78 @@ function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
                                 onClick={() => void match.mutateAsync({ docId: doc.id, invoiceId: c.id }).catch(() => undefined)}
                             >
                                 Vincular
+                            </Button>
+                        }
+                    />
+                ))
+            )}
+        </Section>
+    )
+}
+
+/**
+ * Compra que falta en el ERP: emitir un borrador parecido con el folio del RCV o crear uno desde una OC.
+ * Nada corre sin un clic explícito (ADR-0138 D8).
+ */
+function RcvRegisterSection({ docId }: { docId: number }) {
+    const drafts = useRcvDraftSuggestions(docId, true)
+    const orders = useRcvSupplierPurchaseOrders(docId, true)
+    const confirm = useConfirmRcvDraft()
+    const create = useCreateRcvDraft()
+    const busy = confirm.isPending || create.isPending
+
+    return (
+        <Section title="Registrar en el ERP">
+            {drafts.isError ? (
+                <Stat title="Borradores" value="No se pudieron cargar los borradores" plain />
+            ) : drafts.isLoading ? (
+                <Stat title="Borradores" value="Buscando…" plain />
+            ) : drafts.suggestions.length === 0 ? (
+                <Stat title="Borradores" value="Sin borradores parecidos" plain />
+            ) : (
+                drafts.suggestions.map((d) => (
+                    <Section.Row
+                        key={d.id}
+                        title={d.display_id}
+                        description={`Borrador · ${formatDate(d.date)}`}
+                        value={<MoneyDisplay amount={d.total} currency="CLP" />}
+                        actions={
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={busy}
+                                onClick={() => void confirm.mutateAsync({ docId, invoiceId: d.id }).catch(() => undefined)}
+                            >
+                                Asignar folio y emitir
+                            </Button>
+                        }
+                    />
+                ))
+            )}
+            {orders.isError ? (
+                <Stat title="Crear borrador desde OC" value="No se pudieron cargar las OC" plain />
+            ) : orders.isLoading ? (
+                <Stat title="Crear borrador desde OC" value="Buscando…" plain />
+            ) : orders.orders.length === 0 ? (
+                <Stat title="Crear borrador desde OC" value="Sin OC del proveedor" plain />
+            ) : (
+                orders.orders.map((o) => (
+                    <Section.Row
+                        key={o.id}
+                        title={o.display_id}
+                        description={`OC · ${formatDate(o.date)}`}
+                        value={<MoneyDisplay amount={o.total} currency="CLP" />}
+                        actions={
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={busy}
+                                aria-label={`Crear borrador desde OC ${o.display_id}`}
+                                onClick={() => void create.mutateAsync({ docId, purchaseOrderId: o.id }).catch(() => undefined)}
+                            >
+                                Crear borrador desde OC
                             </Button>
                         }
                     />
