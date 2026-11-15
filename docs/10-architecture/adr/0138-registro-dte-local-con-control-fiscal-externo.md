@@ -142,13 +142,14 @@ Decisiones del usuario (2026-11-15) y valores fijados al implementar:
 
   La fase 2 va antes de los cuadres: si no, el primer cuadre de 39/48 sale mal por culpa del registro local.
 - **Contratos que cambian:**
-  - payload del checkout de venta (clase del documento en vez de `dte_type`);
+  - payload del checkout de venta (la clave sigue siendo `dte_type`, pero su significado pasa a ser la clase del documento: BOLETA, BOLETA_EXENTA, FACTURA, FACTURA_EXENTA);
   - excepción a ADR-0084 para 39/41/48 sin folio;
   - campos nuevos en `RCVDocument` y `TerminalSale`;
   - `status_check`.
 - **Datos históricos:** las boletas ya registradas con folio inventado y las ventas con tarjeta registradas como 39 aparecerán como `TYPE_DIFF` o `ONLY_ERP` en el primer cuadre. El plan debe decidir si hacer una migración de limpieza o aceptar el histórico como está.
-- **Preguntas abiertas para el plan:**
-  - líneas en documentos divididos por pago mixto (proporcionales o línea resumen);
-  - tamaño de la ventana de D4;
-  - si TUU separa la transacción mixta igual que D3 (verificar con datos reales);
-  - tolerancia de redondeo en `AMOUNT_DIFF`.
+- **Preguntas abiertas del plan:**
+  - líneas en documentos divididos por pago mixto: resuelta, proporcionales (ver «Resolución de preguntas abiertas»);
+  - tamaño de la ventana de D4: resuelta, 15 minutos (ver «Resolución de preguntas abiertas»);
+  - si TUU separa la transacción mixta igual que D3: **sigue abierta**, verificar con datos reales (el cuadre lo revelará como `ONLY_ERP`/`ONLY_EXTERNAL`);
+  - tolerancia de redondeo en `AMOUNT_DIFF`: resuelta, 0 (ver «Resolución de preguntas abiertas»);
+  - signo de las notas de crédito en el RCV: **sigue abierta**, se comparan por monto absoluto hasta verificar con datos reales del SII.

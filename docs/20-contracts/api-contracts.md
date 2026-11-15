@@ -1116,15 +1116,15 @@ GET    /api/tax/reconciliation/?year=&month=                                repo
 POST   /api/tax/reconciliation/terminal/run/                                cuadra ventas TUU del mes (body: year, month)
 POST   /api/tax/reconciliation/rcv/run/                                     cuadra RCV del mes (body: year, month)
 GET    /api/tax/reconciliation/terminal-sales/{id}/candidates/              facturas candidatas
-POST   /api/tax/reconciliation/terminal-sales/{id}/match/                   vínculo manual (body: invoice)
+POST   /api/tax/reconciliation/terminal-sales/{id}/match/                   vínculo manual (body: invoice_id)
 POST   /api/tax/reconciliation/terminal-sales/{id}/unmatch/                 quita el vínculo
 GET    /api/tax/reconciliation/rcv-documents/{id}/candidates/               facturas candidatas
-POST   /api/tax/reconciliation/rcv-documents/{id}/match/                    vínculo manual
+POST   /api/tax/reconciliation/rcv-documents/{id}/match/                    vínculo manual (body: invoice_id)
 POST   /api/tax/reconciliation/rcv-documents/{id}/unmatch/                  quita el vínculo
 GET    /api/tax/reconciliation/rcv-documents/{id}/draft-suggestions/        borradores de compra del mismo RUT y tipo con total parecido (≤ 2 %)
 GET    /api/tax/reconciliation/rcv-documents/{id}/purchase-orders/          OC elegibles para crear borrador
-POST   /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/            asigna folio y emite el borrador (mismo RUT y tipo SII; Idempotency-Key)
-POST   /api/tax/reconciliation/rcv-documents/{id}/create-draft/             crea borrador desde una OC y lo vincula (Idempotency-Key)
+POST   /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/            asigna folio y emite el borrador (body: invoice_id + attachment opcional, multipart; mismo RUT y tipo SII; Idempotency-Key)
+POST   /api/tax/reconciliation/rcv-documents/{id}/create-draft/             crea borrador desde una OC y lo vincula (body: purchase_order_id; Idempotency-Key)
 ```
 
 `fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`) también viaja en `status_check` y en la respuesta de calculate del F29.
