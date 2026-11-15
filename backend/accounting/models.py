@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 from core.edit_policy import EditPolicy
+from core.fiscal_match import MatchStatus
 from core.models import AuditedModel, TimeStampedModel
 from core.utils import get_current_date
 
@@ -1807,6 +1808,17 @@ class RCVSettings(TimeStampedModel):
     )
     include_purchases = models.BooleanField(_("Incluir compras"), default=True)
     include_sales = models.BooleanField(_("Incluir ventas"), default=True)
+    fiscal_match_start_date = models.DateField(
+        _("Cuadrar desde"),
+        null=True,
+        blank=True,
+        help_text=_("Sin fecha no se cuadra nada. Los documentos anteriores no se evalúan."),
+    )
+    terminal_match_window_minutes = models.PositiveSmallIntegerField(
+        _("Ventana de cuadre del terminal (minutos)"),
+        default=15,
+        validators=[MinValueValidator(1), MaxValueValidator(240)],
+    )
 
     class Meta:
         verbose_name = _("Configuración de Importación RCV")
@@ -2088,6 +2100,24 @@ class RCVDocument(TimeStampedModel):
         verbose_name=_("Ausente desde"),
     )
 
+    matched_invoice = models.ForeignKey(
+        "billing.Invoice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rcv_documents",
+        verbose_name=_("Factura vinculada"),
+    )
+    match_status = models.CharField(
+        _("Estado de cuadre"),
+        max_length=20,
+        choices=MatchStatus.choices,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+    matched_manually = models.BooleanField(_("Vínculo manual"), default=False)
+
     class Meta:
         verbose_name = _("Documento RCV")
         verbose_name_plural = _("Documentos RCV")
@@ -2096,6 +2126,11 @@ class RCVDocument(TimeStampedModel):
             models.UniqueConstraint(
                 fields=["company_rut", "direction", "dte_type", "folio", "counterparty_rut"],
                 name="rcvdocument_natural_key_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["matched_invoice"],
+                condition=models.Q(matched_invoice__isnull=False),
+                name="rcvdocument_matched_invoice_uniq",
             ),
         ]
         indexes = [

@@ -426,3 +426,50 @@ def test_api_key_new_value_clears_exhaustion(manager):
     assert key.get_key() == "TEST-KEY-NUEVA-0001"
     assert key.exhausted_until is None
     assert key.last_error == ""
+
+
+@pytest.mark.django_db
+def test_documents_expose_match_fields_without_n_plus_one(reader):
+    from datetime import date as _d
+
+    from billing.models import Invoice
+    from contacts.models import Contact
+
+    contact = Contact.objects.create(name="Cliente RCV cuadre", tax_id="76.333.333-3")
+
+    def seed(n: int, base: int) -> None:
+        imp = _import()
+        for i in range(n):
+            inv = Invoice.objects.create(contact=contact, date=_d(2026, 10, 5), number=f"RM-{base + i}")
+            _doc(imp, matched_invoice=inv, match_status="MATCHED")
+
+    url = "/api/accounting/rcv-documents/"
+    seed(3, 0)
+    _count_queries(reader, url)
+    small = _count_queries(reader, url)
+    seed(6, 100)
+    assert _count_queries(reader, url) == small
+    rows = reader.get(url).json()["results"]
+    assert len(rows) == 9
+    for row in rows:
+        assert row["match_status"] == "MATCHED"
+        assert row["match_status_display"] == "Cuadrado"
+        assert row["matched_invoice"]
+        assert row["matched_invoice_display"]
+
+
+@pytest.mark.django_db
+def test_settings_fiscal_match_fields_writable(manager):
+    r = manager.patch(
+        SETTINGS_URL,
+        {"fiscal_match_start_date": "2026-11-01", "terminal_match_window_minutes": 30},
+        format="json",
+    )
+    assert r.status_code == 200, r.content
+    body = r.json()
+    assert body["fiscal_match_start_date"] == "2026-11-01"
+    assert body["terminal_match_window_minutes"] == 30
+    bad = manager.patch(
+        SETTINGS_URL, {"terminal_match_window_minutes": 0}, format="json"
+    )
+    assert bad.status_code == 400

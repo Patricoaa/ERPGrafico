@@ -26,6 +26,10 @@ def _import_ref(rcv_import: RCVImport | None) -> dict | None:
 
 class RCVDocumentListSerializer(serializers.ModelSerializer):
     is_missing = serializers.SerializerMethodField()
+    match_status_display = serializers.CharField(source="get_match_status_display", read_only=True)
+    matched_invoice_display = serializers.CharField(
+        source="matched_invoice.display_id", read_only=True, default=None
+    )
 
     class Meta:
         model = RCVDocument
@@ -56,6 +60,10 @@ class RCVDocumentListSerializer(serializers.ModelSerializer):
             "reference_dte_type",
             "reference_folio",
             "is_missing",
+            "match_status",
+            "match_status_display",
+            "matched_invoice",
+            "matched_invoice_display",
         ]
         read_only_fields = fields
 
@@ -259,6 +267,8 @@ class RCVSettingsSerializer(serializers.ModelSerializer):
             "run_hour",
             "include_purchases",
             "include_sales",
+            "fiscal_match_start_date",
+            "terminal_match_window_minutes",
             "next_period",
             "estimated_monthly_queries",
             "total_monthly_quota",
