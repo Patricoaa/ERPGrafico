@@ -13,7 +13,7 @@ const m = vi.hoisted(() => ({
     openEntity: vi.fn(),
 }))
 
-vi.mock("@/features/tax", () => ({
+vi.mock("../../hooks/useTerminalSaleMatch", () => ({
     useTerminalSaleCandidates: () => ({ candidates: m.candidates, isLoading: false, isError: false }),
     useMatchTerminalSale: () => ({ mutateAsync: m.match, isPending: false }),
     useUnmatchTerminalSale: () => ({ mutateAsync: m.unmatch, isPending: false }),

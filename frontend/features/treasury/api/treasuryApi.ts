@@ -2,6 +2,8 @@ import api from '@/lib/api'
 import { toPage, type Page } from '@/lib/pagination'
 import { fetchBoundedList } from '@/lib/bounded-list'
 import type {
+    TerminalSaleCandidate,
+    TerminalSaleMatchResult,
     Terminal,
     POSSessionOverview,
     POSSessionActivityEvent,
@@ -138,6 +140,14 @@ export const treasuryApi = {
         const response = await api.get('/treasury/terminal-sales/', { params, signal })
         return toPage<TerminalSale>(response.data, Number(params.page ?? 1), Number(params.page_size ?? 50))
     },
+
+    /** Cuadre fiscal (endpoints de `tax`): candidatos y vínculo manual de una venta TUU con una factura. */
+    getTerminalSaleCandidates: (saleId: number) =>
+        api.get<TerminalSaleCandidate[]>(`/tax/reconciliation/terminal-sales/${saleId}/candidates/`).then(r => r.data),
+    matchTerminalSale: (saleId: number, invoiceId: number) =>
+        api.post<TerminalSaleMatchResult>(`/tax/reconciliation/terminal-sales/${saleId}/match/`, { invoice_id: invoiceId }).then(r => r.data),
+    unmatchTerminalSale: (saleId: number) =>
+        api.post<TerminalSaleMatchResult>(`/tax/reconciliation/terminal-sales/${saleId}/unmatch/`).then(r => r.data),
 
     getTerminalSale: async (id: number): Promise<TerminalSaleDetail> => {
         const { data } = await api.get<TerminalSaleDetail>(`/treasury/terminal-sales/${id}/`)

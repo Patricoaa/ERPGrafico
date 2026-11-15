@@ -1,4 +1,4 @@
-import type { MatchStatus } from '@/features/tax'
+import type { MatchStatus } from '@/lib/fiscal-match'
 
 export interface Terminal {
     id: number
@@ -826,4 +826,20 @@ export interface TerminalSyncRunFilters {
 export interface ManualSyncPayload {
     start_date?: string
     end_date?: string
+}
+
+/** Factura local candidata a vincularse con una venta TUU. */
+export interface TerminalSaleCandidate {
+    id: number
+    display_id: string
+    dte_type: string
+    total: string
+    /** ISO date */
+    date: string
+}
+
+export interface TerminalSaleMatchResult {
+    id: number
+    match_status: MatchStatus
+    matched_invoice: number | null
 }

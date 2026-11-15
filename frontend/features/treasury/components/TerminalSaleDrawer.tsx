@@ -6,11 +6,11 @@ import { Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell,
 import { Collection, formatDate, useEntityCollection } from "@/components/entity-view"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { DocumentRelationsTab } from "@/features/documents"
-import { useMatchTerminalSale, useTerminalSaleCandidates, useUnmatchTerminalSale } from "@/features/tax"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useTerminalSale } from "../hooks/useTerminalSales"
+import { useMatchTerminalSale, useTerminalSaleCandidates, useUnmatchTerminalSale } from "../hooks/useTerminalSaleMatch"
 import type { TerminalSaleDetail } from "../types"
 import {
     formatDteType,

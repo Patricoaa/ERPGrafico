@@ -1,6 +1,6 @@
 import { defineEntity, formatDate, toNumber, type StatusValue } from "@/components/entity-view"
 import type { BadgeIntent } from "@/lib/badge-resolvers"
-import type { MatchStatus } from "@/features/tax"
+import { matchStatusValue, type MatchStatus } from "@/lib/fiscal-match"
 import type { TerminalSale, TerminalSalePaymentType, TerminalSaleStatus } from "../types"
 
 export const TERMINAL_SALE_PAYMENT_TYPE_LABELS: Record<TerminalSalePaymentType, string> = {
@@ -41,30 +41,9 @@ export function terminalSalePaymentType(paymentType: TerminalSalePaymentType): S
     }
 }
 
-const MATCH_STATUS_LABELS: Record<Exclude<MatchStatus, "">, string> = {
-    MATCHED: "Cuadrado",
-    AMOUNT_DIFF: "Diferencia de monto",
-    TYPE_DIFF: "Diferencia de tipo",
-    AMBIGUOUS: "Ambiguo",
-    ONLY_EXTERNAL: "Falta en el ERP",
-    ONLY_ERP: "Falta en el SII/TUU",
-    EXCLUDED: "Excluido",
-}
-
-const MATCH_STATUS_INTENTS: Record<Exclude<MatchStatus, "">, BadgeIntent> = {
-    MATCHED: "success",
-    AMOUNT_DIFF: "warning",
-    TYPE_DIFF: "warning",
-    AMBIGUOUS: "warning",
-    ONLY_EXTERNAL: "destructive",
-    ONLY_ERP: "destructive",
-    EXCLUDED: "neutral",
-}
-
-/** Cuadre fiscal de la venta; prefiere el texto del backend (`match_status_display`). `""` = «Sin evaluar». */
+/** Cuadre fiscal de la venta; prefiere el texto del backend (`match_status_display`). */
 export function terminalSaleMatchStatus(matchStatus: MatchStatus, display = ""): StatusValue {
-    if (matchStatus === "") return { status: "unevaluated", label: "Sin evaluar", intent: "neutral" }
-    return { status: matchStatus.toLowerCase(), label: display || MATCH_STATUS_LABELS[matchStatus], intent: MATCH_STATUS_INTENTS[matchStatus] }
+    return matchStatusValue(matchStatus, display)
 }
 
 /** Settlement column/detail text: the deposit date, or "Pendiente" while TUU has not settled it. */
