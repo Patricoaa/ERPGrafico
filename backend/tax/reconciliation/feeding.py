@@ -13,7 +13,7 @@ from django.utils.translation import gettext as _
 
 from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument, RCVImport
-from billing.fiscal_key import fiscal_direction_expression
+from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
 from billing.models import SII_CODE_TO_DTE_TYPE, Invoice
 from core.fiscal_match import MatchStatus
 from purchasing.models import PurchaseOrder
@@ -63,7 +63,8 @@ def draft_suggestions(doc: RCVDocument) -> list[Invoice]:
     margin = total * SUGGESTION_TOLERANCE
     rows = (
         _purchase_drafts()
-        .filter(total__gte=total - margin, total__lte=total + margin)
+        .annotate(sii=sii_code_expression())
+        .filter(sii=doc.dte_type, total__gte=total - margin, total__lte=total + margin)
         .filter(~Exists(RCVDocument.objects.filter(matched_invoice=OuterRef("pk"))))
         .select_related("contact", "purchase_order__supplier")
     )
@@ -93,8 +94,13 @@ def confirm_draft_from_rcv(doc: RCVDocument, invoice: Invoice, attachment=None) 
     from billing.services import BillingService
 
     _require_pending_purchase(doc)
-    if not _purchase_drafts().filter(pk=invoice.pk).exists():
+    draft = _purchase_drafts().select_related("contact", "purchase_order__supplier").filter(pk=invoice.pk).first()
+    if draft is None:
         raise ValidationError(_("La factura no es un borrador de compra."))
+    if _draft_rut(draft) != normalize_rut(doc.counterparty_rut):
+        raise ValidationError(_("El borrador no corresponde al proveedor del documento."))
+    if draft.sii_code != doc.dte_type:
+        raise ValidationError(_("El tipo del borrador no coincide con el tipo del documento."))
     BillingService.confirm_invoice(
         invoice, number=str(doc.folio), document_attachment=attachment, date=doc.issue_date
     )

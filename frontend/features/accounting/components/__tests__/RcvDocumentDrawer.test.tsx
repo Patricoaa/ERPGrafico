@@ -176,9 +176,10 @@ describe("RcvDocumentDrawer", () => {
 
         it("asigna folio y emite el borrador sugerido", async () => {
             m.doc = missing
-            m.suggestions = [{ id: 31, display_id: "FACC-B31", dte_type: "FACTURA", total: "11800", date: "2026-10-01" }]
+            m.suggestions = [{ id: 31, display_id: "FACC-B31", dte_type: "FACTURA_EXENTA", total: "11800", date: "2026-10-01" }]
             render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
             expect(screen.getByText("FACC-B31")).toBeInTheDocument()
+            expect(screen.getByText(/^Factura Exenta · Borrador/)).toBeInTheDocument()
             expect(m.confirmDraft).not.toHaveBeenCalled()
             await userEvent.click(screen.getByRole("button", { name: "Asignar folio y emitir" }))
             expect(m.confirmDraft).toHaveBeenCalledWith({ docId: 9, invoiceId: 31 })

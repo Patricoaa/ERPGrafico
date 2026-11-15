@@ -103,6 +103,12 @@ def test_suggests_draft_same_rut_within_2_percent(imp, supplier):
     assert [i.id for i in draft_suggestions(doc)] == [exact.id, near.id]
 
 
+def test_suggestions_require_same_type(imp, supplier):
+    draft(supplier, 100000)  # 33
+    exempt = draft(supplier, 100000, dte_type=Invoice.DTEType.FACTURA_EXENTA)
+    assert [i.id for i in draft_suggestions(rcv(imp, 34, 100000, dte_type=34))] == [exempt.id]
+
+
 def test_no_suggestions_for_sales_or_matched(imp, supplier):
     draft(supplier, 100000)
     assert draft_suggestions(rcv(imp, 1, 100000, direction=S)) == []
@@ -139,6 +145,24 @@ def test_confirm_draft_rejections(imp, supplier):
         confirm_draft_from_rcv(rcv(imp, 4, 100000, direction=S), invoice)
     invoice.refresh_from_db()
     assert invoice.status == Invoice.Status.DRAFT
+
+
+def test_confirm_draft_rejects_other_supplier(imp, supplier):
+    invoice = draft(Contact.objects.create(name="Otro", tax_id="76.543.210-3"), 100000)
+    with pytest.raises(ValidationError) as exc:
+        confirm_draft_from_rcv(rcv(imp, 123, 100000), invoice)
+    assert exc.value.messages == ["El borrador no corresponde al proveedor del documento."]
+    invoice.refresh_from_db()
+    assert invoice.status == Invoice.Status.DRAFT and invoice.number == ""
+
+
+def test_confirm_draft_rejects_other_type(imp, supplier):
+    invoice = draft(supplier, 100000)  # 33
+    with pytest.raises(ValidationError) as exc:
+        confirm_draft_from_rcv(rcv(imp, 123, 100000, dte_type=34), invoice)
+    assert exc.value.messages == ["El tipo del borrador no coincide con el tipo del documento."]
+    invoice.refresh_from_db()
+    assert invoice.status == Invoice.Status.DRAFT and invoice.number == ""
 
 
 def test_confirm_draft_rolls_back_when_link_fails(imp, supplier):

@@ -7,6 +7,7 @@ import { formatDate } from "@/components/entity-view"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
+import { getDteLabel } from "@/lib/entity-registry"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { matchStatusValue } from "@/lib/fiscal-match"
 import {
@@ -234,7 +235,7 @@ function RcvRegisterSection({ docId }: { docId: number }) {
                     <Section.Row
                         key={d.id}
                         title={d.display_id}
-                        description={`Borrador · ${formatDate(d.date)}`}
+                        description={`${getDteLabel(d.dte_type)} · Borrador · ${formatDate(d.date)}`}
                         value={<MoneyDisplay amount={d.total} currency="CLP" />}
                         actions={
                             <Button
