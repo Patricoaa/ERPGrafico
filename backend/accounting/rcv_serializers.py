@@ -6,6 +6,8 @@ Secretos (clave SII y API keys) son solo escritura; nunca se devuelven. Ningún
 
 from rest_framework import serializers
 
+from core.fiscal_match import MatchStatus
+
 from .integrations.rcv_normalizer import is_valid_rut, normalize_rut
 from .models import (
     RCVApiKey,
@@ -64,6 +66,7 @@ class RCVDocumentListSerializer(serializers.ModelSerializer):
             "match_status_display",
             "matched_invoice",
             "matched_invoice_display",
+            "matched_manually",
         ]
         read_only_fields = fields
 
@@ -107,6 +110,7 @@ class RCVDocumentFilterSerializer(serializers.Serializer):
     status = serializers.CharField(required=False, allow_blank=True)
     acknowledgement = serializers.CharField(required=False, allow_blank=True)
     missing = serializers.ChoiceField(choices=["true", "false"], required=False)
+    match_status = serializers.ChoiceField(choices=MatchStatus.choices, required=False)
     issue_date_from = serializers.DateField(required=False)
     issue_date_to = serializers.DateField(required=False)
     search = serializers.CharField(required=False, allow_blank=True)

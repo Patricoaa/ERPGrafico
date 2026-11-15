@@ -456,6 +456,7 @@ def test_documents_expose_match_fields_without_n_plus_one(reader):
         assert row["match_status_display"] == "Cuadrado"
         assert row["matched_invoice"]
         assert row["matched_invoice_display"]
+        assert row["matched_manually"] is False
 
 
 @pytest.mark.django_db
@@ -473,3 +474,14 @@ def test_settings_fiscal_match_fields_writable(manager):
         SETTINGS_URL, {"terminal_match_window_minutes": 0}, format="json"
     )
     assert bad.status_code == 400
+
+
+@pytest.mark.django_db
+def test_documents_filter_by_match_status(reader):
+    imp = _import()
+    matched = _doc(imp, match_status="MATCHED")
+    _doc(imp, match_status="ONLY_EXTERNAL")
+    _doc(imp)
+    rows = reader.get("/api/accounting/rcv-documents/?match_status=MATCHED").json()["results"]
+    assert [r["id"] for r in rows] == [matched.id]
+    assert reader.get("/api/accounting/rcv-documents/?match_status=NOPE").status_code == 400

@@ -199,7 +199,7 @@ def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
         qs = qs.filter(period__startswith=f"{year:04d}")
     elif month is not None:
         qs = qs.filter(period__endswith=f"{month:02d}")
-    for field in ("direction", "dte_type", "status", "acknowledgement"):
+    for field in ("direction", "dte_type", "status", "acknowledgement", "match_status"):
         if filters.get(field) not in (None, ""):
             qs = qs.filter(**{field: filters[field]})
     if filters.get("missing"):
