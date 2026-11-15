@@ -1,3 +1,5 @@
+import type { MatchStatus } from '@/lib/fiscal-match'
+
 export interface Terminal {
     id: number
     /** Hay una sesión POS abierta que usa esta caja: no se puede modificar ni archivar. */
@@ -719,6 +721,11 @@ export interface TerminalSale {
     settlement_date: string | null
     settlement_id: string | null
     settlement_amount: string | null
+    match_status: MatchStatus
+    match_status_display: string
+    matched_invoice: number | null
+    matched_invoice_display: string | null
+    matched_manually: boolean
 }
 
 export interface TerminalSaleDetail extends TerminalSale {
@@ -819,4 +826,20 @@ export interface TerminalSyncRunFilters {
 export interface ManualSyncPayload {
     start_date?: string
     end_date?: string
+}
+
+/** Factura local candidata a vincularse con una venta TUU. */
+export interface TerminalSaleCandidate {
+    id: number
+    display_id: string
+    dte_type: string
+    total: string
+    /** ISO date */
+    date: string
+}
+
+export interface TerminalSaleMatchResult {
+    id: number
+    match_status: MatchStatus
+    matched_invoice: number | null
 }

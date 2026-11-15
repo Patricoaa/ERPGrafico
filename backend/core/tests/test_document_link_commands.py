@@ -126,3 +126,27 @@ def test_backfill_apply_restores_links(broken_delivery):
     assert broken_delivery["doc"].source_document_type == "sales.saledelivery"
     assert broken_delivery["doc"].source_document_id == broken_delivery["delivery"].id
     assert "OK  " in _run("audit_document_integrity")
+
+
+def _posted_without_folio(report: str) -> int:
+    line = next(ln for ln in report.splitlines() if "POSTED) sin folio" in ln)
+    return int(line.split(": ")[1].split(" ")[0])
+
+
+@pytest.mark.django_db
+def test_audit_exempts_pos_boletas_without_folio():
+    """ADR-0138: 39/41/48 cobrados en caja POS quedan POSTED sin folio; el resto no."""
+    from billing.models import Invoice
+    from tax.tests.reconciliation_helpers import local_dt, make_pos_document, make_terminal_env
+
+    env = make_terminal_env()
+    at = local_dt(2026, 11, 10)
+    make_pos_document(env, 1000, at, dte_type=Invoice.DTEType.COMPROBANTE_PAGO)
+    make_pos_document(env, 1000, at, dte_type=Invoice.DTEType.BOLETA, method="CASH")
+    make_pos_document(env, 1000, at, dte_type=Invoice.DTEType.FACTURA)  # factura sin folio: falla
+    Invoice.objects.create(  # boleta sin folio fuera del POS: falla
+        dte_type=Invoice.DTEType.BOLETA, status=Invoice.Status.POSTED, contact=env.customer,
+        total=Decimal("1000"), total_net=Decimal("1000"), total_tax=Decimal("0"), date=at.date(),
+    )
+
+    assert _posted_without_folio(_run("audit_document_integrity")) == 2

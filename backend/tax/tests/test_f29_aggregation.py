@@ -7,17 +7,19 @@ import pytest
 
 from billing.models import Invoice
 from contacts.models import Contact
+from purchasing.models import PurchaseOrder
 from sales.models import SaleOrder
 from tax.services import F29CalculationService
 
 PERIOD = (2026, 8)
 
 
-def _invoice(dte_type, total_net, sale_order=None, contact=None):
+def _invoice(dte_type, total_net, sale_order=None, contact=None, purchase_order=None):
     return Invoice.objects.create(
         dte_type=dte_type,
         contact=contact,
         sale_order=sale_order,
+        purchase_order=purchase_order,
         status=Invoice.Status.POSTED,
         date=date(2026, 8, 15),
         total=Decimal(total_net) * Decimal("1.19"),
@@ -37,12 +39,13 @@ def month(db):
     _invoice(Invoice.DTEType.NOTA_CREDITO, 100, sale_order=order, contact=contact)
     _invoice(Invoice.DTEType.NOTA_DEBITO, 50, sale_order=order, contact=contact)
     _invoice(Invoice.DTEType.NOTA_CREDITO, 40, sale_order=order, contact=contact)
-    # Purchases (no sale_order)
-    _invoice(Invoice.DTEType.FACTURA, 2000, contact=contact)
-    _invoice(Invoice.DTEType.BOLETA, 700, contact=contact)  # boletas give no VAT credit
-    _invoice(Invoice.DTEType.FACTURA_EXENTA, 400, contact=contact)
-    _invoice(Invoice.DTEType.NOTA_CREDITO, 200, contact=contact)
-    _invoice(Invoice.DTEType.NOTA_DEBITO, 30, contact=contact)
+    # Purchases (with purchase_order)
+    po = PurchaseOrder.objects.create(supplier=contact, status="DRAFT")
+    _invoice(Invoice.DTEType.FACTURA, 2000, contact=contact, purchase_order=po)
+    _invoice(Invoice.DTEType.BOLETA, 700, contact=contact, purchase_order=po)  # boletas give no VAT credit
+    _invoice(Invoice.DTEType.FACTURA_EXENTA, 400, contact=contact, purchase_order=po)
+    _invoice(Invoice.DTEType.NOTA_CREDITO, 200, contact=contact, purchase_order=po)
+    _invoice(Invoice.DTEType.NOTA_DEBITO, 30, contact=contact, purchase_order=po)
 
 
 @pytest.mark.django_db
@@ -69,3 +72,15 @@ def test_breakdown_by_dte_counts_and_totals(month):
     purchases = {row["dte_type"]: row for row in result["purchases_taxed_by_dte"]}
     assert purchases[Invoice.DTEType.FACTURA]["total"] == Decimal("2000")
     assert Invoice.DTEType.BOLETA not in {row["dte_type"] for row in result["purchases_taxed_by_dte"]}
+
+
+@pytest.mark.django_db
+def test_standalone_sale_invoice_counts_as_sale(db):
+    """Una FACTURA POSTED sin sale_order (nota manual) es venta, no compra."""
+    contact = Contact.objects.create(name="Cliente manual", tax_id="F29-2")
+    _invoice(Invoice.DTEType.FACTURA, 800, contact=contact)
+
+    result = F29CalculationService.calculate_f29_for_period(*PERIOD)
+
+    assert result["sales_taxed"] == Decimal("800")
+    assert result["purchases_taxed"] == Decimal("0")

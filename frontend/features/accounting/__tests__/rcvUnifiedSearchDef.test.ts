@@ -18,4 +18,12 @@ describe('filtros de documentos RCV', () => {
         expect(keys).not.toContain('acknowledgement')
         expect(rcvSaleUnifiedSearchDef.dateFilters?.[0]?.key).toBe('issue_date')
     })
+
+    it('compras y ventas filtran por estado de cuadre', () => {
+        for (const def of [rcvDocumentUnifiedSearchDef, rcvSaleUnifiedSearchDef]) {
+            const filter = def.filters?.find((f) => f.key === 'match_status')
+            expect(filter).toMatchObject({ type: 'single', serverParam: 'match_status' })
+            expect(filter && 'options' in filter ? (filter.options ?? []).map((o) => o.value) : []).toContain('MATCHED')
+        }
+    })
 })

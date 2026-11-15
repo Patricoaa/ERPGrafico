@@ -1,4 +1,5 @@
 import { defineEntity, type StatusValue } from "@/components/entity-view"
+import { matchStatusValue } from "@/lib/fiscal-match"
 import type { RcvDocument } from "../types/rcv"
 
 /** "<código SII> · <nombre>" (p. ej. "33 · Factura Electrónica"). */
@@ -37,6 +38,7 @@ export const rcvDocumentEntity = defineEntity<RcvDocument>()((f) => ({
         acknowledgement: f.status((d) => rcvAcknowledgementStatus(d.acknowledgement), { label: "Acuse" }),
         receivedAt: f.date("received_at", { label: "Recepción SII", time: true }),
         missing: f.status((d) => rcvMissingStatus(d), { label: "Vigencia" }),
+        matchStatus: f.status((d) => matchStatusValue(d.match_status, d.match_status_display), { label: "Cuadre" }),
     },
 }))
 
@@ -44,7 +46,7 @@ export const rcvPurchaseViews = rcvDocumentEntity.views({
     table: {
         columns: [
             "issueDate", "dteType", "folio", "counterpartyRut", "supplierName",
-            "net", "vatRecoverable", "total", "acknowledgement", "receivedAt", "missing",
+            "net", "vatRecoverable", "total", "acknowledgement", "matchStatus", "receivedAt", "missing",
         ],
         primary: "folio",
     },
@@ -53,7 +55,7 @@ export const rcvPurchaseViews = rcvDocumentEntity.views({
         title: "supplierName",
         subtitle: ["issueDate", "folio"],
         trailing: ["total"],
-        meta: ["dteType", "counterpartyRut", "net", "vatRecoverable", "acknowledgement", "missing"],
+        meta: ["dteType", "counterpartyRut", "net", "vatRecoverable", "acknowledgement", "matchStatus", "missing"],
     },
 })
 
@@ -61,7 +63,7 @@ export const rcvSaleViews = rcvDocumentEntity.views({
     table: {
         columns: [
             "issueDate", "dteType", "folio", "counterpartyRut", "customerName",
-            "net", "vatAmount", "total", "receivedAt", "missing",
+            "net", "vatAmount", "total", "matchStatus", "receivedAt", "missing",
         ],
         primary: "folio",
     },
@@ -70,6 +72,6 @@ export const rcvSaleViews = rcvDocumentEntity.views({
         title: "customerName",
         subtitle: ["issueDate", "folio"],
         trailing: ["total"],
-        meta: ["dteType", "counterpartyRut", "net", "vatAmount", "missing"],
+        meta: ["dteType", "counterpartyRut", "net", "vatAmount", "matchStatus", "missing"],
     },
 })

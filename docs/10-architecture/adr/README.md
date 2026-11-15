@@ -200,5 +200,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0135](0135-subcuentas-contables-por-socio.md) | Toda cuenta contable de socio se contabiliza en una subcuenta por socio | Accepted |
 | [0136](0136-section-compartida.md) | `Section` compartida reemplaza FormSection, SummarySection y PendingChecklist | Accepted |
 | [0137](0137-variante-embebida-collection.md) | Variante embebida de `Collection` (marco, vacío en columnas y «Mostrar más») | Accepted |
+| [0138](0138-registro-dte-local-con-control-fiscal-externo.md) | El registro DTE local es la fuente contable; el RCV y las ventas TUU son control fiscal externo que se cuadra contra él | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

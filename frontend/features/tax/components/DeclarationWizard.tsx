@@ -22,6 +22,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Lock,
+    Scale,
 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
@@ -266,6 +267,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
     // Borradores del mes: las facturas bloquean (no entran al IVA), los asientos solo se sugieren.
     const draftInvoices = calcData?.drafts_summary?.invoices ?? []
     const draftEntries = calcData?.drafts_summary?.entries ?? []
+    const fiscalMismatches = calcData?.fiscal_mismatches?.count ?? 0
     const draftChecklist: { required: SectionChecklistItem[]; suggested: SectionChecklistItem[] } = {
         required: [{
             key: "invoices",
@@ -288,6 +290,14 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                 total: draftEntries.length,
                 documents: draftEntries.map(entry => ({ id: entry.id, label: `${entry.display_id} ${entry.description}`.trim(), amount: null, date: entry.date })),
             },
+        }, {
+            key: "fiscal",
+            title: "Cuadre fiscal sin diferencias",
+            passed: fiscalMismatches === 0,
+            detail: fiscalMismatches > 0 ? `${fiscalMismatches} diferencia(s) con TUU o el SII` : undefined,
+            action: fiscalMismatches > 0
+                ? { text: "Ir al cuadre", href: "/accounting/rcv/reconciliation", variant: "ghost", icon: Scale }
+                : undefined,
         }],
     }
     const hasBlockingDrafts = !isDeclared && draftInvoices.length > 0

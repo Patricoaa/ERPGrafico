@@ -7,6 +7,20 @@ const m = vi.hoisted(() => ({
     sale: undefined as unknown,
     isError: false,
     requestedIds: [] as (number | null)[],
+    candidates: [] as unknown[],
+    candidatesError: false,
+    match: vi.fn(),
+    unmatch: vi.fn(),
+    openEntity: vi.fn(),
+}))
+
+vi.mock("../../hooks/useTerminalSaleMatch", () => ({
+    useTerminalSaleCandidates: () => ({ candidates: m.candidates, isLoading: false, isError: m.candidatesError }),
+    useMatchTerminalSale: () => ({ mutateAsync: m.match, isPending: false }),
+    useUnmatchTerminalSale: () => ({ mutateAsync: m.unmatch, isPending: false }),
+}))
+vi.mock("@/components/providers/GlobalModalProvider", () => ({
+    useGlobalModals: () => ({ openEntity: m.openEntity }),
 }))
 
 vi.mock("../../hooks/useTerminalSales", () => ({
@@ -37,6 +51,7 @@ const sale: TerminalSaleDetail = {
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,
     natural_key: "cash:13347", card_bin: "", card_origin: "", installment_type: "", acquirer_id: null,
     sources: ["BRANCH"], items: [], reconciliations: [], raw: { branch: { saleId: "13347" } },
+    match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false,
     first_seen_run: 1, last_seen_run: 1, created_at: "2026-11-12T10:05:00-03:00", updated_at: "2026-11-12T10:05:00-03:00",
 }
 
@@ -44,6 +59,11 @@ beforeEach(() => {
     m.sale = sale
     m.isError = false
     m.requestedIds = []
+    m.candidates = []
+    m.candidatesError = false
+    m.match.mockReset().mockResolvedValue(undefined)
+    m.unmatch.mockReset().mockResolvedValue(undefined)
+    m.openEntity.mockReset()
 })
 
 describe("TerminalSaleDrawer", () => {
@@ -78,5 +98,53 @@ describe("TerminalSaleDrawer", () => {
         m.isError = true
         render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
         expect(screen.getByText("No se pudo cargar la venta")).toBeInTheDocument()
+    })
+
+    describe("Documento ERP", () => {
+        it("con vínculo muestra el documento y abre billing.invoice", async () => {
+            m.sale = { ...sale, match_status: "MATCHED", match_status_display: "Cuadrado", matched_invoice: 5, matched_invoice_display: "B-100" }
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("Documento ERP")).toBeInTheDocument()
+            expect(screen.getByText("Cuadrado")).toBeInTheDocument()
+            await userEvent.click(screen.getByRole("button", { name: "B-100" }))
+            expect(m.openEntity).toHaveBeenCalledWith("billing.invoice", 5)
+            expect(screen.queryByRole("button", { name: "Desvincular" })).not.toBeInTheDocument()
+        })
+
+        it("sin vínculo lista candidatos y vincula", async () => {
+            m.candidates = [{ id: 7, display_id: "B-200", dte_type: "BOLETA", total: "3200", date: "2026-11-12" }]
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("B-200")).toBeInTheDocument()
+            await userEvent.click(screen.getByRole("button", { name: "Vincular" }))
+            expect(m.match).toHaveBeenCalledWith({ saleId: 9, invoiceId: 7 })
+        })
+
+        it("con vínculo manual ofrece Desvincular", async () => {
+            m.sale = { ...sale, match_status: "MATCHED", match_status_display: "Cuadrado", matched_invoice: 5, matched_invoice_display: "B-100", matched_manually: true }
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            await userEvent.click(screen.getByRole("button", { name: "Desvincular" }))
+            expect(m.unmatch).toHaveBeenCalledWith(9)
+        })
+
+        it("los candidatos muestran el nombre del tipo de documento", () => {
+            m.candidates = [{ id: 8, display_id: "CP-8", dte_type: "COMPROBANTE_PAGO", total: "3200", date: "2026-11-12" }]
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText(/^Comprobante de Pago · /)).toBeInTheDocument()
+            expect(screen.queryByText(/COMPROBANTE_PAGO/)).not.toBeInTheDocument()
+        })
+
+        it("si los candidatos no cargan lo indica", () => {
+            m.candidatesError = true
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("No se pudieron cargar los candidatos.")).toBeInTheDocument()
+        })
+
+        it("un vínculo rechazado no deja una promesa sin manejar", async () => {
+            m.candidates = [{ id: 7, display_id: "B-200", dte_type: "BOLETA", total: "3200", date: "2026-11-12" }]
+            m.match.mockRejectedValue(new Error("ya vinculado"))
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            await userEvent.click(screen.getByRole("button", { name: "Vincular" }))
+            expect(m.match).toHaveBeenCalledTimes(1)
+        })
     })
 })

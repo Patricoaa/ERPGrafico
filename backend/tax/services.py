@@ -3,12 +3,13 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import BooleanField, Case, Count, Sum, Value, When
+from django.db.models import Count, Sum
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
+from billing.fiscal_key import fiscal_direction_expression
 from billing.models import Invoice
 from core.edit_policy import assert_editable, changed_fields
 from workflow.services import WorkflowService
@@ -91,26 +92,20 @@ class F29CalculationService:
             store[dte_type]["total"] += total_net
             store[dte_type]["count"] += 1
 
-        # Aggregate in SQL by (is_sale, dte_type): one row per combination instead of
+        # Aggregate in SQL by (direction, dte_type): one row per combination instead of
         # loading every invoice of the month. Same branches as before; exempt = the
         # exempt DTE types (Invoice.is_tax_exempt is derived from dte_type).
         exempt_types = {Invoice.DTEType.FACTURA_EXENTA, Invoice.DTEType.BOLETA_EXENTA}
         buckets = (
-            invoices.annotate(
-                is_sale=Case(
-                    When(sale_order__isnull=False, then=Value(True)),
-                    default=Value(False),
-                    output_field=BooleanField(),
-                )
-            )
-            .values("is_sale", "dte_type")
+            invoices.annotate(direction=fiscal_direction_expression())
+            .values("direction", "dte_type")
             .annotate(total=Sum("total_net"), count=Count("id"))
-            .order_by("is_sale", "dte_type")
+            .order_by("direction", "dte_type")
         )
 
         for row in buckets:
             dte_type = row["dte_type"]
-            is_sale = row["is_sale"]
+            is_sale = row["direction"] == "sale"
             is_exempt = dte_type in exempt_types
             total_net = row["total"] or Decimal("0")
             count = row["count"]
@@ -186,6 +181,8 @@ class F29CalculationService:
             # Remanente is an asset, so Debit - Credit
             vat_credit_carryforward = total_debit - total_credit
 
+        from .reconciliation.report import fiscal_mismatch_counts
+
         # Detect Draft Documents (Advisory)
         draft_invoices = Invoice.objects.filter(
             date__gte=start_date, date__lt=end_date, status=Invoice.Status.DRAFT
@@ -214,6 +211,7 @@ class F29CalculationService:
             "vat_credit": vat_credit,
             "vat_credit_carryforward": vat_credit_carryforward,
             "tax_rate": tax_rate,
+            "fiscal_mismatches": fiscal_mismatch_counts(year, month),
             "drafts_summary": {
                 "invoices": [
                     {
@@ -1218,6 +1216,8 @@ class AccountingPeriodService:
             .order_by("statement_date", "id")[:cap]
         ]
 
+        from .reconciliation.report import fiscal_mismatch_counts
+
         # Build checklist
         checklist = {
             "tax_period_id": tax_period_id,
@@ -1225,6 +1225,7 @@ class AccountingPeriodService:
             "draft_invoices": draft_invoices,
             "unposted_payrolls": unposted_payrolls,
             "unconfirmed_statements": unconfirmed_statements,
+            "fiscal_mismatches": fiscal_mismatch_counts(year, month),
             "period_exists": period is not None,
             "period_status": period.status if period else "NOT_CREATED",
             "tax_period_closed": tax_closed,

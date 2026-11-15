@@ -17,6 +17,7 @@ from tax.services import TaxPeriodService
 from treasury.models import TreasuryAccount, TreasuryMovement
 
 from .invoicing import InvoicingService
+from .line_split import LineShare
 from .models import Invoice
 
 
@@ -495,11 +496,26 @@ class BillingService:
         status: str = Invoice.Status.POSTED,
         number: str = None,
         date=None,
+        *,
+        amount: Decimal | None = None,
+        line_shares: list[LineShare] | None = None,
+        net_tax_discount: tuple[Decimal, Decimal, Decimal] | None = None,
+        folio_exempt: bool = False,
+        link_advances: bool = True,
     ):
         """
         Creates a Sale Invoice (Factura/Boleta) from a SaleOrder.
+
+        ADR-0138 D3:
+        - Sin `amount` la factura es espejo completo de la OV.
+        - Con `amount` factura una porción: `total=amount`, `(neto, IVA, descuento)` =
+          `net_tax_discount` y las líneas salen de `line_shares`.
+        - El ERP no inventa folios. Sin `number` el documento baja a borrador, salvo que
+          `folio_exempt` y el tipo lo emita el proveedor (boleta / comprobante): queda POSTED.
+        - `link_advances=False` no concilia los anticipos de la OV con este documento.
         """
         from billing.dte_policy import validate_configured_dte_type
+        from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 
         validate_configured_dte_type(side="emit", dte_type=dte_type)
 
@@ -511,18 +527,29 @@ class BillingService:
             # Allow from draft if POS immediate
             pass
 
-        from core.services import SequenceService
-
-        # Auto-generate folio for Boletas if empty
-        if dte_type == Invoice.DTEType.BOLETA and not number:
-            number = SequenceService.get_next_number(
-                Invoice, filter_kwargs={"dte_type": Invoice.DTEType.BOLETA}
+        if amount is not None and (line_shares is None or net_tax_discount is None):
+            raise ValidationError(
+                "Una factura por porción requiere line_shares y net_tax_discount."
             )
+        if amount is not None and net_tax_discount[0] + net_tax_discount[1] != amount:
+            raise ValidationError(
+                f"El neto más el IVA de la porción ({net_tax_discount[0]} + {net_tax_discount[1]}) "
+                f"no iguala su monto ({amount})."
+            )
+        if amount is not None and link_advances:
+            unlinked = sum((p.amount for p in order.payments.filter(invoice__isnull=True)), Decimal(0))
+            if unlinked > amount:
+                raise ValidationError(
+                    "Los anticipos de la orden superan el monto del documento; regístrelo sin dividir."
+                )
 
         # ADR-0084: emitida (POSTED) exige folio. Sin folio la factura nace en borrador
         # (folio pendiente; su asiento queda en borrador hasta confirm_invoice).
+        # ADR-0138 D3: boletas y comprobantes POS los emite el proveedor; su folio llega
+        # después, así que con `folio_exempt` quedan POSTED sin número.
         if status == Invoice.Status.POSTED and not number:
-            status = Invoice.Status.DRAFT
+            if not (folio_exempt and dte_type in FOLIO_EXEMPT_DTE_TYPES):
+                status = Invoice.Status.DRAFT
 
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
@@ -545,6 +572,15 @@ class BillingService:
         if number:
             BillingService._validate_document_uniqueness(number, dte_type)
 
+        if amount is None:
+            total_net, total_tax, total_discount = (
+                order.total_net, order.total_tax, order.total_discount_amount,
+            )
+            total = order.total
+        else:
+            total_net, total_tax, total_discount = net_tax_discount
+            total = amount
+
         # 1. Create Invoice Record
         invoice = Invoice.objects.create(
             dte_type=dte_type,
@@ -552,14 +588,17 @@ class BillingService:
             date=date or timezone.now().date(),
             sale_order=order,
             payment_method=payment_method,
-            total_net=order.total_net,
-            total_tax=order.total_tax,
-            total_discount_amount=order.total_discount_amount,
-            total=order.total,
+            total_net=total_net,
+            total_tax=total_tax,
+            total_discount_amount=total_discount,
+            total=total,
             status=status,
         )
-        # ADR-0081: líneas propias (M4a: espejo de la orden completa)
-        InvoicingService.mirror_order_lines(invoice, order)
+        if amount is None:
+            # ADR-0081: líneas propias (M4a: espejo de la orden completa)
+            InvoicingService.mirror_order_lines(invoice, order)
+        else:
+            InvoicingService.create_share_lines(invoice, order, line_shares)
 
         # 2. Accounting Entry via Mapper
         settings = AccountingSettings.get_solo()
@@ -585,8 +624,11 @@ class BillingService:
         invoice.save()
 
         # Check for advances and link them
-        advances = order.payments.filter(invoice__isnull=True)
-        total_advanced = sum(p.amount for p in advances)
+        if link_advances:
+            advances = order.payments.filter(invoice__isnull=True)
+            total_advanced = sum(p.amount for p in advances)
+        else:
+            advances, total_advanced = [], 0
 
         if total_advanced > 0:
             doc_id = invoice.display_id
@@ -815,6 +857,16 @@ class BillingService:
             WorkflowService.sync_hub_tasks(order)
 
         return invoice
+
+    @staticmethod
+    def checkout_documents_summary(invoice: Invoice) -> list[dict]:
+        """Todos los documentos del checkout (ADR-0138 D3); el principal va primero."""
+        places = Decimal(1).scaleb(-Invoice._meta.get_field("total").decimal_places)
+        return [
+            {"id": doc.id, "display_id": doc.display_id, "dte_type": doc.dte_type,
+             "total": str(Decimal(doc.total).quantize(places))}
+            for doc in getattr(invoice, "checkout_documents", [invoice])
+        ]
 
     @staticmethod
     def pos_checkout(*args, **kwargs):
@@ -1244,31 +1296,33 @@ class BillingService:
             order.delivery_status = SaleOrder.DeliveryStatus.PENDING
             order.save()
 
-        # --- Detección de pago vía terminal integrado TUU (DTE 48) ---
-        # dte_type='COMPROBANTE_PAGO' indica que TUU ya emitió el DTE 48.
-        # El ERP no emite DTE local; solo registra el movimiento de tesorería.
-        # 4. Create Invoice (if not already invoiced)
+        # 4. Create Invoice(s) (if not already invoiced)
+        # ADR-0138 D3: `dte_type` es la clase de documento. La parte de una boleta
+        # cobrada con terminal integrado es un 48 (lo emite TUU) y el resto un 39.
+        from . import pos_checkout_documents as checkout_docs
+        from .sale_documents import folio_exempt_for_session, plan_sale_documents
+
+        allocations = payments if use_multi_payment else None
+        methods = checkout_docs.load_payment_methods(allocations, payment_method_id)
         invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
-        if not invoice:
-            status = Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED
-
-            # Validate uniqueness if number provided
-            if document_number:
-                BillingService._validate_document_uniqueness(document_number, dte_type)
-
-            invoice = BillingService.create_sale_invoice(
-                order,
-                dte_type,
-                payment_method,
-                status=status,
-                number=document_number,
-                date=document_date,
+        if invoice:
+            invoice.checkout_documents = [invoice]
+            invoice_by_payment = {}
+        else:
+            portions = checkout_docs.checkout_portions(
+                allocations, methods, order_total=order.total,
+                single_amount=paid_amount, single_method_id=payment_method_id,
             )
-            if document_date:
-                invoice.date = document_date
-            if document_attachment:
-                invoice.document_attachment = document_attachment
-            invoice.save()
+            plans = plan_sale_documents(dte_type, portions, order.total)
+            documents = checkout_docs.create_checkout_documents(
+                order, plans, payment_method=payment_method,
+                status=Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED,
+                number=document_number, date=document_date, attachment=document_attachment,
+                folio_exempt=folio_exempt_for_session(pos_session_id),
+            )
+            invoice = documents[0]
+            invoice.checkout_documents = documents
+            invoice_by_payment = checkout_docs.invoice_by_payment(plans, documents)
 
         # 4. Create Payment(s)
         movement_date = (
@@ -1284,7 +1338,9 @@ class BillingService:
             total_received = sum(Decimal(str(p.get("amount", 0))) for p in payments)
             payment_amount = min(total_received, order.total)
 
-            for alloc in payments:
+            for alloc_index, alloc in enumerate(payments):
+                # Una asignación sin plan (p. ej. sobrepago) va al documento principal.
+                alloc_invoice = invoice_by_payment.get(alloc_index, invoice)
                 p_method = alloc.get("method", payment_method)
                 p_amount = Decimal(str(alloc.get("amount", 0)))
                 p_amount = min(p_amount, order.total)
@@ -1313,7 +1369,7 @@ class BillingService:
                         payment_method="CREDIT_BALANCE",
                         reference=f"Consumo Saldo {order.display_id}",
                         partner=contact,
-                        invoice=invoice,
+                        invoice=alloc_invoice,
                         date=movement_date,
                         sale_order=order,
                         from_account=None,
@@ -1326,10 +1382,7 @@ class BillingService:
                 elif p_method in ("CREDIT",):
                     continue
                 else:
-                    p_inst = None
-                    if p_payment_method_id:
-                        from treasury.models import PaymentMethod as PM
-                        p_inst = PM.objects.filter(id=p_payment_method_id).first()
+                    p_inst = methods.get(checkout_docs.payment_method_key(p_payment_method_id))
 
                     if p_inst is not None:
                         if p_inst.method_type == "CREDIT_CARD" and payment_type == TreasuryMovement.Type.INBOUND:
@@ -1346,7 +1399,7 @@ class BillingService:
                             movement_type=payment_type,
                             reference=order.display_id,
                             partner=order.customer,
-                            invoice=invoice,
+                            invoice=alloc_invoice,
                             date=movement_date,
                             sale_order=order,
                             pos_session_id=pos_session_id,
@@ -1375,7 +1428,7 @@ class BillingService:
                             payment_method=p_method,
                             reference=order.display_id,
                             partner=order.customer,
-                            invoice=invoice,
+                            invoice=alloc_invoice,
                             date=movement_date,
                             sale_order=order,
                             from_account=from_acc,
@@ -1386,18 +1439,16 @@ class BillingService:
                             created_by=user,
                         )
         else:
-            # Legacy single-payment flow
+            # Legacy single-payment flow: el pago (índice None) va al documento de su plan
+            # (el 48 si fue con terminal integrado y el resto quedó a crédito).
+            single_invoice = invoice_by_payment.get(None, invoice)
             if payment_method not in ("CREDIT", "CREDIT_BALANCE"):
                 received_amount = (
                     Decimal(str(amount)) if amount is not None and str(amount) != "" else order.total
                 )
                 payment_amount = min(received_amount, order.total)
 
-                payment_method_inst = None
-                if payment_method_id:
-                    from treasury.models import PaymentMethod as PM
-
-                    payment_method_inst = PM.objects.filter(id=payment_method_id).first()
+                payment_method_inst = methods.get(checkout_docs.payment_method_key(payment_method_id))
 
                 if not isinstance(installments, int):
                     try:
@@ -1423,7 +1474,7 @@ class BillingService:
                         movement_type=payment_type,
                         reference=order.display_id,
                         partner=order.customer,
-                        invoice=invoice,
+                        invoice=single_invoice,
                         date=movement_date,
                         sale_order=order,
                         pos_session_id=pos_session_id,
@@ -1452,7 +1503,7 @@ class BillingService:
                         payment_method=payment_method,
                         reference=order.display_id,
                         partner=order.customer,
-                        invoice=invoice,
+                        invoice=single_invoice,
                         date=movement_date,
                         sale_order=order,
                         from_account=from_acc,
@@ -1481,7 +1532,7 @@ class BillingService:
                     payment_method="CREDIT_BALANCE",
                         reference=f"Consumo Saldo {order.display_id}",
                         partner=contact,
-                        invoice=invoice,
+                        invoice=single_invoice,
                         date=movement_date,
                         sale_order=order,
                         from_account=None,

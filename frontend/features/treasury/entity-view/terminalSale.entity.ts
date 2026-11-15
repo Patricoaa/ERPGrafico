@@ -1,5 +1,6 @@
 import { defineEntity, formatDate, toNumber, type StatusValue } from "@/components/entity-view"
 import type { BadgeIntent } from "@/lib/badge-resolvers"
+import { matchStatusValue, type MatchStatus } from "@/lib/fiscal-match"
 import type { TerminalSale, TerminalSalePaymentType, TerminalSaleStatus } from "../types"
 
 export const TERMINAL_SALE_PAYMENT_TYPE_LABELS: Record<TerminalSalePaymentType, string> = {
@@ -40,6 +41,11 @@ export function terminalSalePaymentType(paymentType: TerminalSalePaymentType): S
     }
 }
 
+/** Cuadre fiscal de la venta; prefiere el texto del backend (`match_status_display`). */
+export function terminalSaleMatchStatus(matchStatus: MatchStatus, display = ""): StatusValue {
+    return matchStatusValue(matchStatus, display)
+}
+
 /** Settlement column/detail text: the deposit date, or "Pendiente" while TUU has not settled it. */
 export function terminalSaleSettlement(settlementDate: string | null): string {
     return settlementDate ? formatDate(settlementDate) : "Pendiente"
@@ -66,6 +72,7 @@ export const terminalSaleEntity = defineEntity<TerminalSale>()((f) => ({
         netAmount: f.money("net_amount", { label: "Neto" }),
         settlementDate: f.text((s) => terminalSaleSettlement(s.settlement_date), { label: "Abono" }),
         status: f.status((s) => terminalSaleStatus(s.status), { label: "Estado" }),
+        matchStatus: f.status((s) => terminalSaleMatchStatus(s.match_status, s.match_status_display), { label: "Cuadre fiscal" }),
     },
 }))
 
@@ -73,7 +80,7 @@ export const terminalSaleViews = terminalSaleEntity.views({
     table: {
         columns: [
             "transactionAt", "saleId", "paymentType", "documentType", "cardIssuer",
-            "totalAmount", "commissionAmount", "netAmount", "settlementDate", "status",
+            "totalAmount", "commissionAmount", "netAmount", "settlementDate", "status", "matchStatus",
         ],
         primary: "saleId",
     },

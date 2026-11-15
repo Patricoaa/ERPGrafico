@@ -6,13 +6,18 @@ import { Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell,
 import { Collection, formatDate, useEntityCollection } from "@/components/entity-view"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { DocumentRelationsTab } from "@/features/documents"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { Button } from "@/components/ui/button"
+import { getDteLabel } from "@/lib/entity-registry"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useTerminalSale } from "../hooks/useTerminalSales"
+import { useMatchTerminalSale, useTerminalSaleCandidates, useUnmatchTerminalSale } from "../hooks/useTerminalSaleMatch"
 import type { TerminalSaleDetail } from "../types"
 import {
     formatDteType,
     terminalSaleItemEntity,
     terminalSaleItemViews,
+    terminalSaleMatchStatus,
     terminalSalePaymentType,
     terminalSaleReconciliationEntity,
     terminalSaleReconciliationViews,
@@ -108,6 +113,8 @@ function TerminalSaleDetailBody({ sale }: { sale: TerminalSaleDetail }) {
                 <Stat title="Fuentes" value={sale.sources.map((s) => SOURCE_LABELS[s] ?? s).join(" · ")} plain />
             </Section>
 
+            <TerminalSaleErpDocument sale={sale} />
+
             <Section title="Pago">
                 <Stat title="Tipo de pago" value={<StatusBadge status={paymentType.status} label={paymentType.label} intent={paymentType.intent} size="sm" />} />
                 <Stat title="Marca" value={sale.card_brand} plain />
@@ -160,6 +167,59 @@ function TerminalSaleDetailBody({ sale }: { sale: TerminalSaleDetail }) {
 function Stat({ title, value, plain, strong }: { title: string; value: ReactNode; plain?: boolean; strong?: boolean }) {
     const empty = value === null || value === undefined || value === ""
     return <Section.Row variant="stat" title={title} value={empty ? "—" : value} plain={plain} strong={strong} />
+}
+
+/** Cuadre fiscal: documento ERP vinculado, o candidatos para vincular a mano. */
+function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
+    const { openEntity } = useGlobalModals()
+    const match = useMatchTerminalSale()
+    const unmatch = useUnmatchTerminalSale()
+    const linked = sale.matched_invoice !== null
+    const { candidates, isLoading, isError } = useTerminalSaleCandidates(sale.id, !linked)
+    const status = terminalSaleMatchStatus(sale.match_status, sale.match_status_display)
+
+    return (
+        <Section title="Documento ERP">
+            <Stat title="Cuadre fiscal" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
+            {linked ? (
+                <Section.Row
+                    title="Documento vinculado"
+                    value={
+                        <Button variant="link" className="h-auto p-0" onClick={() => openEntity("billing.invoice", sale.matched_invoice as number)}>
+                            {sale.matched_invoice_display ?? `#${sale.matched_invoice}`}
+                        </Button>
+                    }
+                    actions={
+                        sale.matched_manually ? (
+                            <Button size="sm" variant="outline" disabled={unmatch.isPending} onClick={() => void unmatch.mutateAsync(sale.id).catch(() => undefined)}>
+                                Desvincular
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            ) : isError ? (
+                <Stat title="Candidatos" value="No se pudieron cargar los candidatos." plain />
+            ) : isLoading ? (
+                <Stat title="Candidatos" value="Buscando…" plain />
+            ) : candidates.length === 0 ? (
+                <Stat title="Candidatos" value="Sin documentos candidatos" plain />
+            ) : (
+                candidates.map((c) => (
+                    <Section.Row
+                        key={c.id}
+                        title={c.display_id}
+                        description={`${getDteLabel(c.dte_type)} · ${formatDate(c.date)}`}
+                        value={<MoneyDisplay amount={c.total} currency={sale.currency} />}
+                        actions={
+                            <Button size="sm" variant="outline" disabled={match.isPending} onClick={() => void match.mutateAsync({ saleId: sale.id, invoiceId: c.id }).catch(() => undefined)}>
+                                Vincular
+                            </Button>
+                        }
+                    />
+                ))
+            )}
+        </Section>
+    )
 }
 
 function TerminalSaleItems({ items }: { items: Record<string, unknown>[] }) {

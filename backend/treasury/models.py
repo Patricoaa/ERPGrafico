@@ -15,6 +15,7 @@ from simple_history.models import HistoricalRecords
 from accounting.models import Account, AccountType
 from billing.models import SII_CODE_TO_DTE_TYPE, SII_DOCUMENT_CODE_CHOICES
 from core.edit_policy import EditPolicy
+from core.fiscal_match import MatchStatus
 from core.models import TimeStampedModel
 from core.storages import PrivateMediaStorage
 from core.utils import get_current_date
@@ -4032,6 +4033,23 @@ class TerminalSale(TimeStampedModel):
         related_name="+",
         verbose_name=_("Última ejecución"),
     )
+    matched_invoice = models.ForeignKey(
+        "billing.Invoice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="terminal_sales",
+        verbose_name=_("Factura vinculada"),
+    )
+    match_status = models.CharField(
+        _("Estado de cuadre"),
+        max_length=20,
+        choices=MatchStatus.choices,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+    matched_manually = models.BooleanField(_("Vínculo manual"), default=False)
 
     class Meta:
         verbose_name = _("Venta de Terminal")
@@ -4040,6 +4058,11 @@ class TerminalSale(TimeStampedModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["provider", "natural_key"], name="uniq_terminal_sale_provider_key"
+            ),
+            models.UniqueConstraint(
+                fields=["matched_invoice"],
+                condition=models.Q(matched_invoice__isnull=False),
+                name="terminalsale_matched_invoice_uniq",
             ),
         ]
 

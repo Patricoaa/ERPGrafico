@@ -1912,6 +1912,10 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
     device_name = serializers.CharField(source="device.name", read_only=True, default=None)
     document_type_label = serializers.CharField(read_only=True)
     dte_type = serializers.CharField(read_only=True, allow_null=True)
+    match_status_display = serializers.CharField(source="get_match_status_display", read_only=True)
+    matched_invoice_display = serializers.CharField(
+        source="matched_invoice.display_id", read_only=True, default=None
+    )
 
     class Meta:
         model = TerminalSale
@@ -1946,6 +1950,11 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "settlement_date",
             "settlement_id",
             "settlement_amount",
+            "match_status",
+            "match_status_display",
+            "matched_invoice",
+            "matched_invoice_display",
+            "matched_manually",
         ]
         read_only_fields = fields
 

@@ -191,7 +191,7 @@ def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
 
     Sin joins a importaciones (``is_missing`` usa solo la FK) y sin ``raw``.
     """
-    qs = RCVDocument.objects.defer("raw")
+    qs = RCVDocument.objects.select_related("matched_invoice").defer("raw")
     year, month = filters.get("year"), filters.get("month")
     if year is not None and month is not None:
         qs = qs.filter(period=f"{year:04d}{month:02d}")
@@ -199,7 +199,7 @@ def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
         qs = qs.filter(period__startswith=f"{year:04d}")
     elif month is not None:
         qs = qs.filter(period__endswith=f"{month:02d}")
-    for field in ("direction", "dte_type", "status", "acknowledgement"):
+    for field in ("direction", "dte_type", "status", "acknowledgement", "match_status"):
         if filters.get(field) not in (None, ""):
             qs = qs.filter(**{field: filters[field]})
     if filters.get("missing"):
@@ -223,7 +223,7 @@ _IMPORT_REFS = ("first_import", "last_import", "missing_since_import")
 
 def rcv_document_detail_queryset() -> QuerySet[RCVDocument]:
     """Detalle: importaciones relacionadas sin su ``raw_response`` (solo se lee id + período)."""
-    return RCVDocument.objects.select_related(*_IMPORT_REFS).defer(
+    return RCVDocument.objects.select_related(*_IMPORT_REFS, "matched_invoice").defer(
         *(f"{ref}__raw_response" for ref in _IMPORT_REFS)
     )
 

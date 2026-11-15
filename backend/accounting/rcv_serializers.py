@@ -6,6 +6,8 @@ Secretos (clave SII y API keys) son solo escritura; nunca se devuelven. Ningún
 
 from rest_framework import serializers
 
+from core.fiscal_match import MatchStatus
+
 from .integrations.rcv_normalizer import is_valid_rut, normalize_rut
 from .models import (
     RCVApiKey,
@@ -26,6 +28,10 @@ def _import_ref(rcv_import: RCVImport | None) -> dict | None:
 
 class RCVDocumentListSerializer(serializers.ModelSerializer):
     is_missing = serializers.SerializerMethodField()
+    match_status_display = serializers.CharField(source="get_match_status_display", read_only=True)
+    matched_invoice_display = serializers.CharField(
+        source="matched_invoice.display_id", read_only=True, default=None
+    )
 
     class Meta:
         model = RCVDocument
@@ -56,6 +62,11 @@ class RCVDocumentListSerializer(serializers.ModelSerializer):
             "reference_dte_type",
             "reference_folio",
             "is_missing",
+            "match_status",
+            "match_status_display",
+            "matched_invoice",
+            "matched_invoice_display",
+            "matched_manually",
         ]
         read_only_fields = fields
 
@@ -99,6 +110,7 @@ class RCVDocumentFilterSerializer(serializers.Serializer):
     status = serializers.CharField(required=False, allow_blank=True)
     acknowledgement = serializers.CharField(required=False, allow_blank=True)
     missing = serializers.ChoiceField(choices=["true", "false"], required=False)
+    match_status = serializers.ChoiceField(choices=MatchStatus.choices, required=False)
     issue_date_from = serializers.DateField(required=False)
     issue_date_to = serializers.DateField(required=False)
     search = serializers.CharField(required=False, allow_blank=True)
@@ -259,6 +271,8 @@ class RCVSettingsSerializer(serializers.ModelSerializer):
             "run_hour",
             "include_purchases",
             "include_sales",
+            "fiscal_match_start_date",
+            "terminal_match_window_minutes",
             "next_period",
             "estimated_monthly_queries",
             "total_monthly_quota",

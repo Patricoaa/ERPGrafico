@@ -47,6 +47,7 @@ import {
     useDraftSync,
     type SyncDraft
 } from '@/features/pos/hooks'
+import { CheckoutDocumentsList } from './CheckoutDocumentsList'
 import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutWizardState, SalesCheckoutWizardView, type SalesCheckoutWizardViewHandle } from '@/features/sales'
 import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
@@ -176,7 +177,7 @@ export function POSClientView() {
     })
     const { filteredProducts, categories, searchTerm, setSearchTerm, selectedCategoryId, setSelectedCategoryId, refreshProducts, toggleFavorite } = useProducts()
 
-    const [completedSaleData, setCompletedSaleData] = useState<TransactionData | null>(null)
+    const [completedSaleData, setCompletedSaleData] = useState<(TransactionData & Pick<CheckoutResponse, 'documents'>) | null>(null)
 
     useEffect(() => { if (lastSaved) refreshProducts(true) }, [lastSaved, refreshProducts])
 
@@ -399,7 +400,7 @@ export function POSClientView() {
 
     const handleCheckoutComplete = async (resData: TransactionData | CheckoutResponse) => {
         // Map CheckoutResponse to TransactionData if needed, or just cast if they overlap in usage
-        const transactionData = resData as TransactionData
+        const transactionData = resData as TransactionData & Pick<CheckoutResponse, 'documents'>
         setCompletedSaleData(transactionData)
         forgetOperatorPass() // el cobro ya consumió el pase en el backend
         await releaseCurrentLock()
@@ -767,6 +768,8 @@ export function POSClientView() {
                 <p className="mb-4 text-center text-sm text-muted-foreground">
                     ¿Desea imprimir el comprobante?
                 </p>
+
+                <CheckoutDocumentsList documents={completedSaleData?.documents} />
 
                 {/* Hidden Receipt for Printing */}
                 {completedSaleData && (

@@ -6,13 +6,15 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
-import { AutoSaveStatusBadge, Banner, FadeIn, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell, SubmitButton } from "@/components/shared"
+import { AutoSaveStatusBadge, Banner, DatePicker, FadeIn, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell, SubmitButton } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { Can } from "@/components/auth"
 import { useAuth } from "@/contexts/AuthContext"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { formatRUT } from "@/lib/utils/format"
+import { toDateOnlyISO } from "@/lib/utils"
+import { parseISO } from "date-fns"
 import {
     formatRcvPeriod,
     rcvApiKeyEntity,
@@ -42,6 +44,8 @@ function toFormValues(settings: RcvSettings): RcvSettingsFormValues {
         run_hour: settings.run_hour,
         include_purchases: settings.include_purchases,
         include_sales: settings.include_sales,
+        fiscal_match_start_date: settings.fiscal_match_start_date,
+        terminal_match_window_minutes: settings.terminal_match_window_minutes,
     }
 }
 
@@ -321,6 +325,50 @@ function RcvSettingsPanel({ settings }: { settings: RcvSettings }) {
                                             El consumo estimado supera el cupo disponible: agrega otra API key, sube el cupo mensual o aumenta los días entre consultas.
                                         </Banner>
                                     )}
+                                </CardContent>
+                            </Card>
+
+                            <Card variant="default">
+                                <CardHeader>
+                                    <CardTitle className="text-lg text-primary">Cuadre fiscal</CardTitle>
+                                    <CardDescription>
+                                        Compara los documentos del ERP con las ventas TUU y el RCV del SII. Los documentos anteriores a la fecha de inicio no se evalúan.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="fiscal_match_start_date"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledContainer label="Fecha de inicio del cuadre" error={fieldState.error?.message}>
+                                                <DatePicker
+                                                    date={field.value ? parseISO(field.value) : undefined}
+                                                    onDateChange={(d) => field.onChange(d ? toDateOnlyISO(d) : null)}
+                                                    placeholder="Sin fecha de inicio"
+                                                    disabled={!canChange}
+                                                    className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                                />
+                                            </LabeledContainer>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="terminal_match_window_minutes"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Ventana del cuadre TUU (minutos)"
+                                                hint="Diferencia máxima entre la venta TUU y el documento. Entre 1 y 240."
+                                                type="number"
+                                                {...field}
+                                                value={numberValue(field.value)}
+                                                onChange={(event) => field.onChange(parseNumber(event.target.value))}
+                                                min={1}
+                                                max={240}
+                                                step={1}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
                                 </CardContent>
                             </Card>
                         </fieldset>

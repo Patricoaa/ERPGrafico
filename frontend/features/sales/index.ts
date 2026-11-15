@@ -38,6 +38,7 @@ export type {
     CheckoutPaymentData,
     CheckoutDeliveryData,
     CheckoutResponse,
+    CheckoutDocument,
     CreditApprovalTask,
     AccountingSettings,
     SaleOrderStatus,

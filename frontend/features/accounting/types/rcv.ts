@@ -3,6 +3,8 @@
  * Espejo del contrato REST `/api/accounting/rcv-*`. Los montos llegan como `string` (Decimal DRF).
  */
 
+import type { MatchStatus } from '@/lib/fiscal-match'
+
 export type RcvDirection = 'PURCHASES' | 'SALES'
 
 export type RcvImportStatus = 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED'
@@ -48,6 +50,13 @@ export interface RcvDocument {
     reference_dte_type: number | null
     reference_folio: string
     is_missing: boolean
+    /** Cuadre contra facturas y notas del ERP (ADR-0138 D5); `""` = no evaluado. */
+    match_status: MatchStatus
+    match_status_display: string
+    matched_invoice: number | null
+    matched_invoice_display: string | null
+    /** Vínculo hecho a mano: solo estos se pueden desvincular y el recálculo no los toca. */
+    matched_manually: boolean
 }
 
 export interface RcvDocumentDetail extends RcvDocument {
@@ -137,6 +146,10 @@ export interface RcvSettings {
     next_period: RcvNextPeriod
     estimated_monthly_queries: number
     total_monthly_quota: number
+    /** ISO date desde la que se cuadra; null = sin cuadre de faltantes en el ERP. */
+    fiscal_match_start_date: string | null
+    /** Ventana del cuadre TUU, 1..240 minutos. */
+    terminal_match_window_minutes: number
 }
 
 /** `sii_password` es de solo escritura: vacío o ausente la deja sin cambios. */
@@ -149,6 +162,8 @@ export interface RcvSettingsPatch {
     run_hour?: number
     include_purchases?: boolean
     include_sales?: boolean
+    fiscal_match_start_date?: string | null
+    terminal_match_window_minutes?: number
 }
 
 export interface RcvApiKey {
@@ -181,6 +196,7 @@ export interface RcvDocumentFilters {
     acknowledgement?: string
     /** El backend solo acepta las cadenas "true" / "false". */
     missing?: 'true' | 'false'
+    match_status?: Exclude<MatchStatus, ''>
     issue_date_from?: string
     issue_date_to?: string
     search?: string

@@ -61,10 +61,24 @@ def run_rcv_imports(import_ids: list[int]) -> list[str]:
             time.sleep(rcv_service.MIN_PAUSE_SECONDS)
         try:
             rcv_import = RCVImport.objects.get(pk=import_id)
-            statuses.append(rcv_service.execute_import(rcv_import).status)
+            executed = rcv_service.execute_import(rcv_import)
+            statuses.append(executed.status)
         except Exception as exc:
             # Solo el tipo: el mensaje podría contener secretos.
             logger.error("Importación RCV %s abortada: %s", import_id, type(exc).__name__)
             status = RCVImport.objects.filter(pk=import_id).values_list("status", flat=True).first()
             statuses.append(status or RCVImport.Status.FAILED)
+            continue
+        if executed.status == RCVImport.Status.SUCCESS:
+            _reconcile_imported_period(executed)
     return statuses
+
+
+def _reconcile_imported_period(rcv_import: RCVImport) -> None:
+    """Cuadre fiscal del período recién importado; un fallo nunca tumba la importación."""
+    try:
+        from tax.reconciliation.rcv import reconcile_rcv_period
+
+        reconcile_rcv_period(rcv_import.direction, rcv_import.year, rcv_import.month, rcv_import)
+    except Exception:
+        logger.exception("Cuadre RCV de la importación %s falló", rcv_import.pk)

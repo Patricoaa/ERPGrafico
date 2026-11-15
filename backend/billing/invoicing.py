@@ -8,11 +8,16 @@ crear / cancelar / anular. La facturación parcial y multi-orden llega en M4b.
 
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
+from typing import TYPE_CHECKING
 
+from django.core.exceptions import ValidationError
 from django.db.models import Sum
 
 from .models import Invoice, InvoiceLine
+
+if TYPE_CHECKING:
+    from .line_split import LineShare
 
 # Documentos que facturan la orden (las NC/ND la corrigen; no cuentan como facturado).
 PRIMARY_DTE_TYPES = (
@@ -51,6 +56,45 @@ class InvoicingService:
                 tax_rate=line.tax_rate or 0,
                 discount_amount=getattr(line, "discount_amount", 0) or 0,
                 subtotal=line.subtotal or 0,
+            ))
+        return InvoiceLine.objects.bulk_create(lines)
+
+    @staticmethod
+    def create_share_lines(invoice: Invoice, order, shares: list[LineShare]) -> list[InvoiceLine]:
+        """
+        Líneas de una porción de la OV (ADR-0138 D3): como `mirror_order_lines`, pero con la
+        `quantity` y el `subtotal` de cada share (`key` = `SaleLine.pk`). Precio, tasa y unidad
+        se copian de la línea de la OV; el descuento se prorratea por cantidad. Los shares
+        vacíos (cantidad y subtotal en cero) no generan línea.
+        """
+        order_lines = {
+            line.pk: line
+            for line in order.lines.filter(related_note__isnull=True).select_related("product")
+        }
+        lines = []
+        for share in shares:
+            if share.quantity == 0 and share.subtotal == 0:
+                continue
+            line = order_lines.get(share.key)
+            if line is None:
+                raise ValidationError(f"La línea {share.key} no pertenece a la orden {order.pk}.")
+            discount = line.discount_amount or Decimal("0")
+            if discount and line.quantity:
+                discount = (discount * share.quantity / line.quantity).quantize(
+                    Decimal("1"), rounding=ROUND_HALF_UP
+                )
+            lines.append(InvoiceLine(
+                invoice=invoice,
+                sale_line=line,
+                product=line.product,
+                description=line.description or (line.product.name if line.product else ""),
+                quantity=share.quantity,
+                uom_id=line.uom_id,
+                unit_price=line.unit_price,
+                unit_price_gross=line.unit_price_gross,
+                tax_rate=line.tax_rate or 0,
+                discount_amount=discount,
+                subtotal=share.subtotal,
             ))
         return InvoiceLine.objects.bulk_create(lines)
 

@@ -158,3 +158,73 @@ def test_status_caps_invoices_at_50(api_client, period):
     data = api_client.get(URL.format(acc.pk)).json()
     assert len(data["draft_invoices"]) == 50
     assert data["draft_invoices_count"] == 52
+
+
+# --- fiscal_mismatches (ADR-0138 D7) ------------------------------------------------
+
+
+def _fiscal_rcv(status, folio, period="202608"):
+    from accounting.models import RCVImport
+    from tax.tests.test_reconciliation_report import _import
+
+    imp = _import(RCVImport.Direction.SALES, month=8)
+    from accounting.models import RCVDocument
+
+    return RCVDocument.objects.create(
+        direction=RCVImport.Direction.SALES, company_rut="11111111-1", period=period, dte_type=33,
+        folio=folio, counterparty_rut="8973356-K", issue_date=date(2026, 8, 15),
+        total_amount=Decimal("1000"), first_import=imp, last_import=imp, match_status=status,
+    )
+
+
+def _fiscal_sale(env, status, day=15):
+    from tax.tests.reconciliation_helpers import local_dt, make_terminal_sale
+
+    sale = make_terminal_sale(env, 1000, local_dt(2026, 8, day))
+    sale.match_status = status
+    sale.save(update_fields=["match_status"])
+    return sale
+
+
+def test_status_check_includes_fiscal_mismatches(api_client, period):
+    from core.fiscal_match import MatchStatus
+    from tax.tests.reconciliation_helpers import make_terminal_env
+
+    acc, _ = period
+    env = make_terminal_env()
+    _fiscal_rcv(MatchStatus.ONLY_EXTERNAL, "1")
+    _fiscal_rcv(MatchStatus.MATCHED, "2")
+    _fiscal_rcv(MatchStatus.ONLY_EXTERNAL, "3", period="202607")  # otro período
+    _fiscal_sale(env, MatchStatus.TYPE_DIFF)
+    _fiscal_sale(env, MatchStatus.TYPE_DIFF, day=31)
+    data = api_client.get(URL.format(acc.pk)).json()
+    assert data["fiscal_mismatches"] == {
+        "count": 3,
+        "by_status": {"ONLY_EXTERNAL": 1, "AMOUNT_DIFF": 0, "TYPE_DIFF": 2, "AMBIGUOUS": 0},
+    }
+
+
+def test_fiscal_mismatches_do_not_block_close(db):
+    from accounting.models import RCVImport  # noqa: F401
+    from core.fiscal_match import MatchStatus
+    from tax.services import AccountingPeriodService
+
+    tax_period = TaxPeriod.objects.create(year=2026, month=8, status=TaxPeriod.Status.CLOSED)
+    AccountingPeriod.objects.update_or_create(year=2026, month=8, defaults={"tax_period": tax_period})
+    _fiscal_rcv(MatchStatus.ONLY_EXTERNAL, "1")
+    status_data = AccountingPeriodService.get_period_status(2026, 8)
+    assert status_data["fiscal_mismatches"]["count"] == 1
+    assert status_data["is_fully_closable"] is True
+    user = get_user_model().objects.create_user(username="closer", password="x")
+    closed = AccountingPeriodService.close_period(2026, 8, user)
+    assert closed.status == AccountingPeriod.Status.CLOSED
+
+
+def test_f29_calculation_includes_fiscal_mismatches(db):
+    from core.fiscal_match import MatchStatus
+    from tax.services import F29CalculationService
+
+    _fiscal_rcv(MatchStatus.AMBIGUOUS, "1")
+    calc = F29CalculationService.calculate_f29_for_period(2026, 8)
+    assert calc["fiscal_mismatches"]["count"] == 1
+    assert calc["fiscal_mismatches"]["by_status"]["AMBIGUOUS"] == 1

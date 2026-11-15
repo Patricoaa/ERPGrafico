@@ -212,3 +212,34 @@ def test_dispatcher_marks_run_failed_when_broker_down(monkeypatch):
     run = TerminalSyncRun.objects.get()
     assert run.status == TerminalSyncRun.Status.FAILED
     assert run.finished_at is not None
+
+
+def _success_run(monkeypatch):
+    run = _scheduled_run()
+
+    def fake_execute(r):
+        r.status = TerminalSyncRun.Status.SUCCESS
+        return r
+
+    monkeypatch.setattr(tasks, "execute_run", fake_execute)
+    return run
+
+
+def test_sync_run_triggers_reconciliation(monkeypatch):
+    run = _success_run(monkeypatch)
+    calls = []
+    monkeypatch.setattr(
+        "tax.reconciliation.terminal.reconcile_terminal_sales", lambda s, e: calls.append((s, e)) or {}
+    )
+    assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
+    assert calls == [(run.start_date, run.end_date)]
+
+
+def test_reconciliation_error_does_not_fail_sync(monkeypatch):
+    run = _success_run(monkeypatch)
+
+    def boom(s, e):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("tax.reconciliation.terminal.reconcile_terminal_sales", boom)
+    assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
