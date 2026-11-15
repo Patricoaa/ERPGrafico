@@ -940,6 +940,16 @@ def dispatch_terminal_sales_sync() -> int:
     return queued
 
 
+def _reconcile_after_sync(run: TerminalSyncRun) -> None:
+    """Cuadra las ventas del rango sincronizado; un fallo no invalida la sincronización."""
+    try:
+        from tax.reconciliation import terminal
+
+        terminal.reconcile_terminal_sales(run.start_date, run.end_date)
+    except Exception:
+        logger.exception("Cuadre fiscal TUU falló tras sincronizar el run %s", run.pk)
+
+
 @shared_task(bind=True, name="treasury.tasks.sync_terminal_run")
 def sync_terminal_run(self, run_id: int) -> str:
     """Ejecuta una sincronización; reintenta ante errores transitorios de TUU."""
@@ -947,7 +957,10 @@ def sync_terminal_run(self, run_id: int) -> str:
     run.attempts += 1
     run.save(update_fields=["attempts"])
     try:
-        return execute_run(run).status
+        status = execute_run(run).status
+        if status in (TerminalSyncRun.Status.SUCCESS, TerminalSyncRun.Status.PARTIAL):
+            _reconcile_after_sync(run)
+        return status
     except TuuTransientError:
         config = TerminalSyncSettings.get_settings()
         if self.request.retries < config.max_retries:

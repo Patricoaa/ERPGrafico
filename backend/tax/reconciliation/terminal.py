@@ -7,9 +7,11 @@ documento emitido (ADR-0091). Las filas con vínculo manual no se recalculan.
 from collections import Counter, defaultdict
 from datetime import date, datetime, time, timedelta
 
-from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from accounting.models import RCVSettings
 from billing.models import Invoice
@@ -159,3 +161,41 @@ def _assign(
             type_diff = s.document_type is not None and s.document_type != invoice.sii_code
             s.matched_invoice = invoice
             s.match_status = MatchStatus.TYPE_DIFF if type_diff else MatchStatus.MATCHED
+
+
+def _sale_documents() -> "models.QuerySet[Invoice]":
+    return Invoice.objects.filter(status=Invoice.Status.POSTED, sale_order__isnull=False)
+
+
+def terminal_sale_candidates(sale: TerminalSale) -> "models.QuerySet[Invoice]":
+    """Documentos de venta emitidos del mismo día local y monto, sin otra venta enlazada."""
+    day = timezone.localdate(sale.transaction_at)
+    return (
+        _sale_documents()
+        .filter(date=day, total=sale.sale_amount, terminal_sales__isnull=True)
+        .order_by("id")[:20]
+    )
+
+
+@transaction.atomic
+def match_terminal_sale(sale: TerminalSale, invoice: Invoice) -> TerminalSale:
+    """Vínculo manual: queda protegido del recálculo (`matched_manually`)."""
+    if not _sale_documents().filter(pk=invoice.pk).exists():
+        raise ValidationError(_("El documento no es un documento de venta emitido."))
+    if TerminalSale.objects.filter(matched_invoice=invoice).exclude(pk=sale.pk).exists():
+        raise ValidationError(_("El documento ya está vinculado a otra venta."))
+    type_diff = sale.document_type is not None and sale.document_type != invoice.sii_code
+    sale.matched_invoice = invoice
+    sale.matched_manually = True
+    sale.match_status = MatchStatus.TYPE_DIFF if type_diff else MatchStatus.MATCHED
+    sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    return sale
+
+
+@transaction.atomic
+def unmatch_terminal_sale(sale: TerminalSale) -> TerminalSale:
+    sale.matched_invoice = None
+    sale.matched_manually = False
+    sale.match_status = ""
+    sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    return sale
