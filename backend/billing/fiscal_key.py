@@ -7,7 +7,7 @@ Python como en el ORM, y una clave comparable contra el RCV del SII.
 from dataclasses import dataclass
 from typing import Literal
 
-from django.db.models import Case, CharField, Q, Value, When
+from django.db.models import Case, CharField, F, IntegerField, Q, Value, When
 
 from accounting.integrations.rcv_normalizer import normalize_rut
 from billing.models import Invoice
@@ -59,6 +59,18 @@ def fiscal_direction_expression() -> Case:
         When(Q(corrected_invoice__isnull=False) & corrected_purchase, then=Value("purchase")),
         default=Value("sale"),
         output_field=CharField(),
+    )
+
+
+def sii_code_expression() -> Case:
+    """Misma regla que ``Invoice.sii_code`` como expresión ORM (código explícito o el de la estrategia)."""
+    from billing.strategies.dte import DTE_STRATEGY_REGISTRY
+
+    return Case(
+        When(sii_document_code__gt=0, then=F("sii_document_code")),
+        *(When(dte_type=t, then=Value(cls.sii_document_code)) for t, cls in DTE_STRATEGY_REGISTRY.items()),
+        default=Value(0),
+        output_field=IntegerField(),
     )
 
 

@@ -8,8 +8,11 @@ import calendar
 from collections import Counter, defaultdict
 from datetime import date, timedelta
 
-from django.db import transaction
-from django.db.models import Q
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, models, transaction
+from django.db.models import Exists, OuterRef, Q
+from django.db.models.functions import Replace, Upper
+from django.utils.translation import gettext as _
 
 from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument, RCVImport, RCVSettings
@@ -18,6 +21,7 @@ from billing.fiscal_key import (
     FiscalKey,
     fiscal_direction_expression,
     fiscal_key,
+    sii_code_expression,
 )
 from billing.models import SII_CODE_TO_DTE_TYPE, Invoice
 from core.fiscal_match import MatchStatus
@@ -132,3 +136,79 @@ def _warn_closed_period(
         f"Hay {new_diffs} diferencia(s) nueva(s) del RCV en un período tributario cerrado.",
     ]
     rcv_import.save(update_fields=["warnings"])
+
+
+def _rcv_family(doc: RCVDocument) -> "models.QuerySet[Invoice]":
+    """Facturas emitidas de la misma dirección y código SII que el documento RCV."""
+    return Invoice.objects.annotate(
+        fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
+    ).filter(
+        sii=doc.dte_type,
+        status=Invoice.Status.POSTED,
+        fiscal_direction=RCV_TO_FISCAL_DIRECTION[doc.direction],
+    )
+
+
+def _rut_body(field: str) -> Upper:
+    expr = models.F(field)
+    for char in (".", " ", "-"):
+        expr = Replace(expr, models.Value(char), models.Value(""))
+    return Upper(expr)
+
+
+def rcv_document_candidates(doc: RCVDocument) -> "models.QuerySet[Invoice]":
+    """Mismo tipo, dirección y RUT normalizado, con folio o total igual; sin otro vínculo RCV."""
+    rut = normalize_rut(doc.counterparty_rut)
+    body = rut.replace("-", "")
+    total = abs(doc.total_amount)
+    rows = (
+        _rcv_family(doc)
+        .annotate(snapshot_rut=_rut_body("partner_tax_id_snapshot"), contact_rut=_rut_body("contact__tax_id"))
+        .filter(Q(snapshot_rut=body) | Q(partner_tax_id_snapshot="", contact_rut=body))
+        .filter(Q(total=total) | ~Q(number=""))
+        .filter(~Exists(RCVDocument.objects.filter(matched_invoice=OuterRef("pk")).exclude(pk=doc.pk)))
+        .select_related(*FISCAL_KEY_RELATED)
+        .order_by("id")
+    )
+    ids = []
+    for invoice in rows:
+        key = fiscal_key(invoice)
+        if key.counterparty_rut != rut:
+            continue
+        if key.folio == doc.folio or invoice.total == total:
+            ids.append(invoice.id)
+            if len(ids) == 20:
+                break
+    return Invoice.objects.filter(id__in=ids).order_by("id")
+
+
+@transaction.atomic
+def match_rcv_document(doc: RCVDocument, invoice: Invoice) -> RCVDocument:
+    """Vínculo manual: queda protegido del recálculo (`matched_manually`)."""
+    same_direction = Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression()).filter(
+        pk=invoice.pk, status=Invoice.Status.POSTED, fiscal_direction=RCV_TO_FISCAL_DIRECTION[doc.direction]
+    )
+    if not same_direction.exists():
+        raise ValidationError(_("El documento no es un documento emitido de la misma dirección."))
+    taken = _("El documento ya está vinculado a otro documento del RCV.")
+    if RCVDocument.objects.filter(matched_invoice=invoice).exclude(pk=doc.pk).exists():
+        raise ValidationError(taken)
+    doc.matched_invoice = invoice
+    doc.matched_manually = True
+    same = abs(doc.total_amount) == invoice.total
+    doc.match_status = MatchStatus.MATCHED if same else MatchStatus.AMOUNT_DIFF
+    try:
+        with transaction.atomic():
+            doc.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    except IntegrityError as exc:
+        raise ValidationError(taken) from exc
+    return doc
+
+
+@transaction.atomic
+def unmatch_rcv_document(doc: RCVDocument) -> RCVDocument:
+    doc.matched_invoice = None
+    doc.matched_manually = False
+    doc.match_status = ""
+    doc.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    return doc
