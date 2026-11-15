@@ -176,3 +176,28 @@ def test_single_partial_card_rest_on_credit_links_card_to_48(env, pos):
     assert docs[Invoice.DTEType.COMPROBANTE_PAGO].total == D("3000")
     movement = TreasuryMovement.objects.get(sale_order=order)
     assert movement.invoice_id == docs[Invoice.DTEType.COMPROBANTE_PAGO].id
+
+
+@pytest.mark.django_db
+def test_two_card_swipes_make_two_48(env, pos):
+    order = _order(env)
+
+    inv = _checkout(order, pos, payments=[
+        _alloc(pos["card"], 3000), _alloc(pos["card"], 3000), _alloc(pos["cash"], 4000),
+    ])
+
+    docs = inv.checkout_documents
+    assert [(d.dte_type, d.total) for d in docs] == [
+        (Invoice.DTEType.BOLETA, D("4000")),
+        (Invoice.DTEType.COMPROBANTE_PAGO, D("3000")),
+        (Invoice.DTEType.COMPROBANTE_PAGO, D("3000")),
+    ]
+    b39, first48, second48 = docs
+    movements = list(TreasuryMovement.objects.filter(sale_order=order).order_by("id"))
+    assert [(m.amount, m.invoice_id) for m in movements] == [
+        (D("3000"), first48.id), (D("3000"), second48.id), (D("4000"), b39.id),
+    ]
+    for doc in docs:
+        assert doc.total_net + doc.total_tax == doc.total
+        assert doc.lines.count() == 1
+    assert sum((d.lines.get().quantity for d in docs), D(0)) == D("4")

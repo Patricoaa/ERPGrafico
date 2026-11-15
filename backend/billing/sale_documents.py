@@ -2,7 +2,7 @@
 
 El ERP solo registra los DTE de boleta: las boletas (39) y los comprobantes de
 pago (48) los emite el proveedor del terminal. Una venta de clase boleta cobrada
-con terminal integrado es un 48; el resto (efectivo, transferencia, saldo
+con terminal integrado es un 48 por cada porción integrada; el resto (efectivo, transferencia, saldo
 impago o a crédito) es un 39.
 """
 
@@ -43,20 +43,24 @@ def plan_sale_documents(
     if document_class != _BOLETA:
         raise ValidationError(f"Clase de documento no reconocida: {document_class}")
 
-    integrated_portions = [p for p in portions if p.integrated]
     other_portions = [p for p in portions if not p.integrated]
-    integrated = min(sum((p.amount for p in integrated_portions), Decimal("0")), order_total)
-    rest = order_total - integrated
 
+    # Un 48 por porción integrada (cada pasada del terminal es una venta TUU), en
+    # orden de entrada y recortada a lo que queda del total. Una porción que
+    # recibe 0 no genera documento: su asignación va al documento principal.
     plans: list[DocumentPlan] = []
-    if integrated > 0:
-        plans.append(DocumentPlan(_COMPROBANTE, integrated, tuple(p.index for p in integrated_portions)))
+    rest = order_total
+    for portion in (p for p in portions if p.integrated):
+        amount = min(portion.amount, rest)
+        if amount > 0:
+            plans.append(DocumentPlan(_COMPROBANTE, amount, (portion.index,)))
+            rest -= amount
     if rest > 0 or not portions:
         plans.append(DocumentPlan(_BOLETA, rest, tuple(p.index for p in other_portions)))
     if not plans:
         # Total cero con porciones: siempre queda un documento principal.
         plans.append(DocumentPlan(_BOLETA, order_total, tuple(p.index for p in portions)))
-    # Mayor monto primero; en empate, la boleta (sort estable sobre la clave).
+    # Mayor monto primero; en empate, la boleta; entre 48 iguales, orden de entrada (sort estable).
     plans.sort(key=lambda d: (-d.amount, d.dte_type != _BOLETA))
     return plans
 
