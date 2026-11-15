@@ -53,6 +53,9 @@ def plan_sale_documents(
         plans.append(DocumentPlan(_COMPROBANTE, integrated, tuple(p.index for p in integrated_portions)))
     if rest > 0 or not portions:
         plans.append(DocumentPlan(_BOLETA, rest, tuple(p.index for p in other_portions)))
+    if not plans:
+        # Total cero con porciones: siempre queda un documento principal.
+        plans.append(DocumentPlan(_BOLETA, order_total, tuple(p.index for p in portions)))
     # Mayor monto primero; en empate, la boleta (sort estable sobre la clave).
     plans.sort(key=lambda d: (-d.amount, d.dte_type != _BOLETA))
     return plans

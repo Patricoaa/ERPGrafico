@@ -83,6 +83,12 @@ def test_no_portions_boleta():
     assert plan_sale_documents("BOLETA", [], D(5000)) == [plan("BOLETA", 5000, ())]
 
 
+def test_zero_total_with_portions_yields_boleta():
+    expected = [plan("BOLETA", 0, (0,))]
+    assert plan_sale_documents("BOLETA", [P(0, False, 0)], D(0)) == expected
+    assert plan_sale_documents("BOLETA", [P(5000, True, 0)], D(0)) == expected
+
+
 def test_unknown_class():
     with pytest.raises(ValidationError):
         plan_sale_documents("NOPE", [], D(1))
@@ -94,7 +100,10 @@ def test_folio_exempt_types():
 
 @pytest.mark.django_db
 def test_folio_exempt_for_session(django_user_model):
-    Account.objects.get_or_create(code=Account.CASH_GROUP_CODE, defaults={"name": "Efectivo", "account_type": AccountType.ASSET})
+    Account.objects.get_or_create(
+        code=Account.CASH_GROUP_CODE,
+        defaults={"name": "Efectivo", "account_type": AccountType.ASSET},
+    )
     acc = Account.objects.create(code="1.1.01.100", name="Caja", account_type=AccountType.ASSET)
     ta = TreasuryAccount.objects.create(name="Caja Física", account_type="CASH", account=acc)
     terminal = POSTerminal.objects.create(name="Caja 1", code="C-1", default_treasury_account=ta)
