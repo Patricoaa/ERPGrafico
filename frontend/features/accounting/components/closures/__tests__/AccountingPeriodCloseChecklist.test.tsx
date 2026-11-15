@@ -286,4 +286,21 @@ describe("AccountingPeriodCloseChecklistModal", () => {
         await press(buttonByText(/Reintentar/))
         expect(m.refetch).toHaveBeenCalledTimes(1)
     })
+
+    it("lists the fiscal reconciliation in Sugeridos with a link, without gating the close button", () => {
+        m.status = makeStatus({ tax_period_closed: true, fiscal_mismatches: { count: 3 } })
+        mount()
+        const suggested = screen.getByRole("region", { name: "Sugeridos" })
+        expect(within(suggested).getByText("Cuadre fiscal sin diferencias")).toBeInTheDocument()
+        expect(suggested).toHaveTextContent("3 diferencia(s) con TUU o el SII")
+        expect(within(suggested).getByRole("link", { name: /Ir al cuadre/ })).toHaveAttribute("href", "/accounting/rcv/reconciliation")
+        expect(buttonByText(/Confirmar Cierre/)).not.toBeDisabled()
+    })
+
+    it("treats a missing fiscal_mismatches as zero differences", () => {
+        mount()
+        const suggested = screen.getByRole("region", { name: "Sugeridos" })
+        expect(within(suggested).getByText("Cuadre fiscal sin diferencias")).toBeInTheDocument()
+        expect(within(suggested).queryByRole("link", { name: /Ir al cuadre/ })).toBeNull()
+    })
 })

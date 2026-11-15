@@ -22,6 +22,8 @@ export const accountingPeriodStatusSchema = z.object({
     draft_invoices: z.array(pendingDocumentSchema),
     unposted_payrolls: z.array(pendingDocumentSchema),
     unconfirmed_statements: z.array(pendingDocumentSchema),
+    // Ausente en respuestas antiguas: se trata como 0 diferencias.
+    fiscal_mismatches: z.object({ count: z.number() }).optional(),
     period_exists: z.boolean(),
     period_status: z.string(),
     tax_period_closed: z.boolean(),

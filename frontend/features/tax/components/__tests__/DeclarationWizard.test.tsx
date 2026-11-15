@@ -1,4 +1,4 @@
-import { render, screen, act, fireEvent } from "@testing-library/react"
+import { render, screen, act, fireEvent, within } from "@testing-library/react"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
 
@@ -345,6 +345,16 @@ describe("DeclarationWizard — borradores y footer", () => {
         m.calculateTax.mockResolvedValue({ ...CALC, drafts_summary: { invoices: [], entries: [ENTRY_DRAFT] } })
         await mount()
         expect(screen.getByRole("region", { name: "Sugeridos" })).toHaveTextContent("Sin asientos en borrador")
+        expect(buttonByText(/Siguiente/)).not.toBeDisabled()
+    })
+
+    it("las diferencias del cuadre fiscal se sugieren con enlace y no bloquean", async () => {
+        m.period = makePeriod(null)
+        m.calculateTax.mockResolvedValue({ ...CALC, fiscal_mismatches: { count: 2 } })
+        await mount()
+        const suggested = screen.getByRole("region", { name: "Sugeridos" })
+        expect(suggested).toHaveTextContent("2 diferencia(s) con TUU o el SII")
+        expect(within(suggested).getByRole("link", { name: /Ir al cuadre/ })).toHaveAttribute("href", "/accounting/rcv/reconciliation")
         expect(buttonByText(/Siguiente/)).not.toBeDisabled()
     })
 

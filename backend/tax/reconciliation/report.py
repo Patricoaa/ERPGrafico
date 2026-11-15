@@ -42,6 +42,26 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
     }
 
 
+MISMATCH_STATUSES = (MatchStatus.ONLY_EXTERNAL, MatchStatus.AMOUNT_DIFF, MatchStatus.TYPE_DIFF, MatchStatus.AMBIGUOUS)
+
+
+def fiscal_mismatch_counts(year: int, month: int) -> dict:
+    """Diferencias del cuadre (RCV + ventas TUU) del mes; 2 consultas agregadas fijas.
+
+    ``ONLY_ERP`` no se cuenta: el RCV puede llegar tarde.
+    """
+    first = date(year, month, 1)
+    lo = _local_midnight(first)
+    hi = _local_midnight(date(year + (month == 12), month % 12 + 1, 1))
+    by_status = {str(s): 0 for s in MISMATCH_STATUSES}
+    rcv = RCVDocument.objects.filter(period=f"{year}{month:02d}", match_status__in=MISMATCH_STATUSES)
+    sales = TerminalSale.objects.filter(transaction_at__gte=lo, transaction_at__lt=hi, match_status__in=MISMATCH_STATUSES)
+    for qs in (rcv, sales):
+        for row in qs.values("match_status").annotate(n=Count("id")).order_by():
+            by_status[str(row["match_status"])] += row["n"]
+    return {"count": sum(by_status.values()), "by_status": by_status}
+
+
 def _local_midnight(day: date) -> datetime:
     return timezone.make_aware(datetime.combine(day, time.min))
 

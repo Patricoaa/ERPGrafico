@@ -181,6 +181,8 @@ class F29CalculationService:
             # Remanente is an asset, so Debit - Credit
             vat_credit_carryforward = total_debit - total_credit
 
+        from .reconciliation.report import fiscal_mismatch_counts
+
         # Detect Draft Documents (Advisory)
         draft_invoices = Invoice.objects.filter(
             date__gte=start_date, date__lt=end_date, status=Invoice.Status.DRAFT
@@ -209,6 +211,7 @@ class F29CalculationService:
             "vat_credit": vat_credit,
             "vat_credit_carryforward": vat_credit_carryforward,
             "tax_rate": tax_rate,
+            "fiscal_mismatches": fiscal_mismatch_counts(year, month),
             "drafts_summary": {
                 "invoices": [
                     {
@@ -1213,6 +1216,8 @@ class AccountingPeriodService:
             .order_by("statement_date", "id")[:cap]
         ]
 
+        from .reconciliation.report import fiscal_mismatch_counts
+
         # Build checklist
         checklist = {
             "tax_period_id": tax_period_id,
@@ -1220,6 +1225,7 @@ class AccountingPeriodService:
             "draft_invoices": draft_invoices,
             "unposted_payrolls": unposted_payrolls,
             "unconfirmed_statements": unconfirmed_statements,
+            "fiscal_mismatches": fiscal_mismatch_counts(year, month),
             "period_exists": period is not None,
             "period_status": period.status if period else "NOT_CREATED",
             "tax_period_closed": tax_closed,

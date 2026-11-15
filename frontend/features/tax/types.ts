@@ -79,6 +79,7 @@ export interface TaxCalculationData {
     sales_exempt_by_dte?: DteBreakdownItem[]
     purchases_taxed_by_dte?: DteBreakdownItem[]
     purchases_exempt_by_dte?: DteBreakdownItem[]
+    fiscal_mismatches?: { count: number }
     drafts_summary?: {
         invoices: {
             id: number

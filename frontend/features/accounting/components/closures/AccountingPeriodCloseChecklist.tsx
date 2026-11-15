@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { BaseModal, Banner, CancelButton, SubmitButton, Skeleton, EmptyState, Section, type SectionChecklistItem, type SectionChecklistDocumentLabel } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { ClipboardCheck, FileText } from 'lucide-react'
+import { ClipboardCheck, FileText, Scale } from 'lucide-react'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { getEntityMetadata } from '@/lib/entity-registry'
 import { DeclarationWizard } from '@/features/tax'
@@ -41,6 +41,7 @@ function zeroStateAction(label: SectionChecklistDocumentLabel, text: string): Se
 
 function buildItems(status: AccountingPeriodStatus, openF29: () => void): { required: SectionChecklistItem[]; suggested: SectionChecklistItem[] } {
     const pendingPayrolls = Math.max(status.payroll_count - status.payroll_posted_count, 0)
+    const fiscalMismatches = status.fiscal_mismatches?.count ?? 0
     const pendingStatements = Math.max(status.reconciliation_count - status.reconciliation_confirmed_count, 0)
 
     return {
@@ -87,6 +88,15 @@ function buildItems(status: AccountingPeriodStatus, openF29: () => void): { requ
                     : 'Sin conciliaciones bancarias en el período',
                 action: status.reconciliation_count === 0 ? zeroStateAction('treasury.bankstatement', 'Ir a conciliaciones') : undefined,
                 pending: { label: 'treasury.bankstatement', documents: status.unconfirmed_statements, total: pendingStatements },
+            },
+            {
+                key: 'fiscal',
+                title: 'Cuadre fiscal sin diferencias',
+                passed: fiscalMismatches === 0,
+                detail: fiscalMismatches > 0 ? `${fiscalMismatches} diferencia(s) con TUU o el SII` : undefined,
+                action: fiscalMismatches > 0
+                    ? { text: 'Ir al cuadre', href: '/accounting/rcv/reconciliation', variant: 'ghost', icon: Scale }
+                    : undefined,
             },
         ],
     }
