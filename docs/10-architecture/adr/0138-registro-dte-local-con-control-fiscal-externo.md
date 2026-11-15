@@ -102,6 +102,26 @@ La evaluación (2026-11-15) encontró que no conviene quedarse con un solo regis
 - **Completar borradores diferidos:** un `RCVDocument` `ONLY_EXTERNAL` de compra con el mismo RUT que un `Invoice` `DRAFT` y un total parecido se sugiere como su folio. Si el usuario confirma, se asignan folio y fecha y se emite (`confirm_invoice`).
 - **Registrar desde RCV:** un `ONLY_EXTERNAL` sin borrador asociado crea un borrador de `Invoice` prellenado (contacto por RUT, folio, fecha, neto, IVA). El usuario completa la OC o la cuenta de gasto.
 - Ninguna de estas acciones emite ni contabiliza sin la confirmación del usuario.
+- **Alcance:** sin OC no hay borrador. El modelo `Invoice` trata como venta a toda factura sin OC (`is_sale_document`), así que un borrador de compra se crea solo desde una OC.
+
+## Resolución de preguntas abiertas
+
+Decisiones del usuario (2026-11-15) y valores fijados al implementar:
+
+- **Pago mixto con boleta:** las líneas se reparten en proporción al monto de cada documento. La cantidad lleva 2 decimales y el último documento absorbe el redondeo. Un pago mixto da dos documentos (48 + 39); el neto de cada uno es proporcional y el IVA es `monto − neto`, de modo que el asiento cuadra.
+- **Pago único:** el movimiento se asocia al documento cuyo monto paga, no siempre al principal.
+- **Venta de total cero:** igual genera un documento (toda venta se registra).
+- **Anticipos:** si al dividir un documento los anticipos sin vincular superan su monto, se rechaza («Los anticipos de la orden superan el monto del documento; regístrelo sin dividir.»).
+- **Histórico:** se cuadra desde una fecha configurable (`fiscal_match_start_date`). Los documentos anteriores no se evalúan ni se modifican.
+- **Ventana TUU:** 15 minutos. **Tolerancia de monto:** 0 (CLP enteros). **«Total parecido»** para completar borradores: diferencia ≤ 2 %.
+- **Boleta exenta con terminal integrado:** queda como 41 y no se convierte en 48. Si TUU dice 48, el cuadre la marca `TYPE_DIFF`.
+- **TUU, competidores en el borde de la ventana:** ventas anteriores a la fecha de inicio pero dentro de la ventana siguen compitiendo; ante duda el resultado es `AMBIGUOUS`, nunca un vínculo erróneo.
+- **Facturas ya vinculadas fuera de la corrida:** no se reasignan (ni las manuales ni las automáticas de otra corrida).
+- **RCV, claves duplicadas:** si hay más de un documento ERP con la misma clave fiscal, el resultado es `AMBIGUOUS`.
+- **Notas de crédito:** se comparan por monto absoluto. El signo no está verificado con datos reales del SII.
+- **Permisos:** todos los endpoints de cuadre exigen `tax.change_taxperiod`; el reporte (`GET`) exige `tax.view_taxperiod`.
+- **Compuerta F29:** `fiscal_mismatches` también se incluye en la respuesta de `calculate` del F29, porque el wizard lee esa respuesta.
+- **D8:** `create-draft` vincula el borrador nuevo al RCV para que deje de aparecer como `ONLY_EXTERNAL` (sigue bloqueando el F29 como borrador). `confirm-draft` exige en el servidor el mismo RUT y el mismo tipo SII (`sii_code`) entre borrador y documento RCV, porque confirmar contabiliza de forma irreversible.
 
 ## Alternativas descartadas
 

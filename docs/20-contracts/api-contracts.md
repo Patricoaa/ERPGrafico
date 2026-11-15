@@ -142,6 +142,14 @@ Response schema (detail):
 
 Base: `/api/accounting/`
 
+### rcv-documents/ (RCVDocument)
+
+```
+GET    /api/accounting/rcv-documents/?match_status=   filtro por estado de cuadre (ChoiceField MatchStatus; valor desconocido → 400)
+```
+
+Resto del recurso: ver `accounting/rcv_views.py`. El cuadre ERP ↔ RCV vive en `/api/tax/reconciliation/` (sección tax).
+
 ### accounts/
 
 ```
@@ -262,7 +270,7 @@ PATCH  /api/billing/invoices/{id}/           update (limited — use actions for
 GET    /api/billing/invoices/{id}/cancel_impact/   preview impacto de cancelación
 POST   /api/billing/invoices/check_folio/         valida folio disponible (detail=False)
 POST   /api/billing/invoices/create_from_order/   crea factura desde una orden (detail=False)
-POST   /api/billing/invoices/pos_checkout/        checkout POS (detail=False)
+POST   /api/billing/invoices/pos_checkout/        checkout POS (detail=False). `dte_type` es la clase de documento (BOLETA|BOLETA_EXENTA|FACTURA|FACTURA_EXENTA); la respuesta agrega `documents` (un pago mixto puede dar 48 + 39; ADR-0138 D3)
 POST   /api/billing/invoices/request_credit/      solicitud de crédito (detail=False)
 POST   /api/billing/invoices/{id}/confirm/        confirma/marca POSTED
 POST   /api/billing/invoices/{id}/annul/          anula (genera NOTA_CREDITO)
@@ -1098,6 +1106,28 @@ Key computed fields: `net_taxed_sales`, `net_taxed_purchases`, `vat_debit`, `vat
 GET    /api/tax/payments/          list
 GET    /api/tax/payments/{id}/     detail
 ```
+
+### reconciliation/ (cuadre fiscal, ADR-0138)
+
+Escrituras y candidatos exigen `tax.change_taxperiod`; el reporte exige `tax.view_taxperiod`. Nunca modifican documentos `POSTED`.
+
+```
+GET    /api/tax/reconciliation/?year=&month=                                reporte del período (incluye conteos por MatchStatus)
+POST   /api/tax/reconciliation/terminal/run/                                cuadra ventas TUU del mes (body: year, month)
+POST   /api/tax/reconciliation/rcv/run/                                     cuadra RCV del mes (body: year, month)
+GET    /api/tax/reconciliation/terminal-sales/{id}/candidates/              facturas candidatas
+POST   /api/tax/reconciliation/terminal-sales/{id}/match/                   vínculo manual (body: invoice)
+POST   /api/tax/reconciliation/terminal-sales/{id}/unmatch/                 quita el vínculo
+GET    /api/tax/reconciliation/rcv-documents/{id}/candidates/               facturas candidatas
+POST   /api/tax/reconciliation/rcv-documents/{id}/match/                    vínculo manual
+POST   /api/tax/reconciliation/rcv-documents/{id}/unmatch/                  quita el vínculo
+GET    /api/tax/reconciliation/rcv-documents/{id}/draft-suggestions/        borradores de compra del mismo RUT y tipo con total parecido (≤ 2 %)
+GET    /api/tax/reconciliation/rcv-documents/{id}/purchase-orders/          OC elegibles para crear borrador
+POST   /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/            asigna folio y emite el borrador (mismo RUT y tipo SII; Idempotency-Key)
+POST   /api/tax/reconciliation/rcv-documents/{id}/create-draft/             crea borrador desde una OC y lo vincula (Idempotency-Key)
+```
+
+`fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`) también viaja en `status_check` y en la respuesta de calculate del F29.
 
 ---
 
