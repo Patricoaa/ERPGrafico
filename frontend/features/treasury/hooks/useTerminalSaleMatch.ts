@@ -3,9 +3,7 @@ import { treasuryApi } from '../api/treasuryApi'
 import { TERMINAL_SALES_KEYS } from './queryKeys'
 import { showApiError } from '@/lib/errors'
 import { staleTime } from '@/lib/query-config'
-
-/** Prefijo de las queries del cuadre fiscal (las pantallas de cuadre lo reutilizan). */
-const FISCAL_RECONCILIATION_KEY = ['fiscal-reconciliation'] as const
+import { FISCAL_RECONCILIATION_KEY } from '@/lib/fiscal-match'
 
 export function useTerminalSaleCandidates(saleId: number, enabled: boolean) {
     const { data, isLoading, isError } = useQuery({

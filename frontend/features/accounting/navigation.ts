@@ -64,6 +64,15 @@ export const RCV_SUB_TABS: NavTabConfig[] = [
     headerDescription: "Historial de importaciones del RCV desde el SII.",
     metadataTitle: "Importaciones RCV | ERPGrafico",
   },
+  {
+    value: "reconciliation",
+    label: "Cuadre",
+    href: "/accounting/rcv/reconciliation",
+    iconName: "scale",
+    headerTitle: "Cuadre fiscal",
+    headerDescription: "ERP frente a TUU y el RCV del SII, por período.",
+    metadataTitle: "Cuadre fiscal | ERPGrafico",
+  },
 ]
 
 // ============================================
@@ -137,6 +146,15 @@ export function getAccountingTab(value: string): NavTabConfig | undefined {
 /** Busca sub-tab del Registro de Compras y Ventas */
 export function getRcvSubTab(value: string): NavTabConfig | undefined {
   return findTabConfig(RCV_SUB_TABS, value)
+}
+
+/** Pestaña y sub-pestaña activas de Contabilidad según la ruta (`/accounting/<tab>/<sub>`). */
+export function resolveAccountingNav(pathname: string): { activeValue: string; subActiveValue: string | undefined } {
+  const segments = pathname.split("/").filter(Boolean)
+  const currentSegment = segments[1] || "ledger"
+  if (currentSegment === "settings") return { activeValue: "config", subActiveValue: segments[2] || "vat-rates" }
+  if (currentSegment === "rcv") return { activeValue: "rcv", subActiveValue: segments[2] || "purchases" }
+  return { activeValue: currentSegment, subActiveValue: undefined }
 }
 
 /** Busca sub-tab de Configuración */

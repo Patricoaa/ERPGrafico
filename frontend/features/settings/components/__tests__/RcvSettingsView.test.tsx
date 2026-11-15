@@ -37,6 +37,8 @@ const baseSettings = {
     next_period: { year: 2026, month: 10 },
     estimated_monthly_queries: 8,
     total_monthly_quota: 10,
+    fiscal_match_start_date: "2026-10-01",
+    terminal_match_window_minutes: 15,
 }
 
 const apiKey = {
@@ -105,5 +107,13 @@ describe("RcvSettingsView", () => {
         render(<RcvSettingsView />)
         expect(screen.queryByRole("button", { name: "Cambiar" })).toBeNull()
         expect(screen.queryByRole("button", { name: "Agregar API key" })).toBeNull()
+    })
+
+    it("muestra la sección Cuadre fiscal con la ventana TUU", () => {
+        render(<RcvSettingsView />)
+        expect(screen.getByText("Cuadre fiscal")).toBeTruthy()
+        expect(screen.getByText("Fecha de inicio del cuadre")).toBeTruthy()
+        const group = screen.getByRole("group", { name: "Ventana del cuadre TUU (minutos)" })
+        expect((group.querySelector("input") as HTMLInputElement).value).toBe("15")
     })
 })

@@ -10,3 +10,6 @@ export {
   useReopenPeriod,
 } from './useTaxMutations'
 export { TAX_KEYS } from './queryKeys'
+export { useFiscalReconciliation, useRunReconciliation } from './useFiscalReconciliation'
+export { useRcvDocumentCandidates, useMatchRcvDocument, useUnmatchRcvDocument } from './useRcvMatch'
+export { RECONCILIATION_KEYS } from './reconciliationKeys'

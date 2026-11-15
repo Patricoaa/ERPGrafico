@@ -1,5 +1,8 @@
 import type { BadgeIntent } from "@/lib/badge-resolvers"
 
+/** Prefijo de todas las queries del cuadre fiscal (TUU, RCV y reporte del período). */
+export const FISCAL_RECONCILIATION_KEY = ["fiscal-reconciliation"] as const
+
 /** Estado de cuadre fiscal de un registro externo (TUU / RCV). `""` = no evaluado. */
 export type MatchStatus =
     | "MATCHED"

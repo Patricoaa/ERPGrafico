@@ -8,6 +8,8 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { Button } from "@/components/ui/button"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { matchStatusValue } from "@/lib/fiscal-match"
+import { useMatchRcvDocument, useRcvDocumentCandidates, useUnmatchRcvDocument } from "@/features/tax"
 import { useRcvDocument } from "../../hooks/useRcvDocuments"
 import { formatRcvDteType, rcvAcknowledgementStatus } from "../../entity-view/rcvDocument.entity"
 import { formatRcvPeriod } from "../../entity-view/rcvImport.entity"
@@ -118,6 +120,8 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
                 />
             </Section>
 
+            <RcvErpDocumentSection doc={doc} />
+
             <RcvImportSection doc={doc} />
 
             <Section title="Datos originales">
@@ -136,6 +140,63 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
                 />
             </Section>
         </div>
+    )
+}
+
+/** Cuadre fiscal: factura o nota del ERP vinculada, o candidatos para vincular a mano. */
+function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
+    const { openEntity } = useGlobalModalActions()
+    const match = useMatchRcvDocument()
+    const unmatch = useUnmatchRcvDocument()
+    const linked = doc.matched_invoice !== null
+    const { candidates, isLoading } = useRcvDocumentCandidates(doc.id, !linked)
+    const status = matchStatusValue(doc.match_status, doc.match_status_display)
+
+    return (
+        <Section title="Documento ERP">
+            <Stat title="Cuadre fiscal" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
+            {linked ? (
+                <Section.Row
+                    title="Documento vinculado"
+                    value={
+                        <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("billing.invoice", doc.matched_invoice as number)}>
+                            {doc.matched_invoice_display ?? `#${doc.matched_invoice}`}
+                        </Button>
+                    }
+                    actions={
+                        doc.matched_manually ? (
+                            <Button type="button" size="sm" variant="outline" disabled={unmatch.isPending} onClick={() => void unmatch.mutateAsync(doc.id).catch(() => undefined)}>
+                                Desvincular
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            ) : isLoading ? (
+                <Stat title="Candidatos" value="Buscando…" plain />
+            ) : candidates.length === 0 ? (
+                <Stat title="Candidatos" value="Sin documentos candidatos" plain />
+            ) : (
+                candidates.map((c) => (
+                    <Section.Row
+                        key={c.id}
+                        title={c.display_id}
+                        description={`${c.dte_type} · ${formatDate(c.date)}`}
+                        value={<MoneyDisplay amount={c.total} currency="CLP" />}
+                        actions={
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={match.isPending}
+                                onClick={() => void match.mutateAsync({ docId: doc.id, invoiceId: c.id }).catch(() => undefined)}
+                            >
+                                Vincular
+                            </Button>
+                        }
+                    />
+                ))
+            )}
+        </Section>
     )
 }
 
