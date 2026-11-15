@@ -17,6 +17,7 @@ from tax.services import TaxPeriodService
 from treasury.models import TreasuryAccount, TreasuryMovement
 
 from .invoicing import InvoicingService
+from .line_split import LineShare
 from .models import Invoice
 
 
@@ -495,11 +496,26 @@ class BillingService:
         status: str = Invoice.Status.POSTED,
         number: str = None,
         date=None,
+        *,
+        amount: Decimal | None = None,
+        line_shares: list[LineShare] | None = None,
+        net_tax_discount: tuple[Decimal, Decimal, Decimal] | None = None,
+        folio_exempt: bool = False,
+        link_advances: bool = True,
     ):
         """
         Creates a Sale Invoice (Factura/Boleta) from a SaleOrder.
+
+        ADR-0138 D3:
+        - Sin `amount` la factura es espejo completo de la OV.
+        - Con `amount` factura una porción: `total=amount`, `(neto, IVA, descuento)` =
+          `net_tax_discount` y las líneas salen de `line_shares`.
+        - El ERP no inventa folios. Sin `number` el documento baja a borrador, salvo que
+          `folio_exempt` y el tipo lo emita el proveedor (boleta / comprobante): queda POSTED.
+        - `link_advances=False` no concilia los anticipos de la OV con este documento.
         """
         from billing.dte_policy import validate_configured_dte_type
+        from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 
         validate_configured_dte_type(side="emit", dte_type=dte_type)
 
@@ -511,18 +527,23 @@ class BillingService:
             # Allow from draft if POS immediate
             pass
 
-        from core.services import SequenceService
-
-        # Auto-generate folio for Boletas if empty
-        if dte_type == Invoice.DTEType.BOLETA and not number:
-            number = SequenceService.get_next_number(
-                Invoice, filter_kwargs={"dte_type": Invoice.DTEType.BOLETA}
+        if amount is not None and (line_shares is None or net_tax_discount is None):
+            raise ValidationError(
+                "Una factura por porción requiere line_shares y net_tax_discount."
+            )
+        if amount is not None and net_tax_discount[0] + net_tax_discount[1] != amount:
+            raise ValidationError(
+                f"El neto más el IVA de la porción ({net_tax_discount[0]} + {net_tax_discount[1]}) "
+                f"no iguala su monto ({amount})."
             )
 
         # ADR-0084: emitida (POSTED) exige folio. Sin folio la factura nace en borrador
         # (folio pendiente; su asiento queda en borrador hasta confirm_invoice).
+        # ADR-0138 D3: boletas y comprobantes POS los emite el proveedor; su folio llega
+        # después, así que con `folio_exempt` quedan POSTED sin número.
         if status == Invoice.Status.POSTED and not number:
-            status = Invoice.Status.DRAFT
+            if not (folio_exempt and dte_type in FOLIO_EXEMPT_DTE_TYPES):
+                status = Invoice.Status.DRAFT
 
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
@@ -545,6 +566,15 @@ class BillingService:
         if number:
             BillingService._validate_document_uniqueness(number, dte_type)
 
+        if amount is None:
+            total_net, total_tax, total_discount = (
+                order.total_net, order.total_tax, order.total_discount_amount,
+            )
+            total = order.total
+        else:
+            total_net, total_tax, total_discount = net_tax_discount
+            total = amount
+
         # 1. Create Invoice Record
         invoice = Invoice.objects.create(
             dte_type=dte_type,
@@ -552,14 +582,17 @@ class BillingService:
             date=date or timezone.now().date(),
             sale_order=order,
             payment_method=payment_method,
-            total_net=order.total_net,
-            total_tax=order.total_tax,
-            total_discount_amount=order.total_discount_amount,
-            total=order.total,
+            total_net=total_net,
+            total_tax=total_tax,
+            total_discount_amount=total_discount,
+            total=total,
             status=status,
         )
-        # ADR-0081: líneas propias (M4a: espejo de la orden completa)
-        InvoicingService.mirror_order_lines(invoice, order)
+        if amount is None:
+            # ADR-0081: líneas propias (M4a: espejo de la orden completa)
+            InvoicingService.mirror_order_lines(invoice, order)
+        else:
+            InvoicingService.create_share_lines(invoice, order, line_shares)
 
         # 2. Accounting Entry via Mapper
         settings = AccountingSettings.get_solo()
@@ -585,8 +618,11 @@ class BillingService:
         invoice.save()
 
         # Check for advances and link them
-        advances = order.payments.filter(invoice__isnull=True)
-        total_advanced = sum(p.amount for p in advances)
+        if link_advances:
+            advances = order.payments.filter(invoice__isnull=True)
+            total_advanced = sum(p.amount for p in advances)
+        else:
+            advances, total_advanced = [], 0
 
         if total_advanced > 0:
             doc_id = invoice.display_id
