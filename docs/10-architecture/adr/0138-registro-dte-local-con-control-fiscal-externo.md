@@ -40,8 +40,8 @@ La evaluación (2026-11-15) encontró que no conviene quedarse con un solo regis
 
 ### D2. Clave fiscal de `Invoice` (fase 1)
 
-- Un selector `fiscal_key(invoice)` en `billing/selectors.py` devuelve `(direction, sii_code, folio:int | None, counterparty_rut_normalized)`.
-  - `direction` se deduce de una sola forma: venta si hay `sale_order` o si es una nota cuya `corrected_invoice` es de venta; compra en el resto de los casos.
+- Un selector `fiscal_key(invoice)` en `billing/fiscal_key.py` devuelve `(direction, sii_code, folio:int | None, counterparty_rut_normalized)`.
+  - `direction` se deduce de una sola forma, en este orden: compra si hay `purchase_order` o es `PURCHASE_INV`; venta si hay `sale_order`; si es una nota con `corrected_invoice`, la dirección de esa factura; **venta en el resto de los casos** (una factura suelta, sin OV ni OC, es de venta). La misma regla existe como expresión ORM (`fiscal_direction_expression`).
   - El RUT se normaliza con el mismo normalizador del RCV (`accounting/integrations/rcv_normalizer.py`).
 - `PURCHASE_INV` y `FACTURA` + `purchase_order` producen la misma clave (`purchase`, 33). Unificar el enum es una migración aparte y queda fuera de este ADR.
 
