@@ -1,3 +1,4 @@
+export { CheckoutDocumentsList } from './CheckoutDocumentsList'
 export { POSApprovalCard } from './POSApprovalCard'
 export { Cart } from './Cart'
 export { CartItem } from './CartItem'

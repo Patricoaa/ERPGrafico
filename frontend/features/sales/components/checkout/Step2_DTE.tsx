@@ -56,7 +56,7 @@ export function Step2_DTE({
     }, [dateString, dteData.date, dteData.type, setDteData, dteData])
 
     const dteOptions = [
-        { id: "BOLETA", label: "Boleta Electrónica", code: "39", description: "Venta a consumidor final.", icon: Receipt },
+        { id: "BOLETA", label: "Boleta Electrónica", code: "39", description: "Consumidor final. Si se cobra con terminal integrado se registra como Comprobante de Pago (48).", icon: Receipt },
         { id: "FACTURA", label: "Factura Electrónica", code: "33", description: "Venta afecta a IVA con crédito fiscal.", icon: FileText },
         { id: "BOLETA_EXENTA", label: "Boleta Exenta", code: "41", description: "Venta a consumidor final exenta de IVA.", icon: Receipt, tone: "warning" as const },
         { id: "FACTURA_EXENTA", label: "Factura Exenta", code: "34", description: "Venta exenta de IVA.", icon: FileText, tone: "warning" as const },

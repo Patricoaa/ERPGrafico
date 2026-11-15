@@ -181,6 +181,13 @@ export interface AccountingSettings {
     last_closing_date: string | null
 }
 
+export interface CheckoutDocument {
+    id: number
+    display_id: string
+    dte_type: string
+    total: string
+}
+
 export interface CheckoutResponse {
     order_id: number
     order_number: string
@@ -189,6 +196,8 @@ export interface CheckoutResponse {
     payment_id?: number
     delivery_id?: number
     status: string
+    /** Documentos generados por el cobro; 2 o más cuando el pago es mixto. */
+    documents?: CheckoutDocument[]
 }
 
 export interface CreditApprovalTask {
