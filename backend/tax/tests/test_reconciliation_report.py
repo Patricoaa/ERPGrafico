@@ -129,7 +129,7 @@ def test_only_erp_excludes_purchase_boletas():
     _invoice(Invoice.DTEType.PURCHASE_INV, 3000, day=1)  # antes del inicio
     _invoice(Invoice.DTEType.PURCHASE_INV, 3000, number="")  # sin folio
     _invoice(Invoice.DTEType.PURCHASE_INV, 3000, status=Invoice.Status.DRAFT)
-    sale_missing = _invoice(Invoice.DTEType.FACTURA, 4000, day=20)
+    _invoice(Invoice.DTEType.FACTURA, 4000, day=20)  # venta sin RCV de ventas importado
     _invoice(Invoice.DTEType.BOLETA, 4000)  # boleta de venta: va por resumen
 
     report = fiscal_reconciliation_report(2026, 10)
@@ -137,12 +137,27 @@ def test_only_erp_excludes_purchase_boletas():
     assert report["documents"]["purchase"] == {
         MatchStatus.MATCHED: 1, MatchStatus.ONLY_EXTERNAL: 1, MatchStatus.ONLY_ERP: 1,
     }
-    assert report["documents"]["sale"] == {MatchStatus.ONLY_ERP: 1}
-    assert [i["id"] for i in report["only_erp"]] == [missing.id, sale_missing.id]
+    # Sin importación RCV de ventas no se sabe qué falta en el SII: null, y sin listar.
+    assert report["documents"]["sale"] == {MatchStatus.ONLY_ERP: None}
+    assert [i["id"] for i in report["only_erp"]] == [missing.id]
     assert report["only_erp"][0] == {
         "id": missing.id, "label": f"Factura de Compra {missing.number}",
         "amount": str(missing.total), "date": "2026-10-12",
     }
+
+
+def test_only_erp_counts_sales_once_imported():
+    set_match_settings(date(2026, 10, 5))
+    _import(direction=P, status=RCVImport.Status.FAILED)
+    _import(direction=S)
+    _invoice(Invoice.DTEType.PURCHASE_INV, 1000)
+    sale_missing = _invoice(Invoice.DTEType.FACTURA, 4000, day=20)
+
+    report = fiscal_reconciliation_report(2026, 10)
+
+    assert report["documents"]["purchase"] == {MatchStatus.ONLY_ERP: None}
+    assert report["documents"]["sale"] == {MatchStatus.ONLY_ERP: 1}
+    assert [i["id"] for i in report["only_erp"]] == [sale_missing.id]
 
 
 def test_only_erp_zero_without_start_date():

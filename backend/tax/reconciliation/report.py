@@ -32,10 +32,11 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
     first = date(year, month, 1)
     last = date(year, month, calendar.monthrange(year, month)[1])
     lo, hi = _local_midnight(first), _local_midnight(last + timedelta(days=1))
-    only_erp = _only_erp_documents(first, last, start)
+    imported = _imported_directions(year, month)
+    only_erp = _only_erp_documents(first, last, start, imported)
     return {
         "start_date": start.isoformat() if start else None,
-        "documents": _documents(f"{year}{month:02d}", only_erp),
+        "documents": _documents(f"{year}{month:02d}", only_erp, imported),
         "only_erp": [_item(i) for i in only_erp.order_by("date", "id")[:ONLY_ERP_CAP]] if only_erp is not None else [],
         "summaries": _summaries(year, month, first, last, lo, hi),
         "terminal": _terminal(first, last, lo, hi, start, settings.terminal_match_window_minutes),
@@ -77,9 +78,20 @@ def _annotated_invoices() -> QuerySet[Invoice]:
     return Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression())
 
 
-def _only_erp_documents(first: date, last: date, start: date | None) -> QuerySet[Invoice] | None:
+def _imported_directions(year: int, month: int) -> set[str]:
+    """Direcciones fiscales con alguna importación RCV exitosa del período."""
+    rows = RCVImport.objects.filter(year=year, month=month, status=RCVImport.Status.SUCCESS).values_list(
+        "direction", flat=True
+    ).distinct()
+    return {RCV_TO_FISCAL_DIRECTION[d] for d in rows}
+
+
+def _only_erp_documents(
+    first: date, last: date, start: date | None, imported: set[str]
+) -> QuerySet[Invoice] | None:
+    """Facturas sin documento RCV; solo en direcciones ya importadas (si no, no se sabe qué falta)."""
     since = _period_start(first, last, start)
-    if since is None:
+    if since is None or not imported:
         return None
     linked = RCVDocument.objects.filter(matched_invoice=OuterRef("pk"))
     return (
@@ -90,13 +102,17 @@ def _only_erp_documents(first: date, last: date, start: date | None) -> QuerySet
             date__lte=last,
             sii__in=DOCUMENT_SII_CODES,
             number__regex=FOLIO_REGEX,
+            fiscal_direction__in=imported,
         )
         .filter(~Exists(linked))
     )
 
 
-def _documents(period: str, only_erp: QuerySet[Invoice] | None) -> dict[str, dict[str, int]]:
-    out: dict[str, dict[str, int]] = {"purchase": {}, "sale": {}}
+def _documents(
+    period: str, only_erp: QuerySet[Invoice] | None, imported: set[str]
+) -> dict[str, dict[str, int | None]]:
+    """Conteos por estado; ``ONLY_ERP`` es ``None`` en una dirección sin importación RCV exitosa."""
+    out: dict[str, dict[str, int | None]] = {"purchase": {}, "sale": {}}
     rows = (
         RCVDocument.objects.filter(period=period)
         .values("direction", "match_status")
@@ -105,8 +121,8 @@ def _documents(period: str, only_erp: QuerySet[Invoice] | None) -> dict[str, dic
     )
     for row in rows:
         out[RCV_TO_FISCAL_DIRECTION[row["direction"]]][row["match_status"]] = row["n"]
-    for counts in out.values():
-        counts[MatchStatus.ONLY_ERP] = 0
+    for direction, counts in out.items():
+        counts[MatchStatus.ONLY_ERP] = 0 if direction in imported else None
     if only_erp is not None:
         for row in only_erp.values("fiscal_direction").annotate(n=Count("id")).order_by():
             out[row["fiscal_direction"]][MatchStatus.ONLY_ERP] = row["n"]

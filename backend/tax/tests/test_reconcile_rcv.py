@@ -312,3 +312,29 @@ def test_import_task_skips_failed_and_survives_errors(imp):
 
     assert reconcile.call_count == 1
     assert statuses == [RCVImport.Status.FAILED, RCVImport.Status.SUCCESS]
+
+
+def test_manual_link_to_cancelled_invoice_is_reevaluated(imp):
+    cancelled = purchase_invoice("30", 1000)
+    replacement = purchase_invoice("20", 1000)
+    doc = rcv(imp, 20, 1000, matched_invoice=cancelled, matched_manually=True, match_status=MatchStatus.MATCHED)
+    Invoice.objects.filter(pk=cancelled.pk).update(status=Invoice.Status.CANCELLED)
+
+    run()
+
+    _reload(doc)
+    assert doc.matched_manually is False
+    assert doc.matched_invoice_id == replacement.id
+    assert doc.match_status == MatchStatus.MATCHED
+
+
+def test_manual_link_with_null_invoice_is_reevaluated(imp):
+    inv = purchase_invoice("20", 1000)
+    doc = rcv(imp, 20, 1000, matched_invoice=None, matched_manually=True, match_status=MatchStatus.MATCHED)
+
+    run()
+
+    _reload(doc)
+    assert doc.matched_manually is False
+    assert doc.matched_invoice_id == inv.id
+    assert doc.match_status == MatchStatus.MATCHED

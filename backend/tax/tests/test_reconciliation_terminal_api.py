@@ -103,3 +103,24 @@ def test_endpoints_require_permission(env):
     assert c.get(f"{BASE}/terminal-sales/{sale.pk}/candidates/").status_code == 403
     assert c.post(f"{BASE}/terminal-sales/{sale.pk}/match/", {"invoice_id": doc.pk}, format="json").status_code == 403
     assert c.post(f"{BASE}/terminal-sales/{sale.pk}/unmatch/").status_code == 403
+
+
+def test_concurrent_link_raises_validation_error(env):
+    """Si otra venta enlaza el documento entre la lectura y el guardado, la
+    restricción única se traduce en el mismo error de «vinculado a otra venta»."""
+    from unittest import mock
+
+    from django.core.exceptions import ValidationError
+
+    from tax.reconciliation import terminal
+
+    sale, doc = _sale_and_doc(env)
+    other = make_terminal_sale(env, 5000, local_dt(2026, 11, 10, 12, 1))
+    other.matched_invoice = doc
+    other.save()
+    with mock.patch.object(terminal, "TerminalSale") as stale_read:
+        stale_read.objects.filter.return_value.exclude.return_value.exists.return_value = False
+        with pytest.raises(ValidationError, match="vinculado a otra venta"):
+            terminal.match_terminal_sale(sale, doc)
+    sale.refresh_from_db()
+    assert sale.matched_invoice_id is None and not sale.matched_manually

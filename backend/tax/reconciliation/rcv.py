@@ -1,7 +1,8 @@
 """Cuadre del RCV del SII contra facturas y notas del ERP (ADR-0138 D5).
 
 Solo escribe `matched_invoice` / `match_status` en `RCVDocument`; nunca toca la
-factura emitida (ADR-0091). Las filas con vínculo manual no se recalculan.
+factura emitida (ADR-0091). Las filas con vínculo manual no se recalculan,
+salvo que su factura ya no exista o esté anulada.
 """
 
 import calendar
@@ -48,8 +49,14 @@ def reconcile_rcv_period(
     if start_date is None or last < start_date:
         return {}
 
+    # Un vínculo manual a una factura borrada o anulada ya no protege nada: se reevalúa.
+    stale_or_automatic = (
+        Q(matched_manually=False)
+        | Q(matched_invoice__isnull=True)
+        | Q(matched_invoice__status=Invoice.Status.CANCELLED)
+    )
     selection = RCVDocument.objects.filter(
-        direction=direction, period=f"{year}{month:02d}", matched_manually=False
+        stale_or_automatic, direction=direction, period=f"{year}{month:02d}"
     )
     docs = list(selection.order_by("id"))
     if not docs:
@@ -57,7 +64,7 @@ def reconcile_rcv_period(
     previous = {d.id: d.match_status for d in docs}
     # Limpiar antes de leer los vínculos vigentes: lo que quede enlazado pertenece
     # a filas fuera de esta selección (manuales u otro período) y no se reasigna.
-    selection.update(matched_invoice=None, match_status="")
+    selection.update(matched_invoice=None, match_status="", matched_manually=False)
 
     by_key = _candidates_by_key(RCV_TO_FISCAL_DIRECTION[direction], first, last)
     _assign(docs, by_key)

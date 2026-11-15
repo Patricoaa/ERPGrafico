@@ -276,3 +276,46 @@ def test_query_count_constant(env):
     assert small_result == {MatchStatus.MATCHED: 10}
     assert large_result == {MatchStatus.MATCHED: 40}
     assert len(small) == len(large)
+
+
+def test_manual_link_to_cancelled_invoice_is_reevaluated(env):
+    cancelled = make_pos_document(env, 6000, T0)
+    replacement = make_pos_document(env, 6000, T0 + timedelta(minutes=1))
+    sale = make_terminal_sale(
+        env, 6000, T0 + timedelta(minutes=2), matched_invoice=cancelled,
+        match_status=MatchStatus.MATCHED, matched_manually=True,
+    )
+    Invoice.objects.filter(pk=cancelled.pk).update(status=Invoice.Status.CANCELLED)
+
+    run()
+
+    _reload(sale)
+    assert sale.matched_manually is False
+    assert sale.matched_invoice_id == replacement.id
+    assert sale.match_status == MatchStatus.MATCHED
+
+
+def test_manual_link_with_null_invoice_is_reevaluated(env):
+    inv = make_pos_document(env, 6000, T0)
+    sale = make_terminal_sale(
+        env, 6000, T0 + timedelta(minutes=2), matched_invoice=None,
+        match_status=MatchStatus.MATCHED, matched_manually=True,
+    )
+
+    run()
+
+    _reload(sale)
+    assert sale.matched_manually is False
+    assert sale.matched_invoice_id == inv.id
+    assert sale.match_status == MatchStatus.MATCHED
+
+
+def test_exempt_factura_paid_by_card_matches(env):
+    inv = make_pos_document(env, 6000, T0, dte_type=Invoice.DTEType.FACTURA_EXENTA)
+    sale = make_terminal_sale(env, 6000, T0 + timedelta(minutes=3), document_type=None)
+
+    run()
+
+    _reload(sale)
+    assert sale.match_status == MatchStatus.MATCHED
+    assert sale.matched_invoice_id == inv.id

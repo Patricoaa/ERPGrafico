@@ -1,14 +1,15 @@
 """Cuadre de ventas TUU contra documentos POS emitidos (ADR-0138 D4).
 
 Solo escribe `matched_invoice` / `match_status` en `TerminalSale`; nunca toca el
-documento emitido (ADR-0091). Las filas con vínculo manual no se recalculan.
+documento emitido (ADR-0091). Las filas con vínculo manual no se recalculan,
+salvo que su documento ya no exista o esté anulado.
 """
 
 from collections import Counter, defaultdict
 from datetime import date, datetime, time, timedelta
 
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -23,6 +24,7 @@ SALE_DTE_TYPES = (
     Invoice.DTEType.BOLETA_EXENTA,
     Invoice.DTEType.COMPROBANTE_PAGO,
     Invoice.DTEType.FACTURA,
+    Invoice.DTEType.FACTURA_EXENTA,
 )
 
 
@@ -39,14 +41,14 @@ def reconcile_terminal_sales(start: date, end: date) -> dict[str, int]:
         return {}
 
     selection = TerminalSale.objects.filter(
-        transaction_at__gte=lo, transaction_at__lt=hi, matched_manually=False
+        _stale_or_automatic(), transaction_at__gte=lo, transaction_at__lt=hi
     )
     sales = list(selection)
     if not sales:
         return {}
     # Limpiar antes de leer los vínculos vigentes: lo que quede enlazado pertenece
     # a filas fuera de esta selección (manuales u otro rango) y no se reasigna.
-    selection.update(matched_invoice=None, match_status="")
+    selection.update(matched_invoice=None, match_status="", matched_manually=False)
     taken = set(
         TerminalSale.objects.filter(matched_invoice__isnull=False).values_list("matched_invoice_id", flat=True)
     )
@@ -63,6 +65,16 @@ def reconcile_terminal_sales(start: date, end: date) -> dict[str, int]:
 
     TerminalSale.objects.bulk_update(sales, ["matched_invoice", "match_status"])
     return dict(Counter(s.match_status for s in sales))
+
+
+def _stale_or_automatic() -> Q:
+    """Filas que el recálculo evalúa: automáticas, o manuales cuyo documento ya no
+    existe o fue anulado (ese vínculo dejó de proteger algo)."""
+    return (
+        Q(matched_manually=False)
+        | Q(matched_invoice__isnull=True)
+        | Q(matched_invoice__status=Invoice.Status.CANCELLED)
+    )
 
 
 def _local_midnight(day: date) -> datetime:
@@ -182,13 +194,19 @@ def match_terminal_sale(sale: TerminalSale, invoice: Invoice) -> TerminalSale:
     """Vínculo manual: queda protegido del recálculo (`matched_manually`)."""
     if not _sale_documents().filter(pk=invoice.pk).exists():
         raise ValidationError(_("El documento no es un documento de venta emitido."))
+    taken = _("El documento ya está vinculado a otra venta.")
     if TerminalSale.objects.filter(matched_invoice=invoice).exclude(pk=sale.pk).exists():
-        raise ValidationError(_("El documento ya está vinculado a otra venta."))
+        raise ValidationError(taken)
     type_diff = sale.document_type is not None and sale.document_type != invoice.sii_code
     sale.matched_invoice = invoice
     sale.matched_manually = True
     sale.match_status = MatchStatus.TYPE_DIFF if type_diff else MatchStatus.MATCHED
-    sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    try:
+        with transaction.atomic():
+            sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    except IntegrityError as exc:
+        # Otra venta enlazó el documento entre la lectura y el guardado.
+        raise ValidationError(taken) from exc
     return sale
 
 
