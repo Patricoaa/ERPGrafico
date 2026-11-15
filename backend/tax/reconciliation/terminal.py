@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, time, timedelta
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from accounting.models import RCVSettings
@@ -48,11 +49,15 @@ def reconcile_terminal_sales(start: date, end: date) -> dict[str, int]:
         TerminalSale.objects.filter(matched_invoice__isnull=False).values_list("matched_invoice_id", flat=True)
     )
     movements = [m for m in _candidate_movements(lo - window, hi + window) if m.invoice_id not in taken]
-    terminals = _terminals_by_device({s.device_id for s in sales if s.device_id})
+    # Ventas vecinas fuera del rango (±w) compiten por las mismas facturas: se leen
+    # para detectar ambigüedad en el borde, pero no se escriben ni se cuentan.
+    competitors = _border_competitors(lo, hi, window)
+    terminals = _terminals_by_device({s.device_id for s in sales + competitors if s.device_id})
 
     completed = [s for s in sales if s.status == TerminalSale.Status.COMPLETED]
     candidates = _candidates(completed, movements, window, terminals)
-    _assign(sales, candidates, {m.invoice_id: m.invoice for m in movements})
+    rivals = _candidates(competitors, movements, window, terminals)
+    _assign(sales, candidates, rivals, {m.invoice_id: m.invoice for m in movements})
 
     TerminalSale.objects.bulk_update(sales, ["matched_invoice", "match_status"])
     return dict(Counter(s.match_status for s in sales))
@@ -60,6 +65,17 @@ def reconcile_terminal_sales(start: date, end: date) -> dict[str, int]:
 
 def _local_midnight(day: date) -> datetime:
     return timezone.make_aware(datetime.combine(day, time.min))
+
+
+def _border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[TerminalSale]:
+    near_border = Q(transaction_at__gte=lo - window, transaction_at__lt=lo) | Q(
+        transaction_at__gte=hi, transaction_at__lt=hi + window
+    )
+    return list(
+        TerminalSale.objects.filter(
+            near_border, status=TerminalSale.Status.COMPLETED, matched_manually=False
+        )
+    )
 
 
 def _candidate_movements(lo: datetime, hi: datetime) -> list[TreasuryMovement]:
@@ -120,8 +136,15 @@ def _payment_compatible(sale: TerminalSale, m: TreasuryMovement, terminals: dict
     return m.payment_method_new is not None and m.payment_method_new.linked_terminal_device_id == sale.device_id
 
 
-def _assign(sales: list[TerminalSale], candidates: dict[int, set[int]], invoices: dict[int, Invoice]) -> None:
-    sales_per_invoice: Counter[int] = Counter(inv for cands in candidates.values() for inv in cands)
+def _assign(
+    sales: list[TerminalSale],
+    candidates: dict[int, set[int]],
+    rivals: dict[int, set[int]],
+    invoices: dict[int, Invoice],
+) -> None:
+    sales_per_invoice: Counter[int] = Counter(
+        inv for cands in (*candidates.values(), *rivals.values()) for inv in cands
+    )
     for s in sales:
         if s.id not in candidates:
             s.matched_invoice, s.match_status = None, MatchStatus.EXCLUDED

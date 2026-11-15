@@ -210,6 +210,25 @@ def test_invoice_linked_outside_range_is_not_reassigned(env):
     assert sale.match_status == MatchStatus.ONLY_EXTERNAL
 
 
+def test_border_competitor_makes_both_ambiguous(env):
+    make_pos_document(env, 6000, local_dt(2026, 11, 9, 23, 55))
+    a = make_terminal_sale(env, 6000, local_dt(2026, 11, 9, 23, 58))
+    b = make_terminal_sale(env, 6000, local_dt(2026, 11, 10, 0, 2))
+
+    result = run()
+
+    _reload(a, b)
+    assert result == {MatchStatus.AMBIGUOUS: 1}
+    assert b.match_status == MatchStatus.AMBIGUOUS and b.matched_invoice_id is None
+    assert a.match_status == "" and a.matched_invoice_id is None
+
+    reconcile_terminal_sales(date(2026, 11, 9), DAY)
+
+    _reload(a, b)
+    assert a.match_status == b.match_status == MatchStatus.AMBIGUOUS
+    assert a.matched_invoice_id is None and b.matched_invoice_id is None
+
+
 def test_idempotent(env):
     inv = make_pos_document(env, 6000, T0)
     make_pos_document(env, 5000, T0)
