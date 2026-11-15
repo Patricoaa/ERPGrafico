@@ -15,7 +15,7 @@ import {
     reconciliationSummaryEntity,
     reconciliationSummaryViews,
 } from "../entity-view/fiscalReconciliation.entity"
-import type { FiscalReconciliationReport, MatchCounts, ReconciliationSource } from "../types/reconciliation"
+import type { DocumentMatchCounts, FiscalReconciliationReport, MatchCounts, ReconciliationSource } from "../types/reconciliation"
 
 const RUN_PERMISSION = "tax.change_taxperiod"
 const FIRST_YEAR = 2017
@@ -43,7 +43,8 @@ function yearOptions(current: number) {
     })
 }
 
-function countEntries(counts: MatchCounts) {
+/** `null` = no se puede saber (p. ej. `ONLY_ERP` sin importación RCV); se muestra «—». */
+function countEntries(counts: MatchCounts | DocumentMatchCounts) {
     return STATUS_ORDER.flatMap((status) => {
         const count = counts[status]
         return count === undefined ? [] : [{ status, count }]
@@ -51,7 +52,7 @@ function countEntries(counts: MatchCounts) {
 }
 
 function isEmptyReport(report: FiscalReconciliationReport): boolean {
-    const total = (counts: MatchCounts) => STATUS_ORDER.reduce((sum, s) => sum + (counts[s] ?? 0), 0)
+    const total = (counts: MatchCounts | DocumentMatchCounts) => STATUS_ORDER.reduce((sum, s) => sum + (counts[s] ?? 0), 0)
     const summaries = report.summaries.every((s) => s.erp_count === 0 && s.tuu_count === 0 && !s.rcv_count)
     return summaries
         && report.only_erp.length === 0
@@ -171,13 +172,15 @@ function ReconciliationBody({ report, year, month }: { report: FiscalReconciliat
     )
 }
 
-function StatusCountRow({ status, count, noun, href }: { status: Exclude<MatchStatus, "">; count: number; noun: string; href?: string }) {
+function StatusCountRow({ status, count, noun, href }: { status: Exclude<MatchStatus, "">; count: number | null; noun: string; href?: string }) {
     const badge = matchStatusValue(status)
     return (
         <Section.Row
             title={<StatusBadge status={badge.status} label={badge.label} intent={badge.intent} size="sm" />}
             value={
-                href && count > 0 ? (
+                count === null ? (
+                    "—"
+                ) : href && count > 0 ? (
                     <Link href={href} className="font-medium text-primary hover:underline" aria-label={`${count} ${noun} ${badge.label}`}>
                         {count}
                     </Link>

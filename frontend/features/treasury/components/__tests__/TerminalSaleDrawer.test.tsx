@@ -8,13 +8,14 @@ const m = vi.hoisted(() => ({
     isError: false,
     requestedIds: [] as (number | null)[],
     candidates: [] as unknown[],
+    candidatesError: false,
     match: vi.fn(),
     unmatch: vi.fn(),
     openEntity: vi.fn(),
 }))
 
 vi.mock("../../hooks/useTerminalSaleMatch", () => ({
-    useTerminalSaleCandidates: () => ({ candidates: m.candidates, isLoading: false, isError: false }),
+    useTerminalSaleCandidates: () => ({ candidates: m.candidates, isLoading: false, isError: m.candidatesError }),
     useMatchTerminalSale: () => ({ mutateAsync: m.match, isPending: false }),
     useUnmatchTerminalSale: () => ({ mutateAsync: m.unmatch, isPending: false }),
 }))
@@ -59,8 +60,9 @@ beforeEach(() => {
     m.isError = false
     m.requestedIds = []
     m.candidates = []
-    m.match.mockReset()
-    m.unmatch.mockReset()
+    m.candidatesError = false
+    m.match.mockReset().mockResolvedValue(undefined)
+    m.unmatch.mockReset().mockResolvedValue(undefined)
     m.openEntity.mockReset()
 })
 
@@ -122,6 +124,27 @@ describe("TerminalSaleDrawer", () => {
             render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
             await userEvent.click(screen.getByRole("button", { name: "Desvincular" }))
             expect(m.unmatch).toHaveBeenCalledWith(9)
+        })
+
+        it("los candidatos muestran el nombre del tipo de documento", () => {
+            m.candidates = [{ id: 8, display_id: "CP-8", dte_type: "COMPROBANTE_PAGO", total: "3200", date: "2026-11-12" }]
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText(/^Comprobante de Pago · /)).toBeInTheDocument()
+            expect(screen.queryByText(/COMPROBANTE_PAGO/)).not.toBeInTheDocument()
+        })
+
+        it("si los candidatos no cargan lo indica", () => {
+            m.candidatesError = true
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("No se pudieron cargar los candidatos.")).toBeInTheDocument()
+        })
+
+        it("un vínculo rechazado no deja una promesa sin manejar", async () => {
+            m.candidates = [{ id: 7, display_id: "B-200", dte_type: "BOLETA", total: "3200", date: "2026-11-12" }]
+            m.match.mockRejectedValue(new Error("ya vinculado"))
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            await userEvent.click(screen.getByRole("button", { name: "Vincular" }))
+            expect(m.match).toHaveBeenCalledTimes(1)
         })
     })
 })

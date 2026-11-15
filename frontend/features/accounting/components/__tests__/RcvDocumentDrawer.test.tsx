@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { RcvDocumentDetail } from "../../types"
@@ -8,6 +8,7 @@ const m = vi.hoisted(() => ({
     isError: false,
     openEntity: vi.fn(),
     candidates: [] as unknown[],
+    candidatesError: false,
     match: vi.fn(),
     unmatch: vi.fn(),
     suggestions: [] as unknown[],
@@ -20,7 +21,7 @@ const m = vi.hoisted(() => ({
 }))
 
 vi.mock("@/features/tax", () => ({
-    useRcvDocumentCandidates: () => ({ candidates: m.candidates, isLoading: false, isError: false }),
+    useRcvDocumentCandidates: () => ({ candidates: m.candidates, isLoading: false, isError: m.candidatesError }),
     useMatchRcvDocument: () => ({ mutateAsync: m.match, isPending: false }),
     useUnmatchRcvDocument: () => ({ mutateAsync: m.unmatch, isPending: false }),
     useRcvDraftSuggestions: (_id: number, enabled: boolean) => {
@@ -65,6 +66,7 @@ beforeEach(() => {
     m.isError = false
     m.openEntity.mockClear()
     m.candidates = []
+    m.candidatesError = false
     m.match.mockReset().mockResolvedValue(undefined)
     m.unmatch.mockReset().mockResolvedValue(undefined)
     m.suggestions = []
@@ -143,8 +145,15 @@ describe("RcvDocumentDrawer", () => {
             m.candidates = [{ id: 7, display_id: "FC-4521", dte_type: "PURCHASE_INV", total: "11900", date: "2026-10-05" }]
             render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
             expect(screen.getByText("FC-4521")).toBeInTheDocument()
+            expect(screen.getByText(/^Factura de Compra · /)).toBeInTheDocument()
             await userEvent.click(screen.getByRole("button", { name: "Vincular" }))
             expect(m.match).toHaveBeenCalledWith({ docId: 9, invoiceId: 7 })
+        })
+
+        it("si los candidatos no cargan lo indica", () => {
+            m.candidatesError = true
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("No se pudieron cargar los candidatos.")).toBeInTheDocument()
         })
 
         it("con vínculo manual ofrece Desvincular", async () => {
@@ -182,7 +191,25 @@ describe("RcvDocumentDrawer", () => {
             expect(screen.getByText(/^Factura Exenta · Borrador/)).toBeInTheDocument()
             expect(m.confirmDraft).not.toHaveBeenCalled()
             await userEvent.click(screen.getByRole("button", { name: "Asignar folio y emitir" }))
+            // Pide confirmar folio y totales antes de emitir.
+            const dialog = await screen.findByRole("dialog")
+            expect(m.confirmDraft).not.toHaveBeenCalled()
+            expect(within(dialog).getByText("Total del borrador")).toBeInTheDocument()
+            expect(within(dialog).getByText("Total en el SII")).toBeInTheDocument()
+            expect(within(dialog).getByText("4521")).toBeInTheDocument()
+            expect(within(dialog).getByText("FACC-B31")).toBeInTheDocument()
+            await userEvent.click(within(dialog).getByRole("button", { name: "Emitir" }))
             expect(m.confirmDraft).toHaveBeenCalledWith({ docId: 9, invoiceId: 31 })
+        })
+
+        it("cancelar la confirmación no emite", async () => {
+            m.doc = missing
+            m.suggestions = [{ id: 31, display_id: "FACC-B31", dte_type: "FACTURA_EXENTA", total: "11800", date: "2026-10-01" }]
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            await userEvent.click(screen.getByRole("button", { name: "Asignar folio y emitir" }))
+            const dialog = await screen.findByRole("dialog")
+            await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }))
+            expect(m.confirmDraft).not.toHaveBeenCalled()
         })
 
         it("crea un borrador desde la OC elegida", async () => {

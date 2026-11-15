@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import { FileText } from "lucide-react"
-import { Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
+import { ActionConfirmModal, Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
 import { formatDate } from "@/components/entity-view"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
@@ -131,7 +131,7 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
 
             <RcvErpDocumentSection doc={doc} />
 
-            {purchases && doc.match_status === "ONLY_EXTERNAL" && <RcvRegisterSection docId={doc.id} />}
+            {purchases && doc.match_status === "ONLY_EXTERNAL" && <RcvRegisterSection doc={doc} />}
 
             <RcvImportSection doc={doc} />
 
@@ -160,7 +160,7 @@ function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
     const match = useMatchRcvDocument()
     const unmatch = useUnmatchRcvDocument()
     const linked = doc.matched_invoice !== null
-    const { candidates, isLoading } = useRcvDocumentCandidates(doc.id, !linked)
+    const { candidates, isLoading, isError } = useRcvDocumentCandidates(doc.id, !linked)
     const status = matchStatusValue(doc.match_status, doc.match_status_display)
 
     return (
@@ -182,6 +182,8 @@ function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
                         ) : undefined
                     }
                 />
+            ) : isError ? (
+                <Stat title="Candidatos" value="No se pudieron cargar los candidatos." plain />
             ) : isLoading ? (
                 <Stat title="Candidatos" value="Buscando…" plain />
             ) : candidates.length === 0 ? (
@@ -191,7 +193,7 @@ function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
                     <Section.Row
                         key={c.id}
                         title={c.display_id}
-                        description={`${c.dte_type} · ${formatDate(c.date)}`}
+                        description={`${getDteLabel(c.dte_type)} · ${formatDate(c.date)}`}
                         value={<MoneyDisplay amount={c.total} currency="CLP" />}
                         actions={
                             <Button
@@ -211,16 +213,25 @@ function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
     )
 }
 
+/** Borrador elegido para emitir, pendiente de confirmación. */
+interface PendingDraft {
+    id: number
+    display_id: string
+    total: string
+}
+
 /**
  * Compra que falta en el ERP: emitir un borrador parecido con el folio del RCV o crear uno desde una OC.
- * Nada corre sin un clic explícito (ADR-0138 D8).
+ * Nada corre sin un clic explícito (ADR-0138 D8); emitir pide confirmar folio y totales.
  */
-function RcvRegisterSection({ docId }: { docId: number }) {
+function RcvRegisterSection({ doc }: { doc: RcvDocumentDetail }) {
+    const docId = doc.id
     const drafts = useRcvDraftSuggestions(docId, true)
     const orders = useRcvSupplierPurchaseOrders(docId, true)
     const confirm = useConfirmRcvDraft()
     const create = useCreateRcvDraft()
     const busy = confirm.isPending || create.isPending
+    const [pending, setPending] = useState<PendingDraft | null>(null)
 
     return (
         <Section title="Registrar en el ERP">
@@ -243,7 +254,7 @@ function RcvRegisterSection({ docId }: { docId: number }) {
                                 size="sm"
                                 variant="outline"
                                 disabled={busy}
-                                onClick={() => void confirm.mutateAsync({ docId, invoiceId: d.id }).catch(() => undefined)}
+                                onClick={() => setPending({ id: d.id, display_id: d.display_id, total: d.total })}
                             >
                                 Asignar folio y emitir
                             </Button>
@@ -279,6 +290,29 @@ function RcvRegisterSection({ docId }: { docId: number }) {
                     />
                 ))
             )}
+            <ActionConfirmModal
+                open={pending !== null}
+                onOpenChange={(open) => { if (!open) setPending(null) }}
+                // Si falla, el hook ya muestra el error y el diálogo queda abierto.
+                onConfirm={async () => { if (pending) await confirm.mutateAsync({ docId, invoiceId: pending.id }) }}
+                title="Asignar folio y emitir"
+                confirmText="Emitir"
+                variant="warning"
+                description={
+                    pending && (
+                        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm [&_dd]:text-foreground">
+                            <dt className="text-muted-foreground">Borrador</dt>
+                            <dd>{pending.display_id}</dd>
+                            <dt className="text-muted-foreground">Folio a asignar</dt>
+                            <dd className="font-mono">{doc.folio}</dd>
+                            <dt className="text-muted-foreground">Total del borrador</dt>
+                            <dd><MoneyDisplay amount={pending.total} currency="CLP" /></dd>
+                            <dt className="text-muted-foreground">Total en el SII</dt>
+                            <dd><MoneyDisplay amount={doc.total_amount} currency="CLP" /></dd>
+                        </dl>
+                    )
+                }
+            />
         </Section>
     )
 }

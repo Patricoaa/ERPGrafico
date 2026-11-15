@@ -5,6 +5,7 @@ const DTE_LABELS: Record<string, string> = {
   FACTURA_EXENTA: 'Factura Exenta',
   BOLETA: 'Boleta',
   BOLETA_EXENTA: 'Boleta Exenta',
+  COMPROBANTE_PAGO: 'Comprobante de Pago',
   PURCHASE_INV: 'Factura de Compra',
   NOTA_CREDITO: 'Nota de Crédito',
   NOTA_DEBITO: 'Nota de Débito',

@@ -10,6 +10,12 @@ export type { MatchStatus }
 /** Conteo por estado. Solo vienen las claves presentes, más `ONLY_ERP`; `""` = no evaluado. */
 export type MatchCounts = Partial<Record<MatchStatus, number>>
 
+/**
+ * Conteos de facturas y notas frente al RCV. `ONLY_ERP` es null si no hay importación RCV
+ * exitosa de esa dirección en el período: sin RCV no se sabe qué falta en el SII.
+ */
+export type DocumentMatchCounts = Omit<MatchCounts, 'ONLY_ERP'> & { ONLY_ERP?: number | null }
+
 /** Resumen mensual de boletas y comprobantes (39, 41, 48). `rcv_*`/`difference` son null sin importación RCV de ventas. */
 export interface ReconciliationSummary {
     dte_type: number
@@ -35,7 +41,7 @@ export interface OnlyErpDocument {
 export interface FiscalReconciliationReport {
     /** Fecha desde la que se cuadra (`fiscal_match_start_date`); null si no está configurada. */
     start_date: string | null
-    documents: { purchase: MatchCounts; sale: MatchCounts }
+    documents: { purchase: DocumentMatchCounts; sale: DocumentMatchCounts }
     only_erp: OnlyErpDocument[]
     summaries: ReconciliationSummary[]
     terminal: MatchCounts

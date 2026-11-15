@@ -8,6 +8,7 @@ import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_s
 import { DocumentRelationsTab } from "@/features/documents"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
+import { getDteLabel } from "@/lib/entity-registry"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useTerminalSale } from "../hooks/useTerminalSales"
 import { useMatchTerminalSale, useTerminalSaleCandidates, useUnmatchTerminalSale } from "../hooks/useTerminalSaleMatch"
@@ -174,7 +175,7 @@ function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
     const match = useMatchTerminalSale()
     const unmatch = useUnmatchTerminalSale()
     const linked = sale.matched_invoice !== null
-    const { candidates, isLoading } = useTerminalSaleCandidates(sale.id, !linked)
+    const { candidates, isLoading, isError } = useTerminalSaleCandidates(sale.id, !linked)
     const status = terminalSaleMatchStatus(sale.match_status, sale.match_status_display)
 
     return (
@@ -190,12 +191,14 @@ function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
                     }
                     actions={
                         sale.matched_manually ? (
-                            <Button size="sm" variant="outline" disabled={unmatch.isPending} onClick={() => void unmatch.mutateAsync(sale.id)}>
+                            <Button size="sm" variant="outline" disabled={unmatch.isPending} onClick={() => void unmatch.mutateAsync(sale.id).catch(() => undefined)}>
                                 Desvincular
                             </Button>
                         ) : undefined
                     }
                 />
+            ) : isError ? (
+                <Stat title="Candidatos" value="No se pudieron cargar los candidatos." plain />
             ) : isLoading ? (
                 <Stat title="Candidatos" value="Buscando…" plain />
             ) : candidates.length === 0 ? (
@@ -205,10 +208,10 @@ function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
                     <Section.Row
                         key={c.id}
                         title={c.display_id}
-                        description={`${c.dte_type} · ${formatDate(c.date)}`}
+                        description={`${getDteLabel(c.dte_type)} · ${formatDate(c.date)}`}
                         value={<MoneyDisplay amount={c.total} currency={sale.currency} />}
                         actions={
-                            <Button size="sm" variant="outline" disabled={match.isPending} onClick={() => void match.mutateAsync({ saleId: sale.id, invoiceId: c.id })}>
+                            <Button size="sm" variant="outline" disabled={match.isPending} onClick={() => void match.mutateAsync({ saleId: sale.id, invoiceId: c.id }).catch(() => undefined)}>
                                 Vincular
                             </Button>
                         }

@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { FiscalReconciliationReport } from "../../types/reconciliation"
+import { matchStatusValue } from "@/lib/fiscal-match"
 
 const m = vi.hoisted(() => ({
     report: undefined as unknown,
@@ -97,6 +98,16 @@ describe("FiscalReconciliationClientView", () => {
         )
         // "" (no evaluado) se ignora
         expect(screen.queryByRole("link", { name: /^4 compras/ })).not.toBeInTheDocument()
+    })
+
+    it("sin importación RCV de la dirección, «Falta en el SII» muestra «—» sin enlace", () => {
+        m.report = { ...report, documents: { ...report.documents, purchase: { MATCHED: 12, ONLY_ERP: null } } }
+        render(<FiscalReconciliationClientView />)
+        const purchases = screen.getByRole("heading", { name: "Compras" }).closest("section") as HTMLElement
+        const row = within(purchases).getByText(matchStatusValue("ONLY_ERP").label).closest("li") as HTMLElement
+        expect(within(row).getByText("—")).toBeInTheDocument()
+        expect(within(purchases).queryByText("0")).not.toBeInTheDocument()
+        expect(within(purchases).getAllByRole("link")).toHaveLength(1) // solo «Cuadrado»
     })
 
     it("lista «Falta en el SII» y abre la factura", async () => {
