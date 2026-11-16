@@ -1127,7 +1127,7 @@ POST   /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/            asig
 POST   /api/tax/reconciliation/rcv-documents/{id}/create-draft/             crea borrador desde una OC y lo vincula (body: purchase_order_id; Idempotency-Key)
 ```
 
-`fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`) también viaja en `status_check` y en la respuesta de calculate del F29.
+`fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`, `PENDING_ERP`) también viaja en `status_check` y en la respuesta de calculate del F29.
 
 `/api/treasury/terminal-sync-settings/` (`TerminalSyncSettings`, ADR-0140 D6): `interval_value` (entero) e `interval_unit` (`MINUTES` | `HOURS` | `DAYS`). `MINUTES` exige `interval_value` ≥ 5 (400 si no). `run_hour` solo aplica con `DAYS`. Los intervalos `MINUTES`/`HOURS` sincronizan solo [ayer, hoy]; `DAYS` usa `lookback_days`.
 
