@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { TerminalSaleDetail } from "../../types"
@@ -112,17 +112,26 @@ describe("TerminalSaleDrawer", () => {
         })
 
         it("con boleta SII muestra el folio y abre accounting.rcvdocument", async () => {
-            m.sale = { ...sale, rcv_document: 31, rcv_folio: 12345 }
+            m.sale = { ...sale, document_type: 39, rcv_document: 31, rcv_folio: 12345 }
             render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
             expect(screen.getByText("Boleta SII")).toBeInTheDocument()
             await userEvent.click(screen.getByRole("button", { name: "Folio 12345" }))
             expect(m.openEntity).toHaveBeenCalledWith("accounting.rcvdocument", 31)
         })
 
-        it("sin boleta SII muestra un guion", () => {
+        it("boleta sin boleta SII muestra un guion en la fila", () => {
+            m.sale = { ...sale, document_type: 41 }
             render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
-            expect(screen.getByText("Boleta SII")).toBeInTheDocument()
+            const row = screen.getByText("Boleta SII").closest("li")
+            expect(row).toBeTruthy()
+            expect(within(row as HTMLElement).getByText("—")).toBeInTheDocument()
             expect(screen.queryByRole("button", { name: /^Folio / })).not.toBeInTheDocument()
+        })
+
+        it("un comprobante 48 no muestra la fila Boleta SII", () => {
+            m.sale = { ...sale, document_type: 48 }
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.queryByText("Boleta SII")).not.toBeInTheDocument()
         })
 
         it("sin vínculo lista candidatos y vincula", async () => {

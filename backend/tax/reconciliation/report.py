@@ -38,7 +38,7 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
         "start_date": start.isoformat() if start else None,
         "documents": _documents(f"{year}{month:02d}", only_erp, imported),
         "only_erp": [_item(i) for i in only_erp.order_by("date", "id")[:ONLY_ERP_CAP]] if only_erp is not None else [],
-        "summaries": _summaries(year, month, first, last, lo, hi),
+        "summaries": _summaries(year, month, first, last, lo, hi, start),
         "terminal": _terminal(first, last, lo, hi, start, settings.terminal_match_window_minutes),
     }
 
@@ -145,7 +145,9 @@ def _totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
     return {row[key]: (row["n"] or 0, row["t"] or Decimal("0")) for row in rows}
 
 
-def _summaries(year: int, month: int, first: date, last: date, lo: datetime, hi: datetime) -> list[dict]:
+def _summaries(
+    year: int, month: int, first: date, last: date, lo: datetime, hi: datetime, start: date | None
+) -> list[dict]:
     # El código sale de `sii_code_expression`, así un `sii_document_code` explícito también cuenta.
     erp = _totals(
         _annotated_invoices()
@@ -165,25 +167,34 @@ def _summaries(year: int, month: int, first: date, last: date, lo: datetime, hi:
         "document_type",
     )
     rcv = _rcv_totals(year, month)
-    unpaired = _unpaired_boletas(year, month, lo, hi)
+    since = _period_start(first, last, start) if rcv is not None else None
+    unpaired = _unpaired_boletas(year, month, since, hi)
     return [_summary_row(code, erp, tuu, rcv) | unpaired.get(code, _NO_PAIRING) for code in SUMMARY_SII_CODES]
 
 
 _NO_PAIRING = {"tuu_without_rcv": None, "rcv_without_tuu": None}
 
 
-def _unpaired_boletas(year: int, month: int, lo: datetime, hi: datetime) -> dict[int, dict[str, int]]:
-    """Boletas 39/41 sin par (ADR-0139): venta TUU sin boleta RCV y boleta RCV sin venta TUU."""
-    out = {code: {"tuu_without_rcv": 0, "rcv_without_tuu": 0} for code in BOLETA_SII_CODES}
-    sales = (
-        TerminalSale.objects.filter(
-            status=TerminalSale.Status.COMPLETED, transaction_at__gte=lo, transaction_at__lt=hi,
-            document_type__in=BOLETA_SII_CODES, rcv_document__isnull=True,
+def _unpaired_boletas(year: int, month: int, since: date | None, hi: datetime) -> dict[int, dict[str, int | None]]:
+    """Boletas 39/41 sin par (ADR-0139): venta TUU sin boleta RCV y boleta RCV sin venta TUU.
+
+    ``since`` es el primer día que se cuadra; ``None`` (sin importación RCV de ventas
+    o sin fecha de inicio que cubra el mes) deja ``tuu_without_rcv`` en null: no se
+    sabe qué falta en el SII.
+    """
+    out: dict[int, dict[str, int | None]] = {
+        code: {"tuu_without_rcv": None if since is None else 0, "rcv_without_tuu": 0} for code in BOLETA_SII_CODES
+    }
+    if since is not None:
+        sales = (
+            TerminalSale.objects.filter(
+                status=TerminalSale.Status.COMPLETED, transaction_at__gte=_local_midnight(since),
+                transaction_at__lt=hi, document_type__in=BOLETA_SII_CODES, rcv_document__isnull=True,
+            )
+            .values("document_type").annotate(n=Count("id")).order_by()
         )
-        .values("document_type").annotate(n=Count("id")).order_by()
-    )
-    for row in sales:
-        out[row["document_type"]]["tuu_without_rcv"] = row["n"]
+        for row in sales:
+            out[row["document_type"]]["tuu_without_rcv"] = row["n"]
     docs = (
         RCVDocument.objects.filter(
             direction=RCVImport.Direction.SALES, period=f"{year}{month:02d}",

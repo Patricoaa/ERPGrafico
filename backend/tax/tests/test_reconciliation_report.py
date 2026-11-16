@@ -341,8 +341,37 @@ def test_summaries_boletas_without_pair():
 
 
 def test_summaries_boletas_zero_when_all_paired():
+    set_match_settings(date(2026, 10, 1))
+    _import()
     report = fiscal_reconciliation_report(2026, 10)
     assert _row(report, 39)["tuu_without_rcv"] == 0 and _row(report, 39)["rcv_without_tuu"] == 0
+
+
+def test_tuu_without_rcv_null_without_rcv_import():
+    """Sin importación RCV de ventas no se sabe qué falta en el SII: null, como las columnas SII."""
+    set_match_settings(date(2026, 10, 1))
+    env = make_terminal_env()
+    make_terminal_sale(env, 2000, local_dt(2026, 10, 5, 12), document_type=39)
+    _import(direction=P)  # compras no cuenta
+    _import(status=RCVImport.Status.FAILED)
+
+    report = fiscal_reconciliation_report(2026, 10)
+
+    assert _row(report, 39)["tuu_without_rcv"] is None and _row(report, 41)["tuu_without_rcv"] is None
+
+
+def test_tuu_without_rcv_respects_start_date():
+    set_match_settings(date(2026, 10, 10))
+    env = make_terminal_env()
+    make_terminal_sale(env, 2000, local_dt(2026, 10, 9, 23, 59), document_type=39)  # antes del inicio
+    make_terminal_sale(env, 2000, local_dt(2026, 10, 10, 0, 1), document_type=39)
+    _import()
+
+    assert _row(fiscal_reconciliation_report(2026, 10), 39)["tuu_without_rcv"] == 1
+    set_match_settings(date(2026, 11, 1))  # el cuadre aún no aplica a este mes
+    assert _row(fiscal_reconciliation_report(2026, 10), 39)["tuu_without_rcv"] is None
+    set_match_settings(None)
+    assert _row(fiscal_reconciliation_report(2026, 10), 39)["tuu_without_rcv"] is None
 
 
 def test_mismatch_counts_boletas_counted_once():
