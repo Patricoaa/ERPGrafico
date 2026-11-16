@@ -82,7 +82,8 @@ function ProductGridComponent({
             itemContent={(index) => {
                 const product = products[index]
                 const categoryObject = typeof product.category === 'object' ? product.category : undefined
-                const categoryFromList = categoriesById.get(Number(product.category ?? categoryObject?.id))
+                const categoryId = categoryObject?.id ?? (typeof product.category === 'number' || typeof product.category === 'string' ? product.category : undefined)
+                const categoryFromList = categoryId != null ? categoriesById.get(Number(categoryId)) : undefined
                 const categoryName = categoryObject?.name ?? categoryFromList?.name ?? product.category_name
                 const categoryIcon = categoryObject?.icon ?? categoryFromList?.icon
 
