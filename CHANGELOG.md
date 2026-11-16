@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.115](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.114...v0.3.115) (2026-11-14)
+
+
+### 🐛 Bug Fixes
+
+* **documents:** agregar cursor-pointer a DocumentRefLink para feedback hover en enlaces documentales ([2a06f35](https://github.com/Patricoaa/ERPGrafico/commit/2a06f355691fd558647ae78722786cb77da632fd))
+
 ### [0.3.114](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.113...v0.3.114) (2026-11-14)
 
 
