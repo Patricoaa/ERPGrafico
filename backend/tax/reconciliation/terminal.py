@@ -210,7 +210,7 @@ def terminal_sale_candidates(sale: TerminalSale) -> "models.QuerySet[Invoice]":
 def match_terminal_sale(sale: TerminalSale, invoice: Invoice) -> TerminalSale:
     """Vínculo manual: queda protegido del recálculo (`matched_manually`)."""
     if not _sale_documents().filter(pk=invoice.pk).exists():
-        raise ValidationError(_("El documento no es un documento de venta emitido."))
+        raise ValidationError(_("El documento no es un documento de venta válido para cuadrar."))
     taken = _("El documento ya está vinculado a otra venta.")
     if TerminalSale.objects.filter(matched_invoice=invoice).exclude(pk=sale.pk).exists():
         raise ValidationError(taken)

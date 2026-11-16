@@ -1,7 +1,7 @@
 """Emisión automática de borradores 39/41/48 con el folio del proveedor (ADR-0140 D3).
 
 El checkout deja las boletas y comprobantes sin folio en borrador. Cuando el
-cuadre los enlaza con su venta TUU (y la venta con su boleta del RCV), el número
+cuadre los enlaza con su venta TUU con estado ``MATCHED`` (y la venta con su boleta del RCV), el número
 fiscal ya es conocido: folio RCV para 39/41, id TUU para 48. Cada emisión pasa
 por ``BillingService.confirm_invoice`` en su propia transacción; un fallo se
 registra y no detiene al resto.
@@ -17,6 +17,8 @@ from django.utils import timezone
 from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from billing.services import BillingService
+from core.fiscal_match import MatchStatus
+from core.services.document import lock_document
 from treasury.models import TerminalSale
 
 logger = logging.getLogger(__name__)
@@ -32,14 +34,23 @@ def issue_fiscal_drafts(year: int, month: int) -> dict[str, int]:
             continue
         number, issue_date = fiscal
         try:
-            with transaction.atomic():
-                BillingService.confirm_invoice(invoice, number, date=issue_date)
+            done = _issue(invoice, number, issue_date)
         except Exception as exc:  # noqa: BLE001 — un documento no detiene la emisión del resto
-            logger.warning("No se pudo emitir el documento %s: %s", invoice.pk, exc)
+            logger.warning("No se pudo emitir el documento %s: %s", invoice.pk, exc, exc_info=True)
             failed += 1
         else:
-            issued += 1
+            issued += done
     return {"issued": issued, "failed": failed}
+
+
+@transaction.atomic
+def _issue(invoice: Invoice, number: str, issue_date: date) -> bool:
+    """Emite bajo el row-lock; ``False`` si otro proceso ya lo emitió tras la selección."""
+    lock_document(invoice)
+    if invoice.status != Invoice.Status.DRAFT or invoice.number:
+        return False
+    BillingService.confirm_invoice(invoice, number, date=issue_date)
+    return True
 
 
 def fiscal_number_and_date(invoice: Invoice, sale: TerminalSale) -> tuple[str, date] | None:
@@ -65,6 +76,7 @@ def _linked_drafts(year: int, month: int) -> list[TerminalSale]:
     last = date(year, month, calendar.monthrange(year, month)[1])
     return list(
         TerminalSale.objects.filter(
+            match_status=MatchStatus.MATCHED,
             matched_invoice__status=Invoice.Status.DRAFT,
             matched_invoice__number="",
             matched_invoice__dte_type__in=FOLIO_EXEMPT_DTE_TYPES,

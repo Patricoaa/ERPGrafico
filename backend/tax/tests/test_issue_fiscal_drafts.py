@@ -1,5 +1,6 @@
 """Emisión automática de borradores 39/41/48 con el folio del proveedor (ADR-0140 D3)."""
 
+import functools
 import itertools
 from datetime import date, timedelta
 from decimal import Decimal
@@ -15,6 +16,8 @@ from billing.models import Invoice
 from billing.services import BillingService
 from billing.tests.conftest import _any_account_is_cash, env  # noqa: F401 (fixtures)
 from billing.tests.test_pos_checkout_documents import _checkout, _order, pos  # noqa: F401
+from core.fiscal_match import MatchStatus
+from tax.reconciliation import issuing
 from tax.reconciliation.boletas import reconcile_rcv_boletas
 from tax.reconciliation.issuing import issue_fiscal_drafts
 from tax.reconciliation.terminal import reconcile_terminal_sales
@@ -23,10 +26,15 @@ from tax.tests.reconciliation_helpers import (
     local_dt,
     make_pos_document,
     make_terminal_env,
-    make_terminal_sale,
     set_match_settings,
 )
+from tax.tests.reconciliation_helpers import (
+    make_terminal_sale as _make_terminal_sale,
+)
 from treasury.models import TerminalSale
+
+# Vínculo del cuadre automático: la emisión solo toma ventas MATCHED.
+make_terminal_sale = functools.partial(_make_terminal_sale, match_status=MatchStatus.MATCHED)
 
 S = RCVImport.Direction.SALES
 _folios = itertools.count(9000)
@@ -136,6 +144,43 @@ def test_drafts_outside_month_or_unlinked_are_ignored(tenv):
         assert inv.status == DRAFT
 
 
+@pytest.mark.parametrize("status", [MatchStatus.TYPE_DIFF, MatchStatus.AMBIGUOUS])
+def test_type_diff_link_is_not_issued(tenv, status):
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    make_terminal_sale(tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv, match_status=status)
+
+    assert issue_fiscal_drafts(2026, 11) == {"issued": 0, "failed": 0}
+    inv.refresh_from_db()
+    assert (inv.status, inv.number) == (DRAFT, "")
+
+
+def test_manual_matched_link_is_issued(tenv):
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    make_terminal_sale(tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv, matched_manually=True)
+
+    assert issue_fiscal_drafts(2026, 11) == {"issued": 1, "failed": 0}
+
+
+def test_invoice_confirmed_after_selection_is_skipped(tenv):
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    make_terminal_sale(tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv)
+    real = issuing._linked_drafts
+
+    def select_then_confirm_manually(year, month):
+        sales = real(year, month)
+        Invoice.objects.filter(pk=inv.pk).update(status=Invoice.Status.POSTED, number="555")
+        return sales
+
+    with patch.object(issuing, "_linked_drafts", select_then_confirm_manually), \
+            patch.object(BillingService, "confirm_invoice") as confirm:
+        result = issue_fiscal_drafts(2026, 11)
+
+    assert result == {"issued": 0, "failed": 0}
+    confirm.assert_not_called()
+    inv.refresh_from_db()
+    assert (inv.status, inv.number) == (Invoice.Status.POSTED, "555")
+
+
 def test_failure_is_isolated(tenv):
     closed_day = date(2026, 11, 10)
     blocked = _draft(tenv, 1000, local_dt(2026, 11, 10))
@@ -154,6 +199,7 @@ def test_failure_is_isolated(tenv):
     assert ok.status == Invoice.Status.POSTED
     logger.warning.assert_called_once()
     assert logger.warning.call_args.args[1] == blocked.pk
+    assert logger.warning.call_args.kwargs == {"exc_info": True}
 
 
 def test_duplicate_folio_fails_cleanly(tenv):
@@ -188,5 +234,7 @@ def test_query_count_bounded(tenv):
 
     assert result == {"issued": 6, "failed": 0}
     assert confirm.call_count == 6
-    selects = [q for q in ctx.captured_queries if "SAVEPOINT" not in q["sql"]]
-    assert len(selects) == 1
+    selects = [q["sql"] for q in ctx.captured_queries if "SAVEPOINT" not in q["sql"]]
+    # Una sola selección; por documento solo el row-lock y su re-lectura (constante).
+    assert sum("treasury_terminalsale" in sql for sql in selects) == 1
+    assert len(selects) == 1 + 2 * 6
