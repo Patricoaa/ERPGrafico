@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.119](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.118...v0.3.119) (2026-11-16)
+
 ### [0.3.118](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.117...v0.3.118) (2026-11-16)
 
 ### [0.3.117](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.116...v0.3.117) (2026-11-16)
