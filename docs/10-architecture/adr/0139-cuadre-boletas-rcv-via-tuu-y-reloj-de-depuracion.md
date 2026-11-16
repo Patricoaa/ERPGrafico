@@ -39,6 +39,7 @@ Además, el cruce D4 compara contra la hora real del servidor. Las ventas TUU de
 - **`TerminalSale.rcv_document`:** FK opcional a `RCVDocument` (`SET_NULL`, `related_name="terminal_sales"`, único cuando no es nulo).
 - **Estado del `RCVDocument` 39/41 tras el paso 2:**
   - `MATCHED` si tiene venta TUU, con `matched_invoice` = la factura de esa venta, o nulo si la venta aún no cuadra con el ERP;
+  - *(Enmendado por ADR-0140 D5)* `MATCHED` solo con documento ERP; con venta TUU pero sin documento ERP queda `PENDING_ERP` («Sin documento ERP»);
   - `ONLY_EXTERNAL` si no tiene venta TUU.
   - `missing_since_import` → `EXCLUDED` y sin enlaces, igual que en ADR-0138.
 - **Venta TUU 39/41 sin boleta RCV:** no lleva campo de estado propio. El reporte la cuenta como «Venta TUU sin boleta SII».

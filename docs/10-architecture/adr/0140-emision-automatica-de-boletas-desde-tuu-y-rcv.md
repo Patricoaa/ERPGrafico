@@ -51,7 +51,7 @@ Una tarea de Celery Beat, `tax.tasks.run_fiscal_reconciliation`, corre cada 10 m
 3. `issue_fiscal_drafts`;
 4. `reconcile_rcv_boletas` otra vez, para que el RCV vea las facturas recién emitidas.
 
-Solo trabaja con datos locales, sin llamar a APIs externas. Un candado en caché evita que dos ejecuciones se solapen, y no hace nada si no hay `fiscal_match_start_date`.
+Solo trabaja con datos locales, sin llamar a APIs externas. Un candado en caché (clave `tax:fiscal_reconciliation:lock`, 540 s) evita que dos ejecuciones se solapen, y no hace nada si no hay `fiscal_match_start_date`.
 
 ### D5. Estado de la boleta RCV según la cadena
 
@@ -63,7 +63,9 @@ Una boleta 39/41 del RCV queda `MATCHED` solo cuando su venta TUU tiene document
 
 - `run_hour` solo aplica con la unidad `DAYS`;
 - el despachador corre cada minuto y lanza una sincronización cuando se cumple el intervalo desde la última programada;
-- el rango programado termina **hoy**, ya no ayer.
+- el rango programado termina **hoy**, ya no ayer;
+- los intervalos intradía (`MINUTES`/`HOURS`) sincronizan solo [ayer, hoy]; `DAYS` mantiene `lookback_days`;
+- el despachador omite un proveedor que ya tiene una ejecución `RUNNING`, y marca como `FAILED` («Sincronización interrumpida…») las `RUNNING` con más de 60 minutos.
 
 La pantalla de configuración de TUU edita esos campos, igual que la del RCV.
 
@@ -73,3 +75,4 @@ La pantalla de configuración de TUU edita esos campos, igual que la del RCV.
 - **Asiento en borrador:** mientras la boleta es borrador, su asiento contable también lo es, y la venta no cuenta en el F29. Al emitirse, el asiento se publica.
 - **Datos existentes:** los documentos ya emitidos sin folio con ADR-0138 quedan como están. No se reescriben (ADR-0091).
 - **Tolerancia del cruce 48 ↔ TUU:** si el paso 1 se equivoca (dos ventas candidatas del mismo monto en la misma ventana), el resultado es `AMBIGUOUS` y no se emite nada.
+- **Fecha del asiento:** `confirm_invoice` conserva la fecha del asiento cuando la fecha del SII cae en otro mes. Limitación conocida, queda como seguimiento.
