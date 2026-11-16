@@ -82,13 +82,15 @@ function ProductGridComponent({
             itemContent={(index) => {
                 const product = products[index]
                 const categoryObject = typeof product.category === 'object' ? product.category : undefined
-                const category = categoryObject ?? categoriesById.get(Number(product.category))
+                const categoryFromList = categoriesById.get(Number(product.category ?? categoryObject?.id))
+                const categoryName = categoryObject?.name ?? categoryFromList?.name ?? product.category_name
+                const categoryIcon = categoryObject?.icon ?? categoryFromList?.icon
 
                 return (
                     <ProductCard
                         product={product}
-                        categoryName={category?.name ?? product.category_name}
-                        categoryIcon={category?.icon}
+                        categoryName={categoryName}
+                        categoryIcon={categoryIcon}
                         limit={limits[`prod_${product.id}`]}
                         isDisabled={isProductDisabled(product)}
                         isSelected={selectedProductIds?.has(product.id) ?? false}
