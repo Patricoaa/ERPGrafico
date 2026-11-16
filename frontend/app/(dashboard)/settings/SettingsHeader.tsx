@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { useDebugToolsAccess, visibleSettingsTabs } from "@/features/settings"
 
 export const SETTINGS_TABS = [
     {
@@ -67,6 +68,12 @@ export const SETTINGS_TABS = [
         href: "/settings/jobs",
     },
     {
+        value: "debug",
+        label: "Depuración",
+        iconName: "bug",
+        href: "/settings/debug",
+    },
+    {
         value: "workflow",
         label: "Workflow",
         iconName: "git-branch",
@@ -82,6 +89,7 @@ export const SETTINGS_TABS = [
 
 export function SettingsHeader() {
     const pathname = usePathname()
+    const canDebug = useDebugToolsAccess()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'overview'
@@ -94,7 +102,7 @@ export function SettingsHeader() {
     const navigation = {
         moduleName: "Configuración Global",
         moduleHref: "/settings",
-        tabs: SETTINGS_TABS,
+        tabs: visibleSettingsTabs(SETTINGS_TABS, canDebug),
         activeValue,
         subActiveValue,
     }
@@ -144,6 +152,12 @@ export function SettingsHeader() {
                     title: "Procesos en Segundo Plano",
                     description: "Gestión de importaciones, exportaciones y reportes asíncronos.",
                     iconName: "server-cog"
+                }
+            case 'debug':
+                return {
+                    title: "Depuración",
+                    description: "Herramientas solo para desarrollo, como el reloj del servidor.",
+                    iconName: "bug"
                 }
             case 'workflow':
                 if (subActiveValue === 'tasks') return { title: "Tareas Automáticas", description: "Configuración de responsables y disparadores de tareas.", iconName: "list-todo" }

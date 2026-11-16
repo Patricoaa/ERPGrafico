@@ -231,3 +231,30 @@ Nota de red: `.env.dev` del servidor usa `ALLOWED_HOSTS=...,192.168.1.86` y
 - La guardia `ram` es **mejor que el OOM-kill**: un reinicio elegido siempre gana a un kill del kernel en mitad de un compile. No entra en bucle (tras reiniciar el frontend baja a ~0,5 GiB y el pico de cold compile ronda 2,7 GiB).
 - La limpieza de `.next` **no se automatiza**: cada limpieza cuesta ~3 min de recompilación en frío — solo manual (arriba).
 - El journal del sistema (~1 GB) tampoco: requiere `sudo journalctl --rotate && sudo journalctl --vacuum-size=200M` de vez en cuando.
+
+## 9. Reloj de depuración
+
+Permite probar el cuadre fiscal y otros procesos por fecha moviendo la hora del servidor de desarrollo (ADR-0139 D4). Solo actúa con `DEBUG=True` **y** `DEBUG_CLOCK_ENABLED=1`; en cualquier otro caso es un no-op.
+
+**Activar**
+
+1. Agregar `DEBUG_CLOCK_ENABLED=1` al `.env` del servidor de desarrollo (backend y `celery-worker` lo leen).
+2. `time-machine==3.6.0` es un requisito nuevo: instalarlo con `docker compose exec backend pip install -r requirements.txt` (y lo mismo en `celery-worker`) o reconstruir la imagen.
+3. Reiniciar `backend` y `celery-worker`.
+
+**Usar**
+
+```bash
+docker compose exec backend python manage.py debug_clock set "2026-11-13 17:35"   # hora local America/Santiago
+docker compose exec backend python manage.py debug_clock show
+docker compose exec backend python manage.py debug_clock reset
+```
+
+También desde la UI: Configuración → Depuración (solo superusuario y con herramientas activas). Mientras el reloj está alterado, una barra fija superior muestra «Reloj de depuración: dd-mm-aaaa HH:mm».
+
+**Límites**
+
+- Celery Beat sigue la hora real: las tareas programadas no se disparan por la hora falsa.
+- Las APIs externas (TUU, SimpleAPI) devuelven fechas reales.
+- Tras saltos grandes la sesión JWT puede verse expirada: volver a iniciar sesión.
+- Los `auto_now_add` siguen el reloj falso mientras está activo.
