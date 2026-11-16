@@ -7,7 +7,7 @@ respuestas crudas y hace upsert de las ventas unificadas.
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
@@ -118,12 +118,36 @@ def eligible_providers() -> models.QuerySet[PaymentTerminalProvider]:
     )
 
 
-def daily_range(settings: TerminalSyncSettings, today: date) -> tuple[date, date] | None:
+def scheduled_range(settings: TerminalSyncSettings, today: date) -> tuple[date, date] | None:
+    """Rango de una sincronización programada: la ventana de retroceso hasta hoy."""
     start = today - timedelta(days=settings.lookback_days)
     if settings.history_start_date:
         start = max(settings.history_start_date, start)
-    end = today - timedelta(days=1)
-    return None if start > end else (start, end)
+    return None if start > today else (start, today)
+
+
+def is_sync_due(
+    settings: TerminalSyncSettings, now_local: datetime, last_scheduled_at: datetime | None
+) -> bool:
+    """Corresponde sincronizar: habilitada y cumplido el intervalo desde la última programada."""
+    if not settings.enabled:
+        return False
+    unit = settings.interval_unit
+    if unit == TerminalSyncSettings.IntervalUnit.DAYS:
+        if now_local.hour < settings.run_hour:
+            return False
+        if last_scheduled_at is None:
+            return True
+        elapsed = now_local.date() - timezone.localtime(last_scheduled_at).date()
+        return elapsed >= timedelta(days=settings.interval_value)
+    if last_scheduled_at is None:
+        return True
+    step = (
+        timedelta(hours=settings.interval_value)
+        if unit == TerminalSyncSettings.IntervalUnit.HOURS
+        else timedelta(minutes=settings.interval_value)
+    )
+    return now_local - last_scheduled_at >= step
 
 
 def manual_range(

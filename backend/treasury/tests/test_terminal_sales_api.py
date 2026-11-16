@@ -285,3 +285,21 @@ def test_manual_sync_enqueue_failure_marks_run_failed(db):
 def test_settings_viewset_exposes_only_current(admin_client):
     assert admin_client.get("/api/treasury/terminal-sync-settings/").status_code == 404
     assert admin_client.get("/api/treasury/terminal-sync-settings/1/").status_code == 404
+
+
+@pytest.mark.django_db
+def test_settings_interval_validation(admin_client):
+    url = "/api/treasury/terminal-sync-settings/current/"
+    bad = admin_client.patch(url, {"interval_unit": "MINUTES", "interval_value": 4}, format="json")
+    assert bad.status_code == 400
+    assert "interval_value" in bad.json()["error"]["details"]
+    zero = admin_client.patch(url, {"interval_unit": "HOURS", "interval_value": 0}, format="json")
+    assert zero.status_code == 400
+    ok = admin_client.patch(url, {"interval_unit": "MINUTES", "interval_value": 5}, format="json")
+    assert ok.status_code == 200, ok.content
+    assert ok.json()["interval_value"] == 5
+    assert ok.json()["interval_unit"] == "MINUTES"
+    # Con 1 guardado, cambiar solo la unidad a MINUTES viola el mínimo.
+    admin_client.patch(url, {"interval_unit": "DAYS", "interval_value": 1}, format="json")
+    again = admin_client.patch(url, {"interval_unit": "MINUTES"}, format="json")
+    assert again.status_code == 400

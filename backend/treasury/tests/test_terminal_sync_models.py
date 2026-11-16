@@ -81,3 +81,9 @@ def test_dte_type_property():
     ]:
         s.document_type = n
         assert s.dte_type == dte
+
+
+def test_settings_interval_defaults_keep_daily_behaviour():
+    s = TerminalSyncSettings.get_settings()
+    assert s.interval_value == 1
+    assert s.interval_unit == "DAYS"

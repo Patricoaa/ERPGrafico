@@ -36,7 +36,7 @@ describe("TreasurySettingsView", () => {
 
     it("el panel cargado desplaza su contenido internamente dentro del layout del módulo", () => {
         state.settings = {
-            id: 1, enabled: false, run_hour: 3, lookback_days: 7, history_start_date: null,
+            id: 1, enabled: false, interval_value: 1, interval_unit: "DAYS", run_hour: 3, lookback_days: 7, history_start_date: null,
             max_retries: 3, retry_delay_minutes: 10, last_run: null,
         }
         state.isError = false
@@ -46,5 +46,22 @@ describe("TreasurySettingsView", () => {
         expect(scroller?.className).toEqual(expect.stringContaining("min-h-0"))
         expect(scroller?.className).toEqual(expect.stringContaining("flex-1"))
         expect(screen.getByText("Sincronización automática", { selector: "div,h3,[data-slot=card-title]" })).toBeTruthy()
+    })
+
+    it("muestra la hora de ejecución solo cuando la unidad es Días", () => {
+        const base = {
+            id: 1, enabled: false, interval_value: 1, interval_unit: "DAYS" as const, run_hour: 3, lookback_days: 7,
+            history_start_date: null, max_retries: 3, retry_delay_minutes: 10, last_run: null,
+        }
+        state.settings = base
+        state.isError = false
+        const days = render(<TreasurySettingsView />)
+        expect(screen.getByText("Hora de ejecución")).toBeTruthy()
+        expect(screen.getByText("Cada")).toBeTruthy()
+        expect(screen.getByText("Unidad")).toBeTruthy()
+        days.unmount()
+        state.settings = { ...base, interval_unit: "MINUTES", interval_value: 30 }
+        render(<TreasurySettingsView />)
+        expect(screen.queryByText("Hora de ejecución")).toBeNull()
     })
 })

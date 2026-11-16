@@ -3813,6 +3813,20 @@ class TerminalSyncSettings(TimeStampedModel):
         default=7,
         validators=[MinValueValidator(1), MaxValueValidator(60)],
     )
+    class IntervalUnit(models.TextChoices):
+        MINUTES = "MINUTES", _("Minutos")
+        HOURS = "HOURS", _("Horas")
+        DAYS = "DAYS", _("Días")
+
+    interval_value = models.PositiveSmallIntegerField(
+        _("Cada"), default=1, validators=[MinValueValidator(1)]
+    )
+    interval_unit = models.CharField(
+        _("Unidad del intervalo"),
+        max_length=10,
+        choices=IntervalUnit.choices,
+        default=IntervalUnit.DAYS,
+    )
     history_start_date = models.DateField(_("Inicio del historial"), null=True, blank=True)
     max_retries = models.PositiveSmallIntegerField(
         _("Reintentos máximos"),

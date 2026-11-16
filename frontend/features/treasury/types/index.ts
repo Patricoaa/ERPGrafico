@@ -788,10 +788,14 @@ export interface TerminalSyncLastRun {
     warnings: string[]
 }
 
+export type TerminalSyncIntervalUnit = 'MINUTES' | 'HOURS' | 'DAYS'
+
 export interface TerminalSyncSettings {
     id: number
     enabled: boolean
     run_hour: number
+    interval_value: number
+    interval_unit: TerminalSyncIntervalUnit
     lookback_days: number
     /** ISO date */
     history_start_date: string | null

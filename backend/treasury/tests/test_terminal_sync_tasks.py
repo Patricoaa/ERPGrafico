@@ -100,12 +100,34 @@ def test_dispatcher_skips_inactive_and_keyless_providers(monkeypatch, enqueued):
     assert list(TerminalSyncRun.objects.values_list("provider_id", flat=True)) == [ok.pk]
 
 
-def test_dispatcher_skips_when_no_daily_range(monkeypatch, enqueued):
+def test_dispatcher_skips_when_no_scheduled_range(monkeypatch, enqueued):
     _configure(run_hour=3, history_start_date=timezone.localtime().date() + timedelta(days=1))
     _keyed_provider()
     _freeze(monkeypatch, 3)
     assert tasks.dispatch_terminal_sales_sync() == 0
     assert TerminalSyncRun.objects.count() == 0
+
+
+def test_dispatcher_minutes_interval_29_does_not_launch_30_does(monkeypatch, enqueued):
+    _configure(interval_value=30, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    assert tasks.dispatch_terminal_sales_sync() == 1
+    TerminalSyncRun.objects.filter(provider=provider).update(
+        started_at=timezone.localtime().replace(hour=10, minute=0, second=0, microsecond=0)
+    )
+    _freeze(monkeypatch, 10, 29)
+    assert tasks.dispatch_terminal_sales_sync() == 0
+    _freeze(monkeypatch, 10, 30)
+    assert tasks.dispatch_terminal_sales_sync() == 1
+
+
+def test_dispatcher_range_ends_today(monkeypatch, enqueued):
+    _configure(run_hour=3)
+    _keyed_provider()
+    _freeze(monkeypatch, 3)
+    tasks.dispatch_terminal_sales_sync()
+    assert TerminalSyncRun.objects.get().end_date == timezone.localtime().date()
 
 
 def _scheduled_run():
@@ -195,7 +217,7 @@ def test_transient_error_then_success_returns_final_status(monkeypatch):
 
 
 def test_beat_entry_matches_registered_task():
-    entry = django_settings.CELERY_BEAT_SCHEDULE["dispatch_terminal_sales_sync_hourly"]
+    entry = django_settings.CELERY_BEAT_SCHEDULE["dispatch_terminal_sales_sync"]
     assert entry["task"] in celery_app.tasks
 
 
@@ -229,7 +251,8 @@ def test_sync_run_triggers_reconciliation(monkeypatch):
     run = _success_run(monkeypatch)
     calls = []
     monkeypatch.setattr(
-        "tax.reconciliation.terminal.reconcile_terminal_sales", lambda s, e: calls.append((s, e)) or {}
+        "tax.reconciliation.terminal.reconcile_terminal_sales",
+        lambda s, e: calls.append((s, e)) or {},
     )
     assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
     assert calls == [(run.start_date, run.end_date)]
@@ -278,6 +301,8 @@ def test_boletas_skipped_when_terminal_reconcile_fails(monkeypatch):
 
     monkeypatch.setattr("tax.reconciliation.terminal.reconcile_terminal_sales", boom)
     calls = []
-    monkeypatch.setattr("tax.reconciliation.boletas.reconcile_rcv_boletas", lambda y, m: calls.append(1))
+    monkeypatch.setattr(
+        "tax.reconciliation.boletas.reconcile_rcv_boletas", lambda y, m: calls.append(1)
+    )
     assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
     assert calls == []
