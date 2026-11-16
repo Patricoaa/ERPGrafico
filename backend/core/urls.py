@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .api.documents import document_ref, document_relations
 from .api.rbac import catalog_view, bundles_view
 from .api.search import universal_search
+from .debug_clock_views import DebugClockView
 from .views import (
     ActionLogViewSet,
     BackgroundJobViewSet,
@@ -41,6 +42,7 @@ urlpatterns = [
     path("auth/change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("audit/global/", GlobalAuditLogView.as_view(), name="global-audit-log"),
     path("server-time/", server_time, name="server-time"),
+    path("debug/clock/", DebugClockView.as_view(), name="debug-clock"),
     path("status/", system_status, name="system-status"),
     path("entity-prefixes/", entity_prefixes, name="entity-prefixes"),
     path("entity-config/", entity_config, name="entity-config"),

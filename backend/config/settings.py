@@ -133,6 +133,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # ADR-0139 D4: siempre presente; se autodesactiva sin DEBUG + DEBUG_CLOCK_ENABLED=1.
+    "core.debug_clock.DebugClockMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
