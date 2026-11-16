@@ -19,6 +19,11 @@ from accounting.models import (
     FiscalYear,
     JournalEntry,
     JournalItem,
+    RCVApiKey,
+    RCVDocument,
+    RCVImport,
+    RCVImportAttempt,
+    RCVImportSummary,
 )
 from accounting.services import AccountingService
 from accounting.utils import get_default_vat_rate
@@ -125,6 +130,9 @@ from treasury.models import (
     ReconciliationMatch,
     ReconciliationSettings,
     TerminalBatch,
+    TerminalSale,
+    TerminalSyncPayload,
+    TerminalSyncRun,
     TreasuryAccount,
     TreasuryMovement,
 )
@@ -560,6 +568,18 @@ class Command(BaseCommand):
         _section_header("3. Tax")
         _safe_delete(F29Payment, "F29Payment")
         _safe_delete(F29Declaration, "F29Declaration")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+
+        # ── 3.5. RCV & TUU Imports ───────────────────────────
+        _section_header("3.5. RCV & TUU Imports")
+        _safe_delete(RCVDocument, "RCVDocument")
+        _safe_delete(RCVImportAttempt, "RCVImportAttempt")
+        _safe_delete(RCVImportSummary, "RCVImportSummary")
+        _safe_delete(RCVImport, "RCVImport")
+        _safe_delete(RCVApiKey, "RCVApiKey")
+        _safe_delete(TerminalSale, "TerminalSale")
+        _safe_delete(TerminalSyncPayload, "TerminalSyncPayload")
+        _safe_delete(TerminalSyncRun, "TerminalSyncRun")
         self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
         # ── 4. Logistics Detail ──────────────────────────────
@@ -1328,6 +1348,20 @@ class Command(BaseCommand):
                 "product_type": Product.Type.SERVICE,
                 "uom": uoms["un"],
                 "sale_price": 15000,
+                "track_inventory": False,
+            },
+        )
+        Product.objects.get_or_create(
+            code="SRV-VTA-DIN",
+            defaults={
+                "name": "Servicio con Precio Dinámico",
+                "category": cat_services,
+                "product_type": Product.Type.SERVICE,
+                "uom": uoms["un"],
+                "sale_price": 0,
+                "is_dynamic_pricing": True,
+                "can_be_sold": True,
+                "can_be_purchased": False,
                 "track_inventory": False,
             },
         )
@@ -2722,57 +2756,7 @@ class Command(BaseCommand):
             )
 
         self.stdout.write("  ── 3 órdenes de compra, 3 receipts, 3 facturas, 3 pagos")
-
-        # ── Multi-month purchases (Jan-Jun 2026) ──────────────────────────
-        from datetime import date as _date
-
-        s3 = partners["suppliers"][2]  # Servicios Eléctricos Enel
-        tinta_m = Product.objects.get(code="MP-TIN-MAG")
-        tinta_y = Product.objects.get(code="MP-TIN-YEL")
-        multi_month_products = [
-            (s1, papel, uoms["resma"], 30, 5000, "Compra mensual resmas"),
-            (s2, tinta_c, uoms["kg"], 5, 12000, "Compra mensual tinta cyan"),
-            (s1, cartulina, uoms["paquete"], 3, 22000, "Compra mensual cartulina"),
-            (s2, tinta_m, uoms["kg"], 5, 12000, "Compra mensual tinta magenta"),
-            (s2, tinta_y, uoms["kg"], 5, 12000, "Compra mensual tinta yellow"),
-            (s1, papel, uoms["resma"], 40, 5000, "Compra semestral resmas"),
-        ]
-        for i, month in enumerate(range(1, 7)):
-            order_date = _date(2026, month, 15)
-            supplier, product, uom, qty, cost, note = multi_month_products[i]
-            note_tag = f"Seed-MultiMonth-{month:02d}"
-            if PurchaseOrder.objects.filter(notes=note_tag).exists():
-                continue
-            po = PurchaseOrder.objects.create(
-                supplier=supplier,
-                date=order_date,
-                payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
-                warehouse=wh,
-                notes=note_tag,
-            )
-            PurchaseLine.objects.create(
-                order=po, product=product, quantity=qty,
-                uom=uom, unit_cost=cost, tax_rate=get_default_vat_rate(),
-            )
-            po.save()
-            PurchaseOrderService().confirm(po, user=admin)
-            PurchasingService.receive_order(po, wh)
-            BillingService.create_purchase_bill(
-                po, supplier_invoice_number=f"OC-{po.number}", date=order_date,
-            )
-            TreasuryService.create_movement(
-                amount=po.total,
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-                payment_method=TreasuryMovement.Method.TRANSFER,
-                date=order_date, created_by=admin,
-                from_account=bco_estado, partner=supplier,
-                purchase_order=po, reference=f"Pago OC MultiMonth {month:02d}",
-            )
-            self.stdout.write(
-                f"  ✓ OCS-{po.number}: {supplier.name} → {qty}u {product.name} "
-                f"(${po.total:,.0f}) — {order_date.strftime('%b %Y')}"
-            )
-        self.stdout.write("  ── +6 compras multi-mes (Ene-Jun 2026)")
+        self.stdout.write("  ── Sin compras en períodos anteriores (meses previos cierran en 0)")
 
     def _create_sales_demo(self, accounts, partners, inventory, uoms):
         from billing.services import BillingService
@@ -2959,110 +2943,7 @@ class Command(BaseCommand):
             )
 
         self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
-
-        # ── Multi-month sales (Historical to Current Month) ─────────────
-        import calendar
-        import random
-        from datetime import date as _date
-
-        current_month = today.month
-        current_year = today.year
-
-        available_products = [
-            (Product.objects.get(code="PT-0001"), uoms["hoja"]),
-            (Product.objects.get(code="SRV-DIS-GRA"), uoms["un"]),
-            (Product.objects.get(name="Servicio Encuadernación"), uoms["un"]),
-            (Product.objects.get(name="Banner Roller Up (80x200cm)"), uoms["un"]),
-            (Product.objects.get(name="Calendario de Escritorio"), uoms["un"]),
-            (Product.objects.get(name="Afiche Publicitario (Couché 170g)"), uoms["un"]),
-            (Product.objects.get(name="Flyer Promocional A5"), uoms["un"]),
-            (Product.objects.get(name="Tríptico Corporativo"), uoms["un"]),
-            (Product.objects.get(name="Carpeta Institucional"), uoms["un"]),
-            (Product.objects.get(name="Libreta de Notas (Bond 80g)"), uoms["un"]),
-        ]
-
-        customers = [c1, c2, c_default]
-        total_hist_sales = 0
-
-        for month in range(1, current_month + 1):
-            num_days = calendar.monthrange(current_year, month)[1]
-            max_day = num_days if month != current_month else today.day
-            if max_day < 1:
-                max_day = 1
-
-            # Genera entre 22 y 30 ventas por mes para volumen comercial realista y ganancias sólidas
-            num_sales = random.randint(22, 30)
-
-            for sale_idx in range(num_sales):
-                order_date = _date(current_year, month, random.randint(1, max_day))
-                customer = random.choice(customers)
-                product, uom = random.choice(available_products)
-
-                # Segmentación realista de pedidos gráficos B2B para rentabilidad positiva en Estado de Resultados:
-                # - 20% pedidos express/menores: $350.000 - $750.000
-                # - 55% pedidos medianos/campañas: $800.000 - $2.200.000
-                # - 25% grandes contratos corporativos: $2.200.000 - $4.800.000
-                target_value = Decimal(
-                    random.choices(
-                        [
-                            random.randint(350000, 750000),
-                            random.randint(800000, 2200000),
-                            random.randint(2200000, 4800000),
-                        ],
-                        weights=[20, 55, 25],
-                        k=1,
-                    )[0]
-                )
-                price = product.sale_price if product.sale_price > 0 else Decimal("1000")
-                qty = max(1, int(target_value / price))
-
-                note_tag = f"Seed-HistSale-{month:02d}-{sale_idx:02d}"
-                if SaleOrder.objects.filter(notes=note_tag).exists():
-                    continue
-
-                so = SaleOrder.objects.create(
-                    customer=customer, date=order_date,
-                    payment_method=SaleOrder.PaymentMethod.TRANSFER,
-                    notes=note_tag,
-                )
-                SaleLine.objects.create(
-                    order=so, product=product, description=f"{product.name} (Auto Histórico)",
-                    quantity=qty, uom=uom, unit_price=price,
-                    tax_rate=get_default_vat_rate(),
-                )
-                so.save()
-                SalesService.confirm_sale(so)
-
-                # Dispatch if required (for services, this might return None or empty)
-                delivery = SalesService.dispatch_order(so, wh, delivery_date=order_date)
-                if delivery:
-                    SalesService.confirm_delivery(delivery)
-
-                # ADR-0084: emitida = con folio. Una de cada cinco ventas del mes en curso
-                # queda con folio pendiente (borrador pagado); los meses pasados se cierran
-                # (_close_past_periods) y no admiten asientos en borrador.
-                folio_pending = (
-                    sale_idx % 5 == 4
-                    and (order_date.year, order_date.month) == (today.year, today.month)
-                )
-                inv = BillingService.create_sale_invoice(
-                    so, dte_type=Invoice.DTEType.FACTURA,
-                    payment_method="TRANSFER", date=order_date,
-                    number=None if folio_pending else str(20000 + so.id),
-                )
-
-                TreasuryService.create_movement(
-                    amount=inv.total,
-                    movement_type=TreasuryMovement.Type.INBOUND,
-                    payment_method=TreasuryMovement.Method.TRANSFER,
-                    date=order_date, created_by=admin,
-                    to_account=bco_estado, partner=customer,
-                    sale_order=so, invoice=inv,
-                    reference=f"Cobro Venta Hist. {note_tag}",
-                )
-                total_hist_sales += 1
-
-        self.stdout.write(f"  ✓ {total_hist_sales} ventas multi-mes generadas (Ene-{today.strftime('%b')} {current_year})")
+        self.stdout.write("  ── Sin ventas en períodos anteriores (meses previos cierran en 0)")
 
     def _create_document_flows_demo(self, partners, inventory, uoms):
         """
@@ -3244,113 +3125,13 @@ class Command(BaseCommand):
         self.stdout.write(f"  ✓ {settled} facturas saldadas")
 
     def _create_historical_purchases_and_pos(self, accounts, partners, inventory, uoms):
-        import calendar
-        import random
-        from datetime import date as _date
+        """Omitido: no se crean ventas/compras ni liquidaciones en períodos anteriores.
 
-        from billing.services import BillingService
-        from inventory.models import Product
-        from purchasing.models import PurchaseLine, PurchaseOrder
-        from purchasing.services import PurchaseOrderService, PurchasingService
-        from treasury.models import (
-            PaymentMethod,
-            PaymentTerminalProvider,
-            TreasuryAccount,
-            TreasuryMovement,
+        Los meses contables y fiscales previos al actual deben cerrarse en 0.
+        """
+        self.stdout.write(
+            "  ✓ Sin compras/ventas históricas ni liquidaciones POS en períodos anteriores"
         )
-        from treasury.services import TerminalBatchService, TreasuryService
-
-        admin = User.objects.filter(is_superuser=True).first()
-        today = timezone.now().date()
-        current_year = today.year
-        current_month = today.month
-
-        # Subscriptions
-        electric_prod = Product.objects.get(code="SUB-ELEC")
-        maint_prod = Product.objects.get(code="SUB-MNT-OFF")
-        internet_prod, _ = Product.objects.get_or_create(
-            code="SUB-INT",
-            defaults={
-                "name": "Servicios de Internet",
-                "category": electric_prod.category,
-                "product_type": Product.Type.SUBSCRIPTION,
-                "uom": uoms["un"],
-                "sale_price": 0,
-                "can_be_sold": False,
-                "can_be_purchased": True,
-            }
-        )
-
-        suppliers = partners["suppliers"]
-        s_enel = suppliers[2]
-        s_maint = suppliers[1]
-        s_internet = suppliers[0] # Ejemplo
-
-        # POS setup
-        tuu_prov = PaymentTerminalProvider.objects.filter(name="TUU").first()
-        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
-        pm_deposit = PaymentMethod.objects.filter(
-            treasury_account=bco_estado, allow_for_sales=True, is_active=True,
-            method_type=PaymentMethod.Type.TRANSFER
-        ).first()
-
-        for month in range(1, current_month + 1):
-            num_days = calendar.monthrange(current_year, month)[1]
-            max_day = num_days if month != current_month else today.day
-            if max_day < 1: max_day = 1
-
-            # 1. Purchase Invoices (Subscriptions)
-            subs = [
-                (s_enel, electric_prod, Decimal(random.randint(60000, 150000))),
-                (s_maint, maint_prod, Decimal("250000")),
-                (s_internet, internet_prod, Decimal("45000")),
-            ]
-            for supp, prod, cost in subs:
-                order_date = _date(current_year, month, random.randint(1, 10))
-                po = PurchaseOrder.objects.create(
-                    supplier=supp, date=order_date,
-                    payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
-                    notes=f"Subscripción Histórica {month:02d}",
-                )
-                PurchaseLine.objects.create(
-                    order=po, product=prod, quantity=1, uom=prod.uom,
-                    unit_cost=cost, tax_rate=get_default_vat_rate(),
-                )
-                po.save()
-                PurchaseOrderService().confirm(po, user=admin)
-                PurchasingService.receive_order(po, inventory["warehouse"])
-                inv = BillingService.create_purchase_bill(
-                    po, supplier_invoice_number=f"SUB-{prod.code}-{month:02d}", date=order_date,
-                )
-                TreasuryService.create_movement(
-                    amount=po.total, movement_type=TreasuryMovement.Type.OUTBOUND,
-                    payment_method=TreasuryMovement.Method.TRANSFER, date=order_date,
-                    created_by=admin, from_account=bco_estado, partner=supp,
-                    purchase_order=po, invoice=inv, reference=f"Pago SUB {month:02d}"
-                )
-
-            # 2. POS Terminal Settlements (TUU)
-            if tuu_prov and pm_deposit:
-                sales_date = _date(current_year, month, max_day)
-                gross = Decimal(random.randint(2000000, 5000000))
-                base_comm = (gross * Decimal("0.02")).quantize(Decimal("1")) # 2%
-                iva_comm = (base_comm * Decimal("0.19")).quantize(Decimal("1"))
-                net = gross - base_comm - iva_comm
-
-                TerminalBatchService.create_batch(
-                    provider=tuu_prov, payment_method=pm_deposit,
-                    sales_date=sales_date, gross_amount=gross,
-                    commission_base=base_comm, commission_tax=iva_comm,
-                    net_amount=net, terminal_reference=f"SETTLE-{month:02d}",
-                    user=admin
-                )
-
-                TerminalBatchService.generate_monthly_invoice(
-                    provider=tuu_prov, year=current_year, month=month,
-                    user=admin, number=f"TUU-{month:02d}", date=sales_date
-                )
-
-        self.stdout.write(f"  ✓ Compras históricas (Suscripciones) y Liquidaciones TC generadas (Ene-{today.strftime('%b')} {current_year})")
 
     def _initialize_company_settings(self):
         """
@@ -3689,12 +3470,14 @@ class Command(BaseCommand):
                 self.stdout.write(f"    ✓ Employee '{contact.name}' — {emp_data['position']} (${emp_data['base_salary']:,.0f})")
             created_employees.append(emp)
 
-        # 5. Payrolls: Ene-Jun 2026 for each employee
+        # 5. Payrolls: solo mes actual (períodos anteriores deben cerrar en 0)
         bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
 
         from treasury.services import TreasuryService as _TS
 
         admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
+        current_payroll_year = timezone.now().year
+        current_payroll_month = timezone.now().month
         _funding_amount = Decimal("30000000")
         if bco_estado.current_balance < _funding_amount:
             _TS.create_movement(
@@ -3715,7 +3498,7 @@ class Command(BaseCommand):
                 f"(saldo ahora: ${bco_estado.current_balance:,.0f})"
             )
 
-        payroll_months = [(2026, m) for m in range(1, 7)]
+        payroll_months = [(current_payroll_year, current_payroll_month)]
         payroll_count = 0
         payment_count = 0
 
@@ -3737,7 +3520,7 @@ class Command(BaseCommand):
                     PayrollPaymentService.pay_salary(
                         payroll,
                         treasury_account_id=bco_estado.pk,
-                        payment_date=date(year, month, 28),
+                        payment_date=timezone.now().date(),
                         payment_method="TRANSFER",
                         notes="Pago remuneración demo",
                         created_by=User.objects.filter(is_superuser=True).first(),
@@ -3745,7 +3528,7 @@ class Command(BaseCommand):
                     PayrollPaymentService.pay_previred(
                         payroll,
                         treasury_account_id=bco_estado.pk,
-                        payment_date=date(year, month, 28),
+                        payment_date=timezone.now().date(),
                         payment_method="TRANSFER",
                         notes="Pago previred demo",
                         created_by=User.objects.filter(is_superuser=True).first(),
@@ -3760,7 +3543,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             f"    ✓ {len(created_employees)} empleados, "
-            f"{payroll_count} nóminas posteadas, {payment_count} pagos registrados"
+            f"{payroll_count} nóminas posteadas (solo mes actual), {payment_count} pagos registrados"
         )
 
     def _initialize_workflow_settings(self):
@@ -3912,14 +3695,10 @@ class Command(BaseCommand):
         )
 
     def _close_past_periods(self, accounts):
-        """Close past tax/accounting periods with full F29 lifecycle.
+        """Cierra todos los meses anteriores al actual en 0 (contable y fiscal).
 
-        For each month before the current month:
-        1. Create F29 declaration (auto-calculates from invoices)
-        2. Register F29 (creates VAT clearing journal entry)
-        3. Pay F29 if amount due > 0
-        4. Close TaxPeriod
-        5. Close AccountingPeriod
+        Sin ventas/compras en períodos anteriores, cada F29 queda en 0 y los
+        períodos tributario/contable se cierran sin movimientos.
         """
         from tax.services import (
             AccountingPeriodService,
@@ -3934,24 +3713,24 @@ class Command(BaseCommand):
         current_month = timezone.now().month
 
         self.stdout.write(f"\n{'─' * 50}")
-        self.stdout.write("  Closing past periods (F29 + Accounting)...")
+        self.stdout.write("  Closing past periods at 0 (F29 + Accounting)...")
 
         for month in range(1, current_month):
             self.stdout.write(f"\n  ── Periodo {month:02d}/{current_year} ──")
 
-            # 1. Create F29 declaration
+            # 1. Create/refresh F29 declaration (debe quedar en 0 sin actividad)
             try:
                 declaration = F29CalculationService.create_or_update_declaration(
                     year=current_year, month=month,
                 )
                 self.stdout.write(
-                    f"    ✓ F29 creado: ventas=${declaration.sales_taxed:,.0f}, "
+                    f"    ✓ F29 en 0: ventas=${declaration.sales_taxed:,.0f}, "
                     f"compras=${declaration.purchases_taxed:,.0f}, "
                     f"IVA por pagar=${declaration.vat_to_pay:,.0f}"
                 )
             except Exception as e:
                 self.stdout.write(self.style.WARNING(
-                    f"    ⚠ F29 création falló: {str(e)[:80]}"
+                    f"    ⚠ F29 creación falló: {str(e)[:80]}"
                 ))
                 continue
 
@@ -3962,16 +3741,20 @@ class Command(BaseCommand):
                         declaration_id=declaration.pk,
                         folio_number=f"SII-{current_year}-{month:02d}",
                     )
-                    self.stdout.write(f"    ✓ F29 registrado (folio: SII-{current_year}-{month:02d})")
+                    self.stdout.write(
+                        f"    ✓ F29 registrado en 0 (folio: SII-{current_year}-{month:02d})"
+                    )
                 except Exception as e:
                     self.stdout.write(self.style.WARNING(
                         f"    ⚠ F29 registro falló: {str(e)[:80]}"
                     ))
                     continue
 
-            # 3. Pay F29 if amount due > 0
+            # 3. Pay F29 if amount due > 0 (no debería ocurrir sin actividad)
             if declaration.total_amount_due > 0:
-                already_paid = sum(p.amount for p in declaration.payments.all() if p.status == "POSTED")
+                already_paid = sum(
+                    p.amount for p in declaration.payments.all() if p.status == "POSTED"
+                )
                 remaining = declaration.total_amount_due - already_paid
                 if remaining > 0:
                     try:
@@ -3998,14 +3781,14 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write("    ✓ F29 ya pagado completamente")
             else:
-                self.stdout.write("    ✓ F29 sin saldo a pagar")
+                self.stdout.write("    ✓ F29 sin saldo a pagar (0)")
 
             # 4. Close TaxPeriod
             try:
                 TaxPeriodService.close_period(
                     year=current_year, month=month, user=admin,
                 )
-                self.stdout.write("    ✓ Período tributario cerrado")
+                self.stdout.write("    ✓ Período tributario cerrado en 0")
             except Exception as e:
                 self.stdout.write(self.style.WARNING(
                     f"    ⚠ Cierre tributario falló: {str(e)[:80]}"
@@ -4017,13 +3800,13 @@ class Command(BaseCommand):
                 AccountingPeriodService.close_period(
                     year=current_year, month=month, user=admin,
                 )
-                self.stdout.write("    ✓ Período contable cerrado")
+                self.stdout.write("    ✓ Período contable cerrado en 0")
             except Exception as e:
                 self.stdout.write(self.style.WARNING(
                     f"    ⚠ Cierre contable falló: {str(e)[:80]}"
                 ))
 
-        closed_count = current_month - 1
+        closed_count = max(current_month - 1, 0)
         self.stdout.write(
-            f"\n  ✓ {closed_count} períodos procesados para cierre ({current_year})"
+            f"\n  ✓ {closed_count} períodos cerrados en 0 ({current_year})"
         )
