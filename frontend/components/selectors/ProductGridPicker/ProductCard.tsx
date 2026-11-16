@@ -47,9 +47,9 @@ const AVAILABILITY_ICONS: Record<AvailabilityIcon, typeof Package> = {
 }
 
 const TONE_TEXT: Record<AvailabilityTone, string> = {
-    ok: 'text-muted-foreground',
+    ok: 'text-success',
     neutral: 'text-muted-foreground',
-    warning: 'text-warning-foreground',
+    warning: 'text-warning',
     none: 'text-destructive',
 }
 
@@ -148,7 +148,7 @@ function ProductCardComponent({
                 </h3>
 
                 {model.availability && AvailabilityIconComponent && (
-                    <p className={cn("flex items-center gap-1.5", cardAnatomy.description, unavailable ? "text-muted-foreground" : TONE_TEXT[model.availability.tone])}>
+                    <p className={cn("inline-flex min-w-0 items-center gap-1.5 text-xs font-medium", unavailable ? "text-muted-foreground" : TONE_TEXT[model.availability.tone])}>
                         <AvailabilityIconComponent className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         <span className="truncate">{model.availability.text}</span>
                     </p>
