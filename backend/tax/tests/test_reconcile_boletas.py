@@ -341,3 +341,17 @@ def test_run_endpoints_include_boletas_counts(env, imp):
     assert r.json()["boletas"] == {MatchStatus.MATCHED: 1}
     r = client.post(f"{base}/rcv/run/", body, format="json")
     assert r.json()["boletas"] == {MatchStatus.MATCHED: 1}
+
+
+def test_propagate_invoice_skips_manually_matched_boleta(env, imp):
+    from tax.reconciliation.boletas import propagate_invoice
+
+    manual_inv = make_pos_document(env, 1000, local_dt(2026, 11, 13, 10))
+    new_inv = make_pos_document(env, 1000, local_dt(2026, 11, 13, 11))
+    b = boleta(imp, 1000, matched_invoice=manual_inv, matched_manually=True, match_status=MatchStatus.MATCHED)
+
+    propagate_invoice(b.id, new_inv)
+    propagate_invoice(b.id, None)
+
+    _reload(b)
+    assert b.matched_invoice_id == manual_inv.id

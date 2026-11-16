@@ -226,3 +226,34 @@ def test_celery_prerun_noop_when_disabled(monkeypatch):
     cache.set(debug_clock.CACHE_KEY, 3600.0, None)
     apply_debug_clock_for_task()
     assert not debug_clock.is_active()
+
+
+def test_jwt_leeway_only_with_debug_and_env():
+    from config.settings import _jwt_leeway
+
+    assert _jwt_leeway(True, "1") == timedelta(days=366)
+    assert _jwt_leeway(False, "1") is None
+    assert _jwt_leeway(True, None) is None
+    assert _jwt_leeway(True, "0") is None
+
+
+def test_jwt_token_validates_after_clock_moves_back_with_leeway(enabled, monkeypatch, settings):
+    from rest_framework_simplejwt.backends import TokenBackend
+    from rest_framework_simplejwt.exceptions import TokenError
+    from rest_framework_simplejwt.tokens import AccessToken
+
+    from config.settings import _jwt_leeway
+
+    def backend(leeway):
+        return TokenBackend("HS256", settings.SECRET_KEY, leeway=leeway)
+
+    token = str(AccessToken())  # iat = hora real
+    debug_clock.set_clock(_real_now() - timedelta(days=3))
+    debug_clock.apply_debug_clock()
+
+    monkeypatch.setattr(AccessToken, "_token_backend", backend(0))
+    with pytest.raises(TokenError):  # sin leeway, el iat queda en el futuro
+        AccessToken(token)
+
+    monkeypatch.setattr(AccessToken, "_token_backend", backend(_jwt_leeway(True, "1")))
+    AccessToken(token)  # con el leeway de desarrollo, valida

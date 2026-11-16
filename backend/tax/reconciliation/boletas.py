@@ -74,7 +74,7 @@ def propagate_invoice(doc_id: int, invoice: Invoice | None) -> None:
     invoice_id = invoice.pk if invoice else None
     if invoice_id and RCVDocument.objects.filter(matched_invoice_id=invoice_id).exclude(pk=doc_id).exists():
         invoice_id = None  # la factura ya está en otra fila RCV (única por factura)
-    RCVDocument.objects.filter(pk=doc_id).update(matched_invoice_id=invoice_id)
+    RCVDocument.objects.filter(pk=doc_id, matched_manually=False).update(matched_invoice_id=invoice_id)
 
 
 def _stale_or_automatic() -> Q:
