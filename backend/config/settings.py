@@ -536,6 +536,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "accounting.tasks.dispatch_rcv_imports",
         "schedule": crontab(minute=20),  # Hourly at XX:20
     },
+    # ── Tax / Fiscal reconciliation ─────────────────────────────────────────
+    # Every 10 min, on local data only: terminal sales → RCV boletas → issue
+    # fiscal drafts (39/41/48) → boletas again, for the current month (and the
+    # previous one during the first 10 days). Cache lock prevents overlap
+    # (ADR-0140 D4).
+    "run_fiscal_reconciliation_10min": {
+        "task": "tax.tasks.run_fiscal_reconciliation",
+        "schedule": crontab(minute="*/10"),  # Every 10 minutes
+    },
     # ── Core / Idempotency ───────────────────────────────────────────────────
     # Purges IdempotencyRecord rows older than the 24h TTL defined by contract
     # (docs/20-contracts/idempotency.md). Runs off-peak so a reused key after
