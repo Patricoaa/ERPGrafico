@@ -46,7 +46,7 @@ const ANIMATE_ALLOWLIST = [
     "components/shared/SkeletonShell.tsx",
     "components/shared/WizardStepsSidebar.tsx",
     "features/accounting/components/closures/FiscalYearClosingWizard.tsx",
-    "features/accounting/components/closures/NewFiscalYearDrawer.tsx",
+    "features/accounting/components/closures/NewFiscalYearWizard.tsx",
     "features/auth/components/LoginForm.tsx",
     "features/notes/components/sidebars/NoteItemsSummary.tsx",
     "features/notes/components/steps/NoteStep_Logistics.tsx",

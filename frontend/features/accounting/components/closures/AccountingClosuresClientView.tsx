@@ -1,12 +1,11 @@
 "use client";
 
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { EntityPanelTab } from "@/components/providers"
 import React, {useState, useMemo, useCallback} from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
-import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
+import { NewFiscalYearWizard } from './NewFiscalYearWizard';
 import { type AccountingPeriod, type TaxPeriod } from '../../types';
 import { useTaxPeriods, useReopenPeriod as useReopenTaxPeriod, DeclarationWizard } from '@/features/tax';
 import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
@@ -211,18 +210,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     title="Aún no hay periodos contables"
                     description="Los periodos y cierres se activan automáticamente al registrar el primer asiento contable."
                 />
-                <EntityPanelTab label="accounting.fiscalyear" {...newFYPanel.tab}>
-                    {(open) => (
-                        <NewFiscalYearDrawer
-                            isOpen={open}
-                            onClose={newFYPanel.close}
-                            onConfirm={handleCreateFY}
-                            isLoading={actionLoadingPeriod}
-                            existingYears={fiscalYears.map(fy => fy.year)}
-                            hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
-                        />
-                    )}
-                </EntityPanelTab>
+                <NewFiscalYearWizard
+                isOpen={newFYPanel.open}
+                onClose={newFYPanel.close}
+                onConfirm={handleCreateFY}
+                isLoading={actionLoadingPeriod}
+                existingYears={fiscalYears.map(fy => fy.year)}
+                hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
+            />
             </div>
         );
     }
@@ -273,18 +268,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 onSuccess={() => handleDeclarationOpenChange(false)}
             />
 
-            <EntityPanelTab label="accounting.fiscalyear" {...newFYPanel.tab}>
-                {(open) => (
-                    <NewFiscalYearDrawer
-                        isOpen={open}
-                        onClose={newFYPanel.close}
-                        onConfirm={handleCreateFY}
-                        isLoading={actionLoadingPeriod}
-                        existingYears={fiscalYears.map(fy => fy.year)}
-                        hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
-                    />
-                )}
-            </EntityPanelTab>
+            <NewFiscalYearWizard
+                isOpen={newFYPanel.open}
+                onClose={newFYPanel.close}
+                onConfirm={handleCreateFY}
+                isLoading={actionLoadingPeriod}
+                existingYears={fiscalYears.map(fy => fy.year)}
+                hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
+            />
 
             {/* Accounting Period Pre-Close Checklist */}
             <AccountingPeriodCloseChecklistModal
