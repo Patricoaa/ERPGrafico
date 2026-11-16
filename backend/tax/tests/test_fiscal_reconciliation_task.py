@@ -106,3 +106,34 @@ def test_beat_schedule_registered():
     entry = settings.CELERY_BEAT_SCHEDULE["run_fiscal_reconciliation_10min"]
     assert entry["task"] == "tax.tasks.run_fiscal_reconciliation"
     assert entry["task"] == run_fiscal_reconciliation.name
+
+
+def test_expired_lock_taken_by_other_run_is_not_released():
+    set_match_settings(date(2026, 1, 1))
+
+    def other_run_takes_lock(*args):
+        cache.set(LOCK_KEY, "other-run", timeout=540)  # el candado propio expiró
+        return {"t": 1}
+
+    p1, p2, p3 = _patches([])
+    with p1, p2, p3, patch.object(tasks, "reconcile_terminal_sales", other_run_takes_lock), \
+            patch.object(tasks, "_local_today", return_value=date(2026, 11, 16)):
+        run_fiscal_reconciliation()
+
+    assert cache.get(LOCK_KEY) == "other-run"
+
+
+def test_task_has_soft_time_limit_below_lock():
+    assert run_fiscal_reconciliation.soft_time_limit == 520
+    assert run_fiscal_reconciliation.soft_time_limit < tasks.LOCK_TIMEOUT
+
+
+def test_soft_time_limit_stops_chain_and_releases_lock():
+    from celery.exceptions import SoftTimeLimitExceeded
+
+    set_match_settings(date(2026, 1, 1))
+    calls = []
+    with pytest.raises(SoftTimeLimitExceeded):
+        _run(calls, date(2026, 11, 16), terminal=SoftTimeLimitExceeded())
+    assert [c[0] for c in calls] == ["terminal"]
+    assert cache.get(LOCK_KEY) is None

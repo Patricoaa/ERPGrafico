@@ -238,3 +238,13 @@ def test_query_count_bounded(tenv):
     # Una sola selección; por documento solo el row-lock y su re-lectura (constante).
     assert sum("treasury_terminalsale" in sql for sql in selects) == 1
     assert len(selects) == 1 + 2 * 6
+
+
+def test_soft_time_limit_is_not_swallowed(tenv):
+    from celery.exceptions import SoftTimeLimitExceeded
+
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    make_terminal_sale(tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv)
+    with patch.object(BillingService, "confirm_invoice", side_effect=SoftTimeLimitExceeded()), \
+            pytest.raises(SoftTimeLimitExceeded):
+        issue_fiscal_drafts(2026, 11)

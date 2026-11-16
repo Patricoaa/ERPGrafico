@@ -2,9 +2,11 @@
 
 import calendar
 import logging
+import uuid
 from datetime import date
 
 from celery import shared_task
+from celery.exceptions import SoftTimeLimitExceeded
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -18,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 LOCK_KEY = "tax:fiscal_reconciliation:lock"
 LOCK_TIMEOUT = 540  # 9 min: menos que el período de 10 min de la tarea
+SOFT_TIME_LIMIT = 520  # corta la ejecución antes de que expire el candado
 PREVIOUS_MONTH_UNTIL_DAY = 10
 
 
@@ -36,6 +39,8 @@ def months_to_reconcile(today: date) -> list[tuple[int, int]]:
 def _step(name: str, label: str, fn, *args) -> dict:
     try:
         return fn(*args)
+    except SoftTimeLimitExceeded:
+        raise  # el límite corta toda la cadena, no solo el paso
     except Exception as exc:
         logger.exception("Cuadre fiscal %s: falló el paso %s", label, name)
         return {"error": type(exc).__name__}
@@ -51,10 +56,11 @@ def _reconcile_month(year: int, month: int) -> dict:
     return {"terminal": terminal, "boletas": boletas, "issued": issued}
 
 
-@shared_task(name="tax.tasks.run_fiscal_reconciliation")
+@shared_task(name="tax.tasks.run_fiscal_reconciliation", soft_time_limit=SOFT_TIME_LIMIT)
 def run_fiscal_reconciliation() -> dict:
     """Cadena local: terminal → boletas → emisión de borradores → boletas."""
-    if not cache.add(LOCK_KEY, "1", timeout=LOCK_TIMEOUT):
+    token = uuid.uuid4().hex
+    if not cache.add(LOCK_KEY, token, timeout=LOCK_TIMEOUT):
         return {"skipped": True}
     try:
         if RCVSettings.get_settings().fiscal_match_start_date is None:
@@ -64,4 +70,6 @@ def run_fiscal_reconciliation() -> dict:
         }
         return {"months": months}
     finally:
-        cache.delete(LOCK_KEY)
+        # Solo libera su propio candado: si expiró, otra ejecución puede tenerlo.
+        if cache.get(LOCK_KEY) == token:
+            cache.delete(LOCK_KEY)

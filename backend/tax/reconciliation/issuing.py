@@ -11,6 +11,7 @@ import calendar
 import logging
 from datetime import date
 
+from celery.exceptions import SoftTimeLimitExceeded
 from django.db import transaction
 from django.utils import timezone
 
@@ -35,6 +36,8 @@ def issue_fiscal_drafts(year: int, month: int) -> dict[str, int]:
         number, issue_date = fiscal
         try:
             done = _issue(invoice, number, issue_date)
+        except SoftTimeLimitExceeded:
+            raise  # el límite de la tarea periódica corta la emisión completa
         except Exception as exc:  # noqa: BLE001 — un documento no detiene la emisión del resto
             logger.warning("No se pudo emitir el documento %s: %s", invoice.pk, exc, exc_info=True)
             failed += 1
