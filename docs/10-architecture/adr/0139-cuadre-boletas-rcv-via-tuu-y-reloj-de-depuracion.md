@@ -60,8 +60,13 @@ El cuadre documento a documento del RCV (`reconcile_rcv_period`) deja de tocar l
 Solo existe con `DEBUG=True` y `DEBUG_CLOCK_ENABLED=1`. En cualquier otro caso, el código no hace nada.
 
 - Un desfase guardado en el caché (Redis) mueve `timezone.now()` del backend con `time-machine`, y el reloj sigue avanzando desde la hora fijada. Se aplica en las requests web y en las tareas Celery.
-- Se controla con `manage.py debug_clock set "AAAA-MM-DD HH:MM"`, `manage.py debug_clock reset` y `manage.py debug_clock show`. No hay endpoint para fijarlo.
-- `/api/core/server-time/` informa `debug_clock: true|false`. El frontend muestra un **banner fijo** mientras el reloj está alterado. La interfaz ya toma la fecha del servidor (`useServerDate`), así que sigue al reloj.
+- Se controla con `manage.py debug_clock set "AAAA-MM-DD HH:MM"`, `manage.py debug_clock reset` y `manage.py debug_clock show`.
+- **Pantalla `Configuración → Depuración` (`/settings/debug`)** con el endpoint `GET|POST|DELETE /api/core/debug/clock/` para ver, fijar y restablecer la hora. El endpoint:
+  - responde **404** si `is_enabled()` es falso, de modo que en producción no existe;
+  - exige `is_superuser`;
+  - registra cada cambio en la auditoría (`SecurityAuditMiddleware` o el log de auditoría existente).
+- `/api/core/server-time/` informa `debug_clock` (activo) y `debug_tools` (disponible). La pestaña y la tarjeta «Depuración» solo aparecen con `debug_tools` verdadero y para superusuarios.
+- El frontend muestra un **banner fijo** mientras el reloj está alterado. La interfaz ya toma la fecha del servidor (`useServerDate`), así que sigue al reloj.
 - Fuera de alcance: Celery Beat sigue el reloj real, y las APIs externas (TUU, SimpleAPI) responden con fechas reales.
 
 ## Alternativas descartadas

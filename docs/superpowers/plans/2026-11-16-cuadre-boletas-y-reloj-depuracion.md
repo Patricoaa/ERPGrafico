@@ -54,24 +54,35 @@
   - `is_active() -> bool`.
   - `DebugClockMiddleware`: llama a `apply_debug_clock()` cuando `is_enabled()`.
   - Comando `debug_clock set "AAAA-MM-DD HH:MM"` (hora local `America/Santiago`) | `reset` | `show`. Si `is_enabled()` es falso, `CommandError("El reloj de depuración solo funciona con DEBUG=True y DEBUG_CLOCK_ENABLED=1.")`.
-  - `server_time` responde `debug_clock` = `is_enabled() and is_active()`.
+  - `server_time` responde `debug_clock` = `is_enabled() and is_active()` y `debug_tools` = `is_enabled()`.
+  - Endpoint `/api/core/debug/clock/`, en `core/debug_clock_views.py`, registrado en `core/urls.py`:
+    - `GET` → `{active, now, offset_seconds}`;
+    - `POST {datetime: "AAAA-MM-DDTHH:MM"}` (hora local) → fija y aplica;
+    - `DELETE` → restablece.
+
+    Permiso `IsAdminUser`, que exige superusuario: un permiso propio que lanza 404 cuando `not is_enabled()` y que, si está habilitado, exige `request.user.is_superuser`. Cada `POST` o `DELETE` deja un log de auditoría con el mecanismo existente de `core` (buscar `AuditLog`/`log_security_event`). Vistas ≤ 20 líneas.
 
 - [ ] **Step 1: Write the failing tests** (`override_settings(DEBUG=True)` + `monkeypatch.setenv`):
   - `test_set_clock_moves_timezone_now`: tras `set_clock(2026-11-13 17:35 local)` y `apply_debug_clock()`, `timezone.localtime()` queda dentro de ±5 s de esa hora.
   - `test_clock_ticks`: dos lecturas separadas por `sleep(0.05)` son crecientes.
   - `test_change_without_restart_and_reset` (Review Focus 4): tras un segundo `set_clock` y `apply`, la hora es la nueva; tras `reset_clock()` y `apply`, vuelve a ±5 s de la real.
   - `test_disabled_when_not_debug` (Review Focus 5): con `DEBUG=False` y el env en 1, `apply` no mueve la hora y el comando lanza el `CommandError` exacto.
-  - `test_server_time_reports_flag`: `GET /api/core/server-time/` devuelve `debug_clock` en `false` y luego en `true`.
+  - `test_server_time_reports_flag`: `GET /api/core/server-time/` devuelve `debug_clock` en `false` y luego en `true`, y `debug_tools` según `is_enabled()`.
+  - `test_clock_endpoint_404_when_disabled`, `test_clock_endpoint_requires_superuser` (staff no superusuario → 403), `test_clock_endpoint_set_get_reset` (el `POST` mueve `timezone.now()` en la siguiente request; el `DELETE` la restablece) y `test_clock_endpoint_audits_changes`.
   - Fixture autouse que llama a `reset_clock()` y `apply_debug_clock()` al terminar cada test, para no contaminar la suite.
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** `…pytest core/tests/test_debug_clock.py -q` y luego `…pytest core -q`. Expected: PASS, salvo las 6 fallas preexistentes de core.
 - [ ] **Step 5: Commit** `feat(core): reloj de depuración para desarrollo (ADR-0139 D4)`.
 
-### Task 2: Banner del reloj y documentación
+### Task 2: Pantalla de depuración, banner del reloj y documentación
 
 **Files:**
-- Modify: el tipo y la respuesta que consume `frontend/hooks/useServerDate.ts` (agregar `debug_clock?: boolean`)
+- Modify: el tipo y la respuesta que consume `frontend/hooks/useServerDate.ts` (agregar `debug_clock?: boolean` y `debug_tools?: boolean`)
+- Create: `frontend/app/(dashboard)/settings/debug/page.tsx` (con el mismo patrón que `settings/jobs/page.tsx`)
+- Create: `frontend/features/settings/components/DebugSettingsView.tsx`, `frontend/features/settings/components/DebugClockForm.schema.ts`, `frontend/features/settings/api/debugApi.ts` y `frontend/features/settings/hooks/useDebugClock.ts`. Seguir la estructura real del feature `settings`. El formulario usa react-hook-form + zodResolver, con un campo fecha-hora local y los botones «Fijar hora» y «Volver a la hora real». También muestra la hora actual del servidor y si el reloj está alterado.
+- Modify: `frontend/app/(dashboard)/settings/SettingsHeader.tsx` (pestaña «Depuración») y `SettingsPageClient.tsx` (tarjeta), visibles solo con `debug_tools` verdadero **y** usuario superusuario (usar el hook o contexto de usuario actual existente)
+- Test: `frontend/features/settings/components/__tests__/DebugSettingsView.test.tsx` (fijar hora llama a la mutación con el valor, restablecer llama a `DELETE`, estados de carga y error) y un test de que la pestaña no aparece sin `debug_tools`
 - Create: `frontend/components/shared/DebugClockBanner.tsx` (exportado por el barrel de `@/components/shared`), o el lugar donde ya vivan los banners globales si existe uno
 - Modify: el layout del dashboard (`frontend/app/(dashboard)/layout.tsx` o el shell equivalente), donde se monta el banner
 - Modify: `docs/30-playbooks/remote-dev-server.md` (sección «Reloj de depuración»: activar con `DEBUG_CLOCK_ENABLED=1` en el `.env` del servidor de desarrollo, reiniciar `backend` y `celery-worker`, usar `docker compose exec backend python manage.py debug_clock set "2026-11-13 17:35"`, `reset`, `show`, y sus límites)
@@ -85,7 +96,7 @@
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement**, reusando la query de `useServerDate` sin crear otra. Si `useServerDate` no refresca, que el banner use un `refetchInterval` de 60 s dentro del hook.
 - [ ] **Step 4: Run** el test, `type-check` y `eslint`. Expected: PASS.
-- [ ] **Step 5: Commit** `feat(core): banner del reloj de depuración y guía de uso`.
+- [ ] **Step 5: Commit** `feat(settings): pantalla de depuración con reloj del servidor, banner y guía de uso`.
 
 ### Task 3: Vínculo venta TUU ↔ boleta RCV y servicio de emparejamiento
 
