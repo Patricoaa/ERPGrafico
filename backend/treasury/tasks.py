@@ -17,6 +17,7 @@ from .terminal_sync_service import (
     enqueue_runs,
     execute_run,
     is_sync_due,
+    recover_stale_runs,
     scheduled_range,
 )
 
@@ -926,6 +927,7 @@ def dispatch_terminal_sales_sync() -> int:
     date_range = scheduled_range(config, now.date())
     if date_range is None:
         return 0
+    recover_stale_runs(now)
     queued = 0
     for provider in eligible_providers():
         if TerminalSyncRun.objects.filter(

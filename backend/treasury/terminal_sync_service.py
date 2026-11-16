@@ -35,6 +35,7 @@ from treasury.models import (
 logger = logging.getLogger(__name__)
 
 MAX_CHUNK_DAYS = 30
+STALE_RUN_MINUTES = 60
 AUTH_MESSAGE = "La API key de TUU fue rechazada. Revise la key del proveedor."
 PLAN_MESSAGE = (
     "La cuenta TUU no tiene habilitado el reporte (plan PaaS requerido o servicio deshabilitado)."
@@ -129,6 +130,18 @@ def scheduled_range(settings: TerminalSyncSettings, today: date) -> tuple[date, 
     if settings.history_start_date:
         start = max(settings.history_start_date, start)
     return None if start > today else (start, today)
+
+
+def recover_stale_runs(now: datetime) -> int:
+    """Marca como fallidas las ejecuciones RUNNING sin respuesta por más de STALE_RUN_MINUTES."""
+    return TerminalSyncRun.objects.filter(
+        status=TerminalSyncRun.Status.RUNNING,
+        started_at__lt=now - timedelta(minutes=STALE_RUN_MINUTES),
+    ).update(
+        status=TerminalSyncRun.Status.FAILED,
+        error_message=f"Sincronización interrumpida (sin respuesta por más de {STALE_RUN_MINUTES} minutos)",
+        finished_at=timezone.now(),
+    )
 
 
 def is_sync_due(

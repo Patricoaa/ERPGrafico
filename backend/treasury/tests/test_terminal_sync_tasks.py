@@ -140,6 +140,39 @@ def test_dispatch_skips_provider_with_run_in_progress(monkeypatch, enqueued):
     assert TerminalSyncRun.objects.count() == 1
 
 
+def _running_run(provider, started):
+    return TerminalSyncRun.objects.create(
+        provider=provider,
+        trigger=TerminalSyncRun.Trigger.SCHEDULED,
+        status=TerminalSyncRun.Status.RUNNING,
+        start_date=date(2026, 11, 12),
+        end_date=date(2026, 11, 13),
+        started_at=started,
+    )
+
+
+def test_stale_running_run_is_failed_and_unblocks(monkeypatch, enqueued):
+    _configure(interval_value=5, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    stale = _running_run(provider, tasks._now() - timedelta(minutes=61))
+    assert tasks.dispatch_terminal_sales_sync() == 1
+    stale.refresh_from_db()
+    assert stale.status == TerminalSyncRun.Status.FAILED
+    assert "interrumpida" in stale.error_message
+    assert stale.finished_at is not None
+
+
+def test_recent_running_run_still_blocks(monkeypatch, enqueued):
+    _configure(interval_value=5, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    run = _running_run(provider, tasks._now() - timedelta(minutes=30))
+    assert tasks.dispatch_terminal_sales_sync() == 0
+    run.refresh_from_db()
+    assert run.status == TerminalSyncRun.Status.RUNNING
+
+
 def test_dispatcher_range_ends_today(monkeypatch, enqueued):
     _configure(run_hour=3)
     _keyed_provider()
