@@ -20,6 +20,7 @@ from tax.tests.reconciliation_helpers import (
     make_terminal_sale,
     set_match_settings,
 )
+from treasury.models import TerminalSale
 
 S = RCVImport.Direction.SALES
 _folios = itertools.count(5000)
@@ -183,6 +184,44 @@ def test_missing_since_import_excluded(env, imp):
     assert result == {MatchStatus.EXCLUDED: 1}
 
 
+def test_invoice_taken_elsewhere_leaves_boleta_without_invoice(env, imp):
+    inv = make_pos_document(env, 1000, local_dt(2026, 11, 13), dte_type=Invoice.DTEType.BOLETA)
+    other = boleta(imp, 1000, day=20, matched_invoice=inv, matched_manually=True,
+                   match_status=MatchStatus.MATCHED)
+    s = sale(env, 1000, matched_invoice=inv, match_status=MatchStatus.MATCHED)
+    b = boleta(imp, 1000)
+
+    run()
+
+    _reload(other, s, b)
+    assert s.rcv_document_id == b.id
+    assert b.match_status == MatchStatus.MATCHED
+    assert b.matched_invoice_id is None
+    assert other.matched_invoice_id == inv.id
+
+
+def test_clears_link_from_sale_outside_selection(env, imp):
+    b = boleta(imp, 1000)
+    other_month = make_terminal_sale(env, 1000, local_dt(2026, 12, 2), document_type=39, rcv_document=b)
+
+    run()
+
+    _reload(other_month, b)
+    assert other_month.rcv_document_id is None
+    assert b.match_status == MatchStatus.ONLY_EXTERNAL
+
+
+def test_clears_link_from_reversed_sale(env, imp):
+    b = boleta(imp, 1000)
+    reversed_sale = sale(env, 1000, status=TerminalSale.Status.REVERSED, rcv_document=b)
+
+    run()
+
+    _reload(reversed_sale, b)
+    assert reversed_sale.rcv_document_id is None
+    assert b.match_status == MatchStatus.ONLY_EXTERNAL
+
+
 def test_rcv_period_reconcile_leaves_boletas_untouched(env, imp):
     b39, b41 = boleta(imp, 1000, dte_type=39), boleta(imp, 1000, dte_type=41)
     s = sale(env, 1000)
@@ -201,7 +240,9 @@ def test_rcv_period_reconcile_leaves_boletas_untouched(env, imp):
 
 def test_idempotent(env, imp):
     sales = [sale(env, 1250, hh=h) for h in (9, 11, 17)]
-    docs = [boleta(imp, 1250, folio=f) for f in (100, 101)] + [boleta(imp, 9999)]
+    for folio in (100, 101):
+        boleta(imp, 1250, folio=folio)
+    boleta(imp, 9999)
     first = run()
     for s in sales:
         s.refresh_from_db()
@@ -213,7 +254,6 @@ def test_idempotent(env, imp):
         s.refresh_from_db()
     assert first == second == {MatchStatus.MATCHED: 2, MatchStatus.ONLY_EXTERNAL: 1}
     assert {s.id: s.rcv_document_id for s in sales} == links
-    assert len(docs) == 3
 
 
 def _queries_for(env, imp, n):
