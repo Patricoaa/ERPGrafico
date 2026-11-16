@@ -55,7 +55,7 @@ const doc: RcvDocumentDetail = {
     acknowledgement: "Recibo otorgado por el receptor", service_indicator: null, exempt_amount: "0", net_amount: "10000",
     vat_amount: "1900", vat_recoverable: "1900", vat_non_recoverable: "0", total_amount: "11900", other_taxes_total: "0",
     reference_dte_type: null, reference_folio: "", is_missing: false,
-    match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false,
+    match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false, terminal_sale: null, terminal_sale_display: null,
     raw: { folio: 4521 },
     first_import: { id: 3, period: "202610" }, last_import: { id: 5, period: "202611" }, missing_since_import: null,
     created_at: "2026-11-01T10:00:00-03:00", updated_at: "2026-11-01T10:00:00-03:00",
@@ -125,6 +125,24 @@ describe("RcvDocumentDrawer", () => {
     })
 
     describe("Documento ERP", () => {
+        it("boleta con venta TUU la muestra y abre treasury.terminalsale", async () => {
+            m.doc = { ...doc, direction: "SALES", dte_type: 39, dte_type_label: "Boleta Electrónica", terminal_sale: 44, terminal_sale_display: "Venta TUU V-88" }
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("Venta TUU")).toBeInTheDocument()
+            await userEvent.click(screen.getByRole("button", { name: "Venta TUU V-88" }))
+            expect(m.openEntity).toHaveBeenCalledWith("treasury.terminalsale", 44)
+        })
+
+        it("boleta sin venta TUU muestra un guion; una factura no muestra la fila", () => {
+            m.doc = { ...doc, direction: "SALES", dte_type: 41, dte_type_label: "Boleta Exenta" }
+            const { unmount } = render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("Venta TUU")).toBeInTheDocument()
+            unmount()
+            m.doc = doc
+            render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.queryByText("Venta TUU")).not.toBeInTheDocument()
+        })
+
         it("sin evaluar muestra «Sin evaluar» y sin candidatos lo indica", () => {
             render(<RcvDocumentDrawer id={9} open onOpenChange={vi.fn()} />)
             expect(screen.getByText("Documento ERP")).toBeInTheDocument()

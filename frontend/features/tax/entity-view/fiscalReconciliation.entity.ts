@@ -23,11 +23,13 @@ export const reconciliationSummaryEntity = defineEntity<ReconciliationSummary>()
         tuu: f.money((r) => amount(r.tuu_total), { ...fixed, label: "TUU" }),
         rcv: f.money((r) => amount(r.rcv_total), { ...fixed, label: "SII" }),
         difference: f.money((r) => amount(r.difference), { ...fixed, label: "Diferencia" }),
+        tuuWithoutRcv: f.number("tuu_without_rcv", { ...fixed, label: "Venta TUU sin boleta SII" }),
+        rcvWithoutTuu: f.number("rcv_without_tuu", { ...fixed, label: "Boleta SII sin venta TUU" }),
     },
 }))
 
 export const reconciliationSummaryViews = reconciliationSummaryEntity.views({
-    table: { columns: ["dteType", "erp", "tuu", "rcv", "difference"], primary: "dteType" },
+    table: { columns: ["dteType", "erp", "tuu", "rcv", "difference", "tuuWithoutRcv", "rcvWithoutTuu"], primary: "dteType" },
 })
 
 /** Facturas y notas del ERP sin documento en el RCV del SII. */

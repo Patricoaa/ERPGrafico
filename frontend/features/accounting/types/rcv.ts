@@ -57,6 +57,10 @@ export interface RcvDocument {
     matched_invoice_display: string | null
     /** Vínculo hecho a mano: solo estos se pueden desvincular y el recálculo no los toca. */
     matched_manually: boolean
+    /** Venta TUU emparejada con la boleta 39/41 (ADR-0139); null si no hay. */
+    terminal_sale: number | null
+    /** «Venta TUU {ID venta o N° secuencia}». */
+    terminal_sale_display: string | null
 }
 
 export interface RcvDocumentDetail extends RcvDocument {

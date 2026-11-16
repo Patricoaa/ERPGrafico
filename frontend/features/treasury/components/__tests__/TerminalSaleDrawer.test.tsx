@@ -51,7 +51,7 @@ const sale: TerminalSaleDetail = {
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,
     natural_key: "cash:13347", card_bin: "", card_origin: "", installment_type: "", acquirer_id: null,
     sources: ["BRANCH"], items: [], reconciliations: [], raw: { branch: { saleId: "13347" } },
-    match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false,
+    match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false, rcv_document: null, rcv_folio: null,
     first_seen_run: 1, last_seen_run: 1, created_at: "2026-11-12T10:05:00-03:00", updated_at: "2026-11-12T10:05:00-03:00",
 }
 
@@ -109,6 +109,20 @@ describe("TerminalSaleDrawer", () => {
             await userEvent.click(screen.getByRole("button", { name: "B-100" }))
             expect(m.openEntity).toHaveBeenCalledWith("billing.invoice", 5)
             expect(screen.queryByRole("button", { name: "Desvincular" })).not.toBeInTheDocument()
+        })
+
+        it("con boleta SII muestra el folio y abre accounting.rcvdocument", async () => {
+            m.sale = { ...sale, rcv_document: 31, rcv_folio: 12345 }
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("Boleta SII")).toBeInTheDocument()
+            await userEvent.click(screen.getByRole("button", { name: "Folio 12345" }))
+            expect(m.openEntity).toHaveBeenCalledWith("accounting.rcvdocument", 31)
+        })
+
+        it("sin boleta SII muestra un guion", () => {
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.getByText("Boleta SII")).toBeInTheDocument()
+            expect(screen.queryByRole("button", { name: /^Folio / })).not.toBeInTheDocument()
         })
 
         it("sin vínculo lista candidatos y vincula", async () => {
