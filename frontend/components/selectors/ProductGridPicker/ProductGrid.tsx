@@ -51,7 +51,15 @@ function ProductGridComponent({
     selectedProductIds
 }: ProductGridProps) {
     const { isTouchPOS, isSmallScreen } = useDeviceContext()
-    const categoriesById = useMemo(() => new Map(categories.map(c => [Number(c.id), c])), [categories])
+    const categoryIndex = useMemo(() => {
+        const byId = new Map<string, ProductCategory>()
+        const byName = new Map<string, ProductCategory>()
+        for (const c of categories) {
+            if (c?.id != null) byId.set(String(c.id), c)
+            if (c?.name) byName.set(c.name.trim().toLowerCase(), c)
+        }
+        return { byId, byName }
+    }, [categories])
 
     if (products.length === 0) {
         return (
@@ -81,16 +89,23 @@ function ProductGridComponent({
             overscan={400}
             itemContent={(index) => {
                 const product = products[index]
-                const categoryObject = typeof product.category === 'object' ? product.category : undefined
-                const categoryId = categoryObject?.id ?? (typeof product.category === 'number' || typeof product.category === 'string' ? product.category : undefined)
-                const categoryFromList = categoryId != null ? categoriesById.get(Number(categoryId)) : undefined
+                const categoryObject = typeof product.category === 'object' && product.category !== null ? product.category : undefined
+                const rawCategoryId = categoryObject?.id ?? (typeof product.category === 'number' || typeof product.category === 'string' ? product.category : undefined)
+                const categoryFromList = rawCategoryId != null
+                    ? categoryIndex.byId.get(String(rawCategoryId))
+                    : undefined
                 const categoryName = categoryObject?.name ?? categoryFromList?.name ?? product.category_name
-                const categoryIcon = categoryObject?.icon ?? categoryFromList?.icon
+                const categoryFromName = !categoryFromList && categoryName
+                    ? categoryIndex.byName.get(String(categoryName).trim().toLowerCase())
+                    : undefined
+                const resolvedCategory = categoryFromList ?? categoryFromName
+                const rawIcon = categoryObject?.icon ?? resolvedCategory?.icon
+                const categoryIcon = typeof rawIcon === 'string' && rawIcon.trim() ? rawIcon.trim() : undefined
 
                 return (
                     <ProductCard
                         product={product}
-                        categoryName={categoryName}
+                        categoryName={categoryName ?? resolvedCategory?.name}
                         categoryIcon={categoryIcon}
                         limit={limits[`prod_${product.id}`]}
                         isDisabled={isProductDisabled(product)}

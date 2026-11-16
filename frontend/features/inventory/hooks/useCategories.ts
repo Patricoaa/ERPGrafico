@@ -45,9 +45,10 @@ export function useCategories(initialData?: Category[]) {
     const query = useQuery({
         queryKey: CATEGORIES_KEYS.list(),
         queryFn: async (): Promise<Category[]> => {
-            const response = await api.get<Category[]>('/inventory/categories/')
+            const response = await api.get<Category[] | { results?: Category[] }>('/inventory/categories/')
+            const data = response.data
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
-            return response.data
+            return Array.isArray(data) ? data : (data?.results ?? [])
         },
         staleTime: staleTime.reference, // 15 min — datos quasi-estáticos
         initialData,
