@@ -2,12 +2,12 @@
 
 // ProductGridPicker/ProductCard
 // One card anatomy for every catalog context (POS, calculator, production):
-// icon/photo strip → code · name · availability → price + action glyph.
+// icon/photo strip → name · availability → price + action glyph.
 // What the card says is decided by `getProductCardModel`; this file only draws it.
 
 import { memo } from 'react'
 import Image from 'next/image'
-import { Ban, ChevronRight, Clock, Factory, Heart, Layers, Lock, Minus, Package, Plus } from 'lucide-react'
+import { Ban, Boxes, ChevronRight, Clock, Factory, Heart, Layers, Lock, Minus, Package, Plus, Repeat, Wrench, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/money'
 import { resolveMediaUrl } from '@/lib/media-url'
@@ -44,6 +44,15 @@ const AVAILABILITY_ICONS: Record<AvailabilityIcon, typeof Package> = {
     service: Clock,
     manufacture: Factory,
     blocked: Ban,
+}
+
+// Same fallback as the product EntityCard (catalog): meaningful icon by product type when no image/category icon.
+const TYPE_ICON: Record<string, LucideIcon> = {
+    STORABLE: Boxes,
+    CONSUMABLE: Package,
+    SERVICE: Wrench,
+    SUBSCRIPTION: Repeat,
+    MANUFACTURABLE: Factory,
 }
 
 const TONE_TEXT: Record<AvailabilityTone, string> = {
@@ -97,7 +106,12 @@ function ProductCardComponent({
                     <Image src={photo} alt="" fill sizes="(min-width: 1024px) 20vw, 40vw" className="object-cover" />
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <DynamicIcon name={categoryIcon || "Package"} className={cn("h-9 w-9", unavailable ? "text-muted-foreground/40" : "text-muted-foreground/60")} />
+                        {categoryIcon ? (
+                            <DynamicIcon name={categoryIcon} className={cn("h-9 w-9", unavailable ? "text-muted-foreground/40" : "text-muted-foreground/60")} />
+                        ) : (() => {
+                            const TypeIcon = TYPE_ICON[product.product_type ?? ""] ?? Package
+                            return <TypeIcon className={cn("h-9 w-9", unavailable ? "text-muted-foreground/40" : "text-muted-foreground/60")} />
+                        })()}
                     </div>
                 )}
 
