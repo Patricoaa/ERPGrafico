@@ -4050,6 +4050,15 @@ class TerminalSale(TimeStampedModel):
         db_index=True,
     )
     matched_manually = models.BooleanField(_("Vínculo manual"), default=False)
+    # Boleta del RCV emparejada por día local, monto y tipo (ADR-0139 D1-D2).
+    rcv_document = models.ForeignKey(
+        "accounting.RCVDocument",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="terminal_sales",
+        verbose_name=_("Boleta SII"),
+    )
 
     class Meta:
         verbose_name = _("Venta de Terminal")
@@ -4063,6 +4072,11 @@ class TerminalSale(TimeStampedModel):
                 fields=["matched_invoice"],
                 condition=models.Q(matched_invoice__isnull=False),
                 name="terminalsale_matched_invoice_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["rcv_document"],
+                condition=models.Q(rcv_document__isnull=False),
+                name="terminalsale_rcv_document_uniq",
             ),
         ]
 

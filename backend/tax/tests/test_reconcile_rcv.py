@@ -128,15 +128,16 @@ def test_credit_note_matches_by_absolute_amount(imp):
     assert doc.matched_invoice_id == note.id
 
 
-def test_boleta_and_48_detail_rows_are_excluded(imp):
-    docs = [rcv(imp, 1, 1000, dte_type=39, direction=S), rcv(imp, 2, 1000, dte_type=48, direction=S),
-            rcv(imp, 3, 1000, dte_type=41, direction=S)]
+def test_48_detail_rows_excluded_and_boletas_not_selected(imp):
+    b39, b48, b41 = (rcv(imp, 1, 1000, dte_type=39, direction=S), rcv(imp, 2, 1000, dte_type=48, direction=S),
+                     rcv(imp, 3, 1000, dte_type=41, direction=S))
 
     result = run(S)
 
-    _reload(*docs)
-    assert {d.match_status for d in docs} == {MatchStatus.EXCLUDED}
-    assert result == {MatchStatus.EXCLUDED: 3}
+    _reload(b39, b48, b41)
+    assert b48.match_status == MatchStatus.EXCLUDED
+    assert b39.match_status == b41.match_status == ""
+    assert result == {MatchStatus.EXCLUDED: 1}
 
 
 def test_unsupported_type_excluded(imp):
