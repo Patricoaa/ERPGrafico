@@ -14,7 +14,7 @@ import { Plus, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
-import { ProductInsightsDrawer } from "./ProductInsightsDrawer"
+import { ProductAnalyticsModal } from "./ProductAnalyticsModal"
 import { StockReport } from "./StockReport"
 import { buildProductAnalyticsScreen } from "./productAnalyticsScreen"
 import type { StockReportItem } from "@/features/inventory/entity-view/stockReport.entity"
@@ -302,7 +302,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 )}
             </EntityPanelTab>
 
-            <ProductInsightsDrawer
+            <ProductAnalyticsModal
                 productId={selectedStockProduct ? (selectedStockProduct.id as number) : null}
                 productName={selectedStockProduct?.name ?? null}
                 open={!!selectedStockProduct}

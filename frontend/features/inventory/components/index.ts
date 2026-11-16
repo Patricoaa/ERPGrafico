@@ -5,7 +5,7 @@ export * from './BarcodeModal';
 export * from './CategoryClientView';
 export * from './MovementClientView';
 export * from './PricingRuleClientView';
-export * from './ProductInsightsDrawer';
+export * from './ProductAnalyticsModal';
 export * from './ProductClientView';
 export * from './StockReport';
 export * from './UoMCategoryClientView';
