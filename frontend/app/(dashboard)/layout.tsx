@@ -10,10 +10,12 @@ export default function DashboardLayout({
     return (
         <AuthGuard>
             <ErrorBoundary>
-                <DebugClockBanner />
-                <DashboardShell>
-                    {children}
-                </DashboardShell>
+                <div className="flex h-screen flex-col">
+                    <DebugClockBanner />
+                    <DashboardShell>
+                        {children}
+                    </DashboardShell>
+                </div>
             </ErrorBoundary>
         </AuthGuard>
     )

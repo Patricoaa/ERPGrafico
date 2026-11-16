@@ -122,7 +122,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     )
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden font-sans">
+        <div className="flex min-h-0 flex-1 bg-background overflow-hidden font-sans">
             {/* ── SIDEBAR (riel de módulos + panel del módulo, ADR-0079) ───── */}
             <aside className="hidden md:flex h-full shrink-0 z-40">
                 {sidebar()}

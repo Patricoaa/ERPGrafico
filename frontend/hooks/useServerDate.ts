@@ -36,8 +36,8 @@ export function useServerDate() {
             }
         },
         staleTime: 30 * 1000,
-        // El banner del reloj de depuración necesita la hora del servidor al día.
-        refetchInterval: 60 * 1000,
+        // Solo donde existen herramientas de depuración (dev): detecta cambios del reloj hechos por CLI.
+        refetchInterval: (query) => (query.state.data?.debug_tools ? 60 * 1000 : false),
         refetchOnWindowFocus: false,
     })
 

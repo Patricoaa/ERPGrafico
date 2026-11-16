@@ -14,6 +14,9 @@ describe("DebugClockBanner", () => {
         state.value = { debugClock: true, datetime: "2026-11-13T20:35:00+00:00", timezone: "America/Santiago" }
         render(<DebugClockBanner />)
         expect(screen.getByText("Reloj de depuración: 13-11-2026 17:35")).toBeTruthy()
+        const bar = screen.getByRole("status")
+        expect(bar.className).toContain("shrink-0")
+        expect(bar.className).not.toMatch(/fixed|pointer-events-none/)
     })
 
     it("no se renderiza con debug_clock falso", () => {
