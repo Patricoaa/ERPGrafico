@@ -549,7 +549,7 @@ class BillingService:
 
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
-            doc_date = date or timezone.now().date()
+            doc_date = date or timezone.localdate()
             from tax.services import AccountingPeriodService, TaxPeriodService
 
             if TaxPeriodService.is_period_closed(doc_date):
@@ -581,7 +581,7 @@ class BillingService:
         invoice = Invoice.objects.create(
             dte_type=dte_type,
             number=number or "",
-            date=date or timezone.now().date(),
+            date=date or timezone.localdate(),
             sale_order=order,
             payment_method=payment_method,
             total_net=total_net,
@@ -631,7 +631,7 @@ class BillingService:
             customer_name = order.customer.name
 
             recon_entry = JournalEntry.objects.create(
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 description=GlosaBuilder.build(
                     GlosaBuilder.CONCILIACION_ANTICIPOS, doc_id, customer_name, total_advanced,
                 ),
@@ -1008,7 +1008,7 @@ class BillingService:
 
         # Tax & Accounting Period Validation (Only if NOT pending registration)
         if not is_pending_registration:
-            doc_date = document_date or timezone.now().date()
+            doc_date = document_date or timezone.localdate()
             from tax.services import AccountingPeriodService, TaxPeriodService
 
             if TaxPeriodService.is_period_closed(doc_date):
@@ -1328,7 +1328,7 @@ class BillingService:
 
         # 4. Create Payment(s)
         movement_date = (
-            invoice.date if invoice is not None else (document_date or timezone.now().date())
+            invoice.date if invoice is not None else (document_date or timezone.localdate())
         )
 
         # Determine which payment allocations to process
@@ -1648,7 +1648,7 @@ class BillingService:
 
         invoice.number = number
         if date:
-            invoice.date = date
+            invoice.date = target_date
         if document_attachment:
             invoice.document_attachment = document_attachment
 
@@ -1669,6 +1669,11 @@ class BillingService:
                 )
 
             entry.reference = f"{invoice.dte_type[:3]}-{number}"
+            # El asiento borrador sigue la fecha fiscal del documento; el período se
+            # re-deriva de la nueva fecha en JournalEntry.save (ya validado arriba).
+            if entry.status == JournalEntry.State.DRAFT and entry.date != target_date:
+                entry.date = target_date
+                entry.accounting_period = None
             entry.save()
 
             # Post entry if it's still in DRAFT (which it is for Draft/Paid-Draft invoices)
