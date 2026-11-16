@@ -60,8 +60,9 @@ El cuadre documento a documento del RCV (`reconcile_rcv_period`) deja de tocar l
 Solo existe con `DEBUG=True` y `DEBUG_CLOCK_ENABLED=1`. En cualquier otro caso, el código no hace nada.
 
 - Un desfase guardado en el caché (Redis) mueve `timezone.now()` del backend con `time-machine`, y el reloj sigue avanzando desde la hora fijada. Se aplica en las requests web y en las tareas Celery.
+- Requiere `time-machine==3.6.0` instalado en los contenedores `backend` y `celery-worker`.
 - Se controla con `manage.py debug_clock set "AAAA-MM-DD HH:MM"`, `manage.py debug_clock reset` y `manage.py debug_clock show`.
-- **Pantalla `Configuración → Depuración` (`/settings/debug`)** con el endpoint `GET|POST|DELETE /api/core/debug/clock/` para ver, fijar y restablecer la hora. El endpoint:
+- **Pantalla `Configuración → Depuración` (`/settings/debug`)** con el endpoint `GET|POST|DELETE /api/core/debug/clock/` (POST con `datetime` local `AAAA-MM-DDTHH:MM`) para ver, fijar y restablecer la hora. El endpoint:
   - responde **404** si `is_enabled()` es falso, de modo que en producción no existe;
   - exige `is_superuser`;
   - registra cada cambio en la auditoría (`SecurityAuditMiddleware` o el log de auditoría existente).
@@ -79,6 +80,6 @@ Solo existe con `DEBUG=True` y `DEBUG_CLOCK_ENABLED=1`. En cualquier otro caso, 
 
 ## Consecuencias
 
-- El reporte y `fiscal_mismatches` pasan a contar las boletas 39/41 sin par (RCV sin venta TUU, venta TUU sin boleta RCV).
+- `fiscal_mismatches` cuenta solo las boletas RCV 39/41 sin venta TUU (`ONLY_EXTERNAL`). Las ventas TUU sin boleta RCV aparecen únicamente en la columna del reporte «Venta TUU sin boleta SII», que es null hasta importar el RCV de ventas y solo cuenta desde `fiscal_match_start_date`.
 - Los vínculos boleta ↔ venta pueden intercambiarse entre ventas del mismo día y monto. Ningún flujo contable depende de ese vínculo.
 - **Supuesto a vigilar:** el folio del RCV crece con la hora de emisión. Si TUU emite boletas fuera de orden, los pares de montos repetidos quedan intercambiados, sin efecto en los totales.

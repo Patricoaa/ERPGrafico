@@ -1112,9 +1112,9 @@ GET    /api/tax/payments/{id}/     detail
 Escrituras y candidatos exigen `tax.change_taxperiod`; el reporte exige `tax.view_taxperiod`. Nunca modifican documentos `POSTED`.
 
 ```
-GET    /api/tax/reconciliation/?year=&month=                                reporte del período (incluye conteos por MatchStatus)
-POST   /api/tax/reconciliation/terminal/run/                                cuadra ventas TUU del mes (body: year, month)
-POST   /api/tax/reconciliation/rcv/run/                                     cuadra RCV del mes (body: year, month)
+GET    /api/tax/reconciliation/?year=&month=                                reporte del período (incluye conteos por MatchStatus; `summaries[]` de 39/41 añade `tuu_without_rcv` y `rcv_without_tuu`)
+POST   /api/tax/reconciliation/terminal/run/                                cuadra ventas TUU del mes (body: year, month); la respuesta incluye `boletas` (resultado de `reconcile_rcv_boletas`)
+POST   /api/tax/reconciliation/rcv/run/                                     cuadra RCV del mes (body: year, month); la respuesta incluye `boletas`
 GET    /api/tax/reconciliation/terminal-sales/{id}/candidates/              facturas candidatas
 POST   /api/tax/reconciliation/terminal-sales/{id}/match/                   vínculo manual (body: invoice_id)
 POST   /api/tax/reconciliation/terminal-sales/{id}/unmatch/                 quita el vínculo
@@ -1128,6 +1128,12 @@ POST   /api/tax/reconciliation/rcv-documents/{id}/create-draft/             crea
 ```
 
 `fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`) también viaja en `status_check` y en la respuesta de calculate del F29.
+
+Boletas 39/41 (ADR-0139), emparejadas 1:1 con la venta TUU por día local y monto, en orden:
+
+- `TerminalSale` (treasury): `rcv_document` (id de la fila RCV, null si no hay par) y `rcv_folio` (folio, solo lectura).
+- `RCVDocument` (accounting): `terminal_sale` (id de la venta TUU) y `terminal_sale_display` (`"Venta TUU {ref}"`), ambos null sin par.
+- `summaries[].tuu_without_rcv`: ventas TUU sin boleta RCV; null mientras no haya RCV de ventas importado ni `fiscal_match_start_date` que cubra el mes. `summaries[].rcv_without_tuu`: boletas RCV `ONLY_EXTERNAL`.
 
 ---
 
@@ -1277,7 +1283,8 @@ GET    /api/core/jobs/            background jobs (Celery) + estado
 GET    /api/core/entity-prefixes/   prefijos de display id por entidad
 GET    /api/core/entity-config/     configuración de entidades (getEntityConfig)
 GET    /api/core/search/            Universal Search
-GET    /api/core/server-time/       hora del servidor (useServerDate)
+GET    /api/core/server-time/       hora del servidor (useServerDate); incluye `debug_clock` (reloj alterado activo) y `debug_tools` (herramientas de depuración disponibles)
+GET|POST|DELETE /api/core/debug/clock/   reloj de depuración (ADR-0139 D4): ver, fijar (body: `datetime` local `AAAA-MM-DDTHH:MM`) y restablecer; superusuario, 404 si `DEBUG_CLOCK_ENABLED` no está activo
 GET    /api/core/status/            estado del sistema
 
 # Auth propio
