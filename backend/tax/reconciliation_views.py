@@ -12,6 +12,7 @@ from accounting.models import RCVDocument, RCVImport
 from core.idempotency import idempotent_endpoint
 from treasury.models import TerminalSale
 
+from .reconciliation.boletas import reconcile_rcv_boletas
 from .reconciliation.feeding import (
     confirm_draft_from_rcv,
     create_draft_from_rcv,
@@ -79,7 +80,8 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
         body.is_valid(raise_exception=True)
         year, month = body.validated_data["year"], body.validated_data["month"]
         last = calendar.monthrange(year, month)[1]
-        return Response(reconcile_terminal_sales(date(year, month, 1), date(year, month, last)))
+        counts = reconcile_terminal_sales(date(year, month, 1), date(year, month, last))
+        return Response({**counts, "boletas": reconcile_rcv_boletas(year, month)})
 
     @action(detail=False, methods=["get"], url_path=f"{_SALE}/candidates")
     def candidates(self, request, sale_id=None):
@@ -105,6 +107,7 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
         return Response({
             "purchase": reconcile_rcv_period(RCVImport.Direction.PURCHASES, year, month),
             "sale": reconcile_rcv_period(RCVImport.Direction.SALES, year, month),
+            "boletas": reconcile_rcv_boletas(year, month),
         })
 
     @action(detail=False, methods=["get"], url_path=f"{_DOC}/candidates")

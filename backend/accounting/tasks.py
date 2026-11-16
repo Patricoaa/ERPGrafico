@@ -82,3 +82,12 @@ def _reconcile_imported_period(rcv_import: RCVImport) -> None:
         reconcile_rcv_period(rcv_import.direction, rcv_import.year, rcv_import.month, rcv_import)
     except Exception:
         logger.exception("Cuadre RCV de la importación %s falló", rcv_import.pk)
+        return
+    if rcv_import.direction != RCVImport.Direction.SALES:
+        return
+    try:
+        from tax.reconciliation.boletas import reconcile_rcv_boletas
+
+        reconcile_rcv_boletas(rcv_import.year, rcv_import.month)
+    except Exception:
+        logger.exception("Cuadre de boletas de la importación %s falló", rcv_import.pk)

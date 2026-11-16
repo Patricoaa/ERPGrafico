@@ -1,6 +1,7 @@
 export * from './BillingSettingsView';
 export * from './DteSettingsView';
 export * from './CompanySettingsView';
+export * from './DebugSettingsView';
 export * from './GroupsClientView';
 export * from './HRSettingsView';
 export * from './RcvSettingsView';

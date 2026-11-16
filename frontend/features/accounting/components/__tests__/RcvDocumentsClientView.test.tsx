@@ -61,6 +61,8 @@ const doc: RcvDocument = {
     reference_dte_type: null, reference_folio: "", is_missing: false,
     match_status: "AMOUNT_DIFF", match_status_display: "Diferencia de monto", matched_invoice: 3, matched_invoice_display: "FC-4521",
     matched_manually: false,
+    terminal_sale: null,
+    terminal_sale_display: null,
 }
 
 describe("RcvDocumentsClientView", () => {

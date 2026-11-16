@@ -27,6 +27,10 @@ export interface ReconciliationSummary {
     rcv_total: string | null
     /** `erp_total - rcv_total` */
     difference: string | null
+    /** Ventas TUU 39/41 del mes sin boleta en el RCV (ADR-0139); null para el 48. */
+    tuu_without_rcv: number | null
+    /** Boletas RCV 39/41 del período sin venta TUU (`ONLY_EXTERNAL`); null para el 48. */
+    rcv_without_tuu: number | null
 }
 
 /** Factura o nota del ERP sin documento en el RCV. */

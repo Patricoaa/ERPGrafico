@@ -33,4 +33,6 @@ channels-redis>=4.1.0
 weasyprint
 qrcode[pil]
 sentry-sdk[django]>=2.18.0
+# Reloj de depuración (ADR-0139 D4): solo se importa con DEBUG + DEBUG_CLOCK_ENABLED=1
+time-machine==3.6.0
 pytest-benchmark

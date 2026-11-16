@@ -1,10 +1,10 @@
 "use client"
 
-import { Building2, ShieldCheck, History, GitBranch, Terminal, Info, BookOpen, ServerCog } from "lucide-react"
+import { Building2, ShieldCheck, History, GitBranch, Terminal, Info, BookOpen, ServerCog, Bug } from "lucide-react"
 import { ModuleGrid, type ModuleGridItem } from "@/components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getFrontendVersion, getGitHash, getBuildDate } from "@/lib/version"
-import { useSystemStatus } from "@/features/settings"
+import { useDebugToolsAccess, useSystemStatus } from "@/features/settings"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -53,8 +53,17 @@ const settingsModules: ModuleGridItem[] = [
     },
 ]
 
+const debugModule: ModuleGridItem = {
+    id: "debug",
+    icon: Bug,
+    label: "Depuración",
+    description: "Reloj del servidor para pruebas",
+    url: "/settings/debug"
+}
+
 export default function SettingsPageClient() {
     const { status, isLoading } = useSystemStatus()
+    const canDebug = useDebugToolsAccess()
     
     const feVersion = getFrontendVersion()
     const feHash = getGitHash()
@@ -62,7 +71,7 @@ export default function SettingsPageClient() {
 
     return (
         <div className="flex flex-col space-y-8">
-            <ModuleGrid items={settingsModules} />
+            <ModuleGrid items={canDebug ? [...settingsModules, debugModule] : settingsModules} />
 
             <Card className="rounded-md border-border/10 bg-muted/30 shadow-none overflow-hidden border-dashed">
                 <CardHeader className="pb-2">

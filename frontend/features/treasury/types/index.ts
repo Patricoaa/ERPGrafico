@@ -726,6 +726,9 @@ export interface TerminalSale {
     matched_invoice: number | null
     matched_invoice_display: string | null
     matched_manually: boolean
+    /** Boleta del RCV del SII emparejada con esta venta (ADR-0139); solo 39/41. */
+    rcv_document: number | null
+    rcv_folio: number | null
 }
 
 export interface TerminalSaleDetail extends TerminalSale {

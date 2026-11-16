@@ -154,6 +154,9 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
     )
 }
 
+/** Boletas que el cuadre empareja con una venta TUU (ADR-0139). */
+const BOLETA_DTE_TYPES: readonly number[] = [39, 41]
+
 /** Cuadre fiscal: factura o nota del ERP vinculada, o candidatos para vincular a mano. */
 function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
     const { openEntity } = useGlobalModalActions()
@@ -166,6 +169,18 @@ function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
     return (
         <Section title="Documento ERP">
             <Stat title="Cuadre fiscal" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
+            {doc.direction === "SALES" && BOLETA_DTE_TYPES.includes(doc.dte_type) && (
+                <Stat
+                    title="Venta TUU"
+                    value={
+                        doc.terminal_sale !== null ? (
+                            <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("treasury.terminalsale", doc.terminal_sale as number)}>
+                                {doc.terminal_sale_display ?? `#${doc.terminal_sale}`}
+                            </Button>
+                        ) : null
+                    }
+                />
+            )}
             {linked ? (
                 <Section.Row
                     title="Documento vinculado"

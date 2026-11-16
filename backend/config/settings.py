@@ -133,6 +133,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # ADR-0139 D4: siempre presente; se autodesactiva sin DEBUG + DEBUG_CLOCK_ENABLED=1.
+    "core.debug_clock.DebugClockMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -310,6 +312,16 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Long lifetime for dev convenience
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
+
+
+def _jwt_leeway(debug: bool, env: str | None) -> timedelta | None:
+    """Con el reloj de depuración activo, el ``iat`` de los tokens puede quedar en el futuro."""
+    return timedelta(days=366) if debug and env == "1" else None
+
+
+_leeway = _jwt_leeway(DEBUG, os.environ.get("DEBUG_CLOCK_ENABLED"))
+if _leeway is not None:
+    SIMPLE_JWT["LEEWAY"] = _leeway
 
 # ── Email ────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")

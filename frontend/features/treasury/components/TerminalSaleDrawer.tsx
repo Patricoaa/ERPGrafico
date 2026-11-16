@@ -169,6 +169,9 @@ function Stat({ title, value, plain, strong }: { title: string; value: ReactNode
     return <Section.Row variant="stat" title={title} value={empty ? "—" : value} plain={plain} strong={strong} />
 }
 
+/** Boletas que el cuadre empareja con el RCV del SII (ADR-0139). */
+const BOLETA_DTE_TYPES: readonly number[] = [39, 41]
+
 /** Cuadre fiscal: documento ERP vinculado, o candidatos para vincular a mano. */
 function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
     const { openEntity } = useGlobalModals()
@@ -181,6 +184,18 @@ function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
     return (
         <Section title="Documento ERP">
             <Stat title="Cuadre fiscal" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
+            {sale.document_type !== null && BOLETA_DTE_TYPES.includes(sale.document_type) && (
+                <Stat
+                    title="Boleta SII"
+                    value={
+                        sale.rcv_document !== null ? (
+                            <Button variant="link" className="h-auto p-0" onClick={() => openEntity("accounting.rcvdocument", sale.rcv_document as number)}>
+                                {`Folio ${sale.rcv_folio ?? sale.rcv_document}`}
+                            </Button>
+                        ) : null
+                    }
+                />
+            )}
             {linked ? (
                 <Section.Row
                     title="Documento vinculado"

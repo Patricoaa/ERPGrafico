@@ -78,6 +78,8 @@ La evaluación (2026-11-15) encontró que no conviene quedarse con un solo regis
 
 ### D5. Cuadre ERP ↔ RCV (fase 4)
 
+> Enmendado por ADR-0139: las boletas 39/41 se cuadran una a una vía la venta TUU (la «tabla de tres columnas» sigue como resumen).
+
 - `RCVDocument` gana `matched_invoice` (FK opcional), `match_status` y `matched_manually`.
 - **Documento por documento** (33, 34, 56, 61, compras y ventas): se cruza `fiscal_key` (D2) contra `(direction, dte_type, folio, counterparty_rut)`.
   - Clave igual y montos iguales → `MATCHED`.

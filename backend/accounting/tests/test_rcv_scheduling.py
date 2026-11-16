@@ -188,3 +188,38 @@ def test_run_rcv_imports_continues_after_exception(monkeypatch):
 def test_beat_entry_matches_registered_task():
     entry = django_settings.CELERY_BEAT_SCHEDULE["dispatch_rcv_imports_hourly"]
     assert entry["task"] in celery_app.tasks
+
+
+def _run_with_fakes(monkeypatch, direction, boletas):
+    rcv_import = RCVImport.objects.create(
+        direction=direction, year=2026, month=11, trigger=RCVImport.Trigger.SCHEDULED
+    )
+
+    def fake_execute(i):
+        i.status = RCVImport.Status.SUCCESS
+        return i
+
+    monkeypatch.setattr(tasks.rcv_service, "execute_import", fake_execute)
+    monkeypatch.setattr("tax.reconciliation.rcv.reconcile_rcv_period", lambda *a: {})
+    monkeypatch.setattr("tax.reconciliation.boletas.reconcile_rcv_boletas", boletas)
+    tasks.run_rcv_imports([rcv_import.id])
+
+
+def test_rcv_sales_import_runs_boletas(monkeypatch):
+    calls = []
+    _run_with_fakes(monkeypatch, SALES, lambda y, m: calls.append((y, m)) or {})
+    assert calls == [(2026, 11)]
+
+
+def test_rcv_purchases_import_skips_boletas(monkeypatch):
+    calls = []
+    _run_with_fakes(monkeypatch, RCVImport.Direction.PURCHASES, lambda y, m: calls.append((y, m)) or {})
+    assert calls == []
+
+
+def test_rcv_boletas_error_does_not_fail_import(monkeypatch, caplog):
+    def boom(y, m):
+        raise RuntimeError("boom")
+
+    _run_with_fakes(monkeypatch, SALES, boom)
+    assert "boletas" in caplog.text

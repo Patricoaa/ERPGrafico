@@ -9,6 +9,8 @@ interface ServerDateResponse {
     month: number
     day: number
     timezone: string
+    debug_clock?: boolean
+    debug_tools?: boolean
 }
 
 export function useServerDate() {
@@ -33,7 +35,9 @@ export function useServerDate() {
                 } as ServerDateResponse
             }
         },
-        staleTime: 30 * 1000, 
+        staleTime: 30 * 1000,
+        // Solo donde existen herramientas de depuración (dev): detecta cambios del reloj hechos por CLI.
+        refetchInterval: (query) => (query.state.data?.debug_tools ? 60 * 1000 : false),
         refetchOnWindowFocus: false,
     })
 
@@ -48,6 +52,10 @@ export function useServerDate() {
         isError,
         dateString: data?.date || '',
         year: data?.year || null,
-        month: data?.month || null
+        month: data?.month || null,
+        datetime: data?.datetime ?? null,
+        timezone: data?.timezone ?? null,
+        debugClock: data?.debug_clock === true,
+        debugTools: data?.debug_tools === true,
     }
 }

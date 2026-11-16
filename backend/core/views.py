@@ -408,6 +408,8 @@ def logout_view(request):
 @api_view(["GET"])
 def server_time(request):
     """Return current server date and time"""
+    from . import debug_clock
+
     now = timezone.now()
     return Response(
         {
@@ -417,6 +419,8 @@ def server_time(request):
             "month": now.month,
             "day": now.day,
             "timezone": str(timezone.get_current_timezone()),
+            "debug_clock": debug_clock.is_enabled() and debug_clock.is_active(),
+            "debug_tools": debug_clock.is_enabled(),
         }
     )
 

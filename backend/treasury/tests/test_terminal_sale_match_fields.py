@@ -87,3 +87,50 @@ def test_unlinked_sale_has_empty_match_fields(admin_client, provider):
     assert row["matched_invoice"] is None
     assert row["matched_invoice_display"] is None
     assert row["matched_manually"] is False
+
+
+# ── Boleta SII vinculada (ADR-0139) ─────────────────────────────────────────
+
+
+def _boleta(folio: int):
+    from accounting.models import RCVDocument, RCVImport
+
+    imp = RCVImport.objects.get_or_create(
+        direction=RCVImport.Direction.SALES, year=2026, month=11,
+        defaults={"trigger": RCVImport.Trigger.MANUAL, "status": RCVImport.Status.SUCCESS},
+    )[0]
+    return RCVDocument.objects.create(
+        direction=RCVImport.Direction.SALES, company_rut="11111111-1", period="202611", dte_type=39,
+        folio=folio, counterparty_rut="66666666-6", issue_date=date(2026, 11, 13), total_amount=1000,
+        first_import=imp, last_import=imp,
+    )
+
+
+def _with_boleta(provider, n: int, offset: int) -> None:
+    for i in range(n):
+        make_sale(provider, rcv_document=_boleta(offset + i))
+
+
+@pytest.mark.django_db
+def test_list_exposes_rcv_boleta_without_n_plus_one(admin_client, provider):
+    _with_boleta(provider, 3, 100)
+    _count(admin_client)
+    small = _count(admin_client)
+    _with_boleta(provider, 6, 200)
+    assert _count(admin_client) == small
+    rows = admin_client.get(URL).json()["results"]
+    assert len(rows) == 9
+    for row in rows:
+        assert row["rcv_document"]
+        assert row["rcv_folio"] >= 100
+
+
+@pytest.mark.django_db
+def test_sale_without_boleta_has_null_rcv_fields(admin_client, provider):
+    sale = make_sale(provider)
+    row = admin_client.get(f"{URL}{sale.id}/").json()
+    assert row["rcv_document"] is None and row["rcv_folio"] is None
+    doc = _boleta(77)
+    TerminalSale.objects.filter(pk=sale.pk).update(rcv_document=doc)
+    row = admin_client.get(f"{URL}{sale.id}/").json()
+    assert row["rcv_document"] == doc.id and row["rcv_folio"] == 77

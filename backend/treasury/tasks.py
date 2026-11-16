@@ -948,6 +948,14 @@ def _reconcile_after_sync(run: TerminalSyncRun) -> None:
         terminal.reconcile_terminal_sales(run.start_date, run.end_date)
     except Exception:
         logger.exception("Cuadre fiscal TUU falló tras sincronizar el run %s", run.pk)
+        return  # sin el paso 1 al día, el cuadre de boletas no tiene base
+    try:
+        from tax.reconciliation.boletas import months_in_range, reconcile_rcv_boletas
+
+        for year, month in months_in_range(run.start_date, run.end_date):
+            reconcile_rcv_boletas(year, month)
+    except Exception:
+        logger.exception("Cuadre de boletas falló tras sincronizar el run %s", run.pk)
 
 
 @shared_task(bind=True, name="treasury.tasks.sync_terminal_run")

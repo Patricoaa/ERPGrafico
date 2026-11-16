@@ -1,6 +1,6 @@
 import { AuthGuard } from "@/components/auth"
 import { DashboardShell } from "@/components/layout/DashboardShell"
-import { ErrorBoundary } from '@/components/shared'
+import { DebugClockBanner, ErrorBoundary } from '@/components/shared'
 
 export default function DashboardLayout({
     children,
@@ -10,9 +10,12 @@ export default function DashboardLayout({
     return (
         <AuthGuard>
             <ErrorBoundary>
-                <DashboardShell>
-                    {children}
-                </DashboardShell>
+                <div className="flex h-screen flex-col">
+                    <DebugClockBanner />
+                    <DashboardShell>
+                        {children}
+                    </DashboardShell>
+                </div>
             </ErrorBoundary>
         </AuthGuard>
     )

@@ -36,9 +36,9 @@ const report: FiscalReconciliationReport = {
     },
     only_erp: [{ id: 812, label: "Factura de Compra 000123", amount: "119000.00", date: "2026-10-12" }],
     summaries: [
-        { dte_type: 39, erp_count: 2, erp_total: "3000.00", tuu_count: 2, tuu_total: "3000.00", rcv_count: 2, rcv_total: "2500.00", difference: "500.00" },
-        { dte_type: 41, erp_count: 0, erp_total: "0", tuu_count: 0, tuu_total: "0", rcv_count: 0, rcv_total: "0", difference: "0" },
-        { dte_type: 48, erp_count: 5, erp_total: "25000.00", tuu_count: 5, tuu_total: "25000.00", rcv_count: 0, rcv_total: "0", difference: "25000.00" },
+        { dte_type: 39, erp_count: 2, erp_total: "3000.00", tuu_count: 2, tuu_total: "3000.00", rcv_count: 2, rcv_total: "2500.00", difference: "500.00", tuu_without_rcv: 3, rcv_without_tuu: 4 },
+        { dte_type: 41, erp_count: 0, erp_total: "0", tuu_count: 0, tuu_total: "0", rcv_count: 0, rcv_total: "0", difference: "0", tuu_without_rcv: 0, rcv_without_tuu: 0 },
+        { dte_type: 48, erp_count: 5, erp_total: "25000.00", tuu_count: 5, tuu_total: "25000.00", rcv_count: 0, rcv_total: "0", difference: "25000.00", tuu_without_rcv: null, rcv_without_tuu: null },
     ],
     terminal: { MATCHED: 30, AMBIGUOUS: 1, ONLY_EXTERNAL: 2, ONLY_ERP: 1 },
 }
@@ -72,6 +72,19 @@ describe("FiscalReconciliationClientView", () => {
         expect(within(table).getByText("39 · Boleta Electrónica")).toBeInTheDocument()
         expect(within(table).getAllByText("$500").length).toBeGreaterThan(0)
         expect(screen.queryByText("No hay importación RCV de ventas para este período.")).not.toBeInTheDocument()
+    })
+
+    it("Boletas y comprobantes: boletas sin par entre TUU y el SII; guion en el 48", () => {
+        render(<FiscalReconciliationClientView />)
+        const table = screen.getByRole("table", { name: "Boletas y comprobantes" })
+        const headers = within(table).getAllByRole("columnheader").map((h) => h.textContent)
+        expect(headers).toEqual(expect.arrayContaining(["Venta TUU sin boleta SII", "Boleta SII sin venta TUU"]))
+        const rows = within(table).getAllByRole("row")
+        const boleta = rows.find((r) => within(r).queryByText("39 · Boleta Electrónica"))
+        const comprobante = rows.find((r) => within(r).queryByText("48 · Comprobante de pago electrónico"))
+        expect(boleta && within(boleta).getByText("3")).toBeInTheDocument()
+        expect(boleta && within(boleta).getByText("4")).toBeInTheDocument()
+        expect(comprobante && within(comprobante).getAllByText("—").length).toBe(2)
     })
 
     it("sin importación RCV de ventas avisa y muestra guiones en SII y diferencia", () => {

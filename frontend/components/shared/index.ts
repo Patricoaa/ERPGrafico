@@ -186,3 +186,4 @@ export * from './ContactSelector'
 // (audit T5) — no longer published from the shared barrel.
 export * from './manufacturing'
 export * from './PersistentPanelContext';
+export * from './DebugClockBanner';
