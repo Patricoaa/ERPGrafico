@@ -69,7 +69,7 @@ def test_boleta_paid_with_integrated_terminal_is_48(env, pos):
 
     assert list(order.invoices.all()) == [inv]
     assert inv.dte_type == Invoice.DTEType.COMPROBANTE_PAGO
-    assert inv.status == Invoice.Status.POSTED
+    assert inv.status == Invoice.Status.DRAFT
     assert inv.number == ""
     assert TreasuryMovement.objects.filter(sale_order=order, invoice=inv).exists()
     assert inv.checkout_documents == [inv]
@@ -82,9 +82,20 @@ def test_boleta_cash_is_39_without_invented_folio(env, pos):
     inv = _checkout(order, pos, payment_method_id=pos["cash"].id)
 
     assert inv.dte_type == Invoice.DTEType.BOLETA
-    assert inv.status == Invoice.Status.POSTED
+    assert inv.status == Invoice.Status.DRAFT
     assert inv.number == ""
     assert TreasuryMovement.objects.filter(sale_order=order, invoice=inv).exists()
+
+
+@pytest.mark.django_db
+def test_pos_boleta_never_posted_without_folio(env, pos):
+    for kwargs in ({"payment_method_id": pos["cash"].id},
+                   {"payment_method": "CARD", "payment_method_id": pos["card"].id}):
+        inv = _checkout(_order(env), pos, **kwargs)
+        assert inv.status == Invoice.Status.DRAFT
+        assert inv.number == ""
+        assert inv.display_id.endswith("-Draft")
+        assert inv.journal_entry.status == "DRAFT"
 
 
 @pytest.mark.django_db

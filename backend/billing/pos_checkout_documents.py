@@ -70,7 +70,7 @@ def portion_totals(order, amounts: list[Decimal]) -> list[tuple[list[LineShare],
 
 
 def create_checkout_documents(order, plans: list[DocumentPlan], *, payment_method, status,
-                              number, date, attachment, folio_exempt) -> list[Invoice]:
+                              number, date, attachment) -> list[Invoice]:
     """Un documento por plan, en orden de plan. El folio y adjunto del usuario nunca van al 48."""
     from .services import BillingService
 
@@ -87,7 +87,7 @@ def create_checkout_documents(order, plans: list[DocumentPlan], *, payment_metho
         invoice = BillingService.create_sale_invoice(
             order, plan.dte_type, payment_method, status=status,
             number=number if own_folio else None, date=date,
-            folio_exempt=folio_exempt, link_advances=i == advances_at, **portion,
+            link_advances=i == advances_at, **portion,
         )
         if attachment and own_folio:
             invoice.document_attachment = attachment

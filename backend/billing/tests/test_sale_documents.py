@@ -5,22 +5,12 @@ from decimal import Decimal
 import pytest
 from django.core.exceptions import ValidationError
 
-from accounting.models import Account, AccountType
 from billing.sale_documents import (
     FOLIO_EXEMPT_DTE_TYPES,
     DocumentPlan,
     PaymentPortion,
-    folio_exempt_for_session,
     plan_sale_documents,
 )
-from treasury.models import (
-    PaymentMethod,
-    PaymentTerminalDevice,
-    POSSession,
-    POSTerminal,
-    TreasuryAccount,
-)
-from treasury.tests.helpers import make_terminal_provider
 
 D = Decimal
 
@@ -96,33 +86,6 @@ def test_unknown_class():
 
 def test_folio_exempt_types():
     assert FOLIO_EXEMPT_DTE_TYPES == ("BOLETA", "BOLETA_EXENTA", "COMPROBANTE_PAGO")
-
-
-@pytest.mark.django_db
-def test_folio_exempt_for_session(django_user_model):
-    Account.objects.get_or_create(
-        code=Account.CASH_GROUP_CODE,
-        defaults={"name": "Efectivo", "account_type": AccountType.ASSET},
-    )
-    acc = Account.objects.create(code="1.1.01.100", name="Caja", account_type=AccountType.ASSET)
-    ta = TreasuryAccount.objects.create(name="Caja Física", account_type="CASH", account=acc)
-    terminal = POSTerminal.objects.create(name="Caja 1", code="C-1", default_treasury_account=ta)
-    user = django_user_model.objects.create_user(username="cajero", password="x")
-    session = POSSession.objects.create(user=user, terminal=terminal)
-
-    cash = PaymentMethod.objects.create(name="Efectivo", method_type="CASH", treasury_account=ta)
-    terminal.allowed_payment_methods.add(cash)
-    assert folio_exempt_for_session(session.id) is False
-    assert folio_exempt_for_session(None) is False
-
-    provider = make_terminal_provider()
-    device = PaymentTerminalDevice.objects.create(name="D1", serial_number="SN-9", provider=provider)
-    card = PaymentMethod.objects.create(
-        name="Tarjeta", method_type=PaymentMethod.Type.CARD_TERMINAL,
-        treasury_account=ta, linked_terminal_device=device,
-    )
-    terminal.allowed_payment_methods.add(card)
-    assert folio_exempt_for_session(session.id) is True
 
 
 def test_two_integrated_portions_two_48():

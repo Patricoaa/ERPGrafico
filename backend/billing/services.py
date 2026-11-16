@@ -500,7 +500,6 @@ class BillingService:
         amount: Decimal | None = None,
         line_shares: list[LineShare] | None = None,
         net_tax_discount: tuple[Decimal, Decimal, Decimal] | None = None,
-        folio_exempt: bool = False,
         link_advances: bool = True,
     ):
         """
@@ -510,12 +509,11 @@ class BillingService:
         - Sin `amount` la factura es espejo completo de la OV.
         - Con `amount` factura una porción: `total=amount`, `(neto, IVA, descuento)` =
           `net_tax_discount` y las líneas salen de `line_shares`.
-        - El ERP no inventa folios. Sin `number` el documento baja a borrador, salvo que
-          `folio_exempt` y el tipo lo emita el proveedor (boleta / comprobante): queda POSTED.
+        - El ERP no inventa folios. Sin `number` el documento baja a borrador, también las
+          boletas y comprobantes (ADR-0140 D1: su folio lo asigna la emisión automática).
         - `link_advances=False` no concilia los anticipos de la OV con este documento.
         """
         from billing.dte_policy import validate_configured_dte_type
-        from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 
         validate_configured_dte_type(side="emit", dte_type=dte_type)
 
@@ -545,11 +543,9 @@ class BillingService:
 
         # ADR-0084: emitida (POSTED) exige folio. Sin folio la factura nace en borrador
         # (folio pendiente; su asiento queda en borrador hasta confirm_invoice).
-        # ADR-0138 D3: boletas y comprobantes POS los emite el proveedor; su folio llega
-        # después, así que con `folio_exempt` quedan POSTED sin número.
+        # ADR-0140 D1: ningún documento sin folio queda POSTED, tampoco 39/41/48.
         if status == Invoice.Status.POSTED and not number:
-            if not (folio_exempt and dte_type in FOLIO_EXEMPT_DTE_TYPES):
-                status = Invoice.Status.DRAFT
+            status = Invoice.Status.DRAFT
 
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
@@ -1300,7 +1296,7 @@ class BillingService:
         # ADR-0138 D3: `dte_type` es la clase de documento. La parte de una boleta
         # cobrada con terminal integrado es un 48 (lo emite TUU) y el resto un 39.
         from . import pos_checkout_documents as checkout_docs
-        from .sale_documents import folio_exempt_for_session, plan_sale_documents
+        from .sale_documents import plan_sale_documents
 
         allocations = payments if use_multi_payment else None
         methods = checkout_docs.load_payment_methods(allocations, payment_method_id)
@@ -1318,7 +1314,6 @@ class BillingService:
                 order, plans, payment_method=payment_method,
                 status=Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED,
                 number=document_number, date=document_date, attachment=document_attachment,
-                folio_exempt=folio_exempt_for_session(pos_session_id),
             )
             invoice = documents[0]
             invoice.checkout_documents = documents
