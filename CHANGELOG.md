@@ -2,6 +2,99 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.116](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.115...v0.3.116) (2026-11-16)
+
+
+### ⚙️ Refactors
+
+* **treasury:** mapa de cuadre fiscal en lib y hooks de vínculo TUU en treasury ([0e094eb](https://github.com/Patricoaa/ERPGrafico/commit/0e094eba8c5d2dac2c91f4ded9bd5e6070d4a839))
+
+
+### 🧪 Testing
+
+* **tax:** cubre factura tomada por otra fila RCV y limpieza de vínculos fuera de la selección ([93b2238](https://github.com/Patricoaa/ERPGrafico/commit/93b2238ef56db60b1641d9ed68cb4c4927dc9f6e))
+* **tax:** integración checkout POS mixto → cuadre TUU por porción ([8963f90](https://github.com/Patricoaa/ERPGrafico/commit/8963f901fea422e1d8765dedc0e4dad403fe41cf))
+
+
+### ✨ Features
+
+* **accounting:** API REST de importación RCV ([785a227](https://github.com/Patricoaa/ERPGrafico/commit/785a227aff80cd600bb229fda6f3aa1058f47d3b))
+* **accounting:** capa de datos y navegación RCV en frontend ([e83f396](https://github.com/Patricoaa/ERPGrafico/commit/e83f3969c5ce7eadb55c2f3f9ab92dd56782e779))
+* **accounting:** cliente HTTP de SimpleAPI RCV ([fe7b137](https://github.com/Patricoaa/ERPGrafico/commit/fe7b137b47bcf7ea336ea4643e57580a6ae2433d))
+* **accounting:** configuración RCV / SII con API keys ([6b11e6a](https://github.com/Patricoaa/ERPGrafico/commit/6b11e6a72e998b2d249c1826f19f06e903ca465f))
+* **accounting:** historial de importaciones RCV e importación manual ([ddc6f63](https://github.com/Patricoaa/ERPGrafico/commit/ddc6f639be11d0b0aba529b77104ddfcb935a000))
+* **accounting:** listados RCV de compras y ventas con ficha ([e152660](https://github.com/Patricoaa/ERPGrafico/commit/e152660733adb77a42733e387ee37d7dec5aadb3))
+* **accounting:** modelos de importación RCV (SimpleAPI) ([dd47557](https://github.com/Patricoaa/ERPGrafico/commit/dd47557e52adce8031577bc74c8fb40842c4e4ed))
+* **accounting:** normalizador de respuestas RCV ([badc3b0](https://github.com/Patricoaa/ERPGrafico/commit/badc3b08cd4e60a5c05fc589c536321dc6ec8494))
+* **accounting:** pestaña de cuadre fiscal y vínculo manual en documentos RCV ([cec1ca8](https://github.com/Patricoaa/ERPGrafico/commit/cec1ca8f38a1a6741da50e81d1f41e250bce369a))
+* **accounting:** programación y tareas Celery de importación RCV ([c0d56ad](https://github.com/Patricoaa/ERPGrafico/commit/c0d56ad38fd8506c3f6bbdb8f08bb45b651e9f8b))
+* **accounting:** servicio de importación RCV con rotación de API keys ([894af14](https://github.com/Patricoaa/ERPGrafico/commit/894af14e41eceed3d581c0cf633cc5d9804c9fd9))
+* **accounting:** vínculo manual y filtro por estado de cuadre en documentos RCV ([447ce33](https://github.com/Patricoaa/ERPGrafico/commit/447ce33221e571c4899ea679879247f6a84de934))
+* **billing:** checkout POS deriva 39/48 del pago y divide el pago mixto (ADR-0138 D3) ([fe17ecc](https://github.com/Patricoaa/ERPGrafico/commit/fe17ecc434e00e302004a02bff7b0831e408832e))
+* **billing:** clave fiscal de Invoice y dirección fiscal única (ADR-0138 D2) ([8eb8fd9](https://github.com/Patricoaa/ERPGrafico/commit/8eb8fd9e314c2280981df1da0b87b87a29fd6c04))
+* **billing:** facturas por porción y boletas POS sin folio inventado (ADR-0138 D3) ([3332375](https://github.com/Patricoaa/ERPGrafico/commit/33323755adafe69c84bd864aa762de217373c37e))
+* **billing:** reparto proporcional de líneas para documentos divididos ([bf201cd](https://github.com/Patricoaa/ERPGrafico/commit/bf201cd466994bb3d4422f4f31dc5c9dd81556b6))
+* **billing:** resolver del documento de venta según medio de pago (ADR-0138 D3) ([35db0c4](https://github.com/Patricoaa/ERPGrafico/commit/35db0c42204363360c4f7d94aa592774c29d768d))
+* **core:** estados de cuadre fiscal y campos de vínculo en TUU/RCV (ADR-0138 D6) ([f4fedf2](https://github.com/Patricoaa/ERPGrafico/commit/f4fedf2c171cff8068f548d21c8d16ea6d408514))
+* **core:** reloj de depuración para desarrollo (ADR-0139 D4) ([bcf3c58](https://github.com/Patricoaa/ERPGrafico/commit/bcf3c58a147f671494dbb173395fa8865b9c33f4))
+* **inventory:** open product analytics as modal from product drawer ([54dc762](https://github.com/Patricoaa/ERPGrafico/commit/54dc7626d4d6cab0fd741bcea6d3509be8560ff9))
+* **sales:** checkout informa los documentos generados por pago mixto ([91bc0f2](https://github.com/Patricoaa/ERPGrafico/commit/91bc0f2cd3d0e4674d5f720ec70fb84f5bf6f34b))
+* **settings:** pantalla de depuración con reloj del servidor, banner y guía de uso ([3919bf3](https://github.com/Patricoaa/ERPGrafico/commit/3919bf35bb82625f9d976dbf53d4d4f842acf0cd))
+* **tax:** API de cuadre TUU y disparo tras sincronizar ([1e50c24](https://github.com/Patricoaa/ERPGrafico/commit/1e50c24200bffacaea25438c24ab803c3f1dc0b6))
+* **tax:** boletas del RCV emparejadas con la venta TUU por día y monto (ADR-0139 D1-D2) ([39ffdc8](https://github.com/Patricoaa/ERPGrafico/commit/39ffdc8432fb5c8d79ef036b1d4dd489362a417e))
+* **tax:** cuadre de ventas TUU contra documentos POS (ADR-0138 D4) ([e033abc](https://github.com/Patricoaa/ERPGrafico/commit/e033abc0859a772f4b7d513c8c2c251b4216f730))
+* **tax:** cuadre del RCV contra facturas y notas del ERP (ADR-0138 D5) ([93c7c4b](https://github.com/Patricoaa/ERPGrafico/commit/93c7c4bc3a7b2c4133c9d60358155181c185c894))
+* **tax:** diferencias del cuadre fiscal como pendiente sugerido del cierre (ADR-0138 D7) ([b25dfd5](https://github.com/Patricoaa/ERPGrafico/commit/b25dfd540bcdfb9f3b04a396099eb0e254a20fde))
+* **tax:** el cuadre de boletas corre tras TUU, RCV y vínculos manuales (ADR-0139 D3) ([829619c](https://github.com/Patricoaa/ERPGrafico/commit/829619c5268ae985d7deb6af8ba217be243c4ce4))
+* **tax:** el RCV completa borradores de compra y crea borradores desde OC (ADR-0138 D8) ([d534faa](https://github.com/Patricoaa/ERPGrafico/commit/d534faa8059576a3a0fb9e4858152a01b95d27e0))
+* **tax:** el RCV completa borradores de compra y crea borradores desde OC (ADR-0138 D8) ([ffc19b6](https://github.com/Patricoaa/ERPGrafico/commit/ffc19b61a08de45a09897785602ab0d86c79f9f3))
+* **tax:** reporte de cuadre fiscal por período ([76f6e49](https://github.com/Patricoaa/ERPGrafico/commit/76f6e49d292d60ae8cac2ce12c341da730408d28))
+* **tax:** reporte y fichas muestran el cruce boleta SII ↔ venta TUU ([96da4c3](https://github.com/Patricoaa/ERPGrafico/commit/96da4c39f9c65757c7be859061a28be292a5e010))
+* **tax:** reporte y fichas muestran el cruce boleta SII ↔ venta TUU ([218cbec](https://github.com/Patricoaa/ERPGrafico/commit/218cbec84576f4207bea1a6ed1cf60d27e4c02e7))
+* **treasury:** estado de cuadre y vínculo manual en ventas TUU ([b938eda](https://github.com/Patricoaa/ERPGrafico/commit/b938eda2f5ddc8a3c6a23a98f998c64eaaf9c273))
+
+
+### 📚 Documentation
+
+* **accounting:** diseño y plan de importación RCV vía SimpleAPI ([ef4dad5](https://github.com/Patricoaa/ERPGrafico/commit/ef4dad5cbada8fe2f30ac8d0248b3295097ccff2))
+* ADR-0138 registro DTE local con control fiscal externo y plan de implementación ([1f78a71](https://github.com/Patricoaa/ERPGrafico/commit/1f78a719b9bdd672095acdba5f43e3f89272ee80))
+* ADR-0139 agrega la pantalla y el endpoint de depuración del reloj ([4c2bfbd](https://github.com/Patricoaa/ERPGrafico/commit/4c2bfbde965bfa37ab04ead1f9307cf36f0a7a48))
+* ADR-0139 cuadre de boletas RCV vía TUU y reloj de depuración, con su plan ([a147fcb](https://github.com/Patricoaa/ERPGrafico/commit/a147fcba3cb65d309d063508423e1fc5f6c61778))
+* ADR-0139 enmienda el cuadre de boletas de ADR-0138 ([0d62e87](https://github.com/Patricoaa/ERPGrafico/commit/0d62e874605d3e60f8be2bc714490f2a01b998a6))
+* corrige cuerpos de los endpoints de cuadre y marca preguntas resueltas en ADR-0138 ([677f94b](https://github.com/Patricoaa/ERPGrafico/commit/677f94be0aad80b7285d052350bfeee8d82a5e71))
+* corrige playbook del reloj (.env.dev, Celery, JWT) y ADR-0139 (etiqueta, despliegue) ([9f35631](https://github.com/Patricoaa/ERPGrafico/commit/9f356315af4b76d38c6801d69d70a505f362bed8))
+* resolución de preguntas abiertas de ADR-0138 y excepción de folio en ADR-0084 ([eece3b1](https://github.com/Patricoaa/ERPGrafico/commit/eece3b1af12ecc54394b4a292bb275982b3f6e50))
+* **tax:** ADR-0138 D2 describe la regla real de dirección fiscal ([f1dcce6](https://github.com/Patricoaa/ERPGrafico/commit/f1dcce6090f517d781614bcbe9e1177477a30167))
+
+
+### 🐛 Bug Fixes
+
+* **accounting:** ajustes de la UI del RCV tras la revisión final ([31bdc30](https://github.com/Patricoaa/ERPGrafico/commit/31bdc30539d3e245decb163666b0217d1e4c5da8))
+* **accounting:** documentos RCV sin cargar raw ni raw_response de importaciones ([48ff67b](https://github.com/Patricoaa/ERPGrafico/commit/48ff67ba368af6804b43205e543b5e23922b291d))
+* **accounting:** marcar hooks RCV como client para importarlos desde páginas server ([ed4a96f](https://github.com/Patricoaa/ERPGrafico/commit/ed4a96f8eb59306f96daf75c759996f9455ff43b))
+* **accounting:** marcar sub-pestañas RCV activas en el encabezado de Contabilidad ([afff2ea](https://github.com/Patricoaa/ERPGrafico/commit/afff2eae76c40528aac6d905bb50cd08211a52ae))
+* **accounting:** RCV detalle vacío como descuadre, ejecución solo desde QUEUED y logs sin secretos ([acdfaa8](https://github.com/Patricoaa/ERPGrafico/commit/acdfaa899cf5f964148df216c70e4e832801aabd))
+* **accounting:** redactar secretos RCV también escapados como JSON ([49cf0c7](https://github.com/Patricoaa/ERPGrafico/commit/49cf0c791b2ecfad670e3f22147cc1a304fa4d70))
+* **accounting:** robustez de la importación RCV ([b8ff609](https://github.com/Patricoaa/ERPGrafico/commit/b8ff60904cbe66cfd67201da4003c2b70f667871))
+* **billing:** el plan de boleta con total cero conserva un documento principal ([500d065](https://github.com/Patricoaa/ERPGrafico/commit/500d0657da5553781ef57d93fd51604fa03171c7))
+* **billing:** un comprobante de pago (48) por cada porción integrada ([e995fe8](https://github.com/Patricoaa/ERPGrafico/commit/e995fe860035e27d440367ba00bc26289f4cfafa))
+* **core:** la auditoría documental exime boletas y 48 del POS sin folio ([235b39a](https://github.com/Patricoaa/ERPGrafico/commit/235b39a28471c3592f95e724e0dfd274a88550f4))
+* **core:** leeway JWT con reloj de depuración y boletas manuales no se pisan al propagar ([ced5f20](https://github.com/Patricoaa/ERPGrafico/commit/ced5f20b8525e0566e3afca78e87ddce0c59232d))
+* **inventory:** StockReport importa ProductAnalyticsModal tras el renombre ([b304f67](https://github.com/Patricoaa/ERPGrafico/commit/b304f675e4c66f8faf0b78dd2acef6554fc4021d))
+* **inventory:** update product analytics imports after modal rename ([5ccc992](https://github.com/Patricoaa/ERPGrafico/commit/5ccc9923d28a64e59e3f3a3715a805e126bd4743))
+* **settings:** banner del reloj en el flujo y sondeo solo con herramientas de depuración ([a4f67de](https://github.com/Patricoaa/ERPGrafico/commit/a4f67ded8ea5b3bc59bb2ddb07e234a1777c59d4))
+* **settings:** offset_seconds del reloj es nullable y la vista explica la sesión ([a8bfc24](https://github.com/Patricoaa/ERPGrafico/commit/a8bfc244c3fb35bb84981e67d5d042f0bf8a978d))
+* **tax:** confirma folio y totales antes de emitir y pule los drawers del cuadre ([631981a](https://github.com/Patricoaa/ERPGrafico/commit/631981a304b9c04baedea6a8bbd413ee8101867d))
+* **tax:** el borrador emitido desde el RCV debe ser del mismo proveedor y tipo ([b6fafca](https://github.com/Patricoaa/ERPGrafico/commit/b6fafca8eb17027c427f5382182f32131117eac6))
+* **tax:** las ventas TUU vecinas al borde del rango compiten por la factura ([047699c](https://github.com/Patricoaa/ERPGrafico/commit/047699c95220edd38776de5bbbb4837431fb4e44))
+* **tax:** reevalúa vínculos manuales caídos, factura exenta TUU y ONLY_ERP sin RCV ([564bade](https://github.com/Patricoaa/ERPGrafico/commit/564baded82527065af3103258edb5a2616f0ad45))
+* **tax:** venta TUU sin boleta SII solo se cuenta con RCV importado y desde el inicio del cuadre ([66ca682](https://github.com/Patricoaa/ERPGrafico/commit/66ca682d2a72796e67c359964743dd83c2a2c2cb))
+
+
+### 🚀 Maintenance
+
+* **dev:** habilita el reloj de depuración en .env.dev (ADR-0139) ([b67a35b](https://github.com/Patricoaa/ERPGrafico/commit/b67a35b98f50c95f75e5e80f7f2062c1572b771c))
+
 ### [0.3.115](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.114...v0.3.115) (2026-11-14)
 
 
