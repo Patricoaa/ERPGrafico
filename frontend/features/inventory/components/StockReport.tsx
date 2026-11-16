@@ -10,7 +10,7 @@ import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 import { useCategories, useWarehouses } from '@/features/inventory'
 import { stockReportUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { stockReportEntity, stockReportViews, type StockReportItem } from "@/features/inventory/entity-view/stockReport.entity"
-import { ProductInsightsDrawer } from "./ProductInsightsDrawer"
+import { ProductAnalyticsModal } from "./ProductAnalyticsModal"
 
 export interface StockReportExternalFilters {
     search?: string
@@ -168,7 +168,7 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
             </div>
 
             {!embedded && (
-                <ProductInsightsDrawer
+                <ProductAnalyticsModal
                     productId={detailProductId}
                     productName={detailProductName}
                     open={!!detailProductId}
