@@ -1300,7 +1300,14 @@ class BillingService:
 
         allocations = payments if use_multi_payment else None
         methods = checkout_docs.load_payment_methods(allocations, payment_method_id)
-        invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
+        from .invoicing import PRIMARY_DTE_TYPES
+
+        invoice = (
+            order.invoices.filter(dte_type__in=PRIMARY_DTE_TYPES)
+            .exclude(status=Invoice.Status.CANCELLED)
+            .order_by("id")
+            .first()
+        )
         if invoice:
             invoice.checkout_documents = [invoice]
             invoice_by_payment = {}
