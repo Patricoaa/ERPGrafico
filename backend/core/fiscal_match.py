@@ -14,3 +14,5 @@ class MatchStatus(models.TextChoices):
     ONLY_EXTERNAL = "ONLY_EXTERNAL", _("Falta en el ERP")
     ONLY_ERP = "ONLY_ERP", _("Falta en el externo")
     EXCLUDED = "EXCLUDED", _("Excluido")
+    # Boleta RCV con venta TUU cuya cadena no llega a un documento del ERP (ADR-0140 D5).
+    PENDING_ERP = "PENDING_ERP", _("Sin documento ERP")

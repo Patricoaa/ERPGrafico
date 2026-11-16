@@ -12,6 +12,7 @@ export type MatchStatus =
     | "ONLY_EXTERNAL"
     | "ONLY_ERP"
     | "EXCLUDED"
+    | "PENDING_ERP"
     | ""
 
 type EvaluatedStatus = Exclude<MatchStatus, "">
@@ -24,6 +25,7 @@ export const MATCH_STATUS_LABELS: Record<EvaluatedStatus, string> = {
     ONLY_EXTERNAL: "Falta en el ERP",
     ONLY_ERP: "Falta en el SII/TUU",
     EXCLUDED: "Excluido",
+    PENDING_ERP: "Sin documento ERP",
 }
 
 export const MATCH_STATUS_INTENTS: Record<EvaluatedStatus, BadgeIntent> = {
@@ -34,6 +36,7 @@ export const MATCH_STATUS_INTENTS: Record<EvaluatedStatus, BadgeIntent> = {
     ONLY_EXTERNAL: "destructive",
     ONLY_ERP: "destructive",
     EXCLUDED: "neutral",
+    PENDING_ERP: "warning",
 }
 
 /** Valor de `StatusBadge`/`f.status` para un cuadre; prefiere el texto del backend. `""` = «Sin evaluar». */

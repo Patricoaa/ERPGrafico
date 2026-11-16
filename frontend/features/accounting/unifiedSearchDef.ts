@@ -94,7 +94,7 @@ export const fiscalYearUnifiedSearchDef: UnifiedSearchConfig = {
 export const RCV_FIRST_YEAR = 2017
 
 /** Estados de cuadre que puede tener un documento RCV (`ONLY_ERP` no: es una factura sin documento). */
-export const RCV_MATCH_STATUSES = ['MATCHED', 'AMOUNT_DIFF', 'TYPE_DIFF', 'AMBIGUOUS', 'ONLY_EXTERNAL', 'EXCLUDED'] as const
+export const RCV_MATCH_STATUSES = ['MATCHED', 'AMOUNT_DIFF', 'TYPE_DIFF', 'AMBIGUOUS', 'PENDING_ERP', 'ONLY_EXTERNAL', 'EXCLUDED'] as const
 export const RCV_MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',

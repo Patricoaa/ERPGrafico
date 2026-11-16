@@ -27,7 +27,7 @@ const MONTH_OPTIONS = MONTH_NAMES.map((label, i) => ({ label, value: String(i + 
 
 /** Orden fijo de los conteos; `""` (no evaluado) se omite. */
 const STATUS_ORDER: Exclude<MatchStatus, "">[] = [
-    "MATCHED", "AMOUNT_DIFF", "TYPE_DIFF", "AMBIGUOUS", "ONLY_EXTERNAL", "ONLY_ERP", "EXCLUDED",
+    "MATCHED", "AMOUNT_DIFF", "TYPE_DIFF", "AMBIGUOUS", "PENDING_ERP", "ONLY_EXTERNAL", "ONLY_ERP", "EXCLUDED",
 ]
 
 type Direction = "purchase" | "sale"

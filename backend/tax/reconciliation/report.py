@@ -19,6 +19,7 @@ from core.fiscal_match import MatchStatus
 from treasury.models import TerminalSale, TreasuryMovement
 
 from .rcv import BOLETA_SII_CODES, DOCUMENT_SII_CODES, RCV_TO_FISCAL_DIRECTION
+from .terminal import sale_document_status_q
 
 SUMMARY_SII_CODES = (39, 41, 48)
 ONLY_ERP_CAP = 50
@@ -43,15 +44,22 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
     }
 
 
-MISMATCH_STATUSES = (MatchStatus.ONLY_EXTERNAL, MatchStatus.AMOUNT_DIFF, MatchStatus.TYPE_DIFF, MatchStatus.AMBIGUOUS)
+MISMATCH_STATUSES = (
+    MatchStatus.ONLY_EXTERNAL,
+    MatchStatus.AMOUNT_DIFF,
+    MatchStatus.TYPE_DIFF,
+    MatchStatus.AMBIGUOUS,
+    MatchStatus.PENDING_ERP,
+)
 
 
 def fiscal_mismatch_counts(year: int, month: int) -> dict:
     """Diferencias del cuadre (RCV + ventas TUU) del mes; 2 consultas agregadas fijas.
 
     ``ONLY_ERP`` no se cuenta: el RCV puede llegar tarde. Las boletas RCV 39/41 sin venta
-    TUU ya entran como ``ONLY_EXTERNAL``; la venta TUU sin boleta no tiene estado propio
-    y solo se informa en el reporte (ADR-0139 D2).
+    TUU ya entran como ``ONLY_EXTERNAL`` y las que tienen venta TUU sin documento ERP como
+    ``PENDING_ERP`` (ADR-0140 D5); la venta TUU sin boleta no tiene estado propio y solo
+    se informa en el reporte (ADR-0139 D2).
     """
     first = date(year, month, 1)
     lo = _local_midnight(first)
@@ -149,10 +157,11 @@ def _summaries(
     year: int, month: int, first: date, last: date, lo: datetime, hi: datetime, start: date | None
 ) -> list[dict]:
     # El código sale de `sii_code_expression`, así un `sii_document_code` explícito también cuenta.
+    # Los borradores 39/41/48 sin folio son ventas reales a la espera de su número (ADR-0140 D2).
     erp = _totals(
         _annotated_invoices()
         .filter(
-            status=Invoice.Status.POSTED, fiscal_direction="sale",
+            sale_document_status_q(), fiscal_direction="sale",
             date__gte=first, date__lte=last, sii__in=SUMMARY_SII_CODES,
         )
         .values("sii").annotate(n=Count("id"), t=Sum("total")).order_by(),
@@ -263,7 +272,7 @@ def _terminal_only_erp(first: date, last: date, start: date | None, window_minut
     return (
         Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression())
         .filter(
-            status=Invoice.Status.POSTED, fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
+            sale_document_status_q(), fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
             date__gte=since, date__lte=last,
             created_at__lt=timezone.now() - timedelta(minutes=window_minutes),
         )

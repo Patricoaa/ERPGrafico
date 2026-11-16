@@ -74,7 +74,14 @@ def propagate_invoice(doc_id: int, invoice: Invoice | None) -> None:
     invoice_id = invoice.pk if invoice else None
     if invoice_id and RCVDocument.objects.filter(matched_invoice_id=invoice_id).exclude(pk=doc_id).exists():
         invoice_id = None  # la factura ya está en otra fila RCV (única por factura)
-    RCVDocument.objects.filter(pk=doc_id, matched_manually=False).update(matched_invoice_id=invoice_id)
+    RCVDocument.objects.filter(pk=doc_id, matched_manually=False).update(
+        matched_invoice_id=invoice_id, match_status=_paired_status(invoice_id)
+    )
+
+
+def _paired_status(invoice_id: int | None) -> str:
+    """Boleta con venta TUU: cuadrada solo si la cadena llega al ERP (ADR-0140 D5)."""
+    return MatchStatus.MATCHED if invoice_id else MatchStatus.PENDING_ERP
 
 
 def _stale_or_automatic() -> Q:
@@ -133,6 +140,6 @@ def _assign(docs: list[RCVDocument], paired: dict[int, TerminalSale], taken: set
         elif doc.id in paired:
             invoice_id = paired[doc.id].matched_invoice_id
             doc.matched_invoice_id = invoice_id if invoice_id not in taken else None
-            doc.match_status = MatchStatus.MATCHED
+            doc.match_status = _paired_status(doc.matched_invoice_id)
         else:
             doc.match_status = MatchStatus.ONLY_EXTERNAL

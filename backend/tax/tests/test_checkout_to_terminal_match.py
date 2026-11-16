@@ -29,7 +29,6 @@ def _terminal_sale(device, amount, at, payment_type, document_type, n):
     )
 
 
-@pytest.mark.xfail(strict=True, reason="ADR-0140 Task 2 adds drafts to candidates")
 @pytest.mark.django_db
 def test_mixed_checkout_matches_each_portion(env, pos):  # noqa: F811
     today = timezone.localdate()

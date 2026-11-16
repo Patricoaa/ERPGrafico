@@ -70,8 +70,8 @@ def test_pairs_by_day_and_amount(env, imp):
     _reload(s1, s2, b1, b2)
     assert s1.rcv_document_id == b2.id
     assert s2.rcv_document_id == b1.id
-    assert b1.match_status == b2.match_status == MatchStatus.MATCHED
-    assert result == {MatchStatus.MATCHED: 2}
+    assert b1.match_status == b2.match_status == MatchStatus.PENDING_ERP
+    assert result == {MatchStatus.PENDING_ERP: 2}
 
 
 def test_duplicates_pair_in_order(env, imp):
@@ -87,7 +87,7 @@ def test_duplicates_pair_in_order(env, imp):
     assert early.rcv_document_id == b100.id
     assert mid.rcv_document_id == b101.id
     assert late.rcv_document_id is None
-    assert b100.match_status == b101.match_status == MatchStatus.MATCHED
+    assert b100.match_status == b101.match_status == MatchStatus.PENDING_ERP
 
 
 def test_local_day_boundary(env, imp):
@@ -110,6 +110,20 @@ def test_type_must_match(env, imp):
     _reload(s, b)
     assert s.rcv_document_id is None
     assert b.match_status == MatchStatus.ONLY_EXTERNAL
+
+
+def test_boleta_without_erp_is_pending_erp(env, imp):
+    """ADR-0140 D5: con venta TUU pero sin documento ERP, la boleta no está cuadrada."""
+    s = sale(env, 1000)
+    b = boleta(imp, 1000)
+
+    result = run()
+
+    _reload(s, b)
+    assert s.rcv_document_id == b.id
+    assert b.match_status == MatchStatus.PENDING_ERP
+    assert b.matched_invoice_id is None
+    assert result == {MatchStatus.PENDING_ERP: 1}
 
 
 def test_rcv_without_sale_is_only_external(env, imp):
@@ -150,7 +164,7 @@ def test_manual_rcv_row_respected(env, imp):
     assert manual.matched_manually and manual.matched_invoice_id == inv.id
     assert linked.rcv_document_id == manual.id
     assert s.rcv_document_id == auto.id
-    assert result == {MatchStatus.MATCHED: 1}
+    assert result == {MatchStatus.PENDING_ERP: 1}
 
 
 def test_stale_manual_rcv_row_is_reevaluated(env, imp):
@@ -195,7 +209,7 @@ def test_invoice_taken_elsewhere_leaves_boleta_without_invoice(env, imp):
 
     _reload(other, s, b)
     assert s.rcv_document_id == b.id
-    assert b.match_status == MatchStatus.MATCHED
+    assert b.match_status == MatchStatus.PENDING_ERP
     assert b.matched_invoice_id is None
     assert other.matched_invoice_id == inv.id
 
@@ -231,7 +245,7 @@ def test_rcv_period_reconcile_leaves_boletas_untouched(env, imp):
     result = reconcile_rcv_period(S, 2026, 11)
 
     _reload(b39, b41, b48, s)
-    assert b39.match_status == MatchStatus.MATCHED
+    assert b39.match_status == MatchStatus.PENDING_ERP
     assert b41.match_status == MatchStatus.ONLY_EXTERNAL
     assert s.rcv_document_id == b39.id
     assert b48.match_status == MatchStatus.EXCLUDED
@@ -252,7 +266,7 @@ def test_idempotent(env, imp):
 
     for s in sales:
         s.refresh_from_db()
-    assert first == second == {MatchStatus.MATCHED: 2, MatchStatus.ONLY_EXTERNAL: 1}
+    assert first == second == {MatchStatus.PENDING_ERP: 2, MatchStatus.ONLY_EXTERNAL: 1}
     assert {s.id: s.rcv_document_id for s in sales} == links
 
 
@@ -263,7 +277,7 @@ def _queries_for(env, imp, n):
     RCVSettings.get_settings()  # singleton en caché: no cuenta como consulta del cuadre
     with CaptureQueriesContext(connection) as ctx:
         result = run()
-    assert result == {MatchStatus.MATCHED: n}
+    assert result == {MatchStatus.PENDING_ERP: n}
     return len(ctx.captured_queries)
 
 
@@ -293,7 +307,7 @@ def test_terminal_reconcile_propagates_to_rcv(env, imp):
     b = boleta(imp, 5000)
     run()
     _reload(s, b)
-    assert b.match_status == MatchStatus.MATCHED and b.matched_invoice_id is None
+    assert b.match_status == MatchStatus.PENDING_ERP and b.matched_invoice_id is None
     invoice = make_pos_document(env, 5000, local_dt(2026, 11, 13, 12))
 
     match_terminal_sale(s, invoice)
@@ -304,7 +318,7 @@ def test_terminal_reconcile_propagates_to_rcv(env, imp):
     unmatch_terminal_sale(s)
     _reload(b)
     assert b.matched_invoice_id is None
-    assert b.match_status == MatchStatus.MATCHED
+    assert b.match_status == MatchStatus.PENDING_ERP
 
 
 def test_match_propagation_skips_invoice_held_by_other_doc(env, imp):
@@ -321,6 +335,7 @@ def test_match_propagation_skips_invoice_held_by_other_doc(env, imp):
 
     _reload(b, other)
     assert b.matched_invoice_id is None
+    assert b.match_status == MatchStatus.PENDING_ERP
     assert other.matched_invoice_id == invoice.id
 
 
@@ -338,9 +353,9 @@ def test_run_endpoints_include_boletas_counts(env, imp):
     base = "/api/tax/reconciliation"
     r = client.post(f"{base}/terminal/run/", body, format="json")
     assert r.status_code == 200, r.content
-    assert r.json()["boletas"] == {MatchStatus.MATCHED: 1}
+    assert r.json()["boletas"] == {MatchStatus.PENDING_ERP: 1}
     r = client.post(f"{base}/rcv/run/", body, format="json")
-    assert r.json()["boletas"] == {MatchStatus.MATCHED: 1}
+    assert r.json()["boletas"] == {MatchStatus.PENDING_ERP: 1}
 
 
 def test_propagate_invoice_skips_manually_matched_boleta(env, imp):

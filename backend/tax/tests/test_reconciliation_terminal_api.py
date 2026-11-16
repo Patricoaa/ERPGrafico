@@ -67,9 +67,27 @@ def test_cannot_match_invoice_linked_elsewhere(api, env):
 
 
 def test_cannot_match_non_sale_document(api, env):
-    sale, doc = _sale_and_doc(env, status=Invoice.Status.DRAFT)
+    sale, doc = _sale_and_doc(env, dte_type=Invoice.DTEType.FACTURA, status=Invoice.Status.DRAFT)
     r = api.post(f"{BASE}/terminal-sales/{sale.pk}/match/", {"invoice_id": doc.pk}, format="json")
     assert r.status_code == 400
+
+
+def test_cannot_match_numbered_draft(api, env):
+    sale, doc = _sale_and_doc(env, status=Invoice.Status.DRAFT)
+    Invoice.objects.filter(pk=doc.pk).update(number="77")
+    r = api.post(f"{BASE}/terminal-sales/{sale.pk}/match/", {"invoice_id": doc.pk}, format="json")
+    assert r.status_code == 400
+
+
+def test_manual_match_and_candidates_accept_pos_draft(api, env):
+    """ADR-0140 D2: el borrador 39/41/48 sin número también es candidato del vínculo manual."""
+    sale, doc = _sale_and_doc(env, dte_type=Invoice.DTEType.BOLETA, status=Invoice.Status.DRAFT)
+    r = api.get(f"{BASE}/terminal-sales/{sale.pk}/candidates/")
+    assert [i["id"] for i in r.json()] == [doc.pk]
+    r = api.post(f"{BASE}/terminal-sales/{sale.pk}/match/", {"invoice_id": doc.pk}, format="json")
+    assert r.status_code == 200, r.content
+    sale.refresh_from_db()
+    assert sale.matched_invoice_id == doc.pk
 
 
 def test_candidates_same_day_same_amount(api, env):

@@ -7,6 +7,9 @@ describe("matchStatusValue", () => {
         expect(matchStatusValue("AMOUNT_DIFF").intent).toBe("warning")
         expect(matchStatusValue("ONLY_ERP").label).toBe("Falta en el SII/TUU")
         expect(matchStatusValue("EXCLUDED").intent).toBe("neutral")
+        expect(matchStatusValue("PENDING_ERP")).toEqual({
+            status: "pending_erp", label: "Sin documento ERP", intent: "warning",
+        })
     })
     it("prefers the backend display text", () => {
         expect(matchStatusValue("MATCHED", "Cuadrada").label).toBe("Cuadrada")
