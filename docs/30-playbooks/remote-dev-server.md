@@ -238,7 +238,7 @@ Permite probar el cuadre fiscal y otros procesos por fecha moviendo la hora del 
 
 **Activar**
 
-1. Agregar `DEBUG_CLOCK_ENABLED=1` al `.env` del servidor de desarrollo (backend y `celery-worker` lo leen).
+1. Agregar `DEBUG_CLOCK_ENABLED=1` a `.env.dev` del servidor de desarrollo (`env_file` de `backend`, `celery-worker` y `beat`).
 2. `time-machine==3.6.0` es un requisito nuevo: instalarlo con `docker compose exec backend pip install -r requirements.txt` (y lo mismo en `celery-worker`) o reconstruir la imagen.
 3. Reiniciar `backend` y `celery-worker`.
 
@@ -254,7 +254,7 @@ También desde la UI: Configuración → Depuración (solo superusuario y con he
 
 **Límites**
 
-- Celery Beat sigue la hora real: las tareas programadas no se disparan por la hora falsa.
+- Celery Beat sigue la hora real: las tareas programadas no se disparan por la hora falsa. Las tareas que ejecuta el worker de Celery sí corren bajo la hora falsa.
 - Las APIs externas (TUU, SimpleAPI) devuelven fechas reales.
-- Tras saltos grandes la sesión JWT puede verse expirada: volver a iniciar sesión.
+- Con el reloj habilitado, `SIMPLE_JWT["LEEWAY"]` es de 366 días, así que las sesiones sobreviven a los cambios de hora. Si aun así aparece un 401, volver a iniciar sesión.
 - Los `auto_now_add` siguen el reloj falso mientras está activo.

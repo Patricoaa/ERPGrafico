@@ -41,7 +41,7 @@ Además, el cruce D4 compara contra la hora real del servidor. Las ventas TUU de
   - `MATCHED` si tiene venta TUU, con `matched_invoice` = la factura de esa venta, o nulo si la venta aún no cuadra con el ERP;
   - `ONLY_EXTERNAL` si no tiene venta TUU.
   - `missing_since_import` → `EXCLUDED` y sin enlaces, igual que en ADR-0138.
-- **Venta TUU 39/41 sin boleta RCV:** no lleva campo de estado propio. El reporte la cuenta como «Falta en el SII».
+- **Venta TUU 39/41 sin boleta RCV:** no lleva campo de estado propio. El reporte la cuenta como «Venta TUU sin boleta SII».
 - **48:** sigue `EXCLUDED` a nivel de documento y se cuadra por resumen, como en ADR-0138.
 - Las filas con `matched_manually` se respetan, con la misma regla de ADR-0138: deja de protegerse un vínculo manual si su factura se anuló o desapareció.
 
@@ -83,3 +83,4 @@ Solo existe con `DEBUG=True` y `DEBUG_CLOCK_ENABLED=1`. En cualquier otro caso, 
 - `fiscal_mismatches` cuenta solo las boletas RCV 39/41 sin venta TUU (`ONLY_EXTERNAL`). Las ventas TUU sin boleta RCV aparecen únicamente en la columna del reporte «Venta TUU sin boleta SII», que es null hasta importar el RCV de ventas y solo cuenta desde `fiscal_match_start_date`.
 - Los vínculos boleta ↔ venta pueden intercambiarse entre ventas del mismo día y monto. Ningún flujo contable depende de ese vínculo.
 - **Supuesto a vigilar:** el folio del RCV crece con la hora de emisión. Si TUU emite boletas fuera de orden, los pares de montos repetidos quedan intercambiados, sin efecto en los totales.
+- **Despliegue:** las filas que antes quedaron EXCLUDED (oct/nov) siguen así hasta que corra el cuadre de boletas: ejecutar «Recalcular RCV» por mes tras desplegar.
