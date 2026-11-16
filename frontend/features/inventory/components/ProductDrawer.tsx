@@ -32,8 +32,8 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { PrintableLayout } from "@/features/_shared"
 import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, drawerFooter, type DrawerMode } from "@/features/_shared"
 import { DataCell } from "@/components/shared"
-import { ArrowRightLeft } from "lucide-react"
-import { ProductInsightsDrawer } from "./ProductInsightsDrawer"
+import { BarChart3 } from "lucide-react"
+import { ProductAnalyticsModal } from "./ProductAnalyticsModal"
 
 // Product subcomponents and schema
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
@@ -747,7 +747,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
         onPrint: handlePrint,
     })
 
-    // Custom header actions: Print + Ver Kardex
+    // Custom header actions: Print + Análisis de producto
     const customHeaderActions = (
         <>
             {drawerIdentity.headerActions}
@@ -755,10 +755,10 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
                 <DataCell.Action
                     action="detail"
                     onClick={() => setInsightsOpen(true)}
-                    title="Ver Kardex (Movimientos de Stock)"
-                    aria-label="Ver Kardex"
+                    title="Ver análisis del producto"
+                    aria-label="Ver análisis del producto"
                 >
-                    <ArrowRightLeft className="h-4 w-4" />
+                    <BarChart3 className="h-4 w-4" />
                 </DataCell.Action>
             )}
         </>
@@ -880,8 +880,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
             >
             {formContent}
 
-            {/* Product Insights Drawer (Kardex) */}
-            <ProductInsightsDrawer
+            {/* Análisis de producto (modal) */}
+            <ProductAnalyticsModal
                 productId={effectiveInitialData?.id ?? null}
                 productName={effectiveInitialData?.name ?? null}
                 open={insightsOpen}

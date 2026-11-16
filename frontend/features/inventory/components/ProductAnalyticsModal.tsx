@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import {
     Chip, SkeletonShell, StatCard, ChartLegend, AnalyticsChart, getCssChartColors,
-    Drawer, DataCell,
+    BaseModal, DataCell,
 } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import type { LineChartConfig, BarChartConfig } from '@/components/shared'
@@ -97,7 +97,7 @@ interface ProductInsights {
     top_suppliers: TopSupplier[]
 }
 
-interface ProductInsightsDrawerProps {
+interface ProductAnalyticsModalProps {
     productId: number | null
     productName?: string | null
     open: boolean
@@ -161,9 +161,9 @@ const TABS = [
 
 type TabValue = typeof TABS[number]["value"]
 
-// ─── Inner panel (runs inside the open drawer) ─────────────────────────────────
+// ─── Inner panel (runs inside the open modal) ──────────────────────────────────
 
-function ProductInsightsPanelInner({
+function ProductAnalyticsPanelInner({
     productId,
     productName,
     onProductChange,
@@ -671,26 +671,29 @@ function ProductInsightsPanelInner({
     )
 }
 
-// ─── Drawer shell ─────────────────────────────────────────────────────────────
+// ─── Modal shell ──────────────────────────────────────────────────────────────
 
-export function ProductInsightsDrawer({
+export function ProductAnalyticsModal({
     productId,
     productName,
     open,
     onOpenChange,
     onProductChange,
-}: ProductInsightsDrawerProps) {
+}: ProductAnalyticsModalProps) {
     return (
-        <Drawer
+        <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title={productName ?? "Insights del Producto"}
-            side="right"
-            defaultSize={1100}
+            icon={BarChart3}
+            title="Análisis de producto"
+            description={productName ?? undefined}
+            size="xl"
+            hideScrollArea
+            contentClassName="overflow-hidden"
         >
-            <div className="p-4 overflow-hidden h-full flex flex-col">
+            <div className="h-[80vh] p-4 overflow-hidden flex flex-col">
                 {productId && (
-                    <ProductInsightsPanelInner
+                    <ProductAnalyticsPanelInner
                         productId={productId}
                         productName={productName}
                         onProductChange={onProductChange}
@@ -698,6 +701,9 @@ export function ProductInsightsDrawer({
                     />
                 )}
             </div>
-        </Drawer>
+        </BaseModal>
     )
 }
+
+// Compatibilidad temporal con importaciones existentes
+export const ProductInsightsDrawer = ProductAnalyticsModal
