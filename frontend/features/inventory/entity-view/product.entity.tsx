@@ -150,7 +150,6 @@ export const productEntity = defineEntity<Product>()((f) => ({
 export const productViews = productEntity.views({
     table: { columns: ["internalCode", "name", "sku", "category", "type", "stock", "price"], primary: "name", defaultSort: "name" },
     card: {
-        code: "internalCode",
         title: "name",
         // Stock health with icon and tone. The commercial slot is the footer: price, or the channel
         // restriction when the product is not for sale.

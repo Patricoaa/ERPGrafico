@@ -138,10 +138,11 @@ function ProductCardComponent({
             </div>
 
             <div className={cn(cardAnatomy.body, isTouch && "pt-3")}>
-                <div className="flex min-h-4 items-center justify-between gap-2">
-                    <span className={cardAnatomy.code}>{model.code}</span>
-                    {unavailable && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="No disponible" />}
-                </div>
+                {unavailable && (
+                    <div className="flex min-h-4 items-center justify-end gap-2">
+                        <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="No disponible" />
+                    </div>
+                )}
 
                 <h3 className={cn(cardAnatomy.title, isTouch ? "text-base" : "text-sm", unavailable && "text-muted-foreground")}>
                     {product.name}
