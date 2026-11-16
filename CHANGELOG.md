@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.117](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.116...v0.3.117) (2026-11-16)
+
+
+### 🚀 Maintenance
+
+* **seed:** clean prior-period demo data and add dynamic-price service ([8f90ae3](https://github.com/Patricoaa/ERPGrafico/commit/8f90ae3cb3d11ef78e85dde95f3d9823b4d52982))
+
 ### [0.3.116](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.115...v0.3.116) (2026-11-16)
 
 
