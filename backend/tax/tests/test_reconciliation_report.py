@@ -24,6 +24,7 @@ from tax.tests.reconciliation_helpers import (
     make_terminal_sale,
     set_match_settings,
 )
+from treasury.models import TerminalSale
 
 pytestmark = pytest.mark.django_db
 
@@ -205,11 +206,14 @@ def _populate(n):
         make_pos_document(env, 1000, at, dte_type=Invoice.DTEType.BOLETA)
         make_pos_document(env, 1000, at, dte_type=Invoice.DTEType.COMPROBANTE_PAGO)
         make_terminal_sale(env, 1000, at, document_type=48, match_status=MatchStatus.ONLY_EXTERNAL)
+        make_terminal_sale(env, 1000, at, document_type=39)
         inv = _invoice(Invoice.DTEType.PURCHASE_INV, 1000)
         _rcv(imp, int(inv.number), 1000, matched_invoice=inv, match_status=MatchStatus.MATCHED)
         _invoice(Invoice.DTEType.PURCHASE_INV, 1000)
         _invoice(Invoice.DTEType.FACTURA, 1000)
     sales = _import()
+    for _ in range(n):
+        _rcv(sales, next(_seq), 1000, direction=S, dte_type=39, match_status=MatchStatus.ONLY_EXTERNAL)
     for code in (39, 41, 48):
         RCVImportSummary.objects.create(rcv_import=sales, dte_type=code, document_count=n, total_amount=n * 1000)
 
@@ -233,6 +237,7 @@ def test_report_endpoint(api):
     r = api.get(f"{BASE}/", {"year": 2026, "month": 10})
     assert r.status_code == 200
     assert set(r.json()) == {"start_date", "documents", "only_erp", "summaries", "terminal"}
+    assert {"tuu_without_rcv", "rcv_without_tuu"} <= set(r.json()["summaries"][0])
     assert api.get(f"{BASE}/", {"year": 2026, "month": 13}).status_code == 400
     assert api.get(f"{BASE}/").status_code == 400
 
@@ -306,3 +311,51 @@ def test_rcv_manual_match_rejections(api):
         assert r.status_code == 400
     doc.refresh_from_db()
     assert doc.matched_invoice is None and not doc.matched_manually
+
+
+# ── Boletas 39/41: cruce RCV ↔ venta TUU (ADR-0139) ─────────────────────────
+
+
+def test_summaries_boletas_without_pair():
+    set_match_settings(date(2026, 10, 1))
+    env = make_terminal_env()
+    at = local_dt(2026, 10, 5, 12)
+    imp = _import()
+    paired = _rcv(imp, 1, 1000, direction=S, dte_type=39, match_status=MatchStatus.MATCHED)
+    make_terminal_sale(env, 1000, at, document_type=39, rcv_document=paired)
+    make_terminal_sale(env, 2000, at, document_type=39)  # sin boleta
+    make_terminal_sale(env, 2500, at, document_type=41)  # sin boleta
+    make_terminal_sale(env, 3000, at, document_type=39, status=TerminalSale.Status.REVERSED)  # anulada: no cuenta
+    make_terminal_sale(env, 4000, local_dt(2026, 11, 1, 12), document_type=39)  # otro mes
+    make_terminal_sale(env, 5000, at, document_type=48)  # comprobante: no aplica
+    _rcv(imp, 2, 700, direction=S, dte_type=39, match_status=MatchStatus.ONLY_EXTERNAL)
+    _rcv(imp, 3, 800, direction=S, dte_type=39, match_status=MatchStatus.ONLY_EXTERNAL)
+    _rcv(imp, 4, 900, direction=S, dte_type=41, match_status=MatchStatus.ONLY_EXTERNAL)
+    _rcv(imp, 5, 900, direction=S, dte_type=39, match_status=MatchStatus.EXCLUDED)
+
+    report = fiscal_reconciliation_report(2026, 10)
+
+    assert _row(report, 39)["tuu_without_rcv"] == 1 and _row(report, 39)["rcv_without_tuu"] == 2
+    assert _row(report, 41)["tuu_without_rcv"] == 1 and _row(report, 41)["rcv_without_tuu"] == 1
+    assert _row(report, 48)["tuu_without_rcv"] is None and _row(report, 48)["rcv_without_tuu"] is None
+
+
+def test_summaries_boletas_zero_when_all_paired():
+    report = fiscal_reconciliation_report(2026, 10)
+    assert _row(report, 39)["tuu_without_rcv"] == 0 and _row(report, 39)["rcv_without_tuu"] == 0
+
+
+def test_mismatch_counts_boletas_counted_once():
+    """Una boleta RCV sin venta TUU suma 1 (por su estado); la venta TUU sin boleta no suma."""
+    from tax.reconciliation.report import fiscal_mismatch_counts
+
+    env = make_terminal_env()
+    imp = _import()
+    _rcv(imp, 1, 700, direction=S, dte_type=39, match_status=MatchStatus.ONLY_EXTERNAL)
+    _rcv(imp, 2, 700, direction=S, dte_type=41, match_status=MatchStatus.ONLY_EXTERNAL)
+    make_terminal_sale(env, 2000, local_dt(2026, 10, 5, 12), document_type=39, match_status=MatchStatus.MATCHED)
+
+    result = fiscal_mismatch_counts(2026, 10)
+
+    assert result["count"] == 2
+    assert result["by_status"][MatchStatus.ONLY_EXTERNAL] == 2

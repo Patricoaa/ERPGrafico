@@ -1916,6 +1916,7 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
     matched_invoice_display = serializers.CharField(
         source="matched_invoice.display_id", read_only=True, default=None
     )
+    rcv_folio = serializers.IntegerField(source="rcv_document.folio", read_only=True, default=None)
 
     class Meta:
         model = TerminalSale
@@ -1955,6 +1956,8 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "matched_invoice",
             "matched_invoice_display",
             "matched_manually",
+            "rcv_document",
+            "rcv_folio",
         ]
         read_only_fields = fields
 

@@ -18,7 +18,7 @@ from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import MatchStatus
 from treasury.models import TerminalSale, TreasuryMovement
 
-from .rcv import DOCUMENT_SII_CODES, RCV_TO_FISCAL_DIRECTION
+from .rcv import BOLETA_SII_CODES, DOCUMENT_SII_CODES, RCV_TO_FISCAL_DIRECTION
 
 SUMMARY_SII_CODES = (39, 41, 48)
 ONLY_ERP_CAP = 50
@@ -49,7 +49,9 @@ MISMATCH_STATUSES = (MatchStatus.ONLY_EXTERNAL, MatchStatus.AMOUNT_DIFF, MatchSt
 def fiscal_mismatch_counts(year: int, month: int) -> dict:
     """Diferencias del cuadre (RCV + ventas TUU) del mes; 2 consultas agregadas fijas.
 
-    ``ONLY_ERP`` no se cuenta: el RCV puede llegar tarde.
+    ``ONLY_ERP`` no se cuenta: el RCV puede llegar tarde. Las boletas RCV 39/41 sin venta
+    TUU ya entran como ``ONLY_EXTERNAL``; la venta TUU sin boleta no tiene estado propio
+    y solo se informa en el reporte (ADR-0139 D2).
     """
     first = date(year, month, 1)
     lo = _local_midnight(first)
@@ -163,7 +165,35 @@ def _summaries(year: int, month: int, first: date, last: date, lo: datetime, hi:
         "document_type",
     )
     rcv = _rcv_totals(year, month)
-    return [_summary_row(code, erp, tuu, rcv) for code in SUMMARY_SII_CODES]
+    unpaired = _unpaired_boletas(year, month, lo, hi)
+    return [_summary_row(code, erp, tuu, rcv) | unpaired.get(code, _NO_PAIRING) for code in SUMMARY_SII_CODES]
+
+
+_NO_PAIRING = {"tuu_without_rcv": None, "rcv_without_tuu": None}
+
+
+def _unpaired_boletas(year: int, month: int, lo: datetime, hi: datetime) -> dict[int, dict[str, int]]:
+    """Boletas 39/41 sin par (ADR-0139): venta TUU sin boleta RCV y boleta RCV sin venta TUU."""
+    out = {code: {"tuu_without_rcv": 0, "rcv_without_tuu": 0} for code in BOLETA_SII_CODES}
+    sales = (
+        TerminalSale.objects.filter(
+            status=TerminalSale.Status.COMPLETED, transaction_at__gte=lo, transaction_at__lt=hi,
+            document_type__in=BOLETA_SII_CODES, rcv_document__isnull=True,
+        )
+        .values("document_type").annotate(n=Count("id")).order_by()
+    )
+    for row in sales:
+        out[row["document_type"]]["tuu_without_rcv"] = row["n"]
+    docs = (
+        RCVDocument.objects.filter(
+            direction=RCVImport.Direction.SALES, period=f"{year}{month:02d}",
+            dte_type__in=BOLETA_SII_CODES, match_status=MatchStatus.ONLY_EXTERNAL,
+        )
+        .values("dte_type").annotate(n=Count("id")).order_by()
+    )
+    for row in docs:
+        out[row["dte_type"]]["rcv_without_tuu"] = row["n"]
+    return out
 
 
 def _rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:

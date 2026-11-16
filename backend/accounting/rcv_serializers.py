@@ -32,6 +32,9 @@ class RCVDocumentListSerializer(serializers.ModelSerializer):
     matched_invoice_display = serializers.CharField(
         source="matched_invoice.display_id", read_only=True, default=None
     )
+    # Anotados por `with_terminal_sale` en el selector (sin consulta por fila).
+    terminal_sale = serializers.IntegerField(source="terminal_sale_pk", read_only=True, default=None)
+    terminal_sale_display = serializers.SerializerMethodField()
 
     class Meta:
         model = RCVDocument
@@ -67,11 +70,18 @@ class RCVDocumentListSerializer(serializers.ModelSerializer):
             "matched_invoice",
             "matched_invoice_display",
             "matched_manually",
+            "terminal_sale",
+            "terminal_sale_display",
         ]
         read_only_fields = fields
 
     def get_is_missing(self, obj: RCVDocument) -> bool:
         return obj.missing_since_import_id is not None
+
+    def get_terminal_sale_display(self, obj: RCVDocument) -> str | None:
+        if getattr(obj, "terminal_sale_pk", None) is None:
+            return None
+        return f"Venta TUU {obj.terminal_sale_ref}"
 
 
 class RCVDocumentSerializer(RCVDocumentListSerializer):

@@ -485,3 +485,56 @@ def test_documents_filter_by_match_status(reader):
     rows = reader.get("/api/accounting/rcv-documents/?match_status=MATCHED").json()["results"]
     assert [r["id"] for r in rows] == [matched.id]
     assert reader.get("/api/accounting/rcv-documents/?match_status=NOPE").status_code == 400
+
+
+# ── Venta TUU vinculada a la boleta (ADR-0139) ──────────────────────────────
+
+
+def _linked_boletas(n: int) -> list[RCVDocument]:
+    from treasury.models import TerminalSale
+    from treasury.tests.helpers import make_terminal_provider
+
+    provider = make_terminal_provider()
+    imp = _import(SALES, 2026, 10)
+    docs = []
+    for i in range(n):
+        doc = _doc(imp, dte_type=39)
+        TerminalSale.objects.create(
+            provider=provider, natural_key=f"rcv-ts-{doc.id}", serial_number="SN1",
+            sale_id=f"V{doc.id}" if i % 2 == 0 else "", sequence_number=f"S{doc.id}",
+            transaction_at=FIXED_NOW, status=TerminalSale.Status.COMPLETED, document_type=39,
+            sale_amount=1000, total_amount=1000, rcv_document=doc,
+        )
+        docs.append(doc)
+    return docs
+
+
+@pytest.mark.django_db
+def test_documents_expose_terminal_sale_without_n_plus_one(reader):
+    url = "/api/accounting/rcv-documents/"
+    _linked_boletas(3)
+    _count_queries(reader, url)
+    small = _count_queries(reader, url)
+    _linked_boletas(9)
+    assert _count_queries(reader, url) == small
+    rows = reader.get(url).json()["results"]
+    assert len(rows) == 12
+    for row in rows:
+        assert row["terminal_sale"]
+        assert row["terminal_sale_display"].startswith("Venta TUU ")
+
+
+@pytest.mark.django_db
+def test_document_terminal_sale_display(reader):
+    from treasury.models import TerminalSale
+
+    with_id, without_id = _linked_boletas(2)
+    alone = _doc(_import(SALES, 2026, 9), dte_type=39)
+    sale = TerminalSale.objects.get(rcv_document=with_id)
+    body = reader.get(f"/api/accounting/rcv-documents/{with_id.id}/").json()
+    assert body["terminal_sale"] == sale.id
+    assert body["terminal_sale_display"] == f"Venta TUU V{with_id.id}"
+    body = reader.get(f"/api/accounting/rcv-documents/{without_id.id}/").json()
+    assert body["terminal_sale_display"] == f"Venta TUU S{without_id.id}"
+    body = reader.get(f"/api/accounting/rcv-documents/{alone.id}/").json()
+    assert body["terminal_sale"] is None and body["terminal_sale_display"] is None
