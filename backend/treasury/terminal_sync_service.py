@@ -119,8 +119,13 @@ def eligible_providers() -> models.QuerySet[PaymentTerminalProvider]:
 
 
 def scheduled_range(settings: TerminalSyncSettings, today: date) -> tuple[date, date] | None:
-    """Rango de una sincronización programada: la ventana de retroceso hasta hoy."""
-    start = today - timedelta(days=settings.lookback_days)
+    """Rango programado hasta hoy: ayer en intervalos cortos, la ventana completa en días."""
+    back = (
+        1
+        if settings.interval_unit != TerminalSyncSettings.IntervalUnit.DAYS
+        else settings.lookback_days
+    )
+    start = today - timedelta(days=back)
     if settings.history_start_date:
         start = max(settings.history_start_date, start)
     return None if start > today else (start, today)

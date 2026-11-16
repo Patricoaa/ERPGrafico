@@ -114,12 +114,30 @@ def test_dispatcher_minutes_interval_29_does_not_launch_30_does(monkeypatch, enq
     _freeze(monkeypatch, 10, 0)
     assert tasks.dispatch_terminal_sales_sync() == 1
     TerminalSyncRun.objects.filter(provider=provider).update(
-        started_at=timezone.localtime().replace(hour=10, minute=0, second=0, microsecond=0)
+        status=TerminalSyncRun.Status.SUCCESS,
+        started_at=timezone.localtime().replace(hour=10, minute=0, second=0, microsecond=0),
     )
     _freeze(monkeypatch, 10, 29)
     assert tasks.dispatch_terminal_sales_sync() == 0
     _freeze(monkeypatch, 10, 30)
     assert tasks.dispatch_terminal_sales_sync() == 1
+
+
+def test_dispatch_skips_provider_with_run_in_progress(monkeypatch, enqueued):
+    _configure(interval_value=5, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    started = timezone.localtime().replace(hour=9, minute=53, second=0, microsecond=0)
+    TerminalSyncRun.objects.create(
+        provider=provider,
+        trigger=TerminalSyncRun.Trigger.SCHEDULED,
+        status=TerminalSyncRun.Status.RUNNING,
+        start_date=date(2026, 11, 12),
+        end_date=date(2026, 11, 13),
+        started_at=started,
+    )
+    assert tasks.dispatch_terminal_sales_sync() == 0
+    assert TerminalSyncRun.objects.count() == 1
 
 
 def test_dispatcher_range_ends_today(monkeypatch, enqueued):

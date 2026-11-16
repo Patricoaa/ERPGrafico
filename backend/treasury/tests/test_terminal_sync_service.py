@@ -130,6 +130,14 @@ def test_scheduled_range_ends_today_and_respects_history_floor():
     assert scheduled_range(s, date(2026, 11, 13)) is None
 
 
+def test_scheduled_range_short_intervals_cover_yesterday_and_today():
+    for unit in ("MINUTES", "HOURS"):
+        s = TerminalSyncSettings(lookback_days=7, interval_unit=unit, history_start_date=None)
+        assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 12), date(2026, 11, 13))
+    s.history_start_date = date(2026, 11, 13)
+    assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 13), date(2026, 11, 13))
+
+
 def _at(hour, minute=0, day=13):
     from datetime import datetime
     from zoneinfo import ZoneInfo

@@ -300,13 +300,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
 
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description=GlosaBuilder.build(
-                GlosaBuilder.DEVENGO_INTERESES,
-                inst.loan.display_id,
-                "",
-                total_interest_clp,
-                extra=[f"{month:02d}/{year}"],
-            ),
+            description=GlosaBuilder.build(GlosaBuilder.DEVENGO_INTERESES, inst.loan.display_id, "", total_interest_clp, extra=[f"{month:02d}/{year}"]),
             reference=ref,
             status=JournalEntry.Status.DRAFT,
         )
@@ -934,6 +928,10 @@ def dispatch_terminal_sales_sync() -> int:
         return 0
     queued = 0
     for provider in eligible_providers():
+        if TerminalSyncRun.objects.filter(
+            provider=provider, status=TerminalSyncRun.Status.RUNNING
+        ).exists():
+            continue  # evita solapar con una sincronización en curso
         last = (
             TerminalSyncRun.objects.filter(
                 provider=provider, trigger=TerminalSyncRun.Trigger.SCHEDULED
