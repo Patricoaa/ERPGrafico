@@ -65,7 +65,7 @@ export function DebugSettingsView() {
                     <CardTitle className="text-base">Reloj del servidor</CardTitle>
                 </div>
                 <CardDescription>
-                    Solo desarrollo. Altera la hora de todo el servidor (hora de Santiago); Celery Beat y las APIs externas siguen en hora real.
+                    Solo desarrollo. Altera la hora de todo el servidor (hora de Santiago); Celery Beat y las APIs externas siguen en hora real. Las sesiones sobreviven a los cambios de hora; si aparece un 401, vuelve a iniciar sesión.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

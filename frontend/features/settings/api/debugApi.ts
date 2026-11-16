@@ -3,7 +3,7 @@ import api from "@/lib/api"
 export interface DebugClockState {
     active: boolean
     now: string
-    offset_seconds: number
+    offset_seconds: number | null
 }
 
 export const debugApi = {
