@@ -243,3 +243,41 @@ def test_reconciliation_error_does_not_fail_sync(monkeypatch):
 
     monkeypatch.setattr("tax.reconciliation.terminal.reconcile_terminal_sales", boom)
     assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
+
+
+def test_sync_task_runs_boletas_for_each_month(monkeypatch):
+    run = _success_run(monkeypatch)
+    run.start_date, run.end_date = date(2026, 10, 28), date(2026, 11, 3)
+    run.save()
+    monkeypatch.setattr("tax.reconciliation.terminal.reconcile_terminal_sales", lambda s, e: {})
+    calls = []
+    monkeypatch.setattr(
+        "tax.reconciliation.boletas.reconcile_rcv_boletas", lambda y, m: calls.append((y, m)) or {}
+    )
+    assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
+    assert calls == [(2026, 10), (2026, 11)]
+
+
+def test_boletas_error_is_logged_and_does_not_fail_sync(monkeypatch, caplog):
+    run = _success_run(monkeypatch)
+    monkeypatch.setattr("tax.reconciliation.terminal.reconcile_terminal_sales", lambda s, e: {})
+
+    def boom(y, m):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("tax.reconciliation.boletas.reconcile_rcv_boletas", boom)
+    assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
+    assert "boletas" in caplog.text
+
+
+def test_boletas_skipped_when_terminal_reconcile_fails(monkeypatch):
+    run = _success_run(monkeypatch)
+
+    def boom(s, e):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("tax.reconciliation.terminal.reconcile_terminal_sales", boom)
+    calls = []
+    monkeypatch.setattr("tax.reconciliation.boletas.reconcile_rcv_boletas", lambda y, m: calls.append(1))
+    assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
+    assert calls == []

@@ -27,6 +27,16 @@ from .terminal import _local_midnight
 PairKey = tuple[date, Decimal, int]
 
 
+def months_in_range(start: date, end: date) -> list[tuple[int, int]]:
+    """(año, mes) de cada mes que toca el rango [start, end], ambos inclusive."""
+    months: list[tuple[int, int]] = []
+    year, month = start.year, start.month
+    while (year, month) <= (end.year, end.month):
+        months.append((year, month))
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return months
+
+
 @transaction.atomic
 def reconcile_rcv_boletas(year: int, month: int) -> dict[str, int]:
     """Empareja las boletas RCV del mes con ventas TUU; devuelve conteos por estado."""
@@ -57,6 +67,14 @@ def reconcile_rcv_boletas(year: int, month: int) -> dict[str, int]:
     RCVDocument.objects.bulk_update(docs, ["matched_invoice", "match_status"], batch_size=500)
     TerminalSale.objects.bulk_update(paired.values(), ["rcv_document"], batch_size=500)
     return dict(Counter(d.match_status for d in docs))
+
+
+def propagate_invoice(doc_id: int, invoice: Invoice | None) -> None:
+    """Refleja en la boleta la factura (o su ausencia) del vínculo manual de su venta TUU."""
+    invoice_id = invoice.pk if invoice else None
+    if invoice_id and RCVDocument.objects.filter(matched_invoice_id=invoice_id).exclude(pk=doc_id).exists():
+        invoice_id = None  # la factura ya está en otra fila RCV (única por factura)
+    RCVDocument.objects.filter(pk=doc_id).update(matched_invoice_id=invoice_id)
 
 
 def _stale_or_automatic() -> Q:

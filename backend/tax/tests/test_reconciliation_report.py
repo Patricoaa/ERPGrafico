@@ -257,7 +257,7 @@ def test_rcv_run_endpoint(api):
     _rcv(imp, 77, 100)
     r = api.post(f"{BASE}/rcv/run/", {"year": 2026, "month": 10}, format="json")
     assert r.status_code == 200
-    assert r.json() == {"purchase": {MatchStatus.ONLY_EXTERNAL: 1}, "sale": {}}
+    assert r.json() == {"purchase": {MatchStatus.ONLY_EXTERNAL: 1}, "sale": {}, "boletas": {}}
     assert api.post(f"{BASE}/rcv/run/", {"year": 2026, "month": 0}, format="json").status_code == 400
 
 

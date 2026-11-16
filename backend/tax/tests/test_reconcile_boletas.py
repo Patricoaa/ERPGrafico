@@ -272,3 +272,72 @@ def test_query_count_constant(env, imp):
     RCVDocument.objects.all().delete()
     big = _queries_for(env, imp, 40)
     assert small == big
+
+
+# --- Disparadores y propagación (ADR-0139 D3) ---
+
+
+def test_months_in_range():
+    from tax.reconciliation.boletas import months_in_range
+
+    assert months_in_range(date(2026, 10, 28), date(2026, 11, 3)) == [(2026, 10), (2026, 11)]
+    assert months_in_range(date(2026, 11, 2), date(2026, 11, 2)) == [(2026, 11)]
+    assert months_in_range(date(2026, 12, 20), date(2027, 1, 5)) == [(2026, 12), (2027, 1)]
+    assert months_in_range(date(2027, 1, 5), date(2026, 11, 1)) == []
+
+
+def test_terminal_reconcile_propagates_to_rcv(env, imp):
+    from tax.reconciliation.terminal import match_terminal_sale, unmatch_terminal_sale
+
+    s = sale(env, 5000)
+    b = boleta(imp, 5000)
+    run()
+    _reload(s, b)
+    assert b.match_status == MatchStatus.MATCHED and b.matched_invoice_id is None
+    invoice = make_pos_document(env, 5000, local_dt(2026, 11, 13, 12))
+
+    match_terminal_sale(s, invoice)
+    _reload(b)
+    assert b.matched_invoice_id == invoice.id
+    assert b.match_status == MatchStatus.MATCHED
+
+    unmatch_terminal_sale(s)
+    _reload(b)
+    assert b.matched_invoice_id is None
+    assert b.match_status == MatchStatus.MATCHED
+
+
+def test_match_propagation_skips_invoice_held_by_other_doc(env, imp):
+    from tax.reconciliation.terminal import match_terminal_sale
+
+    s = sale(env, 5000)
+    b = boleta(imp, 5000)
+    run()
+    _reload(s)
+    invoice = make_pos_document(env, 5000, local_dt(2026, 11, 13, 12))
+    other = boleta(imp, 5000, folio=1, matched_invoice=invoice)
+
+    match_terminal_sale(s, invoice)
+
+    _reload(b, other)
+    assert b.matched_invoice_id is None
+    assert other.matched_invoice_id == invoice.id
+
+
+def test_run_endpoints_include_boletas_counts(env, imp):
+    from rest_framework.test import APIClient
+
+    from core.tests.rbac_factories import make_user
+
+    client = APIClient()
+    user = make_user("boletas-run", "tax.change_taxperiod")
+    client.force_authenticate(user=user)
+    sale(env, 5000)
+    boleta(imp, 5000)
+    body = {"year": 2026, "month": 11}
+    base = "/api/tax/reconciliation"
+    r = client.post(f"{base}/terminal/run/", body, format="json")
+    assert r.status_code == 200, r.content
+    assert r.json()["boletas"] == {MatchStatus.MATCHED: 1}
+    r = client.post(f"{base}/rcv/run/", body, format="json")
+    assert r.json()["boletas"] == {MatchStatus.MATCHED: 1}

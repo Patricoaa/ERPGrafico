@@ -91,7 +91,7 @@ def test_run_endpoint_returns_counts(api, env):
     make_terminal_sale(env, 5000, local_dt(2026, 11, 10, 12))
     r = api.post(f"{BASE}/terminal/run/", {"year": 2026, "month": 11}, format="json")
     assert r.status_code == 200
-    assert r.json() == {MatchStatus.ONLY_EXTERNAL: 1}
+    assert r.json() == {MatchStatus.ONLY_EXTERNAL: 1, "boletas": {}}
     assert api.post(f"{BASE}/terminal/run/", {"year": 2026, "month": 13}, format="json").status_code == 400
 
 

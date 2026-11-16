@@ -207,6 +207,7 @@ def match_terminal_sale(sale: TerminalSale, invoice: Invoice) -> TerminalSale:
     except IntegrityError as exc:
         # Otra venta enlazó el documento entre la lectura y el guardado.
         raise ValidationError(taken) from exc
+    _propagate_to_boleta(sale, invoice)
     return sale
 
 
@@ -216,4 +217,13 @@ def unmatch_terminal_sale(sale: TerminalSale) -> TerminalSale:
     sale.matched_manually = False
     sale.match_status = ""
     sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    _propagate_to_boleta(sale, None)
     return sale
+
+
+def _propagate_to_boleta(sale: TerminalSale, invoice: Invoice | None) -> None:
+    """La boleta RCV emparejada con la venta hereda el vínculo manual (ADR-0139 D3)."""
+    if sale.rcv_document_id:
+        from .boletas import propagate_invoice  # boletas importa este módulo
+
+        propagate_invoice(sale.rcv_document_id, invoice)
