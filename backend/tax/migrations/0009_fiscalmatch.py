@@ -22,8 +22,8 @@ class Migration(migrations.Migration):
                 ('error', models.TextField(blank=True, verbose_name='Error')),
             ],
             options={
-                'verbose_name': 'Ejecución de cuadre fiscal',
-                'verbose_name_plural': 'Ejecuciones de cuadre fiscal',
+                'verbose_name': 'Ejecución de cuadre',
+                'verbose_name_plural': 'Ejecuciones de cuadre',
                 'ordering': ['-id'],
             },
         ),
@@ -54,8 +54,8 @@ class Migration(migrations.Migration):
                 ('invoice', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='fiscal_match_set', to='billing.invoice', verbose_name='Documento ERP')),
             ],
             options={
-                'verbose_name': 'Grupo de cuadre fiscal',
-                'verbose_name_plural': 'Grupos de cuadre fiscal',
+                'verbose_name': 'Grupo de cuadre',
+                'verbose_name_plural': 'Grupos de cuadre',
                 'indexes': [models.Index(fields=['direction', 'status'], name='fiscalmatch_dir_status_idx'), models.Index(fields=['status', 'issue_date'], name='fiscalmatch_status_date_idx'), models.Index(fields=['fiscal_period'], name='fiscalmatch_period_idx')],
                 'constraints': [models.UniqueConstraint(condition=models.Q(('invoice__isnull', False)), fields=('invoice',), name='fiscalmatch_invoice_uniq')],
             },

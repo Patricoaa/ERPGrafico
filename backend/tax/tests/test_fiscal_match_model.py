@@ -38,8 +38,9 @@ def test_movement_unique_per_sale():
     make_pos_document(env, 1000, local_dt(2026, 5, 4))
     movement = TreasuryMovement.objects.get()
     make_terminal_sale(env, 1000, local_dt(2026, 5, 4), matched_movement=movement)
-    with pytest.raises(IntegrityError), transaction.atomic():
-        make_terminal_sale(env, 1000, local_dt(2026, 5, 4), matched_movement=movement)
+    with pytest.raises(IntegrityError, match="terminalsale_matched_movement_uniq"):
+        with transaction.atomic():
+            make_terminal_sale(env, 1000, local_dt(2026, 5, 4), matched_movement=movement)
 
 
 @pytest.mark.django_db

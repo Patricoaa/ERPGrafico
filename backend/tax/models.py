@@ -502,7 +502,7 @@ _MATCH_AMOUNT = {"max_digits": 14, "decimal_places": 0, "null": True, "blank": T
 
 
 class FiscalMatch(models.Model):
-    """Grupo de cuadre fiscal: un documento ERP con sus partes TUU y RCV."""
+    """Grupo de cuadre: un documento ERP con sus partes TUU y RCV."""
 
     class Direction(models.TextChoices):
         PURCHASE = "purchase", _("Compra")
@@ -550,8 +550,8 @@ class FiscalMatch(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = _("Grupo de cuadre fiscal")
-        verbose_name_plural = _("Grupos de cuadre fiscal")
+        verbose_name = _("Grupo de cuadre")
+        verbose_name_plural = _("Grupos de cuadre")
         constraints = [
             models.UniqueConstraint(
                 fields=["invoice"],
@@ -570,7 +570,7 @@ class FiscalMatch(models.Model):
 
 
 class FiscalMatchRun(models.Model):
-    """Ejecución del motor de cuadre fiscal."""
+    """Ejecución del motor de cuadre."""
 
     started_at = models.DateTimeField(_("Inicio"), auto_now_add=True)
     finished_at = models.DateTimeField(_("Fin"), null=True, blank=True)
@@ -578,8 +578,8 @@ class FiscalMatchRun(models.Model):
     error = models.TextField(_("Error"), blank=True)
 
     class Meta:
-        verbose_name = _("Ejecución de cuadre fiscal")
-        verbose_name_plural = _("Ejecuciones de cuadre fiscal")
+        verbose_name = _("Ejecución de cuadre")
+        verbose_name_plural = _("Ejecuciones de cuadre")
         ordering = ["-id"]
 
     @classmethod
