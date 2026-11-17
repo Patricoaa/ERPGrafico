@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
+from tax.models import FiscalMatch
 from treasury.models import POSTerminal, TerminalSale, TreasuryMovement
 
 SALE_DTE_TYPES = (
@@ -55,6 +56,17 @@ class LinkResult:
     linked: int
     ambiguous_group_ids: set[int] = field(default_factory=set)
     touched_group_ids: set[int] = field(default_factory=set, compare=False)
+
+
+def stamp_groups(group_ids: set[int]) -> None:
+    """Marca ``updated_at`` de los grupos que un paso tocó, dentro de su transacción.
+
+    ``bulk_update``/``update`` no tocan ``auto_now``: sin la marca, si la corrida cae
+    antes de evaluar, un grupo cuadrado que perdió una parte quedaría fuera del alcance
+    de la corrida siguiente.
+    """
+    if group_ids:
+        FiscalMatch.objects.filter(id__in=group_ids).update(updated_at=timezone.now())
 
 
 def border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[TerminalSale]:

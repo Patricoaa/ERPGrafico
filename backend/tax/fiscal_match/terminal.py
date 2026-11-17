@@ -19,6 +19,7 @@ from tax.fiscal_match.candidates import (
     candidate_movements_where,
     local_midnight,
     payment_compatible,
+    stamp_groups,
     terminals_by_device,
 )
 from tax.models import FiscalMatch
@@ -192,4 +193,5 @@ def _attach(
     FiscalMatch.objects.filter(
         id__in=orphan_ids, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
     ).delete()
+    stamp_groups(touched)
     return LinkResult(len(moved_sales), ambiguous, touched)

@@ -67,7 +67,7 @@ def fiscal_number_and_date(group: FiscalMatch) -> tuple[str, date] | None:
     if group.invoice.dte_type == Invoice.DTEType.COMPROBANTE_PAGO:
         if len(sales) != 1:
             return None
-        number = _tuu_number(sales[0])
+        number = tuu_number(sales[0])
         return (number, timezone.localdate(sales[0].transaction_at)) if number else None
     docs = list(group.rcv_documents.all())
     if len(docs) != 1:
@@ -90,11 +90,15 @@ def _issue(invoice: Invoice, number: str, issue_date: date) -> bool:
     return True
 
 
-def _tuu_number(sale: TerminalSale) -> str:
+def tuu_number(sale: TerminalSale) -> str:
+    """Número fiscal de un 48: el id de venta TUU, o su número de secuencia si no hay id."""
     sale_id = (sale.sale_id or "").strip()
     if sale_id and sale_id.upper() != "N/A":
         return sale_id
     return (sale.sequence_number or "").strip()
+
+
+_tuu_number = tuu_number  # alias para tax.reconciliation.issuing (se borra en la limpieza)
 
 
 def _candidates(group_ids: list[int] | None, *, retry_failed: bool) -> list[FiscalMatch]:

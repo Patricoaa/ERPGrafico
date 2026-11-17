@@ -17,7 +17,7 @@ from billing.fiscal_key import (
     sii_code_expression,
 )
 from billing.models import SII_CODE_TO_DTE_TYPE, Invoice
-from tax.fiscal_match.candidates import LinkResult
+from tax.fiscal_match.candidates import LinkResult, stamp_groups
 from tax.models import FiscalMatch
 
 # Tipos que se cuadran documento por documento; 48 va por resumen mensual.
@@ -159,4 +159,5 @@ def link_rcv_documents(since: date) -> LinkResult:
         FiscalMatch.objects.filter(
             id__in=emptied, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
         ).delete()
+    stamp_groups(touched)
     return LinkResult(len(moved), ambiguous, touched)

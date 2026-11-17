@@ -10,6 +10,7 @@ que cambiaron desde la corrida anterior y los cuadrados con ventas automáticas 
 una sincronización TUU reciente puede reabrir (ventas rivales que llegan tarde).
 """
 
+import logging
 from datetime import date, datetime, timedelta
 
 from django.db import transaction
@@ -21,14 +22,16 @@ from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match.boletas import pair_rcv_boletas
-from tax.fiscal_match.candidates import local_midnight
+from tax.fiscal_match.candidates import local_midnight, stamp_groups
 from tax.fiscal_match.groups import ensure_groups, rcv_orphan_group, tuu_orphan_group
-from tax.fiscal_match.issuing import _tuu_number, issue_fiscal_drafts
+from tax.fiscal_match.issuing import issue_fiscal_drafts, tuu_number
 from tax.fiscal_match.rcv import link_rcv_documents
 from tax.fiscal_match.states import STATE_FIELDS, EvalContext, build_context, evaluate
 from tax.fiscal_match.terminal import link_terminal_sales
 from tax.models import FiscalMatch, FiscalMatchRun
 from treasury.models import TerminalSale, TerminalSyncRun
+
+logger = logging.getLogger(__name__)
 
 # Días hacia atrás que se releen por fecha (ventas TUU y boletas): las filas leídas no
 # crecen con el historial. Lo anterior entra por cambios o por ``rematch_ids``.
@@ -54,10 +57,13 @@ def run_fiscal_match() -> dict:
     run = FiscalMatchRun.objects.create()
     try:
         counts = _run(start, timedelta(minutes=settings.terminal_match_window_minutes), since)
-    except BaseException as exc:  # también el límite de tiempo: la corrida queda cerrada
-        run.error = f"{type(exc).__name__}: {exc}"[:2000]
+    except Exception as exc:  # también SoftTimeLimitExceeded (subclase de Exception)
+        run.error = f"{type(exc).__name__}: {exc}"[:2000] or type(exc).__name__
         run.finished_at = timezone.now()
-        run.save(update_fields=["error", "finished_at"])
+        try:
+            run.save(update_fields=["error", "finished_at"])
+        except Exception:  # noqa: BLE001 — registrar el fallo no debe tapar el error original
+            logger.exception("No se pudo registrar el fallo de la corrida de cuadre %s", run.pk)
         raise
     run.counts = counts
     run.finished_at = timezone.now()
@@ -150,7 +156,7 @@ def _flag_frozen_48(groups: list[FiscalMatch], ctx: EvalContext) -> None:
             continue
         if invoice.dte_type != Invoice.DTEType.COMPROBANTE_PAGO:
             continue
-        if any(invoice.number == _tuu_number(s) for s in ctx.sales.get(group.id, ())):
+        if any(invoice.number == tuu_number(s) for s in ctx.sales.get(group.id, ())):
             group.closed_period_alert = True
 
 
@@ -177,7 +183,7 @@ def rematch_ids(start: date, window: timedelta, since: datetime | None) -> set[i
         finished_at__gt=since,
     ).values_list("start_date", "end_date")
     spans = Q()
-    for first, last in runs:
+    for first, last in _merged_days(runs):
         spans |= Q(
             matched_movement__created_at__gte=local_midnight(first) - window,
             matched_movement__created_at__lt=local_midnight(last + timedelta(days=1)) + window,
@@ -186,6 +192,17 @@ def rematch_ids(start: date, window: timedelta, since: datetime | None) -> set[i
         return ids
     matched = automatic.filter(spans, fiscal_match__status=FiscalMatchStatus.MATCHED)
     return ids | set(matched.values_list("fiscal_match_id", flat=True))
+
+
+def _merged_days(ranges) -> list[tuple[date, date]]:
+    """Rangos de días [desde, hasta] unidos cuando se traslapan o son contiguos."""
+    merged: list[tuple[date, date]] = []
+    for first, last in sorted(ranges):
+        if merged and first <= merged[-1][1] + timedelta(days=1):
+            merged[-1] = (merged[-1][0], max(merged[-1][1], last))
+        else:
+            merged.append((first, last))
+    return merged
 
 
 @transaction.atomic
@@ -217,4 +234,6 @@ def release_cancelled(start: date) -> set[int]:
     TerminalSale.objects.bulk_update(sales, ["fiscal_match", "matched_movement", "linked_manually"])
     RCVDocument.objects.bulk_update(docs, ["fiscal_match"])
     FiscalMatch.objects.filter(id__in=sources | manual_rcv).update(rcv_linked_manually=False)
-    return sources | manual_rcv | {g.id for g in sale_groups + rcv_groups}
+    touched = sources | manual_rcv | {g.id for g in sale_groups + rcv_groups}
+    stamp_groups(touched)
+    return touched

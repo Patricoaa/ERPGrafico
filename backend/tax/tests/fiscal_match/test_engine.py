@@ -263,3 +263,41 @@ def test_failed_run_does_not_advance_change_mark(tenv):
 
     _reload(group)
     assert group.status == FiscalMatchStatus.DIFF
+
+
+def test_source_group_of_committed_move_is_reevaluated_after_crash(tenv):
+    from unittest.mock import patch
+
+    inv1 = make_pos_document(tenv, 6000, _ago(120))
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    run_fiscal_match()
+    run_fiscal_match()  # la marca queda después de la creación de los grupos
+    g1 = _group_of(inv1)
+    assert g1.status == FiscalMatchStatus.MATCHED
+
+    # El cobro de inv1 deja de calzar y aparece otro documento cuyo cobro sí calza.
+    TreasuryMovement.objects.filter(invoice=inv1).update(amount=Decimal(5000))
+    inv2 = make_pos_document(tenv, 6000, _ago(117))
+    _sync_run(tenv)
+    with patch("tax.fiscal_match.engine._evaluate", side_effect=RuntimeError("boom")):
+        with pytest.raises(RuntimeError):
+            run_fiscal_match()  # el paso TUU ya confirmó el traslado; la evaluación cae
+    _reload(sale, g1)
+    assert sale.fiscal_match.invoice_id == inv2.id
+    assert g1.status == FiscalMatchStatus.MATCHED  # quedó con el estado viejo
+
+    run_fiscal_match()
+
+    _reload(g1)
+    assert g1.status != FiscalMatchStatus.MATCHED
+
+
+def test_sync_ranges_are_merged():
+    from datetime import date
+
+    from tax.fiscal_match.engine import _merged_days
+
+    d = date(2026, 11, 10)
+    ranges = [(d, d), (d, d + timedelta(days=1)), (d + timedelta(days=2), d + timedelta(days=2)),
+              (d + timedelta(days=5), d + timedelta(days=6))]
+    assert _merged_days(ranges) == [(d, d + timedelta(days=2)), (d + timedelta(days=5), d + timedelta(days=6))]

@@ -17,7 +17,7 @@ from django.utils import timezone
 from accounting.models import RCVDocument, RCVImport, RCVSettings
 from billing.fiscal_key import parse_folio
 from billing.models import Invoice
-from tax.fiscal_match.candidates import LinkResult, local_midnight
+from tax.fiscal_match.candidates import LinkResult, local_midnight, stamp_groups
 from tax.models import FiscalMatch
 from treasury.models import TerminalSale
 
@@ -127,4 +127,5 @@ def pair_rcv_boletas(lo: datetime, hi: datetime) -> LinkResult:
     FiscalMatch.objects.filter(
         id__in=source_ids, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
     ).delete()
+    stamp_groups(touched)
     return LinkResult(len(moved), touched_group_ids=touched)
