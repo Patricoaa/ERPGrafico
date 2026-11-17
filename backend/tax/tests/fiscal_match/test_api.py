@@ -103,6 +103,13 @@ def test_counts(api, tenv):
     assert sum(body["by_status"].values()) == 2  # el filtro de estado no aplica a los conteos
     good = FiscalMatchRun.objects.filter(error="").latest("finished_at")
     assert body["last_run_at"] == good.finished_at.isoformat()
+    assert body["start_date"] == (timezone.localdate() - timedelta(days=5)).isoformat()
+
+
+def test_counts_without_start_date(api, tenv):
+    set_match_settings(None)
+
+    assert api.get(f"{BASE}/counts/").json()["start_date"] is None
 
 
 def test_detail(api, tenv):

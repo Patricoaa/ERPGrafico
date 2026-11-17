@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
 
 from accounting.integrations.rcv_normalizer import normalize_rut
-from accounting.models import RCVDocument
+from accounting.models import RCVDocument, RCVSettings
 from core.fiscal_match import FiscalMatchStatus
 from tax.models import FiscalMatch, FiscalMatchRun
 from treasury.models import TerminalSale
@@ -98,7 +98,8 @@ def fiscal_match_detail_queryset() -> QuerySet[FiscalMatch]:
 
 
 def fiscal_match_counts(filters: dict) -> dict:
-    """Conteo por estado con los filtros de la lista (salvo ``status``) y la última corrida."""
+    """Conteo por estado con los filtros de la lista (salvo ``status``), la última corrida y la fecha
+    de inicio del cuadre (``None`` = sin configurar: el motor no evalúa nada)."""
     rows = _filtered(filters, with_status=False).order_by().values("status").annotate(n=Count("id"))
     by_status = dict.fromkeys(FiscalMatchStatus.values, 0)
     by_status.update({row["status"]: row["n"] for row in rows})
@@ -108,4 +109,9 @@ def fiscal_match_counts(filters: dict) -> dict:
         .only("finished_at")
         .first()
     )
-    return {"by_status": by_status, "last_run_at": run.finished_at.isoformat() if run else None}
+    start = RCVSettings.get_settings().fiscal_match_start_date
+    return {
+        "by_status": by_status,
+        "last_run_at": run.finished_at.isoformat() if run else None,
+        "start_date": start.isoformat() if start else None,
+    }

@@ -100,6 +100,8 @@ export interface FiscalMatchDetail extends Omit<FiscalMatchListItem, 'invoice' |
 export interface FiscalMatchCounts {
     by_status: Record<FiscalMatchStatus, number>
     last_run_at: string | null
+    /** `RCVSettings.fiscal_match_start_date`; null = sin configurar (el motor no evalúa nada). */
+    start_date: string | null
 }
 
 export interface ErpCandidate {

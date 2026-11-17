@@ -65,13 +65,13 @@ export const RCV_SUB_TABS: NavTabConfig[] = [
     metadataTitle: "Importaciones RCV | ERPGrafico",
   },
   {
-    value: "reconciliation",
+    value: "cuadre",
     label: "Cuadre",
-    href: "/accounting/rcv/reconciliation",
+    href: "/accounting/rcv/cuadre",
     iconName: "scale",
-    headerTitle: "Cuadre fiscal",
-    headerDescription: "ERP frente a TUU y el RCV del SII, por período.",
-    metadataTitle: "Cuadre fiscal | ERPGrafico",
+    headerTitle: "Cuadre",
+    headerDescription: "Cada documento del ERP con sus pagos TUU y su registro en el SII.",
+    metadataTitle: "Cuadre | ERPGrafico",
   },
 ]
 

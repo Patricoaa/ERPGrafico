@@ -4,7 +4,7 @@ import { ACCOUNTING_TABS, getAccountingConfigSubTab, getRcvSubTab, RCV_SUB_TABS,
 describe('navegación RCV', () => {
     it('resuelve los sub-tabs del RCV', () => {
         expect(getRcvSubTab('sales')?.href).toBe('/accounting/rcv/sales')
-        expect(RCV_SUB_TABS.map(t => t.value)).toEqual(['purchases', 'sales', 'imports', 'reconciliation'])
+        expect(RCV_SUB_TABS.map(t => t.value)).toEqual(['purchases', 'sales', 'imports', 'cuadre'])
     })
 
     it('registra el tab rcv tras closures', () => {
@@ -17,18 +17,18 @@ describe('navegación RCV', () => {
         expect(getAccountingConfigSubTab('rcv')?.href).toBe('/accounting/settings/rcv')
     })
 
-    it('registra la sub-pestaña de cuadre fiscal', () => {
-        expect(getRcvSubTab('reconciliation')).toMatchObject({
+    it('registra la sub-pestaña de cuadre', () => {
+        expect(getRcvSubTab('cuadre')).toMatchObject({
             label: 'Cuadre',
-            href: '/accounting/rcv/reconciliation',
+            href: '/accounting/rcv/cuadre',
             iconName: 'scale',
-            headerTitle: 'Cuadre fiscal',
-            headerDescription: 'ERP frente a TUU y el RCV del SII, por período.',
+            headerTitle: 'Cuadre',
+            metadataTitle: 'Cuadre | ERPGrafico',
         })
     })
 
     it('marca activa la sub-pestaña según la ruta', () => {
-        expect(resolveAccountingNav('/accounting/rcv/reconciliation')).toEqual({ activeValue: 'rcv', subActiveValue: 'reconciliation' })
+        expect(resolveAccountingNav('/accounting/rcv/cuadre')).toEqual({ activeValue: 'rcv', subActiveValue: 'cuadre' })
         expect(resolveAccountingNav('/accounting/rcv')).toEqual({ activeValue: 'rcv', subActiveValue: 'purchases' })
         expect(resolveAccountingNav('/accounting/settings')).toEqual({ activeValue: 'config', subActiveValue: 'vat-rates' })
         expect(resolveAccountingNav('/accounting')).toEqual({ activeValue: 'ledger', subActiveValue: undefined })

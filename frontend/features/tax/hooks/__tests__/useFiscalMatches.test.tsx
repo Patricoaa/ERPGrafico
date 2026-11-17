@@ -48,7 +48,7 @@ describe('queries', () => {
         expect(list).toHaveBeenCalledWith({ status: ['attention'] }, 2)
     })
     it('conteos con refetchInterval de 60 s', async () => {
-        counts.mockResolvedValue({ by_status: {}, last_run_at: null })
+        counts.mockResolvedValue({ by_status: {}, last_run_at: null, start_date: null })
         const { Wrapper, client } = setup()
         const { result } = renderHook(() => useFiscalMatchCounts({}), { wrapper: Wrapper })
         await waitFor(() => expect(result.current.counts).toBeDefined())

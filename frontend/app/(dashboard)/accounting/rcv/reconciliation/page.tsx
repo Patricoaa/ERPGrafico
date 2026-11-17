@@ -1,11 +1,6 @@
-import type { Metadata } from "next"
-import { FiscalReconciliationClientView } from "@/features/tax"
-import { getRcvSubTab } from "@/features/accounting/navigation"
-import { buildMetadataFromTab } from "@/lib/navigation-helpers"
+import { redirect } from "next/navigation"
 
-const tabConfig = getRcvSubTab("reconciliation")
-export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Cuadre fiscal | ERPGrafico" }
-
-export default async function AccountingRcvReconciliationPage() {
-  return <FiscalReconciliationClientView />
+/** Ruta anterior del cuadre: los enlaces guardados siguen funcionando. */
+export default function AccountingRcvReconciliationPage() {
+  redirect("/accounting/rcv/cuadre")
 }
