@@ -5,14 +5,12 @@ número de consultas no crece con los documentos del período (ADR-0118).
 """
 
 import calendar
-from datetime import date, datetime, time, timedelta
-from decimal import Decimal
+from datetime import date, datetime, timedelta
 
 from django.db.models import (
     Case,
     Count,
     Exists,
-    F,
     OuterRef,
     Q,
     QuerySet,
@@ -23,19 +21,30 @@ from django.db.models import (
 )
 from django.utils import timezone
 
-from accounting.models import RCVDocument, RCVImport, RCVImportSummary, RCVSettings
-from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
+from accounting.models import RCVDocument, RCVImport, RCVSettings
+from billing.fiscal_key import fiscal_direction_expression
 from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import MatchStatus
+from tax.fiscal_match.summary import (
+    PENDING_ISSUE_CAP,
+    SUMMARY_SII_CODES,
+    _rcv_totals,
+    _summary_row,
+    _summary_status_q,
+    _totals,
+)
+from tax.fiscal_match.summary import (
+    annotated_invoices as _annotated_invoices,
+)
+from tax.fiscal_match.summary import (
+    local_midnight as _local_midnight,
+)
 from treasury.models import TerminalSale, TreasuryMovement
 
 from .rcv import BOLETA_SII_CODES, DOCUMENT_SII_CODES, RCV_TO_FISCAL_DIRECTION
-from .terminal import sale_document_status_q
 
-SUMMARY_SII_CODES = (39, 41, 48)
 ONLY_ERP_CAP = 50
-PENDING_ISSUE_CAP = 50
 # Mismo criterio que `billing.fiscal_key.parse_folio`: dígitos (con puntos/espacios) y > 0.
 FOLIO_REGEX = r"^[0-9. ]*[1-9][0-9. ]*$"
 
@@ -58,48 +67,11 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
     }
 
 
-MISMATCH_STATUSES = (
-    MatchStatus.ONLY_EXTERNAL,
-    MatchStatus.AMOUNT_DIFF,
-    MatchStatus.TYPE_DIFF,
-    MatchStatus.AMBIGUOUS,
-    MatchStatus.PENDING_ERP,
-)
-
-
-def fiscal_mismatch_counts(year: int, month: int) -> dict:
-    """Diferencias del cuadre (RCV + ventas TUU) del mes; 2 consultas agregadas fijas.
-
-    ``ONLY_ERP`` no se cuenta: el RCV puede llegar tarde. Las boletas RCV 39/41 sin venta
-    TUU ya entran como ``ONLY_EXTERNAL`` y las que tienen venta TUU sin documento ERP como
-    ``PENDING_ERP`` (ADR-0140 D5); la venta TUU sin boleta no tiene estado propio y solo
-    se informa en el reporte (ADR-0139 D2).
-    """
-    first = date(year, month, 1)
-    lo = _local_midnight(first)
-    hi = _local_midnight(date(year + (month == 12), month % 12 + 1, 1))
-    by_status = {str(s): 0 for s in MISMATCH_STATUSES}
-    rcv = RCVDocument.objects.filter(period=f"{year}{month:02d}", match_status__in=MISMATCH_STATUSES)
-    sales = TerminalSale.objects.filter(transaction_at__gte=lo, transaction_at__lt=hi, match_status__in=MISMATCH_STATUSES)
-    for qs in (rcv, sales):
-        for row in qs.values("match_status").annotate(n=Count("id")).order_by():
-            by_status[str(row["match_status"])] += row["n"]
-    return {"count": sum(by_status.values()), "by_status": by_status}
-
-
-def _local_midnight(day: date) -> datetime:
-    return timezone.make_aware(datetime.combine(day, time.min))
-
-
 def _period_start(first: date, last: date, start: date | None) -> date | None:
     """Primer día evaluable del mes, o ``None`` si el cuadre no aplica a este mes."""
     if start is None or last < start:
         return None
     return max(first, start)
-
-
-def _annotated_invoices() -> QuerySet[Invoice]:
-    return Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression())
 
 
 def _imported_directions(year: int, month: int) -> set[str]:
@@ -163,17 +135,6 @@ def _item(invoice: Invoice) -> dict:
     }
 
 
-def _totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
-    return {row[key]: (row["n"] or 0, row["t"] or Decimal("0")) for row in rows}
-
-
-def _summary_status_q() -> Q:
-    """Como ``sale_document_status_q`` pero los borradores deben venir de una orden de venta."""
-    return Q(status=Invoice.Status.POSTED) | (
-        sale_document_status_q() & Q(sale_order__isnull=False)
-    )
-
-
 def _summaries(
     year: int, month: int, first: date, last: date, lo: datetime, hi: datetime, start: date | None
 ) -> list[dict]:
@@ -235,40 +196,6 @@ def _unpaired_boletas(year: int, month: int, since: date | None, hi: datetime) -
     for row in docs:
         out[row["dte_type"]]["rcv_without_tuu"] = row["n"]
     return out
-
-
-def _rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:
-    """Resúmenes de la última importación exitosa de ventas del período; ``None`` si no hay."""
-    latest = (
-        RCVImport.objects.filter(
-            direction=RCVImport.Direction.SALES, year=year, month=month, status=RCVImport.Status.SUCCESS
-        )
-        .order_by(F("finished_at").desc(nulls_last=True), "-id")
-        .values_list("id", flat=True)
-        .first()
-    )
-    if latest is None:
-        return None
-    return _totals(
-        RCVImportSummary.objects.filter(rcv_import_id=latest, dte_type__in=SUMMARY_SII_CODES)
-        .values("dte_type").annotate(n=Sum("document_count"), t=Sum("total_amount")).order_by(),
-        "dte_type",
-    )
-
-
-def _summary_row(code: int, erp: dict, tuu: dict, rcv: dict | None) -> dict:
-    erp_count, erp_total = erp.get(code, (0, Decimal("0")))
-    tuu_count, tuu_total = tuu.get(code, (0, Decimal("0")))
-    row = {
-        "dte_type": code,
-        "erp_count": erp_count, "erp_total": str(erp_total),
-        "tuu_count": tuu_count, "tuu_total": str(tuu_total),
-        "rcv_count": None, "rcv_total": None, "difference": None,
-    }
-    if rcv is not None:
-        rcv_count, rcv_total = rcv.get(code, (0, Decimal("0")))
-        row.update(rcv_count=rcv_count, rcv_total=str(rcv_total), difference=str(erp_total - rcv_total))
-    return row
 
 
 def _terminal(

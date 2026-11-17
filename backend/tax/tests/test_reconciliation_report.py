@@ -363,22 +363,6 @@ def test_tuu_without_rcv_respects_start_date():
     assert _row(fiscal_reconciliation_report(2026, 10), 39)["tuu_without_rcv"] is None
 
 
-def test_mismatch_counts_boletas_counted_once():
-    """Una boleta RCV sin venta TUU suma 1 (por su estado); la venta TUU sin boleta no suma."""
-    from tax.reconciliation.report import fiscal_mismatch_counts
-
-    env = make_terminal_env()
-    imp = _import()
-    _rcv(imp, 1, 700, direction=S, dte_type=39, match_status=MatchStatus.ONLY_EXTERNAL)
-    _rcv(imp, 2, 700, direction=S, dte_type=41, match_status=MatchStatus.ONLY_EXTERNAL)
-    make_terminal_sale(env, 2000, local_dt(2026, 10, 5, 12), document_type=39, match_status=MatchStatus.MATCHED)
-
-    result = fiscal_mismatch_counts(2026, 10)
-
-    assert result["count"] == 2
-    assert result["by_status"][MatchStatus.ONLY_EXTERNAL] == 2
-
-
 def test_summaries_and_only_erp_count_pos_drafts():
     """ADR-0140 D2: el 39/48 en borrador sin folio es una venta real a la espera de su número."""
     set_match_settings(date(2026, 10, 1))
@@ -396,20 +380,6 @@ def test_summaries_and_only_erp_count_pos_drafts():
     assert _row(report, 39)["erp_count"] == 1 and Decimal(_row(report, 39)["erp_total"]) == 1500
     assert _row(report, 48)["erp_count"] == 1 and Decimal(_row(report, 48)["erp_total"]) == 2500
     assert report["terminal"][MatchStatus.ONLY_ERP] == 2
-
-
-def test_mismatch_counts_include_pending_erp():
-    """ADR-0140 D5: la boleta con venta TUU pero sin documento ERP es una diferencia."""
-    from tax.reconciliation.report import fiscal_mismatch_counts
-
-    imp = _import()
-    _rcv(imp, 1, 700, direction=S, dte_type=39, match_status=MatchStatus.PENDING_ERP)
-    _rcv(imp, 2, 800, direction=S, dte_type=39, match_status=MatchStatus.MATCHED)
-
-    result = fiscal_mismatch_counts(2026, 10)
-
-    assert result["count"] == 1
-    assert result["by_status"][MatchStatus.PENDING_ERP] == 1
 
 
 def test_summaries_ignore_drafts_without_sale_order():

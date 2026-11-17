@@ -22,8 +22,11 @@ from tax.fiscal_match.serializers import (
     FiscalMatchFilterSerializer,
     FiscalMatchListSerializer,
     LinkSerializer,
+    OptionalPeriodSerializer,
+    PeriodSerializer,
     UnlinkSerializer,
 )
+from tax.fiscal_match.summary import monthly_summary, pending_issue
 from tax.models import FiscalMatch
 from tax.reconciliation_serializers import InvoiceCandidateSerializer, PurchaseOrderOptionSerializer
 
@@ -52,7 +55,7 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     filter_backends: list = []
     action_permissions = {
-        **dict.fromkeys(("list", "retrieve", "counts", "candidates", "draft_suggestions", "purchase_orders"), _VIEW),
+        **dict.fromkeys(("list", "retrieve", "counts", "summary", "pending_issue", "candidates", "draft_suggestions", "purchase_orders"), _VIEW),
         **dict.fromkeys(("link", "unlink", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE),
     }
 
@@ -70,6 +73,16 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["get"])
     def counts(self, request):
         return Response(fiscal_match_counts(_filters(request.query_params)))
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        period = _valid(PeriodSerializer, request.query_params)
+        return Response(monthly_summary(period["year"], period["month"]))
+
+    @action(detail=False, methods=["get"], url_path="pending-issue")
+    def pending_issue(self, request):
+        period = _valid(OptionalPeriodSerializer, request.query_params)
+        return Response(pending_issue(period.get("year"), period.get("month")))
 
     @action(detail=True, methods=["get"])
     def candidates(self, request, pk=None):
