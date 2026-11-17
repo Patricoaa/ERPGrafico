@@ -204,7 +204,7 @@ class NoteCheckoutService:
         invoice = Invoice.objects.create(
             dte_type=note_type,
             status=Invoice.Status.DRAFT,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             sale_order=corrected_invoice.sale_order,
             purchase_order=corrected_invoice.purchase_order,
             contact=corrected_invoice.contact,
@@ -604,7 +604,7 @@ class NoteCheckoutService:
             )
 
         # Update invoice
-        doc_date = document_date or timezone.now().date()
+        doc_date = document_date or timezone.localdate()
 
         # Tax Period Validation
         if TaxPeriodService.is_period_closed(doc_date):
@@ -614,7 +614,7 @@ class NoteCheckoutService:
             )
 
         workflow.invoice.number = document_number
-        workflow.invoice.date = document_date or timezone.now().date()
+        workflow.invoice.date = document_date or timezone.localdate()
         if document_attachment:
             workflow.invoice.document_attachment = document_attachment
 
@@ -1065,7 +1065,7 @@ class NoteCheckoutService:
         invoice = Invoice.objects.create(
             dte_type=note_type,
             status=Invoice.Status.DRAFT,
-            date=registration_data.get("document_date") or timezone.now().date(),
+            date=registration_data.get("document_date") or timezone.localdate(),
             sale_order=corrected_invoice.sale_order,
             purchase_order=corrected_invoice.purchase_order,
             contact=corrected_invoice.contact,
@@ -1196,7 +1196,7 @@ class NoteCheckoutService:
 
         if has_stockable and logistics_data:
             warehouse_id = logistics_data.get("warehouse_id")
-            move_date = logistics_data.get("date") or timezone.now().date()
+            move_date = logistics_data.get("date") or timezone.localdate()
             delivery_type = logistics_data.get("delivery_type", "IMMEDIATE")
             warehouse = Warehouse.objects.get(id=warehouse_id)
             is_sale = workflow.sale_order is not None
@@ -1315,7 +1315,7 @@ class NoteCheckoutService:
 
         # 6. document Registration (DTE & Accounting)
         doc_number = registration_data.get("document_number")
-        doc_date = registration_data.get("document_date") or timezone.now().date()
+        doc_date = registration_data.get("document_date") or timezone.localdate()
         val_is_pending = registration_data.get("is_pending", False)
 
         # Tax Period Validation

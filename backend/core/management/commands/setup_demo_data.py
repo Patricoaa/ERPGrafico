@@ -851,7 +851,7 @@ class Command(BaseCommand):
             socio_a.save(update_fields=["partner_equity_percentage"])
         if not PartnerEquityStake.objects.filter(partner=socio_a).exists():
             PartnerEquityStake.objects.create(
-                partner=socio_a, percentage=Decimal("35.00"), effective_from=timezone.now().date()
+                partner=socio_a, percentage=Decimal("35.00"), effective_from=timezone.localdate()
             )
 
         # Socio B: Capitalista
@@ -874,7 +874,7 @@ class Command(BaseCommand):
             socio_b.save(update_fields=["partner_equity_percentage"])
         if not PartnerEquityStake.objects.filter(partner=socio_b).exists():
             PartnerEquityStake.objects.create(
-                partner=socio_b, percentage=Decimal("35.00"), effective_from=timezone.now().date()
+                partner=socio_b, percentage=Decimal("35.00"), effective_from=timezone.localdate()
             )
 
         # Socio C: Admin/Owner (linked to the admin system user)
@@ -888,7 +888,7 @@ class Command(BaseCommand):
             if not admin_contact.is_partner:
                 admin_contact.is_partner = True
                 admin_contact.partner_equity_percentage = Decimal("30.00")
-                admin_contact.partner_since = timezone.now().date()
+                admin_contact.partner_since = timezone.localdate()
                 admin_contact.save(update_fields=["is_partner", "partner_equity_percentage", "partner_since"])
             elif admin_contact.partner_equity_percentage != Decimal("30.00"):
                 admin_contact.partner_equity_percentage = Decimal("30.00")
@@ -896,7 +896,7 @@ class Command(BaseCommand):
             if not PartnerEquityStake.objects.filter(partner=admin_contact).exists():
                 PartnerEquityStake.objects.create(
                     partner=admin_contact, percentage=Decimal("30.00"),
-                    effective_from=timezone.now().date(),
+                    effective_from=timezone.localdate(),
                     notes="Socio fundador — usuario admin del sistema",
                 )
 
@@ -1434,8 +1434,8 @@ class Command(BaseCommand):
             product=p_maint_offset,
             supplier=suppliers[1],
             defaults={
-                "start_date": timezone.now().date(),
-                "next_payment_date": timezone.now().date() + timezone.timedelta(days=5),
+                "start_date": timezone.localdate(),
+                "next_payment_date": timezone.localdate() + timezone.timedelta(days=5),
                 "amount": 250000,
                 "currency": "CLP",
                 "status": Subscription.Status.ACTIVE,
@@ -1450,8 +1450,8 @@ class Command(BaseCommand):
             product=p_electric,
             supplier=suppliers[2],
             defaults={
-                "start_date": timezone.now().date(),
-                "next_payment_date": timezone.now().date() + timezone.timedelta(days=20),
+                "start_date": timezone.localdate(),
+                "next_payment_date": timezone.localdate() + timezone.timedelta(days=20),
                 "amount": 0,  # Variable
                 "currency": "CLP",
                 "status": Subscription.Status.ACTIVE,
@@ -1465,7 +1465,7 @@ class Command(BaseCommand):
             return
 
         entry = JournalEntry(
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             description="Asiento de Apertura 2026 (Suscripción y Pago de Capital)",
             reference="OPEN-2026",
             status=JournalEntry.State.POSTED,
@@ -1512,7 +1512,7 @@ class Command(BaseCommand):
                     partner=owner,
                     transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION,
                     amount=sub_per_owner,
-                    date=timezone.now().date(),
+                    date=timezone.localdate(),
                     description=f"Suscripción Inicial de Capital ({total_subscription:,.0f} total)",
                     journal_entry=entry,
                 )
@@ -1551,7 +1551,7 @@ class Command(BaseCommand):
                     partner=owner,
                     transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,
                     amount=val,
-                    date=timezone.now().date(),
+                    date=timezone.localdate(),
                     description="Pago de Capital en Efectivo (Depósito Bancario)",
                     journal_entry=entry,
                 )
@@ -1748,7 +1748,7 @@ class Command(BaseCommand):
             return
 
         entry = JournalEntry(
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             description="Carga Inicial de Inventario (Demo Data)",
             reference="INIT-STOCK",
             status=JournalEntry.State.POSTED,
@@ -1800,7 +1800,7 @@ class Command(BaseCommand):
             doc = InventoryDocument.objects.create(
                 document_type=InventoryDocument.Type.RECEIPT,
                 status=InventoryDocument.Status.DRAFT,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 reference="INIT-STOCK",
                 notes="Carga Inicial Demo Data",
             )
@@ -1864,7 +1864,7 @@ class Command(BaseCommand):
                         partner=owner,
                         transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY,
                         amount=val,
-                        date=timezone.now().date(),
+                        date=timezone.localdate(),
                         description="Pago de Capital en Especies (Inventario Inicial)",
                         journal_entry=entry,
                     )
@@ -2388,7 +2388,7 @@ class Command(BaseCommand):
         if product:
             order = SaleOrder.objects.create(
                 customer=customer,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 payment_method=SaleOrder.PaymentMethod.CREDIT,
             )
             SaleLine.objects.create(
@@ -2409,7 +2409,7 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.FACTURA,
                 number="1001",
                 status=Invoice.Status.POSTED,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
             )
             self.stdout.write(
                 f"  ✓ OV-{order.number}: {customer.name} → {order.lines.first().quantity}u {product.name} (FACT-{invoice.number})"
@@ -2459,8 +2459,8 @@ class Command(BaseCommand):
             rate_basis=BankLoan.RateBasis.MONTHLY,
             amortization_system=BankLoan.AmortizationSystem.FRENCH,
             term_months=12,
-            start_date=timezone.now().date(),
-            first_due_date=timezone.now().date() + timezone.timedelta(days=30),
+            start_date=timezone.localdate(),
+            first_due_date=timezone.localdate() + timezone.timedelta(days=30),
             insurance_monthly=Decimal("5000"),
             opening_fee=Decimal("50000"),
             stamp_tax=Decimal("10000"),
@@ -2543,8 +2543,8 @@ class Command(BaseCommand):
                 rate_basis=BankLoan.RateBasis.MONTHLY,
                 amortization_system=BankLoan.AmortizationSystem.FRENCH,
                 term_months=6,
-                start_date=timezone.now().date(),
-                first_due_date=timezone.now().date() + timezone.timedelta(days=30),
+                start_date=timezone.localdate(),
+                first_due_date=timezone.localdate() + timezone.timedelta(days=30),
                 insurance_monthly=Decimal("3000"),
                 opening_fee=Decimal("30000"),
                 stamp_tax=Decimal("5000"),
@@ -2587,7 +2587,7 @@ class Command(BaseCommand):
 
         admin = User.objects.filter(is_superuser=True).first()
         wh = inventory["warehouse"]
-        today = timezone.now().date()
+        today = timezone.localdate()
 
         s1 = partners["suppliers"][0]  # Distribuidora de Papeles
         s2 = partners["suppliers"][1]  # Tintas Gráficas
@@ -2767,7 +2767,7 @@ class Command(BaseCommand):
 
         admin = User.objects.filter(is_superuser=True).first()
         wh = inventory["warehouse"]
-        today = timezone.now().date()
+        today = timezone.localdate()
 
         c1 = partners["customers"][0]  # Editorial Amanecer
         c2 = partners["customers"][1]  # Publicidad Creativa
@@ -2962,7 +2962,7 @@ class Command(BaseCommand):
 
         admin = User.objects.filter(is_superuser=True).first()
         wh = inventory["warehouse"]
-        today = timezone.now().date()
+        today = timezone.localdate()
         customer = partners["customers"][0]
         supplier = partners["suppliers"][0]
         papel = Product.objects.get(code="INS-0001")
@@ -3108,7 +3108,7 @@ class Command(BaseCommand):
                             TreasuryMovement.Type.INBOUND if is_sale else TreasuryMovement.Type.OUTBOUND
                         ),
                         payment_method=TreasuryMovement.Method.TRANSFER,
-                        date=timezone.now().date(),
+                        date=timezone.localdate(),
                         created_by=admin,
                         to_account=bank if is_sale else None,
                         from_account=None if is_sale else bank,
@@ -3487,7 +3487,7 @@ class Command(BaseCommand):
                 partner=admin_contact,
                 justify_reason=TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION,
                 created_by=User.objects.filter(is_superuser=True).first(),
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 reference="Aporte de Capital — Nóminas Demo",
                 notes=f"Aporte de ${_funding_amount:,.0f} para cubrir pagos de remuneraciones.",
             )
@@ -3519,7 +3519,7 @@ class Command(BaseCommand):
                     PayrollPaymentService.pay_salary(
                         payroll,
                         treasury_account_id=bco_estado.pk,
-                        payment_date=timezone.now().date(),
+                        payment_date=timezone.localdate(),
                         payment_method="TRANSFER",
                         notes="Pago remuneración demo",
                         created_by=User.objects.filter(is_superuser=True).first(),
@@ -3527,7 +3527,7 @@ class Command(BaseCommand):
                     PayrollPaymentService.pay_previred(
                         payroll,
                         treasury_account_id=bco_estado.pk,
-                        payment_date=timezone.now().date(),
+                        payment_date=timezone.localdate(),
                         payment_method="TRANSFER",
                         notes="Pago previred demo",
                         created_by=User.objects.filter(is_superuser=True).first(),
@@ -3625,8 +3625,8 @@ class Command(BaseCommand):
         budget, _ = Budget.objects.get_or_create(
             name=f"Presupuesto Operativo {current_year}",
             defaults={
-                "start_date": timezone.now().date().replace(month=1, day=1),
-                "end_date": timezone.now().date().replace(month=12, day=31),
+                "start_date": timezone.localdate().replace(month=1, day=1),
+                "end_date": timezone.localdate().replace(month=12, day=31),
                 "description": "Presupuesto base para la operación de la imprenta.",
             },
         )

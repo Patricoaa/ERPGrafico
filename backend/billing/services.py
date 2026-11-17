@@ -706,7 +706,7 @@ class BillingService:
 
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
-            doc_date = date or timezone.now().date()
+            doc_date = date or timezone.localdate()
             from tax.services import AccountingPeriodService, TaxPeriodService
 
             if TaxPeriodService.is_period_closed(doc_date):
@@ -731,7 +731,7 @@ class BillingService:
             dte_type=dte_type,
             number=supplier_invoice_number,
             document_attachment=document_attachment,
-            date=date or timezone.now().date(),
+            date=date or timezone.localdate(),
             purchase_order=order,
             total_net=order.total_net,
             total_tax=order.total_tax,
@@ -801,7 +801,7 @@ class BillingService:
             supplier_name = order.supplier.name
 
             recon_entry = JournalEntry.objects.create(
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 description=GlosaBuilder.build(
                     GlosaBuilder.CONCILIACION_ANTICIPOS, doc_id, supplier_name, total_prepaid,
                 ),
@@ -1847,7 +1847,7 @@ class BillingService:
 
             from tax.services import validate_period_open
 
-            validate_period_open(timezone.now().date(), action="anular la factura")
+            validate_period_open(timezone.localdate(), action="anular la factura")
             JournalEntryService.reverse_entry(
                 invoice.journal_entry, description=f"Anulación Factura {invoice.number}"
             )

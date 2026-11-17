@@ -45,7 +45,7 @@ class PurchaseReturnService:
                 unit_cost=move.unit_cost,
                 description=f"Anulación {doc.display_id}",
                 source_document=doc,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
             )
 
         doc.status = PurchaseReturn.Status.CANCELLED
@@ -66,7 +66,7 @@ class PurchaseReturnService:
         Creates a DRAFT PurchaseReturn from a Credit Note request.
         """
         if not date:
-            date = timezone.now().date()
+            date = timezone.localdate()
 
         try:
             warehouse = Warehouse.objects.get(id=warehouse_id)

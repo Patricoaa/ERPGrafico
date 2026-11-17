@@ -18,7 +18,7 @@ class BIAnalyticsService:
         from sales.models import SaleOrder
 
         if not end_date:
-            end_date = timezone.now().date()
+            end_date = timezone.localdate()
         if not start_date:
             start_date = end_date - datetime.timedelta(days=180)
 

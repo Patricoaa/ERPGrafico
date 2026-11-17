@@ -125,7 +125,7 @@ class WorkOrderService:
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=delivery_with_wh.warehouse if delivery_with_wh else WorkOrderService._default_warehouse(),
             stage_data={},
-            start_date=timezone.now().date(),
+            start_date=timezone.localdate(),
         )
 
         # TASK-113: Flat stage_data — no more nested prepress/press/postpress copies
@@ -316,7 +316,7 @@ class WorkOrderService:
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=delivery_line.delivery.warehouse,
             stage_data={"quantity": float(delivery_line.quantity)},
-            start_date=timezone.now().date(),
+            start_date=timezone.localdate(),
         )
 
         # TASK-110: Expand BOM via shared helper
@@ -1028,7 +1028,7 @@ class WorkOrderService:
         doc_inv = InventoryDocument.objects.create(
             document_type=InventoryDocument.Type.PRODUCTION,
             status=InventoryDocument.Status.DRAFT,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             reference=f"Producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
             source_document_type="production.workorder",
             source_document_id=work_order.id,
@@ -1179,7 +1179,7 @@ class WorkOrderService:
 
                 # Create journal entry
                 entry_data = {
-                    "date": timezone.now().date(),
+                    "date": timezone.localdate(),
                     "description": f"Consumo Producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
                     "reference": f"{EntityPrefix.WORK_ORDER}-{work_order.number}",
                     "status": JournalEntry.State.DRAFT,

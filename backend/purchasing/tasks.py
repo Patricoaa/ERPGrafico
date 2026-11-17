@@ -26,7 +26,7 @@ def generate_subscription_orders(self):
     Generates draft purchase orders for active subscriptions that are due for renewal.
     Runs daily.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     # Look for subscriptions due in the next 7 days or past due. Bounded per run: the rest is
     # picked up by the next run (next_payment_date stays due until its order is paid).
     upcoming_subscriptions = list(

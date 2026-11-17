@@ -199,7 +199,7 @@ class PaymentOrchestrator:
         # Fechas por defecto
         from django.utils import timezone
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         issue_date = check_issue_date or today
         due_date = check_due_date or today
 

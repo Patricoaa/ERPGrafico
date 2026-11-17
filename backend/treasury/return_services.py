@@ -147,7 +147,7 @@ class TreasuryReturnService:
                 if payment.transaction_number
                 else None,
                 notes=f"Devolución de pago: {reason}",
-                date=return_date or timezone.now().date(),
+                date=return_date or timezone.localdate(),
             )
 
         # 4. Create accounting entry (separate reversal entry)

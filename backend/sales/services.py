@@ -253,7 +253,7 @@ class SalesService:
             raise ValidationError("La orden ya está completamente despachada.")
 
         if not delivery_date:
-            delivery_date = timezone.now().date()
+            delivery_date = timezone.localdate()
 
         # VALIDATION: Prevent dispatch of products based on stock/production status
         for sale_line in order.lines.all():
@@ -357,7 +357,7 @@ class SalesService:
         3. Creates delivery and marks it as CONFIRMED.
         """
         if not delivery_date:
-            delivery_date = timezone.now().date()
+            delivery_date = timezone.localdate()
 
         # Create delivery
         delivery = SaleDelivery.objects.create(
@@ -440,7 +440,7 @@ class SalesService:
             SaleDelivery instance
         """
         if not delivery_date:
-            delivery_date = timezone.now().date()
+            delivery_date = timezone.localdate()
 
         # Create delivery
         delivery = SaleDelivery.objects.create(
@@ -933,7 +933,7 @@ class SalesService:
         if delivery.journal_entry:
             from tax.services import validate_period_open
 
-            validate_period_open(timezone.now().date(), action="anular el despacho")
+            validate_period_open(timezone.localdate(), action="anular el despacho")
             rev_entry = JournalEntryService.reverse_entry(
                 delivery.journal_entry, description=f"Anulación Despacho {delivery.number}"
             )
@@ -955,7 +955,7 @@ class SalesService:
                 description=reversal_description,
                 journal_entry=rev_entry,
                 source_document=delivery,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
             )
 
         for line in delivery.lines.all():
@@ -1205,7 +1205,7 @@ class SalesService:
             doc_inv = InventoryDocument.objects.create(
                 document_type=InventoryDocument.Type.RECEIPT,
                 status=InventoryDocument.Status.DRAFT,
-                date=date or timezone.now().date(),
+                date=date or timezone.localdate(),
                 reference=f"Devolución NC {document_number} - OV {order.number}",
                 partner=order.customer,
                 source_document_type="sales.saleorder",

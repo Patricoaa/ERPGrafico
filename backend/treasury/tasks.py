@@ -56,7 +56,7 @@ def mark_overdue_loan_installments(days_ahead: int = 5, notify: bool = True):
 
     from .models import LoanInstallment
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     # 1) Marcar OVERDUE las vencidas y aún PENDING.
@@ -153,7 +153,7 @@ def mark_overdue_credit_card_statements(days_ahead: int = 5, notify: bool = True
 
     from .models import CreditCardStatement
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     # 1) Marcar OVERDUE los vencidos y aún OPEN o PARTIALLY_PAID
@@ -257,7 +257,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
     from .models import BankLoan, LoanInstallment
 
     if year is None or month is None:
-        today = timezone.now().date()
+        today = timezone.localdate()
         year = today.year
         month = today.month
 
@@ -300,7 +300,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
             continue
 
         entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             description=GlosaBuilder.build(GlosaBuilder.DEVENGO_INTERESES, inst.loan.display_id, "", total_interest_clp, extra=[f"{month:02d}/{year}"]),
             reference=ref,
             status=JournalEntry.Status.DRAFT,
@@ -594,7 +594,7 @@ def check_alerts(days_ahead: int = 5, transit_max_days: int = 10, notify: bool =
 
     from .models import Check
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     # 1) Cheques en cartera por vencer
@@ -748,7 +748,7 @@ def unified_maturity_alerts(days_ahead: int = 7, notify: bool = True):
 
     from .models import Check, CreditCardStatement, LoanInstallment
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     items = []
@@ -892,7 +892,7 @@ def check_credit_line_expirations():
     """
     from .models import CreditLine
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     expired = CreditLine.objects.filter(
         status=CreditLine.Status.ACTIVE,
         valid_until__isnull=False,

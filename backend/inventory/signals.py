@@ -137,7 +137,7 @@ def product_subscription_sync(sender, instance, created, **kwargs):
             logger.warning(f"Product {instance.id} missing supplier or amount for auto-activation")
             return
 
-        start_date = instance.subscription_start_date or timezone.now().date()
+        start_date = instance.subscription_start_date or timezone.localdate()
 
         subscription = Subscription.objects.create(
             product=instance,

@@ -271,7 +271,7 @@ class Contact(models.Model):
         Uses credit_days as the payment term (default 30 if not set).
         Returns amounts per bucket: current, overdue_30, overdue_60, overdue_90, overdue_90plus.
         """
-        today = timezone.now().date()
+        today = timezone.localdate()
         payment_term = self.credit_days or 30
 
         buckets = {

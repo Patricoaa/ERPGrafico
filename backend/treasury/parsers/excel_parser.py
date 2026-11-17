@@ -137,7 +137,7 @@ class GenericExcelParser(BaseParser):
             # Determine direction and balances
             if not lines:
                 return {
-                    "statement_date": timezone.now().date(),
+                    "statement_date": timezone.localdate(),
                     "opening_balance": Decimal("0"),
                     "closing_balance": Decimal("0"),
                     "lines": [],

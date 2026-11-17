@@ -142,7 +142,7 @@ class BancoChileParser(BaseParser):
                 line_number += 1
 
             return {
-                "statement_date": lines[0]["transaction_date"] if lines else timezone.now().date(),
+                "statement_date": lines[0]["transaction_date"] if lines else timezone.localdate(),
                 "opening_balance": opening_balance,
                 "closing_balance": lines[-1]["balance"] if lines else opening_balance,
                 "lines": lines,

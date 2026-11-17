@@ -184,7 +184,7 @@ class GenericCSVParser(BaseParser):
 
         if not lines:
             return {
-                "statement_date": statement_date or timezone.now().date(),
+                "statement_date": statement_date or timezone.localdate(),
                 "opening_balance": opening_balance or Decimal("0"),
                 "closing_balance": closing_balance or Decimal("0"),
                 "lines": [],

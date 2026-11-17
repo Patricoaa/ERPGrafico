@@ -728,7 +728,7 @@ class SubscriptionSelector:
         if upcoming_days:
             try:
                 days = int(upcoming_days)
-                threshold = timezone.now().date() + timezone.timedelta(days=days)
+                threshold = timezone.localdate() + timezone.timedelta(days=days)
                 queryset = queryset.filter(
                     status=Subscription.Status.ACTIVE, next_payment_date__lte=threshold
                 )

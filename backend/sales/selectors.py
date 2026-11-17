@@ -141,7 +141,7 @@ class SaleOrderSelector:
             "action": action_kind,
         }
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         impact["period_open"] = not (
             TaxPeriodService.is_period_closed(today)
             or AccountingPeriodService.is_period_closed(today)
