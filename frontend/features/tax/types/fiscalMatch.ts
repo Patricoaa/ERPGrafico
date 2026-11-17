@@ -7,7 +7,7 @@ export type { FiscalMatchStatus, PartState }
  * llegan como string Decimal; las fechas como ISO.
  */
 
-export type FiscalMatchDirection = 'SALE' | 'PURCHASE'
+export type FiscalMatchDirection = 'sale' | 'purchase'
 export type FiscalMatchPart = 'erp' | 'tuu' | 'rcv'
 /** Filtro especial de `status`: grupos que requieren atención. */
 export type FiscalMatchStatusFilter = FiscalMatchStatus | 'attention'

@@ -33,7 +33,7 @@ function setup() {
     const invalidate = vi.spyOn(client, 'invalidateQueries')
     const Wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children)
     Wrapper.displayName = 'TestQueryWrapper'
-    return { Wrapper, invalidate }
+    return { Wrapper, invalidate, client }
 }
 
 beforeEach(() => vi.clearAllMocks())
@@ -49,10 +49,12 @@ describe('queries', () => {
     })
     it('conteos con refetchInterval de 60 s', async () => {
         counts.mockResolvedValue({ by_status: {}, last_run_at: null })
-        const { Wrapper } = setup()
+        const { Wrapper, client } = setup()
         const { result } = renderHook(() => useFiscalMatchCounts({}), { wrapper: Wrapper })
         await waitFor(() => expect(result.current.counts).toBeDefined())
         expect(counts).toHaveBeenCalledWith({})
+        const q = client.getQueryCache().findAll({ queryKey: ['fiscal-match', 'counts'] })[0]
+        expect((q.observers[0].options as { refetchInterval?: unknown }).refetchInterval).toBe(60_000)
     })
 })
 

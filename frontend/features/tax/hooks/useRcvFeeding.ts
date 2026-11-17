@@ -9,7 +9,7 @@ import { staleTime } from '@/lib/query-config'
 import { fiscalMatchApi } from '../api/fiscalMatchApi'
 import { reconciliationApi } from '../api/reconciliationApi'
 import { FISCAL_MATCH_KEYS } from './fiscalMatchKeys'
-import { useInvalidateFiscalMatch } from './useFiscalMatches'
+import { useGroupMutation } from './useFiscalMatches'
 import { RCV_DOCUMENTS_KEY, RECONCILIATION_KEYS } from './reconciliationKeys'
 
 /** Borradores de compra del mismo RUT con total parecido a un documento RCV que falta en el ERP. */
@@ -111,42 +111,17 @@ export function useFiscalMatchPurchaseOrders(groupId: number, enabled: boolean) 
 
 /** Asigna folio y fecha del RCV al borrador, lo emite y lo une al grupo. */
 export function useConfirmFiscalMatchDraft() {
-    const invalidate = useInvalidateFiscalMatch()
-    const { markLocalMutation } = useRealtime()
-    const { keyFor, succeeded, failed } = useIdempotencyKey()
-    return useMutation({
-        mutationFn: (payload: { groupId: number; invoiceId: number }) =>
-            fiscalMatchApi.confirmDraft(payload.groupId, payload.invoiceId, keyFor(payload)),
-        onSuccess: () => {
-            markLocalMutation()
-            succeeded()
-            toast.success('Factura emitida con el folio del RCV')
-            return invalidate()
-        },
-        onError: (e) => {
-            failed(e)
-            showApiError(e, 'No se pudo emitir el borrador')
-        },
-    })
+    return useGroupMutation(
+        (v: { groupId: number; invoiceId: number }, key) => fiscalMatchApi.confirmDraft(v.groupId, v.invoiceId, key),
+        { success: 'Factura emitida con el folio del RCV', error: 'No se pudo emitir el borrador' },
+    )
 }
 
 /** Crea un borrador de compra desde la OC con el folio del RCV, ya unido al grupo. */
 export function useCreateFiscalMatchDraft() {
-    const invalidate = useInvalidateFiscalMatch()
-    const { markLocalMutation } = useRealtime()
-    const { keyFor, succeeded, failed } = useIdempotencyKey()
-    return useMutation({
-        mutationFn: (payload: { groupId: number; purchaseOrderId: number }) =>
-            fiscalMatchApi.createDraft(payload.groupId, payload.purchaseOrderId, keyFor(payload)),
-        onSuccess: () => {
-            markLocalMutation()
-            succeeded()
-            toast.success('Borrador creado desde la OC')
-            return invalidate()
-        },
-        onError: (e) => {
-            failed(e)
-            showApiError(e, 'No se pudo crear el borrador')
-        },
-    })
+    return useGroupMutation(
+        (v: { groupId: number; purchaseOrderId: number }, key) =>
+            fiscalMatchApi.createDraft(v.groupId, v.purchaseOrderId, key),
+        { success: 'Borrador creado desde la OC', error: 'No se pudo crear el borrador' },
+    )
 }

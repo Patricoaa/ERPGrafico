@@ -83,7 +83,7 @@ export function useInvalidateFiscalMatch() {
 }
 
 /** Mutación con `Idempotency-Key` por intención; 409 (motor ocupado) muestra el mensaje del servidor. */
-function useGroupMutation<V extends { id: number }>(
+export function useGroupMutation<V>(
     run: (vars: V, key: string) => Promise<unknown>,
     messages: { success: string; error: string },
 ) {
