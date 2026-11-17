@@ -1,7 +1,7 @@
 """TUU ↔ RCV boletas: la boleta RCV entra al grupo de su venta o de su boleta emitida (ADR-0139 D1)."""
 
 import itertools
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -231,3 +231,51 @@ def test_months_in_range_reexported():
     from tax.reconciliation.boletas import _pair, months_in_range
 
     assert months_in_range is boletas.months_in_range and _pair is boletas._pair
+
+
+def test_step2_skips_group_that_got_a_doc_in_step_1(env, imp):
+    inv = make_pos_document(env, 7000, local_dt(2026, 11, 13, 12, 0), dte_type=Invoice.DTEType.BOLETA)
+    Invoice.objects.filter(pk=inv.pk).update(number="123")
+    s = sale(env, 7000, hh=12, mm=1)
+    by_folio = boleta(imp, 7000, folio=123)
+    extra = boleta(imp, 7000, folio=124)
+    ensure_groups(SINCE)
+    # la venta comparte el grupo de la boleta emitida
+    s.refresh_from_db()
+    TerminalSale.objects.filter(pk=s.pk).update(fiscal_match=FiscalMatch.objects.get(invoice=inv))
+
+    result = run()
+
+    _reload(by_folio, extra)
+    group = FiscalMatch.objects.get(invoice=inv)
+    assert by_folio.fiscal_match_id == group.id
+    assert extra.fiscal_match_id != group.id
+    assert result.linked == 1
+
+
+def test_non_midnight_lo_uses_whole_days(env, imp):
+    d1, d2 = boleta(imp, 5000, folio=1), boleta(imp, 5000, folio=2)
+    s1, s2 = sale(env, 5000, hh=8), sale(env, 5000, hh=15)
+    ensure_groups(SINCE)
+    result = pair_rcv_boletas(local_dt(2026, 11, 13, 12, 0), local_midnight(date(2026, 11, 14)))
+    _reload(d1, d2, s1, s2)
+    assert result.linked == 2
+    assert d1.fiscal_match_id == s1.fiscal_match_id
+    assert d2.fiscal_match_id == s2.fiscal_match_id
+
+
+def test_folio_bound_30_days_in_32_out(env, imp):
+    near = make_pos_document(env, 7000, local_dt(2026, 11, 13, 12, 0), dte_type=Invoice.DTEType.BOLETA)
+    far = make_pos_document(env, 7000, local_dt(2026, 11, 13, 12, 0), dte_type=Invoice.DTEType.BOLETA)
+    Invoice.objects.filter(pk=near.pk).update(number="201")
+    Invoice.objects.filter(pk=far.pk).update(number="202")
+    ensure_groups(SINCE)
+    FiscalMatch.objects.filter(invoice=near).update(issue_date=date(2026, 11, 13) - timedelta(days=30))
+    FiscalMatch.objects.filter(invoice=far).update(issue_date=date(2026, 11, 13) - timedelta(days=32))
+    d_near, d_far = boleta(imp, 7000, folio=201), boleta(imp, 7000, folio=202)
+    ensure_groups(SINCE)
+    lo, hi = local_midnight(date(2026, 11, 13)), local_midnight(date(2026, 11, 14))
+    pair_rcv_boletas(lo, hi)
+    _reload(d_near, d_far)
+    assert d_near.fiscal_match_id == FiscalMatch.objects.get(invoice=near).id
+    assert d_far.fiscal_match_id != FiscalMatch.objects.get(invoice=far).id

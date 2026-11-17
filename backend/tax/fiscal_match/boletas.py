@@ -89,6 +89,7 @@ def pair_rcv_boletas(lo: datetime, hi: datetime) -> LinkResult:
             direction=FiscalMatch.Direction.SALE,
             invoice__status=Invoice.Status.POSTED,
             dte_type__in=BOLETA_SII_CODES,
+            # Acota las filas leídas (no las consultas): una boleta se emite cerca de su fecha RCV.
             issue_date__gte=first_day - timedelta(days=31),
             issue_date__lte=last_day + timedelta(days=31),
             rcv_documents__isnull=True,
@@ -106,11 +107,13 @@ def pair_rcv_boletas(lo: datetime, hi: datetime) -> LinkResult:
             TerminalSale.objects.filter(
                 status=TerminalSale.Status.COMPLETED,
                 document_type__in=BOLETA_SII_CODES,
-                transaction_at__gte=lo,
-                transaction_at__lt=hi,
+                transaction_at__gte=local_midnight(first_day),
+                transaction_at__lt=local_midnight(last_day + timedelta(days=1)),
                 fiscal_match__isnull=False,
                 fiscal_match__rcv_documents__isnull=True,
-            ).order_by("transaction_at", "id")
+            )
+            .exclude(fiscal_match_id__in=set(new_group.values()))
+            .order_by("transaction_at", "id")
         )
         for doc_id, sale in _pair(rest, sales).items():
             new_group[doc_id] = sale.fiscal_match_id

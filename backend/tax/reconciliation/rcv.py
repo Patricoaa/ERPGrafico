@@ -26,11 +26,11 @@ from billing.fiscal_key import (
 )
 from billing.models import SII_CODE_TO_DTE_TYPE, Invoice
 from core.fiscal_match import MatchStatus
+from tax.fiscal_match.boletas import BOLETA_SII_CODES
 
 # Tipos que se cuadran documento por documento; 48 va por resumen mensual.
 DOCUMENT_SII_CODES = frozenset({33, 34, 56, 61})
 # Boletas: las cuadra `boletas.reconcile_rcv_boletas` contra la venta TUU (ADR-0139).
-BOLETA_SII_CODES = frozenset({39, 41})
 CANDIDATE_WINDOW = timedelta(days=60)
 RCV_TO_FISCAL_DIRECTION = {
     RCVImport.Direction.PURCHASES: "purchase",
