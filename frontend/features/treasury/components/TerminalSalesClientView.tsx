@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { RefreshCw } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { EntityPanelTab } from "@/components/providers"
+import { Can } from "@/components/auth"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useTerminalSales } from "../hooks/useTerminalSales"
@@ -75,7 +76,11 @@ export function TerminalSalesClientView() {
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
-    const syncAction = <ToolbarCreateButton label="Sincronizar ahora" icon={RefreshCw} onClick={() => setSyncOpen(true)} />
+    const syncAction = (
+        <Can permission="treasury.add_terminalsyncrun">
+            <ToolbarCreateButton label="Sincronizar ahora" icon={RefreshCw} onClick={() => setSyncOpen(true)} />
+        </Can>
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

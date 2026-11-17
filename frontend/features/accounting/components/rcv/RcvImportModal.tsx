@@ -19,6 +19,8 @@ import {
 interface RcvImportModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    /** Direcciones marcadas al abrir; por defecto, ambas. */
+    defaultDirections?: readonly RcvDirection[]
 }
 
 const MONTH_OPTIONS = RCV_MONTH_NAMES.map((label, i) => ({ label, value: String(i + 1) }))
@@ -32,14 +34,14 @@ const DIRECTION_CHOICES: { value: RcvDirection; label: string; description: stri
  * "Importar ahora": encola una importación manual del RCV del SII para un período y una o ambas direcciones.
  * Por defecto propone el mes de (hoy − 3 días), igual que la importación automática.
  */
-export function RcvImportModal({ open, onOpenChange }: RcvImportModalProps) {
+export function RcvImportModal({ open, onOpenChange, defaultDirections }: RcvImportModalProps) {
     const { startImport, isStarting } = useStartRcvImport()
     const form = useForm<RcvImportFormValues>({
         resolver: zodResolver(rcvImportSchema),
-        defaultValues: defaultRcvImportValues(),
+        defaultValues: defaultRcvImportValues(new Date(), defaultDirections),
     })
 
-    useInitializeDrawerForm({ form, open, initialData: null, defaultValues: () => defaultRcvImportValues() })
+    useInitializeDrawerForm({ form, open, initialData: null, defaultValues: () => defaultRcvImportValues(new Date(), defaultDirections) })
 
     const onSubmit = async (values: RcvImportFormValues) => {
         try {

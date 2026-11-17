@@ -32,11 +32,20 @@ export function terminalSyncRunDetail(run: { error_message: string; warnings: st
     return `${run.warnings.length} aviso(s): ${run.warnings.join(" · ")}`
 }
 
+/** "m:ss" entre dos instantes ISO; "—" si falta alguno (la ejecución sigue en curso). */
+export function formatTerminalSyncDuration(start: string | null, end: string | null): string {
+    if (!start || !end) return "—"
+    const ms = new Date(end).getTime() - new Date(start).getTime()
+    if (!Number.isFinite(ms) || ms < 0) return "—"
+    const total = Math.round(ms / 1000)
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`
+}
+
 const fixed = { sortable: false } as const
 
-/** Read-only history of TUU sync runs (spec 2026-11-13). */
+/** Historial de importaciones (ejecuciones de sincronización) de ventas TUU. Solo lectura. */
 export const terminalSyncRunEntity = defineEntity<TerminalSyncRun>()((f) => ({
-    title: "Ejecuciones de sincronización",
+    label: "treasury.terminalsyncrun",
     fields: {
         startedAt: f.date("started_at", { ...fixed, label: "Inicio", time: true }),
         provider: f.text("provider_name", { ...fixed, label: "Proveedor" }),
@@ -46,13 +55,22 @@ export const terminalSyncRunEntity = defineEntity<TerminalSyncRun>()((f) => ({
         fetched: f.number("fetched_count", { ...fixed, label: "Traídas" }),
         created: f.number("created_count", { ...fixed, label: "Nuevas" }),
         updated: f.number("updated_count", { ...fixed, label: "Actualizadas" }),
+        attempts: f.number("attempts", { ...fixed, label: "Intentos" }),
+        duration: f.text((r) => formatTerminalSyncDuration(r.started_at, r.finished_at), { ...fixed, label: "Duración" }),
         error: f.text((r) => terminalSyncRunDetail(r), { ...fixed, label: "Detalle", truncate: true }),
     },
 }))
 
 export const terminalSyncRunViews = terminalSyncRunEntity.views({
     table: {
-        columns: ["startedAt", "provider", "trigger", "range", "status", "fetched", "created", "updated", "error"],
+        columns: ["startedAt", "provider", "trigger", "range", "status", "fetched", "created", "updated", "duration", "error"],
         primary: "startedAt",
+    },
+    card: {
+        rail: { status: (r) => terminalSyncRunStatus(r.status).status },
+        title: "provider",
+        subtitle: ["range", "startedAt"],
+        trailing: ["status"],
+        meta: ["trigger", "fetched", "created", "updated", "duration", "error"],
     },
 })

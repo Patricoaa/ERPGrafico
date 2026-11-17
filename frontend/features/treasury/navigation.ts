@@ -91,6 +91,15 @@ export const TERMINAL_COBRO_SUB_TABS: NavTabConfig[] = [
     headerDescription: "Ventas sincronizadas desde los proveedores TUU.",
     metadataTitle: "Ventas del terminal de cobro | ERPGrafico",
   },
+  {
+    value: "imports",
+    label: "Importaciones",
+    href: "/treasury/terminal-cobro/imports",
+    iconName: "download",
+    headerTitle: "Importaciones de ventas",
+    headerDescription: "Historial de sincronizaciones de ventas desde los proveedores TUU.",
+    metadataTitle: "Importaciones de ventas | ERPGrafico",
+  },
 ]
 
 // ============================================

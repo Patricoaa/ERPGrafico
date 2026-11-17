@@ -105,6 +105,7 @@ export const TERMINAL_SALES_KEYS = {
 export const TERMINAL_SYNC_KEYS = {
     all: ['terminal-sync'] as const,
     runs: () => [...TERMINAL_SYNC_KEYS.all, 'runs'] as const,
+    run: (id: number) => [...TERMINAL_SYNC_KEYS.runs(), 'detail', id] as const,
     settings: () => [...TERMINAL_SYNC_KEYS.all, 'settings'] as const,
 }
 

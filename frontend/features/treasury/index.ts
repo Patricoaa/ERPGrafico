@@ -40,7 +40,7 @@ export type { TreasuryAccountFilters } from './hooks/useTreasuryAccounts'
 export { useTerminalBatches } from './hooks/useTerminalBatches'
 export { useTerminalSales, useTerminalSalesSummary, useTerminalSale } from './hooks/useTerminalSales'
 export {
-  useTerminalSyncRuns, useStartTerminalSync, useTerminalSyncSettings, useUpdateTerminalSyncSettings,
+  useTerminalSyncRuns, useTerminalSyncRun, useStartTerminalSync, useTerminalSyncSettings, useUpdateTerminalSyncSettings,
 } from './hooks/useTerminalSync'
 export { useTerminalBatchMutations } from './hooks/useTerminalBatchMutations'
 export { useTerminalProviders, useTerminalDevices } from './hooks/useTerminalProviders'
@@ -77,6 +77,9 @@ export { TerminalBatchesClientView } from './components/TerminalBatchesClientVie
 export { TerminalSalesClientView } from './components/TerminalSalesClientView'
 export { TerminalSaleDrawer } from './components/TerminalSaleDrawer'
 export type { TerminalSaleDrawerProps } from './components/TerminalSaleDrawer'
+export { TerminalSyncRunsClientView } from './components/TerminalSyncRunsClientView'
+export { TerminalSyncRunDrawer } from './components/TerminalSyncRunDrawer'
+export type { TerminalSyncRunDrawerProps } from './components/TerminalSyncRunDrawer'
 export { PaymentHardwareClientView } from './components/PaymentHardwareClientView'
 /** @deprecated Use TerminalBatchSelectionModal */
 export { default as TerminalBatchForm } from './components/TerminalBatchSelectionModal'
@@ -124,6 +127,6 @@ export { BankUpcomingMaturitiesPanel } from './components/BankUpcomingMaturities
 export { BankRecentActivity } from './components/BankRecentActivity'
 export { statementLineUnmatchActions } from './components/statementLineUnmatchActions'
 export type { StatementLineUnmatchActionsCtx } from './components/statementLineUnmatchActions'
-export { terminalSyncRunEntity, terminalSyncRunViews, terminalSyncRunStatus, terminalSyncRunDetail } from './entity-view/terminalSyncRun.entity'
+export { terminalSyncRunEntity, terminalSyncRunViews, terminalSyncRunStatus, terminalSyncRunDetail, formatTerminalSyncDuration } from './entity-view/terminalSyncRun.entity'
 export { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from './entity-view/loanInstallment.entity'
 export { POSExternalReasonModal } from './components/POSExternalReasonModal'

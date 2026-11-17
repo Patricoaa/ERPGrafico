@@ -198,6 +198,11 @@ const TerminalSaleDrawer = dynamic(
     { ssr: false, loading: () => skeleton("venta de terminal de cobro") }
 )
 
+const TerminalSyncRunDrawer = dynamic(
+    () => import("@/features/treasury").then((m) => m.TerminalSyncRunDrawer),
+    { ssr: false, loading: () => skeleton("importación de ventas TUU") }
+)
+
 const CheckDrawer = dynamic(
     () => import("@/features/treasury").then((m) => m.CheckDrawer),
     { ssr: false, loading: () => skeleton("cheque") }
@@ -684,6 +689,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
     "treasury.terminalsale": ({ id, open, onOpenChange }) => (
         <TerminalSaleDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "treasury.terminalsyncrun": ({ id, open, onOpenChange }) => (
+        <TerminalSyncRunDrawer
             id={id}
             open={open}
             onOpenChange={onOpenChange}

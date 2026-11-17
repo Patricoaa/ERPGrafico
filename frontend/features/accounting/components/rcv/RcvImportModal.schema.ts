@@ -28,9 +28,11 @@ export const rcvImportSchema = z
 
 export type RcvImportFormValues = z.infer<typeof rcvImportSchema>
 
-export function defaultRcvImportValues(now: Date = new Date()): RcvImportFormValues {
-    const directions: RcvDirection[] = ["PURCHASES", "SALES"]
-    return { ...defaultRcvImportPeriod(now), directions }
+const ALL_DIRECTIONS: RcvDirection[] = ["PURCHASES", "SALES"]
+
+/** Período por defecto y las direcciones indicadas (ambas si no se indica ninguna). */
+export function defaultRcvImportValues(now: Date = new Date(), directions: readonly RcvDirection[] = ALL_DIRECTIONS): RcvImportFormValues {
+    return { ...defaultRcvImportPeriod(now), directions: [...directions] }
 }
 
 export function toStartRcvImportPayload(values: RcvImportFormValues): StartRcvImportPayload {

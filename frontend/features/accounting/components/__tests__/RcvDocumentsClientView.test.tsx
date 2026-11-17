@@ -1,10 +1,12 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
 import type { RcvDocument } from "../../types"
 
 const m = vi.hoisted(() => ({
     docs: [] as unknown[],
+    canAdd: true,
+    modal: vi.fn(),
     useRcvDocuments: vi.fn(),
     filters: {} as Record<string, string>,
 }))
@@ -29,6 +31,16 @@ vi.mock("@/components/providers", () => ({
     ),
 }))
 vi.mock("../rcv/RcvDocumentDrawer", () => ({ RcvDocumentDrawer: () => null }))
+vi.mock("../rcv/RcvImportModal", () => ({
+    RcvImportModal: (props: { open: boolean; defaultDirections?: readonly string[] }) => {
+        m.modal(props)
+        return props.open ? <div>modal-importar {props.defaultDirections?.join(",")}</div> : null
+    },
+}))
+vi.mock("@/components/auth", () => ({
+    Can: ({ permission, children }: { permission: string; children: React.ReactNode }) =>
+        permission === "accounting.add_rcvimport" && m.canAdd ? <>{children}</> : null,
+}))
 vi.mock("@/components/shared", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@/components/shared")>()
     return {
@@ -68,7 +80,9 @@ const doc: RcvDocument = {
 describe("RcvDocumentsClientView", () => {
     beforeEach(() => {
         m.docs = []
+        m.canAdd = true
         m.filters = {}
+        m.modal.mockClear()
         m.useRcvDocuments.mockClear()
     })
 
@@ -88,11 +102,25 @@ describe("RcvDocumentsClientView", () => {
         expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ direction: "SALES" }))
     })
 
-    it("sin filtros y sin filas muestra el estado vacío con acción a Importaciones", () => {
+    it("sin filtros y sin filas muestra el estado vacío con 'Importar ahora'", () => {
         render(<RcvDocumentsClientView direction="PURCHASES" />)
         expect(screen.getByText("Aún no hay documentos importados")).toBeInTheDocument()
-        expect(screen.getByText("Configura el RCV en Contabilidad → Configuración → RCV / SII o importa desde la pestaña Importaciones.")).toBeInTheDocument()
-        expect(screen.getByRole("link", { name: "Ir a Importaciones" })).toHaveAttribute("href", "/accounting/rcv/imports")
+        expect(screen.getByText("Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Importar ahora».")).toBeInTheDocument()
+        expect(screen.getAllByRole("button", { name: /Importar ahora/ }).length).toBeGreaterThan(0)
+    })
+
+    it("'Importar ahora' abre el modal con la dirección de la pestaña preseleccionada", () => {
+        m.docs = [{ ...doc, direction: "SALES" }]
+        render(<RcvDocumentsClientView direction="SALES" />)
+        fireEvent.click(screen.getByRole("button", { name: /Importar ahora/ }))
+        expect(screen.getByText("modal-importar SALES")).toBeInTheDocument()
+    })
+
+    it("sin permiso oculta 'Importar ahora'", () => {
+        m.canAdd = false
+        m.docs = [doc]
+        render(<RcvDocumentsClientView direction="PURCHASES" />)
+        expect(screen.queryByRole("button", { name: /Importar ahora/ })).not.toBeInTheDocument()
     })
 
     it("traduce los filtros de la URL a filtros de la API", () => {

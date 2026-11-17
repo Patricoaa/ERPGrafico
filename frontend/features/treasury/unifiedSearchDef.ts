@@ -310,3 +310,32 @@ export const terminalSaleUnifiedSearchDef: UnifiedSearchConfig = {
     ],
   }],
 }
+
+export const terminalSyncRunUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [],
+  filters: [
+    { type: 'single', key: 'provider', label: 'Proveedor', serverParam: 'provider', options: [], dynamic: true },
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'En curso', value: 'RUNNING' },
+        { label: 'Exitosa', value: 'SUCCESS' },
+        { label: 'Parcial', value: 'PARTIAL' },
+        { label: 'Fallida', value: 'FAILED' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'trigger',
+      label: 'Origen',
+      serverParam: 'trigger',
+      options: [
+        { label: 'Automática', value: 'SCHEDULED' },
+        { label: 'Manual', value: 'MANUAL' },
+      ],
+    },
+  ],
+}
