@@ -132,14 +132,20 @@ def scheduled_range(settings: TerminalSyncSettings, today: date) -> tuple[date, 
     return None if start > today else (start, today)
 
 
+def stale_threshold_minutes(settings: TerminalSyncSettings) -> int:
+    """Una corrida con reintentos puede durar hasta max_retries * espera; se suma holgura de 30 min."""
+    return max(STALE_RUN_MINUTES, settings.max_retries * settings.retry_delay_minutes + 30)
+
+
 def recover_stale_runs(now: datetime) -> int:
-    """Marca como fallidas las ejecuciones RUNNING sin respuesta por más de STALE_RUN_MINUTES."""
+    """Marca como fallidas las ejecuciones RUNNING sin respuesta más allá del umbral."""
+    minutes = stale_threshold_minutes(TerminalSyncSettings.get_settings())
     return TerminalSyncRun.objects.filter(
         status=TerminalSyncRun.Status.RUNNING,
-        started_at__lt=now - timedelta(minutes=STALE_RUN_MINUTES),
+        started_at__lt=now - timedelta(minutes=minutes),
     ).update(
         status=TerminalSyncRun.Status.FAILED,
-        error_message=f"Sincronización interrumpida (sin respuesta por más de {STALE_RUN_MINUTES} minutos)",
+        error_message=f"Sincronización interrumpida (sin respuesta por más de {minutes} minutos)",
         finished_at=timezone.now(),
     )
 

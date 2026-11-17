@@ -357,3 +357,17 @@ def test_boletas_skipped_when_terminal_reconcile_fails(monkeypatch):
     )
     assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
     assert calls == []
+
+
+def test_stale_threshold_grows_with_retry_budget(monkeypatch, enqueued):
+    """El umbral es max(60, reintentos * espera + 30) minutos."""
+    _configure(interval_value=5, interval_unit="MINUTES", max_retries=6, retry_delay_minutes=10)
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    young = _running_run(provider, tasks._now() - timedelta(minutes=70))
+    old = _running_run(provider, tasks._now() - timedelta(minutes=91))
+    tasks.dispatch_terminal_sales_sync()
+    young.refresh_from_db()
+    old.refresh_from_db()
+    assert young.status == TerminalSyncRun.Status.RUNNING
+    assert old.status == TerminalSyncRun.Status.FAILED
