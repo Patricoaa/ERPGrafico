@@ -1,3 +1,4 @@
+import { resolveCategory, type CategoryDomain } from "@/lib/badge-resolvers"
 import { formatMoney, formatQuantity } from "@/lib/money"
 import { EMPTY_VALUE, formatPlainDate, isMissing, parseDateOnly, translateStatus } from "@/lib/utils"
 
@@ -94,6 +95,7 @@ export function formatProgress(value: { done: number; total: number } | null, fo
     return `${Math.round((value.done / value.total) * 100)} %`
 }
 
-export function formatTags(value: readonly string[] | null): string {
-    return !value || value.length === 0 ? EMPTY : value.join(", ")
+export function formatTags(value: readonly string[] | null, domain?: CategoryDomain): string {
+    if (!value || value.length === 0) return EMPTY
+    return value.map((tag) => (domain ? resolveCategory(domain, tag).label : tag)).join(", ")
 }

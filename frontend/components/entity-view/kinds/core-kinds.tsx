@@ -160,7 +160,7 @@ export function registerCoreValueKinds(): void {
     })
 
     registerValueKind("tags", {
-        format: (v) => formatTags(v),
+        format: (v, o) => formatTags(v, o.domain),
         // DataCell.Category needs a domain (it renders "-" without one): free tags use neutral chips.
         render: ({ value, options, align, surface }) => {
             if (options.domain) return <DataCell.Category value={value ? [...value] : null} domain={options.domain} align={align} />

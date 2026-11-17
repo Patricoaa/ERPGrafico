@@ -103,6 +103,31 @@ describe("grouping", () => {
         expect(groups.map((g) => g.textContent)).toEqual(["Papeles (2)", "Tintas (1)"])
     })
 
+    it("shows translated labels when grouping by a domain tags field (product_type)", () => {
+        const tagged = defineEntity<{ id: number; product_type: string }>()((f) => ({
+            title: "Tipo",
+            fields: { type: f.tags((p) => [p.product_type], { label: "Tipo", domain: "product_type" }) },
+        }))
+        const taggedViews = tagged.views({ table: { columns: ["type"] } })
+        const taggedRows = [
+            { id: 1, product_type: "STORABLE" },
+            { id: 2, product_type: "SERVICE" },
+            { id: 3, product_type: "STORABLE" },
+        ]
+
+        function TaggedHarness() {
+            const collection = useEntityCollection(tagged, { rows: taggedRows }, { groupBy: "type", pagination: { mode: "none" } })
+            return (
+                <Collection.Root collection={collection} selection="bulk">
+                    <Collection.View table={taggedViews.table} />
+                </Collection.Root>
+            )
+        }
+
+        render(<TaggedHarness />)
+        expect(screen.getAllByRole("rowheader").map((g) => g.textContent)).toEqual(["Almacenable (2)", "Servicio (1)"])
+    })
+
     it("warns when grouping shows fewer rows than the server total", () => {
         render(<Harness source={{ rows, rowCount: 420 }} options={{ groupBy: "category", pagination: { mode: "none" } }} />)
         expect(screen.getByRole("status")).toHaveTextContent("Agrupando los primeros 3 de 420 resultados")
