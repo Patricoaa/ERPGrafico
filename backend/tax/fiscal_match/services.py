@@ -6,20 +6,22 @@ se quita queda en un grupo huérfano marcado como manual: el motor no vuelve a c
 el mismo par en la corrida siguiente hasta que el usuario lo devuelve (``release``).
 """
 
+from collections.abc import Callable
 from datetime import timedelta
 from decimal import Decimal
-from typing import Literal
+from functools import wraps
+from typing import Literal, ParamSpec, TypeVar
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Exists, OuterRef, Q
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument
 from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
 from billing.models import Invoice
+from core.exceptions import ERPGraficoError
 from tax.fiscal_match.candidates import local_midnight, sale_document_status_q, stamp_groups
 from tax.fiscal_match.groups import (
     SALE_SII_CODES,
@@ -31,10 +33,20 @@ from tax.fiscal_match.issuing import issue_fiscal_drafts
 from tax.fiscal_match.rcv import RCV_TO_FISCAL_DIRECTION, rcv_group_candidates, rut_body
 from tax.fiscal_match.states import STATE_FIELDS, build_context, evaluate
 from tax.models import FiscalMatch
+from tax.tasks import fiscal_match_lock
 from treasury.models import TerminalSale, TreasuryMovement
 
 CANDIDATE_CAP = 20
+MANUAL_LOCK_TIMEOUT = 60  # s: una acción manual dura segundos; si se cae, el candado expira pronto
 PAYMENT_REQUIRED = "Indique el pago del documento al que corresponde la venta TUU."
+IGNORED_PAYMENT = "El pago indicado solo aplica al vincular una venta TUU."
+BUSY_MESSAGE = "El cuadre automático se está ejecutando. Reintente en unos segundos."
+MOVED = "El registro cambió de grupo mientras tanto; actualice la ficha y reintente."
+GONE = "El grupo de cuadre ya no existe; actualice la ficha."
+NOTHING_TO_ISSUE = "No hay nada para emitir en este grupo."
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 LinkPart = Literal["erp", "tuu", "rcv"]
 UnlinkPart = Literal["tuu", "rcv"]
@@ -43,8 +55,57 @@ UnlinkPart = Literal["tuu", "rcv"]
 # --- utilidades ---------------------------------------------------------------
 
 
-def _lock(group: FiscalMatch) -> FiscalMatch:
-    return FiscalMatch.objects.select_for_update().get(pk=group.pk)
+class FiscalMatchBusy(ERPGraficoError):
+    """El motor tiene el candado del cuadre: la acción manual no espera (409)."""
+
+    def __init__(self) -> None:
+        super().__init__(BUSY_MESSAGE, code="FISCAL_MATCH_BUSY", status_code=409)
+
+
+def _exclusive(fn: Callable[P, R]) -> Callable[P, R]:
+    """Corre la acción con el candado del motor y en una transacción; sin candado, 409.
+
+    El motor lee y reescribe ventas y registros sin bloqueo de filas: sin el candado,
+    una unión manual confirmada a mitad de corrida podría pisarse o hacerla fallar.
+    """
+
+    @wraps(fn)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        with fiscal_match_lock(MANUAL_LOCK_TIMEOUT) as acquired:
+            if not acquired:
+                raise FiscalMatchBusy()
+            with transaction.atomic():
+                return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def _lock_groups(*group_ids: int | None) -> dict[int, FiscalMatch]:
+    """Bloquea los grupos en orden ascendente de id (sin interbloqueos entre acciones)."""
+    ids = sorted({i for i in group_ids if i is not None})
+    return {g.pk: g for g in FiscalMatch.objects.select_for_update().filter(id__in=ids).order_by("id")}
+
+
+def _locked(groups: dict[int, FiscalMatch], group_id: int) -> FiscalMatch:
+    group = groups.get(group_id)
+    if group is None:
+        raise ValidationError(GONE)
+    return group
+
+
+def _lock_record(model: type[TerminalSale] | type[RCVDocument], record: TerminalSale | RCVDocument):
+    """Relee el registro bloqueado; error si dejó el grupo en que se leyó."""
+    fresh = model.objects.select_for_update().filter(pk=record.pk).first()
+    if fresh is None or fresh.fiscal_match_id is None or fresh.fiscal_match_id != record.fiscal_match_id:
+        raise ValidationError(MOVED)
+    return fresh
+
+
+def _get(model: type[models.Model], pk: int, label: str):
+    obj = model.objects.filter(pk=pk).first()
+    if obj is None:
+        raise ValidationError(f"{label} no existe.")
+    return obj
 
 
 def _rederive(group_ids: set[int]) -> None:
@@ -77,14 +138,9 @@ def _require_orphan(group: FiscalMatch) -> None:
         raise ValidationError("El grupo ya tiene un documento del ERP.")
 
 
-def _orphan_of(record: TerminalSale | RCVDocument) -> FiscalMatch:
-    """Grupo huérfano (bloqueado) donde está el registro; error si ya tiene documento."""
-    if record.fiscal_match_id is None:
-        raise ValidationError("El registro aún no tiene grupo de cuadre.")
-    orphan = FiscalMatch.objects.select_for_update().get(pk=record.fiscal_match_id)
+def _require_record_orphan(orphan: FiscalMatch) -> None:
     if orphan.invoice_id is not None:
         raise ValidationError("El registro ya está vinculado a un documento del ERP.")
-    return orphan
 
 
 def _taken_movements(movement_ids: list[int], *, excluding: list[int] = ()) -> set[int]:
@@ -122,25 +178,31 @@ def _check_rcv(group: FiscalMatch, invoice: Invoice, doc: RCVDocument) -> None:
 # --- vincular -------------------------------------------------------------------
 
 
-@transaction.atomic
+@_exclusive
 def link_invoice(group: FiscalMatch, invoice: Invoice, movement: TreasuryMovement | None = None) -> FiscalMatch:
     """Une un grupo huérfano al documento ERP: sus registros pasan al grupo del documento."""
-    orphan = _lock(group)
-    _require_orphan(orphan)
     target = group_for_invoice(invoice)
     if target is None:
         raise ValidationError("El documento no entra al cuadre.")
-    target = _lock(target)
+    locked = _lock_groups(group.pk, target.pk)
+    orphan, target = _locked(locked, group.pk), _locked(locked, target.pk)
+    _require_orphan(orphan)
     if target.direction != orphan.direction:
         raise ValidationError("El documento es de otra dirección (compra/venta).")
 
-    sales = list(TerminalSale.objects.filter(fiscal_match=orphan).order_by("transaction_at", "id"))
+    sales = list(TerminalSale.objects.select_for_update().filter(fiscal_match=orphan).order_by("transaction_at", "id"))
+    docs = list(RCVDocument.objects.select_for_update().filter(fiscal_match=orphan).order_by("id"))
+    if movement is not None and not sales:
+        raise ValidationError(IGNORED_PAYMENT)
+    for doc in docs:
+        _check_rcv(target, invoice, doc)
     if sales:
         _assign_payments(sales, invoice, movement)
         for sale in sales:
             sale.fiscal_match, sale.linked_manually = target, True
         TerminalSale.objects.bulk_update(sales, ["fiscal_match", "matched_movement", "linked_manually"])
-    if RCVDocument.objects.filter(fiscal_match=orphan).update(fiscal_match=target):
+    if docs:
+        RCVDocument.objects.filter(id__in=[d.pk for d in docs]).update(fiscal_match=target)
         target.rcv_linked_manually = True
         target.save(update_fields=["rcv_linked_manually"])
     _drop_empty({orphan.pk})
@@ -168,14 +230,19 @@ def _assign_payments(sales: list[TerminalSale], invoice: Invoice, movement: Trea
         raise ValidationError("El monto del pago no coincide con el de la venta TUU.")
 
 
-@transaction.atomic
+@_exclusive
 def link_terminal_sale(group: FiscalMatch, sale: TerminalSale, movement: TreasuryMovement) -> FiscalMatch:
     """Agrega al documento una venta TUU huérfana como respaldo de uno de sus cobros."""
-    group = _lock(group)
+    if sale.fiscal_match_id is None:
+        raise ValidationError("El registro aún no tiene grupo de cuadre.")
+    locked = _lock_groups(group.pk, sale.fiscal_match_id)
+    group = _locked(locked, group.pk)
+    sale = _lock_record(TerminalSale, sale)
+    orphan = _locked(locked, sale.fiscal_match_id)
     invoice = _require_invoice_group(group)
+    _require_record_orphan(orphan)
     if sale.status != TerminalSale.Status.COMPLETED:
         raise ValidationError("La venta TUU no está completada.")
-    orphan = _orphan_of(sale)
     _check_movement(sale, movement, invoice)
     sale.fiscal_match, sale.matched_movement, sale.linked_manually = group, movement, True
     sale.save(update_fields=["fiscal_match", "matched_movement", "linked_manually"])
@@ -188,13 +255,18 @@ def link_terminal_sale(group: FiscalMatch, sale: TerminalSale, movement: Treasur
     return _fresh(group.pk)
 
 
-@transaction.atomic
+@_exclusive
 def link_rcv_document(group: FiscalMatch, doc: RCVDocument) -> FiscalMatch:
     """Agrega al documento un registro del SII huérfano del mismo tipo y RUT."""
-    group = _lock(group)
+    if doc.fiscal_match_id is None:
+        raise ValidationError("El registro aún no tiene grupo de cuadre.")
+    locked = _lock_groups(group.pk, doc.fiscal_match_id)
+    group = _locked(locked, group.pk)
+    doc = _lock_record(RCVDocument, doc)
+    orphan = _locked(locked, doc.fiscal_match_id)
     invoice = _require_invoice_group(group)
+    _require_record_orphan(orphan)
     _check_rcv(group, invoice, doc)
-    orphan = _orphan_of(doc)
     if TerminalSale.objects.filter(fiscal_match=orphan).exists():
         raise ValidationError("El registro del SII está unido a una venta TUU; vincule la venta.")
     doc.fiscal_match = group
@@ -208,25 +280,27 @@ def link_rcv_document(group: FiscalMatch, doc: RCVDocument) -> FiscalMatch:
 
 def link(group: FiscalMatch, part: LinkPart, record_id: int, movement_id: int | None = None) -> FiscalMatch:
     """Despacha la unión pedida por la API; devuelve el grupo resultante."""
-    movement = get_object_or_404(TreasuryMovement, pk=movement_id) if movement_id is not None else None
+    if part == "rcv" and movement_id is not None:
+        raise ValidationError(IGNORED_PAYMENT)
+    movement = _get(TreasuryMovement, movement_id, "El pago") if movement_id is not None else None
     if part == "erp":
-        return link_invoice(group, get_object_or_404(Invoice, pk=record_id), movement)
+        return link_invoice(group, _get(Invoice, record_id, "El documento"), movement)
     if part == "tuu":
         if movement is None:
             raise ValidationError(PAYMENT_REQUIRED)
-        return link_terminal_sale(group, get_object_or_404(TerminalSale, pk=record_id), movement)
-    return link_rcv_document(group, get_object_or_404(RCVDocument, pk=record_id))
+        return link_terminal_sale(group, _get(TerminalSale, record_id, "La venta TUU"), movement)
+    return link_rcv_document(group, _get(RCVDocument, record_id, "El registro del SII"))
 
 
 # --- quitar y devolver ----------------------------------------------------------------
 
 
-@transaction.atomic
+@_exclusive
 def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
     """Saca un registro a un grupo huérfano nuevo marcado como manual (Review Focus 2)."""
-    group = _lock(group)
+    group = _locked(_lock_groups(group.pk), group.pk)
     if part == "tuu":
-        sale = TerminalSale.objects.filter(fiscal_match=group, pk=record_id).first()
+        sale = TerminalSale.objects.select_for_update().filter(fiscal_match=group, pk=record_id).first()
         if sale is None:
             raise ValidationError("La venta TUU no pertenece a este grupo.")
         orphan = tuu_orphan_group(sale)
@@ -234,7 +308,7 @@ def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
         sale.fiscal_match, sale.matched_movement, sale.linked_manually = orphan, None, True
         sale.save(update_fields=["fiscal_match", "matched_movement", "linked_manually"])
     else:
-        doc = RCVDocument.objects.filter(fiscal_match=group, pk=record_id).first()
+        doc = RCVDocument.objects.select_for_update().filter(fiscal_match=group, pk=record_id).first()
         if doc is None:
             raise ValidationError("El registro del SII no pertenece a este grupo.")
         orphan = rcv_orphan_group(doc)
@@ -250,10 +324,10 @@ def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
     return FiscalMatch.objects.filter(pk=group.pk).first() or _fresh(orphan.pk)
 
 
-@transaction.atomic
+@_exclusive
 def release(group: FiscalMatch) -> FiscalMatch:
     """Devuelve un huérfano al cruce automático: borra sus marcas manuales."""
-    group = _lock(group)
+    group = _locked(_lock_groups(group.pk), group.pk)
     _require_orphan(group)
     TerminalSale.objects.filter(fiscal_match=group).update(linked_manually=False, updated_at=timezone.now())
     group.rcv_linked_manually = False
@@ -262,14 +336,16 @@ def release(group: FiscalMatch) -> FiscalMatch:
     return _fresh(group.pk)
 
 
-@transaction.atomic
+@_exclusive
 def retry_issue(group: FiscalMatch) -> dict[str, int]:
     """Reintenta, sin esperar, la emisión del borrador del grupo (spec §5.5)."""
-    group = _lock(group)
+    group = _locked(_lock_groups(group.pk), group.pk)
     invoice = _require_invoice_group(group)
     if invoice.status != Invoice.Status.DRAFT or invoice.number:
         raise ValidationError("El documento no está pendiente de emisión.")
     result = issue_fiscal_drafts(group_ids=[group.pk], retry_failed=True)
+    if not result["issued"] and not result["failed"]:
+        raise ValidationError(NOTHING_TO_ISSUE)
     _rederive({group.pk})
     return result
 

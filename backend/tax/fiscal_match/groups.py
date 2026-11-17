@@ -3,7 +3,7 @@
 from datetime import date
 from decimal import Decimal
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
@@ -59,16 +59,24 @@ def _invoice_group(row: dict) -> FiscalMatch:
     )
 
 
+def _group_of_invoice(invoice: Invoice) -> FiscalMatch | None:
+    return FiscalMatch.objects.filter(invoice=invoice).first()
+
+
 def group_for_invoice(invoice: Invoice) -> FiscalMatch | None:
     """Grupo del documento, creándolo si falta; ``None`` si el documento no entra al cuadre."""
-    group = FiscalMatch.objects.filter(invoice=invoice).first()
+    group = _group_of_invoice(invoice)
     if group is not None:
         return group
     row = _evaluable_invoice_rows().filter(id=invoice.pk).first()
     if row is None:
         return None
     group = _invoice_group(row)
-    group.save()
+    try:
+        with transaction.atomic():
+            group.save()
+    except IntegrityError:  # otro proceso lo creó entre la lectura y el INSERT
+        return _group_of_invoice(invoice)
     return group
 
 

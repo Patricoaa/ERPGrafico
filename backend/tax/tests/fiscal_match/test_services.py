@@ -2,18 +2,23 @@
 
 from datetime import date, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport
 from billing.models import Invoice
 from core.fiscal_match import PartState
+from tax.fiscal_match import groups
 from tax.fiscal_match.engine import run_fiscal_match
 from tax.fiscal_match.groups import ensure_groups
 from tax.fiscal_match.services import (
+    FiscalMatchBusy,
     group_candidates,
+    link,
     link_invoice,
     link_rcv_document,
     link_terminal_sale,
@@ -22,6 +27,7 @@ from tax.fiscal_match.services import (
     unlink,
 )
 from tax.models import FiscalMatch
+from tax.tasks import FISCAL_MATCH_LOCK_KEY
 from tax.tests.reconciliation_helpers import (
     make_pos_document,
     make_terminal_env,
@@ -267,3 +273,127 @@ def test_retry_issue_requires_pending_draft(tenv):
     _ensure()
     with pytest.raises(ValidationError):
         retry_issue(_group_of(inv))  # ya emitido
+
+
+# --- ronda de revisión 1 ------------------------------------------------------------
+
+
+@pytest.fixture
+def no_lock():
+    cache.delete(FISCAL_MATCH_LOCK_KEY)
+    yield
+    cache.delete(FISCAL_MATCH_LOCK_KEY)
+
+
+def test_manual_service_fails_fast_while_engine_runs(tenv, no_lock):
+    inv = make_pos_document(tenv, 6000, _ago(120))
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    run_fiscal_match()
+    group = _group_of(inv)
+    cache.add(FISCAL_MATCH_LOCK_KEY, "engine", timeout=540)
+
+    with pytest.raises(FiscalMatchBusy, match="El cuadre automático se está ejecutando"):
+        unlink(group, "tuu", sale.id)
+
+    sale.refresh_from_db()
+    assert (sale.fiscal_match_id, sale.linked_manually) == (group.id, False)
+    assert cache.get(FISCAL_MATCH_LOCK_KEY) == "engine"  # no suelta el candado ajeno
+
+
+def test_manual_service_releases_its_lock(tenv, no_lock):
+    inv = make_pos_document(tenv, 6000, _ago(120))
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    run_fiscal_match()
+    unlink(_group_of(inv), "tuu", sale.id)
+    assert cache.get(FISCAL_MATCH_LOCK_KEY) is None
+
+
+def test_link_terminal_sale_rejects_moved_sale(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(300))
+    other = make_pos_document(tenv, 6000, _ago(290))
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    _ensure()
+    stale = TerminalSale.objects.get(pk=sale.pk)
+    orphan_id = stale.fiscal_match_id
+    # Mientras tanto otra acción la movió al documento ``other``.
+    TerminalSale.objects.filter(pk=sale.pk).update(fiscal_match=_group_of(other))
+    movement = TreasuryMovement.objects.get(invoice=inv)
+
+    with pytest.raises(ValidationError, match="cambió de grupo"):
+        link_terminal_sale(_group_of(inv), stale, movement)
+
+    sale.refresh_from_db()
+    assert sale.fiscal_match_id == _group_of(other).id
+    assert FiscalMatch.objects.filter(pk=orphan_id).exists()
+
+
+def test_link_rcv_document_rejects_moved_doc(imp):
+    inv = _purchase("999", 119000)
+    other = _purchase("998", 119000)
+    doc = _rcv(imp, 123, 119000)
+    _ensure()
+    stale = RCVDocument.objects.get(pk=doc.pk)
+    RCVDocument.objects.filter(pk=doc.pk).update(fiscal_match=_group_of(other))
+
+    with pytest.raises(ValidationError, match="cambió de grupo"):
+        link_rcv_document(_group_of(inv), stale)
+
+    doc.refresh_from_db()
+    assert doc.fiscal_match_id == _group_of(other).id
+
+
+def test_link_invoice_checks_orphan_rcv_type_and_rut(imp):
+    inv = _purchase("999", 119000)
+    doc = _rcv(imp, 123, 119000, rut="7777777-7")
+    _ensure()
+    doc.refresh_from_db()
+
+    with pytest.raises(ValidationError, match="otro RUT"):
+        link_invoice(doc.fiscal_match, inv)
+
+
+def test_link_rejects_ignored_movement(imp, tenv):
+    inv = _purchase("999", 119000)
+    doc = _rcv(imp, 123, 119000)
+    pos = make_pos_document(tenv, 6000, _ago(120))
+    _ensure()
+    doc.refresh_from_db()
+    movement = TreasuryMovement.objects.get(invoice=pos)
+
+    with pytest.raises(ValidationError, match="pago"):
+        link_invoice(doc.fiscal_match, inv, movement)  # el huérfano no tiene ventas TUU
+    with pytest.raises(ValidationError, match="pago"):
+        link(_group_of(inv), "rcv", doc.id, movement.id)
+
+
+def test_link_missing_record_is_validation_error(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(120))
+    _ensure()
+    with pytest.raises(ValidationError, match="no existe"):
+        link(_group_of(inv), "tuu", 999999, 999999)
+
+
+def test_retry_issue_without_candidates(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(120), status=Invoice.Status.DRAFT)
+    _ensure()
+    with pytest.raises(ValidationError, match="No hay nada para emitir en este grupo."):
+        retry_issue(_group_of(inv))
+
+
+def test_group_for_invoice_survives_concurrent_create(imp):
+    inv = _purchase("999", 119000)
+    real = groups._group_of_invoice
+    calls = []
+
+    def racing(invoice):
+        calls.append(invoice.pk)
+        if len(calls) == 1:
+            ensure_groups(date(2000, 1, 1))  # otro proceso crea el grupo entre la lectura y el INSERT
+            return None
+        return real(invoice)
+
+    with patch.object(groups, "_group_of_invoice", side_effect=racing):
+        group = groups.group_for_invoice(inv)
+
+    assert group.pk == _group_of(inv).pk
+    assert FiscalMatch.objects.filter(invoice=inv).count() == 1

@@ -4,6 +4,7 @@ import uuid
 from datetime import timedelta
 
 import pytest
+from django.core.cache import cache
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
@@ -13,6 +14,7 @@ from core.fiscal_match import FiscalMatchStatus
 from core.tests.rbac_factories import make_user
 from tax.fiscal_match.engine import run_fiscal_match
 from tax.models import FiscalMatch, FiscalMatchRun
+from tax.tasks import FISCAL_MATCH_LOCK_KEY
 from tax.tests.reconciliation_helpers import (
     make_pos_document,
     make_terminal_env,
@@ -216,3 +218,25 @@ def test_permissions(tenv):
     assert changer.get(f"{BASE}/").status_code == 403
     assert changer.post(f"{BASE}/{orphan.id}/release/", format="json", **_key()).status_code == 200
     assert _client().get(f"{BASE}/counts/").status_code == 403
+
+
+def test_mutation_returns_409_while_engine_runs(api, tenv):
+    matched, _ = _matched_and_orphan(tenv)
+    sale = matched.terminal_sales.get()
+    cache.delete(FISCAL_MATCH_LOCK_KEY)
+    cache.add(FISCAL_MATCH_LOCK_KEY, "engine", timeout=540)
+    try:
+        r = api.post(f"{BASE}/{matched.id}/unlink/", {"part": "tuu", "id": sale.id}, format="json", **_key())
+    finally:
+        cache.delete(FISCAL_MATCH_LOCK_KEY)
+
+    assert r.status_code == 409
+    assert r.json()["error"]["message"] == "El cuadre automático se está ejecutando. Reintente en unos segundos."
+    sale.refresh_from_db()
+    assert sale.fiscal_match_id == matched.id
+
+
+def test_link_unknown_record_is_400(api, tenv):
+    matched, _ = _matched_and_orphan(tenv)
+    r = api.post(f"{BASE}/{matched.id}/link/", {"part": "rcv", "id": 999999}, format="json", **_key())
+    assert r.status_code == 400

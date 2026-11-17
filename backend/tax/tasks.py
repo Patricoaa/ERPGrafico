@@ -3,6 +3,8 @@
 import calendar
 import logging
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import date
 
 from celery import shared_task
@@ -24,6 +26,22 @@ LOCK_KEY = "tax:fiscal_reconciliation:lock"
 LOCK_TIMEOUT = 540  # 9 min: menos que el período de 10 min de la tarea
 SOFT_TIME_LIMIT = 520  # corta la ejecución antes de que expire el candado
 PREVIOUS_MONTH_UNTIL_DAY = 10
+
+
+@contextmanager
+def fiscal_match_lock(timeout: int = FISCAL_MATCH_LOCK_TIMEOUT) -> Iterator[bool]:
+    """Candado en caché del cuadre, compartido por el motor y la unión manual.
+
+    Entrega si se obtuvo. Solo libera su propio candado: si expiró, otro proceso
+    puede tenerlo.
+    """
+    token = uuid.uuid4().hex
+    acquired = cache.add(FISCAL_MATCH_LOCK_KEY, token, timeout=timeout)
+    try:
+        yield acquired
+    finally:
+        if acquired and cache.get(FISCAL_MATCH_LOCK_KEY) == token:
+            cache.delete(FISCAL_MATCH_LOCK_KEY)
 
 
 def _local_today() -> date:
@@ -82,12 +100,7 @@ def run_fiscal_match() -> dict:
     """Motor único del cuadre (spec §5.4); cada 10 min y tras cada sincronización TUU / RCV."""
     from .fiscal_match import engine
 
-    token = uuid.uuid4().hex
-    if not cache.add(FISCAL_MATCH_LOCK_KEY, token, timeout=FISCAL_MATCH_LOCK_TIMEOUT):
-        return {"skipped": True}
-    try:
+    with fiscal_match_lock() as acquired:
+        if not acquired:
+            return {"skipped": True}
         return _step("motor", "cuadre", engine.run_fiscal_match)
-    finally:
-        # Solo libera su propio candado: si expiró, otra ejecución puede tenerlo.
-        if cache.get(FISCAL_MATCH_LOCK_KEY) == token:
-            cache.delete(FISCAL_MATCH_LOCK_KEY)
