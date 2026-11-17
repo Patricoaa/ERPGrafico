@@ -13,10 +13,12 @@ from .matching_service import MatchingService
 from .models import TerminalSyncRun, TerminalSyncSettings
 from .terminal_sync_service import (
     create_run,
-    daily_range,
     eligible_providers,
     enqueue_runs,
     execute_run,
+    is_sync_due,
+    recover_stale_runs,
+    scheduled_range,
 )
 
 # Rust native extension for batch scoring (graceful fallback)
@@ -54,7 +56,7 @@ def mark_overdue_loan_installments(days_ahead: int = 5, notify: bool = True):
 
     from .models import LoanInstallment
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     # 1) Marcar OVERDUE las vencidas y aún PENDING.
@@ -151,7 +153,7 @@ def mark_overdue_credit_card_statements(days_ahead: int = 5, notify: bool = True
 
     from .models import CreditCardStatement
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     # 1) Marcar OVERDUE los vencidos y aún OPEN o PARTIALLY_PAID
@@ -255,7 +257,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
     from .models import BankLoan, LoanInstallment
 
     if year is None or month is None:
-        today = timezone.now().date()
+        today = timezone.localdate()
         year = today.year
         month = today.month
 
@@ -298,7 +300,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
             continue
 
         entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             description=GlosaBuilder.build(GlosaBuilder.DEVENGO_INTERESES, inst.loan.display_id, "", total_interest_clp, extra=[f"{month:02d}/{year}"]),
             reference=ref,
             status=JournalEntry.Status.DRAFT,
@@ -592,7 +594,7 @@ def check_alerts(days_ahead: int = 5, transit_max_days: int = 10, notify: bool =
 
     from .models import Check
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     # 1) Cheques en cartera por vencer
@@ -746,7 +748,7 @@ def unified_maturity_alerts(days_ahead: int = 7, notify: bool = True):
 
     from .models import Check, CreditCardStatement, LoanInstallment
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     horizon = today + timedelta(days=days_ahead)
 
     items = []
@@ -890,7 +892,7 @@ def check_credit_line_expirations():
     """
     from .models import CreditLine
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     expired = CreditLine.objects.filter(
         status=CreditLine.Status.ACTIVE,
         valid_until__isnull=False,
@@ -912,27 +914,35 @@ def _now():
 
 @shared_task(name="treasury.tasks.dispatch_terminal_sales_sync")
 def dispatch_terminal_sales_sync() -> int:
-    """Crea una ejecución programada diaria por proveedor TUU elegible y la encola.
+    """Crea una ejecución programada por proveedor TUU elegible y la encola.
 
-    Corre cada hora; solo actúa pasada la hora configurada y una vez por día local.
+    Corre cada minuto; solo actúa cuando se cumple el intervalo configurado
+    (minutos, horas o días) desde la última ejecución programada del proveedor.
     Retorna la cantidad de ejecuciones encoladas.
     """
     config = TerminalSyncSettings.get_settings()
     now = _now()
-    if not config.enabled or now.hour < config.run_hour:
+    if not config.enabled:
         return 0
-    today = now.date()
-    date_range = daily_range(config, today)
+    date_range = scheduled_range(config, now.date())
     if date_range is None:
         return 0
+    recover_stale_runs(now)
     queued = 0
     for provider in eligible_providers():
-        already_ran = TerminalSyncRun.objects.filter(
-            provider=provider,
-            trigger=TerminalSyncRun.Trigger.SCHEDULED,
-            started_at__date=today,
-        ).exists()
-        if already_ran:
+        if TerminalSyncRun.objects.filter(
+            provider=provider, status=TerminalSyncRun.Status.RUNNING
+        ).exists():
+            continue  # evita solapar con una sincronización en curso
+        last = (
+            TerminalSyncRun.objects.filter(
+                provider=provider, trigger=TerminalSyncRun.Trigger.SCHEDULED
+            )
+            .order_by("-started_at")
+            .values_list("started_at", flat=True)
+            .first()
+        )
+        if not is_sync_due(config, now, last):
             continue
         run = create_run(provider, *date_range, TerminalSyncRun.Trigger.SCHEDULED)
         enqueue_runs([run], sync_terminal_run.delay)

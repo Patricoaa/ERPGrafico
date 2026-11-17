@@ -587,7 +587,7 @@ class LoanService:
                         settings_obj, "insurance_expense_account", None
                     )
 
-        pay_date = date or timezone.now().date()
+        pay_date = date or timezone.localdate()
         # Si la cuota estaba marcada OVERDUE, mantenemos la fecha de
         # vencimiento original en el asiento; solo cambia paid_at.
 
@@ -776,7 +776,7 @@ class LoanService:
             loan.save(update_fields=["status", "updated_at"])
             return loan
 
-        pay_date = date or timezone.now().date()
+        pay_date = date or timezone.localdate()
 
         # Saldo insoluto real: principal original menos capital pagado real.
         # (Los installments PAID ya tienen su principal_amount actualizado al

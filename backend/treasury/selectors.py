@@ -162,7 +162,7 @@ class BankSelector:
             )
 
         # Próximos vencimientos (cuotas, cheques, tarjetas) — horizonte 30 días
-        today = timezone.now().date()
+        today = timezone.localdate()
         horizon = today + timedelta(days=30)
         upcoming = []
 
@@ -323,7 +323,7 @@ class TreasuryDashboardSelector:
 
     @staticmethod
     def get_future_maturities(days: int = 90, treasury_account_id: int = None) -> dict:
-        today = timezone.now().date()
+        today = timezone.localdate()
         horizon = today + timedelta(days=days)
         items = []
 

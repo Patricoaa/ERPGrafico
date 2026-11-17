@@ -729,6 +729,10 @@ export interface TerminalSale {
     /** Boleta del RCV del SII emparejada con esta venta (ADR-0139); solo 39/41. */
     rcv_document: number | null
     rcv_folio: number | null
+    /** Último intento fallido de emitir el borrador con su folio (ADR-0140); null si no hubo. */
+    issue_attempted_at: string | null
+    /** Error del último intento de emisión; `""` si no hay. */
+    issue_error: string
 }
 
 export interface TerminalSaleDetail extends TerminalSale {
@@ -788,10 +792,14 @@ export interface TerminalSyncLastRun {
     warnings: string[]
 }
 
+export type TerminalSyncIntervalUnit = 'MINUTES' | 'HOURS' | 'DAYS'
+
 export interface TerminalSyncSettings {
     id: number
     enabled: boolean
     run_hour: number
+    interval_value: number
+    interval_unit: TerminalSyncIntervalUnit
     lookback_days: number
     /** ISO date */
     history_start_date: string | null

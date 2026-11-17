@@ -3,6 +3,8 @@ import { terminalSyncSettingsSchema, validateTerminalSyncSettings, type Terminal
 
 const valid: TerminalSyncSettingsFormValues = {
     enabled: false,
+    interval_value: 1,
+    interval_unit: "DAYS",
     run_hour: 3,
     lookback_days: 7,
     history_start_date: null,
@@ -53,5 +55,19 @@ describe("Spanish validation messages", () => {
     it("reports NaN and non-integers in Spanish", () => {
         expect(validateTerminalSyncSettings({ ...valid, lookback_days: Number.NaN })).toBe("Ingrese un número")
         expect(validateTerminalSyncSettings({ ...valid, run_hour: 3.5 })).toBe("Debe ser un número entero")
+    })
+})
+
+describe("interval validation", () => {
+    it("accepts 1 day, 1 hour and 5 minutes", () => {
+        expect(terminalSyncSettingsSchema.safeParse(valid).success).toBe(true)
+        expect(terminalSyncSettingsSchema.safeParse({ ...valid, interval_unit: "HOURS", interval_value: 1 }).success).toBe(true)
+        expect(terminalSyncSettingsSchema.safeParse({ ...valid, interval_unit: "MINUTES", interval_value: 5 }).success).toBe(true)
+    })
+
+    it("rejects 0 and fewer than 5 minutes", () => {
+        expect(validateTerminalSyncSettings({ ...valid, interval_value: 0 })).toBe("Mínimo 1")
+        expect(validateTerminalSyncSettings({ ...valid, interval_unit: "MINUTES", interval_value: 4 })).toBe("Mínimo 5 minutos")
+        expect(validateTerminalSyncSettings({ ...valid, interval_unit: "HOURS", interval_value: 4 })).toBe(true)
     })
 })

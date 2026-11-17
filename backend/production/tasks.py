@@ -21,7 +21,7 @@ def notify_overdue_work_orders(self):
     Criterios: due_date < today AND status NOT IN (FINISHED, CANCELLED).
     Máximo 1 notificación por día por OT.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
 
     overdue_ots = list(
         WorkOrder.objects.filter(estimated_completion_date__lt=today).exclude(

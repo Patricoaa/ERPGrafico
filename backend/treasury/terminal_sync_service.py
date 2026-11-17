@@ -7,7 +7,7 @@ respuestas crudas y hace upsert de las ventas unificadas.
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
@@ -35,6 +35,7 @@ from treasury.models import (
 logger = logging.getLogger(__name__)
 
 MAX_CHUNK_DAYS = 30
+STALE_RUN_MINUTES = 60
 AUTH_MESSAGE = "La API key de TUU fue rechazada. Revise la key del proveedor."
 PLAN_MESSAGE = (
     "La cuenta TUU no tiene habilitado el reporte (plan PaaS requerido o servicio deshabilitado)."
@@ -118,12 +119,59 @@ def eligible_providers() -> models.QuerySet[PaymentTerminalProvider]:
     )
 
 
-def daily_range(settings: TerminalSyncSettings, today: date) -> tuple[date, date] | None:
-    start = today - timedelta(days=settings.lookback_days)
+def scheduled_range(settings: TerminalSyncSettings, today: date) -> tuple[date, date] | None:
+    """Rango programado hasta hoy: ayer en intervalos cortos, la ventana completa en días."""
+    back = (
+        1
+        if settings.interval_unit != TerminalSyncSettings.IntervalUnit.DAYS
+        else settings.lookback_days
+    )
+    start = today - timedelta(days=back)
     if settings.history_start_date:
         start = max(settings.history_start_date, start)
-    end = today - timedelta(days=1)
-    return None if start > end else (start, end)
+    return None if start > today else (start, today)
+
+
+def stale_threshold_minutes(settings: TerminalSyncSettings) -> int:
+    """Una corrida con reintentos puede durar hasta max_retries * espera; se suma holgura de 30 min."""
+    return max(STALE_RUN_MINUTES, settings.max_retries * settings.retry_delay_minutes + 30)
+
+
+def recover_stale_runs(now: datetime) -> int:
+    """Marca como fallidas las ejecuciones RUNNING sin respuesta más allá del umbral."""
+    minutes = stale_threshold_minutes(TerminalSyncSettings.get_settings())
+    return TerminalSyncRun.objects.filter(
+        status=TerminalSyncRun.Status.RUNNING,
+        started_at__lt=now - timedelta(minutes=minutes),
+    ).update(
+        status=TerminalSyncRun.Status.FAILED,
+        error_message=f"Sincronización interrumpida (sin respuesta por más de {minutes} minutos)",
+        finished_at=timezone.now(),
+    )
+
+
+def is_sync_due(
+    settings: TerminalSyncSettings, now_local: datetime, last_scheduled_at: datetime | None
+) -> bool:
+    """Corresponde sincronizar: habilitada y cumplido el intervalo desde la última programada."""
+    if not settings.enabled:
+        return False
+    unit = settings.interval_unit
+    if unit == TerminalSyncSettings.IntervalUnit.DAYS:
+        if now_local.hour < settings.run_hour:
+            return False
+        if last_scheduled_at is None:
+            return True
+        elapsed = now_local.date() - timezone.localtime(last_scheduled_at).date()
+        return elapsed >= timedelta(days=settings.interval_value)
+    if last_scheduled_at is None:
+        return True
+    step = (
+        timedelta(hours=settings.interval_value)
+        if unit == TerminalSyncSettings.IntervalUnit.HOURS
+        else timedelta(minutes=settings.interval_value)
+    )
+    return now_local - last_scheduled_at >= step
 
 
 def manual_range(

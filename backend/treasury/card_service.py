@@ -386,7 +386,7 @@ class CardService:
         card_acc = statement.card_account
         liability_acc = card_acc.account
 
-        apply_date = date or statement.cut_off_date or timezone.now().date()
+        apply_date = date or statement.cut_off_date or timezone.localdate()
 
         # 1) Crear movimiento ADJUSTMENT (sin auto-asiento).
         movement = TreasuryMovement.objects.create(
@@ -609,7 +609,7 @@ class CardService:
         outstanding = max(total - already_paid, Decimal("0"))
 
         # Resolver el monto a pagar.
-        pay_date = date or timezone.now().date()
+        pay_date = date or timezone.localdate()
         if amount is None:
             amount = outstanding  # default: pagar todo el saldo
         else:
@@ -975,7 +975,7 @@ class CardService:
             statement.billed_amount = new_amount
             note = (
                 f"[RECALC] billed_amount {old_amount} → {new_amount} "
-                f"el {timezone.now().date().isoformat()} "
+                f"el {timezone.localdate().isoformat()} "
                 f"(OUTBOUND={outbound_sum}, SCHEDULE={schedule_sum})"
             )
             statement.notes = (statement.notes + "\n" + note) if statement.notes else note
@@ -1180,7 +1180,7 @@ class CardService:
             raise ValidationError(_t("El monto debe ser mayor a cero."))
 
         if not date:
-            date = timezone.now().date()
+            date = timezone.localdate()
 
         charge = CardPendingCharge.objects.create(
             card_account=card_account,

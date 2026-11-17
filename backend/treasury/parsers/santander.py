@@ -101,7 +101,7 @@ class SantanderParser(BaseParser):
 
             if df.empty:
                 return {
-                    "statement_date": timezone.now().date(),
+                    "statement_date": timezone.localdate(),
                     "opening_balance": Decimal(0),
                     "closing_balance": Decimal(0),
                     "lines": [],
@@ -163,7 +163,7 @@ class SantanderParser(BaseParser):
                 line_number += 1
 
             return {
-                "statement_date": lines[0]["transaction_date"] if lines else timezone.now().date(),
+                "statement_date": lines[0]["transaction_date"] if lines else timezone.localdate(),
                 "opening_balance": opening_balance,
                 "closing_balance": lines[-1]["balance"] if lines else opening_balance,
                 "lines": lines,

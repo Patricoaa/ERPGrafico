@@ -3813,6 +3813,20 @@ class TerminalSyncSettings(TimeStampedModel):
         default=7,
         validators=[MinValueValidator(1), MaxValueValidator(60)],
     )
+    class IntervalUnit(models.TextChoices):
+        MINUTES = "MINUTES", _("Minutos")
+        HOURS = "HOURS", _("Horas")
+        DAYS = "DAYS", _("Días")
+
+    interval_value = models.PositiveSmallIntegerField(
+        _("Cada"), default=1, validators=[MinValueValidator(1)]
+    )
+    interval_unit = models.CharField(
+        _("Unidad del intervalo"),
+        max_length=10,
+        choices=IntervalUnit.choices,
+        default=IntervalUnit.DAYS,
+    )
     history_start_date = models.DateField(_("Inicio del historial"), null=True, blank=True)
     max_retries = models.PositiveSmallIntegerField(
         _("Reintentos máximos"),
@@ -4059,6 +4073,9 @@ class TerminalSale(TimeStampedModel):
         related_name="terminal_sales",
         verbose_name=_("Boleta SII"),
     )
+    # Último intento fallido de emitir su borrador con el folio (ADR-0140 D3).
+    issue_attempted_at = models.DateTimeField(_("Intento de emisión"), null=True, blank=True)
+    issue_error = models.CharField(_("Error de emisión"), max_length=255, blank=True, default="")
 
     class Meta:
         verbose_name = _("Venta de Terminal")

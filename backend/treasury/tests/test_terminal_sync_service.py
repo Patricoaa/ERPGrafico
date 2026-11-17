@@ -25,10 +25,11 @@ from treasury.models import (
 )
 from treasury.terminal_sync_service import (
     create_run,
-    daily_range,
     eligible_providers,
     execute_run,
+    is_sync_due,
     manual_range,
+    scheduled_range,
     split_range,
 )
 from treasury.tests.helpers import make_terminal_provider
@@ -120,13 +121,55 @@ def test_split_range():
     assert split_range(date(2026, 1, 1), date(2026, 1, 1)) == [(date(2026, 1, 1), date(2026, 1, 1))]
 
 
-def test_daily_range_respects_history_floor():
+def test_scheduled_range_ends_today_and_respects_history_floor():
     s = TerminalSyncSettings(lookback_days=7, history_start_date=date(2026, 11, 10))
-    assert daily_range(s, date(2026, 11, 13)) == (date(2026, 11, 10), date(2026, 11, 12))
+    assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 10), date(2026, 11, 13))
     s.history_start_date = None
-    assert daily_range(s, date(2026, 11, 13)) == (date(2026, 11, 6), date(2026, 11, 12))
+    assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 6), date(2026, 11, 13))
+    s.history_start_date = date(2026, 11, 14)
+    assert scheduled_range(s, date(2026, 11, 13)) is None
+
+
+def test_scheduled_range_short_intervals_cover_yesterday_and_today():
+    for unit in ("MINUTES", "HOURS"):
+        s = TerminalSyncSettings(lookback_days=7, interval_unit=unit, history_start_date=None)
+        assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 12), date(2026, 11, 13))
     s.history_start_date = date(2026, 11, 13)
-    assert daily_range(s, date(2026, 11, 13)) is None
+    assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 13), date(2026, 11, 13))
+
+
+def _at(hour, minute=0, day=13):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    return datetime(2026, 11, day, hour, minute, tzinfo=ZoneInfo("America/Santiago"))
+
+
+def test_is_sync_due_minutes_interval():
+    s = TerminalSyncSettings(enabled=True, interval_value=30, interval_unit="MINUTES", run_hour=3)
+    last = _at(10, 0)
+    assert is_sync_due(s, _at(10, 29), last) is False
+    assert is_sync_due(s, _at(10, 30), last) is True
+    assert is_sync_due(s, _at(1, 0), None) is True  # run_hour no aplica en minutos
+
+
+def test_is_sync_due_hours_interval():
+    s = TerminalSyncSettings(enabled=True, interval_value=2, interval_unit="HOURS", run_hour=3)
+    assert is_sync_due(s, _at(11, 59), _at(10, 0)) is False
+    assert is_sync_due(s, _at(12, 0), _at(10, 0)) is True
+
+
+def test_is_sync_due_days_respects_run_hour_and_days():
+    s = TerminalSyncSettings(enabled=True, interval_value=2, interval_unit="DAYS", run_hour=3)
+    assert is_sync_due(s, _at(2, 0), None) is False
+    assert is_sync_due(s, _at(3, 0), None) is True
+    assert is_sync_due(s, _at(5, 0, day=13), _at(3, 0, day=12)) is False
+    assert is_sync_due(s, _at(3, 0, day=14), _at(3, 0, day=12)) is True
+
+
+def test_is_sync_due_disabled():
+    s = TerminalSyncSettings(enabled=False, interval_value=1, interval_unit="MINUTES")
+    assert is_sync_due(s, _at(10), None) is False
 
 
 def test_manual_range_defaults_and_validation():

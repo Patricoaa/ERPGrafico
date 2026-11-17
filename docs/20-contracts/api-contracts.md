@@ -145,7 +145,7 @@ Base: `/api/accounting/`
 ### rcv-documents/ (RCVDocument)
 
 ```
-GET    /api/accounting/rcv-documents/?match_status=   filtro por estado de cuadre (ChoiceField MatchStatus; valor desconocido → 400)
+GET    /api/accounting/rcv-documents/?match_status=   filtro por estado de cuadre (ChoiceField MatchStatus; valor desconocido → 400; incluye `PENDING_ERP` «Sin documento ERP»: boleta con venta TUU pero sin documento ERP, ADR-0140)
 ```
 
 Resto del recurso: ver `accounting/rcv_views.py`. El cuadre ERP ↔ RCV vive en `/api/tax/reconciliation/` (sección tax).
@@ -270,7 +270,7 @@ PATCH  /api/billing/invoices/{id}/           update (limited — use actions for
 GET    /api/billing/invoices/{id}/cancel_impact/   preview impacto de cancelación
 POST   /api/billing/invoices/check_folio/         valida folio disponible (detail=False)
 POST   /api/billing/invoices/create_from_order/   crea factura desde una orden (detail=False)
-POST   /api/billing/invoices/pos_checkout/        checkout POS (detail=False). `dte_type` es la clase de documento (BOLETA|BOLETA_EXENTA|FACTURA|FACTURA_EXENTA); la respuesta agrega `documents` (un pago mixto puede dar 48 + 39; ADR-0138 D3)
+POST   /api/billing/invoices/pos_checkout/        checkout POS (detail=False). `dte_type` es la clase de documento (BOLETA|BOLETA_EXENTA|FACTURA|FACTURA_EXENTA); la respuesta agrega `documents` (un pago mixto puede dar 48 + 39; ADR-0138 D3). Las boletas 39/41 y comprobantes 48 sin folio nacen `DRAFT` y se emiten en el cuadre con el folio RCV o el id TUU (ADR-0140)
 POST   /api/billing/invoices/request_credit/      solicitud de crédito (detail=False)
 POST   /api/billing/invoices/{id}/confirm/        confirma/marca POSTED
 POST   /api/billing/invoices/{id}/annul/          anula (genera NOTA_CREDITO)
@@ -1113,8 +1113,8 @@ Escrituras y candidatos exigen `tax.change_taxperiod`; el reporte exige `tax.vie
 
 ```
 GET    /api/tax/reconciliation/?year=&month=                                reporte del período (incluye conteos por MatchStatus; `summaries[]` de 39/41 añade `tuu_without_rcv` y `rcv_without_tuu`)
-POST   /api/tax/reconciliation/terminal/run/                                cuadra ventas TUU del mes (body: year, month); la respuesta incluye `boletas` (resultado de `reconcile_rcv_boletas`)
-POST   /api/tax/reconciliation/rcv/run/                                     cuadra RCV del mes (body: year, month); la respuesta incluye `boletas`
+POST   /api/tax/reconciliation/terminal/run/                                cuadra ventas TUU del mes (body: year, month); la respuesta incluye `boletas` (resultado de `reconcile_rcv_boletas`) e `issued` (borradores emitidos con folio RCV o id TUU, ADR-0140)
+POST   /api/tax/reconciliation/rcv/run/                                     cuadra RCV del mes (body: year, month); la respuesta incluye `boletas` e `issued`
 GET    /api/tax/reconciliation/terminal-sales/{id}/candidates/              facturas candidatas
 POST   /api/tax/reconciliation/terminal-sales/{id}/match/                   vínculo manual (body: invoice_id)
 POST   /api/tax/reconciliation/terminal-sales/{id}/unmatch/                 quita el vínculo
@@ -1127,7 +1127,9 @@ POST   /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/            asig
 POST   /api/tax/reconciliation/rcv-documents/{id}/create-draft/             crea borrador desde una OC y lo vincula (body: purchase_order_id; Idempotency-Key)
 ```
 
-`fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`) también viaja en `status_check` y en la respuesta de calculate del F29.
+`fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`, `PENDING_ERP`) también viaja en `status_check` y en la respuesta de calculate del F29.
+
+`/api/treasury/terminal-sync-settings/` (`TerminalSyncSettings`, ADR-0140 D6): `interval_value` (entero) e `interval_unit` (`MINUTES` | `HOURS` | `DAYS`). `MINUTES` exige `interval_value` ≥ 5 (400 si no). `run_hour` solo aplica con `DAYS`. Los intervalos `MINUTES`/`HOURS` sincronizan solo [ayer, hoy]; `DAYS` usa `lookback_days`.
 
 Boletas 39/41 (ADR-0139), emparejadas 1:1 con la venta TUU por día local y monto, en orden:
 

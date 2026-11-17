@@ -12,6 +12,8 @@ import { useFiscalReconciliation, useRunReconciliation } from "../hooks/useFisca
 import {
     onlyErpDocumentEntity,
     onlyErpDocumentViews,
+    pendingIssueDocumentEntity,
+    pendingIssueDocumentViews,
     reconciliationSummaryEntity,
     reconciliationSummaryViews,
 } from "../entity-view/fiscalReconciliation.entity"
@@ -27,7 +29,7 @@ const MONTH_OPTIONS = MONTH_NAMES.map((label, i) => ({ label, value: String(i + 
 
 /** Orden fijo de los conteos; `""` (no evaluado) se omite. */
 const STATUS_ORDER: Exclude<MatchStatus, "">[] = [
-    "MATCHED", "AMOUNT_DIFF", "TYPE_DIFF", "AMBIGUOUS", "ONLY_EXTERNAL", "ONLY_ERP", "EXCLUDED",
+    "MATCHED", "AMOUNT_DIFF", "TYPE_DIFF", "AMBIGUOUS", "PENDING_ERP", "ONLY_EXTERNAL", "ONLY_ERP", "EXCLUDED",
 ]
 
 type Direction = "purchase" | "sale"
@@ -56,6 +58,7 @@ function isEmptyReport(report: FiscalReconciliationReport): boolean {
     const summaries = report.summaries.every((s) => s.erp_count === 0 && s.tuu_count === 0 && !s.rcv_count)
     return summaries
         && report.only_erp.length === 0
+        && report.pending_issue.count === 0
         && total(report.documents.purchase) === 0
         && total(report.documents.sale) === 0
         && total(report.terminal) === 0
@@ -166,6 +169,7 @@ function ReconciliationBody({ report, year, month }: { report: FiscalReconciliat
         <div className="space-y-8">
             {startBanner}
             <SummariesSection report={report} />
+            <PendingIssueSection report={report} />
             <DocumentsSection report={report} year={year} month={month} />
             <OnlyErpSection report={report} />
         </div>
@@ -243,6 +247,34 @@ function DocumentsSection({ report, year, month }: { report: FiscalReconciliatio
                 })}
             </div>
         </div>
+    )
+}
+
+function pendingIssueDescription(count: number): string {
+    if (count === 0) return "Los borradores sin folio se emiten solos al conocerse su número fiscal."
+    const noun = count === 1 ? "1 borrador espera" : `${count} borradores esperan`
+    return `${noun} su número fiscal.`
+}
+
+/** Borradores 39/41/48 sin folio del mes y por qué aún no se emiten (ADR-0140). */
+function PendingIssueSection({ report }: { report: FiscalReconciliationReport }) {
+    const { openEntity } = useGlobalModalActions()
+    const { count, items } = report.pending_issue
+    const collection = useEntityCollection(pendingIssueDocumentEntity, { rows: items }, { pagination: { mode: "none" } })
+    return (
+        <Section.Scope>
+            <Section.Header title="Boletas pendientes de folio" description={pendingIssueDescription(count)} />
+            {count > items.length && (
+                <Banner tone="info" className="mb-3">{`Se muestran los primeros ${items.length} de ${count}.`}</Banner>
+            )}
+            <Collection.Root collection={collection} label="Boletas pendientes de folio" onOpen={(doc) => openEntity("billing.invoice", doc.id)}>
+                <Collection.View
+                    table={pendingIssueDocumentViews.table}
+                    card={pendingIssueDocumentViews.card}
+                    emptyTitle="No hay boletas pendientes de folio"
+                />
+            </Collection.Root>
+        </Section.Scope>
     )
 }
 

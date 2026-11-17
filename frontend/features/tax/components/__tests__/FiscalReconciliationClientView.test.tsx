@@ -41,6 +41,15 @@ const report: FiscalReconciliationReport = {
         { dte_type: 48, erp_count: 5, erp_total: "25000.00", tuu_count: 5, tuu_total: "25000.00", rcv_count: 0, rcv_total: "0", difference: "25000.00", tuu_without_rcv: null, rcv_without_tuu: null },
     ],
     terminal: { MATCHED: 30, AMBIGUOUS: 1, ONLY_EXTERNAL: 2, ONLY_ERP: 1 },
+    pending_issue: {
+        count: 4,
+        items: [
+            { id: 901, label: "Boleta Electrónica sin folio (#901)", amount: "1500", date: "2026-10-03", reason: "NO_TUU", error: null },
+            { id: 902, label: "Boleta Electrónica sin folio (#902)", amount: "2500", date: "2026-10-04", reason: "WAITING_RCV", error: null },
+            { id: 903, label: "Comprobante de Pago sin folio (#903)", amount: "3500", date: "2026-10-05", reason: "ERROR", error: "Período cerrado" },
+            { id: 904, label: "Comprobante de Pago sin folio (#904)", amount: "4500", date: "2026-10-06", reason: "READY", error: null },
+        ],
+    },
 }
 
 const today = new Date()
@@ -176,9 +185,60 @@ describe("FiscalReconciliationClientView", () => {
                 ...s, erp_count: 0, erp_total: "0", tuu_count: 0, tuu_total: "0", rcv_count: 0, rcv_total: "0", difference: "0",
             })),
             terminal: { ONLY_ERP: 0 },
+            pending_issue: { count: 0, items: [] },
         }
         render(<FiscalReconciliationClientView />)
         expect(screen.getByText("Sin documentos en el período")).toBeInTheDocument()
         expect(screen.queryByRole("heading", { name: "Boletas y comprobantes" })).not.toBeInTheDocument()
+    })
+
+    it("Boletas pendientes de folio: conteo, motivo y abre el borrador", async () => {
+        render(<FiscalReconciliationClientView />)
+        expect(screen.getByRole("heading", { name: "Boletas pendientes de folio" })).toBeInTheDocument()
+        expect(screen.getByText("4 borradores esperan su número fiscal.")).toBeInTheDocument()
+        const table = screen.getByRole("table", { name: "Boletas pendientes de folio" })
+        const headers = within(table).getAllByRole("columnheader").map((h) => h.textContent)
+        expect(headers).toEqual(expect.arrayContaining(["Documento", "Fecha", "Monto", "Motivo", "Detalle"]))
+        expect(within(table).getByText("Sin venta TUU")).toBeInTheDocument()
+        expect(within(table).getByText("Esperando RCV")).toBeInTheDocument()
+        expect(within(table).getByText("Error al emitir: Período cerrado")).toBeInTheDocument()
+        expect(within(table).getByTitle("Período cerrado")).toBeInTheDocument()
+        expect(within(table).getByText("Lista para emitir")).toBeInTheDocument()
+        await userEvent.click(within(table).getByRole("button", { name: /#902/ }))
+        expect(m.openEntity).toHaveBeenCalledWith("billing.invoice", 902)
+    })
+
+    it("Boletas pendientes de folio: un error largo se acorta en el motivo y se lee completo en el detalle", () => {
+        const error = "El período contable de octubre de 2026 está cerrado y no admite asientos nuevos"
+        m.report = {
+            ...report,
+            pending_issue: { count: 1, items: [{ id: 905, label: "Boleta Electrónica sin folio (#905)", amount: "100", date: "2026-10-07", reason: "ERROR", error }] },
+        }
+        render(<FiscalReconciliationClientView />)
+        const table = screen.getByRole("table", { name: "Boletas pendientes de folio" })
+        expect(within(table).getByText(`Error al emitir: ${error.slice(0, 40).trimEnd()}…`)).toBeInTheDocument()
+        expect(within(table).getByTitle(error)).toHaveTextContent(error)
+    })
+
+    it("Boletas pendientes de folio: estado vacío", () => {
+        m.report = { ...report, pending_issue: { count: 0, items: [] } }
+        render(<FiscalReconciliationClientView />)
+        expect(screen.getByText("No hay boletas pendientes de folio")).toBeInTheDocument()
+    })
+
+    it("un período solo con boletas pendientes no se muestra vacío", () => {
+        m.report = {
+            start_date: "2026-10-01",
+            documents: { purchase: { ONLY_ERP: 0 }, sale: { ONLY_ERP: 0 } },
+            only_erp: [],
+            summaries: report.summaries.map((s) => ({
+                ...s, erp_count: 0, erp_total: "0", tuu_count: 0, tuu_total: "0", rcv_count: 0, rcv_total: "0", difference: "0",
+            })),
+            terminal: { ONLY_ERP: 0 },
+            pending_issue: report.pending_issue,
+        }
+        render(<FiscalReconciliationClientView />)
+        expect(screen.queryByText("Sin documentos en el período")).not.toBeInTheDocument()
+        expect(screen.getByRole("heading", { name: "Boletas pendientes de folio" })).toBeInTheDocument()
     })
 })

@@ -202,5 +202,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0137](0137-variante-embebida-collection.md) | Variante embebida de `Collection` (marco, vacío en columnas y «Mostrar más») | Accepted |
 | [0138](0138-registro-dte-local-con-control-fiscal-externo.md) | El registro DTE local es la fuente contable; el RCV y las ventas TUU son control fiscal externo que se cuadra contra él | Accepted |
 | [0139](0139-cuadre-boletas-rcv-via-tuu-y-reloj-de-depuracion.md) | Las boletas del RCV se cuadran una a una vía la venta TUU (día + monto, en orden); reloj de depuración para desarrollo | Accepted |
+| [0140](0140-emision-automatica-de-boletas-desde-tuu-y-rcv.md) | Boletas y comprobantes nacen en borrador y se emiten automáticamente con el folio del RCV o el id de TUU; cuadre cada 10 min y sincronización TUU con intervalo | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

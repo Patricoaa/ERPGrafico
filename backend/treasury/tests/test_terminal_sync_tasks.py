@@ -100,12 +100,85 @@ def test_dispatcher_skips_inactive_and_keyless_providers(monkeypatch, enqueued):
     assert list(TerminalSyncRun.objects.values_list("provider_id", flat=True)) == [ok.pk]
 
 
-def test_dispatcher_skips_when_no_daily_range(monkeypatch, enqueued):
+def test_dispatcher_skips_when_no_scheduled_range(monkeypatch, enqueued):
     _configure(run_hour=3, history_start_date=timezone.localtime().date() + timedelta(days=1))
     _keyed_provider()
     _freeze(monkeypatch, 3)
     assert tasks.dispatch_terminal_sales_sync() == 0
     assert TerminalSyncRun.objects.count() == 0
+
+
+def test_dispatcher_minutes_interval_29_does_not_launch_30_does(monkeypatch, enqueued):
+    _configure(interval_value=30, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    assert tasks.dispatch_terminal_sales_sync() == 1
+    TerminalSyncRun.objects.filter(provider=provider).update(
+        status=TerminalSyncRun.Status.SUCCESS,
+        started_at=timezone.localtime().replace(hour=10, minute=0, second=0, microsecond=0),
+    )
+    _freeze(monkeypatch, 10, 29)
+    assert tasks.dispatch_terminal_sales_sync() == 0
+    _freeze(monkeypatch, 10, 30)
+    assert tasks.dispatch_terminal_sales_sync() == 1
+
+
+def test_dispatch_skips_provider_with_run_in_progress(monkeypatch, enqueued):
+    _configure(interval_value=5, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    started = timezone.localtime().replace(hour=9, minute=53, second=0, microsecond=0)
+    TerminalSyncRun.objects.create(
+        provider=provider,
+        trigger=TerminalSyncRun.Trigger.SCHEDULED,
+        status=TerminalSyncRun.Status.RUNNING,
+        start_date=date(2026, 11, 12),
+        end_date=date(2026, 11, 13),
+        started_at=started,
+    )
+    assert tasks.dispatch_terminal_sales_sync() == 0
+    assert TerminalSyncRun.objects.count() == 1
+
+
+def _running_run(provider, started):
+    return TerminalSyncRun.objects.create(
+        provider=provider,
+        trigger=TerminalSyncRun.Trigger.SCHEDULED,
+        status=TerminalSyncRun.Status.RUNNING,
+        start_date=date(2026, 11, 12),
+        end_date=date(2026, 11, 13),
+        started_at=started,
+    )
+
+
+def test_stale_running_run_is_failed_and_unblocks(monkeypatch, enqueued):
+    _configure(interval_value=5, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    stale = _running_run(provider, tasks._now() - timedelta(minutes=61))
+    assert tasks.dispatch_terminal_sales_sync() == 1
+    stale.refresh_from_db()
+    assert stale.status == TerminalSyncRun.Status.FAILED
+    assert "interrumpida" in stale.error_message
+    assert stale.finished_at is not None
+
+
+def test_recent_running_run_still_blocks(monkeypatch, enqueued):
+    _configure(interval_value=5, interval_unit="MINUTES")
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    run = _running_run(provider, tasks._now() - timedelta(minutes=30))
+    assert tasks.dispatch_terminal_sales_sync() == 0
+    run.refresh_from_db()
+    assert run.status == TerminalSyncRun.Status.RUNNING
+
+
+def test_dispatcher_range_ends_today(monkeypatch, enqueued):
+    _configure(run_hour=3)
+    _keyed_provider()
+    _freeze(monkeypatch, 3)
+    tasks.dispatch_terminal_sales_sync()
+    assert TerminalSyncRun.objects.get().end_date == timezone.localtime().date()
 
 
 def _scheduled_run():
@@ -195,7 +268,7 @@ def test_transient_error_then_success_returns_final_status(monkeypatch):
 
 
 def test_beat_entry_matches_registered_task():
-    entry = django_settings.CELERY_BEAT_SCHEDULE["dispatch_terminal_sales_sync_hourly"]
+    entry = django_settings.CELERY_BEAT_SCHEDULE["dispatch_terminal_sales_sync"]
     assert entry["task"] in celery_app.tasks
 
 
@@ -229,7 +302,8 @@ def test_sync_run_triggers_reconciliation(monkeypatch):
     run = _success_run(monkeypatch)
     calls = []
     monkeypatch.setattr(
-        "tax.reconciliation.terminal.reconcile_terminal_sales", lambda s, e: calls.append((s, e)) or {}
+        "tax.reconciliation.terminal.reconcile_terminal_sales",
+        lambda s, e: calls.append((s, e)) or {},
     )
     assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
     assert calls == [(run.start_date, run.end_date)]
@@ -278,6 +352,22 @@ def test_boletas_skipped_when_terminal_reconcile_fails(monkeypatch):
 
     monkeypatch.setattr("tax.reconciliation.terminal.reconcile_terminal_sales", boom)
     calls = []
-    monkeypatch.setattr("tax.reconciliation.boletas.reconcile_rcv_boletas", lambda y, m: calls.append(1))
+    monkeypatch.setattr(
+        "tax.reconciliation.boletas.reconcile_rcv_boletas", lambda y, m: calls.append(1)
+    )
     assert tasks.sync_terminal_run(run.pk) == TerminalSyncRun.Status.SUCCESS
     assert calls == []
+
+
+def test_stale_threshold_grows_with_retry_budget(monkeypatch, enqueued):
+    """El umbral es max(60, reintentos * espera + 30) minutos."""
+    _configure(interval_value=5, interval_unit="MINUTES", max_retries=6, retry_delay_minutes=10)
+    provider = _keyed_provider()
+    _freeze(monkeypatch, 10, 0)
+    young = _running_run(provider, tasks._now() - timedelta(minutes=70))
+    old = _running_run(provider, tasks._now() - timedelta(minutes=91))
+    tasks.dispatch_terminal_sales_sync()
+    young.refresh_from_db()
+    old.refresh_from_db()
+    assert young.status == TerminalSyncRun.Status.RUNNING
+    assert old.status == TerminalSyncRun.Status.FAILED

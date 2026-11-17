@@ -63,16 +63,3 @@ def plan_sale_documents(
     # Mayor monto primero; en empate, la boleta; entre 48 iguales, orden de entrada (sort estable).
     plans.sort(key=lambda d: (-d.amount, d.dte_type != _BOLETA))
     return plans
-
-
-def folio_exempt_for_session(pos_session_id: int | None) -> bool:
-    """True si el terminal de la sesión admite algún método integrado con un terminal físico."""
-    if pos_session_id is None:
-        return False
-    from treasury.models import PaymentMethod, POSSession
-
-    return POSSession.objects.filter(
-        pk=pos_session_id,
-        terminal__allowed_payment_methods__method_type=PaymentMethod.Type.CARD_TERMINAL,
-        terminal__allowed_payment_methods__linked_terminal_device__isnull=False,
-    ).exists()

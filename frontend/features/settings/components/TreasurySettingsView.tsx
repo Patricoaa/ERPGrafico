@@ -25,7 +25,7 @@ import {
 } from "@/features/treasury"
 import type { TerminalSyncLastRun, TerminalSyncSettings } from "@/features/treasury"
 
-import { terminalSyncSettingsSchema, validateTerminalSyncSettings, type TerminalSyncSettingsFormValues } from "./TreasurySettingsView.schema"
+import { MIN_INTERVAL_MINUTES, terminalSyncSettingsSchema, validateTerminalSyncSettings, type TerminalSyncSettingsFormValues } from "./TreasurySettingsView.schema"
 
 const RUNS_PAGE_SIZE = 10
 
@@ -34,10 +34,18 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => ({
     label: `${String(hour).padStart(2, "0")}:00`,
 }))
 
+const UNIT_OPTIONS = [
+    { value: "MINUTES", label: "Minutos" },
+    { value: "HOURS", label: "Horas" },
+    { value: "DAYS", label: "Días" },
+]
+
 function toFormValues(settings: TerminalSyncSettings): TerminalSyncSettingsFormValues {
     return {
         enabled: settings.enabled,
         run_hour: settings.run_hour,
+        interval_value: settings.interval_value,
+        interval_unit: settings.interval_unit,
         lookback_days: settings.lookback_days,
         history_start_date: settings.history_start_date,
         max_retries: settings.max_retries,
@@ -96,6 +104,8 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
         defaultValues: toFormValues(settings),
     })
 
+    const intervalUnit = form.watch("interval_unit")
+
     const onSave = useCallback(async (data: TerminalSyncSettingsFormValues) => {
         await updateSettings(data)
     }, [updateSettings])
@@ -129,7 +139,7 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
                         <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Sincronización automática</CardTitle>
-                                <CardDescription>Trae cada día las ventas de los terminales TUU.</CardDescription>
+                                <CardDescription>Trae periódicamente las ventas de los terminales TUU.</CardDescription>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <FormField
@@ -148,17 +158,49 @@ function TerminalSyncSettingsPanel({ settings }: { settings: TerminalSyncSetting
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="run_hour"
+                                    name="interval_value"
                                     render={({ field, fieldState }) => (
-                                        <LabeledSelect
-                                            label="Hora de ejecución"
-                                            options={HOUR_OPTIONS}
-                                            value={Number.isNaN(field.value) ? "" : String(field.value)}
-                                            onChange={(value) => field.onChange(Number(value))}
+                                        <LabeledInput
+                                            label="Cada"
+                                            hint={intervalUnit === "MINUTES" ? "Mínimo 5 minutos." : "Mínimo 1."}
+                                            type="number"
+                                            {...field}
+                                            value={numberValue(field.value)}
+                                            onChange={(event) => field.onChange(parseNumber(event.target.value))}
+                                            min={intervalUnit === "MINUTES" ? MIN_INTERVAL_MINUTES : 1}
+                                            step={1}
                                             error={fieldState.error?.message}
                                         />
                                     )}
                                 />
+                                <FormField
+                                    control={form.control}
+                                    name="interval_unit"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledSelect
+                                            label="Unidad"
+                                            options={UNIT_OPTIONS}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
+                                />
+                                {intervalUnit === "DAYS" && (
+                                    <FormField
+                                        control={form.control}
+                                        name="run_hour"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Hora de ejecución"
+                                                options={HOUR_OPTIONS}
+                                                value={Number.isNaN(field.value) ? "" : String(field.value)}
+                                                onChange={(value) => field.onChange(Number(value))}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                )}
                                 <FormField
                                     control={form.control}
                                     name="lookback_days"

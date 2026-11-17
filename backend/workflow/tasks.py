@@ -20,7 +20,7 @@ def daily_workflow_checks(self):
     Runs every day and checks WorkflowSettings.
     """
     settings = WorkflowSettings.get_settings()
-    today = timezone.now().date()
+    today = timezone.localdate()
     current_day = today.day
 
     # We reference the "Tax Period" which is usually the PREVIOUS month

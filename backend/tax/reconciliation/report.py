@@ -8,7 +8,19 @@ import calendar
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Exists, F, OuterRef, QuerySet, Sum
+from django.db.models import (
+    Case,
+    Count,
+    Exists,
+    F,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+    Sum,
+    Value,
+    When,
+)
 from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport, RCVImportSummary, RCVSettings
@@ -19,9 +31,11 @@ from core.fiscal_match import MatchStatus
 from treasury.models import TerminalSale, TreasuryMovement
 
 from .rcv import BOLETA_SII_CODES, DOCUMENT_SII_CODES, RCV_TO_FISCAL_DIRECTION
+from .terminal import sale_document_status_q
 
 SUMMARY_SII_CODES = (39, 41, 48)
 ONLY_ERP_CAP = 50
+PENDING_ISSUE_CAP = 50
 # Mismo criterio que `billing.fiscal_key.parse_folio`: dígitos (con puntos/espacios) y > 0.
 FOLIO_REGEX = r"^[0-9. ]*[1-9][0-9. ]*$"
 
@@ -40,18 +54,26 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
         "only_erp": [_item(i) for i in only_erp.order_by("date", "id")[:ONLY_ERP_CAP]] if only_erp is not None else [],
         "summaries": _summaries(year, month, first, last, lo, hi, start),
         "terminal": _terminal(first, last, lo, hi, start, settings.terminal_match_window_minutes),
+        "pending_issue": _pending_issue(first, last),
     }
 
 
-MISMATCH_STATUSES = (MatchStatus.ONLY_EXTERNAL, MatchStatus.AMOUNT_DIFF, MatchStatus.TYPE_DIFF, MatchStatus.AMBIGUOUS)
+MISMATCH_STATUSES = (
+    MatchStatus.ONLY_EXTERNAL,
+    MatchStatus.AMOUNT_DIFF,
+    MatchStatus.TYPE_DIFF,
+    MatchStatus.AMBIGUOUS,
+    MatchStatus.PENDING_ERP,
+)
 
 
 def fiscal_mismatch_counts(year: int, month: int) -> dict:
     """Diferencias del cuadre (RCV + ventas TUU) del mes; 2 consultas agregadas fijas.
 
     ``ONLY_ERP`` no se cuenta: el RCV puede llegar tarde. Las boletas RCV 39/41 sin venta
-    TUU ya entran como ``ONLY_EXTERNAL``; la venta TUU sin boleta no tiene estado propio
-    y solo se informa en el reporte (ADR-0139 D2).
+    TUU ya entran como ``ONLY_EXTERNAL`` y las que tienen venta TUU sin documento ERP como
+    ``PENDING_ERP`` (ADR-0140 D5); la venta TUU sin boleta no tiene estado propio y solo
+    se informa en el reporte (ADR-0139 D2).
     """
     first = date(year, month, 1)
     lo = _local_midnight(first)
@@ -145,14 +167,22 @@ def _totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
     return {row[key]: (row["n"] or 0, row["t"] or Decimal("0")) for row in rows}
 
 
+def _summary_status_q() -> Q:
+    """Como ``sale_document_status_q`` pero los borradores deben venir de una orden de venta."""
+    return Q(status=Invoice.Status.POSTED) | (
+        sale_document_status_q() & Q(sale_order__isnull=False)
+    )
+
+
 def _summaries(
     year: int, month: int, first: date, last: date, lo: datetime, hi: datetime, start: date | None
 ) -> list[dict]:
     # El código sale de `sii_code_expression`, así un `sii_document_code` explícito también cuenta.
+    # Los borradores 39/41/48 sin folio son ventas reales a la espera de su número (ADR-0140 D2).
     erp = _totals(
         _annotated_invoices()
         .filter(
-            status=Invoice.Status.POSTED, fiscal_direction="sale",
+            _summary_status_q(), fiscal_direction="sale",
             date__gte=first, date__lte=last, sii__in=SUMMARY_SII_CODES,
         )
         .values("sii").annotate(n=Count("id"), t=Sum("total")).order_by(),
@@ -263,10 +293,49 @@ def _terminal_only_erp(first: date, last: date, start: date | None, window_minut
     return (
         Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression())
         .filter(
-            status=Invoice.Status.POSTED, fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
+            _summary_status_q(), fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
             date__gte=since, date__lte=last,
             created_at__lt=timezone.now() - timedelta(minutes=window_minutes),
         )
         .filter(Exists(pos_payment), ~Exists(linked))
         .count()
     )
+
+
+def _pending_issue(first: date, last: date) -> dict:
+    """Borradores 39/41/48 sin folio del mes y por qué aún no se emiten (ADR-0140 D3).
+
+    ``NO_TUU``: sin venta TUU ``MATCHED``; ``ERROR``: el último intento de emisión
+    falló; ``WAITING_RCV``: boleta 39/41 cuya venta aún no tiene su boleta del RCV;
+    ``READY``: la próxima emisión automática la toma. Dos consultas fijas.
+    """
+    sale = TerminalSale.objects.filter(matched_invoice=OuterRef("pk"), match_status=MatchStatus.MATCHED)
+    drafts = (
+        _annotated_invoices()
+        .filter(
+            status=Invoice.Status.DRAFT, number="", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
+            sale_order__isnull=False, fiscal_direction="sale", date__gte=first, date__lte=last,
+        )
+        .annotate(
+            sale_error=Subquery(sale.values("issue_error")[:1]),
+            reason=Case(
+                When(~Exists(sale), then=Value("NO_TUU")),
+                When(Exists(sale.exclude(issue_error="")), then=Value("ERROR")),
+                When(
+                    Q(dte_type__in=(Invoice.DTEType.BOLETA, Invoice.DTEType.BOLETA_EXENTA))
+                    & ~Exists(sale.filter(rcv_document__isnull=False)),
+                    then=Value("WAITING_RCV"),
+                ),
+                default=Value("READY"),
+            ),
+        )
+    )
+    items = [
+        _item(inv) | {
+            "label": f"{inv.get_dte_type_display()} sin folio (#{inv.pk})",
+            "reason": inv.reason,
+            "error": inv.sale_error if inv.reason == "ERROR" else None,
+        }
+        for inv in drafts.order_by("date", "id")[:PENDING_ISSUE_CAP]
+    ]
+    return {"count": drafts.count(), "items": items}

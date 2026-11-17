@@ -55,7 +55,7 @@ class ReturnService:
                 unit_cost=move.unit_cost,
                 description=f"Anulación {doc.display_id}",
                 source_document=doc,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
             )
 
         doc.status = SaleReturn.Status.CANCELLED
@@ -76,7 +76,7 @@ class ReturnService:
         Creates a DRAFT SaleReturn from a Credit Note request (or standalone return).
         """
         if not date:
-            date = timezone.now().date()
+            date = timezone.localdate()
 
         try:
             warehouse = Warehouse.objects.get(id=warehouse_id)
@@ -318,12 +318,11 @@ class SalesReturnService:
         Creates and immediately confirms a merchandise return for a sale order.
         Called from the register_merchandise_return view action.
         """
-        import datetime
         ret_doc = ReturnService.create_return_from_note_request(
             order=order,
             items=return_items,
             warehouse_id=warehouse.id,
-            date=datetime.date.today().isoformat(),
+            date=timezone.localdate().isoformat(),
             notes=notes,
         )
         return ReturnService.confirm_return(ret_doc)

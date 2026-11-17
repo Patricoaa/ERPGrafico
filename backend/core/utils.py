@@ -33,7 +33,7 @@ def get_current_date():
     Returns the current date from the server (respects mock time).
     Used as default for DateFields to avoid AssertionError with DRF serialization.
     """
-    return timezone.now().date()
+    return timezone.localdate()
 
 
 def chunked(iterable: Iterable, size: int = 500) -> Iterator[list]:

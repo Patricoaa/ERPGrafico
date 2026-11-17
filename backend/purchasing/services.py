@@ -165,7 +165,7 @@ class PurchasingService:
             raise ValidationError("La orden ya está completamente recibida.")
 
         if not receipt_date:
-            receipt_date = timezone.now().date()
+            receipt_date = timezone.localdate()
 
         # Create Receipt
         receipt = PurchaseReceipt.objects.create(
@@ -214,7 +214,7 @@ class PurchasingService:
         2. Creates receipt and marks it as CONFIRMED.
         """
         if not receipt_date:
-            receipt_date = timezone.now().date()
+            receipt_date = timezone.localdate()
 
         # Create Receipt
         receipt = PurchaseReceipt.objects.create(
@@ -300,7 +300,7 @@ class PurchasingService:
             subscription_dates: dict mapping product_id to start_date string (YYYY-MM-DD)
         """
         if not receipt_date:
-            receipt_date = timezone.now().date()
+            receipt_date = timezone.localdate()
 
         # Create Receipt
         receipt = PurchaseReceipt.objects.create(
@@ -383,7 +383,7 @@ class PurchasingService:
         line_data = [{ 'line_id': 1, 'quantity': 5, 'unit_cost': 1000 }, ...]
         """
         if not receipt_date:
-            receipt_date = timezone.now().date()
+            receipt_date = timezone.localdate()
 
         # Create Receipt (acts as Return document)
         receipt = PurchaseReceipt.objects.create(
@@ -1078,7 +1078,7 @@ class PurchasingService:
                     description=f"{invoice.get_dte_type_display()} {document_number} ({order.display_id})",
                     journal_entry=entry,
                     source_document=invoice,
-                    date=timezone.now().date(),
+                    date=timezone.localdate(),
                 )
 
         # 7. Post the entry
@@ -1172,7 +1172,7 @@ class PurchasingService:
         if receipt.journal_entry:
             from tax.services import validate_period_open
 
-            validate_period_open(timezone.now().date(), action="anular la recepción")
+            validate_period_open(timezone.localdate(), action="anular la recepción")
             JournalEntryService.reverse_entry(
                 receipt.journal_entry, description=f"Anulación Recepción {receipt.number}"
             )
@@ -1190,7 +1190,7 @@ class PurchasingService:
                 unit_cost=move.unit_cost,
                 description=f"Anulación Recepción {receipt.number}",
                 source_document=receipt,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
             )
 
         for line in receipt.lines.all():
@@ -1356,7 +1356,7 @@ class PurchasingService:
             supplier_invoice_number=document_number,
             dte_type=dte_type,
             document_attachment=document_attachment,
-            date=document_date or timezone.now().date(),
+            date=document_date or timezone.localdate(),
             status=invoice_status,
         )
 
@@ -1397,7 +1397,7 @@ class PurchasingService:
                         card_account=card_account,
                         installments=installments,
                         monthly_rate=Decimal("0"),
-                        date=document_date or timezone.now().date(),
+                        date=document_date or timezone.localdate(),
                         partner=order.supplier,
                         invoice=invoice,
                         purchase_order=order,
@@ -1419,7 +1419,7 @@ class PurchasingService:
                     partner=order.supplier,
                     invoice=invoice,
                     purchase_order=order,
-                    date=document_date or timezone.now().date(),
+                    date=document_date or timezone.localdate(),
                     created_by=user,
                     check_number=check_number,
                     check_bank_id=check_bank_id,
@@ -1476,7 +1476,7 @@ class PurchasingService:
             receipt = PurchasingService.receive_order(
                 order=order,
                 warehouse=target_warehouse or Warehouse.objects.first(),
-                receipt_date=timezone.now().date(),
+                receipt_date=timezone.localdate(),
                 delivery_reference=receipt_data.get("delivery_reference", "")
                 if receipt_data
                 else "",
@@ -1488,7 +1488,7 @@ class PurchasingService:
                 order=order,
                 warehouse=warehouse,
                 line_data=receipt_data.get("line_data", []),
-                receipt_date=receipt_data.get("receipt_date") or timezone.now().date(),
+                receipt_date=receipt_data.get("receipt_date") or timezone.localdate(),
                 delivery_reference=receipt_data.get("delivery_reference", ""),
                 notes=receipt_data.get("notes", ""),
                 subscription_dates=subscription_dates,

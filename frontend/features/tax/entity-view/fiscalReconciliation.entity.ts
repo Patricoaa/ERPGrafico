@@ -1,5 +1,5 @@
-import { defineEntity } from "@/components/entity-view"
-import type { OnlyErpDocument, ReconciliationSummary } from "../types/reconciliation"
+import { defineEntity, type StatusValue } from "@/components/entity-view"
+import type { OnlyErpDocument, PendingIssueDocument, ReconciliationSummary } from "../types/reconciliation"
 
 /** Boletas y comprobantes que se cuadran por resumen mensual (ADR-0138). */
 const SUMMARY_DTE_LABELS: Record<number, string> = {
@@ -45,4 +45,45 @@ export const onlyErpDocumentEntity = defineEntity<OnlyErpDocument>()((f) => ({
 export const onlyErpDocumentViews = onlyErpDocumentEntity.views({
     table: { columns: ["label", "date", "amount"], primary: "label" },
     card: { title: "label", subtitle: ["date"], trailing: ["amount"] },
+})
+
+const ERROR_PREVIEW_CHARS = 40
+
+/** «Error al emitir» con un extracto corto; el texto completo va en la columna «Detalle». */
+function errorLabel(error: string | null): string {
+    const text = (error ?? "").trim()
+    if (!text) return "Error al emitir"
+    const preview = text.length > ERROR_PREVIEW_CHARS ? `${text.slice(0, ERROR_PREVIEW_CHARS).trimEnd()}…` : text
+    return `Error al emitir: ${preview}`
+}
+
+/** Motivo de un borrador pendiente de folio, para `StatusBadge`. */
+export function pendingIssueReason(doc: PendingIssueDocument): StatusValue {
+    switch (doc.reason) {
+        case "NO_TUU":
+            return { status: "NO_TUU", label: "Sin venta TUU", intent: "warning" }
+        case "WAITING_RCV":
+            return { status: "WAITING_RCV", label: "Esperando RCV", intent: "info" }
+        case "ERROR":
+            return { status: "ERROR", label: errorLabel(doc.error), intent: "destructive" }
+        case "READY":
+            return { status: "READY", label: "Lista para emitir", intent: "success" }
+    }
+}
+
+/** Boletas y comprobantes en borrador a la espera de su número fiscal (ADR-0140). */
+export const pendingIssueDocumentEntity = defineEntity<PendingIssueDocument>()((f) => ({
+    title: "Boletas pendientes de folio",
+    fields: {
+        label: f.text("label", { label: "Documento" }),
+        date: f.date("date", { label: "Fecha" }),
+        amount: f.money((r) => amount(r.amount), { label: "Monto" }),
+        reason: f.status(pendingIssueReason, { label: "Motivo" }),
+        error: f.text("error", { label: "Detalle", tone: "secondary" }),
+    },
+}))
+
+export const pendingIssueDocumentViews = pendingIssueDocumentEntity.views({
+    table: { columns: ["label", "date", "amount", "reason", "error"], primary: "label" },
+    card: { title: "label", subtitle: ["date", "reason", "error"], trailing: ["amount"] },
 })

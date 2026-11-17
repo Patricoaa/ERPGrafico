@@ -133,7 +133,7 @@ class TreasuryService:
             raise ValidationError("El monto debe ser mayor a cero.")
 
         if not date:
-            date = timezone.now().date()
+            date = timezone.localdate()
 
         # 1. Account Logic Resolution
         # Ensure we have valid accounts for the movement type (except for CREDIT_BALANCE)
@@ -823,7 +823,7 @@ class TreasuryService:
         elif isinstance(date, datetime):
             date = date.date()
         if not date:
-            date = timezone.now().date()
+            date = timezone.localdate()
 
         # Idempotencia por client_reference.
         if client_reference:
@@ -1059,7 +1059,7 @@ class TreasuryService:
         if movement.journal_entry and movement.journal_entry.status == JournalEntry.State.POSTED:
             from tax.services import validate_period_open
 
-            validate_period_open(timezone.now().date(), action="anular el movimiento")
+            validate_period_open(timezone.localdate(), action="anular el movimiento")
             JournalEntryService.reverse_entry(
                 movement.journal_entry,
                 description=f"Anulación Movimiento {movement.id}",
@@ -1379,8 +1379,8 @@ class TerminalBatchService:
             payment_method=payment_method,
             sales_date=sales_date,
             sales_date_end=sales_date_end,
-            settlement_date=timezone.now().date(),  # Or passed as arg
-            deposit_date=timezone.now().date(),  # Assuming deposit happens on settlement report
+            settlement_date=timezone.localdate(),  # Or passed as arg
+            deposit_date=timezone.localdate(),  # Assuming deposit happens on settlement report
             gross_amount=gross_amount,
             commission_base=commission_base,
             commission_tax=commission_tax,
@@ -1509,7 +1509,7 @@ class TerminalBatchService:
 
         po = PurchaseOrder.objects.create(
             supplier=supplier,
-            date=date or timezone.now().date(),
+            date=date or timezone.localdate(),
             notes=f"Comisiones Terminales {month}/{year}",
             payment_method=PurchaseOrder.PaymentMethod.CREDIT,
         )
@@ -1540,7 +1540,7 @@ class TerminalBatchService:
         BillingService.create_purchase_bill(
             po,
             supplier_invoice_number=number or f"COM-{po.number}",
-            date=date or timezone.now().date()
+            date=date or timezone.localdate()
         )
 
         # Re-fetch invoice linked to PO
@@ -1582,7 +1582,7 @@ class TerminalBatchService:
         doc_ref = f"BRIDGE-{invoice.display_id}"
 
         bridge_entry = JournalEntry.objects.create(
-            date=date or timezone.now().date(),
+            date=date or timezone.localdate(),
             description=GlosaBuilder.build(
                 GlosaBuilder.TRASPASO_CONCILIACION, doc_ref, provider.name, bridge_total,
             ),

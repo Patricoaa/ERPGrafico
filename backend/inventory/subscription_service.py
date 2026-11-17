@@ -102,7 +102,7 @@ class SubscriptionService:
                 new_date = current_next.replace(day=last_day)
 
             # If the adjusted date is in the past, move it to the next valid period
-            if new_date < timezone.now().date():
+            if new_date < timezone.localdate():
                 subscription.next_payment_date = SubscriptionService.calculate_next_payment_date(
                     subscription, from_date=current_next
                 )
@@ -111,7 +111,7 @@ class SubscriptionService:
 
         # For interval, we just keep the current next_payment_date unless it's past
         elif product.payment_day_type == Product.PaymentDayType.INTERVAL:
-            if current_next < timezone.now().date():
+            if current_next < timezone.localdate():
                 subscription.next_payment_date = SubscriptionService.calculate_next_payment_date(
                     subscription
                 )
@@ -133,7 +133,7 @@ class SubscriptionService:
         if subscription.status != Subscription.Status.ACTIVE:
             return False
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         threshold = today + timedelta(days=days_before)
 
         return subscription.next_payment_date <= threshold

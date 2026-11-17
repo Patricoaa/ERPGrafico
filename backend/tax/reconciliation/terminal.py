@@ -16,6 +16,7 @@ from django.utils.translation import gettext as _
 
 from accounting.models import RCVSettings
 from billing.models import Invoice
+from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import MatchStatus
 from treasury.models import POSTerminal, TerminalSale, TreasuryMovement
 
@@ -26,6 +27,22 @@ SALE_DTE_TYPES = (
     Invoice.DTEType.FACTURA,
     Invoice.DTEType.FACTURA_EXENTA,
 )
+
+
+def sale_document_status_q(prefix: str = "") -> Q:
+    """Estado de un documento de venta que el cuadre considera (ADR-0140 D2).
+
+    Los emitidos, y los borradores 39/41/48 sin número: el proveedor del terminal
+    emite su folio y el ERP lo recibe después. ``prefix`` es la ruta hasta la
+    factura (p. ej. ``"invoice__"``).
+    """
+    return Q(**{f"{prefix}status": Invoice.Status.POSTED}) | Q(
+        **{
+            f"{prefix}status": Invoice.Status.DRAFT,
+            f"{prefix}dte_type__in": FOLIO_EXEMPT_DTE_TYPES,
+            f"{prefix}number": "",
+        }
+    )
 
 
 @transaction.atomic
@@ -95,8 +112,8 @@ def _border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[T
 def _candidate_movements(lo: datetime, hi: datetime) -> list[TreasuryMovement]:
     return list(
         TreasuryMovement.objects.filter(
+            sale_document_status_q("invoice__"),
             movement_type=TreasuryMovement.Type.INBOUND,
-            invoice__status=Invoice.Status.POSTED,
             invoice__sale_order__isnull=False,
             invoice__dte_type__in=SALE_DTE_TYPES,
             created_at__gte=lo,
@@ -176,11 +193,11 @@ def _assign(
 
 
 def _sale_documents() -> "models.QuerySet[Invoice]":
-    return Invoice.objects.filter(status=Invoice.Status.POSTED, sale_order__isnull=False)
+    return Invoice.objects.filter(sale_document_status_q(), sale_order__isnull=False)
 
 
 def terminal_sale_candidates(sale: TerminalSale) -> "models.QuerySet[Invoice]":
-    """Documentos de venta emitidos del mismo día local y monto, sin otra venta enlazada."""
+    """Documentos de venta (emitidos o borradores sin folio) del mismo día local y monto, sin otra venta enlazada."""
     day = timezone.localdate(sale.transaction_at)
     return (
         _sale_documents()
@@ -193,7 +210,7 @@ def terminal_sale_candidates(sale: TerminalSale) -> "models.QuerySet[Invoice]":
 def match_terminal_sale(sale: TerminalSale, invoice: Invoice) -> TerminalSale:
     """Vínculo manual: queda protegido del recálculo (`matched_manually`)."""
     if not _sale_documents().filter(pk=invoice.pk).exists():
-        raise ValidationError(_("El documento no es un documento de venta emitido."))
+        raise ValidationError(_("El documento no es un documento de venta válido para cuadrar."))
     taken = _("El documento ya está vinculado a otra venta.")
     if TerminalSale.objects.filter(matched_invoice=invoice).exclude(pk=sale.pk).exists():
         raise ValidationError(taken)
@@ -201,9 +218,10 @@ def match_terminal_sale(sale: TerminalSale, invoice: Invoice) -> TerminalSale:
     sale.matched_invoice = invoice
     sale.matched_manually = True
     sale.match_status = MatchStatus.TYPE_DIFF if type_diff else MatchStatus.MATCHED
+    _clear_issue_attempt(sale)
     try:
         with transaction.atomic():
-            sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+            sale.save(update_fields=["matched_invoice", "matched_manually", "match_status", *_ISSUE_FIELDS])
     except IntegrityError as exc:
         # Otra venta enlazó el documento entre la lectura y el guardado.
         raise ValidationError(taken) from exc
@@ -216,9 +234,19 @@ def unmatch_terminal_sale(sale: TerminalSale) -> TerminalSale:
     sale.matched_invoice = None
     sale.matched_manually = False
     sale.match_status = ""
-    sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    _clear_issue_attempt(sale)
+    sale.save(update_fields=["matched_invoice", "matched_manually", "match_status", *_ISSUE_FIELDS])
     _propagate_to_boleta(sale, None)
     return sale
+
+
+_ISSUE_FIELDS = ("issue_attempted_at", "issue_error")
+
+
+def _clear_issue_attempt(sale: TerminalSale) -> None:
+    """Un vínculo nuevo (o ninguno) deja sin efecto el error de emisión anterior (ADR-0140)."""
+    sale.issue_attempted_at = None
+    sale.issue_error = ""
 
 
 def _propagate_to_boleta(sale: TerminalSale, invoice: Invoice | None) -> None:

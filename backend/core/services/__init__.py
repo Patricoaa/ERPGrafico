@@ -94,7 +94,7 @@ class BaseNoteService:
         from billing.models import Invoice
 
         total_amount = amount_net + amount_tax
-        doc_date = date or timezone.now().date()
+        doc_date = date or timezone.localdate()
 
         # 1. Create Invoice Record
         invoice_data = {

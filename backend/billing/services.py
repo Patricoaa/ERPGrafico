@@ -500,7 +500,6 @@ class BillingService:
         amount: Decimal | None = None,
         line_shares: list[LineShare] | None = None,
         net_tax_discount: tuple[Decimal, Decimal, Decimal] | None = None,
-        folio_exempt: bool = False,
         link_advances: bool = True,
     ):
         """
@@ -510,12 +509,11 @@ class BillingService:
         - Sin `amount` la factura es espejo completo de la OV.
         - Con `amount` factura una porción: `total=amount`, `(neto, IVA, descuento)` =
           `net_tax_discount` y las líneas salen de `line_shares`.
-        - El ERP no inventa folios. Sin `number` el documento baja a borrador, salvo que
-          `folio_exempt` y el tipo lo emita el proveedor (boleta / comprobante): queda POSTED.
+        - El ERP no inventa folios. Sin `number` el documento baja a borrador, también las
+          boletas y comprobantes (ADR-0140 D1: su folio lo asigna la emisión automática).
         - `link_advances=False` no concilia los anticipos de la OV con este documento.
         """
         from billing.dte_policy import validate_configured_dte_type
-        from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 
         validate_configured_dte_type(side="emit", dte_type=dte_type)
 
@@ -545,15 +543,13 @@ class BillingService:
 
         # ADR-0084: emitida (POSTED) exige folio. Sin folio la factura nace en borrador
         # (folio pendiente; su asiento queda en borrador hasta confirm_invoice).
-        # ADR-0138 D3: boletas y comprobantes POS los emite el proveedor; su folio llega
-        # después, así que con `folio_exempt` quedan POSTED sin número.
+        # ADR-0140 D1: ningún documento sin folio queda POSTED, tampoco 39/41/48.
         if status == Invoice.Status.POSTED and not number:
-            if not (folio_exempt and dte_type in FOLIO_EXEMPT_DTE_TYPES):
-                status = Invoice.Status.DRAFT
+            status = Invoice.Status.DRAFT
 
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
-            doc_date = date or timezone.now().date()
+            doc_date = date or timezone.localdate()
             from tax.services import AccountingPeriodService, TaxPeriodService
 
             if TaxPeriodService.is_period_closed(doc_date):
@@ -585,7 +581,7 @@ class BillingService:
         invoice = Invoice.objects.create(
             dte_type=dte_type,
             number=number or "",
-            date=date or timezone.now().date(),
+            date=date or timezone.localdate(),
             sale_order=order,
             payment_method=payment_method,
             total_net=total_net,
@@ -635,7 +631,7 @@ class BillingService:
             customer_name = order.customer.name
 
             recon_entry = JournalEntry.objects.create(
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 description=GlosaBuilder.build(
                     GlosaBuilder.CONCILIACION_ANTICIPOS, doc_id, customer_name, total_advanced,
                 ),
@@ -710,7 +706,7 @@ class BillingService:
 
         # Tax & Accounting Period Validation (Only for POSTED documents)
         if status != Invoice.Status.DRAFT:
-            doc_date = date or timezone.now().date()
+            doc_date = date or timezone.localdate()
             from tax.services import AccountingPeriodService, TaxPeriodService
 
             if TaxPeriodService.is_period_closed(doc_date):
@@ -735,7 +731,7 @@ class BillingService:
             dte_type=dte_type,
             number=supplier_invoice_number,
             document_attachment=document_attachment,
-            date=date or timezone.now().date(),
+            date=date or timezone.localdate(),
             purchase_order=order,
             total_net=order.total_net,
             total_tax=order.total_tax,
@@ -805,7 +801,7 @@ class BillingService:
             supplier_name = order.supplier.name
 
             recon_entry = JournalEntry.objects.create(
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 description=GlosaBuilder.build(
                     GlosaBuilder.CONCILIACION_ANTICIPOS, doc_id, supplier_name, total_prepaid,
                 ),
@@ -1012,7 +1008,7 @@ class BillingService:
 
         # Tax & Accounting Period Validation (Only if NOT pending registration)
         if not is_pending_registration:
-            doc_date = document_date or timezone.now().date()
+            doc_date = document_date or timezone.localdate()
             from tax.services import AccountingPeriodService, TaxPeriodService
 
             if TaxPeriodService.is_period_closed(doc_date):
@@ -1300,11 +1296,18 @@ class BillingService:
         # ADR-0138 D3: `dte_type` es la clase de documento. La parte de una boleta
         # cobrada con terminal integrado es un 48 (lo emite TUU) y el resto un 39.
         from . import pos_checkout_documents as checkout_docs
-        from .sale_documents import folio_exempt_for_session, plan_sale_documents
+        from .sale_documents import plan_sale_documents
 
         allocations = payments if use_multi_payment else None
         methods = checkout_docs.load_payment_methods(allocations, payment_method_id)
-        invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
+        from .invoicing import PRIMARY_DTE_TYPES
+
+        invoice = (
+            order.invoices.filter(dte_type__in=PRIMARY_DTE_TYPES)
+            .exclude(status=Invoice.Status.CANCELLED)
+            .order_by("id")
+            .first()
+        )
         if invoice:
             invoice.checkout_documents = [invoice]
             invoice_by_payment = {}
@@ -1318,7 +1321,6 @@ class BillingService:
                 order, plans, payment_method=payment_method,
                 status=Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED,
                 number=document_number, date=document_date, attachment=document_attachment,
-                folio_exempt=folio_exempt_for_session(pos_session_id),
             )
             invoice = documents[0]
             invoice.checkout_documents = documents
@@ -1326,7 +1328,7 @@ class BillingService:
 
         # 4. Create Payment(s)
         movement_date = (
-            invoice.date if invoice is not None else (document_date or timezone.now().date())
+            invoice.date if invoice is not None else (document_date or timezone.localdate())
         )
 
         # Determine which payment allocations to process
@@ -1646,7 +1648,7 @@ class BillingService:
 
         invoice.number = number
         if date:
-            invoice.date = date
+            invoice.date = target_date
         if document_attachment:
             invoice.document_attachment = document_attachment
 
@@ -1667,6 +1669,11 @@ class BillingService:
                 )
 
             entry.reference = f"{invoice.dte_type[:3]}-{number}"
+            # El asiento borrador sigue la fecha fiscal del documento; el período se
+            # re-deriva de la nueva fecha en JournalEntry.save (ya validado arriba).
+            if entry.status == JournalEntry.State.DRAFT and entry.date != target_date:
+                entry.date = target_date
+                entry.accounting_period = None
             entry.save()
 
             # Post entry if it's still in DRAFT (which it is for Draft/Paid-Draft invoices)
@@ -1840,7 +1847,7 @@ class BillingService:
 
             from tax.services import validate_period_open
 
-            validate_period_open(timezone.now().date(), action="anular la factura")
+            validate_period_open(timezone.localdate(), action="anular la factura")
             JournalEntryService.reverse_entry(
                 invoice.journal_entry, description=f"Anulación Factura {invoice.number}"
             )

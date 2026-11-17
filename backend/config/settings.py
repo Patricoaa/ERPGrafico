@@ -523,11 +523,11 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
     },
     # ── Treasury / Ventas de terminal (TUU) ─────────────────────────────────
-    # Cada hora revisa si corresponde la sincronización diaria (una por proveedor
-    # y día local, pasada la hora configurada en TerminalSyncSettings).
-    "dispatch_terminal_sales_sync_hourly": {
+    # Cada minuto revisa si se cumplió el intervalo configurado en TerminalSyncSettings
+    # (minutos, horas o días; en días respeta la hora de ejecución).
+    "dispatch_terminal_sales_sync": {
         "task": "treasury.tasks.dispatch_terminal_sales_sync",
-        "schedule": crontab(minute=10),  # Hourly at XX:10
+        "schedule": crontab(minute="*"),  # Every minute
     },
     # ── Accounting / Importación RCV (SimpleAPI) ────────────────────────────
     # Cada hora revisa si corresponde la importación automática (intervalo y hora
@@ -535,6 +535,15 @@ CELERY_BEAT_SCHEDULE = {
     "dispatch_rcv_imports_hourly": {
         "task": "accounting.tasks.dispatch_rcv_imports",
         "schedule": crontab(minute=20),  # Hourly at XX:20
+    },
+    # ── Tax / Fiscal reconciliation ─────────────────────────────────────────
+    # Every 10 min, on local data only: terminal sales → RCV boletas → issue
+    # fiscal drafts (39/41/48) → boletas again, for the current month (and the
+    # previous one during the first 10 days). Cache lock prevents overlap
+    # (ADR-0140 D4).
+    "run_fiscal_reconciliation_10min": {
+        "task": "tax.tasks.run_fiscal_reconciliation",
+        "schedule": crontab(minute="*/10"),  # Every 10 minutes
     },
     # ── Core / Idempotency ───────────────────────────────────────────────────
     # Purges IdempotencyRecord rows older than the 24h TTL defined by contract

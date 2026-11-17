@@ -1853,6 +1853,9 @@ class TerminalSyncLastRunSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+MIN_SYNC_INTERVAL_MINUTES = 5
+
+
 class TerminalSyncSettingsSerializer(serializers.ModelSerializer):
     last_run = serializers.SerializerMethodField()
 
@@ -1862,6 +1865,8 @@ class TerminalSyncSettingsSerializer(serializers.ModelSerializer):
             "id",
             "enabled",
             "run_hour",
+            "interval_value",
+            "interval_unit",
             "lookback_days",
             "history_start_date",
             "max_retries",
@@ -1869,6 +1874,20 @@ class TerminalSyncSettingsSerializer(serializers.ModelSerializer):
             "last_run",
         ]
         read_only_fields = ["id", "last_run"]
+
+    def validate(self, attrs):
+        unit = attrs.get("interval_unit", getattr(self.instance, "interval_unit", None))
+        value = attrs.get("interval_value", getattr(self.instance, "interval_value", None))
+        is_minutes = unit == TerminalSyncSettings.IntervalUnit.MINUTES
+        if is_minutes and value is not None and value < MIN_SYNC_INTERVAL_MINUTES:
+            raise serializers.ValidationError(
+                {
+                    "interval_value": (
+                        f"El intervalo mínimo en minutos es {MIN_SYNC_INTERVAL_MINUTES}."
+                    )
+                }
+            )
+        return attrs
 
     def get_last_run(self, obj):
         run = self.context.get("last_run")
@@ -1958,6 +1977,8 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "matched_manually",
             "rcv_document",
             "rcv_folio",
+            "issue_attempted_at",
+            "issue_error",
         ]
         read_only_fields = fields
 

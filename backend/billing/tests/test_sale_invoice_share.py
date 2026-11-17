@@ -109,18 +109,7 @@ def test_share_invoice_rejects_net_plus_tax_not_matching_amount(env):
 
 
 @pytest.mark.django_db
-def test_boleta_without_folio_exempt_is_posted(env):
-    order = _order(env)
-
-    inv = BillingService.create_sale_invoice(order, BOLETA, number=None, folio_exempt=True)
-
-    assert inv.status == Invoice.Status.POSTED
-    assert inv.number == ""
-    assert inv.display_id.endswith(f"-#{inv.pk}")
-
-
-@pytest.mark.django_db
-def test_boleta_without_folio_not_exempt_is_draft(env):
+def test_boleta_without_folio_is_draft(env):
     order = _order(env)
 
     inv = BillingService.create_sale_invoice(order, BOLETA, number=None)
@@ -130,10 +119,10 @@ def test_boleta_without_folio_not_exempt_is_draft(env):
 
 
 @pytest.mark.django_db
-def test_factura_never_folio_exempt(env):
+def test_factura_without_folio_is_draft(env):
     order = _order(env)
 
-    inv = BillingService.create_sale_invoice(order, FACTURA, number=None, folio_exempt=True)
+    inv = BillingService.create_sale_invoice(order, FACTURA, number=None)
 
     assert inv.status == Invoice.Status.DRAFT
 

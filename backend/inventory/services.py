@@ -39,7 +39,7 @@ class SubscriptionService:
     @staticmethod
     def cancel_subscription(subscription: Subscription) -> Subscription:
         subscription.status = Subscription.Status.CANCELLED
-        subscription.end_date = timezone.now().date()
+        subscription.end_date = timezone.localdate()
         subscription.save()
         return subscription
 
@@ -252,7 +252,7 @@ class InventoryService:
 
             if items:
                 entry = JournalEntry.objects.create(
-                    date=timezone.now().date(),
+                    date=timezone.localdate(),
                     description=GlosaBuilder.build(
                         GlosaBuilder.AJUSTE_STOCK, document.reference or str(document.id), document.notes, total_value
                     ),
@@ -452,7 +452,7 @@ class StockService:
         doc = InventoryDocument.objects.create(
             document_type=InventoryDocument.Type.ADJUSTMENT,
             status=InventoryDocument.Status.DRAFT,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             reference=adjustment_reason or "Ajuste Manual",
             notes=description,
         )
@@ -602,7 +602,7 @@ class StockService:
         doc = InventoryDocument.objects.create(
             document_type=doc_type,
             status=InventoryDocument.Status.DRAFT,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             reference="Aporte en Especie" if is_contribution else "Retiro en Especie",
             notes=description,
             partner=partner_contact,
@@ -673,7 +673,7 @@ class StockService:
         if total_value > 0:
             from django.contrib.contenttypes.models import ContentType
             entry_data = {
-                "date": timezone.now().date(),
+                "date": timezone.localdate(),
                 "description": GlosaBuilder.build(
                     GlosaBuilder.AJUSTE_STOCK, str(doc.id), doc.notes, total_value
                 ),
@@ -712,7 +712,7 @@ class StockService:
             partner=partner_contact,
             transaction_type=target_tx_type,
             amount=total_value,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             description=f"{description} - {product.internal_code}",
             journal_entry=entry,
             stock_move=move,
@@ -759,7 +759,7 @@ class PricingService:
         Calculates the best price for a product given a quantity, date and specific UoM.
         """
         if date is None:
-            date = timezone.now().date()
+            date = timezone.localdate()
 
         if uom is None:
             uom = product.uom if hasattr(product, "uom") else None
@@ -1555,11 +1555,10 @@ class ProductService:
             return
 
         from collections import defaultdict
-        from datetime import date
 
         from accounting.utils import get_vat_multiplier
 
-        today = date.today()
+        today = timezone.localdate()
         product_ids = [p.id for p in products]
         category_ids = list({p.category_id for p in products if p.category_id})
         parent_ids = list(

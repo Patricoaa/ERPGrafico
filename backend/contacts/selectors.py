@@ -390,7 +390,7 @@ class ContactSelector:
             ),
         )
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         contact_list = []
         summary = {
             "total_debt": Decimal("0"),
@@ -502,7 +502,7 @@ class ContactSelector:
 
         from core.documents import build_ref
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         payment_term = contact.credit_days or 30
 
         orders = (

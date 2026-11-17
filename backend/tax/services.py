@@ -885,7 +885,7 @@ class F29PaymentService:
         # Create payment record
         payment = F29Payment.objects.create(
             declaration=declaration,
-            payment_date=payment_data.get("payment_date", timezone.now().date()),
+            payment_date=payment_data.get("payment_date", timezone.localdate()),
             amount=payment_data["amount"],
             payment_method=payment_data.get("payment_method", F29Payment.PaymentMethod.TRANSFER),
             reference=payment_data.get("reference", ""),

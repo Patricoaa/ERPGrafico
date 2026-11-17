@@ -19,6 +19,7 @@ from .reconciliation.feeding import (
     draft_suggestions,
     supplier_purchase_orders,
 )
+from .reconciliation.issuing import issue_fiscal_drafts
 from .reconciliation.rcv import (
     match_rcv_document,
     rcv_document_candidates,
@@ -54,6 +55,13 @@ def _period(data) -> tuple[int, int]:
     return body.validated_data["year"], body.validated_data["month"]
 
 
+def _boletas_and_issue(year: int, month: int) -> dict:
+    """Cuadra boletas, emite los borradores con folio y vuelve a cuadrar (ADR-0140 D4)."""
+    reconcile_rcv_boletas(year, month)
+    issued = issue_fiscal_drafts(year, month, retry_failed=True)  # manual: sin esperar el reintento
+    return {"boletas": reconcile_rcv_boletas(year, month), "issued": issued}
+
+
 def _rcv_link(doc: RCVDocument, code: int = status.HTTP_200_OK) -> Response:
     data = {"id": doc.pk, "match_status": doc.match_status, "matched_invoice": doc.matched_invoice_id}
     return Response(data, status=code)
@@ -81,7 +89,7 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
         year, month = body.validated_data["year"], body.validated_data["month"]
         last = calendar.monthrange(year, month)[1]
         counts = reconcile_terminal_sales(date(year, month, 1), date(year, month, last))
-        return Response({**counts, "boletas": reconcile_rcv_boletas(year, month)})
+        return Response({**counts, **_boletas_and_issue(year, month)})
 
     @action(detail=False, methods=["get"], url_path=f"{_SALE}/candidates")
     def candidates(self, request, sale_id=None):
@@ -107,7 +115,7 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
         return Response({
             "purchase": reconcile_rcv_period(RCVImport.Direction.PURCHASES, year, month),
             "sale": reconcile_rcv_period(RCVImport.Direction.SALES, year, month),
-            "boletas": reconcile_rcv_boletas(year, month),
+            **_boletas_and_issue(year, month),
         })
 
     @action(detail=False, methods=["get"], url_path=f"{_DOC}/candidates")

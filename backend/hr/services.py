@@ -801,7 +801,7 @@ class PayrollPaymentService:
             "payment_date": (
                 request.data.get("documentDate")
                 or request.data.get("date")
-                or timezone.now().date().isoformat()
+                or timezone.localdate().isoformat()
             ),
             "payment_method": request.data.get("paymentMethod", "TRANSFER"),
             "payment_method_id": request.data.get("payment_method_new"),

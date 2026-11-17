@@ -131,9 +131,37 @@ def test_amount_mismatch_is_only_external(env):
     assert sale.match_status == MatchStatus.ONLY_EXTERNAL
 
 
-def test_draft_invoice_is_not_candidate(env):
-    make_pos_document(env, 6000, T0, status=Invoice.Status.DRAFT)
+def test_draft_pos_boleta_is_candidate(env):
+    """ADR-0140 D2: el 39/48 sin folio nace en borrador y el cruce lo toma."""
+    boleta = make_pos_document(env, 4000, T0, dte_type=Invoice.DTEType.BOLETA, method="CASH",
+                               status=Invoice.Status.DRAFT)
+    comprobante = make_pos_document(env, 6000, T0, status=Invoice.Status.DRAFT)
+    cash = make_terminal_sale(env, 4000, T0, payment_type=TerminalSale.PaymentType.CASH, document_type=39)
+    card = make_terminal_sale(env, 6000, T0, document_type=48)
+
+    result = run()
+
+    _reload(cash, card)
+    assert cash.match_status == card.match_status == MatchStatus.MATCHED
+    assert cash.matched_invoice_id == boleta.id
+    assert card.matched_invoice_id == comprobante.id
+    assert result == {MatchStatus.MATCHED: 2}
+
+
+def test_draft_with_number_is_not_candidate(env):
+    inv = make_pos_document(env, 6000, T0, status=Invoice.Status.DRAFT)
+    Invoice.objects.filter(pk=inv.pk).update(number="123")
     sale = make_terminal_sale(env, 6000, T0)
+
+    run()
+
+    _reload(sale)
+    assert sale.match_status == MatchStatus.ONLY_EXTERNAL
+
+
+def test_draft_factura_is_not_candidate(env):
+    make_pos_document(env, 6000, T0, dte_type=Invoice.DTEType.FACTURA, status=Invoice.Status.DRAFT)
+    sale = make_terminal_sale(env, 6000, T0, document_type=33)
 
     run()
 

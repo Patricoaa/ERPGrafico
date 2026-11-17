@@ -48,7 +48,7 @@ class PartnerService:
         contact_id = payload.get("contact_id")
         amount = Decimal(str(payload.get("amount", "0")))
         move_type = payload.get("type")  # 'SUBSCRIPTION' or 'REDUCTION'
-        date = payload.get("date", timezone.now().date())
+        date = payload.get("date", timezone.localdate())
         description = payload.get("description", "")
 
         if amount <= 0:
@@ -161,9 +161,9 @@ class PartnerService:
                         else as_of_date
                     )
                 except (ValueError, TypeError):
-                    contact.partner_since = timezone.now().date()
+                    contact.partner_since = timezone.localdate()
             else:
-                contact.partner_since = timezone.now().date()
+                contact.partner_since = timezone.localdate()
 
         contact.save(update_fields=["is_partner", "partner_since"])
         return contact
@@ -774,7 +774,7 @@ class PartnerService:
         if not buyer.is_partner:
             buyer.is_partner = True
             if not buyer.partner_since:
-                buyer.partner_since = date if not isinstance(date, str) else timezone.now().date()
+                buyer.partner_since = date if not isinstance(date, str) else timezone.localdate()
             buyer.save()
 
         seller_social_account = PartnerService._resolve_partner_social_account(seller)

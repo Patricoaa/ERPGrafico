@@ -39,7 +39,7 @@ if not movement:
         movement_type='INBOUND',
         payment_method_new=payment_method,
         contact=contact,
-        date=timezone.now().date(),
+        date=timezone.localdate(),
         created_by=user
     )
 

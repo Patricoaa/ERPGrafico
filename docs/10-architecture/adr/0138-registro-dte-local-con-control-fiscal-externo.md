@@ -47,6 +47,8 @@ La evaluación (2026-11-15) encontró que no conviene quedarse con un solo regis
 
 ### D3. El documento de venta se deriva del pago (fase 2)
 
+> Enmendado por ADR-0140: las boletas y comprobantes sin folio nacen en borrador y se emiten con el folio del RCV o el id de TUU.
+
 - En el paso Documento del wizard de venta se elige la **clase** del documento: **boleta** (consumidor final, afecta o exenta) o **factura** (33/34).
 - **Factura:** no cambia nada. El pago con terminal es solo el medio de pago.
 - **Boleta:** el tipo se decide al confirmar el pago, por cada porción pagada.

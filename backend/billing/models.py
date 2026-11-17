@@ -238,9 +238,6 @@ class Invoice(TransactionalDocument):
         # FACTURA se usa para ventas y compras: FACV para venta, FACC para compra
         if self.dte_type == self.DTEType.FACTURA and self.purchase_order_id:
             prefix = EntityPrefix.INVOICE_COMPRA
-        # ADR-0138 D3: boleta/comprobante POS emitido sin folio aún (lo asigna el proveedor)
-        if self.status == self.Status.POSTED and self.number == "":
-            return f"{prefix}-#{self.pk}"
         number_display = fmt_seq_num(self.number) if self.number else "Draft"
         return f"{prefix}-{number_display}"
 

@@ -50,7 +50,7 @@ def get_balance_sheet_data(request):
         request,
         "balance_sheet",
         FinanceService.get_balance_sheet,
-        default_end=timezone.now().date(),
+        default_end=timezone.localdate(),
     )
 
 
@@ -62,8 +62,8 @@ def get_income_statement_data(request):
         request,
         "income_statement",
         FinanceService.get_income_statement,
-        default_start=date(timezone.now().date().year, 1, 1),
-        default_end=timezone.now().date(),
+        default_start=date(timezone.localdate().year, 1, 1),
+        default_end=timezone.localdate(),
     )
 
 
@@ -75,7 +75,7 @@ def get_trial_balance_data(request):
         request,
         "trial_balance",
         lambda start, end, cs, ce, **kwargs: FinanceService.get_trial_balance(start, end),
-        default_end=timezone.now().date(),
+        default_end=timezone.localdate(),
     )
 
 
@@ -87,8 +87,8 @@ def get_cash_flow_data(request):
         request,
         "cash_flow",
         FinanceService.get_cash_flow,
-        default_start=date(timezone.now().date().year, 1, 1),
-        default_end=timezone.now().date(),
+        default_start=date(timezone.localdate().year, 1, 1),
+        default_end=timezone.localdate(),
     )
 
 
@@ -100,7 +100,7 @@ def get_financial_analysis_data(request):
         request,
         "financial_analysis",
         lambda start, end, cs, ce, **kwargs: FinanceService.get_financial_analysis(start, end),
-        default_end=timezone.now().date(),
+        default_end=timezone.localdate(),
     )
 
 

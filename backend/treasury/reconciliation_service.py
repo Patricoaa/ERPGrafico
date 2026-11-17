@@ -536,7 +536,7 @@ class ReconciliationService:
 
         # Validar fechas de transacciones
         for line in lines:
-            if line["transaction_date"] > timezone.now().date():
+            if line["transaction_date"] > timezone.localdate():
                 warnings.append(
                     {
                         "line": line["line_number"],

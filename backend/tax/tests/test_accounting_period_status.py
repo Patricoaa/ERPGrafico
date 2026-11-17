@@ -200,7 +200,7 @@ def test_status_check_includes_fiscal_mismatches(api_client, period):
     data = api_client.get(URL.format(acc.pk)).json()
     assert data["fiscal_mismatches"] == {
         "count": 3,
-        "by_status": {"ONLY_EXTERNAL": 1, "AMOUNT_DIFF": 0, "TYPE_DIFF": 2, "AMBIGUOUS": 0},
+        "by_status": {"ONLY_EXTERNAL": 1, "AMOUNT_DIFF": 0, "TYPE_DIFF": 2, "AMBIGUOUS": 0, "PENDING_ERP": 0},
     }
 
 

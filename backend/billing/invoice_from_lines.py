@@ -105,7 +105,7 @@ class InvoiceFromLinesService:
         primary = orders[0]
         partner = getattr(primary, s.partner_field)
         invoice = Invoice.objects.create(
-            dte_type=dte_type, number=number or "", date=date or timezone.now().date(),
+            dte_type=dte_type, number=number or "", date=date or timezone.localdate(),
             status=status, payment_method=payment_method, contact=partner,
             document_attachment=document_attachment,
             **{s.order_field: primary},
@@ -332,7 +332,7 @@ class InvoiceFromLinesService:
         partner_name = partner.name if partner else ""
         doc_id = invoice.display_id
         entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             description=GlosaBuilder.build(GlosaBuilder.CONCILIACION_ANTICIPOS, doc_id, partner_name, allocated_total),
             reference=f"RECO-{invoice.id}", status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(Invoice), source_object_id=invoice.id,

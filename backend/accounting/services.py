@@ -75,7 +75,7 @@ class JournalEntryService:
 
         # 1. Create reversal entry linked to original
         reversal = JournalEntry.objects.create(
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             description=description or GlosaBuilder.build_reversal(entry.description),
             status=JournalEntry.State.DRAFT,
             reversal_of=entry,
