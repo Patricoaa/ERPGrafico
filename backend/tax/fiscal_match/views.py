@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
-from tax.fiscal_match import services
+from tax.fiscal_match import feeding, services
 from tax.fiscal_match.selectors import (
     fiscal_match_counts,
     fiscal_match_detail_queryset,
@@ -16,6 +16,8 @@ from tax.fiscal_match.selectors import (
 from tax.fiscal_match.serializers import (
     CANDIDATE_SERIALIZERS,
     CandidatesQuerySerializer,
+    ConfirmDraftSerializer,
+    CreateDraftSerializer,
     FiscalMatchDetailSerializer,
     FiscalMatchFilterSerializer,
     FiscalMatchListSerializer,
@@ -23,6 +25,7 @@ from tax.fiscal_match.serializers import (
     UnlinkSerializer,
 )
 from tax.models import FiscalMatch
+from tax.reconciliation_serializers import InvoiceCandidateSerializer, PurchaseOrderOptionSerializer
 
 _VIEW = "tax.view_taxperiod"
 _CHANGE = "tax.change_taxperiod"
@@ -49,8 +52,8 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     filter_backends: list = []
     action_permissions = {
-        **dict.fromkeys(("list", "retrieve", "counts", "candidates"), _VIEW),
-        **dict.fromkeys(("link", "unlink", "release", "retry_issue"), _CHANGE),
+        **dict.fromkeys(("list", "retrieve", "counts", "candidates", "draft_suggestions", "purchase_orders"), _VIEW),
+        **dict.fromkeys(("link", "unlink", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE),
     }
 
     def get_queryset(self):
@@ -97,3 +100,25 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
         group = self._group(pk)
         services.retry_issue(group)
         return _detail(group)
+
+    @action(detail=True, methods=["get"], url_path="draft-suggestions")
+    def draft_suggestions(self, request, pk=None):
+        return Response(InvoiceCandidateSerializer(feeding.draft_suggestions(self._group(pk)), many=True).data)
+
+    @action(detail=True, methods=["get"], url_path="purchase-orders")
+    def purchase_orders(self, request, pk=None):
+        return Response(PurchaseOrderOptionSerializer(feeding.supplier_purchase_orders(self._group(pk)), many=True).data)
+
+    @idempotent_endpoint(scope="tax.fiscal_match.confirm_draft")
+    @action(detail=True, methods=["post"], url_path="confirm-draft")
+    def confirm_draft(self, request, pk=None):
+        body = _valid(ConfirmDraftSerializer, request.data)
+        return _detail(feeding.confirm_draft_from_rcv(self._group(pk), body["invoice"], body.get("attachment")))
+
+    @idempotent_endpoint(scope="tax.fiscal_match.create_draft")
+    @action(detail=True, methods=["post"], url_path="create-draft")
+    def create_draft(self, request, pk=None):
+        body = _valid(CreateDraftSerializer, request.data)
+        response = _detail(feeding.create_draft_from_rcv(self._group(pk), body["purchase_order"]))
+        response.status_code = 201
+        return response

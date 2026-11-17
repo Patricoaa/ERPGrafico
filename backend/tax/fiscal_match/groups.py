@@ -26,12 +26,17 @@ _RCV_DIRECTION = {
 }
 
 
-def _evaluable_invoice_rows():
-    """Documentos ERP que entran al cuadre, con su dirección y código SII anotados."""
+def _evaluable_invoice_rows(*, purchase_drafts: bool = False):
+    """Documentos ERP que entran al cuadre, con su dirección y código SII anotados.
+
+    ``purchase_drafts`` admite además los borradores de compra: solo la alimentación desde el
+    RCV les da grupo (el motor nunca los crea).
+    """
     sale = Q(fiscal_direction=FiscalMatch.Direction.SALE, sii_code__in=SALE_SII_CODES) & (
         Q(status=Invoice.Status.POSTED) | (sale_document_status_q() & Q(sale_order__isnull=False))
     )
-    purchase = Q(fiscal_direction=FiscalMatch.Direction.PURCHASE, status=Invoice.Status.POSTED)
+    purchase_statuses = [Invoice.Status.POSTED, *([Invoice.Status.DRAFT] if purchase_drafts else [])]
+    purchase = Q(fiscal_direction=FiscalMatch.Direction.PURCHASE, status__in=purchase_statuses)
     return (
         Invoice.objects.annotate(
             fiscal_direction=fiscal_direction_expression(),
@@ -63,12 +68,12 @@ def _group_of_invoice(invoice: Invoice) -> FiscalMatch | None:
     return FiscalMatch.objects.filter(invoice=invoice).first()
 
 
-def group_for_invoice(invoice: Invoice) -> FiscalMatch | None:
+def group_for_invoice(invoice: Invoice, *, purchase_drafts: bool = False) -> FiscalMatch | None:
     """Grupo del documento, creándolo si falta; ``None`` si el documento no entra al cuadre."""
     group = _group_of_invoice(invoice)
     if group is not None:
         return group
-    row = _evaluable_invoice_rows().filter(id=invoice.pk).first()
+    row = _evaluable_invoice_rows(purchase_drafts=purchase_drafts).filter(id=invoice.pk).first()
     if row is None:
         return None
     group = _invoice_group(row)

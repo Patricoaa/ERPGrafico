@@ -58,6 +58,8 @@ La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el c�
 | `tax.fiscal_match.unlink` | `POST /api/tax/fiscal-matches/{id}/unlink/` | Quita un vínculo del cuadre a un grupo huérfano manual |
 | `tax.fiscal_match.release` | `POST /api/tax/fiscal-matches/{id}/release/` | Devuelve un huérfano al cruce automático |
 | `tax.fiscal_match.retry_issue` | `POST /api/tax/fiscal-matches/{id}/retry-issue/` | Reintenta la emisión del borrador (asigna folio fiscal) |
+| `tax.fiscal_match.confirm_draft` | `POST /api/tax/fiscal-matches/{id}/confirm-draft/` | Asigna folio del RCV a un borrador de compra, lo emite y lo une al grupo |
+| `tax.fiscal_match.create_draft` | `POST /api/tax/fiscal-matches/{id}/create-draft/` | Crea un borrador de compra desde una OC con el folio del RCV y lo une al grupo |
 | `treasury.movement.create` | `POST /api/treasury/movements/` (también `/payments/`) | Movimiento bancario manual |
 | `treasury.movement.register` | `POST /api/treasury/movements/register_movement/` (también `/payments/register_movement/`) | Registro rápido de pago/cobro desde formularios |
 | `treasury.card.purchase` | `POST /api/treasury/movements/card-purchase/` (también `/payments/card-purchase/`) | Compra con tarjeta en cuotas — crea grupo + cuotas |

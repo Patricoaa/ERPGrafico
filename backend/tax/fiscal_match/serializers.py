@@ -5,6 +5,7 @@ from rest_framework import serializers
 from accounting.models import RCVDocument
 from billing.models import Invoice
 from core.fiscal_match import FiscalMatchStatus
+from purchasing.models import PurchaseOrder
 from tax.fiscal_match.selectors import ATTENTION
 from tax.models import FiscalMatch
 from treasury.models import TerminalSale, TreasuryMovement
@@ -43,6 +44,17 @@ class LinkSerializer(serializers.Serializer):
 class UnlinkSerializer(serializers.Serializer):
     part = serializers.ChoiceField(choices=["tuu", "rcv"])
     id = serializers.IntegerField(min_value=1)
+
+
+class ConfirmDraftSerializer(serializers.Serializer):
+    invoice_id = serializers.PrimaryKeyRelatedField(queryset=Invoice.objects.all(), source="invoice")
+    attachment = serializers.FileField(required=False)
+
+
+class CreateDraftSerializer(serializers.Serializer):
+    purchase_order_id = serializers.PrimaryKeyRelatedField(
+        queryset=PurchaseOrder.objects.select_related("supplier"), source="purchase_order"
+    )
 
 
 # --- lista --------------------------------------------------------------------
