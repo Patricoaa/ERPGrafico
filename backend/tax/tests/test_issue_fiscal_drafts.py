@@ -248,3 +248,67 @@ def test_soft_time_limit_is_not_swallowed(tenv):
     with patch.object(BillingService, "confirm_invoice", side_effect=SoftTimeLimitExceeded()), \
             pytest.raises(SoftTimeLimitExceeded):
         issue_fiscal_drafts(2026, 11)
+
+
+def test_failure_records_error_on_sale(tenv):
+    closed_day = date(2026, 11, 10)
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 10))
+    sale = make_terminal_sale(tenv, 1000, local_dt(2026, 11, 10), matched_invoice=inv)
+
+    with patch.object(TaxPeriodService, "is_period_closed", side_effect=lambda d: d == closed_day):
+        assert issue_fiscal_drafts(2026, 11) == {"issued": 0, "failed": 1}
+
+    sale.refresh_from_db()
+    assert sale.issue_error
+    assert len(sale.issue_error) <= 255
+    assert sale.issue_attempted_at is not None
+    assert timezone.now() - sale.issue_attempted_at < timedelta(minutes=1)
+
+
+def test_long_error_is_truncated(tenv):
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    sale = make_terminal_sale(tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv)
+
+    with patch.object(BillingService, "confirm_invoice", side_effect=RuntimeError("x" * 400)):
+        assert issue_fiscal_drafts(2026, 11) == {"issued": 0, "failed": 1}
+
+    sale.refresh_from_db()
+    assert sale.issue_error == "x" * 255
+
+
+def test_recent_failure_is_not_retried(tenv):
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    make_terminal_sale(
+        tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv,
+        issue_error="Período cerrado", issue_attempted_at=timezone.now() - timedelta(minutes=10),
+    )
+
+    with patch.object(BillingService, "confirm_invoice") as confirm:
+        assert issue_fiscal_drafts(2026, 11) == {"issued": 0, "failed": 0}
+    confirm.assert_not_called()
+
+
+def test_old_failure_is_retried_and_cleared_on_success(tenv):
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    sale = make_terminal_sale(
+        tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv,
+        issue_error="Período cerrado",
+        issue_attempted_at=timezone.now() - timedelta(minutes=issuing.ISSUE_RETRY_MINUTES + 1),
+    )
+
+    assert issue_fiscal_drafts(2026, 11) == {"issued": 1, "failed": 0}
+
+    sale.refresh_from_db()
+    inv.refresh_from_db()
+    assert inv.status == Invoice.Status.POSTED
+    assert (sale.issue_error, sale.issue_attempted_at) == ("", None)
+
+
+def test_terminal_sale_serializers_expose_issue_attempt(tenv):
+    from treasury.serializers import TerminalSaleListSerializer, TerminalSaleSerializer
+
+    sale = make_terminal_sale(tenv, 1000, local_dt(2026, 11, 12), issue_error="boom")
+    for serializer in (TerminalSaleListSerializer, TerminalSaleSerializer):
+        data = serializer(sale).data
+        assert data["issue_error"] == "boom"
+        assert "issue_attempted_at" in data

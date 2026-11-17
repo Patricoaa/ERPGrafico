@@ -236,7 +236,7 @@ def test_report_query_count_constant():
 def test_report_endpoint(api):
     r = api.get(f"{BASE}/", {"year": 2026, "month": 10})
     assert r.status_code == 200
-    assert set(r.json()) == {"start_date", "documents", "only_erp", "summaries", "terminal"}
+    assert set(r.json()) == {"start_date", "documents", "only_erp", "summaries", "terminal", "pending_issue"}
     assert {"tuu_without_rcv", "rcv_without_tuu"} <= set(r.json()["summaries"][0])
     assert api.get(f"{BASE}/", {"year": 2026, "month": 13}).status_code == 400
     assert api.get(f"{BASE}/").status_code == 400
@@ -431,3 +431,94 @@ def test_summaries_ignore_drafts_without_sale_order():
     report = fiscal_reconciliation_report(2026, 10)
 
     assert _row(report, 39)["erp_count"] == 0 and Decimal(_row(report, 39)["erp_total"]) == 0
+
+
+def _pending_draft(env, total, *, dte_type=Invoice.DTEType.BOLETA, day=7):
+    return make_pos_document(env, total, local_dt(2026, 10, day), dte_type=dte_type, status=Invoice.Status.DRAFT)
+
+
+def test_pending_issue_reasons():
+    """ADR-0140: los borradores 39/41/48 sin folio del mes se listan con su motivo."""
+    set_match_settings(date(2026, 10, 1))
+    env = make_terminal_env()
+    at = local_dt(2026, 10, 7)
+    no_tuu = _pending_draft(env, 1000, dte_type=Invoice.DTEType.COMPROBANTE_PAGO)
+    type_diff = _pending_draft(env, 1100)
+    make_terminal_sale(env, 1100, at, document_type=48, matched_invoice=type_diff, match_status=MatchStatus.TYPE_DIFF)
+    waiting = _pending_draft(env, 2000)
+    make_terminal_sale(env, 2000, at, document_type=39, matched_invoice=waiting, match_status=MatchStatus.MATCHED)
+    failed = _pending_draft(env, 3000, dte_type=Invoice.DTEType.COMPROBANTE_PAGO)
+    make_terminal_sale(
+        env, 3000, at, matched_invoice=failed, match_status=MatchStatus.MATCHED,
+        issue_error="Período cerrado", issue_attempted_at=timezone.now(),
+    )
+    ready = _pending_draft(env, 4000, dte_type=Invoice.DTEType.COMPROBANTE_PAGO)
+    make_terminal_sale(env, 4000, at, matched_invoice=ready, match_status=MatchStatus.MATCHED)
+    imp = _import()
+    doc = _rcv(imp, 777, 5000, direction=S, dte_type=39)
+    ready39 = _pending_draft(env, 5000)
+    make_terminal_sale(
+        env, 5000, at, document_type=39, matched_invoice=ready39, match_status=MatchStatus.MATCHED, rcv_document=doc,
+    )
+    # Fuera: emitido, numerado, sin orden de venta, otro mes, factura.
+    make_pos_document(env, 900, at, dte_type=Invoice.DTEType.BOLETA)
+    numbered = _pending_draft(env, 901)
+    Invoice.objects.filter(pk=numbered.pk).update(number="55")
+    _invoice(Invoice.DTEType.BOLETA, 902, number="", status=Invoice.Status.DRAFT)
+    make_pos_document(env, 903, local_dt(2026, 11, 1), dte_type=Invoice.DTEType.BOLETA, status=Invoice.Status.DRAFT)
+    _pending_draft(env, 904, dte_type=Invoice.DTEType.FACTURA)
+
+    pending = fiscal_reconciliation_report(2026, 10)["pending_issue"]
+
+    assert pending["count"] == 6
+    by_id = {item["id"]: item for item in pending["items"]}
+    assert {pk: by_id[pk]["reason"] for pk in by_id} == {
+        no_tuu.pk: "NO_TUU", type_diff.pk: "NO_TUU", waiting.pk: "WAITING_RCV",
+        failed.pk: "ERROR", ready.pk: "READY", ready39.pk: "READY",
+    }
+    assert by_id[failed.pk]["error"] == "Período cerrado"
+    assert by_id[ready.pk]["error"] is None
+    assert Decimal(by_id[waiting.pk]["amount"]) == 2000
+    assert by_id[waiting.pk]["date"] == "2026-10-07"
+    assert by_id[waiting.pk]["label"]
+
+
+def test_pending_issue_items_capped():
+    set_match_settings(date(2026, 10, 1))
+    env = make_terminal_env()
+    for i in range(52):
+        _pending_draft(env, 1000 + i)
+
+    pending = fiscal_reconciliation_report(2026, 10)["pending_issue"]
+
+    assert pending["count"] == 52
+    assert len(pending["items"]) == 50
+
+
+def _populate_pending(n):
+    env = make_terminal_env()
+    imp = _import()
+    at = local_dt(2026, 10, 7)
+    for i in range(n):
+        _pending_draft(env, 1000)
+        waiting = _pending_draft(env, 1000)
+        make_terminal_sale(env, 1000, at, document_type=39, matched_invoice=waiting, match_status=MatchStatus.MATCHED)
+        failed = _pending_draft(env, 1000, dte_type=Invoice.DTEType.COMPROBANTE_PAGO)
+        make_terminal_sale(
+            env, 1000, at, matched_invoice=failed, match_status=MatchStatus.MATCHED, issue_error="x",
+            issue_attempted_at=timezone.now(),
+        )
+        ready = _pending_draft(env, 1000)
+        doc = _rcv(imp, next(_seq), 1000, direction=S, dte_type=39)
+        make_terminal_sale(
+            env, 1000, at, document_type=39, matched_invoice=ready, match_status=MatchStatus.MATCHED, rcv_document=doc,
+        )
+
+
+def test_pending_issue_query_count_constant():
+    set_match_settings(date(2026, 10, 1))
+    _populate_pending(5)
+    _count_queries()  # calienta el caché de RCVSettings
+    small = _count_queries()
+    _populate_pending(25)
+    assert _count_queries() == small

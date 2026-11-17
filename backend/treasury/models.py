@@ -4073,6 +4073,9 @@ class TerminalSale(TimeStampedModel):
         related_name="terminal_sales",
         verbose_name=_("Boleta SII"),
     )
+    # Último intento fallido de emitir su borrador con el folio (ADR-0140 D3).
+    issue_attempted_at = models.DateTimeField(_("Intento de emisión"), null=True, blank=True)
+    issue_error = models.CharField(_("Error de emisión"), max_length=255, blank=True, default="")
 
     class Meta:
         verbose_name = _("Venta de Terminal")

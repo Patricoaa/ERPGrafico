@@ -8,7 +8,19 @@ import calendar
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Exists, F, OuterRef, Q, QuerySet, Sum
+from django.db.models import (
+    Case,
+    Count,
+    Exists,
+    F,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+    Sum,
+    Value,
+    When,
+)
 from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport, RCVImportSummary, RCVSettings
@@ -23,6 +35,7 @@ from .terminal import sale_document_status_q
 
 SUMMARY_SII_CODES = (39, 41, 48)
 ONLY_ERP_CAP = 50
+PENDING_ISSUE_CAP = 50
 # Mismo criterio que `billing.fiscal_key.parse_folio`: dígitos (con puntos/espacios) y > 0.
 FOLIO_REGEX = r"^[0-9. ]*[1-9][0-9. ]*$"
 
@@ -41,6 +54,7 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
         "only_erp": [_item(i) for i in only_erp.order_by("date", "id")[:ONLY_ERP_CAP]] if only_erp is not None else [],
         "summaries": _summaries(year, month, first, last, lo, hi, start),
         "terminal": _terminal(first, last, lo, hi, start, settings.terminal_match_window_minutes),
+        "pending_issue": _pending_issue(first, last),
     }
 
 
@@ -286,3 +300,42 @@ def _terminal_only_erp(first: date, last: date, start: date | None, window_minut
         .filter(Exists(pos_payment), ~Exists(linked))
         .count()
     )
+
+
+def _pending_issue(first: date, last: date) -> dict:
+    """Borradores 39/41/48 sin folio del mes y por qué aún no se emiten (ADR-0140 D3).
+
+    ``NO_TUU``: sin venta TUU ``MATCHED``; ``ERROR``: el último intento de emisión
+    falló; ``WAITING_RCV``: boleta 39/41 cuya venta aún no tiene su boleta del RCV;
+    ``READY``: la próxima emisión automática la toma. Dos consultas fijas.
+    """
+    sale = TerminalSale.objects.filter(matched_invoice=OuterRef("pk"), match_status=MatchStatus.MATCHED)
+    drafts = (
+        _annotated_invoices()
+        .filter(
+            status=Invoice.Status.DRAFT, number="", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
+            sale_order__isnull=False, fiscal_direction="sale", date__gte=first, date__lte=last,
+        )
+        .annotate(
+            sale_error=Subquery(sale.values("issue_error")[:1]),
+            reason=Case(
+                When(~Exists(sale), then=Value("NO_TUU")),
+                When(Exists(sale.exclude(issue_error="")), then=Value("ERROR")),
+                When(
+                    Q(dte_type__in=(Invoice.DTEType.BOLETA, Invoice.DTEType.BOLETA_EXENTA))
+                    & ~Exists(sale.filter(rcv_document__isnull=False)),
+                    then=Value("WAITING_RCV"),
+                ),
+                default=Value("READY"),
+            ),
+        )
+    )
+    items = [
+        _item(inv) | {
+            "label": f"{inv.get_dte_type_display()} sin folio (#{inv.pk})",
+            "reason": inv.reason,
+            "error": inv.sale_error if inv.reason == "ERROR" else None,
+        }
+        for inv in drafts.order_by("date", "id")[:PENDING_ISSUE_CAP]
+    ]
+    return {"count": drafts.count(), "items": items}

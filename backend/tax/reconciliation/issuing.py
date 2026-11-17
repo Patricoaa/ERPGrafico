@@ -4,15 +4,18 @@ El checkout deja las boletas y comprobantes sin folio en borrador. Cuando el
 cuadre los enlaza con su venta TUU con estado ``MATCHED`` (y la venta con su boleta del RCV), el número
 fiscal ya es conocido: folio RCV para 39/41, id TUU para 48. Cada emisión pasa
 por ``BillingService.confirm_invoice`` en su propia transacción; un fallo se
-registra y no detiene al resto.
+registra en la venta TUU (``issue_error``) y no detiene al resto. La venta con un
+fallo reciente no se reintenta hasta pasados ``ISSUE_RETRY_MINUTES``.
 """
 
 import calendar
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 from celery.exceptions import SoftTimeLimitExceeded
+from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from billing.models import Invoice
@@ -23,6 +26,8 @@ from core.services.document import lock_document
 from treasury.models import TerminalSale
 
 logger = logging.getLogger(__name__)
+
+ISSUE_RETRY_MINUTES = 60
 
 
 def issue_fiscal_drafts(year: int, month: int) -> dict[str, int]:
@@ -41,9 +46,21 @@ def issue_fiscal_drafts(year: int, month: int) -> dict[str, int]:
         except Exception as exc:  # noqa: BLE001 — un documento no detiene la emisión del resto
             logger.warning("No se pudo emitir el documento %s: %s", invoice.pk, exc, exc_info=True)
             failed += 1
+            error = _error_text(exc)
         else:
             issued += done
+            error = None
+        # Fuera del atomic de `_issue`: el registro del fallo sobrevive a su rollback.
+        if error is not None:
+            TerminalSale.objects.filter(pk=sale.pk).update(issue_attempted_at=timezone.now(), issue_error=error)
+        elif sale.issue_error or sale.issue_attempted_at:
+            TerminalSale.objects.filter(pk=sale.pk).update(issue_attempted_at=None, issue_error="")
     return {"issued": issued, "failed": failed}
+
+
+def _error_text(exc: Exception) -> str:
+    text = "; ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+    return (text.strip() or type(exc).__name__)[:255]
 
 
 @transaction.atomic
@@ -87,6 +104,13 @@ def _linked_drafts(year: int, month: int) -> list[TerminalSale]:
             matched_invoice__date__gte=first,
             matched_invoice__date__lte=last,
         )
+        .exclude(_recent_failure_q())
         .select_related("matched_invoice__sale_order", "rcv_document")
         .order_by("matched_invoice__date", "matched_invoice_id")
     )
+
+
+def _recent_failure_q() -> Q:
+    """Venta cuyo último intento falló hace menos de ``ISSUE_RETRY_MINUTES``."""
+    since = timezone.now() - timedelta(minutes=ISSUE_RETRY_MINUTES)
+    return Q(issue_attempted_at__gt=since) & ~Q(issue_error="")

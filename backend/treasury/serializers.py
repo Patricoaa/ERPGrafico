@@ -1977,6 +1977,8 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "matched_manually",
             "rcv_document",
             "rcv_folio",
+            "issue_attempted_at",
+            "issue_error",
         ]
         read_only_fields = fields
 
