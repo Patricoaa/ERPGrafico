@@ -29,16 +29,12 @@ from core.fiscal_match import MatchStatus
 from tax.fiscal_match.summary import (
     PENDING_ISSUE_CAP,
     SUMMARY_SII_CODES,
-    _rcv_totals,
-    _summary_row,
-    _summary_status_q,
-    _totals,
-)
-from tax.fiscal_match.summary import (
-    annotated_invoices as _annotated_invoices,
-)
-from tax.fiscal_match.summary import (
-    local_midnight as _local_midnight,
+    annotated_invoices,
+    local_midnight,
+    rcv_totals,
+    summary_row,
+    summary_status_q,
+    totals,
 )
 from treasury.models import TerminalSale, TreasuryMovement
 
@@ -54,7 +50,7 @@ def fiscal_reconciliation_report(year: int, month: int) -> dict:
     start = settings.fiscal_match_start_date
     first = date(year, month, 1)
     last = date(year, month, calendar.monthrange(year, month)[1])
-    lo, hi = _local_midnight(first), _local_midnight(last + timedelta(days=1))
+    lo, hi = local_midnight(first), local_midnight(last + timedelta(days=1))
     imported = _imported_directions(year, month)
     only_erp = _only_erp_documents(first, last, start, imported)
     return {
@@ -91,7 +87,7 @@ def _only_erp_documents(
         return None
     linked = RCVDocument.objects.filter(matched_invoice=OuterRef("pk"))
     return (
-        _annotated_invoices()
+        annotated_invoices()
         .filter(
             status=Invoice.Status.POSTED,
             date__gte=since,
@@ -140,16 +136,16 @@ def _summaries(
 ) -> list[dict]:
     # El código sale de `sii_code_expression`, así un `sii_document_code` explícito también cuenta.
     # Los borradores 39/41/48 sin folio son ventas reales a la espera de su número (ADR-0140 D2).
-    erp = _totals(
-        _annotated_invoices()
+    erp = totals(
+        annotated_invoices()
         .filter(
-            _summary_status_q(), fiscal_direction="sale",
+            summary_status_q(), fiscal_direction="sale",
             date__gte=first, date__lte=last, sii__in=SUMMARY_SII_CODES,
         )
         .values("sii").annotate(n=Count("id"), t=Sum("total")).order_by(),
         "sii",
     )
-    tuu = _totals(
+    tuu = totals(
         TerminalSale.objects.filter(
             status=TerminalSale.Status.COMPLETED, transaction_at__gte=lo, transaction_at__lt=hi,
             document_type__in=SUMMARY_SII_CODES,
@@ -157,10 +153,10 @@ def _summaries(
         .values("document_type").annotate(n=Count("id"), t=Sum("sale_amount")).order_by(),
         "document_type",
     )
-    rcv = _rcv_totals(year, month)
+    rcv = rcv_totals(year, month)
     since = _period_start(first, last, start) if rcv is not None else None
     unpaired = _unpaired_boletas(year, month, since, hi)
-    return [_summary_row(code, erp, tuu, rcv) | unpaired.get(code, _NO_PAIRING) for code in SUMMARY_SII_CODES]
+    return [summary_row(code, erp, tuu, rcv) | unpaired.get(code, _NO_PAIRING) for code in SUMMARY_SII_CODES]
 
 
 _NO_PAIRING = {"tuu_without_rcv": None, "rcv_without_tuu": None}
@@ -179,7 +175,7 @@ def _unpaired_boletas(year: int, month: int, since: date | None, hi: datetime) -
     if since is not None:
         sales = (
             TerminalSale.objects.filter(
-                status=TerminalSale.Status.COMPLETED, transaction_at__gte=_local_midnight(since),
+                status=TerminalSale.Status.COMPLETED, transaction_at__gte=local_midnight(since),
                 transaction_at__lt=hi, document_type__in=BOLETA_SII_CODES, rcv_document__isnull=True,
             )
             .values("document_type").annotate(n=Count("id")).order_by()
@@ -220,7 +216,7 @@ def _terminal_only_erp(first: date, last: date, start: date | None, window_minut
     return (
         Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression())
         .filter(
-            _summary_status_q(), fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
+            summary_status_q(), fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
             date__gte=since, date__lte=last,
             created_at__lt=timezone.now() - timedelta(minutes=window_minutes),
         )
@@ -238,7 +234,7 @@ def _pending_issue(first: date, last: date) -> dict:
     """
     sale = TerminalSale.objects.filter(matched_invoice=OuterRef("pk"), match_status=MatchStatus.MATCHED)
     drafts = (
-        _annotated_invoices()
+        annotated_invoices()
         .filter(
             status=Invoice.Status.DRAFT, number="", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
             sale_order__isnull=False, fiscal_direction="sale", date__gte=first, date__lte=last,

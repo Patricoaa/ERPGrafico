@@ -47,16 +47,16 @@ def annotated_invoices() -> QuerySet[Invoice]:
     return Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression())
 
 
-def _totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
+def totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
     return {row[key]: (row["n"] or 0, row["t"] or _ZERO) for row in rows}
 
 
-def _summary_status_q() -> Q:
+def summary_status_q() -> Q:
     """Como ``sale_document_status_q`` pero los borradores deben venir de una orden de venta."""
     return Q(status=Invoice.Status.POSTED) | (sale_document_status_q() & Q(sale_order__isnull=False))
 
 
-def _rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:
+def rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:
     """Resúmenes de la última importación exitosa de ventas del período; ``None`` si no hay."""
     latest = (
         RCVImport.objects.filter(
@@ -68,7 +68,7 @@ def _rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:
     )
     if latest is None:
         return None
-    return _totals(
+    return totals(
         RCVImportSummary.objects.filter(rcv_import_id=latest, dte_type__in=SUMMARY_SII_CODES)
         .values("dte_type").annotate(n=Sum("document_count"), t=Sum("total_amount")).order_by(),
         "dte_type",
@@ -78,6 +78,8 @@ def _rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:
 def _card_sales_of_facturas(first: date, last: date) -> Decimal:
     """Ventas TUU con tarjeta de grupos con factura 33/34 del mes: el SII las resume en el 48."""
     total = TerminalSale.objects.filter(
+        status=TerminalSale.Status.COMPLETED,
+        fiscal_match__invoice__status=Invoice.Status.POSTED,
         payment_type__in=_CARD_PAYMENT_TYPES,
         fiscal_match__invoice__dte_type__in=_FACTURA_TYPES,
         fiscal_match__invoice__date__gte=first,
@@ -86,7 +88,7 @@ def _card_sales_of_facturas(first: date, last: date) -> Decimal:
     return total or _ZERO
 
 
-def _summary_row(code: int, erp: dict, tuu: dict, rcv: dict | None, extra_expected: Decimal = _ZERO) -> dict:
+def summary_row(code: int, erp: dict, tuu: dict, rcv: dict | None, extra_expected: Decimal = _ZERO) -> dict:
     erp_count, erp_total = erp.get(code, (0, _ZERO))
     tuu_count, tuu_total = tuu.get(code, (0, _ZERO))
     expected = erp_total + extra_expected
@@ -108,16 +110,16 @@ def monthly_summary(year: int, month: int) -> list[dict]:
     first = date(year, month, 1)
     last = date(year, month, calendar.monthrange(year, month)[1])
     lo, hi = local_midnight(first), local_midnight(last + timedelta(days=1))
-    erp = _totals(
+    erp = totals(
         annotated_invoices()
         .filter(
-            _summary_status_q(), fiscal_direction="sale",
+            summary_status_q(), fiscal_direction="sale",
             date__gte=first, date__lte=last, sii__in=SUMMARY_SII_CODES,
         )
         .values("sii").annotate(n=Count("id"), t=Sum("total")).order_by(),
         "sii",
     )
-    tuu = _totals(
+    tuu = totals(
         TerminalSale.objects.filter(
             status=TerminalSale.Status.COMPLETED, transaction_at__gte=lo, transaction_at__lt=hi,
             document_type__in=SUMMARY_SII_CODES,
@@ -125,9 +127,9 @@ def monthly_summary(year: int, month: int) -> list[dict]:
         .values("document_type").annotate(n=Count("id"), t=Sum("sale_amount")).order_by(),
         "document_type",
     )
-    rcv = _rcv_totals(year, month)
+    rcv = rcv_totals(year, month)
     cards = _card_sales_of_facturas(first, last)
-    return [_summary_row(code, erp, tuu, rcv, cards if code == 48 else _ZERO) for code in SUMMARY_SII_CODES]
+    return [summary_row(code, erp, tuu, rcv, cards if code == 48 else _ZERO) for code in SUMMARY_SII_CODES]
 
 
 def fiscal_mismatch_counts(year: int, month: int) -> dict:

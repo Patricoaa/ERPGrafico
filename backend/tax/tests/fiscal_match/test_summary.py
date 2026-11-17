@@ -14,7 +14,12 @@ from core.fiscal_match import FiscalMatchStatus, PartState
 from core.tests.rbac_factories import make_user
 from tax.fiscal_match.summary import fiscal_mismatch_counts, monthly_summary, pending_issue
 from tax.models import FiscalMatch
-from tax.tests.reconciliation_helpers import local_dt, make_pos_document, make_terminal_env, make_terminal_sale
+from tax.tests.reconciliation_helpers import (
+    local_dt,
+    make_pos_document,
+    make_terminal_env,
+    make_terminal_sale,
+)
 from treasury.models import TerminalSale
 
 pytestmark = pytest.mark.django_db
@@ -54,6 +59,29 @@ def test_48_expected_includes_card_payments_of_facturas():
     assert Decimal(row["expected_total"]) == 6000
     assert row["difference"] is None  # sin importación RCV
     assert Decimal(_row(monthly_summary(2026, 10), 39)["expected_total"]) == 0
+
+
+def _factura(number, status=Invoice.Status.POSTED):
+    return Invoice.objects.create(
+        dte_type=Invoice.DTEType.FACTURA, status=status, number=number, total=Decimal("100"),
+        date=date(2026, 10, 8),
+    )
+
+
+def test_card_sales_ignore_reversed_sales_and_cancelled_facturas():
+    env = make_terminal_env()
+    ok_group = _group(_factura("20"))
+    cancelled_group = _group(_factura("21", Invoice.Status.CANCELLED))
+    good = make_terminal_sale(env, 300, AT, payment_type=TerminalSale.PaymentType.DEBIT, document_type=None)
+    reversed_sale = make_terminal_sale(
+        env, 400, AT, payment_type=TerminalSale.PaymentType.DEBIT, document_type=None,
+        status=TerminalSale.Status.REVERSED,
+    )
+    on_cancelled = make_terminal_sale(env, 500, AT, payment_type=TerminalSale.PaymentType.DEBIT, document_type=None)
+    TerminalSale.objects.filter(pk__in=[good.pk, reversed_sale.pk]).update(fiscal_match=ok_group)
+    TerminalSale.objects.filter(pk=on_cancelled.pk).update(fiscal_match=cancelled_group)
+
+    assert Decimal(_row(monthly_summary(2026, 10), 48)["expected_total"]) == 300
 
 
 def test_mismatch_counts_keys_and_period():
@@ -122,7 +150,12 @@ def test_pending_issue_reasons():
 
 
 def test_summary_query_count_constant():
+    from accounting.models import RCVDocument, RCVImport
+
     env = make_terminal_env()
+    imp = RCVImport.objects.create(
+        direction=RCVImport.Direction.SALES, year=2026, month=10, status=RCVImport.Status.SUCCESS
+    )
 
     def queries():
         with CaptureQueriesContext(connection) as ctx:
@@ -133,8 +166,15 @@ def test_summary_query_count_constant():
 
     base = queries()
     for n in range(4):
-        _draft(env, 10 + n, Invoice.DTEType.BOLETA, tuu_state=PartState.MATCHED, status=FiscalMatchStatus.DIFF,
-               fiscal_period="202610")
+        group = _draft(env, 10 + n, Invoice.DTEType.BOLETA, tuu_state=PartState.MATCHED,
+                       status=FiscalMatchStatus.DIFF, fiscal_period="202610")
+        sale = make_terminal_sale(env, 50, AT, payment_type=TerminalSale.PaymentType.DEBIT, document_type=39)
+        TerminalSale.objects.filter(pk=sale.pk).update(fiscal_match=_group(_factura(f"3{n}")))
+        RCVDocument.objects.create(
+            direction=RCVImport.Direction.SALES, company_rut="11111111-1", period="202610", dte_type=39,
+            folio=100 + n, issue_date=date(2026, 10, 7), total_amount=Decimal("5"),
+            first_import=imp, last_import=imp, fiscal_match=group,
+        )
     assert queries() == base
 
 
@@ -154,3 +194,22 @@ def test_summary_and_pending_issue_endpoints():
     assert pend.status_code == 200 and pend.json() == {"count": 0, "items": []}
     assert api.get("/api/tax/fiscal-matches/pending-issue/?year=2026").status_code == 400
     assert _client().get("/api/tax/fiscal-matches/summary/?year=2026&month=10").status_code == 403
+
+
+def test_pending_issue_includes_41_excludes_manual_drafts_and_caps():
+    env = make_terminal_env()
+    boleta41 = _draft(env, 1, Invoice.DTEType.BOLETA_EXENTA, tuu_state=PartState.MATCHED)
+    manual = Invoice.objects.create(
+        dte_type=Invoice.DTEType.BOLETA, status=Invoice.Status.DRAFT, number="", total=Decimal("9"),
+        date=date(2026, 10, 7),
+    )
+    _group(manual, tuu_state=PartState.MATCHED)
+
+    out = pending_issue(2026, 10)
+    assert [i["id"] for i in out["items"]] == [boleta41.invoice_id]
+    assert out["items"][0]["reason"] == "WAITING_RCV"
+
+    for n in range(55):
+        _draft(env, 100 + n, Invoice.DTEType.COMPROBANTE_PAGO, tuu_state=PartState.MATCHED)
+    capped = pending_issue(2026, 10)
+    assert capped["count"] == 56 and len(capped["items"]) == 50
