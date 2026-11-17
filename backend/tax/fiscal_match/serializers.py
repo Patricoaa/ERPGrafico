@@ -172,17 +172,33 @@ class FiscalMatchDetailSerializer(FiscalMatchListSerializer):
 # --- candidatos ---------------------------------------------------------------
 
 
+class CandidateMovementSerializer(serializers.ModelSerializer):
+    """Cobro del documento al que puede corresponder una venta TUU (``payment_method_new`` precargado)."""
+
+    method = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TreasuryMovement
+        fields = ["id", "amount", "created_at", "method"]
+        read_only_fields = fields
+
+    def get_method(self, obj: TreasuryMovement) -> str:
+        return obj.payment_method_new.name if obj.payment_method_new else obj.get_payment_method_display()
+
+
 class ErpCandidateSerializer(serializers.ModelSerializer):
     display_id = serializers.CharField(read_only=True)
+    # Cobros libres del monto de la venta TUU del huérfano; vacío si no tiene venta.
+    compatible_movements = CandidateMovementSerializer(many=True, read_only=True)
 
     class Meta:
         model = Invoice
-        fields = ["id", "display_id", "dte_type", "number", "total", "date"]
+        fields = ["id", "display_id", "dte_type", "number", "total", "date", "compatible_movements"]
         read_only_fields = fields
 
 
 class TuuCandidateSerializer(serializers.ModelSerializer):
-    compatible_movements = serializers.ListField(child=serializers.IntegerField(), read_only=True)
+    compatible_movements = CandidateMovementSerializer(many=True, read_only=True)
 
     class Meta:
         model = TerminalSale

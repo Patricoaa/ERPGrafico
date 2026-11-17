@@ -153,7 +153,9 @@ def _taken_movements(movement_ids: list[int], *, excluding: list[int] = ()) -> s
 
 def _inbound(invoice: Invoice) -> list[TreasuryMovement]:
     return list(
-        TreasuryMovement.objects.filter(invoice=invoice, movement_type=TreasuryMovement.Type.INBOUND).order_by("id")
+        TreasuryMovement.objects.filter(invoice=invoice, movement_type=TreasuryMovement.Type.INBOUND)
+        .select_related("payment_method_new")
+        .order_by("id")
     )
 
 
@@ -365,15 +367,28 @@ def group_candidates(group: FiscalMatch, part: LinkPart) -> list[models.Model]:
 
 
 def _erp_candidates(group: FiscalMatch) -> list[Invoice]:
+    """Documentos candidatos; con venta TUU, cada uno lleva sus cobros libres del monto de la venta."""
+    sale = TerminalSale.objects.filter(fiscal_match=group).order_by("transaction_at", "id").first()
     doc = RCVDocument.objects.filter(fiscal_match=group).order_by("id").first()
     if doc is not None:
-        return list(rcv_group_candidates(doc))
-    sale = TerminalSale.objects.filter(fiscal_match=group).order_by("transaction_at", "id").first()
-    if sale is None:
-        return []
-    free_payment = TreasuryMovement.objects.filter(
-        invoice=OuterRef("pk"), movement_type=TreasuryMovement.Type.INBOUND, amount=sale.sale_amount
-    ).filter(~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
+        invoices = list(rcv_group_candidates(doc))
+    elif sale is not None:
+        invoices = _sale_invoice_candidates(sale)
+    else:
+        invoices = []
+    _attach_free_payments(invoices, sale)
+    return invoices
+
+
+def _free_payments(amount: Decimal) -> "models.QuerySet[TreasuryMovement]":
+    """Cobros del monto indicado que ninguna venta TUU respalda."""
+    return TreasuryMovement.objects.filter(movement_type=TreasuryMovement.Type.INBOUND, amount=amount).filter(
+        ~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk")))
+    )
+
+
+def _sale_invoice_candidates(sale: TerminalSale) -> list[Invoice]:
+    free_payment = _free_payments(sale.sale_amount).filter(invoice=OuterRef("pk"))
     evaluable = Q(status=Invoice.Status.POSTED) | (sale_document_status_q() & Q(sale_order__isnull=False))
     return list(
         Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression())
@@ -387,6 +402,21 @@ def _erp_candidates(group: FiscalMatch) -> list[Invoice]:
         )
         .order_by("id")[:CANDIDATE_CAP]
     )
+
+
+def _attach_free_payments(invoices: list[Invoice], sale: TerminalSale | None) -> None:
+    """``compatible_movements``: cobros libres del monto de la venta, en una sola consulta."""
+    by_invoice: dict[int, list[TreasuryMovement]] = {i.pk: [] for i in invoices}
+    if sale is not None and invoices:
+        rows = (
+            _free_payments(sale.sale_amount).filter(invoice_id__in=list(by_invoice))
+            .select_related("payment_method_new")
+            .order_by("created_at", "id")
+        )
+        for m in rows:
+            by_invoice[m.invoice_id].append(m)
+    for invoice in invoices:
+        invoice.compatible_movements = by_invoice[invoice.pk]
 
 
 def _tuu_candidates(invoice: Invoice) -> list[TerminalSale]:
@@ -409,7 +439,7 @@ def _tuu_candidates(invoice: Invoice) -> list[TerminalSale]:
         ).order_by("transaction_at", "id")[:CANDIDATE_CAP]
     )
     for sale in sales:
-        sale.compatible_movements = [m.pk for m in free if Decimal(m.amount) == Decimal(sale.sale_amount)]
+        sale.compatible_movements = [m for m in free if Decimal(m.amount) == Decimal(sale.sale_amount)]
     return sales
 
 

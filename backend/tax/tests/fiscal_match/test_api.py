@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.core.cache import cache
@@ -159,7 +160,10 @@ def test_candidates_and_link_terminal_sale(api, tenv):
 
     r = api.get(f"{BASE}/{group.id}/candidates/", {"part": "tuu"})
     assert r.status_code == 200, r.content
-    assert r.json()[0]["id"] == sale.id and r.json()[0]["compatible_movements"] == [movement.id]
+    assert r.json()[0]["id"] == sale.id
+    (payment,) = r.json()[0]["compatible_movements"]
+    assert payment["id"] == movement.id and Decimal(payment["amount"]) == 6000
+    assert payment["method"] == movement.payment_method_new.name and payment["created_at"]
     assert api.get(f"{BASE}/{group.id}/candidates/", {"part": "erp"}).status_code == 400
 
     r = api.post(f"{BASE}/{group.id}/link/", {"part": "tuu", "id": sale.id}, format="json", **_key())
@@ -169,6 +173,31 @@ def test_candidates_and_link_terminal_sale(api, tenv):
     assert r.status_code == 200, r.content
     assert r.json()["id"] == group.id
     assert [s["id"] for s in r.json()["terminal_sales"]] == [sale.id]
+
+
+def test_candidates_query_count_constant(api, tenv):
+    """Candidatos TUU y ERP con sus cobros: consultas fijas sin importar cuántos haya."""
+
+    def count(n: int) -> tuple[int, int]:
+        FiscalMatch.objects.all().delete()
+        inv = make_pos_document(tenv, 6000, _ago(300))
+        sales = [make_terminal_sale(tenv, 6000, _ago(118)) for _ in range(n)]
+        for _ in range(n):
+            make_pos_document(tenv, 6000, _ago(300))
+        run_fiscal_match()
+        group = FiscalMatch.objects.get(invoice=inv)
+        orphan = TerminalSale.objects.get(pk=sales[0].pk).fiscal_match
+        api.get(f"{BASE}/{group.id}/candidates/", {"part": "tuu"})  # calienta permisos
+        with CaptureQueriesContext(connection) as tuu:
+            r = api.get(f"{BASE}/{group.id}/candidates/", {"part": "tuu"})
+            assert r.status_code == 200 and len(r.json()) >= n
+        with CaptureQueriesContext(connection) as erp:
+            r = api.get(f"{BASE}/{orphan.id}/candidates/", {"part": "erp"})
+            assert r.status_code == 200 and len(r.json()) >= n
+            assert all(c["compatible_movements"] for c in r.json())
+        return len(tuu.captured_queries), len(erp.captured_queries)
+
+    assert count(2) == count(6)
 
 
 def test_link_idempotent(api, tenv):

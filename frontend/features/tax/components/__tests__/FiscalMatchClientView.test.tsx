@@ -19,7 +19,8 @@ const m = vi.hoisted(() => ({
     summary: undefined as unknown,
     summaryCalls: [] as [number, number][],
     pending: undefined as unknown,
-    openEntity: vi.fn(),
+    push: vi.fn(),
+    selectedId: null as number | null,
 }))
 
 vi.mock("@/components/shared", async (importOriginal) => {
@@ -58,8 +59,26 @@ vi.mock("../../hooks/useFiscalMatches", () => ({
     usePendingIssue: () => ({ pendingIssue: m.pending, isLoading: false, isError: false, isRefetching: false, refetch: vi.fn() }),
 }))
 vi.mock("@/hooks/useServerDate", () => ({ useServerDate: () => ({ year: 2026, month: 11 }) }))
-vi.mock("@/components/providers/GlobalModalProvider", () => ({
-    useGlobalModalActions: () => ({ openEntity: m.openEntity }),
+vi.mock("next/navigation", () => ({
+    useSearchParams: () => new URLSearchParams("status=attention"),
+    useRouter: () => ({ push: m.push, replace: vi.fn() }),
+    usePathname: () => "/accounting/rcv/cuadre",
+}))
+vi.mock("@/hooks/useEntityPanelRoute", () => ({
+    useEntityPanelRoute: () => ({
+        selectedId: m.selectedId,
+        open: m.selectedId !== null,
+        close: vi.fn(),
+        tab: { id: m.selectedId, open: m.selectedId !== null, onClose: vi.fn() },
+    }),
+}))
+vi.mock("@/components/providers", () => ({
+    EntityPanelTab: ({ label, open, children }: { label: string; open: boolean; children: (open: boolean) => React.ReactNode }) => (
+        <div data-testid={`panel-tab-${label}`}>{children(open)}</div>
+    ),
+}))
+vi.mock("../FiscalMatchDrawer", () => ({
+    FiscalMatchDrawer: ({ id, open }: { id: number | null; open: boolean }) => (open ? <div>{`ficha del grupo #${id}`}</div> : null),
 }))
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ can: () => true, hasPermission: () => true }) }))
 
@@ -130,7 +149,8 @@ beforeEach(() => {
     m.summary = summary
     m.summaryCalls = []
     m.pending = pending
-    m.openEntity.mockReset()
+    m.push.mockReset()
+    m.selectedId = null
 })
 
 describe("FiscalMatchClientView", () => {
@@ -176,7 +196,7 @@ describe("FiscalMatchClientView", () => {
         expect(within(table).getByText("Falta en el ERP")).toBeInTheDocument()
 
         await userEvent.click(within(table).getByRole("button", { name: /Boleta 39 · \$12\.500/ }))
-        expect(m.openEntity).toHaveBeenCalledWith("tax.fiscalmatch", 1)
+        expect(m.push).toHaveBeenCalledWith("/accounting/rcv/cuadre?status=attention&selected=1", { scroll: false })
     })
 
     it("has no recalculate buttons", () => {
@@ -206,7 +226,13 @@ describe("FiscalMatchClientView", () => {
         const table = screen.getByRole("table", { name: "Boletas pendientes de folio" })
         expect(within(table).getByText("Sin venta TUU")).toBeInTheDocument()
         await userEvent.click(within(table).getByRole("button", { name: /Boleta Electrónica sin folio/ }))
-        expect(m.openEntity).toHaveBeenCalledWith("tax.fiscalmatch", 31)
+        expect(m.push).toHaveBeenCalledWith("/accounting/rcv/cuadre?status=attention&selected=31", { scroll: false })
+    })
+
+    it("?selected abre la ficha del grupo", () => {
+        m.selectedId = 5
+        render(<FiscalMatchClientView />)
+        expect(screen.getByTestId("panel-tab-tax.fiscalmatch")).toHaveTextContent("ficha del grupo #5")
     })
 
     it("start date banner", () => {

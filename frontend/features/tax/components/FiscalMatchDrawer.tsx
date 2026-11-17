@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
 import { Scale } from "lucide-react"
 import { Can } from "@/components/auth"
 import { Banner, Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
-import { formatDate } from "@/components/entity-view"
+import { formatDate, formatTimeOfDay } from "@/components/entity-view"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
@@ -20,7 +20,7 @@ import {
     useRetryFiscalIssue,
     useUnlinkFiscalMatch,
 } from "../hooks/useFiscalMatches"
-import type { FiscalMatchDetail } from "../types/fiscalMatch"
+import type { CandidateMovement, FiscalMatchDetail } from "../types/fiscalMatch"
 import { FiscalMatchRegisterSection } from "./FiscalMatchRegisterSection"
 
 export interface FiscalMatchDrawerProps {
@@ -40,12 +40,34 @@ const RCV_NOT_LINKABLE: readonly PartState[] = ["NOT_APPLICABLE", "SUMMARY_ONLY"
 const DIRECTION_LABELS: Record<FiscalMatchDetail["direction"], string> = { sale: "Venta", purchase: "Compra" }
 
 /**
+ * Las acciones responden con el grupo resultante. Unir un huérfano lo borra y devuelve el grupo del
+ * documento: la ficha pasa a mostrar ese grupo en vez de quedarse en un id que ya no existe.
+ */
+const FollowGroupContext = createContext<(result: FiscalMatchDetail) => void>(() => undefined)
+
+/** Ejecuta la acción y sigue al grupo resultante; si falla, el hook ya mostró el error. */
+function useRunAction() {
+    const follow = useContext(FollowGroupContext)
+    return useCallback(
+        (action: () => Promise<FiscalMatchDetail>) => void action().then(follow).catch(() => undefined),
+        [follow],
+    )
+}
+
+/**
  * Ficha de un grupo de cuadre (`tax.fiscalmatch`): documento ERP, pagos TUU y registro RCV del SII,
  * con la unión manual de los tres registros (spec §5.5) y la alimentación de compras desde el RCV.
  */
 export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp }: FiscalMatchDrawerProps) {
     const { mode } = useDrawerMode({ mode: modeProp, initialData: id ? { id } : undefined, defaultMode: "view" })
-    const { group, isLoading, isError } = useFiscalMatch(id)
+    // Grupo al que se movió la ficha tras una unión; vale solo mientras el `id` abierto sea el mismo.
+    const [moved, setMoved] = useState<{ from: number | null; to: number } | null>(null)
+    const groupId = moved && moved.from === id ? moved.to : id
+    const { group, isLoading, isError } = useFiscalMatch(groupId)
+    const follow = useCallback(
+        (result: FiscalMatchDetail) => { if (result.id !== groupId) setMoved({ from: id, to: result.id }) },
+        [id, groupId],
+    )
     const identity = useDrawerIdentity("tax.fiscalmatch", mode, group, {
         overrideTitle: group ? groupTitle(group) : "Cuadre",
         overrideSubtitle: group ? `${DIRECTION_LABELS[group.direction]} · ${group.status_display}` : undefined,
@@ -55,7 +77,11 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp }: Fi
         <EmptyState context="generic" title="No se pudo cargar el cuadre" description="Revisa tu conexión e intenta nuevamente." variant="compact" />
     ) : (
         <SkeletonShell isLoading={isLoading || !group} ariaLabel="Cargando cuadre">
-            {group && <FiscalMatchBody group={group} />}
+            {group && (
+                <FollowGroupContext.Provider value={follow}>
+                    <FiscalMatchBody group={group} />
+                </FollowGroupContext.Provider>
+            )}
         </SkeletonShell>
     )
 
@@ -86,6 +112,7 @@ function groupTitle(group: FiscalMatchDetail): string {
 }
 
 function FiscalMatchBody({ group }: { group: FiscalMatchDetail }) {
+    const follow = useContext(FollowGroupContext)
     const status = fiscalMatchStatusValue(group.status, group.status_display)
     const isOrphan = group.invoice === null
     const records = group.terminal_sales.length + group.rcv_documents.length
@@ -115,7 +142,7 @@ function FiscalMatchBody({ group }: { group: FiscalMatchDetail }) {
 
             {feedingDoc && (
                 <Can permission={CHANGE_PERMISSION}>
-                    <FiscalMatchRegisterSection groupId={group.id} doc={feedingDoc} />
+                    <FiscalMatchRegisterSection groupId={group.id} doc={feedingDoc} onGroupChange={follow} />
                 </Can>
             )}
         </div>
@@ -124,6 +151,7 @@ function FiscalMatchBody({ group }: { group: FiscalMatchDetail }) {
 
 function FiscalMatchBanners({ group }: { group: FiscalMatchDetail }) {
     const retry = useRetryFiscalIssue()
+    const run = useRunAction()
     return (
         <>
             {group.issue_error && (
@@ -137,7 +165,7 @@ function FiscalMatchBanners({ group }: { group: FiscalMatchDetail }) {
                                 size="sm"
                                 variant="outline"
                                 disabled={retry.isPending}
-                                onClick={() => void retry.mutateAsync({ id: group.id }).catch(() => undefined)}
+                                onClick={() => run(() => retry.mutateAsync({ id: group.id }))}
                             >
                                 Reintentar emisión
                             </Button>
@@ -151,7 +179,7 @@ function FiscalMatchBanners({ group }: { group: FiscalMatchDetail }) {
             )}
             {group.closed_period_alert && (
                 <Banner tone="warning" title="Cambió en un período cerrado">
-                    El grupo dejó de estar cuadrado después de cerrar su período; revisa el F29 declarado.
+                    Este cuadre cambió después de cerrarse su período o de emitirse su documento; revíselo.
                 </Banner>
             )}
             {group.notice && <Banner tone="info" live="none">{group.notice}</Banner>}
@@ -161,6 +189,7 @@ function FiscalMatchBanners({ group }: { group: FiscalMatchDetail }) {
 
 function ReleaseAction({ groupId }: { groupId: number }) {
     const release = useReleaseFiscalMatch()
+    const run = useRunAction()
     return (
         <Can permission={CHANGE_PERMISSION}>
             <Button
@@ -168,7 +197,7 @@ function ReleaseAction({ groupId }: { groupId: number }) {
                 size="sm"
                 variant="outline"
                 disabled={release.isPending}
-                onClick={() => void release.mutateAsync({ id: groupId }).catch(() => undefined)}
+                onClick={() => run(() => release.mutateAsync({ id: groupId }))}
             >
                 Devolver al cruce automático
             </Button>
@@ -190,6 +219,67 @@ function ToggleAction({ label, open, onToggle }: { label: string; open: boolean;
 function PartStateRow({ state }: { state: PartState }) {
     const value = partStateValue(state)
     return <Stat title="Estado" value={<StatusBadge status={value.status} label={value.label} intent={value.intent} size="sm" />} />
+}
+
+/** «14:02 · Tarjeta»: hora local del cobro y su método. */
+function paymentLabel(movement: CandidateMovement): string {
+    return `${formatTimeOfDay(movement.created_at)} · ${movement.method}`
+}
+
+/**
+ * Botones para unir un candidato: uno solo si hay un cobro compatible (o ninguno que elegir),
+ * uno por cobro cuando hay varios del mismo monto y el usuario debe decidir a cuál corresponde.
+ */
+function PaymentChoice({ movements, label, singleText, allowNone, disabled, onPick }: {
+    movements: CandidateMovement[]
+    /** Nombre accesible del candidato («venta TUU #40», «BOL-90»). */
+    label: string
+    singleText: string
+    /** Sin cobros compatibles se une igual (el huérfano no tiene venta TUU). */
+    allowNone: boolean
+    disabled: boolean
+    onPick: (movement: number | undefined) => void
+}) {
+    if (movements.length === 0) {
+        if (!allowNone) return <span className="text-xs text-muted-foreground">Sin pago compatible</span>
+        return (
+            <Button type="button" size="sm" variant="outline" disabled={disabled} aria-label={`${singleText} ${label}`} onClick={() => onPick(undefined)}>
+                {singleText}
+            </Button>
+        )
+    }
+    if (movements.length === 1) {
+        const [only] = movements
+        return (
+            <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={disabled}
+                aria-label={`${singleText} ${label} (pago ${paymentLabel(only)})`}
+                onClick={() => onPick(only.id)}
+            >
+                {singleText}
+            </Button>
+        )
+    }
+    return (
+        <span className="flex flex-wrap justify-end gap-2">
+            {movements.map((m) => (
+                <Button
+                    key={m.id}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={disabled}
+                    aria-label={`${singleText} ${label} al pago ${paymentLabel(m)}`}
+                    onClick={() => onPick(m.id)}
+                >
+                    {paymentLabel(m)}
+                </Button>
+            ))}
+        </span>
+    )
 }
 
 function ErpBlock({ group }: { group: FiscalMatchDetail }) {
@@ -221,9 +311,11 @@ function ErpBlock({ group }: { group: FiscalMatchDetail }) {
     )
 }
 
+/** Documentos para un huérfano; si tiene venta TUU, el usuario elige el cobro cuando hay varios. */
 function ErpCandidates({ groupId }: { groupId: number }) {
     const { candidates, isLoading, isError } = useFiscalMatchCandidates(groupId, "erp")
     const link = useLinkFiscalMatch()
+    const run = useRunAction()
     return (
         <CandidateList isLoading={isLoading} isError={isError} isEmpty={candidates.length === 0} emptyText="Sin documentos candidatos">
             {candidates.map((c) => (
@@ -233,16 +325,19 @@ function ErpCandidates({ groupId }: { groupId: number }) {
                     description={[getDteLabel(c.dte_type), c.date && formatDate(c.date)].filter(Boolean).join(" · ")}
                     value={<Money amount={c.total} />}
                     actions={
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
+                        <PaymentChoice
+                            movements={c.compatible_movements}
+                            label={c.display_id}
+                            singleText="Vincular"
+                            allowNone
                             disabled={link.isPending}
-                            aria-label={`Vincular ${c.display_id}`}
-                            onClick={() => void link.mutateAsync({ id: groupId, body: { part: "erp", id: c.id } }).catch(() => undefined)}
-                        >
-                            Vincular
-                        </Button>
+                            onPick={(movement) =>
+                                run(() => link.mutateAsync({
+                                    id: groupId,
+                                    body: movement === undefined ? { part: "erp", id: c.id } : { part: "erp", id: c.id, movement },
+                                }))
+                            }
+                        />
                     }
                 />
             ))}
@@ -253,13 +348,15 @@ function ErpCandidates({ groupId }: { groupId: number }) {
 function TuuBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: boolean }) {
     const { openEntity } = useGlobalModalActions()
     const unlink = useUnlinkFiscalMatch()
+    const run = useRunAction()
     const [linking, setLinking] = useState(false)
-    const hasInvoice = group.invoice !== null
+    // TUU «No aplica» (factura sin terminal): no hay cobro que respaldar con una venta.
+    const canAdd = group.invoice !== null && group.tuu_state !== "NOT_APPLICABLE"
 
     return (
         <Section
             title="Pagos TUU"
-            actions={hasInvoice ? <ToggleAction label="Agregar pago TUU" open={linking} onToggle={() => setLinking((v) => !v)} /> : undefined}
+            actions={canAdd ? <ToggleAction label="Agregar pago TUU" open={linking} onToggle={() => setLinking((v) => !v)} /> : undefined}
         >
             <PartStateRow state={group.tuu_state} />
             {group.tuu_amount !== null && <Stat title="Total TUU" value={<Money amount={group.tuu_amount} />} />}
@@ -284,7 +381,7 @@ function TuuBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: b
                                 size="sm"
                                 variant="outline"
                                 disabled={unlink.isPending}
-                                onClick={() => void unlink.mutateAsync({ id: group.id, body: { part: "tuu", id: s.id } }).catch(() => undefined)}
+                                onClick={() => run(() => unlink.mutateAsync({ id: group.id, body: { part: "tuu", id: s.id } }))}
                             >
                                 Quitar
                             </Button>
@@ -292,7 +389,7 @@ function TuuBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: b
                     ) : undefined}
                 />
             ))}
-            {hasInvoice && linking && <TuuCandidates groupId={group.id} />}
+            {canAdd && linking && <TuuCandidates groupId={group.id} />}
         </Section>
     )
 }
@@ -301,6 +398,7 @@ function TuuBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: b
 function TuuCandidates({ groupId }: { groupId: number }) {
     const { candidates, isLoading, isError } = useFiscalMatchCandidates(groupId, "tuu")
     const link = useLinkFiscalMatch()
+    const run = useRunAction()
     return (
         <CandidateList isLoading={isLoading} isError={isError} isEmpty={candidates.length === 0} emptyText="Sin ventas TUU candidatas">
             {candidates.map((c) => (
@@ -310,25 +408,16 @@ function TuuCandidates({ groupId }: { groupId: number }) {
                     description={[formatDate(c.transaction_at, true), c.document_type !== null && `DTE ${c.document_type}`].filter(Boolean).join(" · ")}
                     value={<Money amount={c.sale_amount} />}
                     actions={
-                        c.compatible_movements.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">Sin pago compatible</span>
-                        ) : (
-                            <span className="flex flex-wrap justify-end gap-2">
-                                {c.compatible_movements.map((movement) => (
-                                    <Button
-                                        key={movement}
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={link.isPending}
-                                        aria-label={`Agregar venta TUU #${c.id} al pago #${movement}`}
-                                        onClick={() => void link.mutateAsync({ id: groupId, body: { part: "tuu", id: c.id, movement } }).catch(() => undefined)}
-                                    >
-                                        {`Pago #${movement}`}
-                                    </Button>
-                                ))}
-                            </span>
-                        )
+                        <PaymentChoice
+                            movements={c.compatible_movements}
+                            label={`venta TUU #${c.id}`}
+                            singleText="Agregar"
+                            allowNone={false}
+                            disabled={link.isPending}
+                            onPick={(movement) => {
+                                if (movement !== undefined) run(() => link.mutateAsync({ id: groupId, body: { part: "tuu", id: c.id, movement } }))
+                            }}
+                        />
                     }
                 />
             ))}
@@ -339,6 +428,7 @@ function TuuCandidates({ groupId }: { groupId: number }) {
 function RcvBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: boolean }) {
     const { openEntity } = useGlobalModalActions()
     const unlink = useUnlinkFiscalMatch()
+    const run = useRunAction()
     const [linking, setLinking] = useState(false)
     const linkable = group.invoice !== null && group.rcv_documents.length === 0 && !RCV_NOT_LINKABLE.includes(group.rcv_state)
 
@@ -367,7 +457,7 @@ function RcvBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: b
                                 size="sm"
                                 variant="outline"
                                 disabled={unlink.isPending}
-                                onClick={() => void unlink.mutateAsync({ id: group.id, body: { part: "rcv", id: d.id } }).catch(() => undefined)}
+                                onClick={() => run(() => unlink.mutateAsync({ id: group.id, body: { part: "rcv", id: d.id } }))}
                             >
                                 Quitar
                             </Button>
@@ -383,6 +473,7 @@ function RcvBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: b
 function RcvCandidates({ groupId }: { groupId: number }) {
     const { candidates, isLoading, isError } = useFiscalMatchCandidates(groupId, "rcv")
     const link = useLinkFiscalMatch()
+    const run = useRunAction()
     return (
         <CandidateList isLoading={isLoading} isError={isError} isEmpty={candidates.length === 0} emptyText="Sin registros RCV candidatos">
             {candidates.map((c) => (
@@ -398,7 +489,7 @@ function RcvCandidates({ groupId }: { groupId: number }) {
                             variant="outline"
                             disabled={link.isPending}
                             aria-label={`Vincular folio ${c.folio}`}
-                            onClick={() => void link.mutateAsync({ id: groupId, body: { part: "rcv", id: c.id } }).catch(() => undefined)}
+                            onClick={() => run(() => link.mutateAsync({ id: groupId, body: { part: "rcv", id: c.id } }))}
                         >
                             Vincular
                         </Button>
@@ -428,9 +519,9 @@ function Money({ amount }: { amount: string | null }) {
 }
 
 /** Key–value row; empty values show a dash so every field stays visible. */
-function Stat({ title, value, plain, strong }: { title: string; value: ReactNode; plain?: boolean; strong?: boolean }) {
+function Stat({ title, value, plain }: { title: string; value: ReactNode; plain?: boolean }) {
     const empty = value === null || value === undefined || value === "" || value === false
-    return <Section.Row variant="stat" title={title} value={empty ? "—" : value} plain={plain} strong={strong} />
+    return <Section.Row variant="stat" title={title} value={empty ? "—" : value} plain={plain} />
 }
 
 export default FiscalMatchDrawer

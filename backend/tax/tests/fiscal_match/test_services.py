@@ -253,7 +253,7 @@ def test_tuu_candidates_list_compatible_payments(tenv):
 
     found = group_candidates(_group_of(inv), "tuu")
 
-    assert [(s.id, s.compatible_movements) for s in found] == [(fits.id, [movement.id])]
+    assert [(s.id, [m.id for m in s.compatible_movements]) for s in found] == [(fits.id, [movement.id])]
     with pytest.raises(ValidationError):
         group_candidates(_group_of(inv), "erp")
 
@@ -265,7 +265,41 @@ def test_erp_candidates_for_orphan_sale(tenv):
     _ensure()
     sale.refresh_from_db()
 
-    assert [i.id for i in group_candidates(sale.fiscal_match, "erp")] == [inv.id]
+    found = group_candidates(sale.fiscal_match, "erp")
+    assert [i.id for i in found] == [inv.id]
+    assert [m.id for m in found[0].compatible_movements] == [TreasuryMovement.objects.get(invoice=inv).id]
+
+
+def test_erp_candidates_expose_each_free_payment_of_the_sale_amount(tenv):
+    """Dos cobros libres del mismo monto: el usuario debe elegir; el candidato trae ambos."""
+    inv = make_pos_document(tenv, 6000, _ago(300))
+    first = TreasuryMovement.objects.get(invoice=inv)
+    second = TreasuryMovement.objects.create(
+        movement_type=TreasuryMovement.Type.INBOUND, payment_method="CASH", amount=Decimal(6000),
+        created_by=tenv.user, contact=tenv.customer, to_account=tenv.cash_account, invoice=inv,
+        sale_order=inv.sale_order, pos_session=tenv.session, date=first.date,
+    )
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    _ensure()
+    sale.refresh_from_db()
+
+    (candidate,) = group_candidates(sale.fiscal_match, "erp")
+
+    assert [m.id for m in candidate.compatible_movements] == [first.id, second.id]
+    with pytest.raises(ValidationError):
+        link_invoice(sale.fiscal_match, inv)  # sin elegir pago
+    target = link_invoice(sale.fiscal_match, inv, second)
+    sale.refresh_from_db()
+    assert sale.fiscal_match_id == target.id and sale.matched_movement_id == second.id
+
+
+def test_erp_candidates_without_sale_have_no_payments(imp):
+    inv = _purchase("999", 119000)
+    doc = _rcv(imp, 999, 119000)
+    _ensure()
+    doc.refresh_from_db()
+    found = group_candidates(doc.fiscal_match, "erp")
+    assert [i.id for i in found] == [inv.id] and found[0].compatible_movements == []
 
 
 def test_retry_issue_requires_pending_draft(tenv):

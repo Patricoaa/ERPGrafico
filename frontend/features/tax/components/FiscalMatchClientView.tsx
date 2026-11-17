@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { Collection, formatNumber, useEntityCollection, useServerPage } from "@/components/entity-view"
@@ -15,8 +16,9 @@ import {
     bindUnifiedSearch,
     useUnifiedSearch,
 } from "@/components/shared"
-import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+import { EntityPanelTab } from "@/components/providers"
 import { Button } from "@/components/ui/button"
+import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useServerDate } from "@/hooks/useServerDate"
 import { fiscalMatchStatusValue, type FiscalMatchStatus } from "@/lib/fiscal-match"
 import { FISCAL_MATCH_PAGE_SIZE } from "../api/fiscalMatchApi"
@@ -39,6 +41,7 @@ import {
 } from "../unifiedSearchDef"
 import type { UseUnifiedSearchReturn } from "@/types/unified-search"
 import type { FiscalMatchCounts, FiscalMatchFilters } from "../types/fiscalMatch"
+import { FiscalMatchDrawer } from "./FiscalMatchDrawer"
 
 const GROUP_LABEL = "tax.fiscalmatch"
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: FISCAL_MATCH_PAGE_SIZE }
@@ -61,7 +64,16 @@ function yearOptions(current: number) {
  * Sin meses ni recálculos: el motor corre solo cada 10 minutos. Los conteos son filtros rápidos.
  */
 export function FiscalMatchClientView() {
-    const { openEntity } = useGlobalModalActions()
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+    // `?selected={id}` abre la ficha del grupo (enlaces directos, `detailUrlPattern` del registro).
+    const panel = useEntityPanelRoute({ create: false })
+    const openGroup = useCallback((id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected", String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
     const search = useUnifiedSearch(fiscalMatchUnifiedSearchDef)
     const filters = useMemo(() => toFiscalMatchFilters(search.filters), [search.filters])
     // Los conteos ignoran el estado: sin él en la clave, cambiar de estado no los vuelve a pedir.
@@ -90,7 +102,13 @@ export function FiscalMatchClientView() {
                         onRetry={() => void counts.refetch()}
                         search={search}
                     />
-                    <Collection.Root collection={collection} label="Cuadre" onOpen={(group) => openEntity(GROUP_LABEL, group.id)}>
+                    <Collection.Root
+                        collection={collection}
+                        label="Cuadre"
+                        selection="panel"
+                        selectedId={panel.selectedId}
+                        onOpen={(group) => openGroup(group.id)}
+                    >
                         <Collection.Toolbar>
                             <UnifiedSearchBar
                                 config={fiscalMatchUnifiedSearchDef}
@@ -107,9 +125,14 @@ export function FiscalMatchClientView() {
                         />
                     </Collection.Root>
                 </div>
-                <PendingIssueSection />
+                <PendingIssueSection onOpenGroup={openGroup} />
                 <MonthlySummarySection />
             </div>
+            <EntityPanelTab label={GROUP_LABEL} {...panel.tab}>
+                {(open) => (
+                    <FiscalMatchDrawer id={panel.selectedId} open={open} onOpenChange={(o) => { if (!o) panel.close() }} />
+                )}
+            </EntityPanelTab>
         </div>
     )
 }
@@ -219,8 +242,7 @@ function pendingIssueDescription(count: number): string {
 }
 
 /** Borradores 39/41/48 sin folio y por qué aún no se emiten (ADR-0140); la fila abre su grupo. */
-function PendingIssueSection() {
-    const { openEntity } = useGlobalModalActions()
+function PendingIssueSection({ onOpenGroup }: { onOpenGroup: (id: number) => void }) {
     const { pendingIssue, isLoading, isRefetching, isError, refetch } = usePendingIssue()
     const items = pendingIssue?.items
     const count = pendingIssue?.count ?? 0
@@ -235,7 +257,7 @@ function PendingIssueSection() {
             {items && count > items.length && (
                 <Banner tone="info" className="mb-3">{`Se muestran los primeros ${items.length} de ${count}.`}</Banner>
             )}
-            <Collection.Root collection={collection} label="Boletas pendientes de folio" onOpen={(doc) => openEntity(GROUP_LABEL, doc.group)}>
+            <Collection.Root collection={collection} label="Boletas pendientes de folio" onOpen={(doc) => onOpenGroup(doc.group)}>
                 <Collection.View
                     table={pendingIssueDocumentViews.table}
                     card={pendingIssueDocumentViews.card}

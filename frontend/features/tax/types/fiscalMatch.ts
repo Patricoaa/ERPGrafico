@@ -104,6 +104,12 @@ export interface FiscalMatchCounts {
     start_date: string | null
 }
 
+/** Cobro del documento al que puede corresponder una venta TUU. */
+export interface CandidateMovement extends FiscalMatchMovementRef {
+    /** Nombre del método de pago («Tarjeta», «Efectivo»). */
+    method: string
+}
+
 export interface ErpCandidate {
     id: number
     display_id: string
@@ -111,12 +117,14 @@ export interface ErpCandidate {
     number: string
     total: string | null
     date: string | null
+    /** Cobros libres del monto de la venta TUU del huérfano; vacío si el huérfano no tiene venta. */
+    compatible_movements: CandidateMovement[]
 }
 
 export interface TuuCandidate extends FiscalMatchSaleRef {
     document_type: number | null
     payment_type: string
-    compatible_movements: number[]
+    compatible_movements: CandidateMovement[]
 }
 
 export interface RcvCandidate extends FiscalMatchRcvDetail {

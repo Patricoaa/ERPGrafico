@@ -1,7 +1,8 @@
-import { render, screen, within } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { FiscalMatchDetail, FiscalMatchPart } from "../../types/fiscalMatch"
+import { formatTimeOfDay } from "@/components/entity-view"
+import type { CandidateMovement, FiscalMatchDetail, FiscalMatchPart } from "../../types/fiscalMatch"
 
 const m = vi.hoisted(() => ({
     group: undefined as unknown,
@@ -145,6 +146,10 @@ const purchaseOrphan: FiscalMatchDetail = {
     counterparty_rut: "76123456-7",
 }
 
+const pay501: CandidateMovement = { id: 501, amount: "9990.00", created_at: "2026-11-10T11:39:00-03:00", method: "Tarjeta" }
+const pay502: CandidateMovement = { id: 502, amount: "9990.00", created_at: "2026-11-10T12:10:00-03:00", method: "Efectivo" }
+const time = (m: CandidateMovement) => formatTimeOfDay(m.created_at)
+
 const renderDrawer = (id: number) => render(<FiscalMatchDrawer id={id} open onOpenChange={vi.fn()} />)
 const section = (title: string) => screen.getByRole("heading", { name: title }).closest("section") as HTMLElement
 
@@ -196,26 +201,65 @@ describe("FiscalMatchDrawer", () => {
     it("link TUU sends movement: el usuario elige la venta y el pago", async () => {
         const user = userEvent.setup()
         m.candidates.tuu = [
-            { id: 40, transaction_at: "2026-11-10T11:45:00-03:00", sale_amount: "9990.00", document_type: 48, payment_type: "CREDIT", compatible_movements: [501, 502] },
+            { id: 40, transaction_at: "2026-11-10T11:45:00-03:00", sale_amount: "9990.00", document_type: 48, payment_type: "CREDIT", compatible_movements: [pay501, pay502] },
+            { id: 41, transaction_at: "2026-11-10T11:50:00-03:00", sale_amount: "9990.00", document_type: 48, payment_type: "CREDIT", compatible_movements: [pay502] },
         ]
         renderDrawer(1)
         // Los candidatos se piden solo al abrir la acción.
         expect(m.candidateCalls.some(([, part, enabled]) => part === "tuu" && enabled)).toBe(false)
         await user.click(screen.getByRole("button", { name: "Agregar pago TUU" }))
         expect(m.candidateCalls).toContainEqual([1, "tuu", true])
-        await user.click(screen.getByRole("button", { name: "Agregar venta TUU #40 al pago #502" }))
+        // Varios cobros: un botón por cobro, rotulado con hora local y método.
+        const choice = screen.getByRole("button", { name: `Agregar venta TUU #40 al pago ${time(pay502)} · Efectivo` })
+        expect(choice).toHaveTextContent(`${time(pay502)} · Efectivo`)
+        await user.click(choice)
         expect(m.link).toHaveBeenCalledWith({ id: 1, body: { part: "tuu", id: 40, movement: 502 } })
+        // Un solo cobro compatible: un único botón.
+        await user.click(screen.getByRole("button", { name: `Agregar venta TUU #41 (pago ${time(pay502)} · Efectivo)` }))
+        expect(m.link).toHaveBeenLastCalledWith({ id: 1, body: { part: "tuu", id: 41, movement: 502 } })
+    })
+
+    it("oculta «Agregar pago TUU» cuando TUU no aplica", () => {
+        m.group = invoice
+        renderDrawer(2)
+        expect(screen.queryByRole("button", { name: "Agregar pago TUU" })).not.toBeInTheDocument()
+    })
+
+    it("ERP con varios cobros del monto de la venta: el usuario elige el pago y se envía movement", async () => {
+        const user = userEvent.setup()
+        m.group = orphan
+        m.candidates.erp = [
+            { id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [pay501, pay502] },
+        ]
+        renderDrawer(3)
+        await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
+        await user.click(screen.getByRole("button", { name: `Vincular BOL-90 al pago ${time(pay501)} · Tarjeta` }))
+        expect(m.link).toHaveBeenCalledWith({ id: 3, body: { part: "erp", id: 90, movement: 501 } })
+    })
+
+    it("tras unir un huérfano, la ficha sigue al grupo del documento", async () => {
+        const user = userEvent.setup()
+        m.group = orphan
+        m.candidates.erp = [{ id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [] }]
+        m.link.mockResolvedValue({ ...voucher, id: 1 })
+        renderDrawer(3)
+        await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
+        m.group = voucher
+        await user.click(screen.getByRole("button", { name: "Vincular BOL-90" }))
+        expect(m.link).toHaveBeenCalledWith({ id: 3, body: { part: "erp", id: 90 } })
+        await waitFor(() => expect(m.requestedIds.at(-1)).toBe(1))
+        expect(screen.getByRole("button", { name: "CMP-77" })).toBeInTheDocument()
     })
 
     it("vincula documento ERP en un huérfano y registro RCV en un grupo con documento", async () => {
         const user = userEvent.setup()
         m.group = orphan
-        m.candidates.erp = [{ id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10" }]
+        m.candidates.erp = [{ id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [pay501] }]
         const { unmount } = renderDrawer(3)
         expect(screen.queryByRole("button", { name: "Agregar pago TUU" })).not.toBeInTheDocument()
         await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
-        await user.click(screen.getByRole("button", { name: "Vincular BOL-90" }))
-        expect(m.link).toHaveBeenCalledWith({ id: 3, body: { part: "erp", id: 90 } })
+        await user.click(screen.getByRole("button", { name: `Vincular BOL-90 (pago ${time(pay501)} · Tarjeta)` }))
+        expect(m.link).toHaveBeenCalledWith({ id: 3, body: { part: "erp", id: 90, movement: 501 } })
         unmount()
 
         m.group = { ...invoice, rcv_state: "MISSING", rcv_documents: [] }
@@ -280,6 +324,7 @@ describe("FiscalMatchDrawer", () => {
         renderDrawer(1)
         expect(screen.getByText("Venta TUU rival del mismo monto")).toBeInTheDocument()
         expect(screen.getByText("Cambió en un período cerrado")).toBeInTheDocument()
+        expect(screen.getByText(/después de cerrarse su período o de emitirse su documento/)).toBeInTheDocument()
     })
 
     it("compra huérfana con un registro RCV: alimentación desde el RCV", async () => {
@@ -288,6 +333,7 @@ describe("FiscalMatchDrawer", () => {
         renderDrawer(4)
         expect(screen.getByRole("heading", { name: "Registrar en el ERP" })).toBeInTheDocument()
         expect(m.feedingCalls).toContainEqual([4, true])
+        m.createDraft.mockResolvedValue({ ...purchaseOrphan, id: 4 })
         await user.click(screen.getByRole("button", { name: "Crear borrador desde OC OC-400" }))
         expect(m.createDraft).toHaveBeenCalledWith({ groupId: 4, purchaseOrderId: 400 })
         await user.click(screen.getByRole("button", { name: "Asignar folio y emitir" }))

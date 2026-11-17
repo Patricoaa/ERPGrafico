@@ -11,13 +11,15 @@ import {
     useFiscalMatchDraftSuggestions,
     useFiscalMatchPurchaseOrders,
 } from "../hooks/useRcvFeeding"
-import type { FiscalMatchRcvDetail } from "../types/fiscalMatch"
+import type { FiscalMatchDetail, FiscalMatchRcvDetail } from "../types/fiscalMatch"
 
 export interface FiscalMatchRegisterSectionProps {
     /** Grupo huérfano de compra. */
     groupId: number
     /** Su único registro del SII: aporta el folio y el total a confirmar. */
     doc: FiscalMatchRcvDetail
+    /** Recibe el grupo resultante (el del documento emitido o creado) para que la ficha lo siga. */
+    onGroupChange?: (group: FiscalMatchDetail) => void
 }
 
 /** Borrador elegido para emitir, pendiente de confirmación. */
@@ -31,7 +33,7 @@ interface PendingDraft {
  * Compra que falta en el ERP: emitir un borrador parecido con el folio del RCV o crear uno desde una OC.
  * Nada corre sin un clic explícito (ADR-0138 D8); emitir pide confirmar folio y totales.
  */
-export function FiscalMatchRegisterSection({ groupId, doc }: FiscalMatchRegisterSectionProps) {
+export function FiscalMatchRegisterSection({ groupId, doc, onGroupChange }: FiscalMatchRegisterSectionProps) {
     const drafts = useFiscalMatchDraftSuggestions(groupId, true)
     const orders = useFiscalMatchPurchaseOrders(groupId, true)
     const confirm = useConfirmFiscalMatchDraft()
@@ -88,7 +90,9 @@ export function FiscalMatchRegisterSection({ groupId, doc }: FiscalMatchRegister
                                 variant="outline"
                                 disabled={busy}
                                 aria-label={`Crear borrador desde OC ${o.display_id}`}
-                                onClick={() => void create.mutateAsync({ groupId, purchaseOrderId: o.id }).catch(() => undefined)}
+                                onClick={() =>
+                                    void create.mutateAsync({ groupId, purchaseOrderId: o.id }).then((g) => onGroupChange?.(g)).catch(() => undefined)
+                                }
                             >
                                 Crear borrador desde OC
                             </Button>
@@ -100,7 +104,11 @@ export function FiscalMatchRegisterSection({ groupId, doc }: FiscalMatchRegister
                 open={pending !== null}
                 onOpenChange={(open) => { if (!open) setPending(null) }}
                 // Si falla, el hook ya muestra el error y el diálogo queda abierto.
-                onConfirm={async () => { if (pending) await confirm.mutateAsync({ groupId, invoiceId: pending.id }) }}
+                onConfirm={async () => {
+                    if (!pending) return
+                    const result = await confirm.mutateAsync({ groupId, invoiceId: pending.id })
+                    onGroupChange?.(result)
+                }}
                 title="Asignar folio y emitir"
                 confirmText="Emitir"
                 variant="warning"
