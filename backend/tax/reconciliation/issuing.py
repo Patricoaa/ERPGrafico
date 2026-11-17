@@ -13,21 +13,19 @@ import logging
 from datetime import date, timedelta
 
 from celery.exceptions import SoftTimeLimitExceeded
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
 from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
-from billing.services import BillingService
 from core.fiscal_match import MatchStatus
-from core.services.document import lock_document
+from tax.fiscal_match.issuing import ISSUE_RETRY_MINUTES, _error_text, _issue, _tuu_number
 from treasury.models import TerminalSale
 
 logger = logging.getLogger(__name__)
 
-ISSUE_RETRY_MINUTES = 60
+__all__ = ["ISSUE_RETRY_MINUTES", "_error_text", "_issue", "_tuu_number", "fiscal_number_and_date", "issue_fiscal_drafts"]
+
 
 
 def issue_fiscal_drafts(year: int, month: int, *, retry_failed: bool = False) -> dict[str, int]:
@@ -62,21 +60,6 @@ def issue_fiscal_drafts(year: int, month: int, *, retry_failed: bool = False) ->
     return {"issued": issued, "failed": failed}
 
 
-def _error_text(exc: Exception) -> str:
-    text = "; ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
-    return (text.strip() or type(exc).__name__)[:255]
-
-
-@transaction.atomic
-def _issue(invoice: Invoice, number: str, issue_date: date) -> bool:
-    """Emite bajo el row-lock; ``False`` si otro proceso ya lo emitió tras la selección."""
-    lock_document(invoice)
-    if invoice.status != Invoice.Status.DRAFT or invoice.number:
-        return False
-    BillingService.confirm_invoice(invoice, number, date=issue_date)
-    return True
-
-
 def fiscal_number_and_date(invoice: Invoice, sale: TerminalSale) -> tuple[str, date] | None:
     """Número y fecha fiscales del borrador según su propio tipo; ``None`` si aún no se conocen."""
     if invoice.dte_type == Invoice.DTEType.COMPROBANTE_PAGO:
@@ -86,13 +69,6 @@ def fiscal_number_and_date(invoice: Invoice, sale: TerminalSale) -> tuple[str, d
     if doc is None:
         return None
     return str(doc.folio), doc.issue_date
-
-
-def _tuu_number(sale: TerminalSale) -> str:
-    sale_id = (sale.sale_id or "").strip()
-    if sale_id and sale_id.upper() != "N/A":
-        return sale_id
-    return (sale.sequence_number or "").strip()
 
 
 def _linked_drafts(year: int, month: int, *, retry_failed: bool = False) -> list[TerminalSale]:
