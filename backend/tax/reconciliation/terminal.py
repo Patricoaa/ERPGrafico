@@ -218,9 +218,10 @@ def match_terminal_sale(sale: TerminalSale, invoice: Invoice) -> TerminalSale:
     sale.matched_invoice = invoice
     sale.matched_manually = True
     sale.match_status = MatchStatus.TYPE_DIFF if type_diff else MatchStatus.MATCHED
+    _clear_issue_attempt(sale)
     try:
         with transaction.atomic():
-            sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+            sale.save(update_fields=["matched_invoice", "matched_manually", "match_status", *_ISSUE_FIELDS])
     except IntegrityError as exc:
         # Otra venta enlazó el documento entre la lectura y el guardado.
         raise ValidationError(taken) from exc
@@ -233,9 +234,19 @@ def unmatch_terminal_sale(sale: TerminalSale) -> TerminalSale:
     sale.matched_invoice = None
     sale.matched_manually = False
     sale.match_status = ""
-    sale.save(update_fields=["matched_invoice", "matched_manually", "match_status"])
+    _clear_issue_attempt(sale)
+    sale.save(update_fields=["matched_invoice", "matched_manually", "match_status", *_ISSUE_FIELDS])
     _propagate_to_boleta(sale, None)
     return sale
+
+
+_ISSUE_FIELDS = ("issue_attempted_at", "issue_error")
+
+
+def _clear_issue_attempt(sale: TerminalSale) -> None:
+    """Un vínculo nuevo (o ninguno) deja sin efecto el error de emisión anterior (ADR-0140)."""
+    sale.issue_attempted_at = None
+    sale.issue_error = ""
 
 
 def _propagate_to_boleta(sale: TerminalSale, invoice: Invoice | None) -> None:

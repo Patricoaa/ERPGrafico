@@ -166,8 +166,8 @@ def test_invoice_confirmed_after_selection_is_skipped(tenv):
     make_terminal_sale(tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv)
     real = issuing._linked_drafts
 
-    def select_then_confirm_manually(year, month):
-        sales = real(year, month)
+    def select_then_confirm_manually(year, month, **kwargs):
+        sales = real(year, month, **kwargs)
         Invoice.objects.filter(pk=inv.pk).update(status=Invoice.Status.POSTED, number="555")
         return sales
 
@@ -312,3 +312,53 @@ def test_terminal_sale_serializers_expose_issue_attempt(tenv):
         data = serializer(sale).data
         assert data["issue_error"] == "boom"
         assert "issue_attempted_at" in data
+
+
+def test_manual_run_retries_recent_failure(tenv):
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    sale = make_terminal_sale(
+        tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv,
+        issue_error="Período cerrado", issue_attempted_at=timezone.now() - timedelta(minutes=10),
+    )
+
+    assert issue_fiscal_drafts(2026, 11, retry_failed=True) == {"issued": 1, "failed": 0}
+
+    sale.refresh_from_db()
+    assert (sale.issue_error, sale.issue_attempted_at) == ("", None)
+
+
+def test_manual_endpoint_retries_recent_failure(tenv):
+    from rest_framework.test import APIClient
+
+    from core.tests.rbac_factories import make_user
+
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    make_terminal_sale(
+        tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv,
+        issue_error="Período cerrado", issue_attempted_at=timezone.now() - timedelta(minutes=10),
+    )
+    client = APIClient()
+    client.force_authenticate(user=make_user("recon-retry", "tax.view_taxperiod", "tax.change_taxperiod"))
+
+    r = client.post("/api/tax/reconciliation/rcv/run/", {"year": 2026, "month": 11}, format="json")
+
+    assert r.status_code == 200, r.content
+    inv.refresh_from_db()
+    assert inv.status == Invoice.Status.POSTED
+
+
+@pytest.mark.parametrize("action", ["match", "unmatch"])
+def test_manual_link_clears_issue_error(tenv, action):
+    from tax.reconciliation.terminal import match_terminal_sale, unmatch_terminal_sale
+
+    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
+    sale = make_terminal_sale(
+        tenv, 1000, local_dt(2026, 11, 12), issue_error="boom", issue_attempted_at=timezone.now(),
+    )
+    if action == "match":
+        match_terminal_sale(sale, inv)
+    else:
+        unmatch_terminal_sale(sale)
+
+    sale.refresh_from_db()
+    assert (sale.issue_error, sale.issue_attempted_at) == ("", None)

@@ -134,8 +134,10 @@ describe("TerminalSaleDrawer", () => {
             render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
             const row = screen.getByText("Error al emitir").closest("li")
             expect(row).toBeTruthy()
-            expect(within(row as HTMLElement).getByText("Período cerrado")).toBeInTheDocument()
-            expect(within(row as HTMLElement).getByText(/12-11-2026|12\/11\/2026/)).toBeInTheDocument()
+            // En la descripción (ajusta líneas), no en el valor monoespaciado que no se encoge.
+            const description = within(row as HTMLElement).getByText(/Período cerrado/)
+            expect(description).toHaveClass("text-muted-foreground")
+            expect(description).toHaveTextContent(/Intento: .*(12-11-2026|12\/11\/2026)/)
         })
 
         it("sin error de emisión no muestra la fila", () => {

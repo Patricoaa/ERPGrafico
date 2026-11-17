@@ -47,6 +47,16 @@ export const onlyErpDocumentViews = onlyErpDocumentEntity.views({
     card: { title: "label", subtitle: ["date"], trailing: ["amount"] },
 })
 
+const ERROR_PREVIEW_CHARS = 40
+
+/** «Error al emitir» con un extracto corto; el texto completo va en la columna «Detalle». */
+function errorLabel(error: string | null): string {
+    const text = (error ?? "").trim()
+    if (!text) return "Error al emitir"
+    const preview = text.length > ERROR_PREVIEW_CHARS ? `${text.slice(0, ERROR_PREVIEW_CHARS).trimEnd()}…` : text
+    return `Error al emitir: ${preview}`
+}
+
 /** Motivo de un borrador pendiente de folio, para `StatusBadge`. */
 export function pendingIssueReason(doc: PendingIssueDocument): StatusValue {
     switch (doc.reason) {
@@ -55,7 +65,7 @@ export function pendingIssueReason(doc: PendingIssueDocument): StatusValue {
         case "WAITING_RCV":
             return { status: "WAITING_RCV", label: "Esperando RCV", intent: "info" }
         case "ERROR":
-            return { status: "ERROR", label: `Error al emitir: ${doc.error ?? ""}`.trim(), intent: "destructive" }
+            return { status: "ERROR", label: errorLabel(doc.error), intent: "destructive" }
         case "READY":
             return { status: "READY", label: "Lista para emitir", intent: "success" }
     }
@@ -69,10 +79,11 @@ export const pendingIssueDocumentEntity = defineEntity<PendingIssueDocument>()((
         date: f.date("date", { label: "Fecha" }),
         amount: f.money((r) => amount(r.amount), { label: "Monto" }),
         reason: f.status(pendingIssueReason, { label: "Motivo" }),
+        error: f.text("error", { label: "Detalle", tone: "secondary" }),
     },
 }))
 
 export const pendingIssueDocumentViews = pendingIssueDocumentEntity.views({
-    table: { columns: ["label", "date", "amount", "reason"], primary: "label" },
-    card: { title: "label", subtitle: ["date", "reason"], trailing: ["amount"] },
+    table: { columns: ["label", "date", "amount", "reason", "error"], primary: "label" },
+    card: { title: "label", subtitle: ["date", "reason", "error"], trailing: ["amount"] },
 })

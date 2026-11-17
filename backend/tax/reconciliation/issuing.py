@@ -30,10 +30,14 @@ logger = logging.getLogger(__name__)
 ISSUE_RETRY_MINUTES = 60
 
 
-def issue_fiscal_drafts(year: int, month: int) -> dict[str, int]:
-    """Emite los borradores del mes ya enlazados a su venta TUU; devuelve emitidos y fallidos."""
+def issue_fiscal_drafts(year: int, month: int, *, retry_failed: bool = False) -> dict[str, int]:
+    """Emite los borradores del mes ya enlazados a su venta TUU; devuelve emitidos y fallidos.
+
+    ``retry_failed`` (corrida manual) reintenta también los fallos recientes que la tarea
+    periódica espera ``ISSUE_RETRY_MINUTES`` antes de reintentar.
+    """
     issued = failed = 0
-    for sale in _linked_drafts(year, month):
+    for sale in _linked_drafts(year, month, retry_failed=retry_failed):
         invoice = sale.matched_invoice
         fiscal = fiscal_number_and_date(invoice, sale)
         if fiscal is None:
@@ -91,11 +95,10 @@ def _tuu_number(sale: TerminalSale) -> str:
     return (sale.sequence_number or "").strip()
 
 
-def _linked_drafts(year: int, month: int) -> list[TerminalSale]:
+def _linked_drafts(year: int, month: int, *, retry_failed: bool = False) -> list[TerminalSale]:
     first = date(year, month, 1)
     last = date(year, month, calendar.monthrange(year, month)[1])
-    return list(
-        TerminalSale.objects.filter(
+    sales = TerminalSale.objects.filter(
             match_status=MatchStatus.MATCHED,
             matched_invoice__status=Invoice.Status.DRAFT,
             matched_invoice__number="",
@@ -104,8 +107,10 @@ def _linked_drafts(year: int, month: int) -> list[TerminalSale]:
             matched_invoice__date__gte=first,
             matched_invoice__date__lte=last,
         )
-        .exclude(_recent_failure_q())
-        .select_related("matched_invoice__sale_order", "rcv_document")
+    if not retry_failed:
+        sales = sales.exclude(_recent_failure_q())
+    return list(
+        sales.select_related("matched_invoice__sale_order", "rcv_document")
         .order_by("matched_invoice__date", "matched_invoice_id")
     )
 

@@ -58,7 +58,7 @@ def _period(data) -> tuple[int, int]:
 def _boletas_and_issue(year: int, month: int) -> dict:
     """Cuadra boletas, emite los borradores con folio y vuelve a cuadrar (ADR-0140 D4)."""
     reconcile_rcv_boletas(year, month)
-    issued = issue_fiscal_drafts(year, month)
+    issued = issue_fiscal_drafts(year, month, retry_failed=True)  # manual: sin esperar el reintento
     return {"boletas": reconcile_rcv_boletas(year, month), "issued": issued}
 
 

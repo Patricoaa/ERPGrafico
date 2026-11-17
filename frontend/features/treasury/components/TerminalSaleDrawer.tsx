@@ -197,10 +197,12 @@ function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
                 />
             )}
             {sale.issue_error && (
+                // El texto va en la descripción, que ajusta líneas; el valor de la fila no se encoge.
                 <Section.Row
                     title="Error al emitir"
-                    description={sale.issue_attempted_at ? `Intento: ${formatDate(sale.issue_attempted_at, true)}` : undefined}
-                    value={<span className="text-destructive">{sale.issue_error}</span>}
+                    description={[sale.issue_error, sale.issue_attempted_at && `Intento: ${formatDate(sale.issue_attempted_at, true)}`]
+                        .filter(Boolean)
+                        .join(" · ")}
                 />
             )}
             {linked ? (

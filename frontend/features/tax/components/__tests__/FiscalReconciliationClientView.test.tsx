@@ -198,13 +198,26 @@ describe("FiscalReconciliationClientView", () => {
         expect(screen.getByText("4 borradores esperan su número fiscal.")).toBeInTheDocument()
         const table = screen.getByRole("table", { name: "Boletas pendientes de folio" })
         const headers = within(table).getAllByRole("columnheader").map((h) => h.textContent)
-        expect(headers).toEqual(expect.arrayContaining(["Documento", "Fecha", "Monto", "Motivo"]))
+        expect(headers).toEqual(expect.arrayContaining(["Documento", "Fecha", "Monto", "Motivo", "Detalle"]))
         expect(within(table).getByText("Sin venta TUU")).toBeInTheDocument()
         expect(within(table).getByText("Esperando RCV")).toBeInTheDocument()
         expect(within(table).getByText("Error al emitir: Período cerrado")).toBeInTheDocument()
+        expect(within(table).getByTitle("Período cerrado")).toBeInTheDocument()
         expect(within(table).getByText("Lista para emitir")).toBeInTheDocument()
         await userEvent.click(within(table).getByRole("button", { name: /#902/ }))
         expect(m.openEntity).toHaveBeenCalledWith("billing.invoice", 902)
+    })
+
+    it("Boletas pendientes de folio: un error largo se acorta en el motivo y se lee completo en el detalle", () => {
+        const error = "El período contable de octubre de 2026 está cerrado y no admite asientos nuevos"
+        m.report = {
+            ...report,
+            pending_issue: { count: 1, items: [{ id: 905, label: "Boleta Electrónica sin folio (#905)", amount: "100", date: "2026-10-07", reason: "ERROR", error }] },
+        }
+        render(<FiscalReconciliationClientView />)
+        const table = screen.getByRole("table", { name: "Boletas pendientes de folio" })
+        expect(within(table).getByText(`Error al emitir: ${error.slice(0, 40).trimEnd()}…`)).toBeInTheDocument()
+        expect(within(table).getByTitle(error)).toHaveTextContent(error)
     })
 
     it("Boletas pendientes de folio: estado vacío", () => {
