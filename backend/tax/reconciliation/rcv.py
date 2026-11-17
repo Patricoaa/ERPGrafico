@@ -7,12 +7,11 @@ salvo que su factura ya no exista o esté anulada.
 
 import calendar
 from collections import Counter, defaultdict
-from datetime import date, timedelta
+from datetime import date
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models import Exists, OuterRef, Q
-from django.db.models.functions import Replace, Upper
 from django.utils.translation import gettext as _
 
 from accounting.integrations.rcv_normalizer import normalize_rut
@@ -22,20 +21,18 @@ from billing.fiscal_key import (
     FiscalKey,
     fiscal_direction_expression,
     fiscal_key,
-    sii_code_expression,
 )
 from billing.models import SII_CODE_TO_DTE_TYPE, Invoice
 from core.fiscal_match import MatchStatus
 from tax.fiscal_match.boletas import BOLETA_SII_CODES
+from tax.fiscal_match.rcv import (
+    CANDIDATE_WINDOW,
+    DOCUMENT_SII_CODES,
+    RCV_TO_FISCAL_DIRECTION,
+    _rcv_family,
+    rut_body,
+)
 
-# Tipos que se cuadran documento por documento; 48 va por resumen mensual.
-DOCUMENT_SII_CODES = frozenset({33, 34, 56, 61})
-# Boletas: las cuadra `boletas.reconcile_rcv_boletas` contra la venta TUU (ADR-0139).
-CANDIDATE_WINDOW = timedelta(days=60)
-RCV_TO_FISCAL_DIRECTION = {
-    RCVImport.Direction.PURCHASES: "purchase",
-    RCVImport.Direction.SALES: "sale",
-}
 _NEW_DIFF_FROM = ("", MatchStatus.MATCHED)
 _NOT_A_DIFF = (MatchStatus.MATCHED, MatchStatus.EXCLUDED)
 
@@ -145,25 +142,6 @@ def _warn_closed_period(
         f"Hay {new_diffs} diferencia(s) nueva(s) del RCV en un período tributario cerrado.",
     ]
     rcv_import.save(update_fields=["warnings"])
-
-
-def _rcv_family(doc: RCVDocument) -> "models.QuerySet[Invoice]":
-    """Facturas emitidas de la misma dirección y código SII que el documento RCV."""
-    return Invoice.objects.annotate(
-        fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
-    ).filter(
-        sii=doc.dte_type,
-        status=Invoice.Status.POSTED,
-        fiscal_direction=RCV_TO_FISCAL_DIRECTION[doc.direction],
-    )
-
-
-def rut_body(field: str) -> Upper:
-    """RUT sin puntos, espacios ni guion, en mayúscula, como expresión ORM."""
-    expr = models.F(field)
-    for char in (".", " ", "-"):
-        expr = Replace(expr, models.Value(char), models.Value(""))
-    return Upper(expr)
 
 
 def rcv_document_candidates(doc: RCVDocument) -> "models.QuerySet[Invoice]":
