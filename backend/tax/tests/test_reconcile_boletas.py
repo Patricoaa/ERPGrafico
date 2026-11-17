@@ -339,25 +339,6 @@ def test_match_propagation_skips_invoice_held_by_other_doc(env, imp):
     assert other.matched_invoice_id == invoice.id
 
 
-def test_run_endpoints_include_boletas_counts(env, imp):
-    from rest_framework.test import APIClient
-
-    from core.tests.rbac_factories import make_user
-
-    client = APIClient()
-    user = make_user("boletas-run", "tax.change_taxperiod")
-    client.force_authenticate(user=user)
-    sale(env, 5000)
-    boleta(imp, 5000)
-    body = {"year": 2026, "month": 11}
-    base = "/api/tax/reconciliation"
-    r = client.post(f"{base}/terminal/run/", body, format="json")
-    assert r.status_code == 200, r.content
-    assert r.json()["boletas"] == {MatchStatus.PENDING_ERP: 1}
-    r = client.post(f"{base}/rcv/run/", body, format="json")
-    assert r.json()["boletas"] == {MatchStatus.PENDING_ERP: 1}
-
-
 def test_propagate_invoice_skips_manually_matched_boleta(env, imp):
     from tax.reconciliation.boletas import propagate_invoice
 

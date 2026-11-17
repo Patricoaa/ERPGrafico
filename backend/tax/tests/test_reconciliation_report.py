@@ -246,7 +246,6 @@ def test_report_endpoint_permissions():
     viewer = APIClient()
     viewer.force_authenticate(user=make_user("recon-view", "tax.view_taxperiod"))
     assert viewer.get(f"{BASE}/", {"year": 2026, "month": 10}).status_code == 200
-    assert viewer.post(f"{BASE}/rcv/run/", {"year": 2026, "month": 10}, format="json").status_code == 403
     doc = _rcv(_import(direction=P), 1, 10)
     assert viewer.get(f"{BASE}/rcv-documents/{doc.pk}/candidates/").status_code == 403
     assert viewer.post(f"{BASE}/rcv-documents/{doc.pk}/match/", {"invoice_id": 1}, format="json").status_code == 403
@@ -254,16 +253,6 @@ def test_report_endpoint_permissions():
     nobody = APIClient()
     nobody.force_authenticate(user=make_user("recon-none"))
     assert nobody.get(f"{BASE}/", {"year": 2026, "month": 10}).status_code == 403
-
-
-def test_rcv_run_endpoint(api):
-    set_match_settings(date(2026, 10, 1))
-    imp = _import(direction=P)
-    _rcv(imp, 77, 100)
-    r = api.post(f"{BASE}/rcv/run/", {"year": 2026, "month": 10}, format="json")
-    assert r.status_code == 200
-    assert r.json() == {"purchase": {MatchStatus.ONLY_EXTERNAL: 1}, "sale": {}, "boletas": {}, "issued": {"issued": 0, "failed": 0}}
-    assert api.post(f"{BASE}/rcv/run/", {"year": 2026, "month": 0}, format="json").status_code == 400
 
 
 def test_rcv_manual_match(api):

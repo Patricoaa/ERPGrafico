@@ -9,7 +9,6 @@ from tax.tests.reconciliation_helpers import (
     make_pos_document,
     make_terminal_env,
     make_terminal_sale,
-    set_match_settings,
 )
 
 pytestmark = pytest.mark.django_db
@@ -104,20 +103,10 @@ def test_candidates_same_day_same_amount(api, env):
     assert set(r.json()[0]) == {"id", "display_id", "dte_type", "total", "date"}
 
 
-def test_run_endpoint_returns_counts(api, env):
-    set_match_settings(local_dt(2026, 11, 1).date())
-    make_terminal_sale(env, 5000, local_dt(2026, 11, 10, 12))
-    r = api.post(f"{BASE}/terminal/run/", {"year": 2026, "month": 11}, format="json")
-    assert r.status_code == 200
-    assert r.json() == {MatchStatus.ONLY_EXTERNAL: 1, "boletas": {}, "issued": {"issued": 0, "failed": 0}}
-    assert api.post(f"{BASE}/terminal/run/", {"year": 2026, "month": 13}, format="json").status_code == 400
-
-
 def test_endpoints_require_permission(env):
     sale, doc = _sale_and_doc(env)
     c = APIClient()
     c.force_authenticate(user=make_user("nope", "tax.view_taxperiod"))
-    assert c.post(f"{BASE}/terminal/run/", {"year": 2026, "month": 11}, format="json").status_code == 403
     assert c.get(f"{BASE}/terminal-sales/{sale.pk}/candidates/").status_code == 403
     assert c.post(f"{BASE}/terminal-sales/{sale.pk}/match/", {"invoice_id": doc.pk}, format="json").status_code == 403
     assert c.post(f"{BASE}/terminal-sales/{sale.pk}/unmatch/").status_code == 403

@@ -1,6 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from .fiscal_match.views import FiscalMatchViewSet
 from .reconciliation_views import TerminalReconciliationViewSet
 from .views import (
     AccountingPeriodViewSet,
@@ -15,6 +16,7 @@ router.register(r"accounting-periods", AccountingPeriodViewSet, basename="accoun
 router.register(r"declarations", F29DeclarationViewSet, basename="f29declaration")
 router.register(r"payments", F29PaymentViewSet, basename="f29payment")
 router.register(r"reconciliation", TerminalReconciliationViewSet, basename="reconciliation")
+router.register(r"fiscal-matches", FiscalMatchViewSet, basename="fiscal-match")
 
 urlpatterns = [
     path("", include(router.urls)),

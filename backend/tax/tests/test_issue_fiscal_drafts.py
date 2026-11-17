@@ -327,26 +327,6 @@ def test_manual_run_retries_recent_failure(tenv):
     assert (sale.issue_error, sale.issue_attempted_at) == ("", None)
 
 
-def test_manual_endpoint_retries_recent_failure(tenv):
-    from rest_framework.test import APIClient
-
-    from core.tests.rbac_factories import make_user
-
-    inv = _draft(tenv, 1000, local_dt(2026, 11, 12))
-    make_terminal_sale(
-        tenv, 1000, local_dt(2026, 11, 12), matched_invoice=inv,
-        issue_error="Período cerrado", issue_attempted_at=timezone.now() - timedelta(minutes=10),
-    )
-    client = APIClient()
-    client.force_authenticate(user=make_user("recon-retry", "tax.view_taxperiod", "tax.change_taxperiod"))
-
-    r = client.post("/api/tax/reconciliation/rcv/run/", {"year": 2026, "month": 11}, format="json")
-
-    assert r.status_code == 200, r.content
-    inv.refresh_from_db()
-    assert inv.status == Invoice.Status.POSTED
-
-
 @pytest.mark.parametrize("action", ["match", "unmatch"])
 def test_manual_link_clears_issue_error(tenv, action):
     from tax.reconciliation.terminal import match_terminal_sale, unmatch_terminal_sale

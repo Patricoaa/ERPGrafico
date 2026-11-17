@@ -54,6 +54,10 @@ La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el c�
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` | Registrar declaración F29 — crea registro oficial ante SII, no reversible |
 | `tax.reconciliation.rcv.confirm_draft` | `POST /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/` | Asigna folio del RCV a un borrador de compra y lo emite (asiento contable) |
 | `tax.reconciliation.rcv.create_draft` | `POST /api/tax/reconciliation/rcv-documents/{id}/create-draft/` | Crea un borrador de compra desde una OC con el folio del RCV |
+| `tax.fiscal_match.link` | `POST /api/tax/fiscal-matches/{id}/link/` | Unión manual del cuadre: mueve ventas TUU / registros SII entre grupos |
+| `tax.fiscal_match.unlink` | `POST /api/tax/fiscal-matches/{id}/unlink/` | Quita un vínculo del cuadre a un grupo huérfano manual |
+| `tax.fiscal_match.release` | `POST /api/tax/fiscal-matches/{id}/release/` | Devuelve un huérfano al cruce automático |
+| `tax.fiscal_match.retry_issue` | `POST /api/tax/fiscal-matches/{id}/retry-issue/` | Reintenta la emisión del borrador (asigna folio fiscal) |
 | `treasury.movement.create` | `POST /api/treasury/movements/` (también `/payments/`) | Movimiento bancario manual |
 | `treasury.movement.register` | `POST /api/treasury/movements/register_movement/` (también `/payments/register_movement/`) | Registro rápido de pago/cobro desde formularios |
 | `treasury.card.purchase` | `POST /api/treasury/movements/card-purchase/` (también `/payments/card-purchase/`) | Compra con tarjeta en cuotas — crea grupo + cuotas |

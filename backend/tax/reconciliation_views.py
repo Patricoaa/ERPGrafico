@@ -1,35 +1,28 @@
 """API del cuadre fiscal: reporte del período, ventas TUU y documentos RCV (ADR-0138 D4-D6)."""
 
-import calendar
-from datetime import date
-
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from accounting.models import RCVDocument, RCVImport
+from accounting.models import RCVDocument
 from core.idempotency import idempotent_endpoint
 from treasury.models import TerminalSale
 
-from .reconciliation.boletas import reconcile_rcv_boletas
 from .reconciliation.feeding import (
     confirm_draft_from_rcv,
     create_draft_from_rcv,
     draft_suggestions,
     supplier_purchase_orders,
 )
-from .reconciliation.issuing import issue_fiscal_drafts
 from .reconciliation.rcv import (
     match_rcv_document,
     rcv_document_candidates,
-    reconcile_rcv_period,
     unmatch_rcv_document,
 )
 from .reconciliation.report import fiscal_reconciliation_report
 from .reconciliation.terminal import (
     match_terminal_sale,
-    reconcile_terminal_sales,
     terminal_sale_candidates,
     unmatch_terminal_sale,
 )
@@ -41,7 +34,6 @@ from .reconciliation_serializers import (
     RcvCreateDraftSerializer,
     TerminalCandidateSerializer,
     TerminalMatchSerializer,
-    TerminalRunSerializer,
 )
 
 _PERM = "tax.change_taxperiod"
@@ -55,13 +47,6 @@ def _period(data) -> tuple[int, int]:
     return body.validated_data["year"], body.validated_data["month"]
 
 
-def _boletas_and_issue(year: int, month: int) -> dict:
-    """Cuadra boletas, emite los borradores con folio y vuelve a cuadrar (ADR-0140 D4)."""
-    reconcile_rcv_boletas(year, month)
-    issued = issue_fiscal_drafts(year, month, retry_failed=True)  # manual: sin esperar el reintento
-    return {"boletas": reconcile_rcv_boletas(year, month), "issued": issued}
-
-
 def _rcv_link(doc: RCVDocument, code: int = status.HTTP_200_OK) -> Response:
     data = {"id": doc.pk, "match_status": doc.match_status, "matched_invoice": doc.matched_invoice_id}
     return Response(data, status=code)
@@ -72,7 +57,7 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
         "list": "tax.view_taxperiod",
         **dict.fromkeys(
             (
-                "run", "candidates", "match", "unmatch", "rcv_run", "rcv_candidates", "rcv_match", "rcv_unmatch",
+                "candidates", "match", "unmatch", "rcv_candidates", "rcv_match", "rcv_unmatch",
                 "rcv_draft_suggestions", "rcv_purchase_orders", "rcv_confirm_draft", "rcv_create_draft",
             ),
             _PERM,
@@ -81,15 +66,6 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
 
     def list(self, request):
         return Response(fiscal_reconciliation_report(*_period(request.query_params)))
-
-    @action(detail=False, methods=["post"], url_path="terminal/run")
-    def run(self, request):
-        body = TerminalRunSerializer(data=request.data)
-        body.is_valid(raise_exception=True)
-        year, month = body.validated_data["year"], body.validated_data["month"]
-        last = calendar.monthrange(year, month)[1]
-        counts = reconcile_terminal_sales(date(year, month, 1), date(year, month, last))
-        return Response({**counts, **_boletas_and_issue(year, month)})
 
     @action(detail=False, methods=["get"], url_path=f"{_SALE}/candidates")
     def candidates(self, request, sale_id=None):
@@ -108,15 +84,6 @@ class TerminalReconciliationViewSet(viewsets.ViewSet):
     def unmatch(self, request, sale_id=None):
         sale = unmatch_terminal_sale(get_object_or_404(TerminalSale, pk=sale_id))
         return Response({"id": sale.pk, "match_status": sale.match_status, "matched_invoice": None})
-
-    @action(detail=False, methods=["post"], url_path="rcv/run")
-    def rcv_run(self, request):
-        year, month = _period(request.data)
-        return Response({
-            "purchase": reconcile_rcv_period(RCVImport.Direction.PURCHASES, year, month),
-            "sale": reconcile_rcv_period(RCVImport.Direction.SALES, year, month),
-            **_boletas_and_issue(year, month),
-        })
 
     @action(detail=False, methods=["get"], url_path=f"{_DOC}/candidates")
     def rcv_candidates(self, request, doc_id=None):

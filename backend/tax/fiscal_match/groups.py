@@ -26,7 +26,8 @@ _RCV_DIRECTION = {
 }
 
 
-def _evaluable_invoices(since: date):
+def _evaluable_invoice_rows():
+    """Documentos ERP que entran al cuadre, con su dirección y código SII anotados."""
     sale = Q(fiscal_direction=FiscalMatch.Direction.SALE, sii_code__in=SALE_SII_CODES) & (
         Q(status=Invoice.Status.POSTED) | (sale_document_status_q() & Q(sale_order__isnull=False))
     )
@@ -37,9 +38,38 @@ def _evaluable_invoices(since: date):
             sii_code=sii_code_expression(),
             contact_rut=F("contact__tax_id"),
         )
-        .filter(sale | purchase, date__gte=since, fiscal_match_set__isnull=True)
+        .filter(sale | purchase)
         .values("id", "fiscal_direction", "sii_code", "date", "total", "partner_tax_id_snapshot", "contact_rut")
     )
+
+
+def _evaluable_invoices(since: date):
+    return _evaluable_invoice_rows().filter(date__gte=since, fiscal_match_set__isnull=True)
+
+
+def _invoice_group(row: dict) -> FiscalMatch:
+    return FiscalMatch(
+        direction=row["fiscal_direction"],
+        invoice_id=row["id"],
+        dte_type=row["sii_code"],
+        issue_date=row["date"],
+        fiscal_period=_period(row["date"]),
+        counterparty_rut=resolve_counterparty_rut(row["partner_tax_id_snapshot"], row["contact_rut"]),
+        erp_amount=row["total"],
+    )
+
+
+def group_for_invoice(invoice: Invoice) -> FiscalMatch | None:
+    """Grupo del documento, creándolo si falta; ``None`` si el documento no entra al cuadre."""
+    group = FiscalMatch.objects.filter(invoice=invoice).first()
+    if group is not None:
+        return group
+    row = _evaluable_invoice_rows().filter(id=invoice.pk).first()
+    if row is None:
+        return None
+    group = _invoice_group(row)
+    group.save()
+    return group
 
 
 def _period(day: date) -> str:
@@ -73,18 +103,7 @@ def tuu_orphan_group(sale: TerminalSale) -> FiscalMatch:
 @transaction.atomic
 def ensure_groups(since: date) -> int:
     """Crea los grupos que faltan desde ``since``; devuelve cuántos creó."""
-    invoice_groups = [
-        FiscalMatch(
-            direction=row["fiscal_direction"],
-            invoice_id=row["id"],
-            dte_type=row["sii_code"],
-            issue_date=row["date"],
-            fiscal_period=_period(row["date"]),
-            counterparty_rut=resolve_counterparty_rut(row["partner_tax_id_snapshot"], row["contact_rut"]),
-            erp_amount=row["total"],
-        )
-        for row in _evaluable_invoices(since)
-    ]
+    invoice_groups = [_invoice_group(row) for row in _evaluable_invoices(since)]
 
     rcv_docs = list(RCVDocument.objects.filter(fiscal_match__isnull=True, issue_date__gte=since))
     rcv_groups = [rcv_orphan_group(doc) for doc in rcv_docs]
