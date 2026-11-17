@@ -102,10 +102,10 @@ def test_step_failure_does_not_stop_others():
     assert month["issued"] == {"issued": 2, "failed": 0}
 
 
-def test_beat_schedule_registered():
-    entry = settings.CELERY_BEAT_SCHEDULE["run_fiscal_reconciliation_10min"]
-    assert entry["task"] == "tax.tasks.run_fiscal_reconciliation"
-    assert entry["task"] == run_fiscal_reconciliation.name
+def test_no_longer_scheduled():
+    """El motor único ``run_fiscal_match`` la reemplaza en Beat (se borra en la limpieza)."""
+    tasks_scheduled = {e["task"] for e in settings.CELERY_BEAT_SCHEDULE.values()}
+    assert run_fiscal_reconciliation.name not in tasks_scheduled
 
 
 def test_expired_lock_taken_by_other_run_is_not_released():

@@ -46,11 +46,15 @@ class LinkResult:
 
     ``linked`` cuenta las partes que esta corrida unió o volvió a unir a otro grupo o
     cobro (un re-cuadre que no cambia nada no suma); ``ambiguous_group_ids`` son los
-    grupos con más de un candidato o con un candidato que otro registro reclama.
+    grupos con más de un candidato o con un candidato que otro registro reclama;
+    ``touched_group_ids`` son los grupos que ganaron o perdieron una parte (el motor
+    los reevalúa). No entra en la igualdad: dos resultados con los mismos conteos son
+    iguales aunque hayan movido grupos distintos.
     """
 
     linked: int
     ambiguous_group_ids: set[int] = field(default_factory=set)
+    touched_group_ids: set[int] = field(default_factory=set, compare=False)
 
 
 def border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[TerminalSale]:

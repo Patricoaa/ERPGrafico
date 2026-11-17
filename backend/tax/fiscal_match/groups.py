@@ -46,6 +46,30 @@ def _period(day: date) -> str:
     return f"{day:%Y%m}"
 
 
+def rcv_orphan_group(doc: RCVDocument) -> FiscalMatch:
+    """Grupo huérfano (sin guardar) para un documento RCV sin documento ERP."""
+    return FiscalMatch(
+        direction=_RCV_DIRECTION[doc.direction],
+        dte_type=doc.dte_type,
+        issue_date=doc.issue_date,
+        fiscal_period=doc.period,
+        counterparty_rut=normalize_rut(doc.counterparty_rut),
+        rcv_amount=abs(doc.total_amount),
+    )
+
+
+def tuu_orphan_group(sale: TerminalSale) -> FiscalMatch:
+    """Grupo huérfano (sin guardar) para una venta TUU sin documento ERP."""
+    day = timezone.localdate(sale.transaction_at)
+    return FiscalMatch(
+        direction=FiscalMatch.Direction.SALE,
+        dte_type=sale.document_type,
+        issue_date=day,
+        fiscal_period=_period(day),
+        tuu_amount=Decimal(sale.sale_amount),
+    )
+
+
 @transaction.atomic
 def ensure_groups(since: date) -> int:
     """Crea los grupos que faltan desde ``since``; devuelve cuántos creó."""
@@ -63,17 +87,7 @@ def ensure_groups(since: date) -> int:
     ]
 
     rcv_docs = list(RCVDocument.objects.filter(fiscal_match__isnull=True, issue_date__gte=since))
-    rcv_groups = [
-        FiscalMatch(
-            direction=_RCV_DIRECTION[doc.direction],
-            dte_type=doc.dte_type,
-            issue_date=doc.issue_date,
-            fiscal_period=doc.period,
-            counterparty_rut=normalize_rut(doc.counterparty_rut),
-            rcv_amount=abs(doc.total_amount),
-        )
-        for doc in rcv_docs
-    ]
+    rcv_groups = [rcv_orphan_group(doc) for doc in rcv_docs]
 
     sales = list(
         TerminalSale.objects.filter(
@@ -82,18 +96,7 @@ def ensure_groups(since: date) -> int:
             transaction_at__gte=local_midnight(since),
         )
     )
-    tuu_groups = []
-    for sale in sales:
-        day = timezone.localdate(sale.transaction_at)
-        tuu_groups.append(
-            FiscalMatch(
-                direction=FiscalMatch.Direction.SALE,
-                dte_type=sale.document_type,
-                issue_date=day,
-                fiscal_period=_period(day),
-                tuu_amount=Decimal(sale.sale_amount),
-            )
-        )
+    tuu_groups = [tuu_orphan_group(sale) for sale in sales]
     # Un solo INSERT para todos los grupos: el conteo de consultas no crece con las filas.
     FiscalMatch.objects.bulk_create(invoice_groups + rcv_groups + tuu_groups)
     for doc, group in zip(rcv_docs, rcv_groups, strict=True):

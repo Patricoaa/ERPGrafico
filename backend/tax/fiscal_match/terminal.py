@@ -168,12 +168,14 @@ def _attach(
 
     moved_sales: list[TerminalSale] = []
     moved_rcv: list[RCVDocument] = []
+    touched: set[int] = set()
     for s in sales:
         m = unique.get(s.id)
         target = groups.get(m.invoice_id) if m else None
         if target is None or (s.fiscal_match_id == target and s.matched_movement_id == m.id):
             continue
         source = s.fiscal_match_id
+        touched |= {source, target}
         if source in orphan_ids and target not in with_rcv:
             for d in rcv_by_group.pop(source, []):
                 d.fiscal_match_id = target
@@ -190,4 +192,4 @@ def _attach(
     FiscalMatch.objects.filter(
         id__in=orphan_ids, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
     ).delete()
-    return LinkResult(len(moved_sales), ambiguous)
+    return LinkResult(len(moved_sales), ambiguous, touched)

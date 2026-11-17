@@ -142,6 +142,7 @@ def link_rcv_documents(since: date) -> LinkResult:
     ambiguous: set[int] = set()
     moved: list[RCVDocument] = []
     emptied: set[int] = set()
+    touched: set[int] = set()
     for doc, key in zip(docs, doc_keys, strict=True):
         matches = by_key.get(key, [])
         if not matches:
@@ -150,6 +151,7 @@ def link_rcv_documents(since: date) -> LinkResult:
             ambiguous.add(doc.fiscal_match_id)
             continue
         emptied.add(doc.fiscal_match_id)
+        touched |= {doc.fiscal_match_id, matches[0][1]}
         doc.fiscal_match_id = matches[0][1]
         moved.append(doc)
     if moved:
@@ -157,4 +159,4 @@ def link_rcv_documents(since: date) -> LinkResult:
         FiscalMatch.objects.filter(
             id__in=emptied, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
         ).delete()
-    return LinkResult(len(moved), ambiguous)
+    return LinkResult(len(moved), ambiguous, touched)

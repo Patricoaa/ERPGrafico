@@ -287,31 +287,31 @@ def test_query_count_constant(imp):
     assert _count(imp) == small
 
 
-def test_import_task_triggers_reconciliation(imp):
-    def execute(rcv_import):
-        return rcv_import
+def test_import_task_enqueues_fiscal_match(imp, django_capture_on_commit_callbacks):
+    from tax.tasks import run_fiscal_match
 
-    with mock.patch.object(tasks.rcv_service, "execute_import", side_effect=execute), \
-            mock.patch("tax.reconciliation.rcv.reconcile_rcv_period") as reconcile:
+    with mock.patch.object(tasks.rcv_service, "execute_import", side_effect=lambda i: i), \
+            mock.patch.object(run_fiscal_match, "delay") as delay, \
+            django_capture_on_commit_callbacks(execute=True):
         tasks.run_rcv_imports([imp.id])
 
-    reconcile.assert_called_once()
-    args = reconcile.call_args.args
-    assert args[:3] == (P, 2026, 10)
-    assert args[3].pk == imp.pk
+    delay.assert_called_once_with()
 
 
-def test_import_task_skips_failed_and_survives_errors(imp):
+def test_import_task_skips_failed_and_survives_errors(imp, django_capture_on_commit_callbacks):
+    from tax.tasks import run_fiscal_match
+
     failed = RCVImport.objects.create(
         direction=S, year=2026, month=10, trigger=RCVImport.Trigger.MANUAL, status=RCVImport.Status.FAILED
     )
 
     with mock.patch.object(tasks.time, "sleep"), \
             mock.patch.object(tasks.rcv_service, "execute_import", side_effect=lambda i: i), \
-            mock.patch("tax.reconciliation.rcv.reconcile_rcv_period", side_effect=RuntimeError("x")) as reconcile:
+            mock.patch.object(run_fiscal_match, "delay", side_effect=RuntimeError("x")) as delay, \
+            django_capture_on_commit_callbacks(execute=True):
         statuses = tasks.run_rcv_imports([failed.id, imp.id])
 
-    assert reconcile.call_count == 1
+    assert delay.call_count == 1
     assert statuses == [RCVImport.Status.FAILED, RCVImport.Status.SUCCESS]
 
 

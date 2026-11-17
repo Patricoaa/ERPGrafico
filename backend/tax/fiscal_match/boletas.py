@@ -119,10 +119,12 @@ def pair_rcv_boletas(lo: datetime, hi: datetime) -> LinkResult:
             new_group[doc_id] = sale.fiscal_match_id
 
     moved = [d for d in docs if new_group.get(d.id) not in (None, d.fiscal_match_id)]
+    touched: set[int] = set()
     for d in moved:
+        touched |= {d.fiscal_match_id, new_group[d.id]}
         d.fiscal_match_id = new_group[d.id]
     RCVDocument.objects.bulk_update(moved, ["fiscal_match"], batch_size=500)
     FiscalMatch.objects.filter(
         id__in=source_ids, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
     ).delete()
-    return LinkResult(len(moved))
+    return LinkResult(len(moved), touched_group_ids=touched)

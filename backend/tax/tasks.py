@@ -18,6 +18,8 @@ from .reconciliation.terminal import reconcile_terminal_sales
 
 logger = logging.getLogger(__name__)
 
+FISCAL_MATCH_LOCK_KEY = "tax:fiscal_match:lock"
+FISCAL_MATCH_LOCK_TIMEOUT = 540  # 9 min: menos que el período de 10 min de la tarea
 LOCK_KEY = "tax:fiscal_reconciliation:lock"
 LOCK_TIMEOUT = 540  # 9 min: menos que el período de 10 min de la tarea
 SOFT_TIME_LIMIT = 520  # corta la ejecución antes de que expire el candado
@@ -73,3 +75,19 @@ def run_fiscal_reconciliation() -> dict:
         # Solo libera su propio candado: si expiró, otra ejecución puede tenerlo.
         if cache.get(LOCK_KEY) == token:
             cache.delete(LOCK_KEY)
+
+
+@shared_task(name="tax.tasks.run_fiscal_match", soft_time_limit=SOFT_TIME_LIMIT)
+def run_fiscal_match() -> dict:
+    """Motor único del cuadre (spec §5.4); cada 10 min y tras cada sincronización TUU / RCV."""
+    from .fiscal_match import engine
+
+    token = uuid.uuid4().hex
+    if not cache.add(FISCAL_MATCH_LOCK_KEY, token, timeout=FISCAL_MATCH_LOCK_TIMEOUT):
+        return {"skipped": True}
+    try:
+        return _step("motor", "cuadre", engine.run_fiscal_match)
+    finally:
+        # Solo libera su propio candado: si expiró, otra ejecución puede tenerlo.
+        if cache.get(FISCAL_MATCH_LOCK_KEY) == token:
+            cache.delete(FISCAL_MATCH_LOCK_KEY)

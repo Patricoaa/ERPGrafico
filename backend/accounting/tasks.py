@@ -7,6 +7,7 @@ import time
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 
 from accounting import rcv_service
@@ -75,19 +76,13 @@ def run_rcv_imports(import_ids: list[int]) -> list[str]:
 
 
 def _reconcile_imported_period(rcv_import: RCVImport) -> None:
-    """Cuadre fiscal del período recién importado; un fallo nunca tumba la importación."""
-    try:
-        from tax.reconciliation.rcv import reconcile_rcv_period
+    """Encola el motor de cuadre al confirmar; un fallo nunca tumba la importación."""
+    from tax.tasks import run_fiscal_match
 
-        reconcile_rcv_period(rcv_import.direction, rcv_import.year, rcv_import.month, rcv_import)
-    except Exception:
-        logger.exception("Cuadre RCV de la importación %s falló", rcv_import.pk)
-        return
-    if rcv_import.direction != RCVImport.Direction.SALES:
-        return
-    try:
-        from tax.reconciliation.boletas import reconcile_rcv_boletas
+    def enqueue() -> None:
+        try:
+            run_fiscal_match.delay()
+        except Exception:
+            logger.exception("No se pudo encolar el cuadre tras la importación RCV %s", rcv_import.pk)
 
-        reconcile_rcv_boletas(rcv_import.year, rcv_import.month)
-    except Exception:
-        logger.exception("Cuadre de boletas de la importación %s falló", rcv_import.pk)
+    transaction.on_commit(enqueue)
