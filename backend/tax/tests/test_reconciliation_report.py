@@ -421,3 +421,13 @@ def test_mismatch_counts_include_pending_erp():
 
     assert result["count"] == 1
     assert result["by_status"][MatchStatus.PENDING_ERP] == 1
+
+
+def test_summaries_ignore_drafts_without_sale_order():
+    """Un borrador 39 hecho a mano (sin orden de venta) no entra en los resúmenes del ERP."""
+    set_match_settings(date(2026, 10, 1))
+    _invoice(Invoice.DTEType.BOLETA, 1000, number="", status=Invoice.Status.DRAFT)
+
+    report = fiscal_reconciliation_report(2026, 10)
+
+    assert _row(report, 39)["erp_count"] == 0 and Decimal(_row(report, 39)["erp_total"]) == 0

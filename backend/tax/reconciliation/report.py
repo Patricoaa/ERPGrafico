@@ -8,7 +8,7 @@ import calendar
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Exists, F, OuterRef, QuerySet, Sum
+from django.db.models import Count, Exists, F, OuterRef, Q, QuerySet, Sum
 from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport, RCVImportSummary, RCVSettings
@@ -153,6 +153,13 @@ def _totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
     return {row[key]: (row["n"] or 0, row["t"] or Decimal("0")) for row in rows}
 
 
+def _summary_status_q() -> Q:
+    """Como ``sale_document_status_q`` pero los borradores deben venir de una orden de venta."""
+    return Q(status=Invoice.Status.POSTED) | (
+        sale_document_status_q() & Q(sale_order__isnull=False)
+    )
+
+
 def _summaries(
     year: int, month: int, first: date, last: date, lo: datetime, hi: datetime, start: date | None
 ) -> list[dict]:
@@ -161,7 +168,7 @@ def _summaries(
     erp = _totals(
         _annotated_invoices()
         .filter(
-            sale_document_status_q(), fiscal_direction="sale",
+            _summary_status_q(), fiscal_direction="sale",
             date__gte=first, date__lte=last, sii__in=SUMMARY_SII_CODES,
         )
         .values("sii").annotate(n=Count("id"), t=Sum("total")).order_by(),
@@ -272,7 +279,7 @@ def _terminal_only_erp(first: date, last: date, start: date | None, window_minut
     return (
         Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression())
         .filter(
-            sale_document_status_q(), fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
+            _summary_status_q(), fiscal_direction="sale", dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
             date__gte=since, date__lte=last,
             created_at__lt=timezone.now() - timedelta(minutes=window_minutes),
         )
