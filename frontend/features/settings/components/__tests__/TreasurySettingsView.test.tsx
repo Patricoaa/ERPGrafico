@@ -8,21 +8,12 @@ vi.mock("@/features/treasury", () => ({
     useTerminalSyncSettings: () => ({ settings: state.settings, isLoading: false, isError: state.isError, refetch }),
     useUpdateTerminalSyncSettings: () => ({ updateSettings: vi.fn(), isUpdating: false }),
     useTerminalProviders: () => ({ providers: [] }),
-    useTerminalSyncRuns: () => ({ runs: [], totalCount: 0, isLoading: false, isRefetching: false, isError: false, refetch: vi.fn() }),
-    terminalSyncRunEntity: {},
-    terminalSyncRunViews: {},
-    terminalSyncRunStatus: vi.fn(),
 }))
 
 vi.mock("@/hooks/useAutoSaveForm", () => ({
     useAutoSaveForm: () => ({ status: "idle", invalidReason: null, lastSavedAt: null, retry: vi.fn() }),
 }))
 vi.mock("@/hooks/useUnsavedChangesGuard", () => ({ useUnsavedChangesGuard: vi.fn() }))
-vi.mock("@/components/entity-view", async (importOriginal) => ({
-    ...await importOriginal<typeof import("@/components/entity-view")>(),
-    useEntityCollection: () => ({}),
-    Collection: { Root: () => null, View: () => null },
-}))
 
 import { TreasurySettingsView } from "../TreasurySettingsView"
 
@@ -46,6 +37,9 @@ describe("TreasurySettingsView", () => {
         expect(scroller?.className).toEqual(expect.stringContaining("min-h-0"))
         expect(scroller?.className).toEqual(expect.stringContaining("flex-1"))
         expect(screen.getByText("Sincronización automática", { selector: "div,h3,[data-slot=card-title]" })).toBeTruthy()
+        expect(screen.queryByText("Última ejecución")).toBeNull()
+        expect(screen.queryByText("Últimas ejecuciones")).toBeNull()
+        expect(screen.getByRole("link", { name: "Terminal de cobro → Importaciones" })).toHaveAttribute("href", "/treasury/terminal-cobro/imports")
     })
 
     it("muestra la hora de ejecución solo cuando la unidad es Días", () => {

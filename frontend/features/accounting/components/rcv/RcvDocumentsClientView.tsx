@@ -1,18 +1,19 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
-import Link from "next/link"
+import { useCallback, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Download } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { EntityPanelTab } from "@/components/providers"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Button } from "@/components/ui/button"
+import { Can } from "@/components/auth"
+import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useRcvDocuments } from "../../hooks/useRcvDocuments"
 import { rcvDocumentEntity, rcvPurchaseViews, rcvSaleViews } from "../../entity-view/rcvDocument.entity"
 import { RCV_MATCH_STATUSES, rcvDocumentUnifiedSearchDef, rcvSaleUnifiedSearchDef } from "../../unifiedSearchDef"
 import type { RcvDirection, RcvDocumentFilters } from "../../types"
 import { RcvDocumentDrawer } from "./RcvDocumentDrawer"
+import { RcvImportModal } from "./RcvImportModal"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
@@ -47,6 +48,7 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    const [importOpen, setImportOpen] = useState(false)
     const purchases = direction === "PURCHASES"
     const searchDef = purchases ? rcvDocumentUnifiedSearchDef : rcvSaleUnifiedSearchDef
     const views = purchases ? rcvPurchaseViews : rcvSaleViews
@@ -76,10 +78,11 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
-    const importsAction = (
-        <Button asChild variant="outline">
-            <Link href="/accounting/rcv/imports">Ir a Importaciones</Link>
-        </Button>
+    const directions = useMemo(() => [direction], [direction])
+    const importAction = (
+        <Can permission="accounting.add_rcvimport">
+            <ToolbarCreateButton label="Importar ahora" icon={Download} onClick={() => setImportOpen(true)} />
+        </Can>
     )
 
     return (
@@ -92,7 +95,7 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
                 selectedId={panel.selectedId}
                 onOpen={(doc) => openDocument(doc.id)}
             >
-                <Collection.Toolbar>
+                <Collection.Toolbar action={importAction}>
                     <UnifiedSearchBar
                         config={searchDef}
                         {...bindUnifiedSearch(search)}
@@ -103,8 +106,8 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
                     table={views.table}
                     card={views.card}
                     emptyTitle="Aún no hay documentos importados"
-                    emptyDescription="Configura el RCV en Contabilidad → Configuración → RCV / SII o importa desde la pestaña Importaciones."
-                    emptyAction={importsAction}
+                    emptyDescription="Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Importar ahora»."
+                    emptyAction={importAction}
                     onResetFilters={search.clearAll}
                 />
             </Collection.Root>
@@ -118,6 +121,7 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
                     />
                 )}
             </EntityPanelTab>
+            <RcvImportModal open={importOpen} onOpenChange={setImportOpen} defaultDirections={directions} />
         </div>
     )
 }

@@ -829,6 +829,7 @@ export type TerminalSalesSummaryFilters = Omit<TerminalSaleFilters, 'page' | 'pa
 export interface TerminalSyncRunFilters {
     provider?: number
     status?: TerminalSyncRunStatus
+    trigger?: TerminalSyncTrigger
     page?: number
     page_size?: number
 }

@@ -998,6 +998,18 @@ const REGISTRY = {
     detailUrlPattern: '/treasury/bank-center?batch={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
+  'treasury.terminalsyncrun': {
+    label: 'treasury.terminalsyncrun',
+    title: 'Importación de ventas TUU',
+    titlePlural: 'Importaciones de ventas TUU',
+    icon: Download,
+    iconName: 'Download',
+    feminine: true,
+    description: 'Ejecución de sincronización de ventas desde el proveedor del terminal de cobro (solo lectura)',
+    listUrl: '/treasury/terminal-cobro/imports',
+    detailUrlPattern: '/treasury/terminal-cobro/imports?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+  },
   'treasury.terminalsale': {
     label: 'treasury.terminalsale',
     title: 'Venta de terminal de cobro',

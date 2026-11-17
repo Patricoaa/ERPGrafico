@@ -164,6 +164,11 @@ export const treasuryApi = {
         return toPage<TerminalSyncRun>(response.data, Number(params.page ?? 1), Number(params.page_size ?? 50))
     },
 
+    getTerminalSyncRun: async (id: number): Promise<TerminalSyncRun> => {
+        const { data } = await api.get<TerminalSyncRun>(`/treasury/terminal-sync-runs/${id}/`)
+        return data
+    },
+
     startTerminalSync: async (payload: ManualSyncPayload, idempotencyKey: string): Promise<TerminalSyncRun[]> => {
         const { data } = await api.post<TerminalSyncRun[]>('/treasury/terminal-sync-runs/sync/', payload, {
             headers: { 'Idempotency-Key': idempotencyKey },

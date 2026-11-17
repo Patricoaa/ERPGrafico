@@ -213,6 +213,21 @@ def test_runs_list_has_names_and_no_payloads(admin_client, provider):
     assert row["triggered_by_name"] == "trig"
     assert "payloads" not in row
     assert admin_client.get("/api/treasury/terminal-sync-runs/", {"status": "SUCCESS"}).json()["count"] == 0
+    assert admin_client.get("/api/treasury/terminal-sync-runs/", {"trigger": "MANUAL"}).json()["count"] == 1
+    assert admin_client.get("/api/treasury/terminal-sync-runs/", {"trigger": "SCHEDULED"}).json()["count"] == 0
+
+
+@pytest.mark.django_db
+def test_run_detail_returns_one_run(admin_client, provider):
+    run = TerminalSyncRun.objects.create(
+        provider=provider, trigger="SCHEDULED", status="PARTIAL", warnings=["chunk 2 falló"],
+        start_date=date(2026, 11, 1), end_date=date(2026, 11, 2),
+        started_at=datetime(2026, 11, 3, tzinfo=dt_tz.utc),
+    )
+    row = admin_client.get(f"/api/treasury/terminal-sync-runs/{run.id}/").json()
+    assert row["id"] == run.id
+    assert row["warnings"] == ["chunk 2 falló"]
+    assert row["triggered_by_name"] in ("", None)
 
 
 @pytest.mark.django_db
@@ -251,6 +266,7 @@ def test_api_never_exposes_api_key(admin_client, provider):
         ("/api/treasury/terminal-sales/summary/", {"device": "zz"}),
         ("/api/treasury/terminal-sync-runs/", {"provider": "abc"}),
         ("/api/treasury/terminal-sync-runs/", {"status": "NOPE"}),
+        ("/api/treasury/terminal-sync-runs/", {"trigger": "NOPE"}),
     ],
 )
 def test_malformed_filters_return_400(admin_client, url, params):

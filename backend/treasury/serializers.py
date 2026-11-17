@@ -2024,3 +2024,4 @@ class TerminalSaleFilterSerializer(serializers.Serializer):
 class TerminalSyncRunFilterSerializer(serializers.Serializer):
     provider = serializers.IntegerField(required=False, min_value=1)
     status = serializers.ChoiceField(choices=TerminalSyncRun.Status.choices, required=False)
+    trigger = serializers.ChoiceField(choices=TerminalSyncRun.Trigger.choices, required=False)

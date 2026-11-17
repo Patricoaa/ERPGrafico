@@ -1386,6 +1386,8 @@ def terminal_sync_runs_queryset(filters: dict) -> QuerySet[TerminalSyncRun]:
         qs = qs.filter(provider_id=filters["provider"])
     if filters.get("status"):
         qs = qs.filter(status=filters["status"])
+    if filters.get("trigger"):
+        qs = qs.filter(trigger=filters["trigger"])
     return qs
 
 

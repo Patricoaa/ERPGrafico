@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
@@ -6,18 +9,43 @@ import { showApiError } from '@/lib/errors'
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey'
 import { treasuryApi } from '../api/treasuryApi'
 import { TERMINAL_SALES_KEYS, TERMINAL_SYNC_KEYS } from './queryKeys'
-import type { ManualSyncPayload, TerminalSyncRunFilters, TerminalSyncSettingsPatch } from '../types'
+import type { ManualSyncPayload, TerminalSyncRunFilters, TerminalSyncRunStatus, TerminalSyncSettingsPatch } from '../types'
 import { staleTime } from '@/lib/query-config'
+
+/** Mientras una ejecución está en curso, se refresca cada 5 s. */
+const POLL_INTERVAL_MS = 5000
+
+const isRunning = (status: TerminalSyncRunStatus | undefined): boolean => status === 'RUNNING'
+
+/**
+ * Cuando una ejecución observada pasa de en curso a terminada, refresca lo que pudo cambiar:
+ * las ventas sincronizadas y la configuración (su última ejecución).
+ */
+function useRefreshOnFinish(rows: ReadonlyArray<{ id: number; status: TerminalSyncRunStatus }> | undefined) {
+    const queryClient = useQueryClient()
+    const active = useRef<Set<number>>(new Set())
+
+    useEffect(() => {
+        if (!rows) return
+        const finished = rows.some((row) => active.current.has(row.id) && !isRunning(row.status))
+        active.current = new Set(rows.filter((row) => isRunning(row.status)).map((row) => row.id))
+        if (finished) {
+            invalidateCrossFeature(queryClient, [TERMINAL_SALES_KEYS.all, TERMINAL_SYNC_KEYS.settings()])
+        }
+    }, [rows, queryClient])
+}
 
 export function useTerminalSyncRuns(filters: TerminalSyncRunFilters = {}) {
     const { page = 1, page_size = 20, ...rest } = filters
     const params: TerminalSyncRunFilters = { ...rest, page, page_size }
 
     const { data, isLoading, isFetching, isError, refetch } = useQuery({
-        queryKey: [...TERMINAL_SYNC_KEYS.runs(), params],
+        queryKey: [...TERMINAL_SYNC_KEYS.runs(), 'list', params],
         queryFn: () => treasuryApi.getTerminalSyncRuns(params),
         staleTime: staleTime.volatile,
+        refetchInterval: (query) => (query.state.data?.results.some((row) => isRunning(row.status)) ? POLL_INTERVAL_MS : false),
     })
+    useRefreshOnFinish(data?.results)
 
     return {
         page: data,
@@ -28,6 +56,20 @@ export function useTerminalSyncRuns(filters: TerminalSyncRunFilters = {}) {
         isError,
         refetch,
     }
+}
+
+export function useTerminalSyncRun(id: number | null | undefined) {
+    const { data, isLoading, isError, refetch } = useQuery({
+        queryKey: TERMINAL_SYNC_KEYS.run(id ?? 0),
+        queryFn: () => treasuryApi.getTerminalSyncRun(id as number),
+        enabled: id != null,
+        staleTime: staleTime.volatile,
+        refetchInterval: (query) => (isRunning(query.state.data?.status) ? POLL_INTERVAL_MS : false),
+    })
+    const observed = useMemo(() => (data ? [data] : undefined), [data])
+    useRefreshOnFinish(observed)
+
+    return { run: data, isLoading, isError, refetch }
 }
 
 /**

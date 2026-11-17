@@ -31,6 +31,9 @@ vi.mock("@/components/providers", () => ({
         <div data-testid={`panel-tab-${label}`}>{children(open)}</div>
     ),
 }))
+vi.mock("@/components/auth", () => ({
+    Can: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
 vi.mock("../TerminalSaleDrawer", () => ({
     TerminalSaleDrawer: ({ id, open }: { id: number | null; open: boolean }) => (open ? <div>drawer-venta #{id}</div> : null),
 }))
