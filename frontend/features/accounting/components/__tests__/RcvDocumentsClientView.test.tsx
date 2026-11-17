@@ -102,25 +102,25 @@ describe("RcvDocumentsClientView", () => {
         expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ direction: "SALES" }))
     })
 
-    it("sin filtros y sin filas muestra el estado vacío con 'Importar ahora'", () => {
+    it("sin filtros y sin filas muestra el estado vacío con 'Sincronizar ahora'", () => {
         render(<RcvDocumentsClientView direction="PURCHASES" />)
         expect(screen.getByText("Aún no hay documentos importados")).toBeInTheDocument()
-        expect(screen.getByText("Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Importar ahora».")).toBeInTheDocument()
-        expect(screen.getAllByRole("button", { name: /Importar ahora/ }).length).toBeGreaterThan(0)
+        expect(screen.getByText("Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Sincronizar ahora».")).toBeInTheDocument()
+        expect(screen.getAllByRole("button", { name: /Sincronizar ahora/ }).length).toBeGreaterThan(0)
     })
 
-    it("'Importar ahora' abre el modal con la dirección de la pestaña preseleccionada", () => {
+    it("'Sincronizar ahora' abre el modal con la dirección de la pestaña preseleccionada", () => {
         m.docs = [{ ...doc, direction: "SALES" }]
         render(<RcvDocumentsClientView direction="SALES" />)
-        fireEvent.click(screen.getByRole("button", { name: /Importar ahora/ }))
+        fireEvent.click(screen.getByRole("button", { name: /Sincronizar ahora/ }))
         expect(screen.getByText("modal-importar SALES")).toBeInTheDocument()
     })
 
-    it("sin permiso oculta 'Importar ahora'", () => {
+    it("sin permiso oculta 'Sincronizar ahora'", () => {
         m.canAdd = false
         m.docs = [doc]
         render(<RcvDocumentsClientView direction="PURCHASES" />)
-        expect(screen.queryByRole("button", { name: /Importar ahora/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: /Sincronizar ahora/ })).not.toBeInTheDocument()
     })
 
     it("traduce los filtros de la URL a filtros de la API", () => {

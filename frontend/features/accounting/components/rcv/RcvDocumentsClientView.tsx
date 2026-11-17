@@ -81,7 +81,7 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
     const directions = useMemo(() => [direction], [direction])
     const importAction = (
         <Can permission="accounting.add_rcvimport">
-            <ToolbarCreateButton label="Importar ahora" icon={Download} onClick={() => setImportOpen(true)} />
+            <ToolbarCreateButton label="Sincronizar ahora" icon={Download} onClick={() => setImportOpen(true)} />
         </Can>
     )
 
@@ -106,7 +106,7 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
                     table={views.table}
                     card={views.card}
                     emptyTitle="Aún no hay documentos importados"
-                    emptyDescription="Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Importar ahora»."
+                    emptyDescription="Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Sincronizar ahora»."
                     emptyAction={importAction}
                     onResetFilters={search.clearAll}
                 />

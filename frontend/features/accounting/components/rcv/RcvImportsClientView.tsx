@@ -72,7 +72,7 @@ export function RcvImportsClientView() {
 
     const importAction = (
         <Can permission="accounting.add_rcvimport">
-            <ToolbarCreateButton label="Importar ahora" icon={Download} onClick={() => setImportOpen(true)} />
+            <ToolbarCreateButton label="Sincronizar ahora" icon={Download} onClick={() => setImportOpen(true)} />
         </Can>
     )
 
@@ -97,8 +97,8 @@ export function RcvImportsClientView() {
                     table={rcvImportViews.table}
                     card={rcvImportViews.card}
                     emptyTitle="Aún no hay importaciones"
-                    emptyDescription="Activa la importación automática en Contabilidad → Configuración → RCV / SII o usa «Importar ahora»."
-                    emptyAction={importAction}
+                    emptyDescription="Activa la importación automática en Contabilidad → Configuración → RCV / SII o usa «Sincronizar ahora»."
+                    emptyAction={impirtAction}
                     onResetFilters={search.clearAll}
                 />
             </Collection.Root>

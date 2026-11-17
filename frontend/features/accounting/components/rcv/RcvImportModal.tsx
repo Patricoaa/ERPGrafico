@@ -31,7 +31,7 @@ const DIRECTION_CHOICES: { value: RcvDirection; label: string; description: stri
 ]
 
 /**
- * "Importar ahora": encola una importación manual del RCV del SII para un período y una o ambas direcciones.
+ * "Sincronizar ahora": encola una importación manual del RCV del SII para un período y una o ambas direcciones.
  * Por defecto propone el mes de (hoy − 3 días), igual que la importación automática.
  */
 export function RcvImportModal({ open, onOpenChange, defaultDirections }: RcvImportModalProps) {
