@@ -9,7 +9,11 @@ from django.utils import timezone
 
 from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument, RCVImport
-from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
+from billing.fiscal_key import (
+    fiscal_direction_expression,
+    resolve_counterparty_rut,
+    sii_code_expression,
+)
 from billing.models import Invoice
 from tax.fiscal_match.candidates import local_midnight, sale_document_status_q
 from tax.models import FiscalMatch
@@ -52,7 +56,7 @@ def ensure_groups(since: date) -> int:
             dte_type=row["sii_code"],
             issue_date=row["date"],
             fiscal_period=_period(row["date"]),
-            counterparty_rut=normalize_rut(row["partner_tax_id_snapshot"] or row["contact_rut"] or ""),
+            counterparty_rut=resolve_counterparty_rut(row["partner_tax_id_snapshot"], row["contact_rut"]),
             erp_amount=row["total"],
         )
         for row in _evaluable_invoices(since)

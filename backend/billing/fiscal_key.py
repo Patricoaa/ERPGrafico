@@ -82,11 +82,21 @@ class FiscalKey:
     counterparty_rut: str
 
 
+def resolve_counterparty_rut(snapshot: str | None, contact_tax_id: str | None) -> str:
+    """RUT normalizado de la contraparte: el de la emisión, o el del contacto si no hay."""
+    return normalize_rut(snapshot or contact_tax_id or "")
+
+
+def counterparty_rut(invoice: Invoice) -> str:
+    return resolve_counterparty_rut(
+        invoice.partner_tax_id_snapshot, invoice.contact.tax_id if invoice.contact_id else ""
+    )
+
+
 def fiscal_key(invoice: Invoice) -> FiscalKey:
-    rut = invoice.partner_tax_id_snapshot or (invoice.contact.tax_id if invoice.contact_id else "")
     return FiscalKey(
         direction=invoice_direction(invoice),
         sii_code=invoice.sii_code,
         folio=parse_folio(invoice.number),
-        counterparty_rut=normalize_rut(rut),
+        counterparty_rut=counterparty_rut(invoice),
     )
