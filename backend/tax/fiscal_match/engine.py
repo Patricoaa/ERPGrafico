@@ -46,7 +46,10 @@ def run_fiscal_match() -> dict:
     start = settings.fiscal_match_start_date
     if start is None:
         return {"skipped": True}
-    previous = FiscalMatchRun.latest_finished()
+    # Solo una corrida sin error avanza la marca: una fallida pudo revertir sus pasos.
+    previous = (
+        FiscalMatchRun.objects.filter(finished_at__isnull=False, error="").order_by("-finished_at", "-id").first()
+    )
     since = previous.started_at if previous is not None else None
     run = FiscalMatchRun.objects.create()
     try:

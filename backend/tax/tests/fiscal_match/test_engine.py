@@ -240,3 +240,26 @@ def test_engine_query_count_constant(tenv, django_assert_max_num_queries):
     _seed(tenv, 50, 100)
     with django_assert_max_num_queries(small):
         run_fiscal_match()
+
+
+def test_failed_run_does_not_advance_change_mark(tenv):
+    from unittest.mock import patch
+
+    inv = make_pos_document(tenv, 6000, _ago(120))
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    run_fiscal_match()
+    group = _group_of(inv)
+    assert group.status == FiscalMatchStatus.MATCHED
+
+    sale.refresh_from_db()
+    sale.document_type = 39  # cambia después de la corrida buena (bumps updated_at)
+    sale.save()
+    with patch("tax.fiscal_match.engine.link_terminal_sales", side_effect=RuntimeError("boom")):
+        with pytest.raises(RuntimeError):
+            run_fiscal_match()
+    assert FiscalMatchRun.objects.filter(error__startswith="RuntimeError").exists()
+
+    run_fiscal_match()
+
+    _reload(group)
+    assert group.status == FiscalMatchStatus.DIFF
