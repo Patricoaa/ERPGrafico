@@ -254,6 +254,35 @@ def test_factura_paid_by_transfer_tuu_not_applicable(env):
     assert parts(one(group)) == (M, NA, M, FiscalMatchStatus.MATCHED)
 
 
+@pytest.mark.parametrize("dte_type", [Invoice.DTEType.FACTURA, Invoice.DTEType.FACTURA_EXENTA])
+def test_factura_paid_cash_at_tuu_pos_tuu_not_applicable(env, dte_type):
+    # Una factura pagada en efectivo no deja registro TUU, aunque la caja tenga dispositivo.
+    invoice, group = pos_group(env, 119000, dte_type=dte_type, method="CASH")
+    add_payment(env, invoice, 1000, AT + timedelta(minutes=1), method="TRANSFER")
+    sync_run(env.provider)
+
+    g = one(group)
+
+    assert g.tuu_state == NA
+    assert g.status == FiscalMatchStatus.PENDING  # solo falta el RCV del período
+
+
+def test_sync_runs_read_only_overlap_unbacked_payment_days(env):
+    _, group = pos_group(env, 5000)  # cobro en efectivo sin venta el 13/11
+    backed_invoice = make_pos_document(env, 7000, local_dt(2026, 11, 20, 12), method="CARD")
+    ensure_groups(SINCE)
+    backed_group = FiscalMatch.objects.get(invoice=backed_invoice)
+    s = make_terminal_sale(env, 7000, local_dt(2026, 11, 20, 12, 1), document_type=48)
+    attach(s, backed_group, movement_of(backed_invoice))
+    covering = sync_run(env.provider)
+    sync_run(env.provider, start=date(2026, 11, 1), end=date(2026, 11, 12))
+    sync_run(env.provider, start=date(2026, 11, 14), end=date(2026, 11, 30))
+
+    ctx = build_context([group, backed_group])
+
+    assert ctx.sync_runs == {env.provider.id: ((covering.start_date, covering.end_date, covering.finished_at),)}
+
+
 def test_credit_note_tuu_not_applicable_and_rcv_by_absolute_value(env):
     invoice = Invoice.objects.create(
         dte_type=Invoice.DTEType.NOTA_CREDITO, status=Invoice.Status.POSTED, number="77",

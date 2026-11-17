@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+from django.db.models import Q
 from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport, RCVSettings
@@ -140,7 +141,9 @@ def build_context(
         providers_of[terminal_id].add(provider_id)
     terminal_providers = {t: frozenset(p) for t, p in providers_of.items()}
 
-    sync_runs = _sync_runs(movement_rows, terminal_providers)
+    backed = {s.matched_movement_id for rows in sales.values() for s in rows}
+    unbacked = [m for m in movement_rows if m.id not in backed]
+    sync_runs = _sync_runs(unbacked, invoices, terminal_providers)
 
     periods = {g.id: _fiscal_period(g, rcv_docs.get(g.id, ())) for g in groups}
     import_months = {m for g in groups for m in _rcv_months(g, periods[g.id])}
@@ -162,25 +165,47 @@ def build_context(
     )
 
 
+def _day_spans(days: set[date]) -> list[tuple[date, date]]:
+    """Días agrupados en tramos de días consecutivos."""
+    spans: list[tuple[date, date]] = []
+    for day in sorted(days):
+        if spans and day - spans[-1][1] <= timedelta(days=1):
+            spans[-1] = (spans[-1][0], day)
+        else:
+            spans.append((day, day))
+    return spans
+
+
 def _sync_runs(
-    movements: list[TreasuryMovement], terminal_providers: Mapping[int, frozenset[int]]
+    movements: list[TreasuryMovement],
+    invoices: Mapping[int, Invoice],
+    terminal_providers: Mapping[int, frozenset[int]],
 ) -> dict[int, tuple[SyncSpan, ...]]:
-    """Sincronizaciones TUU exitosas de los proveedores de los cobros, en el rango de sus días."""
+    """Sincronizaciones TUU exitosas que cubren algún día de un cobro que aún espera su venta.
+
+    Solo se leen las ejecuciones cuyo rango toca esos días: las filas no crecen con la
+    frecuencia de sincronización a lo largo del historial.
+    """
     providers: set[int] = set()
-    days: list[date] = []
+    days: set[date] = set()
     for m in movements:
-        found = _payment_providers(m, terminal_providers)
+        invoice = invoices.get(m.invoice_id)
+        if invoice is None:
+            continue
+        found = _payment_providers(m, terminal_providers, cash_expected=invoice.sii_code in BOLETA_SII_CODES)
         if found:
             providers |= found
-            days.append(timezone.localdate(m.created_at))
+            days.add(timezone.localdate(m.created_at))
     if not providers:
         return {}
+    overlaps = Q()
+    for first, last in _day_spans(days):
+        overlaps |= Q(start_date__lte=last, end_date__gte=first)
     rows = TerminalSyncRun.objects.filter(
+        overlaps,
         status=TerminalSyncRun.Status.SUCCESS,
         provider_id__in=providers,
         finished_at__isnull=False,
-        start_date__lte=max(days),
-        end_date__gte=min(days),
     ).values_list("provider_id", "start_date", "end_date", "finished_at")
     out: dict[int, list[SyncSpan]] = defaultdict(list)
     for provider_id, start, end, finished in rows:
@@ -214,17 +239,20 @@ def _closed_periods(months: set[tuple[int, int]]) -> frozenset[str]:
 # --- derivación (sin consultas) -------------------------------------------------------
 
 
-def _payment_providers(m: TreasuryMovement, terminal_providers: Mapping[int, frozenset[int]]) -> frozenset[int]:
+def _payment_providers(
+    m: TreasuryMovement, terminal_providers: Mapping[int, frozenset[int]], *, cash_expected: bool
+) -> frozenset[int]:
     """Proveedores TUU que deben registrar el cobro; vacío si el cobro no espera venta TUU.
 
-    Tarjeta: el proveedor del dispositivo del medio de pago. Efectivo: los proveedores
-    de los dispositivos del terminal de su sesión POS.
+    Tarjeta: el proveedor del dispositivo del medio de pago. Efectivo (solo boletas
+    39/41, ``cash_expected``; una factura pagada en efectivo no deja registro TUU): los
+    proveedores de los dispositivos del terminal de su sesión POS.
     """
     method = m.payment_method_new if m.payment_method_new_id is not None else None
     device = method.linked_terminal_device if method is not None else None
     if device is not None:
         return frozenset({device.provider_id})
-    if m.payment_method == Invoice.PaymentMethod.CASH and m.pos_session_id is not None:
+    if cash_expected and m.payment_method == Invoice.PaymentMethod.CASH and m.pos_session_id is not None:
         return terminal_providers.get(m.pos_session.terminal_id, frozenset())
     return frozenset()
 
@@ -274,7 +302,7 @@ def _tuu_state(
     expected = [
         (m, providers)
         for m in ctx.movements.get(invoice.id, ())
-        if (providers := _payment_providers(m, ctx.terminal_providers))
+        if (providers := _payment_providers(m, ctx.terminal_providers, cash_expected=code in BOLETA_SII_CODES))
     ]
     if not expected:
         return PartState.NOT_APPLICABLE
