@@ -1,12 +1,15 @@
 """Qué documentos entran al cuadre y utilidades de rango compartidas (ADR-0138)."""
 
-from datetime import date, datetime, time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import date, datetime, time, timedelta
 
 from django.db.models import Q
 from django.utils import timezone
 
 from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
+from treasury.models import POSTerminal, TerminalSale, TreasuryMovement
 
 SALE_DTE_TYPES = (
     Invoice.DTEType.BOLETA,
@@ -35,3 +38,60 @@ def sale_document_status_q(prefix: str = "") -> Q:
 
 def local_midnight(day: date) -> datetime:
     return timezone.make_aware(datetime.combine(day, time.min))
+
+
+@dataclass
+class LinkResult:
+    """Resultado de un paso de vínculo: cuántas partes se unieron y qué grupos quedaron ambiguos."""
+
+    linked: int
+    ambiguous_group_ids: set[int] = field(default_factory=set)
+
+
+def border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[TerminalSale]:
+    near_border = Q(transaction_at__gte=lo - window, transaction_at__lt=lo) | Q(
+        transaction_at__gte=hi, transaction_at__lt=hi + window
+    )
+    return list(
+        TerminalSale.objects.filter(
+            near_border, status=TerminalSale.Status.COMPLETED, matched_manually=False
+        )
+    )
+
+
+def candidate_movements(lo: datetime, hi: datetime) -> list[TreasuryMovement]:
+    return list(
+        TreasuryMovement.objects.filter(
+            sale_document_status_q("invoice__"),
+            movement_type=TreasuryMovement.Type.INBOUND,
+            invoice__sale_order__isnull=False,
+            invoice__dte_type__in=SALE_DTE_TYPES,
+            created_at__gte=lo,
+            created_at__lte=hi,
+        ).select_related("invoice", "payment_method_new", "pos_session")
+    )
+
+
+def terminals_by_device(device_ids: set[int]) -> dict[int, set[int]]:
+    """device_id → ids de POSTerminal que permiten algún método ligado a ese dispositivo."""
+    if not device_ids:
+        return {}
+    rows = POSTerminal.allowed_payment_methods.through.objects.filter(
+        paymentmethod__linked_terminal_device_id__in=device_ids
+    ).values_list("paymentmethod__linked_terminal_device_id", "posterminal_id")
+    out: dict[int, set[int]] = defaultdict(set)
+    for device_id, terminal_id in rows:
+        out[device_id].add(terminal_id)
+    return out
+
+
+def payment_compatible(sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]) -> bool:
+    if sale.payment_type == TerminalSale.PaymentType.CASH:
+        if m.payment_method != "CASH":
+            return False
+        if sale.device_id is None:
+            return True
+        return m.pos_session is not None and m.pos_session.terminal_id in terminals.get(sale.device_id, ())
+    if sale.device_id is None:
+        return True
+    return m.payment_method_new is not None and m.payment_method_new.linked_terminal_device_id == sale.device_id

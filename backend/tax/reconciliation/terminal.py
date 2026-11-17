@@ -6,7 +6,7 @@ salvo que su documento ya no exista o esté anulado.
 """
 
 from collections import Counter, defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
@@ -19,10 +19,14 @@ from billing.models import Invoice
 from core.fiscal_match import MatchStatus
 from tax.fiscal_match.candidates import (  # noqa: F401
     SALE_DTE_TYPES,
+    border_competitors,
+    candidate_movements,
     local_midnight,
+    payment_compatible,
     sale_document_status_q,
+    terminals_by_device,
 )
-from treasury.models import POSTerminal, TerminalSale, TreasuryMovement
+from treasury.models import TerminalSale, TreasuryMovement
 
 
 @transaction.atomic
@@ -75,43 +79,10 @@ def _stale_or_automatic() -> Q:
 
 
 _local_midnight = local_midnight
-
-
-def _border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[TerminalSale]:
-    near_border = Q(transaction_at__gte=lo - window, transaction_at__lt=lo) | Q(
-        transaction_at__gte=hi, transaction_at__lt=hi + window
-    )
-    return list(
-        TerminalSale.objects.filter(
-            near_border, status=TerminalSale.Status.COMPLETED, matched_manually=False
-        )
-    )
-
-
-def _candidate_movements(lo: datetime, hi: datetime) -> list[TreasuryMovement]:
-    return list(
-        TreasuryMovement.objects.filter(
-            sale_document_status_q("invoice__"),
-            movement_type=TreasuryMovement.Type.INBOUND,
-            invoice__sale_order__isnull=False,
-            invoice__dte_type__in=SALE_DTE_TYPES,
-            created_at__gte=lo,
-            created_at__lte=hi,
-        ).select_related("invoice", "payment_method_new", "pos_session")
-    )
-
-
-def _terminals_by_device(device_ids: set[int]) -> dict[int, set[int]]:
-    """device_id → ids de POSTerminal que permiten algún método ligado a ese dispositivo."""
-    if not device_ids:
-        return {}
-    rows = POSTerminal.allowed_payment_methods.through.objects.filter(
-        paymentmethod__linked_terminal_device_id__in=device_ids
-    ).values_list("paymentmethod__linked_terminal_device_id", "posterminal_id")
-    out: dict[int, set[int]] = defaultdict(set)
-    for device_id, terminal_id in rows:
-        out[device_id].add(terminal_id)
-    return out
+_border_competitors = border_competitors
+_candidate_movements = candidate_movements
+_terminals_by_device = terminals_by_device
+_payment_compatible = payment_compatible
 
 
 def _candidates(
@@ -132,18 +103,6 @@ def _candidates(
         }
         for s in sales
     }
-
-
-def _payment_compatible(sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]) -> bool:
-    if sale.payment_type == TerminalSale.PaymentType.CASH:
-        if m.payment_method != "CASH":
-            return False
-        if sale.device_id is None:
-            return True
-        return m.pos_session is not None and m.pos_session.terminal_id in terminals.get(sale.device_id, ())
-    if sale.device_id is None:
-        return True
-    return m.payment_method_new is not None and m.payment_method_new.linked_terminal_device_id == sale.device_id
 
 
 def _assign(
