@@ -14,3 +14,22 @@ export { useFiscalReconciliation, useRunReconciliation } from './useFiscalReconc
 export { useRcvDocumentCandidates, useMatchRcvDocument, useUnmatchRcvDocument } from './useRcvMatch'
 export { useRcvDraftSuggestions, useRcvSupplierPurchaseOrders, useConfirmRcvDraft, useCreateRcvDraft } from './useRcvFeeding'
 export { RECONCILIATION_KEYS } from './reconciliationKeys'
+export { FISCAL_MATCH_KEYS } from './fiscalMatchKeys'
+export {
+    useFiscalMatches,
+    useFiscalMatchCounts,
+    useFiscalMatch,
+    useFiscalMatchCandidates,
+    useFiscalMatchSummary,
+    usePendingIssue,
+    useLinkFiscalMatch,
+    useUnlinkFiscalMatch,
+    useReleaseFiscalMatch,
+    useRetryFiscalIssue,
+} from './useFiscalMatches'
+export {
+    useFiscalMatchDraftSuggestions,
+    useFiscalMatchPurchaseOrders,
+    useConfirmFiscalMatchDraft,
+    useCreateFiscalMatchDraft,
+} from './useRcvFeeding'

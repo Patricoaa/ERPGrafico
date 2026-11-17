@@ -47,3 +47,78 @@ export function matchStatusValue(
     if (status === "") return { status: "unevaluated", label: "Sin evaluar", intent: "neutral" }
     return { status: status.toLowerCase(), label: display || MATCH_STATUS_LABELS[status], intent: MATCH_STATUS_INTENTS[status] }
 }
+
+// --- Cuadre por grupo (ADR-0141) ---------------------------------------------------------------
+
+/** Prefijo de todas las queries del cuadre por grupo (`/api/tax/fiscal-matches/`). */
+export const FISCAL_MATCH_KEY = ["fiscal-match"] as const
+
+/** Estado de una parte (ERP, TUU, RCV) dentro de un grupo. */
+export type PartState = "MATCHED" | "PENDING" | "MISSING" | "DIFF" | "AMBIGUOUS" | "NOT_APPLICABLE" | "SUMMARY_ONLY"
+
+/** Estado agregado de un grupo de cuadre. */
+export type FiscalMatchStatus =
+    | "MATCHED"
+    | "PENDING"
+    | "DIFF"
+    | "AMBIGUOUS"
+    | "MISSING_ERP"
+    | "MISSING_EXTERNAL"
+    | "EXCLUDED"
+
+export const PART_STATE_LABELS: Record<PartState, string> = {
+    MATCHED: "Cuadrado",
+    PENDING: "Pendiente",
+    MISSING: "Falta",
+    DIFF: "Diferencia",
+    AMBIGUOUS: "Ambiguo",
+    NOT_APPLICABLE: "No aplica",
+    SUMMARY_ONLY: "Solo resumen",
+}
+
+export const FISCAL_MATCH_STATUS_LABELS: Record<FiscalMatchStatus, string> = {
+    MATCHED: "Cuadrado",
+    PENDING: "Pendiente",
+    DIFF: "Con diferencia",
+    AMBIGUOUS: "Ambiguo",
+    MISSING_ERP: "Falta en el ERP",
+    MISSING_EXTERNAL: "Falta en SII/TUU",
+    EXCLUDED: "Excluido",
+}
+
+export const PART_STATE_INTENTS: Record<PartState, BadgeIntent> = {
+    MATCHED: "success",
+    PENDING: "neutral",
+    MISSING: "destructive",
+    DIFF: "warning",
+    AMBIGUOUS: "warning",
+    NOT_APPLICABLE: "neutral",
+    SUMMARY_ONLY: "neutral",
+}
+
+export const FISCAL_MATCH_STATUS_INTENTS: Record<FiscalMatchStatus, BadgeIntent> = {
+    MATCHED: "success",
+    PENDING: "neutral",
+    DIFF: "warning",
+    AMBIGUOUS: "warning",
+    MISSING_ERP: "destructive",
+    MISSING_EXTERNAL: "destructive",
+    EXCLUDED: "neutral",
+}
+
+/** Valor de `StatusBadge` para el estado de un grupo; prefiere el texto del backend. */
+export function fiscalMatchStatusValue(
+    status: FiscalMatchStatus,
+    display?: string | null,
+): { status: string; label: string; intent: BadgeIntent } {
+    return {
+        status: status.toLowerCase(),
+        label: display || FISCAL_MATCH_STATUS_LABELS[status],
+        intent: FISCAL_MATCH_STATUS_INTENTS[status],
+    }
+}
+
+/** Valor de `StatusBadge` para el estado de una parte del grupo. */
+export function partStateValue(state: PartState): { status: string; label: string; intent: BadgeIntent } {
+    return { status: state.toLowerCase(), label: PART_STATE_LABELS[state], intent: PART_STATE_INTENTS[state] }
+}
