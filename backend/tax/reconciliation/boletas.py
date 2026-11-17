@@ -8,33 +8,20 @@ factura (ADR-0091).
 """
 
 import calendar
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import date, datetime, timedelta
-from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport, RCVSettings
 from billing.models import Invoice
 from core.fiscal_match import MatchStatus
+from tax.fiscal_match.boletas import _pair, months_in_range  # noqa: F401  (re-export)
 from treasury.models import TerminalSale
 
 from .rcv import BOLETA_SII_CODES
 from .terminal import _local_midnight
-
-PairKey = tuple[date, Decimal, int]
-
-
-def months_in_range(start: date, end: date) -> list[tuple[int, int]]:
-    """(año, mes) de cada mes que toca el rango [start, end], ambos inclusive."""
-    months: list[tuple[int, int]] = []
-    year, month = start.year, start.month
-    while (year, month) <= (end.year, end.month):
-        months.append((year, month))
-        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
-    return months
 
 
 @transaction.atomic
@@ -103,23 +90,6 @@ def _unlinked_sales(lo: datetime, hi: datetime) -> list[TerminalSale]:
             rcv_document__isnull=True,
         ).order_by("transaction_at", "id")
     )
-
-
-def _pair(docs: list[RCVDocument], sales: list[TerminalSale]) -> dict[int, TerminalSale]:
-    """doc_id → venta TUU, emparejadas en orden dentro de cada (día local, monto, tipo)."""
-    by_key: dict[PairKey, list[TerminalSale]] = defaultdict(list)
-    for s in sales:
-        by_key[(timezone.localdate(s.transaction_at), s.sale_amount, s.document_type)].append(s)
-    docs_by_key: dict[PairKey, list[RCVDocument]] = defaultdict(list)
-    for d in docs:
-        if d.missing_since_import_id is None:
-            docs_by_key[(d.issue_date, abs(d.total_amount), d.dte_type)].append(d)
-    paired: dict[int, TerminalSale] = {}
-    for key, group in docs_by_key.items():
-        for doc, sale in zip(group, by_key.get(key, ())):
-            sale.rcv_document_id = doc.id
-            paired[doc.id] = sale
-    return paired
 
 
 def _invoices_taken_elsewhere(sales: list[TerminalSale]) -> set[int]:
