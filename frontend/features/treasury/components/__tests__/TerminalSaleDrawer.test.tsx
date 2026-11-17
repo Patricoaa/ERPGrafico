@@ -52,6 +52,7 @@ const sale: TerminalSaleDetail = {
     natural_key: "cash:13347", card_bin: "", card_origin: "", installment_type: "", acquirer_id: null,
     sources: ["BRANCH"], items: [], reconciliations: [], raw: { branch: { saleId: "13347" } },
     match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false, rcv_document: null, rcv_folio: null,
+    issue_attempted_at: null, issue_error: "",
     first_seen_run: 1, last_seen_run: 1, created_at: "2026-11-12T10:05:00-03:00", updated_at: "2026-11-12T10:05:00-03:00",
 }
 
@@ -126,6 +127,20 @@ describe("TerminalSaleDrawer", () => {
             expect(row).toBeTruthy()
             expect(within(row as HTMLElement).getByText("—")).toBeInTheDocument()
             expect(screen.queryByRole("button", { name: /^Folio / })).not.toBeInTheDocument()
+        })
+
+        it("con error de emisión muestra el error y la hora del intento", () => {
+            m.sale = { ...sale, issue_error: "Período cerrado", issue_attempted_at: "2026-11-12T10:30:00-03:00" }
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            const row = screen.getByText("Error al emitir").closest("li")
+            expect(row).toBeTruthy()
+            expect(within(row as HTMLElement).getByText("Período cerrado")).toBeInTheDocument()
+            expect(within(row as HTMLElement).getByText(/12-11-2026|12\/11\/2026/)).toBeInTheDocument()
+        })
+
+        it("sin error de emisión no muestra la fila", () => {
+            render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
+            expect(screen.queryByText("Error al emitir")).not.toBeInTheDocument()
         })
 
         it("un comprobante 48 no muestra la fila Boleta SII", () => {

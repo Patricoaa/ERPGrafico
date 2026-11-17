@@ -196,6 +196,13 @@ function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
                     }
                 />
             )}
+            {sale.issue_error && (
+                <Section.Row
+                    title="Error al emitir"
+                    description={sale.issue_attempted_at ? `Intento: ${formatDate(sale.issue_attempted_at, true)}` : undefined}
+                    value={<span className="text-destructive">{sale.issue_error}</span>}
+                />
+            )}
             {linked ? (
                 <Section.Row
                     title="Documento vinculado"

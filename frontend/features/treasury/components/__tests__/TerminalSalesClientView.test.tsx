@@ -72,6 +72,7 @@ const sale: TerminalSale = {
     sale_amount: "3200", tip_amount: "0", cashback_amount: "0", total_amount: "3200",
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,
     match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false, rcv_document: null, rcv_folio: null,
+    issue_attempted_at: null, issue_error: "",
 }
 
 const PERIOD = { date_from: "2026-10-01", date_to: "2026-10-31" }

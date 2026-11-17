@@ -1,5 +1,5 @@
-import { defineEntity } from "@/components/entity-view"
-import type { OnlyErpDocument, ReconciliationSummary } from "../types/reconciliation"
+import { defineEntity, type StatusValue } from "@/components/entity-view"
+import type { OnlyErpDocument, PendingIssueDocument, ReconciliationSummary } from "../types/reconciliation"
 
 /** Boletas y comprobantes que se cuadran por resumen mensual (ADR-0138). */
 const SUMMARY_DTE_LABELS: Record<number, string> = {
@@ -45,4 +45,34 @@ export const onlyErpDocumentEntity = defineEntity<OnlyErpDocument>()((f) => ({
 export const onlyErpDocumentViews = onlyErpDocumentEntity.views({
     table: { columns: ["label", "date", "amount"], primary: "label" },
     card: { title: "label", subtitle: ["date"], trailing: ["amount"] },
+})
+
+/** Motivo de un borrador pendiente de folio, para `StatusBadge`. */
+export function pendingIssueReason(doc: PendingIssueDocument): StatusValue {
+    switch (doc.reason) {
+        case "NO_TUU":
+            return { status: "NO_TUU", label: "Sin venta TUU", intent: "warning" }
+        case "WAITING_RCV":
+            return { status: "WAITING_RCV", label: "Esperando RCV", intent: "info" }
+        case "ERROR":
+            return { status: "ERROR", label: `Error al emitir: ${doc.error ?? ""}`.trim(), intent: "destructive" }
+        case "READY":
+            return { status: "READY", label: "Lista para emitir", intent: "success" }
+    }
+}
+
+/** Boletas y comprobantes en borrador a la espera de su número fiscal (ADR-0140). */
+export const pendingIssueDocumentEntity = defineEntity<PendingIssueDocument>()((f) => ({
+    title: "Boletas pendientes de folio",
+    fields: {
+        label: f.text("label", { label: "Documento" }),
+        date: f.date("date", { label: "Fecha" }),
+        amount: f.money((r) => amount(r.amount), { label: "Monto" }),
+        reason: f.status(pendingIssueReason, { label: "Motivo" }),
+    },
+}))
+
+export const pendingIssueDocumentViews = pendingIssueDocumentEntity.views({
+    table: { columns: ["label", "date", "amount", "reason"], primary: "label" },
+    card: { title: "label", subtitle: ["date", "reason"], trailing: ["amount"] },
 })

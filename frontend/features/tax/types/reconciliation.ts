@@ -42,6 +42,19 @@ export interface OnlyErpDocument {
     date: string
 }
 
+/**
+ * Motivo por el que un borrador 39/41/48 sin folio aún no se emite (ADR-0140):
+ * sin venta TUU cuadrada, boleta sin su folio del RCV, error del último intento o lista para la próxima emisión.
+ */
+export type PendingIssueReason = 'NO_TUU' | 'WAITING_RCV' | 'ERROR' | 'READY'
+
+/** Borrador de boleta o comprobante a la espera de su número fiscal. */
+export interface PendingIssueDocument extends OnlyErpDocument {
+    reason: PendingIssueReason
+    /** Texto del error del último intento; solo con `reason === 'ERROR'`. */
+    error: string | null
+}
+
 export interface FiscalReconciliationReport {
     /** Fecha desde la que se cuadra (`fiscal_match_start_date`); null si no está configurada. */
     start_date: string | null
@@ -49,6 +62,8 @@ export interface FiscalReconciliationReport {
     only_erp: OnlyErpDocument[]
     summaries: ReconciliationSummary[]
     terminal: MatchCounts
+    /** Borradores 39/41/48 sin folio del mes; `items` trae como máximo 50. */
+    pending_issue: { count: number; items: PendingIssueDocument[] }
 }
 
 export type ReconciliationSource = 'rcv' | 'terminal'
