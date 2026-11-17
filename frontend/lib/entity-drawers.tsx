@@ -193,6 +193,11 @@ const RcvImportDrawer = dynamic(
     { ssr: false, loading: () => skeleton("importación RCV") }
 )
 
+const FiscalMatchDrawer = dynamic(
+    () => import("@/features/tax").then((m) => m.FiscalMatchDrawer),
+    { ssr: false, loading: () => skeleton("cuadre") }
+)
+
 const TerminalSaleDrawer = dynamic(
     () => import("@/features/treasury").then((m) => m.TerminalSaleDrawer),
     { ssr: false, loading: () => skeleton("venta de terminal de cobro") }
@@ -689,6 +694,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
     "treasury.terminalsale": ({ id, open, onOpenChange }) => (
         <TerminalSaleDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "tax.fiscalmatch": ({ id, open, onOpenChange }) => (
+        <FiscalMatchDrawer
             id={id}
             open={open}
             onOpenChange={onOpenChange}

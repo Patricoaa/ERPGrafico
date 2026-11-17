@@ -17,14 +17,19 @@ const DTE_SHORT: Record<number, string> = {
 
 const RCV_FOLIOS_SHOWN = 2
 
+/** «Boleta 39», «Factura 33»; null si el tipo no tiene nombre corto. */
+export function dteShortLabel(dteType: number | null): string | null {
+    const short = dteType === null ? undefined : DTE_SHORT[dteType]
+    return short ? `${short} ${dteType}` : null
+}
+
 const withAmount = (label: string, amount: string | null): string =>
     amount === null ? label : `${label} · ${formatMoneyValue(amount)}`
 
 /** ERP: «Boleta 39 · $12.500», o «(sin documento)» en un grupo huérfano. */
 export function erpPart(row: FiscalMatchListItem): FiscalMatchPartValue {
     if (!row.invoice) return { state: row.erp_state, text: "(sin documento)" }
-    const short = row.dte_type === null ? undefined : DTE_SHORT[row.dte_type]
-    const label = short ? `${short} ${row.dte_type}` : row.invoice.display_id
+    const label = dteShortLabel(row.dte_type) ?? row.invoice.display_id
     return { state: row.erp_state, text: withAmount(label, row.erp_amount) }
 }
 
