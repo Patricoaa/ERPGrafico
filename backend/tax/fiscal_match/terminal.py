@@ -8,6 +8,7 @@ del documento del cobro y el grupo huérfano que tenía se borra si queda vacío
 
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Q
@@ -15,8 +16,7 @@ from django.db.models import Q
 from accounting.models import RCVDocument, RCVSettings
 from tax.fiscal_match.candidates import (
     LinkResult,
-    border_competitors,
-    candidate_movements,
+    candidate_movements_where,
     local_midnight,
     payment_compatible,
     terminals_by_device,
@@ -50,8 +50,7 @@ def link_terminal_sales(lo: datetime, hi: datetime, *, rematch_ids: set[int]) ->
     if not sales:
         return LinkResult(0)
     selected = {s.id for s in sales}
-    first = min(lo, *(s.transaction_at for s in sales))
-    last = max(hi, *(s.transaction_at for s in sales))
+    spans = _spans(lo, hi, sales, window)
 
     # Cobros ya tomados por ventas fuera de la selección (manuales u otro rango) no se reasignan.
     taken = set(
@@ -59,19 +58,27 @@ def link_terminal_sales(lo: datetime, hi: datetime, *, rematch_ids: set[int]) ->
         .exclude(id__in=selected)
         .values_list("matched_movement_id", flat=True)
     )
-    movements = [m for m in candidate_movements(first - window, last + window) if m.id not in taken]
+    movements = [m for m in candidate_movements_where(_within("created_at", spans)) if m.id not in taken]
     # Ventas vecinas sin cobro compiten por los mismos cobros: se leen para detectar
-    # ambigüedad en el borde, pero no se escriben.
-    competitors = [
-        s
-        for s in border_competitors(first, last, window)
-        if s.id not in selected and not s.linked_manually and s.matched_movement_id is None
-    ]
+    # ambigüedad (también en el borde del rango), pero no se escriben.
+    competitors = list(
+        TerminalSale.objects.filter(
+            _within("transaction_at", spans),
+            status=TerminalSale.Status.COMPLETED,
+            linked_manually=False,
+            matched_movement__isnull=True,
+        ).exclude(id__in=selected)
+    )
     terminals = terminals_by_device({s.device_id for s in sales + competitors if s.device_id})
 
     candidates = _candidates(sales, movements, window, terminals)
     rivals = _candidates(competitors, movements, window, terminals)
     uses: Counter[int] = Counter(m for cands in (*candidates.values(), *rivals.values()) for m in cands)
+    # Una venta seleccionada que conserva su cobro sin tenerlo de candidato (cambió el
+    # monto, o su nuevo cobro no tiene grupo) lo sigue ocupando: cuenta como un uso más.
+    for s in sales:
+        if s.matched_movement_id is not None and s.matched_movement_id not in candidates[s.id]:
+            uses[s.matched_movement_id] += 1
     by_id = {m.id: m for m in movements}
     unique = {
         s.id: by_id[next(iter(cands))]
@@ -83,6 +90,43 @@ def link_terminal_sales(lo: datetime, hi: datetime, *, rematch_ids: set[int]) ->
     return _attach(sales, unique, ambiguous)
 
 
+def _spans(
+    lo: datetime, hi: datetime, sales: list[TerminalSale], window: timedelta
+) -> list[tuple[datetime, datetime]]:
+    """Tramos de tiempo a leer: el rango ± ventana y cada venta re-cuadrada fuera de él ± ventana.
+
+    Un grupo viejo en ``rematch_ids`` no estira la lectura a todo el intervalo entre
+    su venta y el rango (las filas leídas no crecen con la distancia).
+    """
+    raw = sorted(
+        [(lo - window, hi + window)]
+        + [
+            (s.transaction_at - window, s.transaction_at + window)
+            for s in sales
+            if not lo <= s.transaction_at < hi
+        ]
+    )
+    merged = [raw[0]]
+    for start, end in raw[1:]:
+        if start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def _within(field: str, spans: list[tuple[datetime, datetime]]) -> Q:
+    q = Q()
+    for start, end in spans:
+        q |= Q(**{f"{field}__gte": start, f"{field}__lte": end})
+    return q
+
+
+def _clp(amount: Decimal) -> int | None:
+    """Monto en pesos enteros; ``None`` si trae decimales (tolerancia 0: nunca calza)."""
+    return int(amount) if amount == amount.to_integral_value() else None
+
+
 def _candidates(
     sales: list[TerminalSale],
     movements: list[TreasuryMovement],
@@ -92,16 +136,17 @@ def _candidates(
     """sale_id → ids de cobros compatibles (monto del cobro, ventana y medio de pago)."""
     by_amount: dict[int, list[TreasuryMovement]] = defaultdict(list)
     for m in movements:
-        if m.amount == m.amount.to_integral_value():
-            by_amount[int(m.amount)].append(m)
-    return {
-        s.id: {
+        if (key := _clp(m.amount)) is not None:
+            by_amount[key].append(m)
+    out: dict[int, set[int]] = {}
+    for s in sales:
+        key = _clp(s.sale_amount)
+        out[s.id] = {
             m.id
-            for m in by_amount.get(int(s.sale_amount), ())
+            for m in (by_amount.get(key, ()) if key is not None else ())
             if abs(m.created_at - s.transaction_at) <= window and payment_compatible(s, m, terminals)
         }
-        for s in sales
-    }
+    return out
 
 
 def _attach(

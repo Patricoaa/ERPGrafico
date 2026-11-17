@@ -42,7 +42,12 @@ def local_midnight(day: date) -> datetime:
 
 @dataclass
 class LinkResult:
-    """Resultado de un paso de vínculo: cuántas partes se unieron y qué grupos quedaron ambiguos."""
+    """Resultado de un paso de vínculo.
+
+    ``linked`` cuenta las partes que esta corrida unió o volvió a unir a otro grupo o
+    cobro (un re-cuadre que no cambia nada no suma); ``ambiguous_group_ids`` son los
+    grupos con más de un candidato o con un candidato que otro registro reclama.
+    """
 
     linked: int
     ambiguous_group_ids: set[int] = field(default_factory=set)
@@ -60,14 +65,18 @@ def border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[Te
 
 
 def candidate_movements(lo: datetime, hi: datetime) -> list[TreasuryMovement]:
+    return candidate_movements_where(Q(created_at__gte=lo, created_at__lte=hi))
+
+
+def candidate_movements_where(when: Q) -> list[TreasuryMovement]:
+    """Cobros de venta POS que pueden respaldar una venta TUU, filtrados por ``when``."""
     return list(
         TreasuryMovement.objects.filter(
+            when,
             sale_document_status_q("invoice__"),
             movement_type=TreasuryMovement.Type.INBOUND,
             invoice__sale_order__isnull=False,
             invoice__dte_type__in=SALE_DTE_TYPES,
-            created_at__gte=lo,
-            created_at__lte=hi,
         ).select_related("invoice", "payment_method_new", "pos_session")
     )
 

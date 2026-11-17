@@ -244,7 +244,101 @@ def test_rematch_now_ambiguous_keeps_link(env):
     assert sale.fiscal_match_id == group.id
     assert sale.matched_movement_id == _movement(inv).id
     assert rival.fiscal_match.invoice_id is None
+    assert result.linked == 0
     assert result.ambiguous_group_ids == {group.id, rival.fiscal_match_id}
+
+
+def test_rematch_without_candidates_keeps_link(env):
+    """Ruling F: el cobro cambió de monto; la venta sigue en su grupo con su cobro."""
+    inv = make_pos_document(env, 6000, T0)
+    sale = make_terminal_sale(env, 6000, T0 + timedelta(minutes=1))
+    run()
+    group = FiscalMatch.objects.get(invoice=inv)
+    TreasuryMovement.objects.filter(invoice=inv).update(amount=Decimal(7000))
+
+    result = run(rematch_ids={group.id})
+
+    _reload(sale)
+    assert sale.fiscal_match_id == group.id
+    assert sale.matched_movement_id == _movement(inv).id
+    assert result == LinkResult(0)
+
+
+def test_movement_held_by_unmoved_rematch_is_not_reassigned(env):
+    """El cobro que conserva una venta seleccionada no se entrega a otra (unicidad)."""
+    inv = make_pos_document(env, 6000, T0)
+    holder = make_terminal_sale(env, 6000, T0 + timedelta(minutes=1))
+    run()
+    group = FiscalMatch.objects.get(invoice=inv)
+    TreasuryMovement.objects.filter(invoice=inv).update(amount=Decimal(7000))
+    other = make_terminal_sale(env, 7000, T0 + timedelta(minutes=2))
+
+    result = run(rematch_ids={group.id})
+
+    _reload(holder, other)
+    assert holder.matched_movement_id == _movement(inv).id
+    assert other.matched_movement_id is None and other.fiscal_match.invoice_id is None
+    assert result.linked == 0
+    assert result.ambiguous_group_ids == {other.fiscal_match_id}
+
+
+def test_movement_held_when_new_target_has_no_group(env):
+    """Cobro único cuya factura no tiene grupo: la venta no se mueve y conserva su cobro."""
+    inv = make_pos_document(env, 6000, T0)
+    holder = make_terminal_sale(env, 6000, T0 + timedelta(minutes=1))
+    run()
+    group = FiscalMatch.objects.get(invoice=inv)
+    TreasuryMovement.objects.filter(invoice=inv).update(amount=Decimal(7000))
+    loose = make_pos_document(env, 6000, T0 + timedelta(minutes=3))
+    other = make_terminal_sale(env, 7000, T0 + timedelta(minutes=2))
+    ensure_groups(SINCE)
+    FiscalMatch.objects.filter(invoice=loose).delete()
+    lo, hi = _range()
+
+    result = link_terminal_sales(lo, hi, rematch_ids={group.id})
+
+    _reload(holder, other)
+    assert holder.fiscal_match_id == group.id
+    assert holder.matched_movement_id == _movement(inv).id
+    assert other.matched_movement_id is None
+    assert result.linked == 0
+    assert result.ambiguous_group_ids == {other.fiscal_match_id}
+
+
+def test_rematch_far_back_still_sees_border_rival(env):
+    """Un grupo viejo en ``rematch_ids`` no corre el borde: el rival de D-1 23:58 cuenta."""
+    old_inv = make_pos_document(env, 3000, local_dt(2026, 11, 3, 10))
+    make_terminal_sale(env, 3000, local_dt(2026, 11, 3, 10, 1))
+    run(date(2026, 11, 3))
+    old_group = FiscalMatch.objects.get(invoice=old_inv)
+    make_pos_document(env, 6000, local_dt(2026, 11, 9, 23, 55))
+    make_terminal_sale(env, 6000, local_dt(2026, 11, 9, 23, 58))
+    b = make_terminal_sale(env, 6000, local_dt(2026, 11, 10, 0, 2))
+
+    result = run(rematch_ids={old_group.id})
+
+    _reload(b)
+    assert b.matched_movement_id is None and b.fiscal_match.invoice_id is None
+    assert result.ambiguous_group_ids == {b.fiscal_match_id}
+    assert result.linked == 0
+
+
+def test_amounts_with_cents_never_match(env):
+    """Tolerancia 0 en pesos enteros: un monto con decimales no se trunca para calzar."""
+    from tax.fiscal_match.terminal import _candidates
+
+    inv = make_pos_document(env, 6000, T0)
+    movement = _movement(inv)
+    sale = make_terminal_sale(env, 6000, T0)
+    window = timedelta(minutes=15)
+    terminals = {env.device.id: {env.terminal.id}}
+
+    assert _candidates([sale], [movement], window, terminals) == {sale.id: {movement.id}}
+    sale.sale_amount = Decimal("6000.4")
+    assert _candidates([sale], [movement], window, terminals) == {sale.id: set()}
+    sale.sale_amount = Decimal(6000)
+    movement.amount = Decimal("6000.40")
+    assert _candidates([sale], [movement], window, terminals) == {sale.id: set()}
 
 
 def test_orphan_rcv_moves_with_sale(env):
