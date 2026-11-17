@@ -1335,9 +1335,9 @@ class ReconciliationMatchSelector:
 
 def terminal_sales_queryset(filters: dict) -> QuerySet[TerminalSale]:
     """Ventas filtradas con valores ya validados; ``date_*`` aplican a la fecha local de ``transaction_at``."""
-    qs = TerminalSale.objects.select_related("provider", "device", "matched_invoice", "rcv_document").defer(
-        "rcv_document__raw"
-    )
+    qs = TerminalSale.objects.select_related("provider", "device", "fiscal_match")
+    if filters.get("fiscal_match_status"):
+        qs = qs.filter(fiscal_match__status=filters["fiscal_match_status"])
     if filters.get("date_from"):
         qs = qs.filter(transaction_at__date__gte=filters["date_from"])
     if filters.get("date_to"):

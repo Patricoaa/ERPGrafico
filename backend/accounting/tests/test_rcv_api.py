@@ -428,35 +428,39 @@ def test_api_key_new_value_clears_exhaustion(manager):
     assert key.last_error == ""
 
 
+def _group(status: str = "MATCHED"):
+    from tax.models import FiscalMatch
+
+    return FiscalMatch.objects.create(direction=FiscalMatch.Direction.SALE, status=status)
+
+
 @pytest.mark.django_db
-def test_documents_expose_match_fields_without_n_plus_one(reader):
-    from datetime import date as _d
-
-    from billing.models import Invoice
-    from contacts.models import Contact
-
-    contact = Contact.objects.create(name="Cliente RCV cuadre", tax_id="76.333.333-3")
-
-    def seed(n: int, base: int) -> None:
+def test_documents_expose_fiscal_match_without_n_plus_one(reader):
+    def seed(n: int) -> None:
         imp = _import()
-        for i in range(n):
-            inv = Invoice.objects.create(contact=contact, date=_d(2026, 10, 5), number=f"RM-{base + i}")
-            _doc(imp, matched_invoice=inv, match_status="MATCHED")
+        for _i in range(n):
+            _doc(imp, fiscal_match=_group())
 
     url = "/api/accounting/rcv-documents/"
-    seed(3, 0)
+    seed(3)
     _count_queries(reader, url)
     small = _count_queries(reader, url)
-    seed(6, 100)
+    seed(6)
     assert _count_queries(reader, url) == small
     rows = reader.get(url).json()["results"]
     assert len(rows) == 9
     for row in rows:
-        assert row["match_status"] == "MATCHED"
-        assert row["match_status_display"] == "Cuadrado"
-        assert row["matched_invoice"]
-        assert row["matched_invoice_display"]
-        assert row["matched_manually"] is False
+        assert row["fiscal_match"]["status"] == "MATCHED"
+        assert row["fiscal_match"]["status_display"] == "Cuadrado"
+        assert row["fiscal_match"]["id"]
+        for old in ("match_status", "matched_invoice", "terminal_sale", "terminal_sale_display"):
+            assert old not in row
+
+
+@pytest.mark.django_db
+def test_document_without_group_has_null_fiscal_match(reader):
+    doc = _doc(_import())
+    assert reader.get(f"/api/accounting/rcv-documents/{doc.id}/").json()["fiscal_match"] is None
 
 
 @pytest.mark.django_db
@@ -477,64 +481,11 @@ def test_settings_fiscal_match_fields_writable(manager):
 
 
 @pytest.mark.django_db
-def test_documents_filter_by_match_status(reader):
+def test_documents_filter_by_fiscal_match_status(reader):
     imp = _import()
-    matched = _doc(imp, match_status="MATCHED")
-    _doc(imp, match_status="ONLY_EXTERNAL")
+    matched = _doc(imp, fiscal_match=_group("MATCHED"))
+    _doc(imp, fiscal_match=_group("DIFF"))
     _doc(imp)
-    rows = reader.get("/api/accounting/rcv-documents/?match_status=MATCHED").json()["results"]
+    rows = reader.get("/api/accounting/rcv-documents/?fiscal_match_status=MATCHED").json()["results"]
     assert [r["id"] for r in rows] == [matched.id]
-    assert reader.get("/api/accounting/rcv-documents/?match_status=NOPE").status_code == 400
-
-
-# ── Venta TUU vinculada a la boleta (ADR-0139) ──────────────────────────────
-
-
-def _linked_boletas(n: int) -> list[RCVDocument]:
-    from treasury.models import TerminalSale
-    from treasury.tests.helpers import make_terminal_provider
-
-    provider = make_terminal_provider()
-    imp = _import(SALES, 2026, 10)
-    docs = []
-    for i in range(n):
-        doc = _doc(imp, dte_type=39)
-        TerminalSale.objects.create(
-            provider=provider, natural_key=f"rcv-ts-{doc.id}", serial_number="SN1",
-            sale_id=f"V{doc.id}" if i % 2 == 0 else "", sequence_number=f"S{doc.id}",
-            transaction_at=FIXED_NOW, status=TerminalSale.Status.COMPLETED, document_type=39,
-            sale_amount=1000, total_amount=1000, rcv_document=doc,
-        )
-        docs.append(doc)
-    return docs
-
-
-@pytest.mark.django_db
-def test_documents_expose_terminal_sale_without_n_plus_one(reader):
-    url = "/api/accounting/rcv-documents/"
-    _linked_boletas(3)
-    _count_queries(reader, url)
-    small = _count_queries(reader, url)
-    _linked_boletas(9)
-    assert _count_queries(reader, url) == small
-    rows = reader.get(url).json()["results"]
-    assert len(rows) == 12
-    for row in rows:
-        assert row["terminal_sale"]
-        assert row["terminal_sale_display"].startswith("Venta TUU ")
-
-
-@pytest.mark.django_db
-def test_document_terminal_sale_display(reader):
-    from treasury.models import TerminalSale
-
-    with_id, without_id = _linked_boletas(2)
-    alone = _doc(_import(SALES, 2026, 9), dte_type=39)
-    sale = TerminalSale.objects.get(rcv_document=with_id)
-    body = reader.get(f"/api/accounting/rcv-documents/{with_id.id}/").json()
-    assert body["terminal_sale"] == sale.id
-    assert body["terminal_sale_display"] == f"Venta TUU V{with_id.id}"
-    body = reader.get(f"/api/accounting/rcv-documents/{without_id.id}/").json()
-    assert body["terminal_sale_display"] == f"Venta TUU S{without_id.id}"
-    body = reader.get(f"/api/accounting/rcv-documents/{alone.id}/").json()
-    assert body["terminal_sale"] is None and body["terminal_sale_display"] is None
+    assert reader.get("/api/accounting/rcv-documents/?fiscal_match_status=NOPE").status_code == 400

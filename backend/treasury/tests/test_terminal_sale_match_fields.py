@@ -10,7 +10,6 @@ from rest_framework.test import APIClient
 
 from billing.models import Invoice
 from contacts.models import Contact
-from core.fiscal_match import MatchStatus
 from treasury.models import TerminalSale
 from treasury.tests.helpers import make_terminal_provider
 from treasury.tests.test_terminal_sales_api import make_sale
@@ -35,13 +34,15 @@ def _invoice(n: int) -> Invoice:
     return Invoice.objects.create(contact=contact, date=date(2026, 11, 10), number=f"MF-{n}")
 
 
+def _group(status: str = "MATCHED"):
+    from tax.models import FiscalMatch
+
+    return FiscalMatch.objects.create(direction=FiscalMatch.Direction.SALE, status=status)
+
+
 def _linked(provider, n: int) -> None:
-    for i in range(n):
-        make_sale(
-            provider,
-            matched_invoice=_invoice(i + 1000 * n),
-            match_status=MatchStatus.MATCHED,
-        )
+    for _i in range(n):
+        make_sale(provider, fiscal_match=_group())
 
 
 @pytest.mark.django_db
@@ -63,7 +64,7 @@ def _count(client, url=URL) -> int:
 
 
 @pytest.mark.django_db
-def test_list_exposes_match_fields_without_n_plus_one(admin_client, provider):
+def test_list_exposes_fiscal_match_without_n_plus_one(admin_client, provider):
     _linked(provider, 3)
     _count(admin_client)
     small = _count(admin_client)
@@ -72,65 +73,26 @@ def test_list_exposes_match_fields_without_n_plus_one(admin_client, provider):
     rows = admin_client.get(URL).json()["results"]
     assert len(rows) == 9
     for row in rows:
-        assert row["match_status"] == "MATCHED"
-        assert row["match_status_display"] == "Cuadrado"
-        assert row["matched_invoice"]
-        assert row["matched_invoice_display"]
-        assert row["matched_manually"] is False
+        assert row["fiscal_match"]["status"] == "MATCHED"
+        assert row["fiscal_match"]["status_display"] == "Cuadrado"
+        assert row["fiscal_match"]["id"]
+        for old in ("match_status", "matched_invoice", "rcv_document", "rcv_folio"):
+            assert old not in row
 
 
 @pytest.mark.django_db
-def test_unlinked_sale_has_empty_match_fields(admin_client, provider):
+def test_unlinked_sale_has_null_fiscal_match(admin_client, provider):
     sale = make_sale(provider)
     row = admin_client.get(f"{URL}{sale.id}/").json()
-    assert row["match_status"] == ""
-    assert row["matched_invoice"] is None
-    assert row["matched_invoice_display"] is None
+    assert row["fiscal_match"] is None
     assert row["matched_manually"] is False
 
 
-# ── Boleta SII vinculada (ADR-0139) ─────────────────────────────────────────
-
-
-def _boleta(folio: int):
-    from accounting.models import RCVDocument, RCVImport
-
-    imp = RCVImport.objects.get_or_create(
-        direction=RCVImport.Direction.SALES, year=2026, month=11,
-        defaults={"trigger": RCVImport.Trigger.MANUAL, "status": RCVImport.Status.SUCCESS},
-    )[0]
-    return RCVDocument.objects.create(
-        direction=RCVImport.Direction.SALES, company_rut="11111111-1", period="202611", dte_type=39,
-        folio=folio, counterparty_rut="66666666-6", issue_date=date(2026, 11, 13), total_amount=1000,
-        first_import=imp, last_import=imp,
-    )
-
-
-def _with_boleta(provider, n: int, offset: int) -> None:
-    for i in range(n):
-        make_sale(provider, rcv_document=_boleta(offset + i))
-
-
 @pytest.mark.django_db
-def test_list_exposes_rcv_boleta_without_n_plus_one(admin_client, provider):
-    _with_boleta(provider, 3, 100)
-    _count(admin_client)
-    small = _count(admin_client)
-    _with_boleta(provider, 6, 200)
-    assert _count(admin_client) == small
-    rows = admin_client.get(URL).json()["results"]
-    assert len(rows) == 9
-    for row in rows:
-        assert row["rcv_document"]
-        assert row["rcv_folio"] >= 100
-
-
-@pytest.mark.django_db
-def test_sale_without_boleta_has_null_rcv_fields(admin_client, provider):
-    sale = make_sale(provider)
-    row = admin_client.get(f"{URL}{sale.id}/").json()
-    assert row["rcv_document"] is None and row["rcv_folio"] is None
-    doc = _boleta(77)
-    TerminalSale.objects.filter(pk=sale.pk).update(rcv_document=doc)
-    row = admin_client.get(f"{URL}{sale.id}/").json()
-    assert row["rcv_document"] == doc.id and row["rcv_folio"] == 77
+def test_filter_by_fiscal_match_status(admin_client, provider):
+    sale = make_sale(provider, fiscal_match=_group("DIFF"))
+    make_sale(provider, fiscal_match=_group("MATCHED"))
+    make_sale(provider)
+    rows = admin_client.get(f"{URL}?fiscal_match_status=DIFF").json()["results"]
+    assert [r["id"] for r in rows] == [sale.id]
+    assert admin_client.get(f"{URL}?fiscal_match_status=NOPE").status_code == 400

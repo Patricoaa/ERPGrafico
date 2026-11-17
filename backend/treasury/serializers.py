@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 from core.crypto import CryptoError
+from core.fiscal_match import FiscalMatchStatus
+from core.serializers.fiscal_match import FiscalMatchRefSerializer
 from core.serializers.mixins import FrozenFieldsField, IsEditableField
 
 from .models import (
@@ -1931,11 +1933,7 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
     device_name = serializers.CharField(source="device.name", read_only=True, default=None)
     document_type_label = serializers.CharField(read_only=True)
     dte_type = serializers.CharField(read_only=True, allow_null=True)
-    match_status_display = serializers.CharField(source="get_match_status_display", read_only=True)
-    matched_invoice_display = serializers.CharField(
-        source="matched_invoice.display_id", read_only=True, default=None
-    )
-    rcv_folio = serializers.IntegerField(source="rcv_document.folio", read_only=True, default=None)
+    fiscal_match = FiscalMatchRefSerializer(read_only=True, allow_null=True)
 
     class Meta:
         model = TerminalSale
@@ -1970,13 +1968,8 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "settlement_date",
             "settlement_id",
             "settlement_amount",
-            "match_status",
-            "match_status_display",
-            "matched_invoice",
-            "matched_invoice_display",
+            "fiscal_match",
             "matched_manually",
-            "rcv_document",
-            "rcv_folio",
             "issue_attempted_at",
             "issue_error",
         ]
@@ -2019,6 +2012,7 @@ class TerminalSaleFilterSerializer(serializers.Serializer):
     payment_type = serializers.ChoiceField(choices=TerminalSale.PaymentType.choices, required=False)
     status = serializers.ChoiceField(choices=TerminalSale.Status.choices, required=False)
     settled = serializers.ChoiceField(choices=["true", "false"], required=False)
+    fiscal_match_status = serializers.ChoiceField(choices=FiscalMatchStatus.choices, required=False)
 
 
 class TerminalSyncRunFilterSerializer(serializers.Serializer):

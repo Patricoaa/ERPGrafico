@@ -1,8 +1,7 @@
 from datetime import date, datetime, time
 from decimal import Decimal
 
-from django.db.models import Count, F, Q, QuerySet, Sum, Value, Window
-from django.db.models.functions import Coalesce, NullIf
+from django.db.models import Count, F, Q, QuerySet, Sum, Window
 from django.utils import timezone
 
 from core.crypto import CryptoError
@@ -187,26 +186,12 @@ def _filter_period(qs: QuerySet, filters: dict) -> QuerySet:
     return qs
 
 
-def with_terminal_sale(qs: QuerySet[RCVDocument]) -> QuerySet[RCVDocument]:
-    """Venta TUU de la boleta (ADR-0139) en la misma consulta.
-
-    El vínculo es único por boleta (``terminalsale_rcv_document_uniq``), así el
-    LEFT JOIN no duplica filas.
-    """
-    return qs.annotate(
-        terminal_sale_pk=F("terminal_sales__id"),
-        terminal_sale_ref=Coalesce(
-            NullIf(F("terminal_sales__sale_id"), Value("")), F("terminal_sales__sequence_number")
-        ),
-    )
-
-
 def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
     """Listado de documentos RCV con filtros ya validados (``RCVDocumentFilterSerializer``).
 
     Sin joins a importaciones (``is_missing`` usa solo la FK) y sin ``raw``.
     """
-    qs = with_terminal_sale(RCVDocument.objects.select_related("matched_invoice").defer("raw"))
+    qs = RCVDocument.objects.select_related("fiscal_match").defer("raw")
     year, month = filters.get("year"), filters.get("month")
     if year is not None and month is not None:
         qs = qs.filter(period=f"{year:04d}{month:02d}")
@@ -214,9 +199,11 @@ def rcv_documents_queryset(filters: dict) -> QuerySet[RCVDocument]:
         qs = qs.filter(period__startswith=f"{year:04d}")
     elif month is not None:
         qs = qs.filter(period__endswith=f"{month:02d}")
-    for field in ("direction", "dte_type", "status", "acknowledgement", "match_status"):
+    for field in ("direction", "dte_type", "status", "acknowledgement"):
         if filters.get(field) not in (None, ""):
             qs = qs.filter(**{field: filters[field]})
+    if filters.get("fiscal_match_status"):
+        qs = qs.filter(fiscal_match__status=filters["fiscal_match_status"])
     if filters.get("missing"):
         qs = qs.filter(missing_since_import__isnull=filters["missing"] == "false")
     if filters.get("issue_date_from"):
@@ -238,10 +225,8 @@ _IMPORT_REFS = ("first_import", "last_import", "missing_since_import")
 
 def rcv_document_detail_queryset() -> QuerySet[RCVDocument]:
     """Detalle: importaciones relacionadas sin su ``raw_response`` (solo se lee id + período)."""
-    return with_terminal_sale(
-        RCVDocument.objects.select_related(*_IMPORT_REFS, "matched_invoice").defer(
-            *(f"{ref}__raw_response" for ref in _IMPORT_REFS)
-        )
+    return RCVDocument.objects.select_related(*_IMPORT_REFS, "fiscal_match").defer(
+        *(f"{ref}__raw_response" for ref in _IMPORT_REFS)
     )
 
 
