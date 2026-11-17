@@ -8,6 +8,7 @@ from simple_history.models import HistoricalRecords
 
 from accounting.models import JournalEntry
 from core.edit_policy import EditPolicy
+from core.fiscal_match import FiscalMatchStatus, PartState
 from core.models import User
 from core.storages import PrivateMediaStorage
 from core.utils import generic_upload_path
@@ -495,3 +496,94 @@ class F29Payment(models.Model):
 
     def __str__(self):
         return f"Pago F29 {self.declaration.tax_period} - ${self.amount:,.0f}"
+
+
+_MATCH_AMOUNT = {"max_digits": 14, "decimal_places": 0, "null": True, "blank": True}
+
+
+class FiscalMatch(models.Model):
+    """Grupo de cuadre fiscal: un documento ERP con sus partes TUU y RCV."""
+
+    class Direction(models.TextChoices):
+        PURCHASE = "purchase", _("Compra")
+        SALE = "sale", _("Venta")
+
+    direction = models.CharField(_("Tipo"), max_length=10, choices=Direction.choices)
+    invoice = models.ForeignKey(
+        "billing.Invoice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="fiscal_match_set",
+        verbose_name=_("Documento ERP"),
+    )
+    rcv_linked_manually = models.BooleanField(_("RCV vinculado manualmente"), default=False)
+    status = models.CharField(
+        _("Estado"),
+        max_length=20,
+        choices=FiscalMatchStatus.choices,
+        default=FiscalMatchStatus.PENDING,
+        db_index=True,
+    )
+    erp_state = models.CharField(
+        _("Estado ERP"), max_length=20, choices=PartState.choices, default=PartState.PENDING
+    )
+    tuu_state = models.CharField(
+        _("Estado TUU"), max_length=20, choices=PartState.choices, default=PartState.PENDING
+    )
+    rcv_state = models.CharField(
+        _("Estado RCV"), max_length=20, choices=PartState.choices, default=PartState.PENDING
+    )
+    dte_type = models.PositiveSmallIntegerField(_("Tipo DTE"), null=True, blank=True)
+    issue_date = models.DateField(_("Fecha de emisión"), null=True, blank=True)
+    fiscal_period = models.CharField(_("Período fiscal"), max_length=6, blank=True)
+    counterparty_rut = models.CharField(_("RUT contraparte"), max_length=20, blank=True)
+    erp_amount = models.DecimalField(_("Monto ERP"), **_MATCH_AMOUNT)
+    tuu_amount = models.DecimalField(_("Monto TUU"), **_MATCH_AMOUNT)
+    rcv_amount = models.DecimalField(_("Monto RCV"), **_MATCH_AMOUNT)
+    issue_attempted_at = models.DateTimeField(_("Intento de emisión"), null=True, blank=True)
+    issue_error = models.CharField(_("Error de emisión"), max_length=255, blank=True)
+    notice = models.CharField(_("Aviso"), max_length=255, blank=True)
+    closed_period_alert = models.BooleanField(_("Alerta de período cerrado"), default=False)
+    evaluated_at = models.DateTimeField(_("Evaluado"), null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Grupo de cuadre fiscal")
+        verbose_name_plural = _("Grupos de cuadre fiscal")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["invoice"],
+                condition=models.Q(invoice__isnull=False),
+                name="fiscalmatch_invoice_uniq",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["direction", "status"], name="fiscalmatch_dir_status_idx"),
+            models.Index(fields=["status", "issue_date"], name="fiscalmatch_status_date_idx"),
+            models.Index(fields=["fiscal_period"], name="fiscalmatch_period_idx"),
+        ]
+
+    def __str__(self):
+        return f"Cuadre {self.pk} ({self.direction}, {self.status})"
+
+
+class FiscalMatchRun(models.Model):
+    """Ejecución del motor de cuadre fiscal."""
+
+    started_at = models.DateTimeField(_("Inicio"), auto_now_add=True)
+    finished_at = models.DateTimeField(_("Fin"), null=True, blank=True)
+    counts = models.JSONField(_("Conteos"), default=dict, blank=True)
+    error = models.TextField(_("Error"), blank=True)
+
+    class Meta:
+        verbose_name = _("Ejecución de cuadre fiscal")
+        verbose_name_plural = _("Ejecuciones de cuadre fiscal")
+        ordering = ["-id"]
+
+    @classmethod
+    def latest_finished(cls) -> "FiscalMatchRun | None":
+        return (
+            cls.objects.filter(finished_at__isnull=False).order_by("-finished_at", "-id").first()
+        )

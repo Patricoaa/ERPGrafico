@@ -4076,6 +4076,24 @@ class TerminalSale(TimeStampedModel):
     # Último intento fallido de emitir su borrador con el folio (ADR-0140 D3).
     issue_attempted_at = models.DateTimeField(_("Intento de emisión"), null=True, blank=True)
     issue_error = models.CharField(_("Error de emisión"), max_length=255, blank=True, default="")
+    # Cuadre unificado (grupo por documento ERP).
+    fiscal_match = models.ForeignKey(
+        "tax.FiscalMatch",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="terminal_sales",
+        verbose_name=_("Grupo de cuadre"),
+    )
+    matched_movement = models.ForeignKey(
+        "treasury.TreasuryMovement",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("Cobro vinculado"),
+    )
+    linked_manually = models.BooleanField(_("Vínculo manual de cobro"), default=False)
 
     class Meta:
         verbose_name = _("Venta de Terminal")
@@ -4094,6 +4112,11 @@ class TerminalSale(TimeStampedModel):
                 fields=["rcv_document"],
                 condition=models.Q(rcv_document__isnull=False),
                 name="terminalsale_rcv_document_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["matched_movement"],
+                condition=models.Q(matched_movement__isnull=False),
+                name="terminalsale_matched_movement_uniq",
             ),
         ]
 

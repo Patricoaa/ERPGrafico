@@ -2117,6 +2117,14 @@ class RCVDocument(TimeStampedModel):
         db_index=True,
     )
     matched_manually = models.BooleanField(_("Vínculo manual"), default=False)
+    fiscal_match = models.ForeignKey(
+        "tax.FiscalMatch",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rcv_documents",
+        verbose_name=_("Grupo de cuadre"),
+    )
 
     class Meta:
         verbose_name = _("Documento RCV")
