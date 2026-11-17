@@ -65,7 +65,7 @@ Una boleta 39/41 del RCV queda `MATCHED` solo cuando su venta TUU tiene document
 - el despachador corre cada minuto y lanza una sincronización cuando se cumple el intervalo desde la última programada;
 - el rango programado termina **hoy**, ya no ayer;
 - los intervalos intradía (`MINUTES`/`HOURS`) sincronizan solo [ayer, hoy]; `DAYS` mantiene `lookback_days`;
-- el despachador omite un proveedor que ya tiene una ejecución `RUNNING`, y marca como `FAILED` («Sincronización interrumpida…») las `RUNNING` con más de 60 minutos.
+- el despachador omite un proveedor que ya tiene una ejecución `RUNNING`, y marca como `FAILED` («Sincronización interrumpida…») las `RUNNING` con más de `max(60, max_retries × retry_delay_minutes + 30)` minutos (el umbral crece con el presupuesto de reintentos).
 
 La pantalla de configuración de TUU edita esos campos, igual que la del RCV.
 
@@ -76,3 +76,7 @@ La pantalla de configuración de TUU edita esos campos, igual que la del RCV.
 - **Datos existentes:** los documentos ya emitidos sin folio con ADR-0138 quedan como están. No se reescriben (ADR-0091).
 - **Tolerancia del cruce 48 ↔ TUU:** solo se emite un borrador cuyo vínculo con la venta TUU está en `MATCHED`, sea automático o manual. Si el paso 1 se equivoca (dos ventas candidatas del mismo monto en la misma ventana), el resultado es `AMBIGUOUS`; si el tipo de documento de TUU no coincide, es `TYPE_DIFF`. En ambos casos no se emite nada.
 - **Fecha del asiento:** al emitir, `confirm_invoice` mueve la fecha del asiento en borrador a la fecha fiscal del documento, y su período contable se recalcula con esa fecha. Si la fecha del SII cae en otro mes, el asiento queda en ese mes. Las fechas por defecto de los documentos de venta usan la fecha local, no la fecha UTC.
+- **Checkout con borrador del asistente:** el checkout reutiliza cualquier documento primario no anulado de la orden, incluido un borrador creado por el asistente. Es intencional: evita documentos duplicados.
+- **Fechas de negocio locales:** en toda la aplicación las fechas de negocio son locales (America/Santiago), no UTC.
+- **Umbral de sincronización colgada:** una ejecución TUU `RUNNING` se da por interrumpida pasados `max(60, max_retries × retry_delay_minutes + 30)` minutos, para no cortar una corrida que aún reintenta.
+- **Resúmenes del cuadre:** los borradores sin folio solo cuentan en `erp_*` si provienen de una orden de venta; un borrador hecho a mano no entra.
