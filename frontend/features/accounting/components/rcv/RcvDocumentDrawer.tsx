@@ -2,23 +2,13 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import { FileText } from "lucide-react"
-import { ActionConfirmModal, Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
+import { Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
 import { formatDate } from "@/components/entity-view"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
-import { getDteLabel } from "@/lib/entity-registry"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { matchStatusValue } from "@/lib/fiscal-match"
-import {
-    useConfirmRcvDraft,
-    useCreateRcvDraft,
-    useMatchRcvDocument,
-    useRcvDocumentCandidates,
-    useRcvDraftSuggestions,
-    useRcvSupplierPurchaseOrders,
-    useUnmatchRcvDocument,
-} from "@/features/tax"
+import { fiscalMatchRefValue } from "@/lib/fiscal-match"
 import { useRcvDocument } from "../../hooks/useRcvDocuments"
 import { formatRcvDteType, rcvAcknowledgementStatus } from "../../entity-view/rcvDocument.entity"
 import { formatRcvPeriod } from "../../entity-view/rcvImport.entity"
@@ -129,9 +119,7 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
                 />
             </Section>
 
-            <RcvErpDocumentSection doc={doc} />
-
-            {purchases && doc.match_status === "ONLY_EXTERNAL" && <RcvRegisterSection doc={doc} />}
+            <RcvFiscalMatchSection doc={doc} />
 
             <RcvImportSection doc={doc} />
 
@@ -154,178 +142,23 @@ function RcvDocumentDetailBody({ doc }: { doc: RcvDocumentDetail }) {
     )
 }
 
-/** Boletas que el cuadre empareja con una venta TUU (ADR-0139). */
-const BOLETA_DTE_TYPES: readonly number[] = [39, 41]
-
-/** Cuadre fiscal: factura o nota del ERP vinculada, o candidatos para vincular a mano. */
-function RcvErpDocumentSection({ doc }: { doc: RcvDocumentDetail }) {
+/** Cuadre del documento: estado de su grupo y acceso a la ficha del grupo (ADR-0141). */
+function RcvFiscalMatchSection({ doc }: { doc: RcvDocumentDetail }) {
     const { openEntity } = useGlobalModalActions()
-    const match = useMatchRcvDocument()
-    const unmatch = useUnmatchRcvDocument()
-    const linked = doc.matched_invoice !== null
-    const { candidates, isLoading, isError } = useRcvDocumentCandidates(doc.id, !linked)
-    const status = matchStatusValue(doc.match_status, doc.match_status_display)
+    const status = fiscalMatchRefValue(doc.fiscal_match)
+    const groupId = doc.fiscal_match?.id
 
     return (
-        <Section title="Documento ERP">
-            <Stat title="Cuadre fiscal" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
-            {doc.direction === "SALES" && BOLETA_DTE_TYPES.includes(doc.dte_type) && (
-                <Stat
-                    title="Venta TUU"
-                    value={
-                        doc.terminal_sale !== null ? (
-                            <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("treasury.terminalsale", doc.terminal_sale as number)}>
-                                {doc.terminal_sale_display ?? `#${doc.terminal_sale}`}
-                            </Button>
-                        ) : null
-                    }
-                />
-            )}
-            {linked ? (
-                <Section.Row
-                    title="Documento vinculado"
-                    value={
-                        <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("billing.invoice", doc.matched_invoice as number)}>
-                            {doc.matched_invoice_display ?? `#${doc.matched_invoice}`}
+        <Section title="Cuadre">
+            <Section.Row
+                title="Cuadre"
+                value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />}
+                actions={
+                    groupId !== undefined ? (
+                        <Button type="button" size="sm" variant="outline" onClick={() => openEntity("tax.fiscalmatch", groupId)}>
+                            Ver cuadre
                         </Button>
-                    }
-                    actions={
-                        doc.matched_manually ? (
-                            <Button type="button" size="sm" variant="outline" disabled={unmatch.isPending} onClick={() => void unmatch.mutateAsync(doc.id).catch(() => undefined)}>
-                                Desvincular
-                            </Button>
-                        ) : undefined
-                    }
-                />
-            ) : isError ? (
-                <Stat title="Candidatos" value="No se pudieron cargar los candidatos." plain />
-            ) : isLoading ? (
-                <Stat title="Candidatos" value="Buscando…" plain />
-            ) : candidates.length === 0 ? (
-                <Stat title="Candidatos" value="Sin documentos candidatos" plain />
-            ) : (
-                candidates.map((c) => (
-                    <Section.Row
-                        key={c.id}
-                        title={c.display_id}
-                        description={`${getDteLabel(c.dte_type)} · ${formatDate(c.date)}`}
-                        value={<MoneyDisplay amount={c.total} currency="CLP" />}
-                        actions={
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={match.isPending}
-                                onClick={() => void match.mutateAsync({ docId: doc.id, invoiceId: c.id }).catch(() => undefined)}
-                            >
-                                Vincular
-                            </Button>
-                        }
-                    />
-                ))
-            )}
-        </Section>
-    )
-}
-
-/** Borrador elegido para emitir, pendiente de confirmación. */
-interface PendingDraft {
-    id: number
-    display_id: string
-    total: string
-}
-
-/**
- * Compra que falta en el ERP: emitir un borrador parecido con el folio del RCV o crear uno desde una OC.
- * Nada corre sin un clic explícito (ADR-0138 D8); emitir pide confirmar folio y totales.
- */
-function RcvRegisterSection({ doc }: { doc: RcvDocumentDetail }) {
-    const docId = doc.id
-    const drafts = useRcvDraftSuggestions(docId, true)
-    const orders = useRcvSupplierPurchaseOrders(docId, true)
-    const confirm = useConfirmRcvDraft()
-    const create = useCreateRcvDraft()
-    const busy = confirm.isPending || create.isPending
-    const [pending, setPending] = useState<PendingDraft | null>(null)
-
-    return (
-        <Section title="Registrar en el ERP">
-            {drafts.isError ? (
-                <Stat title="Borradores" value="No se pudieron cargar los borradores" plain />
-            ) : drafts.isLoading ? (
-                <Stat title="Borradores" value="Buscando…" plain />
-            ) : drafts.suggestions.length === 0 ? (
-                <Stat title="Borradores" value="Sin borradores parecidos" plain />
-            ) : (
-                drafts.suggestions.map((d) => (
-                    <Section.Row
-                        key={d.id}
-                        title={d.display_id}
-                        description={`${getDteLabel(d.dte_type)} · Borrador · ${formatDate(d.date)}`}
-                        value={<MoneyDisplay amount={d.total} currency="CLP" />}
-                        actions={
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={busy}
-                                onClick={() => setPending({ id: d.id, display_id: d.display_id, total: d.total })}
-                            >
-                                Asignar folio y emitir
-                            </Button>
-                        }
-                    />
-                ))
-            )}
-            {orders.isError ? (
-                <Stat title="Crear borrador desde OC" value="No se pudieron cargar las OC" plain />
-            ) : orders.isLoading ? (
-                <Stat title="Crear borrador desde OC" value="Buscando…" plain />
-            ) : orders.orders.length === 0 ? (
-                <Stat title="Crear borrador desde OC" value="Sin OC del proveedor" plain />
-            ) : (
-                orders.orders.map((o) => (
-                    <Section.Row
-                        key={o.id}
-                        title={o.display_id}
-                        description={`OC · ${formatDate(o.date)}`}
-                        value={<MoneyDisplay amount={o.total} currency="CLP" />}
-                        actions={
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={busy}
-                                aria-label={`Crear borrador desde OC ${o.display_id}`}
-                                onClick={() => void create.mutateAsync({ docId, purchaseOrderId: o.id }).catch(() => undefined)}
-                            >
-                                Crear borrador desde OC
-                            </Button>
-                        }
-                    />
-                ))
-            )}
-            <ActionConfirmModal
-                open={pending !== null}
-                onOpenChange={(open) => { if (!open) setPending(null) }}
-                // Si falla, el hook ya muestra el error y el diálogo queda abierto.
-                onConfirm={async () => { if (pending) await confirm.mutateAsync({ docId, invoiceId: pending.id }) }}
-                title="Asignar folio y emitir"
-                confirmText="Emitir"
-                variant="warning"
-                description={
-                    pending && (
-                        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm [&_dd]:text-foreground">
-                            <dt className="text-muted-foreground">Borrador</dt>
-                            <dd>{pending.display_id}</dd>
-                            <dt className="text-muted-foreground">Folio a asignar</dt>
-                            <dd className="font-mono">{doc.folio}</dd>
-                            <dt className="text-muted-foreground">Total del borrador</dt>
-                            <dd><MoneyDisplay amount={pending.total} currency="CLP" /></dd>
-                            <dt className="text-muted-foreground">Total en el SII</dt>
-                            <dd><MoneyDisplay amount={doc.total_amount} currency="CLP" /></dd>
-                        </dl>
-                    )
+                    ) : undefined
                 }
             />
         </Section>

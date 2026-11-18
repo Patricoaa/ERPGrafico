@@ -21,9 +21,10 @@ describe('filtros de documentos RCV', () => {
 
     it('compras y ventas filtran por estado de cuadre', () => {
         for (const def of [rcvDocumentUnifiedSearchDef, rcvSaleUnifiedSearchDef]) {
-            const filter = def.filters?.find((f) => f.key === 'match_status')
-            expect(filter).toMatchObject({ type: 'single', serverParam: 'match_status' })
-            expect(filter && 'options' in filter ? (filter.options ?? []).map((o) => o.value) : []).toContain('MATCHED')
+            const filter = def.filters?.find((f) => f.key === 'fiscal_match_status')
+            expect(filter).toMatchObject({ type: 'single', label: 'Cuadre', serverParam: 'fiscal_match_status' })
+            const values = filter && 'options' in filter ? (filter.options ?? []).map((o) => o.value) : []
+            expect(values).toEqual(['MATCHED', 'PENDING', 'DIFF', 'AMBIGUOUS', 'MISSING_ERP', 'MISSING_EXTERNAL', 'EXCLUDED'])
         }
     })
 })

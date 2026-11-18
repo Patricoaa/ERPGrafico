@@ -43,6 +43,15 @@ Definitive vocabulary. When a term appears in code or docs, use this meaning —
 
 Inside the "Terminal de cobro" section, sub-tab labels may be shortened ("Proveedores", "Terminales", "Lotes") because the section header gives the context.
 
+## Cuadre (control fiscal)
+
+| Term | Definition |
+|------|------------|
+| **Cuadre** | Control de que el ERP, TUU y el SII (RCV) digan lo mismo. Nombre único en la UI; en código `fiscal_match`. «Conciliación» queda reservado a la conciliación bancaria (ADR-0141). |
+| **Grupo de cuadre** | `tax.FiscalMatch`: un documento ERP (0..1) con sus ventas TUU (0..N) y registros RCV (0..N), o un registro externo huérfano esperando su documento. Lo resuelve `run_fiscal_match` cada 10 min. |
+| **Estado de parte** (`PartState`) | De cada parte (ERP, TUU, RCV): `MATCHED` Cuadrado, `PENDING` Pendiente, `MISSING` Falta, `DIFF` Diferencia, `AMBIGUOUS` Ambiguo, `NOT_APPLICABLE` No aplica, `SUMMARY_ONLY` Solo resumen. |
+| **Estado de grupo** (`FiscalMatchStatus`) | Derivado de las partes, por prioridad: `EXCLUDED`, `AMBIGUOUS`, `DIFF`, `MISSING_ERP` (Falta en el ERP), `MISSING_EXTERNAL` (Falta en SII/TUU), `PENDING`, `MATCHED`. |
+
 ## Production
 
 | Term | Definition |
@@ -82,3 +91,4 @@ Terms NOT to use (use canonical left column instead):
 | "Proveedor de pago", "proveedor de terminal" | Proveedor de terminal de cobro |
 | "Lote de pago", "lote terminal" | Lote de terminal de cobro |
 | "Terminal" (bare, for a POS register) | Caja POS |
+| "Cuadre fiscal", "estado de cuadre", "reconciliación" (fiscal) | Cuadre |

@@ -330,7 +330,7 @@ function RcvSettingsPanel({ settings }: { settings: RcvSettings }) {
 
                             <Card variant="default">
                                 <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuadre fiscal</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Cuadre</CardTitle>
                                     <CardDescription>
                                         Compara los documentos del ERP con las ventas TUU y el RCV del SII. Los documentos anteriores a la fecha de inicio no se evalúan.
                                     </CardDescription>

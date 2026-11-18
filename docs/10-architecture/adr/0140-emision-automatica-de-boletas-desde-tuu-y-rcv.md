@@ -8,6 +8,8 @@ author: backend-team
 
 # 0140 — Emisión automática de boletas desde TUU y el RCV
 
+> **Enmendado por ADR-0141:** D4–D5 (cuadre por mes, recálculo manual y estado de la boleta RCV) pasan al motor `run_fiscal_match` sin meses; la emisión (D3) se conserva y lee del grupo.
+
 **Relacionado:** ADR-0138 (enmienda D3), ADR-0139, ADR-0084, ADR-0091.
 
 ## Contexto

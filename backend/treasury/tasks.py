@@ -6,6 +6,7 @@ import logging
 from datetime import timedelta
 
 from celery import shared_task
+from django.db import transaction
 from django.utils import timezone
 
 from .integrations.tuu_client import TuuTransientError
@@ -951,21 +952,16 @@ def dispatch_terminal_sales_sync() -> int:
 
 
 def _reconcile_after_sync(run: TerminalSyncRun) -> None:
-    """Cuadra las ventas del rango sincronizado; un fallo no invalida la sincronización."""
-    try:
-        from tax.reconciliation import terminal
+    """Encola el motor de cuadre al confirmar; un fallo no invalida la sincronización."""
+    from tax.tasks import run_fiscal_match
 
-        terminal.reconcile_terminal_sales(run.start_date, run.end_date)
-    except Exception:
-        logger.exception("Cuadre fiscal TUU falló tras sincronizar el run %s", run.pk)
-        return  # sin el paso 1 al día, el cuadre de boletas no tiene base
-    try:
-        from tax.reconciliation.boletas import months_in_range, reconcile_rcv_boletas
+    def enqueue() -> None:
+        try:
+            run_fiscal_match.delay()
+        except Exception:
+            logger.exception("No se pudo encolar el cuadre tras sincronizar el run %s", run.pk)
 
-        for year, month in months_in_range(run.start_date, run.end_date):
-            reconcile_rcv_boletas(year, month)
-    except Exception:
-        logger.exception("Cuadre de boletas falló tras sincronizar el run %s", run.pk)
+    transaction.on_commit(enqueue)
 
 
 @shared_task(bind=True, name="treasury.tasks.sync_terminal_run")

@@ -8,6 +8,8 @@ author: backend-team
 
 # 0139 — Cuadre de boletas RCV vía TUU y reloj de depuración
 
+> **Enmendado por ADR-0141:** D1–D3 (vínculos por pares y estados `MatchStatus`) pasan a la parte TUU/RCV de un grupo de cuadre.
+
 **Relacionado:** ADR-0138 (lo enmienda en D5), ADR-0091, ADR-0118.
 
 ## Contexto

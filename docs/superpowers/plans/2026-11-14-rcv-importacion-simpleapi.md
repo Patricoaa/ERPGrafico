@@ -454,7 +454,7 @@ Sin N+1: existentes del período en un dict (una query) + `bulk_create`/`bulk_up
 
 ---
 
-### Task 9: Frontend — importaciones (listado, drawer, modal "Importar ahora")
+### Task 9: Frontend — importaciones (listado, drawer, modal "Sincronizar ahora")
 
 **Files:**
 - Create: `frontend/features/accounting/entity-view/rcvImport.entity.ts`
@@ -479,14 +479,14 @@ Sin N+1: existentes del período en un dict (una query) + `bulk_create`/`bulk_up
     importar un período futuro"). Defaults: mes/año de hoy − 3 días, ambas direcciones.
   - `RcvImportModal({ open, onOpenChange })` (patrón `TerminalSyncModal`); ayuda "Cada dirección consume una consulta
     de las API keys."
-  - `RcvImportsClientView` con "Importar ahora" (`ToolbarCreateButton`, icono `Download`) solo con permiso
+  - `RcvImportsClientView` con "Sincronizarr ahora" (`ToolbarCreateButton`, icono `Download`) solo con permiso
     `accounting.add_rcvimport` (usar el helper de permisos del frontend que ya usa Contabilidad).
   - `RcvImportDrawer({ id, open, onOpenChange, mode? })`: estado, período, dirección, origen, usuario, inicio/fin;
     error/avisos en `Banner`; "Resumen del SII"; "Conteos"; "Intentos"; "Respuesta original" plegable.
 
 - [ ] **Step 1: Write the failing tests**: schema rechaza `directions: []` y período futuro, acepta
   `{year: 2026, month: 10, directions: ["SALES"]}`; drawer muestra la fila 48 con "Solo resumen" y un intento
-  "Sin cupo" con la key enmascarada; ClientView oculta "Importar ahora" sin permiso.
+  "Sin cupo" con la key enmascarada; ClientView oculta "Sincronizar ahora" sin permiso.
 - [ ] **Step 2: Run** `npm run test -- features/accounting/components` → FAIL.
 - [ ] **Step 3: Implement**.
 - [ ] **Step 4: Run** → PASS; `npm run type-check && npm run lint` limpios.
@@ -544,7 +544,7 @@ Sin N+1: existentes del período en un dict (una query) + `bulk_create`/`bulk_up
 - [ ] **Step 3: Servidor de desarrollo**: `mutagen sync list` debe mostrar `erpgrafico-sync … Connected: Yes` (si no,
   detenerse y avisar); en `~/ERPGrafico`: `docker compose exec backend python manage.py migrate` y reiniciar worker/beat.
 - [ ] **Step 4: Prueba real (gasta 1 consulta; pedir confirmación al usuario antes)**: el usuario carga RUTs, clave y
-  una key en `http://192.168.1.86/accounting/settings/rcv`; "Importar ahora" octubre 2026 solo Compras → `SUCCESS`
+  una key en `http://192.168.1.86/accounting/settings/rcv`; "Sincronizar ahora" octubre 2026 solo Compras → `SUCCESS`
   con 24 documentos, resumen 33 de 24 docs / $5.502.286 "cuadra"; listado Compras con 24 filas; drawer de 1205605
   con acuse del 13-10.
 - [ ] **Step 5: Commit** `docs(accounting): cierre de la importación RCV`.

@@ -1,4 +1,4 @@
-import type { MatchStatus } from '@/lib/fiscal-match'
+import type { FiscalMatchRef, FiscalMatchStatus } from '@/lib/fiscal-match'
 
 export interface Terminal {
     id: number
@@ -721,18 +721,8 @@ export interface TerminalSale {
     settlement_date: string | null
     settlement_id: string | null
     settlement_amount: string | null
-    match_status: MatchStatus
-    match_status_display: string
-    matched_invoice: number | null
-    matched_invoice_display: string | null
-    matched_manually: boolean
-    /** Boleta del RCV del SII emparejada con esta venta (ADR-0139); solo 39/41. */
-    rcv_document: number | null
-    rcv_folio: number | null
-    /** Último intento fallido de emitir el borrador con su folio (ADR-0140); null si no hubo. */
-    issue_attempted_at: string | null
-    /** Error del último intento de emisión; `""` si no hay. */
-    issue_error: string
+    /** Grupo de cuadre de la venta; null si aún no se evalúa. */
+    fiscal_match: FiscalMatchRef | null
 }
 
 export interface TerminalSaleDetail extends TerminalSale {
@@ -819,6 +809,7 @@ export interface TerminalSaleFilters {
     payment_type?: TerminalSalePaymentType
     status?: TerminalSaleStatus
     settled?: 'true' | 'false'
+    fiscal_match_status?: FiscalMatchStatus
     page?: number
     page_size?: number
 }
@@ -838,20 +829,4 @@ export interface TerminalSyncRunFilters {
 export interface ManualSyncPayload {
     start_date?: string
     end_date?: string
-}
-
-/** Factura local candidata a vincularse con una venta TUU. */
-export interface TerminalSaleCandidate {
-    id: number
-    display_id: string
-    dte_type: string
-    total: string
-    /** ISO date */
-    date: string
-}
-
-export interface TerminalSaleMatchResult {
-    id: number
-    match_status: MatchStatus
-    matched_invoice: number | null
 }

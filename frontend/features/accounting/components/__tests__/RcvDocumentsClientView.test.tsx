@@ -71,10 +71,7 @@ const doc: RcvDocument = {
     acknowledgement: "Recibo otorgado por el receptor", service_indicator: null, exempt_amount: "0", net_amount: "10000",
     vat_amount: "1900", vat_recoverable: "1900", vat_non_recoverable: "0", total_amount: "11900", other_taxes_total: "0",
     reference_dte_type: null, reference_folio: "", is_missing: false,
-    match_status: "AMOUNT_DIFF", match_status_display: "Diferencia de monto", matched_invoice: 3, matched_invoice_display: "FC-4521",
-    matched_manually: false,
-    terminal_sale: null,
-    terminal_sale_display: null,
+    fiscal_match: { id: 12, status: "DIFF", status_display: "Con diferencia" },
 }
 
 describe("RcvDocumentsClientView", () => {
@@ -102,25 +99,25 @@ describe("RcvDocumentsClientView", () => {
         expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ direction: "SALES" }))
     })
 
-    it("sin filtros y sin filas muestra el estado vacío con 'Importar ahora'", () => {
+    it("sin filtros y sin filas muestra el estado vacío con 'Sincronizar ahora'", () => {
         render(<RcvDocumentsClientView direction="PURCHASES" />)
         expect(screen.getByText("Aún no hay documentos importados")).toBeInTheDocument()
-        expect(screen.getByText("Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Importar ahora».")).toBeInTheDocument()
-        expect(screen.getAllByRole("button", { name: /Importar ahora/ }).length).toBeGreaterThan(0)
+        expect(screen.getByText("Configura el RCV en Contabilidad → Configuración → RCV / SII o usa «Sincronizar ahora».")).toBeInTheDocument()
+        expect(screen.getAllByRole("button", { name: /Sincronizar ahora/ }).length).toBeGreaterThan(0)
     })
 
-    it("'Importar ahora' abre el modal con la dirección de la pestaña preseleccionada", () => {
+    it("'Sincronizar ahora' abre el modal con la dirección de la pestaña preseleccionada", () => {
         m.docs = [{ ...doc, direction: "SALES" }]
         render(<RcvDocumentsClientView direction="SALES" />)
-        fireEvent.click(screen.getByRole("button", { name: /Importar ahora/ }))
+        fireEvent.click(screen.getByRole("button", { name: /Sincronizar ahora/ }))
         expect(screen.getByText("modal-importar SALES")).toBeInTheDocument()
     })
 
-    it("sin permiso oculta 'Importar ahora'", () => {
+    it("sin permiso oculta 'Sincronizar ahora'", () => {
         m.canAdd = false
         m.docs = [doc]
         render(<RcvDocumentsClientView direction="PURCHASES" />)
-        expect(screen.queryByRole("button", { name: /Importar ahora/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: /Sincronizar ahora/ })).not.toBeInTheDocument()
     })
 
     it("traduce los filtros de la URL a filtros de la API", () => {
@@ -155,17 +152,17 @@ describe("RcvDocumentsClientView", () => {
         m.docs = [doc]
         render(<RcvDocumentsClientView direction="PURCHASES" />)
         expect(screen.getByRole("columnheader", { name: /Cuadre/ })).toBeInTheDocument()
-        expect(screen.getByText("Diferencia de monto")).toBeInTheDocument()
+        expect(screen.getByText("Con diferencia")).toBeInTheDocument()
     })
 
     it("filtra por estado de cuadre desde la URL y descarta valores desconocidos", () => {
-        m.filters = { match_status: "ONLY_EXTERNAL" }
+        m.filters = { fiscal_match_status: "MISSING_ERP" }
         const { unmount } = render(<RcvDocumentsClientView direction="SALES" />)
-        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ match_status: "ONLY_EXTERNAL" }))
+        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ fiscal_match_status: "MISSING_ERP" }))
         unmount()
         m.useRcvDocuments.mockClear()
-        m.filters = { match_status: "ONLY_ERP" }
+        m.filters = { fiscal_match_status: "ONLY_ERP" }
         render(<RcvDocumentsClientView direction="SALES" />)
-        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ match_status: undefined }))
+        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ fiscal_match_status: undefined }))
     })
 })

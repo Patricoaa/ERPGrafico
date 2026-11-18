@@ -1,5 +1,6 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { format, subDays } from 'date-fns'
+import { FISCAL_MATCH_STATUS_OPTIONS } from '@/lib/fiscal-match'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear, periodPresets } from '@/lib/date-presets'
 
 export const bankUnifiedSearchDef: UnifiedSearchConfig = {
@@ -298,6 +299,14 @@ export const terminalSaleUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Anulada', value: 'REVERSED' },
         { label: 'Otro', value: 'OTHER' },
       ],
+    },
+    {
+      // Estado del grupo de cuadre de la venta (ADR-0141).
+      type: 'single',
+      key: 'fiscal_match_status',
+      label: 'Cuadre',
+      serverParam: 'fiscal_match_status',
+      options: FISCAL_MATCH_STATUS_OPTIONS,
     },
   ],
   dateFilters: [{

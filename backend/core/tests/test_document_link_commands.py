@@ -137,7 +137,7 @@ def _posted_without_folio(report: str) -> int:
 def test_audit_exempts_pos_boletas_without_folio():
     """ADR-0138: 39/41/48 cobrados en caja POS quedan POSTED sin folio; el resto no."""
     from billing.models import Invoice
-    from tax.tests.reconciliation_helpers import local_dt, make_pos_document, make_terminal_env
+    from tax.tests.fiscal_match_helpers import local_dt, make_pos_document, make_terminal_env
 
     env = make_terminal_env()
     at = local_dt(2026, 11, 10)

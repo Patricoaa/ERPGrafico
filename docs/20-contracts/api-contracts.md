@@ -145,10 +145,10 @@ Base: `/api/accounting/`
 ### rcv-documents/ (RCVDocument)
 
 ```
-GET    /api/accounting/rcv-documents/?match_status=   filtro por estado de cuadre (ChoiceField MatchStatus; valor desconocido → 400; incluye `PENDING_ERP` «Sin documento ERP»: boleta con venta TUU pero sin documento ERP, ADR-0140)
+GET    /api/accounting/rcv-documents/?fiscal_match_status=   filtro por estado del grupo de cuadre (`FiscalMatchStatus`)
 ```
 
-Resto del recurso: ver `accounting/rcv_views.py`. El cuadre ERP ↔ RCV vive en `/api/tax/reconciliation/` (sección tax).
+Resto del recurso: ver `accounting/rcv_views.py`. El cuadre ERP ↔ RCV vive en `/api/tax/fiscal-matches/` (sección tax).
 
 ### accounts/
 
@@ -1107,35 +1107,32 @@ GET    /api/tax/payments/          list
 GET    /api/tax/payments/{id}/     detail
 ```
 
-### reconciliation/ (cuadre fiscal, ADR-0138)
+### fiscal-matches/ (cuadre por grupo; reemplaza `/api/tax/reconciliation/`)
 
-Escrituras y candidatos exigen `tax.change_taxperiod`; el reporte exige `tax.view_taxperiod`. Nunca modifican documentos `POSTED`.
+Lectura exige `tax.view_taxperiod`; toda acción, `tax.change_taxperiod`. Cada grupo une el documento ERP, sus ventas TUU y sus registros del SII. El motor (`tax.tasks.run_fiscal_match`) corre cada 10 min; no hay recálculos por mes. Nunca modifica documentos `POSTED`.
 
 ```
-GET    /api/tax/reconciliation/?year=&month=                                reporte del período (incluye conteos por MatchStatus; `summaries[]` de 39/41 añade `tuu_without_rcv` y `rcv_without_tuu`)
-POST   /api/tax/reconciliation/terminal/run/                                cuadra ventas TUU del mes (body: year, month); la respuesta incluye `boletas` (resultado de `reconcile_rcv_boletas`) e `issued` (borradores emitidos con folio RCV o id TUU, ADR-0140)
-POST   /api/tax/reconciliation/rcv/run/                                     cuadra RCV del mes (body: year, month); la respuesta incluye `boletas` e `issued`
-GET    /api/tax/reconciliation/terminal-sales/{id}/candidates/              facturas candidatas
-POST   /api/tax/reconciliation/terminal-sales/{id}/match/                   vínculo manual (body: invoice_id)
-POST   /api/tax/reconciliation/terminal-sales/{id}/unmatch/                 quita el vínculo
-GET    /api/tax/reconciliation/rcv-documents/{id}/candidates/               facturas candidatas
-POST   /api/tax/reconciliation/rcv-documents/{id}/match/                    vínculo manual (body: invoice_id)
-POST   /api/tax/reconciliation/rcv-documents/{id}/unmatch/                  quita el vínculo
-GET    /api/tax/reconciliation/rcv-documents/{id}/draft-suggestions/        borradores de compra del mismo RUT y tipo con total parecido (≤ 2 %)
-GET    /api/tax/reconciliation/rcv-documents/{id}/purchase-orders/          OC elegibles para crear borrador
-POST   /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/            asigna folio y emite el borrador (body: invoice_id + attachment opcional, multipart; mismo RUT y tipo SII; Idempotency-Key)
-POST   /api/tax/reconciliation/rcv-documents/{id}/create-draft/             crea borrador desde una OC y lo vincula (body: purchase_order_id; Idempotency-Key)
+GET    /api/tax/fiscal-matches/                          lista paginada (filtros: direction, status repetible o con comas, incluye `ATTENTION`)
+GET    /api/tax/fiscal-matches/counts/                   conteos por estado con los mismos filtros, más `last_run_at` y `start_date` (`fiscal_match_start_date` o null)
+GET    /api/tax/fiscal-matches/{id}/                     ficha del grupo
+GET    /api/tax/fiscal-matches/{id}/candidates/?part=    candidatos erp | tuu | rcv para la unión manual
+POST   /api/tax/fiscal-matches/{id}/link/                unión manual (Idempotency-Key)
+POST   /api/tax/fiscal-matches/{id}/unlink/              quita un vínculo a un huérfano manual (Idempotency-Key)
+POST   /api/tax/fiscal-matches/{id}/release/             devuelve un huérfano al cruce automático (Idempotency-Key)
+POST   /api/tax/fiscal-matches/{id}/retry-issue/         reintenta la emisión del borrador (Idempotency-Key)
+GET    /api/tax/fiscal-matches/{id}/draft-suggestions/   borradores de compra del mismo RUT y tipo con total parecido (≤ 2 %)
+GET    /api/tax/fiscal-matches/{id}/purchase-orders/     OC elegibles para crear borrador
+POST   /api/tax/fiscal-matches/{id}/confirm-draft/       asigna folio del RCV y emite el borrador (Idempotency-Key)
+POST   /api/tax/fiscal-matches/{id}/create-draft/        crea borrador desde una OC unido al grupo (Idempotency-Key)
 ```
 
-`fiscal_mismatches` (conteos `ONLY_EXTERNAL`, `AMOUNT_DIFF`, `TYPE_DIFF`, `AMBIGUOUS`, `PENDING_ERP`) también viaja en `status_check` y en la respuesta de calculate del F29.
+El resumen mensual (`summary/`) y los pendientes de folio (`pending-issue/`) se retiraron (ADR-0141 D10).
+
+`fiscal_mismatches` (`{count, by_status}` con `DIFF`, `AMBIGUOUS`, `MISSING_ERP`, `MISSING_EXTERNAL` del `fiscal_period`) también viaja en `status_check` y en la respuesta de calculate del F29. Solo informa, no bloquea.
 
 `/api/treasury/terminal-sync-settings/` (`TerminalSyncSettings`, ADR-0140 D6): `interval_value` (entero) e `interval_unit` (`MINUTES` | `HOURS` | `DAYS`). `MINUTES` exige `interval_value` ≥ 5 (400 si no). `run_hour` solo aplica con `DAYS`. Los intervalos `MINUTES`/`HOURS` sincronizan solo [ayer, hoy]; `DAYS` usa `lookback_days`.
 
-Boletas 39/41 (ADR-0139), emparejadas 1:1 con la venta TUU por día local y monto, en orden:
-
-- `TerminalSale` (treasury): `rcv_document` (id de la fila RCV, null si no hay par) y `rcv_folio` (folio, solo lectura).
-- `RCVDocument` (accounting): `terminal_sale` (id de la venta TUU) y `terminal_sale_display` (`"Venta TUU {ref}"`), ambos null sin par.
-- `summaries[].tuu_without_rcv`: ventas TUU sin boleta RCV; null mientras no haya RCV de ventas importado ni `fiscal_match_start_date` que cubra el mes. `summaries[].rcv_without_tuu`: boletas RCV `ONLY_EXTERNAL`.
+`TerminalSale` (treasury) y `RCVDocument` (accounting) exponen solo `fiscal_match` (`{id, status, status_display}` o null); el filtro de lista es `fiscal_match_status`.
 
 ---
 

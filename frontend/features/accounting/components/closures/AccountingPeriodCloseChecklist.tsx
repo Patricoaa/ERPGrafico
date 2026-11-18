@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ClipboardCheck, FileText, Scale } from 'lucide-react'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { getEntityMetadata } from '@/lib/entity-registry'
+import { cuadreAttentionHref } from '@/lib/fiscal-match'
 import { DeclarationWizard } from '@/features/tax'
 import { useAccountingPeriodStatus } from '../../hooks/useAccountingPeriodStatus'
 import type { AccountingPeriodStatus } from '../../api/accountingApi'
@@ -39,7 +40,7 @@ function zeroStateAction(label: SectionChecklistDocumentLabel, text: string): Se
         : undefined
 }
 
-function buildItems(status: AccountingPeriodStatus, openF29: () => void): { required: SectionChecklistItem[]; suggested: SectionChecklistItem[] } {
+function buildItems(status: AccountingPeriodStatus, year: number, month: number, openF29: () => void): { required: SectionChecklistItem[]; suggested: SectionChecklistItem[] } {
     const pendingPayrolls = Math.max(status.payroll_count - status.payroll_posted_count, 0)
     const fiscalMismatches = status.fiscal_mismatches?.count ?? 0
     const pendingStatements = Math.max(status.reconciliation_count - status.reconciliation_confirmed_count, 0)
@@ -91,11 +92,11 @@ function buildItems(status: AccountingPeriodStatus, openF29: () => void): { requ
             },
             {
                 key: 'fiscal',
-                title: 'Cuadre fiscal sin diferencias',
+                title: 'Cuadre sin diferencias',
                 passed: fiscalMismatches === 0,
                 detail: fiscalMismatches > 0 ? `${fiscalMismatches} diferencia(s) con TUU o el SII` : undefined,
                 action: fiscalMismatches > 0
-                    ? { text: 'Ir al cuadre', href: '/accounting/rcv/reconciliation', variant: 'ghost', icon: Scale }
+                    ? { text: 'Ir al cuadre', href: cuadreAttentionHref(year, month), variant: 'ghost', icon: Scale }
                     : undefined,
             },
         ],
@@ -145,7 +146,7 @@ export function AccountingPeriodCloseChecklistModal({
         void refetch()
     }
 
-    const items = status ? buildItems(status, () => setWizardTarget({ periodId: status.tax_period_id ?? undefined, year, month })) : null
+    const items = status ? buildItems(status, year, month, () => setWizardTarget({ periodId: status.tax_period_id ?? undefined, year, month })) : null
     const canClose = !!status && status.tax_period_closed && status.draft_entries_count === 0 && status.draft_invoices_count === 0
 
     return (

@@ -1,11 +1,15 @@
-import type { Metadata } from "next"
-import { FiscalReconciliationClientView } from "@/features/tax"
-import { getRcvSubTab } from "@/features/accounting/navigation"
-import { buildMetadataFromTab } from "@/lib/navigation-helpers"
+import { redirect } from "next/navigation"
 
-const tabConfig = getRcvSubTab("reconciliation")
-export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Cuadre fiscal | ERPGrafico" }
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
 
-export default async function AccountingRcvReconciliationPage() {
-  return <FiscalReconciliationClientView />
+/** Ruta anterior del cuadre: los enlaces guardados siguen funcionando, con su query (`selected`, filtros). */
+export default async function AccountingRcvReconciliationPage({ searchParams }: PageProps) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(await searchParams)) {
+    for (const v of Array.isArray(value) ? value : value === undefined ? [] : [value]) params.append(key, v)
+  }
+  const query = params.toString()
+  redirect(query ? `/accounting/rcv/cuadre?${query}` : "/accounting/rcv/cuadre")
 }

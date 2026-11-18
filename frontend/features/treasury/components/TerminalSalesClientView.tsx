@@ -8,6 +8,7 @@ import { EntityPanelTab } from "@/components/providers"
 import { Can } from "@/components/auth"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { isFiscalMatchStatus } from "@/lib/fiscal-match"
 import { useTerminalSales } from "../hooks/useTerminalSales"
 import { useTerminalProviders } from "../hooks/useTerminalProviders"
 import { terminalSaleUnifiedSearchDef } from "../unifiedSearchDef"
@@ -37,6 +38,7 @@ function toSalesFilters(params: Record<string, string>): TerminalSalesSummaryFil
         document_type: toId(params.document_type),
         payment_type: isPaymentType(params.payment_type) ? params.payment_type : undefined,
         status: isStatus(params.status) ? params.status : undefined,
+        fiscal_match_status: isFiscalMatchStatus(params.fiscal_match_status) ? params.fiscal_match_status : undefined,
     }
 }
 

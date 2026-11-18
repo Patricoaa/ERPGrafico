@@ -33,6 +33,10 @@ UNPROTECTED_BASELINE: dict[str, str] = {
 # Not documents: lines owned by a locked parent, or the ledger itself.
 EXEMPT = {
     "accounting.JournalItem": "hijo de JournalEntry; lo protege JournalEntryService",
+    "treasury.TerminalSale": (
+        "evidencia externa de TUU; matched_movement es el vínculo de cuadre (ADR-0141), "
+        "no un derivado contable"
+    ),
 }
 
 

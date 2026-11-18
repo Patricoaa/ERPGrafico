@@ -15,7 +15,6 @@ from simple_history.models import HistoricalRecords
 from accounting.models import Account, AccountType
 from billing.models import SII_CODE_TO_DTE_TYPE, SII_DOCUMENT_CODE_CHOICES
 from core.edit_policy import EditPolicy
-from core.fiscal_match import MatchStatus
 from core.models import TimeStampedModel
 from core.storages import PrivateMediaStorage
 from core.utils import get_current_date
@@ -4047,35 +4046,24 @@ class TerminalSale(TimeStampedModel):
         related_name="+",
         verbose_name=_("Última ejecución"),
     )
-    matched_invoice = models.ForeignKey(
-        "billing.Invoice",
+    # Cuadre unificado (grupo por documento ERP).
+    fiscal_match = models.ForeignKey(
+        "tax.FiscalMatch",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="terminal_sales",
-        verbose_name=_("Factura vinculada"),
+        verbose_name=_("Grupo de cuadre"),
     )
-    match_status = models.CharField(
-        _("Estado de cuadre"),
-        max_length=20,
-        choices=MatchStatus.choices,
-        blank=True,
-        default="",
-        db_index=True,
-    )
-    matched_manually = models.BooleanField(_("Vínculo manual"), default=False)
-    # Boleta del RCV emparejada por día local, monto y tipo (ADR-0139 D1-D2).
-    rcv_document = models.ForeignKey(
-        "accounting.RCVDocument",
+    matched_movement = models.ForeignKey(
+        "treasury.TreasuryMovement",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="terminal_sales",
-        verbose_name=_("Boleta SII"),
+        related_name="+",
+        verbose_name=_("Cobro vinculado"),
     )
-    # Último intento fallido de emitir su borrador con el folio (ADR-0140 D3).
-    issue_attempted_at = models.DateTimeField(_("Intento de emisión"), null=True, blank=True)
-    issue_error = models.CharField(_("Error de emisión"), max_length=255, blank=True, default="")
+    linked_manually = models.BooleanField(_("Vínculo manual de cobro"), default=False)
 
     class Meta:
         verbose_name = _("Venta de Terminal")
@@ -4086,14 +4074,9 @@ class TerminalSale(TimeStampedModel):
                 fields=["provider", "natural_key"], name="uniq_terminal_sale_provider_key"
             ),
             models.UniqueConstraint(
-                fields=["matched_invoice"],
-                condition=models.Q(matched_invoice__isnull=False),
-                name="terminalsale_matched_invoice_uniq",
-            ),
-            models.UniqueConstraint(
-                fields=["rcv_document"],
-                condition=models.Q(rcv_document__isnull=False),
-                name="terminalsale_rcv_document_uniq",
+                fields=["matched_movement"],
+                condition=models.Q(matched_movement__isnull=False),
+                name="terminalsale_matched_movement_uniq",
             ),
         ]
 

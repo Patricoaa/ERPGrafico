@@ -13,7 +13,7 @@ export const rcvSettingsSchema = z
         run_hour: z.number({ error: "Ingrese un número" }).int("Debe ser un número entero").min(0, "Entre 0 y 23").max(23, "Entre 0 y 23"),
         include_purchases: z.boolean(),
         include_sales: z.boolean(),
-        /** Cuadre fiscal (ADR-0138): los documentos anteriores no se evalúan. */
+        /** Cuadre (ADR-0138): los documentos anteriores no se evalúan. */
         fiscal_match_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida").nullable(),
         terminal_match_window_minutes: z
             .number({ error: "Ingrese un número" })

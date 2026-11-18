@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import type { FiscalMatchStatus } from "@/lib/fiscal-match"
 import { formatDteType, terminalSaleEntity, terminalSaleMatchStatus } from "./terminalSale.entity"
 
 describe("formatDteType", () => {
@@ -11,13 +12,15 @@ describe("formatDteType", () => {
     })
 })
 
-describe("match_status", () => {
-    it("maps each status to its Spanish label and intent", () => {
-        expect(terminalSaleMatchStatus("MATCHED", "Cuadrado")).toMatchObject({ status: "matched", label: "Cuadrado", intent: "success" })
-        expect(terminalSaleMatchStatus("AMOUNT_DIFF", "Diferencia de monto").intent).toBe("warning")
-        expect(terminalSaleMatchStatus("ONLY_ERP", "Falta en el SII/TUU").intent).toBe("destructive")
-        expect(terminalSaleMatchStatus("EXCLUDED", "Excluido").intent).toBe("neutral")
-        expect(terminalSaleMatchStatus("", "").label).toBe("Sin evaluar")
+describe("fiscal_match", () => {
+    const ref = (status: FiscalMatchStatus, status_display: string) => ({ id: 1, status, status_display })
+
+    it("maps the group status to its Spanish label and intent", () => {
+        expect(terminalSaleMatchStatus(ref("MATCHED", "Cuadrado"))).toMatchObject({ status: "matched", label: "Cuadrado", intent: "success" })
+        expect(terminalSaleMatchStatus(ref("DIFF", "Con diferencia")).intent).toBe("warning")
+        expect(terminalSaleMatchStatus(ref("MISSING_EXTERNAL", "Falta en SII/TUU")).intent).toBe("destructive")
+        expect(terminalSaleMatchStatus(ref("EXCLUDED", "Excluido")).intent).toBe("neutral")
+        expect(terminalSaleMatchStatus(null).label).toBe("Sin evaluar")
     })
 
     it("is a status column of the entity", () => {

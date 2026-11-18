@@ -13,6 +13,7 @@ import {
     formatProgress,
     formatStatus,
     formatSum,
+    formatTags,
     getValueKind,
     initialEditableValues,
     resolveField,
@@ -68,6 +69,13 @@ describe("formatters", () => {
         expect(formatProgress({ done: 3, total: 4 }, "ratio")).toBe("3/4")
         expect(formatProgress({ done: 1, total: 0 })).toBe(EMPTY)
     })
+
+    it("translates domain tags but keeps free tags as-is", () => {
+        expect(formatTags(["STORABLE"], "product_type")).toBe("Almacenable")
+        expect(formatTags(["STORABLE", "SERVICE"], "product_type")).toBe("Almacenable, Servicio")
+        expect(formatTags(["STORABLE"])).toBe("STORABLE")
+        expect(formatTags([], "product_type")).toBe(EMPTY)
+    })
 })
 
 interface Line {
@@ -100,6 +108,16 @@ describe("field resolution", () => {
         expect(r.value).toBe(10)
         expect(r.options).toEqual({ uom: "u" })
         expect(r.text).toBe("10 u")
+    })
+
+    it("resolves domain tags to the label shown in the cell (also used by group headers)", () => {
+        const tagged = defineEntity<{ id: number; product_type: string }>()((f) => ({
+            title: "Tipo",
+            fields: { type: f.tags((p) => [p.product_type], { label: "Tipo", domain: "product_type" }) },
+        }))
+        const def = tagged.field("type")
+        expect(resolveField(def, { id: 1, product_type: "STORABLE" }).text).toBe("Almacenable")
+        expect(sortValueOf(def, { id: 1, product_type: "STORABLE" })).toBe("Almacenable")
     })
 
     it("sorts by the displayed (semantic) value, not by a raw key (fixes TC-007)", () => {

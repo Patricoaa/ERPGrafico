@@ -536,13 +536,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "accounting.tasks.dispatch_rcv_imports",
         "schedule": crontab(minute=20),  # Hourly at XX:20
     },
-    # ── Tax / Fiscal reconciliation ─────────────────────────────────────────
-    # Every 10 min, on local data only: terminal sales → RCV boletas → issue
-    # fiscal drafts (39/41/48) → boletas again, for the current month (and the
-    # previous one during the first 10 days). Cache lock prevents overlap
-    # (ADR-0140 D4).
-    "run_fiscal_reconciliation_10min": {
-        "task": "tax.tasks.run_fiscal_reconciliation",
+    # ── Tax / Fiscal match (cuadre) ─────────────────────────────────────────
+    # Every 10 min, on local data only: one idempotent engine run from
+    # fiscal_match_start_date (groups → TUU → RCV boletas → RCV → states →
+    # issue drafts 39/41/48), no months. Cache lock prevents overlap.
+    "run_fiscal_match_10min": {
+        "task": "tax.tasks.run_fiscal_match",
         "schedule": crontab(minute="*/10"),  # Every 10 minutes
     },
     # ── Core / Idempotency ───────────────────────────────────────────────────

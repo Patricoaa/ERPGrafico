@@ -190,7 +190,9 @@ def test_beat_entry_matches_registered_task():
     assert entry["task"] in celery_app.tasks
 
 
-def _run_with_fakes(monkeypatch, direction, boletas):
+def _run_with_fakes(monkeypatch, direction, delay):
+    from tax.tasks import run_fiscal_match
+
     rcv_import = RCVImport.objects.create(
         direction=direction, year=2026, month=11, trigger=RCVImport.Trigger.SCHEDULED
     )
@@ -200,26 +202,22 @@ def _run_with_fakes(monkeypatch, direction, boletas):
         return i
 
     monkeypatch.setattr(tasks.rcv_service, "execute_import", fake_execute)
-    monkeypatch.setattr("tax.reconciliation.rcv.reconcile_rcv_period", lambda *a: {})
-    monkeypatch.setattr("tax.reconciliation.boletas.reconcile_rcv_boletas", boletas)
+    monkeypatch.setattr(run_fiscal_match, "delay", delay)
     tasks.run_rcv_imports([rcv_import.id])
 
 
-def test_rcv_sales_import_runs_boletas(monkeypatch):
+@pytest.mark.parametrize("direction", [SALES, RCVImport.Direction.PURCHASES])
+def test_rcv_import_enqueues_fiscal_match(monkeypatch, django_capture_on_commit_callbacks, direction):
     calls = []
-    _run_with_fakes(monkeypatch, SALES, lambda y, m: calls.append((y, m)) or {})
-    assert calls == [(2026, 11)]
+    with django_capture_on_commit_callbacks(execute=True):
+        _run_with_fakes(monkeypatch, direction, lambda: calls.append(1))
+    assert calls == [1]
 
 
-def test_rcv_purchases_import_skips_boletas(monkeypatch):
-    calls = []
-    _run_with_fakes(monkeypatch, RCVImport.Direction.PURCHASES, lambda y, m: calls.append((y, m)) or {})
-    assert calls == []
+def test_rcv_enqueue_error_does_not_fail_import(monkeypatch, django_capture_on_commit_callbacks, caplog):
+    def boom():
+        raise ConnectionError("broker down")
 
-
-def test_rcv_boletas_error_does_not_fail_import(monkeypatch, caplog):
-    def boom(y, m):
-        raise RuntimeError("boom")
-
-    _run_with_fakes(monkeypatch, SALES, boom)
-    assert "boletas" in caplog.text
+    with django_capture_on_commit_callbacks(execute=True):
+        _run_with_fakes(monkeypatch, SALES, boom)
+    assert "cuadre" in caplog.text

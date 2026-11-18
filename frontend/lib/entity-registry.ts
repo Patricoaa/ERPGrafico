@@ -795,6 +795,18 @@ const REGISTRY = {
     detailUrlPattern: '/tax/periods/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
+  'tax.fiscalmatch': {
+    label: 'tax.fiscalmatch',
+    title: 'Cuadre',
+    titlePlural: 'Cuadres',
+    icon: Scale,
+    iconName: 'Scale',
+    feminine: false,
+    description: 'Grupo de cuadre: documento ERP, pagos TUU y registro RCV del SII',
+    listUrl: '/accounting/rcv/cuadre',
+    detailUrlPattern: '/accounting/rcv/cuadre?selected={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
   'tax.f29declaration': {
     label: 'tax.f29declaration',
     title: 'Declaración F29',

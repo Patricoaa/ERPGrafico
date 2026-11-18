@@ -264,7 +264,7 @@ Pantallas:
   agrupados (identificación, fechas, montos, IVA/impuestos, estado/acuse, referencia), enlace a la importación
   y crudo plegable.
 - **Importaciones**: ClientView de `RCVImport` (período, dirección, origen, estado con `StatusBadge`,
-  conteos, key enmascarada, duración) + botón **"Importar ahora"** (modal con mes, año y compras/ventas/ambas,
+  conteos, key enmascarada, duración) + botón **"Sincronizar ahora"** (modal con mes, año y compras/ventas/ambas,
   RHF + Zod). Drawer de la importación: estado y error, **tabla de resúmenes por tipo** (los tipos sin detalle,
   como 48, marcados "solo resumen"; los con detalle muestran el control resumen vs. suma importada y un
   aviso si no cuadra), conteos (recibidos/creados/actualizados/faltantes), intentos con la key usada en cada
@@ -283,7 +283,7 @@ Pantallas:
 mecánicas de `core/rbac/bundles.py` ya dan `view_*` a `accounting.read`; se agregan `OVERRIDES` (ADR-0116) para que
 la escritura quede en `accounting.manage`:
 - `accounting.read`: ver documentos RCV, importaciones y resúmenes.
-- `accounting.manage`: "Importar ahora" (`add_rcvimport`), configuración RCV (incluida la clave SII) y API keys.
+- `accounting.manage`: "Sincronizar ahora" (`add_rcvimport`), configuración RCV (incluida la clave SII) y API keys.
 
 El usuario **acepta el riesgo** de que quien gestiona Contabilidad pueda cambiar la clave SII y las keys (no se
 usa un bundle sensible aparte); la clave y las keys siguen siendo write-only y nunca se devuelven.
@@ -295,7 +295,7 @@ Registrar `RCVSettings` (Clase A) y `RCVApiKey` (Clase B) en `docs/20-contracts/
    Contabilidad: evita el mapeo cruzado de permisos y su ADR).
 2. **Una entidad para compras y ventas** (`RCVDocument` con `direction`) en lugar de dos modelos: comparten casi
    todo; los campos propios de un lado son nulos en el otro y todo queda en `raw`.
-3. **Historial de importaciones como tercera sub-pestaña** de RCV, con el botón "Importar ahora" ahí.
+3. **Historial de importaciones como tercera sub-pestaña** de RCV, con el botón "Sincronizar ahora" ahí.
 4. **Conteo de cupo local**: la respuesta no informa el cupo mensual, así que el ERP cuenta las peticiones
    HTTP por key y mes calendario; `monthly_limit` editable (default 10) por si alguna key es de plan pagado.
 5. **Reparto de consumo**: se usa primero la key con menos uso del mes.

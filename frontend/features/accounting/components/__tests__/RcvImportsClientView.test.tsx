@@ -82,21 +82,21 @@ describe("RcvImportsClientView", () => {
         expect(screen.getByText("2:03")).toBeInTheDocument()
     })
 
-    it("con permiso muestra 'Importar ahora'", () => {
+    it("con permiso muestra 'Sincronizar ahora'", () => {
         m.rows = [row]
         render(<RcvImportsClientView />)
-        expect(screen.getByRole("button", { name: /Importar ahora/ })).toBeInTheDocument()
+        expect(screen.getByRole("button", { name: /Sincronizar ahora/ })).toBeInTheDocument()
     })
 
-    it("sin permiso oculta 'Importar ahora' (también en el estado vacío)", () => {
+    it("sin permiso oculta 'Sincronizar ahora' (también en el estado vacío)", () => {
         m.canAdd = false
         const { unmount } = render(<RcvImportsClientView />)
         expect(screen.getByText("Aún no hay importaciones")).toBeInTheDocument()
-        expect(screen.queryByRole("button", { name: /Importar ahora/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: /Sincronizar ahora/ })).not.toBeInTheDocument()
         unmount()
         m.rows = [row]
         render(<RcvImportsClientView />)
-        expect(screen.queryByRole("button", { name: /Importar ahora/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: /Sincronizar ahora/ })).not.toBeInTheDocument()
     })
 
     it("traduce los filtros de la URL a filtros de la API e ignora valores inválidos", () => {

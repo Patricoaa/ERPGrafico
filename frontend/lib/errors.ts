@@ -51,6 +51,13 @@ function isAxiosLikeError(error: unknown): error is AxiosLikeError {
 }
 
 /**
+ * HTTP status of an API error (Axios-like), or `undefined` when the error has no response.
+ */
+export function errorStatus(error: unknown): number | undefined {
+    return isAxiosLikeError(error) ? error.response?.status : undefined
+}
+
+/**
  * Extract a user-friendly error message from any error type.
  * Handles: Axios errors, ApiError, native Error, and unknown.
  */

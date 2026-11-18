@@ -348,13 +348,13 @@ describe("DeclarationWizard — borradores y footer", () => {
         expect(buttonByText(/Siguiente/)).not.toBeDisabled()
     })
 
-    it("las diferencias del cuadre fiscal se sugieren con enlace y no bloquean", async () => {
+    it("las diferencias del cuadre se sugieren con enlace y no bloquean", async () => {
         m.period = makePeriod(null)
         m.calculateTax.mockResolvedValue({ ...CALC, fiscal_mismatches: { count: 2 } })
         await mount()
         const suggested = screen.getByRole("region", { name: "Sugeridos" })
         expect(suggested).toHaveTextContent("2 diferencia(s) con TUU o el SII")
-        expect(within(suggested).getByRole("link", { name: /Ir al cuadre/ })).toHaveAttribute("href", "/accounting/rcv/reconciliation")
+        expect(within(suggested).getByRole("link", { name: /Ir al cuadre/ })).toHaveAttribute("href", "/accounting/rcv/cuadre?direction=all&status=attention&date_from=2026-10-01&date_to=2026-10-31")
         expect(buttonByText(/Siguiente/)).not.toBeDisabled()
     })
 
