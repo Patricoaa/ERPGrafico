@@ -22,7 +22,7 @@ const imp: RcvImportDetail = {
     triggered_by: 1, triggered_by_name: "Ana Prueba",
     started_at: "2026-11-14T10:00:00-03:00", finished_at: "2026-11-14T10:01:05-03:00",
     error_code: "", error_message: "", warnings: ["El detalle del tipo 48 no cuadra con el resumen del SII."],
-    received_count: 12, created_count: 10, updated_count: 2, missing_count: 1,
+    received_count: 12, created_count: 10, updated_count: 2, missing_count: 1, contacts_created_count: 3,
     api_key: 2, masked_key: "••••4472", created_at: "2026-11-14T10:00:00-03:00",
     summaries: [{
         id: 1, dte_type: 48, dte_type_label: "Comprobante de Pago Electrónico", document_count: 30,
@@ -61,6 +61,7 @@ describe("RcvImportDrawer", () => {
         expect(screen.getByText("Ana Prueba")).toBeInTheDocument()
         expect(screen.getByText("1:05")).toBeInTheDocument()
         expect(screen.getByText("El detalle del tipo 48 no cuadra con el resumen del SII.")).toBeInTheDocument()
+        expect(screen.getByText("Contactos creados")).toBeInTheDocument()
     })
 
     it("muestra el error de una importación fallida", () => {

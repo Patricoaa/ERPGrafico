@@ -142,6 +142,7 @@ class RCVImportListSerializer(serializers.ModelSerializer):
             "created_count",
             "updated_count",
             "missing_count",
+            "contacts_created_count",
             "api_key",
             "masked_key",
             "created_at",
