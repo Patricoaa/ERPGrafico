@@ -109,9 +109,9 @@ describe("RcvSettingsView", () => {
         expect(screen.queryByRole("button", { name: "Agregar API key" })).toBeNull()
     })
 
-    it("muestra la sección Cuadre fiscal con la ventana TUU", () => {
+    it("muestra la sección Cuadre con la ventana TUU", () => {
         render(<RcvSettingsView />)
-        expect(screen.getByText("Cuadre fiscal")).toBeTruthy()
+        expect(screen.getByText("Cuadre")).toBeTruthy()
         expect(screen.getByText("Fecha de inicio del cuadre")).toBeTruthy()
         const group = screen.getByRole("group", { name: "Ventana del cuadre TUU (minutos)" })
         expect((group.querySelector("input") as HTMLInputElement).value).toBe("15")

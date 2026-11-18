@@ -1,4 +1,4 @@
-"""Referencia compacta al grupo de cuadre fiscal para listas RCV y TUU."""
+"""Referencia compacta al grupo de cuadre para listas RCV y TUU."""
 
 from rest_framework import serializers
 

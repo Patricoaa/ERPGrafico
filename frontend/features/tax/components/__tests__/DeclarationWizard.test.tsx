@@ -348,7 +348,7 @@ describe("DeclarationWizard — borradores y footer", () => {
         expect(buttonByText(/Siguiente/)).not.toBeDisabled()
     })
 
-    it("las diferencias del cuadre fiscal se sugieren con enlace y no bloquean", async () => {
+    it("las diferencias del cuadre se sugieren con enlace y no bloquean", async () => {
         m.period = makePeriod(null)
         m.calculateTax.mockResolvedValue({ ...CALC, fiscal_mismatches: { count: 2 } })
         await mount()

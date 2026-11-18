@@ -52,8 +52,6 @@ La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el c�
 | `hr.payroll.draft` | `POST /api/hr/payrolls/create_draft_payrolls/` | Generación de borradores de nómina masivos |
 | `tax.period.close` | `POST /api/tax/periods/{id}/close/` + `POST /api/tax/accounting-periods/{id}/close/` | Cierre de período (ambos viewsets usan el mismo scope) |
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` | Registrar declaración F29 — crea registro oficial ante SII, no reversible |
-| `tax.reconciliation.rcv.confirm_draft` | `POST /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/` | Asigna folio del RCV a un borrador de compra y lo emite (asiento contable) |
-| `tax.reconciliation.rcv.create_draft` | `POST /api/tax/reconciliation/rcv-documents/{id}/create-draft/` | Crea un borrador de compra desde una OC con el folio del RCV |
 | `tax.fiscal_match.link` | `POST /api/tax/fiscal-matches/{id}/link/` | Unión manual del cuadre: mueve ventas TUU / registros SII entre grupos |
 | `tax.fiscal_match.unlink` | `POST /api/tax/fiscal-matches/{id}/unlink/` | Quita un vínculo del cuadre a un grupo huérfano manual |
 | `tax.fiscal_match.release` | `POST /api/tax/fiscal-matches/{id}/release/` | Devuelve un huérfano al cruce automático |
@@ -329,8 +327,12 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 | `hr.payroll.draft` | `POST /api/hr/payrolls/create_draft_payrolls/` |
 | `tax.period.close` (x2) | `POST /api/tax/periods/{id}/close/` + `POST /api/tax/accounting-periods/{id}/close/` |
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` |
-| `tax.reconciliation.rcv.confirm_draft` | `POST /api/tax/reconciliation/rcv-documents/{id}/confirm-draft/` |
-| `tax.reconciliation.rcv.create_draft` | `POST /api/tax/reconciliation/rcv-documents/{id}/create-draft/` |
+| `tax.fiscal_match.link` | `POST /api/tax/fiscal-matches/{id}/link/` |
+| `tax.fiscal_match.unlink` | `POST /api/tax/fiscal-matches/{id}/unlink/` |
+| `tax.fiscal_match.release` | `POST /api/tax/fiscal-matches/{id}/release/` |
+| `tax.fiscal_match.retry_issue` | `POST /api/tax/fiscal-matches/{id}/retry-issue/` |
+| `tax.fiscal_match.confirm_draft` | `POST /api/tax/fiscal-matches/{id}/confirm-draft/` |
+| `tax.fiscal_match.create_draft` | `POST /api/tax/fiscal-matches/{id}/create-draft/` |
 | `treasury.movement.create` | `POST /api/treasury/movements/` (y `/payments/`) |
 | `treasury.movement.register` | `POST /api/treasury/movements/register_movement/` (y `/payments/`) |
 | `treasury.card.purchase` | `POST /api/treasury/movements/card-purchase/` (y `/payments/`) |
