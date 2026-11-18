@@ -19,12 +19,11 @@ from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVSettings
 from billing.models import Invoice
-from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match.boletas import pair_rcv_boletas
 from tax.fiscal_match.candidates import local_midnight, stamp_groups
 from tax.fiscal_match.groups import ensure_groups, rcv_orphan_group, tuu_orphan_group
-from tax.fiscal_match.issuing import issue_fiscal_drafts, tuu_number
+from tax.fiscal_match.issuing import issuable_q, issue_fiscal_drafts, tuu_number
 from tax.fiscal_match.rcv import link_rcv_documents
 from tax.fiscal_match.states import STATE_FIELDS, EvalContext, build_context, evaluate
 from tax.fiscal_match.terminal import link_terminal_sales
@@ -99,14 +98,7 @@ def _run(start: date, window: timedelta, since: datetime | None) -> dict:
         _scope(start, since) | Q(id__in=touched), tuu_ambiguous, rcv.ambiguous_group_ids
     )
 
-    drafts = set(
-        FiscalMatch.objects.filter(
-            tuu_state=PartState.MATCHED,
-            invoice__status=Invoice.Status.DRAFT,
-            invoice__number="",
-            invoice__dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
-        ).values_list("id", flat=True)
-    )
+    drafts = set(FiscalMatch.objects.filter(issuable_q()).values_list("id", flat=True))
     issued = issue_fiscal_drafts()
     rcv_after = link_rcv_documents(start)
     relinked = rcv_after.touched_group_ids | rcv_after.ambiguous_group_ids

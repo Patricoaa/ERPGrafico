@@ -39,11 +39,13 @@ def tenv(db):
     return make_terminal_env()
 
 
-def _group(tenv, total, dte_type, *, tuu_state=PartState.MATCHED):
+def _group(tenv, total, dte_type, *, tuu_state=PartState.MATCHED, rcv_state=None):
     method = "CARD" if dte_type == C48 else "CASH"
     invoice = make_pos_document(tenv, total, AT, dte_type=dte_type, method=method, status=DRAFT)
     ensure_groups(SINCE)
-    FiscalMatch.objects.filter(invoice=invoice).update(tuu_state=tuu_state)
+    if rcv_state is None:
+        rcv_state = PartState.SUMMARY_ONLY if dte_type == C48 else PartState.MATCHED
+    FiscalMatch.objects.filter(invoice=invoice).update(tuu_state=tuu_state, rcv_state=rcv_state)
     return invoice, FiscalMatch.objects.get(invoice=invoice)
 
 
@@ -110,6 +112,19 @@ def test_does_not_issue_39_with_two_rcv_folios(tenv):
     inv, group = _group(tenv, 2000, BOLETA)
     _rcv(group, 1000)
     _rcv(group, 1000)
+
+    assert issue_fiscal_drafts() == {"issued": 0, "failed": 0}
+    inv.refresh_from_db()
+    assert (inv.status, inv.number) == (DRAFT, "")
+
+
+@pytest.mark.parametrize("rcv_state", [PartState.DIFF, PartState.AMBIGUOUS, PartState.PENDING])
+def test_does_not_issue_39_unless_rcv_matches(tenv, rcv_state):
+    # Con TUU cuadrada pero un registro RCV de otro monto, emitir fijaría un folio
+    # equivocado de forma irreversible.
+    inv, group = _group(tenv, 5000, BOLETA, rcv_state=rcv_state)
+    _sale(tenv, group, 5000)
+    _rcv(group, 9999, folio=555)
 
     assert issue_fiscal_drafts() == {"issued": 0, "failed": 0}
     inv.refresh_from_db()

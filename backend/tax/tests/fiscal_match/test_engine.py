@@ -338,3 +338,20 @@ def test_reversed_sale_is_released_from_its_document_group(tenv):
     assert sale.fiscal_match.status == FiscalMatchStatus.EXCLUDED
     assert group.status != FiscalMatchStatus.MATCHED
     assert group.tuu_amount is None
+
+
+def test_boleta_draft_not_issued_while_rcv_differs(tenv):
+    inv = make_pos_document(
+        tenv, 5000, _ago(120), dte_type=Invoice.DTEType.BOLETA, method="CASH", status=Invoice.Status.DRAFT
+    )
+    make_terminal_sale(tenv, 5000, _ago(118), payment_type=TerminalSale.PaymentType.CASH, document_type=39)
+    run_fiscal_match()
+    group = _group_of(inv)
+    assert group.tuu_state == PartState.MATCHED
+    _rcv(9999, folio=555, group=group)  # p. ej. unido a mano: otro monto
+
+    run_fiscal_match()
+
+    _reload(inv, group)
+    assert (inv.status, inv.number) == (Invoice.Status.DRAFT, "")
+    assert (group.rcv_state, group.status) == (PartState.DIFF, FiscalMatchStatus.DIFF)

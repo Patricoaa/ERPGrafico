@@ -1,8 +1,8 @@
 """Emisión automática de borradores 39/41/48 desde el grupo de cuadre (ADR-0140 D3).
 
 Toma los grupos cuya factura es un borrador sin número y cuya parte TUU está
-``MATCHED``: el número fiscal ya es conocido (id TUU para 48, folio RCV para
-39/41). Cada emisión pasa por ``BillingService.confirm_invoice`` en su propia
+``MATCHED`` (en 39/41 también la RCV): el número fiscal ya es conocido (id TUU
+para 48, folio RCV para 39/41). Cada emisión pasa por ``BillingService.confirm_invoice`` en su propia
 transacción; un fallo se registra en el grupo y no detiene al resto.
 """
 
@@ -102,14 +102,22 @@ def tuu_number(sale: TerminalSale) -> str:
     return (sale.sequence_number or "").strip()
 
 
-def _candidates(group_ids: list[int] | None, *, retry_failed: bool) -> list[FiscalMatch]:
-    groups = FiscalMatch.objects.filter(
+def issuable_q() -> Q:
+    """Grupos cuyo borrador sin número puede emitirse: TUU cuadrada y, en 39/41, el RCV también.
+
+    Una boleta se emite con el folio de su registro RCV: si ese registro no cuadra (otro
+    monto, ambiguo o aún pendiente) el folio sería equivocado y la emisión es irreversible.
+    """
+    return Q(
         tuu_state=PartState.MATCHED,
         invoice__status=Invoice.Status.DRAFT,
         invoice__number="",
         invoice__dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
-        invoice__purchase_order__isnull=True,
-    )
+    ) & (Q(invoice__dte_type=Invoice.DTEType.COMPROBANTE_PAGO) | Q(rcv_state=PartState.MATCHED))
+
+
+def _candidates(group_ids: list[int] | None, *, retry_failed: bool) -> list[FiscalMatch]:
+    groups = FiscalMatch.objects.filter(issuable_q(), invoice__purchase_order__isnull=True)
     if group_ids is not None:
         groups = groups.filter(pk__in=group_ids)
     if not retry_failed:
