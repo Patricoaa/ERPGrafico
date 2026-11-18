@@ -1,4 +1,4 @@
-"""Fábricas compartidas por los tests de cuadre fiscal (ADR-0138).
+"""Fábricas compartidas por los tests del cuadre (ADR-0138).
 
 Crean documentos POS ya emitidos y ventas TUU directo por ORM, sin pasar por
 el checkout, para que cada test declare solo lo que compara.

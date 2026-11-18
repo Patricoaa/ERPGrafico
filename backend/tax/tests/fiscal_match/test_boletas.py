@@ -15,7 +15,7 @@ from tax.fiscal_match.candidates import LinkResult, local_midnight
 from tax.fiscal_match.groups import ensure_groups
 from tax.fiscal_match.terminal import link_terminal_sales
 from tax.models import FiscalMatch
-from tax.tests.reconciliation_helpers import (
+from tax.tests.fiscal_match_helpers import (
     local_dt,
     make_pos_document,
     make_terminal_env,
@@ -224,13 +224,6 @@ def test_query_count_constant(env, imp):
     small = _queries_for(env, imp, 2)
     big = _queries_for(env, imp, 12)
     assert small == big
-
-
-def test_months_in_range_reexported():
-    from tax.fiscal_match import boletas
-    from tax.reconciliation.boletas import _pair, months_in_range
-
-    assert months_in_range is boletas.months_in_range and _pair is boletas._pair
 
 
 def test_step2_skips_group_that_got_a_doc_in_step_1(env, imp):

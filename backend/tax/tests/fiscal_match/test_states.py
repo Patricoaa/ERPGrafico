@@ -17,7 +17,7 @@ from tax.fiscal_match.groups import ensure_groups
 from tax.fiscal_match.states import STATE_FIELDS, EvalContext, build_context, evaluate
 from tax.fiscal_match.terminal import link_terminal_sales
 from tax.models import FiscalMatch, TaxPeriod
-from tax.tests.reconciliation_helpers import (
+from tax.tests.fiscal_match_helpers import (
     local_dt,
     make_pos_document,
     make_terminal_env,

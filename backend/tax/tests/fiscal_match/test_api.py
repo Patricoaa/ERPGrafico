@@ -16,7 +16,7 @@ from core.tests.rbac_factories import make_user
 from tax.fiscal_match.engine import run_fiscal_match
 from tax.models import FiscalMatch, FiscalMatchRun
 from tax.tasks import FISCAL_MATCH_LOCK_KEY
-from tax.tests.reconciliation_helpers import (
+from tax.tests.fiscal_match_helpers import (
     make_pos_document,
     make_terminal_env,
     make_terminal_sale,

@@ -12,7 +12,7 @@ from accounting import tasks as accounting_tasks
 from accounting.models import RCVImport
 from tax import tasks
 from tax.tasks import FISCAL_MATCH_LOCK_KEY, run_fiscal_match
-from tax.tests.reconciliation_helpers import set_match_settings
+from tax.tests.fiscal_match_helpers import set_match_settings
 from treasury import tasks as treasury_tasks
 from treasury.models import TerminalSyncRun
 from treasury.tests.helpers import make_terminal_provider

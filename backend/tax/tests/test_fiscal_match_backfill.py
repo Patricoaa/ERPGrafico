@@ -11,7 +11,7 @@ from django.utils import timezone
 from accounting.models import RCVDocument, RCVImport
 from billing.models import Invoice
 from tax.models import FiscalMatch
-from tax.tests.reconciliation_helpers import (
+from tax.tests.fiscal_match_helpers import (
     local_dt,
     make_pos_document,
     make_terminal_env,

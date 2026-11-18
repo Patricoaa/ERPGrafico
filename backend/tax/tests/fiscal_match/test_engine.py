@@ -16,7 +16,7 @@ from billing.tests.test_pos_checkout_documents import _alloc, _checkout, _order,
 from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match.engine import run_fiscal_match
 from tax.models import FiscalMatch, FiscalMatchRun
-from tax.tests.reconciliation_helpers import (
+from tax.tests.fiscal_match_helpers import (
     make_pos_document,
     make_terminal_env,
     make_terminal_sale,

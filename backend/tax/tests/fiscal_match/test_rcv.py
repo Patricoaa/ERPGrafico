@@ -16,7 +16,7 @@ from tax.fiscal_match.candidates import LinkResult
 from tax.fiscal_match.groups import ensure_groups
 from tax.fiscal_match.rcv import link_rcv_documents, rcv_group_candidates
 from tax.models import FiscalMatch
-from tax.tests.reconciliation_helpers import set_match_settings
+from tax.tests.fiscal_match_helpers import set_match_settings
 
 SINCE = date(2026, 10, 1)
 P = RCVImport.Direction.PURCHASES
