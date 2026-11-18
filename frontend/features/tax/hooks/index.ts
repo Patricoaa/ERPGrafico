@@ -26,3 +26,4 @@ export {
     useConfirmFiscalMatchDraft,
     useCreateFiscalMatchDraft,
 } from './useFiscalMatchFeeding'
+export { useFiscalMatchDraft } from './useFiscalMatchDraft'
