@@ -10,7 +10,6 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 from core.edit_policy import EditPolicy
-from core.fiscal_match import MatchStatus
 from core.models import AuditedModel, TimeStampedModel
 from core.utils import get_current_date
 
@@ -2100,23 +2099,6 @@ class RCVDocument(TimeStampedModel):
         verbose_name=_("Ausente desde"),
     )
 
-    matched_invoice = models.ForeignKey(
-        "billing.Invoice",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="rcv_documents",
-        verbose_name=_("Factura vinculada"),
-    )
-    match_status = models.CharField(
-        _("Estado de cuadre"),
-        max_length=20,
-        choices=MatchStatus.choices,
-        blank=True,
-        default="",
-        db_index=True,
-    )
-    matched_manually = models.BooleanField(_("Vínculo manual"), default=False)
     fiscal_match = models.ForeignKey(
         "tax.FiscalMatch",
         on_delete=models.SET_NULL,
@@ -2134,11 +2116,6 @@ class RCVDocument(TimeStampedModel):
             models.UniqueConstraint(
                 fields=["company_rut", "direction", "dte_type", "folio", "counterparty_rut"],
                 name="rcvdocument_natural_key_uniq",
-            ),
-            models.UniqueConstraint(
-                fields=["matched_invoice"],
-                condition=models.Q(matched_invoice__isnull=False),
-                name="rcvdocument_matched_invoice_uniq",
             ),
         ]
         indexes = [

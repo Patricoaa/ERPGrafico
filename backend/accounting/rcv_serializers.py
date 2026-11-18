@@ -61,7 +61,6 @@ class RCVDocumentListSerializer(serializers.ModelSerializer):
             "reference_folio",
             "is_missing",
             "fiscal_match",
-            "matched_manually",
         ]
         read_only_fields = fields
 

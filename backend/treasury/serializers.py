@@ -1969,9 +1969,6 @@ class TerminalSaleListSerializer(serializers.ModelSerializer):
             "settlement_id",
             "settlement_amount",
             "fiscal_match",
-            "matched_manually",
-            "issue_attempted_at",
-            "issue_error",
         ]
         read_only_fields = fields
 

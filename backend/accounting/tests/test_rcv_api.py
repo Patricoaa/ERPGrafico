@@ -453,8 +453,8 @@ def test_documents_expose_fiscal_match_without_n_plus_one(reader):
         assert row["fiscal_match"]["status"] == "MATCHED"
         assert row["fiscal_match"]["status_display"] == "Cuadrado"
         assert row["fiscal_match"]["id"]
-        for old in ("match_status", "matched_invoice", "terminal_sale", "terminal_sale_display"):
-            assert old not in row
+        # Sin campos del cuadre por pares: solo el grupo.
+        assert not [key for key in row if key.startswith(("match", "terminal_sale"))]
 
 
 @pytest.mark.django_db

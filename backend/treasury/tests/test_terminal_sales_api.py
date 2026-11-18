@@ -115,6 +115,17 @@ def test_sales_list_excludes_raw_detail_includes_it(admin_client, provider):
 
 
 @pytest.mark.django_db
+def test_sale_exposes_only_the_group_of_cuadre(admin_client, provider):
+    sale = make_sale(provider)
+    row = admin_client.get("/api/treasury/terminal-sales/").json()["results"][0]
+    detail = admin_client.get(f"/api/treasury/terminal-sales/{sale.id}/").json()
+    for payload in (row, detail):
+        assert payload["fiscal_match"] is None
+        # Sin campos del cuadre por pares ni del intento de emisión: viven en el grupo.
+        assert not [key for key in payload if key.startswith(("match", "issue_", "rcv_document"))]
+
+
+@pytest.mark.django_db
 def test_summary_excludes_non_completed(admin_client, provider):
     make_sale(provider, total_amount=Decimal("10000"), commission_amount=Decimal("100"), net_amount=Decimal("9900"))
     make_sale(provider, payment_type="CREDIT", total_amount=Decimal("5000"),
