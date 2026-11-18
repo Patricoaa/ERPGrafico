@@ -92,6 +92,7 @@ describe("TerminalSaleDrawer", () => {
             m.sale = { ...sale, fiscal_match: { id: 31, status: "MATCHED", status_display: "Cuadrado" } }
             render(<TerminalSaleDrawer id={9} open onOpenChange={vi.fn()} />)
             expect(screen.getByText("Cuadrado")).toBeInTheDocument()
+            expect(screen.getByRole("button", { name: "Ver cuadre" })).toHaveAttribute("type", "button")
             await userEvent.click(screen.getByRole("button", { name: "Ver cuadre" }))
             expect(m.openEntity).toHaveBeenCalledWith("tax.fiscalmatch", 31)
         })

@@ -180,7 +180,7 @@ function TerminalSaleFiscalMatch({ sale }: { sale: TerminalSaleDetail }) {
                 value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />}
                 actions={
                     groupId !== undefined ? (
-                        <Button size="sm" variant="outline" onClick={() => openEntity("tax.fiscalmatch", groupId)}>
+                        <Button type="button" size="sm" variant="outline" onClick={() => openEntity("tax.fiscalmatch", groupId)}>
                             Ver cuadre
                         </Button>
                     ) : undefined
