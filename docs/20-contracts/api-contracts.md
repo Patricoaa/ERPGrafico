@@ -1115,9 +1115,7 @@ Lectura exige `tax.view_taxperiod`; toda acción, `tax.change_taxperiod`. Cada g
 GET    /api/tax/fiscal-matches/                          lista paginada (filtros: direction, status repetible o con comas, incluye `ATTENTION`)
 GET    /api/tax/fiscal-matches/counts/                   conteos por estado con los mismos filtros, más `last_run_at` y `start_date` (`fiscal_match_start_date` o null)
 GET    /api/tax/fiscal-matches/{id}/                     ficha del grupo
-GET    /api/tax/fiscal-matches/{id}/candidates/?part=    candidatos erp | tuu | rcv para la unión manual
-POST   /api/tax/fiscal-matches/{id}/link/                unión manual (Idempotency-Key)
-POST   /api/tax/fiscal-matches/{id}/unlink/              quita un vínculo a un huérfano manual (Idempotency-Key)
+POST   /api/tax/fiscal-matches/{id}/apply/               guarda de una vez los cambios de la ficha, todo o nada (Idempotency-Key)
 POST   /api/tax/fiscal-matches/{id}/release/             devuelve un huérfano al cruce automático (Idempotency-Key)
 POST   /api/tax/fiscal-matches/{id}/retry-issue/         reintenta la emisión del borrador (Idempotency-Key)
 GET    /api/tax/fiscal-matches/{id}/draft-suggestions/   borradores de compra del mismo RUT y tipo con total parecido (≤ 2 %)
@@ -1125,6 +1123,8 @@ GET    /api/tax/fiscal-matches/{id}/purchase-orders/     OC elegibles para crear
 POST   /api/tax/fiscal-matches/{id}/confirm-draft/       asigna folio del RCV y emite el borrador (Idempotency-Key)
 POST   /api/tax/fiscal-matches/{id}/create-draft/        crea borrador desde una OC unido al grupo (Idempotency-Key)
 ```
+
+`apply/`: cuerpo `{changes: [{op: "link"|"unlink", part: "erp"|"tuu"|"rcv", id, movement?, payments?}]}` con 1 a 50 cambios. `movement` es el cobro de un `link tuu`; `payments` (`{sale_id: movement_id}`) asigna cobros a las ventas propias del huérfano en un `link erp`. Se aplican primero los `unlink`, luego `link erp`, TUU y RCV. Responde **200** con el detalle del grupo resultante (puede ser otro id), **400** si un cambio rompe una regla del cuadre y **409** si el motor está corriendo. El 400 usa el sobre estándar: `{error: {message, code, details: {change_index}, status_code}}`, con `code` ∈ `TYPE_INCOMPATIBLE`, `OTHER_DIRECTION`, `PAYMENT_TAKEN`, `SECOND_DOCUMENT`, `SECOND_RCV`, `NOT_COMPLETED`, `MOVED`, `PAYMENT_REQUIRED`, `NOT_ALLOWED`, `OTHER_DOCUMENT_PAYMENT`, `GONE`, `NOT_FOUND`, `IGNORED_PAYMENT`, `RCV_HAS_SALES`. Todo el guardado se revierte. Las acciones sueltas (`release/`, `confirm-draft/`...) devuelven el mismo `error.code`, sin `change_index`. Los endpoints `link/`, `unlink/` y `candidates/` se retiraron (la búsqueda con puntaje la cubre `search/`).
 
 El resumen mensual (`summary/`) y los pendientes de folio (`pending-issue/`) se retiraron (ADR-0141 D10).
 

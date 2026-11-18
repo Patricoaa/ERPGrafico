@@ -123,7 +123,7 @@ Valen todas las reglas de ADR-0141, en particular:
 ```
 
 - **Servicio:** `apply_changes(group, changes) -> FiscalMatch`, bajo `_exclusive` + `@transaction.atomic`. Aplica primero las desvinculaciones, luego la unión ERP (si el grupo es huérfano, pasa a trabajar sobre el grupo del documento) y después las uniones TUU y RCV. Cada paso reutiliza `link_invoice`, `link_terminal_sale`, `link_rcv_document` y `unlink`, en su variante sin candado ni transacción propios (refactor interno: las funciones públicas actuales quedan como envoltorios).
-- **Errores:** si un cambio falla, se revierte todo y la respuesta es 400 con `{"detail": ..., "change_index": i, "code": ...}` para marcar esa tarjeta. Si el motor está corriendo, la respuesta es 409.
+- **Errores:** si un cambio falla, se revierte todo y la respuesta es 400 con el sobre estándar de errores: `error.message`, `error.code` y `error.details.change_index` (= i) para marcar esa tarjeta. Si el motor está corriendo, la respuesta es 409.
 - **Respuesta:** el detalle del grupo resultante (puede ser otro id, si un huérfano se unió a un documento). La ficha lo sigue igual que hoy (`onGroupChange`, `?selected`).
 - **Endpoints de unión individuales:** `link`, `unlink` y `candidates` quedan sin consumidor en el frontend y **se eliminan** (backend, API cliente, hooks, pruebas). `release` y `retry-issue` se mantienen.
 
@@ -170,7 +170,7 @@ Valen todas las reglas de ADR-0141, en particular:
 
 El servidor endurece la unión manual (hoy solo la UI evita estos casos):
 
-- **Bloquean** el guardado (400, con `change_index` y el motivo), porque rompen el cuadre:
+- **Bloquean** el guardado (400, con `error.code`, `error.details.change_index` y el motivo), porque rompen el cuadre:
   - un tipo de documento incompatible, incluido un pago TUU en efectivo hacia algo que no es una boleta 39/41;
   - otra dirección (compra o venta);
   - un pago del ERP ya tomado por otra venta TUU;

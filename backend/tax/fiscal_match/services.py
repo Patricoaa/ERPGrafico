@@ -89,7 +89,6 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 LinkPart = Literal["erp", "tuu", "rcv"]
-UnlinkPart = Literal["tuu", "rcv"]
 Record = TerminalSale | RCVDocument
 
 
@@ -106,8 +105,8 @@ class Change(TypedDict):
 # --- utilidades ---------------------------------------------------------------
 
 
-class FiscalMatchRuleError(ValidationError):
-    """Una unión manual rompe una regla del cuadre (400 con ``code``; spec §7c).
+class FiscalMatchRuleError(ValidationError, ERPGraficoError):
+    """Una unión manual rompe una regla del cuadre (400 con ``error.code``; spec §7c).
 
     ``change_index`` es el índice, en la lista enviada, del cambio de ``apply_changes``
     que la rompió (``None`` fuera de ese guardado).
@@ -116,7 +115,12 @@ class FiscalMatchRuleError(ValidationError):
     def __init__(
         self, code: str, message: str | None = None, *, change_index: int | None = None
     ) -> None:
-        super().__init__(message or RULE_MESSAGES[code], code=code)
+        text = message or RULE_MESSAGES[code]
+        ValidationError.__init__(self, text, code=code)
+        # Para el manejador global (400 con ``error.code`` y ``error.details.change_index``).
+        self.details = {} if change_index is None else {"change_index": change_index}
+        self.status_code = 400
+        self.timestamp = timezone.now()
         self.change_index = change_index
 
     def at(self, index: int) -> "FiscalMatchRuleError":
@@ -486,22 +490,6 @@ def _link_rcv_document(group: FiscalMatch, orphan: FiscalMatch, doc: RCVDocument
 
 
 # --- quitar y devolver ----------------------------------------------------------------
-
-
-_RECORD_LABEL = {"tuu": "La venta TUU", "rcv": "El registro del SII"}
-
-
-@_exclusive
-@transaction.atomic
-def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
-    """Saca un registro a un grupo huérfano nuevo marcado como manual (Review Focus 2)."""
-    group = _locked(_lock_groups(group.pk), group.pk)
-    model = TerminalSale if part == "tuu" else RCVDocument
-    record = model.objects.select_for_update().filter(fiscal_match=group, pk=record_id).first()
-    if record is None:
-        raise FiscalMatchRuleError(MOVED, f"{_RECORD_LABEL[part]} no pertenece a este grupo.")
-    orphan = _unlink(group, record)
-    return _finish({group.pk, orphan.pk}, group.pk, orphan.pk)
 
 
 def _unlink(group: FiscalMatch, record: Record) -> FiscalMatch:

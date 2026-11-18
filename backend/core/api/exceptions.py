@@ -34,7 +34,7 @@ def erpgrafico_exception_handler(exc, context):
     """
     # Los servicios lanzan ValidationError de Django para reglas de negocio: son mensajes
     # pensados para el usuario, se responden como 400 (nunca como 500).
-    if isinstance(exc, DjangoValidationError):
+    if isinstance(exc, DjangoValidationError) and not isinstance(exc, ERPGraficoError):
         exc = DRFValidationError(
             exc.message_dict if hasattr(exc, "error_dict") else exc.messages
         )

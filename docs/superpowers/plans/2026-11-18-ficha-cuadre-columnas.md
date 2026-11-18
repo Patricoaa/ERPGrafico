@@ -15,7 +15,7 @@
 - Término «Cuadre». Etiquetas nuevas: grupo `DIFF` = **«Con advertencias»**; parte `DIFF` = **«Advertencia»**. El resto de etiquetas no cambia.
 - Puntaje 0–100: monto igual 40; mismo día local 25, si no `max(0, 15 − 3 × días)`; mismo RUT normalizado 20 (o 20 si la parte no tiene RUT: TUU, boletas 39/41); tipo compatible 15; folio igual con la misma dirección y el mismo tipo = 100.
 - Intents del chip de coincidencia: ≥ 90 success, 60–89 warning, < 60 neutral.
-- **Bloquean** el guardado (400, `{detail, code, change_index}`): `TYPE_INCOMPATIBLE` (incluye el efectivo TUU hacia algo que no es 39/41), `OTHER_DIRECTION`, `PAYMENT_TAKEN`, `SECOND_DOCUMENT`, `SECOND_RCV`, `NOT_COMPLETED`, `MOVED`, `PAYMENT_REQUIRED`, `NOT_ALLOWED` (quitar el documento ERP).
+- **Bloquean** el guardado (400, `error.code` / `error.details.change_index`): `TYPE_INCOMPATIBLE` (incluye el efectivo TUU hacia algo que no es 39/41), `OTHER_DIRECTION`, `PAYMENT_TAKEN`, `SECOND_DOCUMENT`, `SECOND_RCV`, `NOT_COMPLETED`, `MOVED`, `PAYMENT_REQUIRED`, `NOT_ALLOWED` (quitar el documento ERP).
 - **Advierten** (no bloquean): `OTHER_RUT` (facturas y notas), `OTHER_DAY`, `OTHER_AMOUNT`. Tras guardar, el estado es `DIFF` por monto (regla actual) y por RUT (nuevo, en facturas y notas); otro día no cambia el estado.
 - Universo ERP: documentos de los últimos 62 días (`SCAN_DAYS`); con `q`, sin límite de fecha. Las ventas anuladas no se ofrecen.
 - Candado del motor (409 con el mensaje actual), `Idempotency-Key`, permisos `tax.view_taxperiod` (leer) y `tax.change_taxperiod` (guardar).
@@ -88,7 +88,7 @@
 
 **Files:** Modify `backend/tax/fiscal_match/views.py`, `serializers.py` (agregar `ApplySerializer`; eliminar `LinkSerializer`, `UnlinkSerializer`, `CandidatesQuerySerializer` y los serializers de candidatos que no reutilice Task 6), `services.py` (eliminar `link`, `group_candidates` y los `_*_candidates` que Task 6 no reutilice; **conservar** la lógica de compatibilidad que Task 6 necesite, moviéndola a `candidates.py` si hace falta). Tests: `test_api.py`; eliminar los tests de los endpoints retirados.
 
-**Interfaces:** `POST /api/tax/fiscal-matches/{id}/apply/` con `@idempotent_endpoint(scope="tax.fiscal_match.apply")` y permiso `tax.change_taxperiod`. Cuerpo `{changes: Change[]}` (máximo 50). Responde 200 con el detalle del grupo resultante; 400 `{detail, code, change_index}`; 409 si el motor está ocupado.
+**Interfaces:** `POST /api/tax/fiscal-matches/{id}/apply/` con `@idempotent_endpoint(scope="tax.fiscal_match.apply")` y permiso `tax.change_taxperiod`. Cuerpo `{changes: Change[]}` (máximo 50). Responde 200 con el detalle del grupo resultante; 400 `{error: {message, code, details: {change_index}}}`; 409 si el motor está ocupado.
 
 - [ ] Tests: `test_apply_endpoint_ok`, `test_apply_endpoint_error_shape`, `test_apply_permissions`, `test_apply_idempotent_replay`, `test_removed_endpoints_404`.
 - [ ] Commit `feat(tax): endpoint de guardado del cuadre y retiro de las uniones sueltas`
@@ -141,7 +141,7 @@
 **Files:** Modify `frontend/features/tax/types/fiscalMatch.ts`, `api/fiscalMatchApi.ts`, `hooks/useFiscalMatches.ts`, `hooks/fiscalMatchKeys.ts`, barrels. Test `hooks/__tests__/useFiscalMatches.test.tsx`, `api/__tests__/fiscalMatchApi.test.ts`.
 
 **Interfaces:**
-- **Tipos:** `FiscalMatchChange`, `FiscalMatchSearchItem`, `FiscalMatchWarning`, `FiscalMatchApplyError {detail, code, change_index}`.
+- **Tipos:** `FiscalMatchChange`, `FiscalMatchSearchItem`, `FiscalMatchWarning`, `FiscalMatchApplyError {error: {message, code, details: {change_index}}}`.
 - **API:** `fiscalMatchApi.search(id, part, {q, ordering}, page)` y `fiscalMatchApi.apply(id, changes, key)`.
 - **Hooks:**
   - `useFiscalMatchSearch(id, part, {q, ordering}, enabled)` con `useInfiniteQuery` (siguiente página desde `next`), que devuelve `{ items, totalCount, fetchNextPage, hasNextPage, isLoading, isError, refetch }`;

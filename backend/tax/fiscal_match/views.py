@@ -1,7 +1,7 @@
 """API del cuadre por grupo: lista, conteos, ficha y guardado de la unión manual (spec §5.3, §5.7)."""
 
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -86,13 +86,7 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def apply(self, request, pk=None):
         body = _valid(ApplySerializer, request.data)
-        try:
-            return _detail(services.apply_changes(self._group(pk), body["changes"]))
-        except services.FiscalMatchRuleError as error:
-            return Response(
-                {"detail": error.message, "code": error.code, "change_index": error.change_index},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return _detail(services.apply_changes(self._group(pk), body["changes"]))
 
     @idempotent_endpoint(scope="tax.fiscal_match.release")
     @action(detail=True, methods=["post"])

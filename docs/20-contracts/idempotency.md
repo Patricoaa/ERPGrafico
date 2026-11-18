@@ -326,7 +326,7 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 | `hr.payroll.draft` | `POST /api/hr/payrolls/create_draft_payrolls/` |
 | `tax.period.close` (x2) | `POST /api/tax/periods/{id}/close/` + `POST /api/tax/accounting-periods/{id}/close/` |
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` |
-| `tax.fiscal_match.apply` | `POST /api/tax/fiscal-matches/{id}/apply/` | Guarda de una vez los cambios de la ficha de cuadre (uniones y quitas, todo o nada); reemplaza a `link` y `unlink` |
+| `tax.fiscal_match.apply` | `POST /api/tax/fiscal-matches/{id}/apply/` |
 | `tax.fiscal_match.release` | `POST /api/tax/fiscal-matches/{id}/release/` |
 | `tax.fiscal_match.retry_issue` | `POST /api/tax/fiscal-matches/{id}/retry-issue/` |
 | `tax.fiscal_match.confirm_draft` | `POST /api/tax/fiscal-matches/{id}/confirm-draft/` |

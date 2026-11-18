@@ -32,12 +32,12 @@ from tax.fiscal_match.services import (
     TYPE_INCOMPATIBLE,
     FiscalMatchBusy,
     FiscalMatchRuleError,
+    apply_changes,
     link_invoice,
     link_rcv_document,
     link_terminal_sale,
     release,
     retry_issue,
-    unlink,
 )
 from tax.models import FiscalMatch
 from tax.tasks import FISCAL_MATCH_LOCK_KEY
@@ -51,6 +51,10 @@ from treasury.models import TerminalSale, TreasuryMovement
 
 P = RCVImport.Direction.PURCHASES
 SINCE = date(2026, 10, 1)
+
+
+def unlink(group, part, record_id):
+    return apply_changes(group, [{"op": "unlink", "part": part, "id": record_id}])
 
 
 @pytest.fixture

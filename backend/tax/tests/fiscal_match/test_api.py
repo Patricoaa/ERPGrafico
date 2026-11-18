@@ -150,14 +150,6 @@ def test_list_query_count_constant(api, tenv):
     assert few == many <= 4  # conteo, página, ventas TUU y registros RCV
 
 
-
-
-
-
-
-
-
-
 def test_retry_issue_rejects_posted(api, tenv):
     matched, _ = _matched_and_orphan(tenv)
     assert api.post(f"{BASE}/{matched.id}/retry-issue/", format="json", **_key()).status_code == 400
@@ -194,11 +186,10 @@ def test_apply_endpoint_error_shape(api, tenv):
     r = _apply(api, group, changes, **_key())
 
     assert r.status_code == 400
-    assert r.json() == {
-        "detail": "El documento ERP no se quita del cuadre",
-        "code": "NOT_ALLOWED",
-        "change_index": 1,
-    }
+    error = r.json()["error"]
+    assert error["message"] == "El documento ERP no se quita del cuadre"
+    assert error["code"] == "NOT_ALLOWED"
+    assert error["details"] == {"change_index": 1}
     sale.refresh_from_db()
     assert sale.fiscal_match_id != group.id  # todo o nada
 
@@ -273,6 +264,16 @@ def test_apply_returns_409_while_engine_runs(api, tenv):
     assert r.json()["error"]["message"] == "El cuadre automático se está ejecutando. Reintente en unos segundos."
 
 
+def test_rule_error_outside_apply_keeps_its_code(api, tenv):
+    matched, _ = _matched_and_orphan(tenv)
+
+    r = api.post(f"{BASE}/{matched.id}/release/", format="json", **_key())
+
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SECOND_DOCUMENT"
+    assert r.json()["error"]["details"] == {}
+
+
 def test_release_and_retry_issue(api, tenv):
     matched, orphan = _matched_and_orphan(tenv)
     r = api.post(f"{BASE}/{orphan.id}/release/", format="json", **_key())
@@ -288,4 +289,4 @@ def test_removed_endpoints_404(api, tenv):
         ("get", "candidates"),
     ):
         r = getattr(api, method)(f"{BASE}/{matched.id}/{path}/", {"part": "tuu", "id": 1}, format="json", **_key())
-        assert r.status_code in (404, 405), path
+        assert r.status_code == 404, path
