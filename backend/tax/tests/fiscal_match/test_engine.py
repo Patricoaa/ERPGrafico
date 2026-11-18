@@ -1,10 +1,11 @@
 """Motor único del cuadre: encadena grupos, vínculos, estados y emisión (spec §5.4)."""
 
 import itertools
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest
+import time_machine
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
@@ -27,6 +28,17 @@ from treasury.models import TerminalSale, TerminalSyncRun, TreasuryMovement
 S = RCVImport.Direction.SALES
 C48 = Invoice.DTEType.COMPROBANTE_PAGO
 _folios = itertools.count(7000)
+
+
+# Mediodía local fijo, con reloj en marcha: los cobros de hace dos horas y las ventas de
+# dentro de dos minutos caen el mismo día aunque la suite corra de madrugada o a medianoche.
+CLOCK = datetime.fromisoformat("2026-11-18T12:00:00-03:00")
+
+
+@pytest.fixture(autouse=True)
+def _clock():
+    with time_machine.travel(CLOCK, tick=True):
+        yield
 
 
 @pytest.fixture
@@ -54,11 +66,14 @@ def _rcv(total, *, dte_type=39, folio=None, group=None, rut="66666666-6"):
 
 
 def _sync_run(tenv) -> TerminalSyncRun:
-    """Sincronización TUU exitosa de hoy, terminada ahora (después de la última corrida)."""
+    """Sincronización TUU exitosa de ayer y hoy, terminada ahora (después de la última corrida).
+
+    Cubre ayer: de madrugada, un cobro de hace dos horas cae en el día anterior.
+    """
     today = timezone.localdate()
     return TerminalSyncRun.objects.create(
         provider=tenv.provider, trigger=TerminalSyncRun.Trigger.SCHEDULED,
-        status=TerminalSyncRun.Status.SUCCESS, start_date=today, end_date=today,
+        status=TerminalSyncRun.Status.SUCCESS, start_date=today - timedelta(days=1), end_date=today,
         started_at=timezone.now(), finished_at=timezone.now(),
     )
 
