@@ -149,7 +149,7 @@ def build_context(
         providers_of[terminal_id].add(provider_id)
     terminal_providers = {t: frozenset(p) for t, p in providers_of.items()}
 
-    backed = {s.matched_movement_id for rows in sales.values() for s in rows}
+    backed = {s.matched_movement_id for rows in sales.values() for s in _live(rows)}
     unbacked = [m for m in movement_rows if m.id not in backed]
     sync_runs = _sync_runs(unbacked, invoices, terminal_providers)
 
@@ -249,6 +249,11 @@ def _closed_periods(months: set[tuple[int, int]]) -> frozenset[str]:
 
 
 # --- derivación (sin consultas) -------------------------------------------------------
+
+
+def _live(sales: Iterable[TerminalSale]) -> tuple[TerminalSale, ...]:
+    """Ventas que cuentan: una venta anulada (o en otro estado) no respalda ningún cobro."""
+    return tuple(s for s in sales if s.status == TerminalSale.Status.COMPLETED)
 
 
 def _payment_providers(
@@ -375,6 +380,7 @@ def _excluded(
     invoice: Invoice | None,
     code: int | None,
     docs: tuple[RCVDocument, ...],
+    sales: tuple[TerminalSale, ...],
     ctx: EvalContext,
 ) -> bool:
     if code in EXCLUDED_SII_CODES:
@@ -383,6 +389,8 @@ def _excluded(
         return True
     if invoice is None and docs and all(d.missing_since_import_id is not None for d in docs):
         return True
+    if invoice is None and not docs and sales and not _live(sales):
+        return True  # huérfano con solo ventas anuladas: nada que cuadrar
     return (
         ctx.start_date is not None
         and group.issue_date is not None
@@ -397,7 +405,8 @@ def _sum(values: Iterable[Decimal]) -> Decimal | None:
 
 def _evaluate_one(group: FiscalMatch, ctx: EvalContext) -> None:
     invoice = ctx.invoices.get(group.invoice_id) if group.invoice_id is not None else None
-    sales = ctx.sales.get(group.id, ())
+    all_sales = ctx.sales.get(group.id, ())
+    sales = _live(all_sales)
     docs = ctx.rcv_docs.get(group.id, ())
     code = invoice.sii_code if invoice is not None else group.dte_type
 
@@ -416,7 +425,7 @@ def _evaluate_one(group: FiscalMatch, ctx: EvalContext) -> None:
         group.tuu_state,
         group.rcv_state,
         has_invoice=invoice is not None,
-        excluded=_excluded(group, invoice, code, docs, ctx),
+        excluded=_excluded(group, invoice, code, docs, all_sales, ctx),
     )
     if group.status == FiscalMatchStatus.MATCHED:
         group.closed_period_alert = False

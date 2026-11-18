@@ -316,3 +316,25 @@ def test_sync_ranges_are_merged():
     ranges = [(d, d), (d, d + timedelta(days=1)), (d + timedelta(days=2), d + timedelta(days=2)),
               (d + timedelta(days=5), d + timedelta(days=6))]
     assert _merged_days(ranges) == [(d, d + timedelta(days=2)), (d + timedelta(days=5), d + timedelta(days=6))]
+
+
+def test_reversed_sale_is_released_from_its_document_group(tenv):
+    inv = make_pos_document(tenv, 5000, _ago(120))
+    sale = make_terminal_sale(tenv, 5000, _ago(118))
+    run_fiscal_match()
+    group = _group_of(inv)
+    assert group.status == FiscalMatchStatus.MATCHED
+
+    sale.refresh_from_db()
+    sale.status = TerminalSale.Status.REVERSED  # la sincronización la actualiza en su lugar
+    sale.save()
+    _sync_run(tenv)
+    run_fiscal_match()
+
+    _reload(group, sale)
+    assert sale.fiscal_match_id != group.id
+    assert (sale.matched_movement_id, sale.linked_manually) == (None, False)
+    assert sale.fiscal_match.invoice_id is None
+    assert sale.fiscal_match.status == FiscalMatchStatus.EXCLUDED
+    assert group.status != FiscalMatchStatus.MATCHED
+    assert group.tuu_amount is None

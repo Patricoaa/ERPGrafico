@@ -431,3 +431,14 @@ def test_group_for_invoice_survives_concurrent_create(imp):
 
     assert group.pk == _group_of(inv).pk
     assert FiscalMatch.objects.filter(invoice=inv).count() == 1
+
+
+def test_link_invoice_rejects_orphan_with_reversed_sale(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(300))
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    _ensure()
+    TerminalSale.objects.filter(pk=sale.pk).update(status=TerminalSale.Status.REVERSED)
+    sale.refresh_from_db()
+
+    with pytest.raises(ValidationError, match="no está completada"):
+        link_invoice(sale.fiscal_match, inv)

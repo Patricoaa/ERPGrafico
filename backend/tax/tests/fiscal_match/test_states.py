@@ -633,3 +633,25 @@ def test_factura_paid_cash_with_tuu_cash_boleta_attached_is_type_diff(env):
 
     assert g.tuu_state == D
     assert g.status == FiscalMatchStatus.DIFF
+
+
+def test_reversed_tuu_sale_does_not_back_its_payment(env):
+    invoice, group = pos_group(env, 5000, dte_type=Invoice.DTEType.COMPROBANTE_PAGO, method="CARD")
+    sale = sale_for(env, invoice, group, document_type=48, payment_type=TerminalSale.PaymentType.DEBIT)
+    TerminalSale.objects.filter(pk=sale.pk).update(status=TerminalSale.Status.REVERSED)
+    sync_run(env.provider)
+
+    g = one(group)
+
+    assert g.tuu_state == MI
+    assert g.tuu_amount is None
+    assert g.status != FiscalMatchStatus.MATCHED
+
+
+def test_orphan_with_only_reversed_sales_is_excluded(env):
+    sale = make_terminal_sale(env, 5000, AT, status=TerminalSale.Status.REVERSED)
+    ensure_groups(SINCE)
+    group = FiscalMatch.objects.create(direction=FiscalMatch.Direction.SALE, dte_type=48, issue_date=AT.date())
+    TerminalSale.objects.filter(pk=sale.pk).update(fiscal_match=group)
+
+    assert one(group).status == FiscalMatchStatus.EXCLUDED

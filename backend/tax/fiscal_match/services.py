@@ -43,6 +43,7 @@ IGNORED_PAYMENT = "El pago indicado solo aplica al vincular una venta TUU."
 BUSY_MESSAGE = "El cuadre automático se está ejecutando. Reintente en unos segundos."
 MOVED = "El registro cambió de grupo mientras tanto; actualice la ficha y reintente."
 GONE = "El grupo de cuadre ya no existe; actualice la ficha."
+NOT_COMPLETED = "La venta TUU no está completada."
 NOTHING_TO_ISSUE = "No hay nada para emitir en este grupo."
 
 P = ParamSpec("P")
@@ -213,6 +214,8 @@ def link_invoice(
     docs = list(RCVDocument.objects.select_for_update().filter(fiscal_match=orphan).order_by("id"))
     if movement is not None and not sales:
         raise ValidationError(IGNORED_PAYMENT)
+    if any(s.status != TerminalSale.Status.COMPLETED for s in sales):
+        raise ValidationError(NOT_COMPLETED)
     for doc in docs:
         _check_rcv(target, invoice, doc)
     if sales:
@@ -267,7 +270,7 @@ def link_terminal_sale(
     invoice = _require_invoice_group(group)
     _require_record_orphan(orphan)
     if sale.status != TerminalSale.Status.COMPLETED:
-        raise ValidationError("La venta TUU no está completada.")
+        raise ValidationError(NOT_COMPLETED)
     _check_movement(sale, movement, invoice)
     sale.fiscal_match, sale.matched_movement, sale.linked_manually = group, movement, True
     sale.save(update_fields=["fiscal_match", "matched_movement", "linked_manually"])

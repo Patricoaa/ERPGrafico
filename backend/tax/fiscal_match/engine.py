@@ -1,6 +1,6 @@
 """Motor único del cuadre: una corrida idempotente encadena todos los pasos (spec §5.4).
 
-Orden: grupos → liberar anulados → ERP ↔ TUU → TUU ↔ RCV boletas → ERP ↔ RCV →
+Orden: grupos → liberar anulados (documentos y ventas TUU) → ERP ↔ TUU → TUU ↔ RCV boletas → ERP ↔ RCV →
 estados → emisión → ERP ↔ RCV y estados de los emitidos. Cada paso es su propia
 transacción (salvo la emisión, que confirma documento por documento). Cada corrida
 queda en un ``FiscalMatchRun``; su ``started_at`` es la marca para la siguiente.
@@ -79,7 +79,7 @@ def _run(start: date, window: timedelta, since: datetime | None) -> dict:
     hi = local_midnight(today + timedelta(days=1))
 
     created = ensure_groups(start)
-    released = release_cancelled(start)
+    released = release_cancelled(start) | release_reversed(start)
     rematch = rematch_ids(start, window, since)
     terminal = link_terminal_sales(lo, hi, rematch_ids=rematch)
     boletas = pair_rcv_boletas(lo, hi)
@@ -243,5 +243,31 @@ def release_cancelled(start: date) -> set[int]:
     RCVDocument.objects.bulk_update(docs, ["fiscal_match"])
     FiscalMatch.objects.filter(id__in=sources | manual_rcv).update(rcv_linked_manually=False)
     touched = sources | manual_rcv | {g.id for g in sale_groups + rcv_groups}
+    stamp_groups(touched)
+    return touched
+
+
+@transaction.atomic
+def release_reversed(start: date) -> set[int]:
+    """Una venta TUU anulada (o no completada) deja el grupo de su documento.
+
+    La sincronización actualiza el estado en su lugar: sin esto la venta seguiría
+    respaldando su cobro. Vuelve, sin cobro ni marca manual, a un grupo huérfano propio
+    (que se evalúa ``EXCLUDED``); el grupo del documento queda esperando su venta.
+    """
+    sales = list(
+        TerminalSale.objects.filter(
+            fiscal_match__invoice__isnull=False, fiscal_match__issue_date__gte=start
+        ).exclude(status=TerminalSale.Status.COMPLETED)
+    )
+    if not sales:
+        return set()
+    sources = {s.fiscal_match_id for s in sales}
+    groups = [tuu_orphan_group(s) for s in sales]
+    FiscalMatch.objects.bulk_create(groups)
+    for sale, group in zip(sales, groups, strict=True):
+        sale.fiscal_match, sale.matched_movement, sale.linked_manually = group, None, False
+    TerminalSale.objects.bulk_update(sales, ["fiscal_match", "matched_movement", "linked_manually"])
+    touched = sources | {g.id for g in groups}
     stamp_groups(touched)
     return touched
