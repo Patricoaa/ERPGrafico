@@ -286,8 +286,9 @@ def _erp_q(term: str) -> Q:
 
 
 def _erp_search(g: _Group, q: str, ordering: Ordering) -> Search:
-    """Documentos de la misma dirección, evaluables, cuyo grupo no está cuadrado ni excluido
-    y no tiene ya registros de la parte que trae el huérfano."""
+    """Documentos de la misma dirección, evaluables, cuyo grupo no está cuadrado ni excluido,
+    que pueden recibir lo que trae el huérfano (Ruling G): con venta TUU, documentos con algún
+    cobro libre; con RCV, facturas y notas sin registro del SII o boletas aunque ya tengan."""
     group = g.group
     if group.invoice_id is not None or g.ref is None:
         return _empty()
@@ -300,10 +301,14 @@ def _erp_search(g: _Group, q: str, ordering: Ordering) -> Search:
         .exclude(status__in=SETTLED)
         .select_related("invoice__contact", "invoice__purchase_order__supplier")
     )
-    if g.own_sales:
-        qs = qs.exclude(Exists(TerminalSale.objects.filter(fiscal_match=OuterRef("pk"))))
-    if g.has_rcv:
-        qs = qs.exclude(Exists(RCVDocument.objects.filter(fiscal_match=OuterRef("pk"))))
+    if g.own_sales:  # un documento admite varias ventas TUU: basta un cobro libre
+        free = TreasuryMovement.objects.filter(
+            invoice=OuterRef("invoice"), movement_type=TreasuryMovement.Type.INBOUND
+        ).exclude(Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
+        qs = qs.filter(Exists(free))
+    if g.has_rcv:  # facturas y notas llevan un solo registro del SII; las boletas acumulan
+        has_rcv = Exists(RCVDocument.objects.filter(fiscal_match=OuterRef("pk")))
+        qs = qs.exclude(has_rcv & ~Q(dte_type__in=BOLETA_SII_CODES))
     qs = qs.filter(_erp_q(q)) if q else qs.filter(issue_date__gte=_since())
     return Search(_ordered(qs, g.ref, _ERP, ordering), lambda rows: _erp_items(g, rows))
 

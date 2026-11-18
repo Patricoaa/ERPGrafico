@@ -119,12 +119,14 @@ def test_reference_kind_per_group(tenv):
 # --- universo por parte ----------------------------------------------------------------
 
 
-def test_erp_universe_skips_settled_groups_and_groups_with_tuu(api, tenv):
+def test_erp_universe_skips_settled_groups_and_documents_without_free_payment(api, tenv):
     sale = make_terminal_sale(tenv, 7777, _at(hour=15))
     open_doc = make_pos_document(tenv, 5000, _at())
     matched = make_pos_document(tenv, 6000, _at())
     with_tuu = make_pos_document(tenv, 8000, _at())
-    taken = make_terminal_sale(tenv, 8000, _at(hour=11))
+    taken = make_terminal_sale(
+        tenv, 8000, _at(hour=11), matched_movement=TreasuryMovement.objects.get(invoice=with_tuu)
+    )  # su único cobro ya está respaldado: no le queda cobro libre
     _groups()
     FiscalMatch.objects.filter(invoice=matched).update(status=FiscalMatchStatus.MATCHED)
     _into(TerminalSale.objects.get(pk=taken.pk), _group_of(with_tuu))
@@ -363,3 +365,60 @@ def test_cash_sale_toward_an_invoice_is_blocking(api, tenv):
         "label": "Efectivo solo en boletas",
         "blocking": True,
     } in item["warnings"]
+
+
+# --- acumulación (Ruling G) -------------------------------------------------------------
+
+
+def test_erp_document_with_two_card_payments_and_one_sale_is_still_offered(api, tenv):
+    sale = make_terminal_sale(tenv, 3000, _at(hour=15))
+    invoice = make_pos_document(tenv, 5000, _at())
+    first = TreasuryMovement.objects.get(invoice=invoice)
+    TreasuryMovement.objects.filter(pk=first.pk).update(amount=2000)
+    second = TreasuryMovement.objects.create(
+        movement_type=TreasuryMovement.Type.INBOUND,
+        payment_method="CARD",
+        payment_method_new=tenv.card,
+        amount=3000,
+        created_by=tenv.user,
+        contact=tenv.customer,
+        to_account=tenv.cash_account,
+        invoice=invoice,
+        sale_order=invoice.sale_order,
+        pos_session=tenv.session,
+        date=invoice.date,
+    )
+    linked = make_terminal_sale(tenv, 2000, _at(hour=11), matched_movement=first)
+    fully_paid = make_pos_document(tenv, 3000, _at())
+    covering = make_terminal_sale(
+        tenv,
+        3000,
+        _at(hour=11),
+        matched_movement=TreasuryMovement.objects.get(invoice=fully_paid),
+    )
+    _groups()
+    _into(TerminalSale.objects.get(pk=linked.pk), _group_of(invoice))
+    _into(TerminalSale.objects.get(pk=covering.pk), _group_of(fully_paid))
+
+    item = _search(api, _group_of(sale), "erp")["results"]
+
+    assert [i["id"] for i in item] == [invoice.id]  # el pagado por completo no se ofrece
+    assert [m["id"] for m in item[0]["payments_by_sale"][str(sale.id)]] == [second.id]
+
+
+def test_erp_boleta_with_rcv_still_offered_and_factura_with_rcv_not(api, tenv):
+    orphan_doc = _rcv(_today(), 5000, 301, dte_type=39)
+    boleta = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    factura = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.FACTURA)
+    free_factura = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.FACTURA)
+    held_boleta = _rcv(_today(), 5000, 302, dte_type=39)
+    held_factura = _rcv(_today(), 5000, 303, dte_type=33)
+    _groups()
+    _into(RCVDocument.objects.get(pk=held_boleta.pk), _group_of(boleta))
+    _into(RCVDocument.objects.get(pk=held_factura.pk), _group_of(factura))
+
+    ids = _ids(_search(api, _group_of(orphan_doc), "erp"))
+
+    assert boleta.id in ids
+    assert free_factura.id in ids
+    assert factura.id not in ids
