@@ -8,6 +8,8 @@ author: backend-team
 
 # 0138 — Registro DTE local con control fiscal externo (RCV + TUU)
 
+> **Enmendado por ADR-0141:** D4–D6 (cuadre por pares y vínculos en `TerminalSale`/`RCVDocument`) pasan a un registro por grupo (`FiscalMatch`).
+
 **Relacionado:** ADR-0081 (facturación parcial y multi-orden), ADR-0084 (estado del documento desacoplado del pago), ADR-0089 (fusión de billing en ventas/compras), ADR-0091 (inmutabilidad económica), ADR-0118 (zero N+1), ADR-0134 (wizard F29). Specs: `docs/superpowers/specs/2026-11-14-rcv-importacion-simpleapi-design.md`, `docs/superpowers/specs/2026-11-13-tuu-sincronizacion-ventas-terminal-design.md`.
 
 ## Contexto

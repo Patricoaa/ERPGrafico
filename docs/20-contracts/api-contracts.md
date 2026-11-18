@@ -1113,7 +1113,7 @@ Lectura exige `tax.view_taxperiod`; toda acción, `tax.change_taxperiod`. Cada g
 
 ```
 GET    /api/tax/fiscal-matches/                          lista paginada (filtros: direction, status repetible o con comas, incluye `ATTENTION`)
-GET    /api/tax/fiscal-matches/counts/                   conteos por estado con los mismos filtros
+GET    /api/tax/fiscal-matches/counts/                   conteos por estado con los mismos filtros, más `last_run_at` y `start_date` (`fiscal_match_start_date` o null)
 GET    /api/tax/fiscal-matches/summary/?year=&month=     resumen mensual 39/41/48
 GET    /api/tax/fiscal-matches/pending-issue/            borradores 39/41/48 sin folio y su motivo
 GET    /api/tax/fiscal-matches/{id}/                     ficha del grupo
