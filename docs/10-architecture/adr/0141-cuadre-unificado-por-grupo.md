@@ -24,7 +24,7 @@ Un grupo es un documento ERP (0..1, `invoice` único) con sus ventas TUU (`Termi
 
 ### D2. Estados de parte y de grupo
 
-`core/fiscal_match.py` define `PartState` (`MATCHED`, `PENDING`, `MISSING`, `DIFF`, `AMBIGUOUS`, `NOT_APPLICABLE`, `SUMMARY_ONLY`) y `FiscalMatchStatus` (`EXCLUDED`, `AMBIGUOUS`, `DIFF`, `MISSING_ERP`, `MISSING_EXTERNAL`, `PENDING`, `MATCHED`, derivado por esa prioridad). Desaparecen `MatchStatus` y `PENDING_ERP`. Ante duda el resultado es `AMBIGUOUS`, nunca un vínculo.
+`core/fiscal_match.py` define `PartState` (`MATCHED`, `PENDING`, `MISSING`, `DIFF`, `AMBIGUOUS`, `NOT_APPLICABLE`, `SUMMARY_ONLY`) y `FiscalMatchStatus` (`EXCLUDED`, `AMBIGUOUS`, `DIFF`, `MISSING_ERP`, `MISSING_EXTERNAL`, `PENDING`, `MATCHED`, derivado por esa prioridad). Desaparecen `MatchStatus` y `PENDING_ERP`. Ante duda el resultado es `AMBIGUOUS`, nunca un vínculo. Etiquetas (2026-11-18): grupo `DIFF` = «Con advertencias»; parte `DIFF` = «Advertencia». Facturas y notas (33/34/56/61) cuyo registro RCV trae otro RUT quedan en `DIFF` en la parte RCV; las boletas 39/41 ignoran el RUT.
 
 ### D3. Cuadre de TUU por pago
 

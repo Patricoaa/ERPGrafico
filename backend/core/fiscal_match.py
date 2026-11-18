@@ -10,7 +10,7 @@ class PartState(models.TextChoices):
     MATCHED = "MATCHED", _("Cuadrado")
     PENDING = "PENDING", _("Pendiente")
     MISSING = "MISSING", _("Falta")
-    DIFF = "DIFF", _("Diferencia")
+    DIFF = "DIFF", _("Advertencia")
     AMBIGUOUS = "AMBIGUOUS", _("Ambiguo")
     NOT_APPLICABLE = "NOT_APPLICABLE", _("No aplica")
     SUMMARY_ONLY = "SUMMARY_ONLY", _("Solo resumen")
@@ -21,7 +21,7 @@ class FiscalMatchStatus(models.TextChoices):
 
     MATCHED = "MATCHED", _("Cuadrado")
     PENDING = "PENDING", _("Pendiente")
-    DIFF = "DIFF", _("Con diferencia")
+    DIFF = "DIFF", _("Con advertencias")
     AMBIGUOUS = "AMBIGUOUS", _("Ambiguo")
     MISSING_ERP = "MISSING_ERP", _("Falta en el ERP")
     MISSING_EXTERNAL = "MISSING_EXTERNAL", _("Falta en SII/TUU")

@@ -11,6 +11,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport
+from billing.fiscal_key import counterparty_rut
 from billing.models import Invoice
 from billing.tests.conftest import _any_account_is_cash, env  # noqa: F401 (fixtures)
 from billing.tests.test_pos_checkout_documents import _alloc, _checkout, _order, pos  # noqa: F401
@@ -189,7 +190,7 @@ def test_cancelled_invoice_releases_external_records(tenv):
     group = _group_of(inv)
     # El usuario confirma ambos vínculos a mano.
     TerminalSale.objects.filter(pk=sale.pk).update(linked_manually=True)
-    doc = _rcv(9000, dte_type=33, group=group)
+    doc = _rcv(9000, dte_type=33, group=group, rut=counterparty_rut(inv))
     FiscalMatch.objects.filter(pk=group.pk).update(rcv_linked_manually=True)
     run_fiscal_match()
     _reload(group)

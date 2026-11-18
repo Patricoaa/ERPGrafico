@@ -151,7 +151,7 @@ describe("FiscalMatchClientView", () => {
         expect(m.filterOptions?.status).toEqual(expect.arrayContaining([
             { label: "Necesita atención (44)", value: "attention" },
             { label: "Cuadrado (1.204)", value: "MATCHED" },
-            { label: "Con diferencia (5)", value: "DIFF" },
+            { label: "Con advertencias (5)", value: "DIFF" },
             { label: "Todos (1.248)", value: "all" },
         ]))
         expect(screen.getByText(/Última revisión: hace 4 minutos/)).toBeInTheDocument()

@@ -20,7 +20,7 @@ export const PART_STATE_LABELS: Record<PartState, string> = {
     MATCHED: "Cuadrado",
     PENDING: "Pendiente",
     MISSING: "Falta",
-    DIFF: "Diferencia",
+    DIFF: "Advertencia",
     AMBIGUOUS: "Ambiguo",
     NOT_APPLICABLE: "No aplica",
     SUMMARY_ONLY: "Solo resumen",
@@ -29,7 +29,7 @@ export const PART_STATE_LABELS: Record<PartState, string> = {
 export const FISCAL_MATCH_STATUS_LABELS: Record<FiscalMatchStatus, string> = {
     MATCHED: "Cuadrado",
     PENDING: "Pendiente",
-    DIFF: "Con diferencia",
+    DIFF: "Con advertencias",
     AMBIGUOUS: "Ambiguo",
     MISSING_ERP: "Falta en el ERP",
     MISSING_EXTERNAL: "Falta en SII/TUU",

@@ -14,7 +14,9 @@ from decimal import Decimal
 from django.db.models import Q
 from django.utils import timezone
 
+from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument, RCVImport, RCVSettings
+from billing.fiscal_key import counterparty_rut
 from billing.models import Invoice
 from core.fiscal_match import FiscalMatchStatus, PartState, derive_group_status
 from tax.fiscal_match.boletas import BOLETA_SII_CODES
@@ -123,7 +125,7 @@ def build_context(
     group_ids = [g.id for g in groups]
     invoice_ids = [g.invoice_id for g in groups if g.invoice_id is not None]
 
-    invoices = {i.id: i for i in Invoice.objects.filter(id__in=invoice_ids)}
+    invoices = {i.id: i for i in Invoice.objects.filter(id__in=invoice_ids).select_related("contact")}
     sales = _group_by(
         TerminalSale.objects.filter(fiscal_match_id__in=group_ids).order_by("id"), "fiscal_match_id"
     )
@@ -347,6 +349,14 @@ def _tuu_state(
     return PartState.PENDING
 
 
+def _same_rut(invoice: Invoice, docs: tuple[RCVDocument, ...]) -> bool:
+    """Facturas y notas: el RUT del RCV debe ser el del documento (si ambos lo informan)."""
+    expected = counterparty_rut(invoice)
+    if not expected:
+        return True
+    return all(not (rut := normalize_rut(d.counterparty_rut)) or rut == expected for d in docs)
+
+
 def _rcv_state(
     group: FiscalMatch,
     invoice: Invoice | None,
@@ -366,7 +376,7 @@ def _rcv_state(
         if code in BOLETA_SII_CODES:
             ok = group.rcv_amount in (group.erp_amount, group.tuu_amount)
         else:
-            ok = group.rcv_amount == invoice.total
+            ok = group.rcv_amount == invoice.total and _same_rut(invoice, docs)
         return PartState.MATCHED if ok else PartState.DIFF
     direction = _RCV_DIRECTION[group.direction]
     months = _rcv_months(group, group.fiscal_period)
