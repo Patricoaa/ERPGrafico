@@ -112,7 +112,7 @@ export function useFiscalMatchPurchaseOrders(groupId: number, enabled: boolean) 
 /** Asigna folio y fecha del RCV al borrador, lo emite y lo une al grupo. */
 export function useConfirmFiscalMatchDraft() {
     return useGroupMutation(
-        (v: { groupId: number; invoiceId: number }, key) => fiscalMatchApi.confirmDraft(v.groupId, v.invoiceId, key),
+        (v: { id: number; invoiceId: number }, key) => fiscalMatchApi.confirmDraft(v.id, v.invoiceId, key),
         { success: 'Factura emitida con el folio del RCV', error: 'No se pudo emitir el borrador' },
     )
 }
@@ -120,8 +120,8 @@ export function useConfirmFiscalMatchDraft() {
 /** Crea un borrador de compra desde la OC con el folio del RCV, ya unido al grupo. */
 export function useCreateFiscalMatchDraft() {
     return useGroupMutation(
-        (v: { groupId: number; purchaseOrderId: number }, key) =>
-            fiscalMatchApi.createDraft(v.groupId, v.purchaseOrderId, key),
+        (v: { id: number; purchaseOrderId: number }, key) =>
+            fiscalMatchApi.createDraft(v.id, v.purchaseOrderId, key),
         { success: 'Borrador creado desde la OC', error: 'No se pudo crear el borrador' },
     )
 }

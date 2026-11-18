@@ -293,7 +293,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             },
         }, {
             key: "fiscal",
-            title: "Cuadre fiscal sin diferencias",
+            title: "Cuadre sin diferencias",
             passed: fiscalMismatches === 0,
             detail: fiscalMismatches > 0 ? `${fiscalMismatches} diferencia(s) con TUU o el SII` : undefined,
             action: fiscalMismatches > 0

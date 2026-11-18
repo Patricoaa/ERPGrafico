@@ -8,10 +8,12 @@ import {
     useLinkFiscalMatch,
     useReleaseFiscalMatch,
 } from '../useFiscalMatches'
+import { useConfirmFiscalMatchDraft } from '../useRcvFeeding'
 
 const list = vi.fn<(filters: unknown, page: number) => Promise<unknown>>()
 const counts = vi.fn<(filters: unknown) => Promise<unknown>>()
 const link = vi.fn<(id: number, body: unknown, key: string) => Promise<unknown>>()
+const confirmDraft = vi.fn<(id: number, invoiceId: number, key: string) => Promise<unknown>>()
 const release = vi.fn<(id: number, key: string) => Promise<unknown>>()
 const markLocalMutation = vi.fn()
 const showApiError = vi.fn()
@@ -22,6 +24,7 @@ vi.mock('../../api/fiscalMatchApi', () => ({
         counts: (f: unknown): unknown => counts(f),
         link: (id: number, b: unknown, k: string): unknown => link(id, b, k),
         release: (id: number, k: string): unknown => release(id, k),
+        confirmDraft: (id: number, inv: number, k: string): unknown => confirmDraft(id, inv, k),
     },
 }))
 vi.mock('@/features/realtime', () => ({ useRealtime: () => ({ markLocalMutation }) }))
@@ -82,6 +85,31 @@ describe('mutaciones', () => {
         expect(client.getQueryData(['fiscal-match', 'detail', 7])).toBeUndefined()
         expect(client.getQueryData(['fiscal-match', 'detail', 8])).toEqual({ id: 8 })
         finish()
+    })
+    it('confirmar un borrador que disuelve el huérfano descarta su detalle viejo', async () => {
+        confirmDraft.mockResolvedValue({ id: 9 })
+        const { Wrapper, client } = setup()
+        client.setQueryData(['fiscal-match', 'detail', 7], { id: 7 })
+        const { result } = renderHook(() => useConfirmFiscalMatchDraft(), { wrapper: Wrapper })
+        await act(async () => { await result.current.mutateAsync({ id: 7, invoiceId: 3 }) })
+        expect(confirmDraft).toHaveBeenCalledWith(7, 3, expect.any(String))
+        expect(client.getQueryData(['fiscal-match', 'detail', 7])).toBeUndefined()
+    })
+    it('si el grupo no cambia de id espera la invalidación', async () => {
+        link.mockResolvedValue({ id: 7 })
+        const { Wrapper, invalidate } = setup()
+        const finishers: (() => void)[] = []
+        const finish = () => finishers.forEach((f) => f())
+        invalidate.mockImplementation(() => new Promise<void>((resolve) => { finishers.push(resolve) }))
+        const { result } = renderHook(() => useLinkFiscalMatch(), { wrapper: Wrapper })
+        let done = false
+        const pending = result.current.mutateAsync({ id: 7, body: { part: 'rcv', id: 3 } }).then(() => { done = true })
+        await waitFor(() => expect(invalidate).toHaveBeenCalled())
+        await Promise.resolve()
+        expect(done).toBe(false)
+        finish()
+        await act(async () => { await pending })
+        expect(done).toBe(true)
     })
     it('conserva la clave ante un fallo incierto y reintenta con la misma', async () => {
         release.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({})

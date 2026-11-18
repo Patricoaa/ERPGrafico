@@ -15,6 +15,12 @@ export const STATUS_ATTENTION = 'attention'
 export const STATUS_ALL = 'all'
 export const DEFAULT_DIRECTION: FiscalMatchDirection = 'sale'
 
+/** Opciones del filtro `direction`; también las usa el control Ventas | Compras de la página. */
+export const DIRECTION_OPTIONS: { label: string; value: FiscalMatchDirection }[] = [
+  { label: 'Ventas', value: 'sale' },
+  { label: 'Compras', value: 'purchase' },
+]
+
 /**
  * Filtros de la página Cuadre. Sin `direction` ni `status` en la URL valen los por defecto
  * (ventas, necesita atención); «Todos» (`status=all`) quita el filtro de estado.
@@ -27,10 +33,7 @@ export const fiscalMatchUnifiedSearchDef: UnifiedSearchConfig = {
       key: 'direction',
       label: 'Dirección',
       serverParam: 'direction',
-      options: [
-        { label: 'Ventas', value: 'sale' },
-        { label: 'Compras', value: 'purchase' },
-      ],
+      options: DIRECTION_OPTIONS,
     },
     {
       type: 'single',

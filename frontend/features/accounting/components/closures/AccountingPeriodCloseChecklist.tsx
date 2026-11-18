@@ -92,7 +92,7 @@ function buildItems(status: AccountingPeriodStatus, year: number, month: number,
             },
             {
                 key: 'fiscal',
-                title: 'Cuadre fiscal sin diferencias',
+                title: 'Cuadre sin diferencias',
                 passed: fiscalMismatches === 0,
                 detail: fiscalMismatches > 0 ? `${fiscalMismatches} diferencia(s) con TUU o el SII` : undefined,
                 action: fiscalMismatches > 0

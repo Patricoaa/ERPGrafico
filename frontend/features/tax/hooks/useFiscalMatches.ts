@@ -107,8 +107,13 @@ export function useGroupMutation<V, R = unknown>(
             // antes de invalidar para no refetchearlo (404 visible) y se resuelve sin esperar la
             // invalidación, así la ficha sigue al grupo resultante de inmediato.
             const from = idOf(vars)
-            if (from !== undefined && from !== idOf(result)) qc.removeQueries({ queryKey: FISCAL_MATCH_KEYS.detail(from) })
-            void invalidate()
+            if (from !== undefined && from !== idOf(result)) {
+                qc.removeQueries({ queryKey: FISCAL_MATCH_KEYS.detail(from) })
+                void invalidate()
+                return
+            }
+            // Mismo grupo: `isPending` sigue activo hasta que la ficha queda refrescada.
+            return invalidate()
         },
         onError: (e) => {
             failed(e)

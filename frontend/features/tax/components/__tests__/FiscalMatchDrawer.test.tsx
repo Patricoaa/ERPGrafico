@@ -335,10 +335,10 @@ describe("FiscalMatchDrawer", () => {
         expect(m.feedingCalls).toContainEqual([4, true])
         m.createDraft.mockResolvedValue({ ...purchaseOrphan, id: 4 })
         await user.click(screen.getByRole("button", { name: "Crear borrador desde OC OC-400" }))
-        expect(m.createDraft).toHaveBeenCalledWith({ groupId: 4, purchaseOrderId: 400 })
+        expect(m.createDraft).toHaveBeenCalledWith({ id: 4, purchaseOrderId: 400 })
         await user.click(screen.getByRole("button", { name: "Asignar folio y emitir" }))
         await user.click(screen.getByRole("button", { name: "Emitir" }))
-        expect(m.confirmDraft).toHaveBeenCalledWith({ groupId: 4, invoiceId: 300 })
+        expect(m.confirmDraft).toHaveBeenCalledWith({ id: 4, invoiceId: 300 })
     })
 
     it("venta no muestra alimentación de compras", () => {

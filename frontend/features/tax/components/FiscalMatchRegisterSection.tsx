@@ -91,7 +91,7 @@ export function FiscalMatchRegisterSection({ groupId, doc, onGroupChange }: Fisc
                                 disabled={busy}
                                 aria-label={`Crear borrador desde OC ${o.display_id}`}
                                 onClick={() =>
-                                    void create.mutateAsync({ groupId, purchaseOrderId: o.id }).then((g) => onGroupChange?.(g)).catch(() => undefined)
+                                    void create.mutateAsync({ id: groupId, purchaseOrderId: o.id }).then((g) => onGroupChange?.(g)).catch(() => undefined)
                                 }
                             >
                                 Crear borrador desde OC
@@ -106,7 +106,7 @@ export function FiscalMatchRegisterSection({ groupId, doc, onGroupChange }: Fisc
                 // Si falla, el hook ya muestra el error y el diálogo queda abierto.
                 onConfirm={async () => {
                     if (!pending) return
-                    const result = await confirm.mutateAsync({ groupId, invoiceId: pending.id })
+                    const result = await confirm.mutateAsync({ id: groupId, invoiceId: pending.id })
                     onGroupChange?.(result)
                 }}
                 title="Asignar folio y emitir"

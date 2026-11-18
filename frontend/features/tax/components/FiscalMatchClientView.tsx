@@ -18,6 +18,7 @@ import {
 } from "@/components/shared"
 import { EntityPanelTab } from "@/components/providers"
 import { Button } from "@/components/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useServerDate } from "@/hooks/useServerDate"
 import { fiscalMatchStatusValue, type FiscalMatchStatus } from "@/lib/fiscal-match"
@@ -32,6 +33,7 @@ import {
 } from "../entity-view/fiscalMatchSummary.entity"
 import {
     DEFAULT_DIRECTION,
+    DIRECTION_OPTIONS,
     FISCAL_MATCH_STATUSES,
     SETTLED_STATUSES,
     STATUS_ALL,
@@ -160,28 +162,22 @@ function lastRunText(lastRunAt: string | null): string {
     return `Última revisión: ${formatDistanceToNow(new Date(lastRunAt), { addSuffix: true, locale: es })}`
 }
 
-const DIRECTION_OPTIONS = [
-    { value: "sale", label: "Ventas" },
-    { value: "purchase", label: "Compras" },
-] as const
-
 /** Ventas | Compras: ligado al filtro `direction` (sin parámetro = Ventas). */
 function DirectionControl({ direction, search }: { direction: FiscalMatchDirection; search: UseUnifiedSearchReturn }) {
     return (
-        <div role="group" aria-label="Dirección" className="inline-flex items-center gap-1 rounded-md border bg-muted/40 p-0.5">
+        <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={direction}
+            aria-label="Dirección"
+            // Radix devuelve "" al pulsar la opción ya activa: se ignora.
+            onValueChange={(value) => { if (value) void search.applyFilter("direction", value) }}
+        >
             {DIRECTION_OPTIONS.map((option) => (
-                <Button
-                    key={option.value}
-                    type="button"
-                    size="sm"
-                    variant={direction === option.value ? "secondary" : "ghost"}
-                    aria-pressed={direction === option.value}
-                    onClick={() => void search.applyFilter("direction", option.value)}
-                >
-                    {option.label}
-                </Button>
+                <ToggleGroupItem key={option.value} value={option.value}>{option.label}</ToggleGroupItem>
             ))}
-        </div>
+        </ToggleGroup>
     )
 }
 

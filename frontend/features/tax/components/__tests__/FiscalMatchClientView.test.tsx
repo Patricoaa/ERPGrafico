@@ -180,9 +180,9 @@ describe("FiscalMatchClientView", () => {
     it("muestra el control Ventas | Compras con Ventas por defecto y cambia la dirección", async () => {
         render(<FiscalMatchClientView />)
         const control = screen.getByRole("group", { name: "Dirección" })
-        expect(within(control).getByRole("button", { name: "Ventas" })).toHaveAttribute("aria-pressed", "true")
-        expect(within(control).getByRole("button", { name: "Compras" })).toHaveAttribute("aria-pressed", "false")
-        await userEvent.click(within(control).getByRole("button", { name: "Compras" }))
+        expect(within(control).getByRole("radio", { name: "Ventas" })).toHaveAttribute("aria-checked", "true")
+        expect(within(control).getByRole("radio", { name: "Compras" })).toHaveAttribute("aria-checked", "false")
+        await userEvent.click(within(control).getByRole("radio", { name: "Compras" }))
         expect(m.applyFilter).toHaveBeenCalledWith("direction", "purchase")
     })
 
@@ -190,7 +190,7 @@ describe("FiscalMatchClientView", () => {
         m.filters = { direction: "purchase" }
         render(<FiscalMatchClientView />)
         const control = screen.getByRole("group", { name: "Dirección" })
-        expect(within(control).getByRole("button", { name: "Compras" })).toHaveAttribute("aria-pressed", "true")
+        expect(within(control).getByRole("radio", { name: "Compras" })).toHaveAttribute("aria-checked", "true")
     })
 
     it("status=all lists every group", () => {
