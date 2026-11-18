@@ -125,7 +125,10 @@ def pair_rcv_boletas(lo: datetime, hi: datetime) -> LinkResult:
         d.fiscal_match_id = new_group[d.id]
     RCVDocument.objects.bulk_update(moved, ["fiscal_match"], batch_size=500)
     FiscalMatch.objects.filter(
-        id__in=source_ids, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
+        id__in=source_ids,
+        invoice__isnull=True,
+        terminal_sales__isnull=True,
+        rcv_documents__isnull=True,
     ).delete()
     stamp_groups(touched)
     return LinkResult(len(moved), touched_group_ids=touched)

@@ -57,7 +57,10 @@ def rcv_group_candidates(doc: RCVDocument) -> "models.QuerySet[Invoice]":
     taken = RCVDocument.objects.filter(fiscal_match__invoice=OuterRef("pk")).exclude(pk=doc.pk)
     rows = (
         rcv_family(doc)
-        .annotate(snapshot_rut=rut_body("partner_tax_id_snapshot"), contact_rut=rut_body("contact__tax_id"))
+        .annotate(
+            snapshot_rut=rut_body("partner_tax_id_snapshot"),
+            contact_rut=rut_body("contact__tax_id"),
+        )
         .filter(Q(snapshot_rut=body) | Q(partner_tax_id_snapshot="", contact_rut=body))
         .filter(Q(total=total) | ~Q(number=""))
         .filter(~Exists(taken))
@@ -80,7 +83,9 @@ def candidates_by_key(
     fiscal_direction: str | None, first: date, last: date
 ) -> dict[FiscalKey, list[tuple[int, int]]]:
     """Clave fiscal → [(invoice_id, group_id)] de facturas contabilizadas sin RCV en su grupo."""
-    dte_types = [SII_CODE_TO_DTE_TYPE[code] for code in DOCUMENT_SII_CODES] + [Invoice.DTEType.PURCHASE_INV]
+    dte_types = [SII_CODE_TO_DTE_TYPE[code] for code in DOCUMENT_SII_CODES] + [
+        Invoice.DTEType.PURCHASE_INV
+    ]
     taken = RCVDocument.objects.filter(fiscal_match__invoice=OuterRef("pk"))
     groups = FiscalMatch.objects.filter(invoice=OuterRef("pk"))
     invoices = (
@@ -100,7 +105,9 @@ def candidates_by_key(
         invoices = invoices.filter(fiscal_direction=fiscal_direction)
     invoices = list(invoices)
     group_of = dict(
-        FiscalMatch.objects.filter(invoice_id__in=[i.id for i in invoices]).values_list("invoice_id", "id")
+        FiscalMatch.objects.filter(invoice_id__in=[i.id for i in invoices]).values_list(
+            "invoice_id", "id"
+        )
     )
     by_key: dict[FiscalKey, list[tuple[int, int]]] = defaultdict(list)
     for invoice in invoices:
@@ -134,7 +141,12 @@ def link_rcv_documents(since: date) -> LinkResult:
     last = max(d.issue_date for d in docs)
     by_key = candidates_by_key(None, first, last)
     doc_keys = [
-        FiscalKey(RCV_TO_FISCAL_DIRECTION[d.direction], d.dte_type, d.folio, normalize_rut(d.counterparty_rut))
+        FiscalKey(
+            RCV_TO_FISCAL_DIRECTION[d.direction],
+            d.dte_type,
+            d.folio,
+            normalize_rut(d.counterparty_rut),
+        )
         for d in docs
     ]
     repeated = {k for k, n in Counter(doc_keys).items() if n > 1}
@@ -157,7 +169,10 @@ def link_rcv_documents(since: date) -> LinkResult:
     if moved:
         RCVDocument.objects.bulk_update(moved, ["fiscal_match"], batch_size=500)
         FiscalMatch.objects.filter(
-            id__in=emptied, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
+            id__in=emptied,
+            invoice__isnull=True,
+            terminal_sales__isnull=True,
+            rcv_documents__isnull=True,
         ).delete()
     stamp_groups(touched)
     return LinkResult(len(moved), ambiguous, touched)

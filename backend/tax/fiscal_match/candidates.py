@@ -110,13 +110,20 @@ def terminals_by_device(device_ids: set[int]) -> dict[int, set[int]]:
     return out
 
 
-def payment_compatible(sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]) -> bool:
+def payment_compatible(
+    sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]
+) -> bool:
     if sale.payment_type == TerminalSale.PaymentType.CASH:
         if m.payment_method != "CASH":
             return False
         if sale.device_id is None:
             return True
-        return m.pos_session is not None and m.pos_session.terminal_id in terminals.get(sale.device_id, ())
+        return m.pos_session is not None and m.pos_session.terminal_id in terminals.get(
+            sale.device_id, ()
+        )
     if sale.device_id is None:
         return True
-    return m.payment_method_new is not None and m.payment_method_new.linked_terminal_device_id == sale.device_id
+    return (
+        m.payment_method_new is not None
+        and m.payment_method_new.linked_terminal_device_id == sale.device_id
+    )

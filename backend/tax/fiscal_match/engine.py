@@ -51,7 +51,9 @@ def run_fiscal_match() -> dict:
         return {"skipped": True}
     # Solo una corrida sin error avanza la marca: una fallida pudo revertir sus pasos.
     previous = (
-        FiscalMatchRun.objects.filter(finished_at__isnull=False, error="").order_by("-finished_at", "-id").first()
+        FiscalMatchRun.objects.filter(finished_at__isnull=False, error="")
+        .order_by("-finished_at", "-id")
+        .first()
     )
     since = previous.started_at if previous is not None else None
     run = FiscalMatchRun.objects.create()
@@ -93,7 +95,9 @@ def _run(start: date, window: timedelta, since: datetime | None) -> dict:
         | tuu_ambiguous
         | rcv.ambiguous_group_ids
     )
-    evaluated = _evaluate(_scope(start, since) | Q(id__in=touched), tuu_ambiguous, rcv.ambiguous_group_ids)
+    evaluated = _evaluate(
+        _scope(start, since) | Q(id__in=touched), tuu_ambiguous, rcv.ambiguous_group_ids
+    )
 
     drafts = set(
         FiscalMatch.objects.filter(
@@ -213,13 +217,17 @@ def release_cancelled(start: date) -> set[int]:
     automático y el grupo del documento anulado se evalúa como ``EXCLUDED``.
     Devuelve los grupos tocados (los del documento y los huérfanos nuevos).
     """
-    cancelled = Q(fiscal_match__invoice__status=Invoice.Status.CANCELLED, fiscal_match__issue_date__gte=start)
+    cancelled = Q(
+        fiscal_match__invoice__status=Invoice.Status.CANCELLED, fiscal_match__issue_date__gte=start
+    )
     sales = list(TerminalSale.objects.filter(cancelled))
     docs = list(RCVDocument.objects.filter(cancelled))
     sources = {r.fiscal_match_id for r in (*sales, *docs)}
     manual_rcv = set(
         FiscalMatch.objects.filter(
-            invoice__status=Invoice.Status.CANCELLED, issue_date__gte=start, rcv_linked_manually=True
+            invoice__status=Invoice.Status.CANCELLED,
+            issue_date__gte=start,
+            rcv_linked_manually=True,
         ).values_list("id", flat=True)
     )
     if not sources and not manual_rcv:

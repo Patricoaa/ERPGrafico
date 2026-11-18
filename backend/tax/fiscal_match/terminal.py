@@ -59,7 +59,9 @@ def link_terminal_sales(lo: datetime, hi: datetime, *, rematch_ids: set[int]) ->
         .exclude(id__in=selected)
         .values_list("matched_movement_id", flat=True)
     )
-    movements = [m for m in candidate_movements_where(_within("created_at", spans)) if m.id not in taken]
+    movements = [
+        m for m in candidate_movements_where(_within("created_at", spans)) if m.id not in taken
+    ]
     # Ventas vecinas sin cobro compiten por los mismos cobros: se leen para detectar
     # ambigüedad (también en el borde del rango), pero no se escriben.
     competitors = list(
@@ -74,7 +76,9 @@ def link_terminal_sales(lo: datetime, hi: datetime, *, rematch_ids: set[int]) ->
 
     candidates = _candidates(sales, movements, window, terminals)
     rivals = _candidates(competitors, movements, window, terminals)
-    uses: Counter[int] = Counter(m for cands in (*candidates.values(), *rivals.values()) for m in cands)
+    uses: Counter[int] = Counter(
+        m for cands in (*candidates.values(), *rivals.values()) for m in cands
+    )
     # Una venta seleccionada que conserva su cobro sin tenerlo de candidato (cambió el
     # monto, o su nuevo cobro no tiene grupo) lo sigue ocupando: cuenta como un uso más.
     for s in sales:
@@ -145,7 +149,8 @@ def _candidates(
         out[s.id] = {
             m.id
             for m in (by_amount.get(key, ()) if key is not None else ())
-            if abs(m.created_at - s.transaction_at) <= window and payment_compatible(s, m, terminals)
+            if abs(m.created_at - s.transaction_at) <= window
+            and payment_compatible(s, m, terminals)
         }
     return out
 
@@ -155,8 +160,12 @@ def _attach(
 ) -> LinkResult:
     """Mueve cada venta con cobro único al grupo de su documento (con las boletas RCV de su huérfano)."""
     invoice_ids = {m.invoice_id for m in unique.values()}
-    groups = dict(FiscalMatch.objects.filter(invoice_id__in=invoice_ids).values_list("invoice_id", "id"))
-    orphan_ids = {s.fiscal_match_id for s in sales if s.id in unique and s.fiscal_match.invoice_id is None}
+    groups = dict(
+        FiscalMatch.objects.filter(invoice_id__in=invoice_ids).values_list("invoice_id", "id")
+    )
+    orphan_ids = {
+        s.fiscal_match_id for s in sales if s.id in unique and s.fiscal_match.invoice_id is None
+    }
     rcv_docs = list(
         RCVDocument.objects.filter(fiscal_match_id__in=orphan_ids | set(groups.values())).only(
             "id", "fiscal_match_id"
@@ -191,7 +200,10 @@ def _attach(
     TerminalSale.objects.bulk_update(moved_sales, ["fiscal_match", "matched_movement"])
     RCVDocument.objects.bulk_update(moved_rcv, ["fiscal_match"])
     FiscalMatch.objects.filter(
-        id__in=orphan_ids, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
+        id__in=orphan_ids,
+        invoice__isnull=True,
+        terminal_sales__isnull=True,
+        rcv_documents__isnull=True,
     ).delete()
     stamp_groups(touched)
     return LinkResult(len(moved_sales), ambiguous, touched)

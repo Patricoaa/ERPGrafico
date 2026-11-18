@@ -83,7 +83,9 @@ def _exclusive(fn: Callable[P, R]) -> Callable[P, R]:
 def _lock_groups(*group_ids: int | None) -> dict[int, FiscalMatch]:
     """Bloquea los grupos en orden ascendente de id (sin interbloqueos entre acciones)."""
     ids = sorted({i for i in group_ids if i is not None})
-    return {g.pk: g for g in FiscalMatch.objects.select_for_update().filter(id__in=ids).order_by("id")}
+    return {
+        g.pk: g for g in FiscalMatch.objects.select_for_update().filter(id__in=ids).order_by("id")
+    }
 
 
 def _locked(groups: dict[int, FiscalMatch], group_id: int) -> FiscalMatch:
@@ -96,7 +98,11 @@ def _locked(groups: dict[int, FiscalMatch], group_id: int) -> FiscalMatch:
 def _lock_record(model: type[TerminalSale] | type[RCVDocument], record: TerminalSale | RCVDocument):
     """Relee el registro bloqueado; error si dejó el grupo en que se leyó."""
     fresh = model.objects.select_for_update().filter(pk=record.pk).first()
-    if fresh is None or fresh.fiscal_match_id is None or fresh.fiscal_match_id != record.fiscal_match_id:
+    if (
+        fresh is None
+        or fresh.fiscal_match_id is None
+        or fresh.fiscal_match_id != record.fiscal_match_id
+    ):
         raise ValidationError(MOVED)
     return fresh
 
@@ -119,7 +125,10 @@ def _rederive(group_ids: set[int]) -> None:
 
 def _drop_empty(group_ids: set[int]) -> None:
     FiscalMatch.objects.filter(
-        id__in=group_ids, invoice__isnull=True, terminal_sales__isnull=True, rcv_documents__isnull=True
+        id__in=group_ids,
+        invoice__isnull=True,
+        terminal_sales__isnull=True,
+        rcv_documents__isnull=True,
     ).delete()
 
 
@@ -153,7 +162,9 @@ def _taken_movements(movement_ids: list[int], *, excluding: list[int] = ()) -> s
 
 def _inbound(invoice: Invoice) -> list[TreasuryMovement]:
     return list(
-        TreasuryMovement.objects.filter(invoice=invoice, movement_type=TreasuryMovement.Type.INBOUND)
+        TreasuryMovement.objects.filter(
+            invoice=invoice, movement_type=TreasuryMovement.Type.INBOUND
+        )
         .select_related("payment_method_new")
         .order_by("id")
     )
@@ -181,7 +192,9 @@ def _check_rcv(group: FiscalMatch, invoice: Invoice, doc: RCVDocument) -> None:
 
 
 @_exclusive
-def link_invoice(group: FiscalMatch, invoice: Invoice, movement: TreasuryMovement | None = None) -> FiscalMatch:
+def link_invoice(
+    group: FiscalMatch, invoice: Invoice, movement: TreasuryMovement | None = None
+) -> FiscalMatch:
     """Une un grupo huérfano al documento ERP: sus registros pasan al grupo del documento."""
     target = group_for_invoice(invoice)
     if target is None:
@@ -192,7 +205,11 @@ def link_invoice(group: FiscalMatch, invoice: Invoice, movement: TreasuryMovemen
     if target.direction != orphan.direction:
         raise ValidationError("El documento es de otra dirección (compra/venta).")
 
-    sales = list(TerminalSale.objects.select_for_update().filter(fiscal_match=orphan).order_by("transaction_at", "id"))
+    sales = list(
+        TerminalSale.objects.select_for_update()
+        .filter(fiscal_match=orphan)
+        .order_by("transaction_at", "id")
+    )
     docs = list(RCVDocument.objects.select_for_update().filter(fiscal_match=orphan).order_by("id"))
     if movement is not None and not sales:
         raise ValidationError(IGNORED_PAYMENT)
@@ -202,7 +219,9 @@ def link_invoice(group: FiscalMatch, invoice: Invoice, movement: TreasuryMovemen
         _assign_payments(sales, invoice, movement)
         for sale in sales:
             sale.fiscal_match, sale.linked_manually = target, True
-        TerminalSale.objects.bulk_update(sales, ["fiscal_match", "matched_movement", "linked_manually"])
+        TerminalSale.objects.bulk_update(
+            sales, ["fiscal_match", "matched_movement", "linked_manually"]
+        )
     if docs:
         RCVDocument.objects.filter(id__in=[d.pk for d in docs]).update(fiscal_match=target)
         target.rcv_linked_manually = True
@@ -212,7 +231,9 @@ def link_invoice(group: FiscalMatch, invoice: Invoice, movement: TreasuryMovemen
     return _fresh(target.pk)
 
 
-def _assign_payments(sales: list[TerminalSale], invoice: Invoice, movement: TreasuryMovement | None) -> None:
+def _assign_payments(
+    sales: list[TerminalSale], invoice: Invoice, movement: TreasuryMovement | None
+) -> None:
     """A cada venta su cobro del documento: el indicado o el único libre del mismo monto."""
     inbound = _inbound(invoice)
     taken = _taken_movements([m.pk for m in inbound], excluding=[s.pk for s in sales])
@@ -233,7 +254,9 @@ def _assign_payments(sales: list[TerminalSale], invoice: Invoice, movement: Trea
 
 
 @_exclusive
-def link_terminal_sale(group: FiscalMatch, sale: TerminalSale, movement: TreasuryMovement) -> FiscalMatch:
+def link_terminal_sale(
+    group: FiscalMatch, sale: TerminalSale, movement: TreasuryMovement
+) -> FiscalMatch:
     """Agrega al documento una venta TUU huérfana como respaldo de uno de sus cobros."""
     if sale.fiscal_match_id is None:
         raise ValidationError("El registro aún no tiene grupo de cuadre.")
@@ -280,7 +303,9 @@ def link_rcv_document(group: FiscalMatch, doc: RCVDocument) -> FiscalMatch:
     return _fresh(group.pk)
 
 
-def link(group: FiscalMatch, part: LinkPart, record_id: int, movement_id: int | None = None) -> FiscalMatch:
+def link(
+    group: FiscalMatch, part: LinkPart, record_id: int, movement_id: int | None = None
+) -> FiscalMatch:
     """Despacha la unión pedida por la API; devuelve el grupo resultante."""
     if part == "rcv" and movement_id is not None:
         raise ValidationError(IGNORED_PAYMENT)
@@ -302,7 +327,11 @@ def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
     """Saca un registro a un grupo huérfano nuevo marcado como manual (Review Focus 2)."""
     group = _locked(_lock_groups(group.pk), group.pk)
     if part == "tuu":
-        sale = TerminalSale.objects.select_for_update().filter(fiscal_match=group, pk=record_id).first()
+        sale = (
+            TerminalSale.objects.select_for_update()
+            .filter(fiscal_match=group, pk=record_id)
+            .first()
+        )
         if sale is None:
             raise ValidationError("La venta TUU no pertenece a este grupo.")
         orphan = tuu_orphan_group(sale)
@@ -310,7 +339,9 @@ def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
         sale.fiscal_match, sale.matched_movement, sale.linked_manually = orphan, None, True
         sale.save(update_fields=["fiscal_match", "matched_movement", "linked_manually"])
     else:
-        doc = RCVDocument.objects.select_for_update().filter(fiscal_match=group, pk=record_id).first()
+        doc = (
+            RCVDocument.objects.select_for_update().filter(fiscal_match=group, pk=record_id).first()
+        )
         if doc is None:
             raise ValidationError("El registro del SII no pertenece a este grupo.")
         orphan = rcv_orphan_group(doc)
@@ -318,7 +349,10 @@ def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
         orphan.save()
         doc.fiscal_match = orphan
         doc.save(update_fields=["fiscal_match"])
-        if group.rcv_linked_manually and not RCVDocument.objects.filter(fiscal_match=group).exists():
+        if (
+            group.rcv_linked_manually
+            and not RCVDocument.objects.filter(fiscal_match=group).exists()
+        ):
             group.rcv_linked_manually = False
             group.save(update_fields=["rcv_linked_manually"])
     _drop_empty({group.pk})
@@ -331,7 +365,9 @@ def release(group: FiscalMatch) -> FiscalMatch:
     """Devuelve un huérfano al cruce automático: borra sus marcas manuales."""
     group = _locked(_lock_groups(group.pk), group.pk)
     _require_orphan(group)
-    TerminalSale.objects.filter(fiscal_match=group).update(linked_manually=False, updated_at=timezone.now())
+    TerminalSale.objects.filter(fiscal_match=group).update(
+        linked_manually=False, updated_at=timezone.now()
+    )
     group.rcv_linked_manually = False
     group.save(update_fields=["rcv_linked_manually"])
     _rederive({group.pk})
@@ -382,16 +418,20 @@ def _erp_candidates(group: FiscalMatch) -> list[Invoice]:
 
 def _free_payments(amount: Decimal) -> "models.QuerySet[TreasuryMovement]":
     """Cobros del monto indicado que ninguna venta TUU respalda."""
-    return TreasuryMovement.objects.filter(movement_type=TreasuryMovement.Type.INBOUND, amount=amount).filter(
-        ~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk")))
-    )
+    return TreasuryMovement.objects.filter(
+        movement_type=TreasuryMovement.Type.INBOUND, amount=amount
+    ).filter(~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
 
 
 def _sale_invoice_candidates(sale: TerminalSale) -> list[Invoice]:
     free_payment = _free_payments(sale.sale_amount).filter(invoice=OuterRef("pk"))
-    evaluable = Q(status=Invoice.Status.POSTED) | (sale_document_status_q() & Q(sale_order__isnull=False))
+    evaluable = Q(status=Invoice.Status.POSTED) | (
+        sale_document_status_q() & Q(sale_order__isnull=False)
+    )
     return list(
-        Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression())
+        Invoice.objects.annotate(
+            fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
+        )
         .filter(
             evaluable,
             Exists(free_payment),
@@ -409,7 +449,8 @@ def _attach_free_payments(invoices: list[Invoice], sale: TerminalSale | None) ->
     by_invoice: dict[int, list[TreasuryMovement]] = {i.pk: [] for i in invoices}
     if sale is not None and invoices:
         rows = (
-            _free_payments(sale.sale_amount).filter(invoice_id__in=list(by_invoice))
+            _free_payments(sale.sale_amount)
+            .filter(invoice_id__in=list(by_invoice))
             .select_related("payment_method_new")
             .order_by("created_at", "id")
         )
@@ -428,7 +469,10 @@ def _tuu_candidates(invoice: Invoice) -> list[TerminalSale]:
         return []
     days = Q()
     for day in {timezone.localdate(m.created_at) for m in inbound}:
-        days |= Q(transaction_at__gte=local_midnight(day), transaction_at__lt=local_midnight(day + timedelta(days=1)))
+        days |= Q(
+            transaction_at__gte=local_midnight(day),
+            transaction_at__lt=local_midnight(day + timedelta(days=1)),
+        )
     sales = list(
         TerminalSale.objects.filter(
             days,
@@ -439,7 +483,9 @@ def _tuu_candidates(invoice: Invoice) -> list[TerminalSale]:
         ).order_by("transaction_at", "id")[:CANDIDATE_CAP]
     )
     for sale in sales:
-        sale.compatible_movements = [m for m in free if Decimal(m.amount) == Decimal(sale.sale_amount)]
+        sale.compatible_movements = [
+            m for m in free if Decimal(m.amount) == Decimal(sale.sale_amount)
+        ]
     return sales
 
 

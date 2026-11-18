@@ -62,7 +62,9 @@ class UnlinkSerializer(serializers.Serializer):
 
 
 class ConfirmDraftSerializer(serializers.Serializer):
-    invoice_id = serializers.PrimaryKeyRelatedField(queryset=Invoice.objects.all(), source="invoice")
+    invoice_id = serializers.PrimaryKeyRelatedField(
+        queryset=Invoice.objects.all(), source="invoice"
+    )
     attachment = serializers.FileField(required=False)
 
 
@@ -99,9 +101,24 @@ class _RcvRefSerializer(serializers.ModelSerializer):
 
 
 _LIST_FIELDS = [
-    "id", "direction", "status", "status_display", "erp_state", "tuu_state", "rcv_state", "dte_type",
-    "issue_date", "erp_amount", "tuu_amount", "rcv_amount", "invoice", "terminal_sales", "rcv_documents",
-    "notice", "closed_period_alert", "issue_error",
+    "id",
+    "direction",
+    "status",
+    "status_display",
+    "erp_state",
+    "tuu_state",
+    "rcv_state",
+    "dte_type",
+    "issue_date",
+    "erp_amount",
+    "tuu_amount",
+    "rcv_amount",
+    "invoice",
+    "terminal_sales",
+    "rcv_documents",
+    "notice",
+    "closed_period_alert",
+    "issue_error",
 ]
 
 
@@ -142,7 +159,12 @@ class _SaleDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TerminalSale
         fields = [
-            "id", "transaction_at", "sale_amount", "document_type", "payment_type", "matched_movement",
+            "id",
+            "transaction_at",
+            "sale_amount",
+            "document_type",
+            "payment_type",
+            "matched_movement",
             "linked_manually",
         ]
         read_only_fields = fields
@@ -163,7 +185,11 @@ class FiscalMatchDetailSerializer(FiscalMatchListSerializer):
     class Meta:
         model = FiscalMatch
         fields = [
-            *_LIST_FIELDS, "counterparty_rut", "fiscal_period", "rcv_linked_manually", "issue_attempted_at",
+            *_LIST_FIELDS,
+            "counterparty_rut",
+            "fiscal_period",
+            "rcv_linked_manually",
+            "issue_attempted_at",
             "evaluated_at",
         ]
         read_only_fields = fields
@@ -183,7 +209,11 @@ class CandidateMovementSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_method(self, obj: TreasuryMovement) -> str:
-        return obj.payment_method_new.name if obj.payment_method_new else obj.get_payment_method_display()
+        return (
+            obj.payment_method_new.name
+            if obj.payment_method_new
+            else obj.get_payment_method_display()
+        )
 
 
 class ErpCandidateSerializer(serializers.ModelSerializer):
@@ -202,14 +232,29 @@ class TuuCandidateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TerminalSale
-        fields = ["id", "transaction_at", "sale_amount", "document_type", "payment_type", "compatible_movements"]
+        fields = [
+            "id",
+            "transaction_at",
+            "sale_amount",
+            "document_type",
+            "payment_type",
+            "compatible_movements",
+        ]
         read_only_fields = fields
 
 
 class RcvCandidateSerializer(serializers.ModelSerializer):
     class Meta:
         model = RCVDocument
-        fields = ["id", "folio", "dte_type", "issue_date", "total_amount", "period", "counterparty_rut"]
+        fields = [
+            "id",
+            "folio",
+            "dte_type",
+            "issue_date",
+            "total_amount",
+            "period",
+            "counterparty_rut",
+        ]
         read_only_fields = fields
 
 

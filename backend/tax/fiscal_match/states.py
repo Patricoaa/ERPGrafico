@@ -61,7 +61,9 @@ class EvalContext:
     sales: Mapping[int, tuple[TerminalSale, ...]]  # group id →
     movements: Mapping[int, tuple[TreasuryMovement, ...]]  # invoice id → cobros INBOUND
     rcv_docs: Mapping[int, tuple[RCVDocument, ...]]  # group id →
-    terminal_providers: Mapping[int, frozenset[int]]  # POSTerminal id → proveedores TUU de sus métodos
+    terminal_providers: Mapping[
+        int, frozenset[int]
+    ]  # POSTerminal id → proveedores TUU de sus métodos
     sync_runs: Mapping[int, tuple[SyncSpan, ...]]  # provider id → sincronizaciones exitosas
     rcv_imports: frozenset[tuple[str, int, int]]  # (RCVImport.Direction, año, mes) exitosas
     closed_periods: frozenset[str]  # AAAAMM de períodos tributarios cerrados
@@ -122,7 +124,9 @@ def build_context(
     invoice_ids = [g.invoice_id for g in groups if g.invoice_id is not None]
 
     invoices = {i.id: i for i in Invoice.objects.filter(id__in=invoice_ids)}
-    sales = _group_by(TerminalSale.objects.filter(fiscal_match_id__in=group_ids).order_by("id"), "fiscal_match_id")
+    sales = _group_by(
+        TerminalSale.objects.filter(fiscal_match_id__in=group_ids).order_by("id"), "fiscal_match_id"
+    )
     movement_rows = list(
         TreasuryMovement.objects.filter(
             invoice_id__in=invoice_ids, movement_type=TreasuryMovement.Type.INBOUND
@@ -131,9 +135,13 @@ def build_context(
         .order_by("id")
     )
     movements = _group_by(movement_rows, "invoice_id")
-    rcv_docs = _group_by(RCVDocument.objects.filter(fiscal_match_id__in=group_ids).order_by("id"), "fiscal_match_id")
+    rcv_docs = _group_by(
+        RCVDocument.objects.filter(fiscal_match_id__in=group_ids).order_by("id"), "fiscal_match_id"
+    )
 
-    terminal_ids = {m.pos_session.terminal_id for m in movement_rows if m.pos_session_id is not None}
+    terminal_ids = {
+        m.pos_session.terminal_id for m in movement_rows if m.pos_session_id is not None
+    }
     providers_of: dict[int, set[int]] = defaultdict(set)
     for terminal_id, provider_id in POSTerminal.allowed_payment_methods.through.objects.filter(
         posterminal_id__in=terminal_ids, paymentmethod__linked_terminal_device__isnull=False
@@ -192,7 +200,9 @@ def _sync_runs(
         invoice = invoices.get(m.invoice_id)
         if invoice is None:
             continue
-        found = _payment_providers(m, terminal_providers, cash_expected=invoice.sii_code in BOLETA_SII_CODES)
+        found = _payment_providers(
+            m, terminal_providers, cash_expected=invoice.sii_code in BOLETA_SII_CODES
+        )
         if found:
             providers |= found
             days.add(timezone.localdate(m.created_at))
@@ -218,7 +228,9 @@ def _rcv_imports(months: set[tuple[int, int]]) -> frozenset[tuple[str, int, int]
         return frozenset()
     years = [y for y, _ in months]
     rows = (
-        RCVImport.objects.filter(status=RCVImport.Status.SUCCESS, year__gte=min(years), year__lte=max(years))
+        RCVImport.objects.filter(
+            status=RCVImport.Status.SUCCESS, year__gte=min(years), year__lte=max(years)
+        )
         .values_list("direction", "year", "month")
         .distinct()
     )
@@ -252,7 +264,11 @@ def _payment_providers(
     device = method.linked_terminal_device if method is not None else None
     if device is not None:
         return frozenset({device.provider_id})
-    if cash_expected and m.payment_method == Invoice.PaymentMethod.CASH and m.pos_session_id is not None:
+    if (
+        cash_expected
+        and m.payment_method == Invoice.PaymentMethod.CASH
+        and m.pos_session_id is not None
+    ):
         return terminal_providers.get(m.pos_session.terminal_id, frozenset())
     return frozenset()
 
@@ -262,7 +278,10 @@ def _sync_covers(m: TreasuryMovement, providers: frozenset[int], ctx: EvalContex
     day = timezone.localdate(m.created_at)
     deadline = m.created_at + ctx.window
     return all(
-        any(start <= day <= end and finished > deadline for start, end, finished in ctx.sync_runs.get(p, ()))
+        any(
+            start <= day <= end and finished > deadline
+            for start, end, finished in ctx.sync_runs.get(p, ())
+        )
         for p in providers
     )
 
@@ -302,7 +321,11 @@ def _tuu_state(
     expected = [
         (m, providers)
         for m in ctx.movements.get(invoice.id, ())
-        if (providers := _payment_providers(m, ctx.terminal_providers, cash_expected=code in BOLETA_SII_CODES))
+        if (
+            providers := _payment_providers(
+                m, ctx.terminal_providers, cash_expected=code in BOLETA_SII_CODES
+            )
+        )
     ]
     if not expected:
         return PartState.NOT_APPLICABLE
@@ -346,7 +369,11 @@ def _rcv_state(
 
 
 def _excluded(
-    group: FiscalMatch, invoice: Invoice | None, code: int | None, docs: tuple[RCVDocument, ...], ctx: EvalContext
+    group: FiscalMatch,
+    invoice: Invoice | None,
+    code: int | None,
+    docs: tuple[RCVDocument, ...],
+    ctx: EvalContext,
 ) -> bool:
     if code in EXCLUDED_SII_CODES:
         return True
@@ -354,7 +381,11 @@ def _excluded(
         return True
     if invoice is None and docs and all(d.missing_since_import_id is not None for d in docs):
         return True
-    return ctx.start_date is not None and group.issue_date is not None and group.issue_date < ctx.start_date
+    return (
+        ctx.start_date is not None
+        and group.issue_date is not None
+        and group.issue_date < ctx.start_date
+    )
 
 
 def _sum(values: Iterable[Decimal]) -> Decimal | None:

@@ -50,15 +50,31 @@ def _filters(params) -> dict:
 
 
 def _detail(group: FiscalMatch) -> Response:
-    return Response(FiscalMatchDetailSerializer(fiscal_match_detail_queryset().get(pk=group.pk)).data)
+    return Response(
+        FiscalMatchDetailSerializer(fiscal_match_detail_queryset().get(pk=group.pk)).data
+    )
 
 
 class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     filter_backends: list = []
     action_permissions = {
-        **dict.fromkeys(("list", "retrieve", "counts", "summary", "pending_issue", "candidates", "draft_suggestions", "purchase_orders"), _VIEW),
-        **dict.fromkeys(("link", "unlink", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE),
+        **dict.fromkeys(
+            (
+                "list",
+                "retrieve",
+                "counts",
+                "summary",
+                "pending_issue",
+                "candidates",
+                "draft_suggestions",
+                "purchase_orders",
+            ),
+            _VIEW,
+        ),
+        **dict.fromkeys(
+            ("link", "unlink", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE
+        ),
     }
 
     def get_queryset(self):
@@ -118,17 +134,25 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="draft-suggestions")
     def draft_suggestions(self, request, pk=None):
-        return Response(InvoiceCandidateSerializer(feeding.draft_suggestions(self._group(pk)), many=True).data)
+        return Response(
+            InvoiceCandidateSerializer(feeding.draft_suggestions(self._group(pk)), many=True).data
+        )
 
     @action(detail=True, methods=["get"], url_path="purchase-orders")
     def purchase_orders(self, request, pk=None):
-        return Response(PurchaseOrderOptionSerializer(feeding.supplier_purchase_orders(self._group(pk)), many=True).data)
+        return Response(
+            PurchaseOrderOptionSerializer(
+                feeding.supplier_purchase_orders(self._group(pk)), many=True
+            ).data
+        )
 
     @idempotent_endpoint(scope="tax.fiscal_match.confirm_draft")
     @action(detail=True, methods=["post"], url_path="confirm-draft")
     def confirm_draft(self, request, pk=None):
         body = _valid(ConfirmDraftSerializer, request.data)
-        return _detail(feeding.confirm_draft_from_rcv(self._group(pk), body["invoice"], body.get("attachment")))
+        return _detail(
+            feeding.confirm_draft_from_rcv(self._group(pk), body["invoice"], body.get("attachment"))
+        )
 
     @idempotent_endpoint(scope="tax.fiscal_match.create_draft")
     @action(detail=True, methods=["post"], url_path="create-draft")

@@ -44,7 +44,9 @@ def local_midnight(day: date) -> datetime:
 
 
 def annotated_invoices() -> QuerySet[Invoice]:
-    return Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression())
+    return Invoice.objects.annotate(
+        fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
+    )
 
 
 def totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
@@ -53,14 +55,19 @@ def totals(rows, key: str) -> dict[int, tuple[int, Decimal]]:
 
 def summary_status_q() -> Q:
     """Como ``sale_document_status_q`` pero los borradores deben venir de una orden de venta."""
-    return Q(status=Invoice.Status.POSTED) | (sale_document_status_q() & Q(sale_order__isnull=False))
+    return Q(status=Invoice.Status.POSTED) | (
+        sale_document_status_q() & Q(sale_order__isnull=False)
+    )
 
 
 def rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:
     """Resúmenes de la última importación exitosa de ventas del período; ``None`` si no hay."""
     latest = (
         RCVImport.objects.filter(
-            direction=RCVImport.Direction.SALES, year=year, month=month, status=RCVImport.Status.SUCCESS
+            direction=RCVImport.Direction.SALES,
+            year=year,
+            month=month,
+            status=RCVImport.Status.SUCCESS,
         )
         .order_by(F("finished_at").desc(nulls_last=True), "-id")
         .values_list("id", flat=True)
@@ -70,7 +77,9 @@ def rcv_totals(year: int, month: int) -> dict[int, tuple[int, Decimal]] | None:
         return None
     return totals(
         RCVImportSummary.objects.filter(rcv_import_id=latest, dte_type__in=SUMMARY_SII_CODES)
-        .values("dte_type").annotate(n=Sum("document_count"), t=Sum("total_amount")).order_by(),
+        .values("dte_type")
+        .annotate(n=Sum("document_count"), t=Sum("total_amount"))
+        .order_by(),
         "dte_type",
     )
 
@@ -88,20 +97,28 @@ def _card_sales_of_facturas(first: date, last: date) -> Decimal:
     return total or _ZERO
 
 
-def summary_row(code: int, erp: dict, tuu: dict, rcv: dict | None, extra_expected: Decimal = _ZERO) -> dict:
+def summary_row(
+    code: int, erp: dict, tuu: dict, rcv: dict | None, extra_expected: Decimal = _ZERO
+) -> dict:
     erp_count, erp_total = erp.get(code, (0, _ZERO))
     tuu_count, tuu_total = tuu.get(code, (0, _ZERO))
     expected = erp_total + extra_expected
     row = {
         "dte_type": code,
-        "erp_count": erp_count, "erp_total": str(erp_total),
-        "tuu_count": tuu_count, "tuu_total": str(tuu_total),
+        "erp_count": erp_count,
+        "erp_total": str(erp_total),
+        "tuu_count": tuu_count,
+        "tuu_total": str(tuu_total),
         "expected_total": str(expected),
-        "rcv_count": None, "rcv_total": None, "difference": None,
+        "rcv_count": None,
+        "rcv_total": None,
+        "difference": None,
     }
     if rcv is not None:
         rcv_count, rcv_total = rcv.get(code, (0, _ZERO))
-        row.update(rcv_count=rcv_count, rcv_total=str(rcv_total), difference=str(expected - rcv_total))
+        row.update(
+            rcv_count=rcv_count, rcv_total=str(rcv_total), difference=str(expected - rcv_total)
+        )
     return row
 
 
@@ -113,23 +130,35 @@ def monthly_summary(year: int, month: int) -> list[dict]:
     erp = totals(
         annotated_invoices()
         .filter(
-            summary_status_q(), fiscal_direction="sale",
-            date__gte=first, date__lte=last, sii__in=SUMMARY_SII_CODES,
+            summary_status_q(),
+            fiscal_direction="sale",
+            date__gte=first,
+            date__lte=last,
+            sii__in=SUMMARY_SII_CODES,
         )
-        .values("sii").annotate(n=Count("id"), t=Sum("total")).order_by(),
+        .values("sii")
+        .annotate(n=Count("id"), t=Sum("total"))
+        .order_by(),
         "sii",
     )
     tuu = totals(
         TerminalSale.objects.filter(
-            status=TerminalSale.Status.COMPLETED, transaction_at__gte=lo, transaction_at__lt=hi,
+            status=TerminalSale.Status.COMPLETED,
+            transaction_at__gte=lo,
+            transaction_at__lt=hi,
             document_type__in=SUMMARY_SII_CODES,
         )
-        .values("document_type").annotate(n=Count("id"), t=Sum("sale_amount")).order_by(),
+        .values("document_type")
+        .annotate(n=Count("id"), t=Sum("sale_amount"))
+        .order_by(),
         "document_type",
     )
     rcv = rcv_totals(year, month)
     cards = _card_sales_of_facturas(first, last)
-    return [summary_row(code, erp, tuu, rcv, cards if code == 48 else _ZERO) for code in SUMMARY_SII_CODES]
+    return [
+        summary_row(code, erp, tuu, rcv, cards if code == 48 else _ZERO)
+        for code in SUMMARY_SII_CODES
+    ]
 
 
 def fiscal_mismatch_counts(year: int, month: int) -> dict:
@@ -137,7 +166,9 @@ def fiscal_mismatch_counts(year: int, month: int) -> dict:
     by_status = {str(s): 0 for s in MISMATCH_STATUSES}
     rows = (
         FiscalMatch.objects.filter(fiscal_period=f"{year}{month:02d}", status__in=MISMATCH_STATUSES)
-        .values("status").annotate(n=Count("id")).order_by()
+        .values("status")
+        .annotate(n=Count("id"))
+        .order_by()
     )
     for row in rows:
         by_status[str(row["status"])] = row["n"]
@@ -165,30 +196,36 @@ def pending_issue(year: int | None = None, month: int | None = None) -> dict:
     emisión automática la toma. Dos consultas fijas.
     """
     groups = FiscalMatch.objects.filter(
-        invoice__status=Invoice.Status.DRAFT, invoice__number="",
-        invoice__dte_type__in=FOLIO_EXEMPT_DTE_TYPES, invoice__sale_order__isnull=False,
+        invoice__status=Invoice.Status.DRAFT,
+        invoice__number="",
+        invoice__dte_type__in=FOLIO_EXEMPT_DTE_TYPES,
+        invoice__sale_order__isnull=False,
     )
     if year is not None and month is not None:
         first = date(year, month, 1)
         groups = groups.filter(
-            invoice__date__gte=first, invoice__date__lte=date(year, month, calendar.monthrange(year, month)[1])
+            invoice__date__gte=first,
+            invoice__date__lte=date(year, month, calendar.monthrange(year, month)[1]),
         )
     count = groups.count()
     rows = (
-        groups.select_related("invoice").annotate(rcv_count=Count("rcv_documents"))
+        groups.select_related("invoice")
+        .annotate(rcv_count=Count("rcv_documents"))
         .order_by("invoice__date", "invoice_id")[:PENDING_ISSUE_CAP]
     )
     items = []
     for group in rows:
         invoice = group.invoice
         reason = _reason(group)
-        items.append({
-            "id": invoice.pk,
-            "group": group.pk,
-            "label": f"{invoice.get_dte_type_display()} sin folio (#{invoice.pk})",
-            "amount": str(invoice.total) if invoice.total is not None else None,
-            "date": invoice.date.isoformat() if invoice.date else None,
-            "reason": reason,
-            "error": group.issue_error if reason == "ERROR" else None,
-        })
+        items.append(
+            {
+                "id": invoice.pk,
+                "group": group.pk,
+                "label": f"{invoice.get_dte_type_display()} sin folio (#{invoice.pk})",
+                "amount": str(invoice.total) if invoice.total is not None else None,
+                "date": invoice.date.isoformat() if invoice.date else None,
+                "reason": reason,
+                "error": group.issue_error if reason == "ERROR" else None,
+            }
+        )
     return {"count": count, "items": items}

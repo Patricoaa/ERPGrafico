@@ -35,7 +35,10 @@ def _evaluable_invoice_rows(*, purchase_drafts: bool = False):
     sale = Q(fiscal_direction=FiscalMatch.Direction.SALE, sii_code__in=SALE_SII_CODES) & (
         Q(status=Invoice.Status.POSTED) | (sale_document_status_q() & Q(sale_order__isnull=False))
     )
-    purchase_statuses = [Invoice.Status.POSTED, *([Invoice.Status.DRAFT] if purchase_drafts else [])]
+    purchase_statuses = [
+        Invoice.Status.POSTED,
+        *([Invoice.Status.DRAFT] if purchase_drafts else []),
+    ]
     purchase = Q(fiscal_direction=FiscalMatch.Direction.PURCHASE, status__in=purchase_statuses)
     return (
         Invoice.objects.annotate(
@@ -44,7 +47,15 @@ def _evaluable_invoice_rows(*, purchase_drafts: bool = False):
             contact_rut=F("contact__tax_id"),
         )
         .filter(sale | purchase)
-        .values("id", "fiscal_direction", "sii_code", "date", "total", "partner_tax_id_snapshot", "contact_rut")
+        .values(
+            "id",
+            "fiscal_direction",
+            "sii_code",
+            "date",
+            "total",
+            "partner_tax_id_snapshot",
+            "contact_rut",
+        )
     )
 
 
@@ -59,7 +70,9 @@ def _invoice_group(row: dict) -> FiscalMatch:
         dte_type=row["sii_code"],
         issue_date=row["date"],
         fiscal_period=_period(row["date"]),
-        counterparty_rut=resolve_counterparty_rut(row["partner_tax_id_snapshot"], row["contact_rut"]),
+        counterparty_rut=resolve_counterparty_rut(
+            row["partner_tax_id_snapshot"], row["contact_rut"]
+        ),
         erp_amount=row["total"],
     )
 

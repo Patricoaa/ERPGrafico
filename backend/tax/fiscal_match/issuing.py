@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 ISSUE_RETRY_MINUTES = 60
 
 
-def issue_fiscal_drafts(*, group_ids: list[int] | None = None, retry_failed: bool = False) -> dict[str, int]:
+def issue_fiscal_drafts(
+    *, group_ids: list[int] | None = None, retry_failed: bool = False
+) -> dict[str, int]:
     """Emite los borradores de los grupos con TUU conciliada; devuelve emitidos y fallidos.
 
     ``retry_failed`` reintenta también los fallos recientes que la corrida periódica espera
@@ -55,7 +57,9 @@ def issue_fiscal_drafts(*, group_ids: list[int] | None = None, retry_failed: boo
             error = None
         # Fuera del atomic de `_issue`: el registro del fallo sobrevive a su rollback.
         if error is not None:
-            FiscalMatch.objects.filter(pk=group.pk).update(issue_attempted_at=timezone.now(), issue_error=error)
+            FiscalMatch.objects.filter(pk=group.pk).update(
+                issue_attempted_at=timezone.now(), issue_error=error
+            )
         elif group.issue_error or group.issue_attempted_at:
             FiscalMatch.objects.filter(pk=group.pk).update(issue_attempted_at=None, issue_error="")
     return {"issued": issued, "failed": failed}
@@ -96,7 +100,6 @@ def tuu_number(sale: TerminalSale) -> str:
     if sale_id and sale_id.upper() != "N/A":
         return sale_id
     return (sale.sequence_number or "").strip()
-
 
 
 def _candidates(group_ids: list[int] | None, *, retry_failed: bool) -> list[FiscalMatch]:

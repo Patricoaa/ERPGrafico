@@ -103,7 +103,9 @@ def supplier_purchase_orders(group: FiscalMatch) -> list[PurchaseOrder]:
         .select_related("supplier")
         .order_by("-date", "-id")
     )
-    return [order for order in rows[:MAX_PURCHASE_ORDERS] if normalize_rut(order.supplier.tax_id) == rut]
+    return [
+        order for order in rows[:MAX_PURCHASE_ORDERS] if normalize_rut(order.supplier.tax_id) == rut
+    ]
 
 
 def _lock_pending(group: FiscalMatch) -> tuple[FiscalMatch, RCVDocument]:
@@ -139,7 +141,12 @@ def confirm_draft_from_rcv(group: FiscalMatch, invoice: Invoice, attachment=None
     from billing.services import BillingService
 
     orphan, doc = _lock_pending(group)
-    draft = _purchase_drafts().select_related("contact", "purchase_order__supplier").filter(pk=invoice.pk).first()
+    draft = (
+        _purchase_drafts()
+        .select_related("contact", "purchase_order__supplier")
+        .filter(pk=invoice.pk)
+        .first()
+    )
     if draft is None:
         raise ValidationError(_("La factura no es un borrador de compra."))
     if _draft_rut(draft) != normalize_rut(doc.counterparty_rut):

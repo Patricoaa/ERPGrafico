@@ -76,9 +76,14 @@ def fiscal_matches_queryset(filters: dict) -> QuerySet[FiscalMatch]:
         .prefetch_related(
             Prefetch(
                 "terminal_sales",
-                queryset=TerminalSale.objects.only(*_LIST_SALE_FIELDS).order_by("transaction_at", "id"),
+                queryset=TerminalSale.objects.only(*_LIST_SALE_FIELDS).order_by(
+                    "transaction_at", "id"
+                ),
             ),
-            Prefetch("rcv_documents", queryset=RCVDocument.objects.only(*_LIST_RCV_FIELDS).order_by("folio", "id")),
+            Prefetch(
+                "rcv_documents",
+                queryset=RCVDocument.objects.only(*_LIST_RCV_FIELDS).order_by("folio", "id"),
+            ),
         )
         .order_by("-issue_date", "-id")
     )
@@ -93,7 +98,10 @@ def fiscal_match_detail_queryset() -> QuerySet[FiscalMatch]:
             .only(*_DETAIL_SALE_FIELDS)
             .order_by("transaction_at", "id"),
         ),
-        Prefetch("rcv_documents", queryset=RCVDocument.objects.only(*_DETAIL_RCV_FIELDS).order_by("folio", "id")),
+        Prefetch(
+            "rcv_documents",
+            queryset=RCVDocument.objects.only(*_DETAIL_RCV_FIELDS).order_by("folio", "id"),
+        ),
     )
 
 
