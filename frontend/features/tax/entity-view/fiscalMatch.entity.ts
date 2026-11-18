@@ -56,6 +56,7 @@ export const fiscalMatchEntity = defineEntity<FiscalMatchListItem>()((f) => ({
     title: "Cuadre",
     fields: {
         erp: fiscalMatchPart(f, erpPart, { ...fixed, label: "Documento ERP" }),
+        direction: f.text((r) => (r.direction === "purchase" ? "Compra" : "Venta"), { ...fixed, label: "Dirección", tone: "secondary" }),
         tuu: fiscalMatchPart(f, tuuPart, { ...fixed, label: "Pagos TUU" }),
         rcv: fiscalMatchPart(f, rcvPart, { ...fixed, label: "RCV (SII)" }),
         issueDate: f.date("issue_date", { ...fixed, label: "Fecha" }),
@@ -63,13 +64,8 @@ export const fiscalMatchEntity = defineEntity<FiscalMatchListItem>()((f) => ({
     },
 }))
 
+/** Vista única: en compras, TUU muestra «No aplica» desde el estado de la parte. */
 export const fiscalMatchViews = fiscalMatchEntity.views({
-    table: { columns: ["erp", "tuu", "rcv", "issueDate", "status"], primary: "erp" },
-    card: { title: "erp", subtitle: ["issueDate"], meta: ["tuu", "rcv"], trailing: ["status"] },
-})
-
-/** Compras: TUU no aplica, se omite la columna. */
-export const fiscalMatchPurchaseViews = fiscalMatchEntity.views({
-    table: { columns: ["erp", "rcv", "issueDate", "status"], primary: "erp" },
-    card: { title: "erp", subtitle: ["issueDate"], meta: ["rcv"], trailing: ["status"] },
+    table: { columns: ["erp", "direction", "tuu", "rcv", "issueDate", "status"], primary: "erp" },
+    card: { title: "erp", subtitle: ["direction", "issueDate"], meta: ["tuu", "rcv"], trailing: ["status"] },
 })

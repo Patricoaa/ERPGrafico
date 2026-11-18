@@ -2,10 +2,11 @@ import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { FiscalMatchCounts, FiscalMatchFilters, FiscalMatchListItem, MonthlySummaryRow, PendingIssue } from "../../types/fiscalMatch"
+import type { FiscalMatchCounts, FiscalMatchFilters, FiscalMatchListItem } from "../../types/fiscalMatch"
 
 const m = vi.hoisted(() => ({
     filters: {} as Record<string, string>,
+    filterOptions: undefined as Record<string, { label: string; value: string }[]> | undefined,
     applyFilter: vi.fn(),
     removeFilter: vi.fn(),
     groups: [] as unknown[],
@@ -16,9 +17,7 @@ const m = vi.hoisted(() => ({
     counts: undefined as unknown,
     countsLoading: false,
     countsError: false,
-    summary: undefined as unknown,
-    summaryCalls: [] as [number, number][],
-    pending: undefined as unknown,
+    countsRefetch: vi.fn(),
     push: vi.fn(),
     selectedId: null as number | null,
 }))
@@ -28,13 +27,16 @@ vi.mock("@/components/shared", async (importOriginal) => {
     return {
         ...actual,
         UnifiedSearchBar: () => null,
-        useUnifiedSearch: () => ({
-            filters: m.filters,
-            isFiltered: Object.keys(m.filters).length > 0,
-            applyFilter: m.applyFilter,
-            removeFilter: m.removeFilter,
-            clearAll: vi.fn(),
-        }),
+        useUnifiedSearch: (_config: unknown, filterOptions?: Record<string, { label: string; value: string }[]>) => {
+            m.filterOptions = filterOptions
+            return {
+                filters: m.filters,
+                isFiltered: Object.keys(m.filters).length > 0,
+                applyFilter: m.applyFilter,
+                removeFilter: m.removeFilter,
+                clearAll: vi.fn(),
+            }
+        },
         bindUnifiedSearch: () => ({}),
     }
 })
@@ -51,14 +53,8 @@ vi.mock("../../hooks/useFiscalMatches", () => ({
             refetch: m.listRefetch,
         }
     },
-    useFiscalMatchCounts: () => ({ counts: m.counts, isLoading: m.countsLoading, isError: m.countsError, refetch: vi.fn() }),
-    useFiscalMatchSummary: (year: number, month: number) => {
-        m.summaryCalls.push([year, month])
-        return { summary: m.summary, isLoading: false, isError: false, isRefetching: false, refetch: vi.fn() }
-    },
-    usePendingIssue: () => ({ pendingIssue: m.pending, isLoading: false, isError: false, isRefetching: false, refetch: vi.fn() }),
+    useFiscalMatchCounts: () => ({ counts: m.counts, isLoading: m.countsLoading, isError: m.countsError, refetch: m.countsRefetch }),
 }))
-vi.mock("@/hooks/useServerDate", () => ({ useServerDate: () => ({ year: 2026, month: 11 }) }))
 vi.mock("next/navigation", () => ({
     useSearchParams: () => new URLSearchParams("status=attention"),
     useRouter: () => ({ push: m.push, replace: vi.fn() }),
@@ -124,18 +120,9 @@ const counts: FiscalMatchCounts = {
     start_date: "2026-10-01",
 }
 
-const summary: MonthlySummaryRow[] = [
-    { dte_type: 39, erp_count: 2, erp_total: "3000.00", tuu_count: 2, tuu_total: "3000.00", expected_total: "3000.00", rcv_count: 2, rcv_total: "3000.00", difference: "0.00" },
-    { dte_type: 48, erp_count: 1, erp_total: "9990.00", tuu_count: 2, tuu_total: "34990.00", expected_total: "34990.00", rcv_count: 2, rcv_total: "34990.00", difference: "0.00" },
-]
-
-const pending: PendingIssue = {
-    count: 1,
-    items: [{ id: 901, group: 31, label: "Boleta Electrónica sin folio (#901)", amount: "1500", date: "2026-11-03", reason: "NO_TUU", error: null }],
-}
-
 beforeEach(() => {
     m.filters = {}
+    m.filterOptions = undefined
     m.applyFilter.mockReset()
     m.removeFilter.mockReset()
     m.groups = [base, orphan]
@@ -146,51 +133,48 @@ beforeEach(() => {
     m.counts = counts
     m.countsLoading = false
     m.countsError = false
-    m.summary = summary
-    m.summaryCalls = []
-    m.pending = pending
+    m.countsRefetch.mockReset()
     m.push.mockReset()
     m.selectedId = null
 })
 
 describe("FiscalMatchClientView", () => {
-    it("renders counts and opens in attention filter", async () => {
+    it("muestra los conteos dentro del buscador y abre en necesita atención", () => {
         render(<FiscalMatchClientView />)
 
         expect(m.listCalls.at(-1)).toEqual([{ direction: "sale", status: ["attention"] }, 1])
-        const quick = screen.getByRole("group", { name: "Filtros rápidos por estado" })
-        const attention = within(quick).getByRole("button", { name: /Necesita atención\s*44/ })
-        expect(attention).toHaveAttribute("aria-pressed", "true")
-        expect(within(quick).getByRole("button", { name: /Cuadrado\s*1\.204/ })).toHaveAttribute("aria-pressed", "false")
-
-        await userEvent.click(within(quick).getByRole("button", { name: /Con diferencia\s*5/ }))
-        expect(m.applyFilter).toHaveBeenCalledWith("status", "DIFF")
+        expect(m.filterOptions?.status).toEqual(expect.arrayContaining([
+            { label: "Necesita atención (44)", value: "attention" },
+            { label: "Cuadrado (1.204)", value: "MATCHED" },
+            { label: "Con diferencia (5)", value: "DIFF" },
+            { label: "Todos (1.248)", value: "all" },
+        ]))
         expect(screen.getByText(/Última revisión: hace 4 minutos/)).toBeInTheDocument()
+        expect(screen.queryByRole("group", { name: "Filtros rápidos por estado" })).toBeNull()
+        expect(screen.queryByRole("group", { name: "Dirección" })).toBeNull()
     })
 
-    it("applies the URL filters and marks the chosen status", () => {
+    it("applies the URL filters", () => {
         m.filters = { direction: "purchase", status: "DIFF", dte_type: "33", search: "1532" }
         render(<FiscalMatchClientView />)
 
         expect(m.listCalls.at(-1)).toEqual([{ direction: "purchase", status: ["DIFF"], dte_type: 33, search: "1532" }, 1])
-        const quick = screen.getByRole("group", { name: "Filtros rápidos por estado" })
-        expect(within(quick).getByRole("button", { name: /Con diferencia\s*5/ })).toHaveAttribute("aria-pressed", "true")
     })
 
-    it("muestra el control Ventas | Compras con Ventas por defecto y cambia la dirección", async () => {
+    it("direction=all omite el filtro de dirección", () => {
+        m.filters = { direction: "all" }
         render(<FiscalMatchClientView />)
-        const control = screen.getByRole("group", { name: "Dirección" })
-        expect(within(control).getByRole("radio", { name: "Ventas" })).toHaveAttribute("aria-checked", "true")
-        expect(within(control).getByRole("radio", { name: "Compras" })).toHaveAttribute("aria-checked", "false")
-        await userEvent.click(within(control).getByRole("radio", { name: "Compras" }))
-        expect(m.applyFilter).toHaveBeenCalledWith("direction", "purchase")
+
+        expect(m.listCalls.at(-1)).toEqual([{ status: ["attention"] }, 1])
     })
 
-    it("con direction=purchase en la URL marca Compras", () => {
-        m.filters = { direction: "purchase" }
-        render(<FiscalMatchClientView />)
-        const control = screen.getByRole("group", { name: "Dirección" })
-        expect(within(control).getByRole("radio", { name: "Compras" })).toHaveAttribute("aria-checked", "true")
+    it("usa todo el alto disponible y no muestra las secciones retiradas", () => {
+        const { container } = render(<FiscalMatchClientView />)
+
+        expect(container.firstChild).toHaveClass("flex", "flex-1", "min-h-0", "flex-col")
+        expect(screen.queryByRole("heading", { name: "Boletas pendientes de folio" })).toBeNull()
+        expect(screen.queryByRole("heading", { name: "Resumen mensual de boletas y comprobantes" })).toBeNull()
+        expect(screen.getByRole("table", { name: "Cuadre" })).toBeInTheDocument()
     })
 
     it("status=all lists every group", () => {
@@ -203,7 +187,7 @@ describe("FiscalMatchClientView", () => {
         render(<FiscalMatchClientView />)
         const table = screen.getByRole("table", { name: "Cuadre" })
         expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(
-            expect.arrayContaining(["Documento ERP", "Pagos TUU", "RCV (SII)", "Estado"]),
+            expect.arrayContaining(["Documento ERP", "Dirección", "Pagos TUU", "RCV (SII)", "Estado"]),
         )
         expect(within(table).getByText("Boleta 39 · $12.500")).toBeInTheDocument()
         expect(within(table).getByText("1 venta · $12.500")).toBeInTheDocument()
@@ -215,34 +199,11 @@ describe("FiscalMatchClientView", () => {
         expect(m.push).toHaveBeenCalledWith("/accounting/rcv/cuadre?status=attention&selected=1", { scroll: false })
     })
 
-    it("has no recalculate buttons", () => {
+    it("has no recalculate buttons or summary selectors", () => {
         render(<FiscalMatchClientView />)
         expect(screen.queryByRole("button", { name: /recalcular/i })).toBeNull()
-        expect(screen.queryByRole("group", { name: "Año" })).toBeInTheDocument() // solo el del resumen mensual
-        expect(screen.getAllByRole("group", { name: "Año" })).toHaveLength(1)
-    })
-
-    it("shows 48 expected column", () => {
-        render(<FiscalMatchClientView />)
-        expect(m.summaryCalls.at(-1)).toEqual([2026, 11])
-        expect(screen.getByRole("heading", { name: "Resumen mensual de boletas y comprobantes" })).toBeInTheDocument()
-        const table = screen.getByRole("table", { name: "Resumen mensual de boletas y comprobantes" })
-        expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(
-            expect.arrayContaining(["ERP", "TUU", "48 esperado", "SII", "Diferencia"]),
-        )
-        const row48 = within(table).getByText("48 · Comprobante de pago electrónico").closest("tr") as HTMLElement
-        expect(within(row48).getAllByText("$34.990").length).toBeGreaterThanOrEqual(2)
-        const row39 = within(table).getByText("39 · Boleta Electrónica").closest("tr") as HTMLElement
-        expect(within(row39).getByText("—")).toBeInTheDocument()
-    })
-
-    it("lists the drafts waiting for a folio and opens their group", async () => {
-        render(<FiscalMatchClientView />)
-        expect(screen.getByRole("heading", { name: "Boletas pendientes de folio" })).toBeInTheDocument()
-        const table = screen.getByRole("table", { name: "Boletas pendientes de folio" })
-        expect(within(table).getByText("Sin venta TUU")).toBeInTheDocument()
-        await userEvent.click(within(table).getByRole("button", { name: /Boleta Electrónica sin folio/ }))
-        expect(m.push).toHaveBeenCalledWith("/accounting/rcv/cuadre?status=attention&selected=31", { scroll: false })
+        expect(screen.queryByRole("group", { name: "Año" })).toBeNull()
+        expect(screen.queryByRole("group", { name: "Mes" })).toBeNull()
     })
 
     it("?selected abre la ficha del grupo", () => {
@@ -289,8 +250,10 @@ describe("FiscalMatchClientView", () => {
             expect(screen.getByText("No se pudieron cargar los conteos del cuadre")).toBeInTheDocument()
             const retry = screen.getAllByRole("button", { name: "Reintentar" })
             expect(retry.length).toBeGreaterThanOrEqual(2)
-            await userEvent.click(retry[retry.length - 1])
+            await userEvent.click(retry[0])
             expect(m.listRefetch).toHaveBeenCalled()
+            await userEvent.click(retry[retry.length - 1])
+            expect(m.countsRefetch).toHaveBeenCalled()
         })
     })
 })

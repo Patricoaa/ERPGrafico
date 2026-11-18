@@ -1,7 +1,8 @@
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import { formatNumber } from '@/components/entity-view'
+import type { MultiSelectOption, UnifiedSearchConfig } from '@/types/unified-search'
 import { periodPresets } from '@/lib/date-presets'
 import { FISCAL_MATCH_STATUS_LABELS, type FiscalMatchStatus } from '@/lib/fiscal-match'
-import type { FiscalMatchDirection, FiscalMatchFilters } from './types/fiscalMatch'
+import type { FiscalMatchCounts, FiscalMatchDirection, FiscalMatchFilters } from './types/fiscalMatch'
 
 /** Orden fijo de los estados (conteos y filtro). */
 export const FISCAL_MATCH_STATUSES: readonly FiscalMatchStatus[] = [
@@ -13,13 +14,32 @@ export const SETTLED_STATUSES: readonly FiscalMatchStatus[] = ['MATCHED', 'EXCLU
 /** Valores del parámetro `status` de la URL además de un estado: sin parámetro = «attention». */
 export const STATUS_ATTENTION = 'attention'
 export const STATUS_ALL = 'all'
+export const DIRECTION_ALL = 'all'
 export const DEFAULT_DIRECTION: FiscalMatchDirection = 'sale'
 
-/** Opciones del filtro `direction`; también las usa el control Ventas | Compras de la página. */
-export const DIRECTION_OPTIONS: { label: string; value: FiscalMatchDirection }[] = [
+/** `Ambos` omite el parámetro `direction`: el backend devuelve ventas y compras juntas. */
+export const DIRECTION_OPTIONS: { label: string; value: FiscalMatchDirection | typeof DIRECTION_ALL }[] = [
   { label: 'Ventas', value: 'sale' },
   { label: 'Compras', value: 'purchase' },
+  { label: 'Ambos', value: DIRECTION_ALL },
 ]
+
+/** Opciones del filtro de estado con los conteos de la URL actual, dentro del unified search. */
+export function fiscalMatchStatusOptions(counts: FiscalMatchCounts): MultiSelectOption[] {
+  const byStatus = counts.by_status
+  const attention = FISCAL_MATCH_STATUSES.reduce(
+    (sum, s) => (SETTLED_STATUSES.includes(s) ? sum : sum + (byStatus[s] ?? 0)), 0,
+  )
+  const total = FISCAL_MATCH_STATUSES.reduce((sum, s) => sum + (byStatus[s] ?? 0), 0)
+  return [
+    { label: `Necesita atención (${formatNumber(attention)})`, value: STATUS_ATTENTION },
+    ...FISCAL_MATCH_STATUSES.map((value) => ({
+      label: `${FISCAL_MATCH_STATUS_LABELS[value]} (${formatNumber(byStatus[value] ?? 0)})`,
+      value,
+    })),
+    { label: `Todos (${formatNumber(total)})`, value: STATUS_ALL },
+  ]
+}
 
 /**
  * Filtros de la página Cuadre. Sin `direction` ni `status` en la URL valen los por defecto
@@ -40,6 +60,7 @@ export const fiscalMatchUnifiedSearchDef: UnifiedSearchConfig = {
       key: 'status',
       label: 'Estado',
       serverParam: 'status',
+      dynamic: true,
       options: [
         { label: 'Necesita atención', value: STATUS_ATTENTION },
         ...FISCAL_MATCH_STATUSES.map((value) => ({ label: FISCAL_MATCH_STATUS_LABELS[value], value })),
@@ -83,11 +104,12 @@ export function selectedStatus(params: Record<string, string>): FiscalMatchStatu
   return isStatus(v) ? v : STATUS_ATTENTION
 }
 
-/** Parámetros de la URL → filtros de la API. Los vacíos se omiten. */
+/** Parámetros de la URL → filtros de la API. Los vacíos se omiten; «Ambos» no envía `direction`. */
 export function toFiscalMatchFilters(params: Record<string, string>): FiscalMatchFilters {
   const status = selectedStatus(params)
-  const filters: FiscalMatchFilters = {
-    direction: params.direction === 'purchase' ? 'purchase' : DEFAULT_DIRECTION,
+  const filters: FiscalMatchFilters = {}
+  if (params.direction !== DIRECTION_ALL) {
+    filters.direction = params.direction === 'purchase' ? 'purchase' : DEFAULT_DIRECTION
   }
   if (status !== STATUS_ALL) filters.status = [status]
   const dteType = toInt(params.dte_type)
