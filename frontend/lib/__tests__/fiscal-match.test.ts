@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { FISCAL_MATCH_KEY, fiscalMatchStatusValue, partStateValue } from "../fiscal-match"
+import { FISCAL_MATCH_KEY, cuadreAttentionHref, fiscalMatchStatusValue, partStateValue } from "../fiscal-match"
 
 describe("cuadre por grupo", () => {
     it("maps group statuses", () => {
@@ -16,5 +16,11 @@ describe("cuadre por grupo", () => {
     })
     it("exposes the key prefix", () => {
         expect(FISCAL_MATCH_KEY).toEqual(["fiscal-match"])
+    })
+    it("«Ir al cuadre» abre ventas y compras del mes que necesitan atención", () => {
+        // El conteo del F29 y del cierre cuenta ambas direcciones: el enlace no puede filtrar solo ventas.
+        expect(cuadreAttentionHref(2026, 2)).toBe(
+            "/accounting/rcv/cuadre?direction=all&status=attention&date_from=2026-02-01&date_to=2026-02-28",
+        )
     })
 })

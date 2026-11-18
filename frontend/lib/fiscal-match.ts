@@ -110,10 +110,14 @@ export function fiscalMatchRefValue(
 
 const pad2 = (n: number) => String(n).padStart(2, "0")
 
-/** Enlace «Ir al cuadre»: lo que requiere atención del mes (primer a último día). */
+/**
+ * Enlace «Ir al cuadre»: lo que requiere atención del mes (primer a último día), en ventas y
+ * compras (`direction=all`), como el conteo del F29 y del cierre. El conteo agrupa por
+ * `fiscal_period` y el enlace filtra por fecha de emisión: pueden diferir en algún registro RCV.
+ */
 export function cuadreAttentionHref(year: number, month: number): string {
     const last = new Date(year, month, 0).getDate()
     const from = `${year}-${pad2(month)}-01`
     const to = `${year}-${pad2(month)}-${pad2(last)}`
-    return `/accounting/rcv/cuadre?status=attention&date_from=${from}&date_to=${to}`
+    return `/accounting/rcv/cuadre?direction=all&status=attention&date_from=${from}&date_to=${to}`
 }
