@@ -554,3 +554,144 @@ def search_candidates(
 ) -> Search:
     """Universo «sin cuadrar» de la parte frente al grupo, ordenado; ``build`` arma una página."""
     return _SEARCHES[part](_load_group(group), q.strip(), ordering)
+
+
+_MATCH_GROUP = _Columns(
+    kind="rcv",
+    sii="dte_type",
+    day=_day_q("issue_date"),
+    amount=lambda a: Q(rcv_amount=a) | Q(tuu_amount=a),
+    amount_in=lambda s: Q(rcv_amount__in=s) | Q(tuu_amount__in=s),
+    folio=lambda f: Q(rcv_documents__folio=f),
+    rut=lambda r: Q(counterparty_rut=r),
+    no_rut=Q(counterparty_rut=""),
+    order_date="issue_date",
+)
+
+
+def _match_group_q(term: str) -> Q:
+    parsed = parse_search(term)
+    q = Q(counterparty_rut__icontains=parsed.text) | Q(rcv_documents__counterparty_name__icontains=parsed.text)
+    if parsed.rut:
+        q |= Q(counterparty_rut__icontains=parsed.rut.replace("-", ""))
+    if parsed.number is not None:
+        q |= (
+            Q(rcv_documents__folio=parsed.number)
+            | Q(rcv_amount=Decimal(parsed.number))
+            | Q(tuu_amount=Decimal(parsed.number))
+        )
+    return q
+
+
+def candidates_for_context(
+    *,
+    invoice_id: int | None = None,
+    direction: str | None = None,
+    sii_code: int | None = None,
+    counterparty_rut: str = "",
+    amount: Decimal | None = None,
+    date: date | None = None,
+    q: str = "",
+    ordering: Ordering = "score",
+) -> Search:
+    """Busca grupos FiscalMatch huérfanos ('sin cuadrar') compatibles con un documento o pre-contexto."""
+    from billing.fiscal_key import fiscal_key
+    from billing.models import Invoice
+
+    ref_folio = None
+    if invoice_id is not None:
+        invoice = (
+            Invoice.objects.select_related("contact")
+            .filter(pk=invoice_id)
+            .first()
+        )
+        if invoice is None:
+            return _empty()
+        fkey = fiscal_key(invoice)
+        direction = fkey.direction
+        sii_code = fkey.sii_code
+        counterparty_rut = fkey.counterparty_rut
+        amount = Decimal(invoice.total) if invoice.total is not None else None
+        date = invoice.date
+        ref_folio = fkey.folio
+    else:
+        counterparty_rut = normalize_rut(counterparty_rut) if counterparty_rut else ""
+
+    ref = Reference(
+        kind="erp",
+        direction=direction,
+        sii_code=sii_code,
+        date=date,
+        rut=counterparty_rut or None,
+        amount=amount,
+        folio=ref_folio,
+        free_payment_amounts=frozenset(),
+    )
+
+    qs = (
+        FiscalMatch.objects.filter(
+            invoice__isnull=True,
+            direction=direction,
+        )
+        .exclude(status__in=SETTLED)
+        .prefetch_related("rcv_documents", "terminal_sales__device")
+    )
+    if sii_code is not None:
+        qs = qs.filter(Q(dte_type__isnull=True) | Q(dte_type=sii_code))
+
+    qs = qs.filter(_match_group_q(q)).distinct() if q else qs.filter(issue_date__gte=_since())
+
+    def _build(rows: list[FiscalMatch]) -> list[dict]:
+        items = []
+        for group in rows:
+            rcvs = list(group.rcv_documents.all())
+            sales = list(group.terminal_sales.all())
+            doc = rcvs[0] if rcvs else None
+            sale = sales[0] if sales else None
+
+            if doc:
+                kind = "rcv"
+                f_sii = doc.dte_type
+                f_date = doc.issue_date
+                f_rut = doc.counterparty_rut
+                f_amount = abs(doc.total_amount)
+                f_folio = doc.folio
+                f_name = doc.counterparty_name or normalize_rut(doc.counterparty_rut) or doc.counterparty_rut
+                label = f"DTE {group.dte_type or doc.dte_type} N° {doc.folio}"
+            elif sale:
+                kind = "tuu"
+                f_sii = sale.document_type
+                at = timezone.localtime(sale.transaction_at)
+                f_date = at.date()
+                f_rut = None
+                f_amount = sale.sale_amount
+                f_folio = None
+                f_name = sale.device.name if sale.device else "Venta TUU"
+                label = f"Venta TUU #{sale.pk}"
+            else:
+                kind = "rcv"
+                f_sii = group.dte_type
+                f_date = group.issue_date
+                f_rut = group.counterparty_rut
+                f_amount = group.rcv_amount or group.tuu_amount or Decimal(0)
+                f_folio = None
+                f_name = group.counterparty_rut
+                label = f"Grupo #{group.pk}"
+
+            facts = CandidateFacts(
+                kind=kind,
+                direction=group.direction,
+                sii_code=f_sii,
+                date=f_date,
+                rut=f_rut,
+                amount=f_amount,
+                folio=f_folio,
+            )
+            item = _item(ref, facts, group.pk, label, f_name)
+            item["fiscal_match_id"] = group.pk
+            item["carried_rcv"] = [{"id": d.pk, "folio": str(d.folio)} for d in rcvs]
+            items.append(item)
+        return items
+
+    return Search(_ordered(qs, ref, _MATCH_GROUP, ordering), _build)
+

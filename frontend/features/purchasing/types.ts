@@ -121,6 +121,7 @@ export interface DTEData {
     date: string
     attachment: File | null
     isPending: boolean
+    pickedFiscalMatchId?: number | null
 }
 
 export interface PaymentData {

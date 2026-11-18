@@ -83,6 +83,7 @@ export function PurchaseCheckoutWizard({
     
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
     const [selectedSupplierName, setSelectedSupplierName] = useState("")
+    const [selectedSupplierRut, setSelectedSupplierRut] = useState("")
     const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
     const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
     const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
@@ -284,28 +285,33 @@ export function PurchaseCheckoutWizard({
                 return false
             }
         }
-        if (targetStep === 3 && dteData.type === 'FACTURA' && !dteData.isPending) {
-            if (!dteData.attachment) {
-                toast.error("Debe adjuntar el archivo de la factura.")
-                return false
+        if (targetStep === 3) {
+            if (dteData.pickedFiscalMatchId) {
+                return true
             }
-            if (!dteData.number) {
-                toast.error("Debe ingresar el número de folio de la factura.")
-                return false
+            if (dteData.type === 'FACTURA' && !dteData.isPending) {
+                if (!dteData.attachment) {
+                    toast.error("Debe adjuntar el archivo de la factura.")
+                    return false
+                }
+                if (!dteData.number) {
+                    toast.error("Debe ingresar el número de folio de la factura.")
+                    return false
+                }
             }
-        }
 
-        // Tax Period Validation (Handled visually in live, but enforced here)
-        if (targetStep === 3 && !dteData.isPending && dteData.date) {
-            if (!isPeriodValid) {
-                toast.error(`No se puede continuar. El periodo ya se encuentra cerrado.`)
+            // Tax Period Validation (Handled visually in live, but enforced here)
+            if (!dteData.isPending && dteData.date) {
+                if (!isPeriodValid) {
+                    toast.error(`No se puede continuar. El periodo ya se encuentra cerrado.`)
+                    return false
+                }
+            }
+
+            if (dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
+                toast.error("Debe ingresar el número de folio de la boleta.")
                 return false
             }
-        }
-
-        if (targetStep === 3 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
-            toast.error("Debe ingresar el número de folio de la boleta.")
-            return false
         }
         const isPaymentStep = isOnlySubscriptions ? targetStep === 4 : targetStep === 5
         if (isPaymentStep && paymentData.amount > 0) {
@@ -360,7 +366,7 @@ export function PurchaseCheckoutWizard({
         const isValid = await validateCurrentStep(step)
         if (!isValid) return false
 
-        if (step === 3 && !dteData.isPending && !isFolioValid) {
+        if (step === 3 && !dteData.isPending && !dteData.pickedFiscalMatchId && !isFolioValid) {
             toast.error("El número de folio ya ha sido utilizado para este proveedor. Ingrese uno válido para continuar.")
             return false
         }
@@ -405,6 +411,7 @@ export function PurchaseCheckoutWizard({
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
             formData.append('is_pending_registration', dteData.isPending.toString())
+            if (dteData.pickedFiscalMatchId) formData.append('fiscal_match_id', dteData.pickedFiscalMatchId.toString())
 
             // Payment data
             if (paymentData.amount > 0) {
@@ -479,6 +486,7 @@ export function PurchaseCheckoutWizard({
                         selectedSupplierId={selectedSupplierId}
                         setSelectedSupplierId={setSelectedSupplierId}
                         setSelectedSupplierName={setSelectedSupplierName}
+                        setSelectedSupplierRut={setSelectedSupplierRut}
                         selectedWorkOrderId={selectedWorkOrderId}
                         setSelectedWorkOrderId={setSelectedWorkOrderId}
                     />
@@ -499,6 +507,8 @@ export function PurchaseCheckoutWizard({
                         dteData={dteData}
                         setDteData={setDteData}
                         contactId={selectedSupplierId}
+                        supplierRut={selectedSupplierRut}
+                        total={currentTotal}
                         onValidityChange={(isValid) => setIsFolioValid(isValid)}
                         onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                     />
@@ -642,7 +652,7 @@ export function PurchaseCheckoutWizard({
                             ) : (
                                 <SubmitButton
                                     onClick={handleStepNext}
-                                    disabled={loading || (step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid))}
+                                    disabled={loading || (step === 3 && !dteData.isPending && !dteData.pickedFiscalMatchId && (!isFolioValid || !isPeriodValid))}
                                     loading={loading}
                                     icon={ChevronRight}
                                 >

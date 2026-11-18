@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from tax.fiscal_match import feeding, services
-from tax.fiscal_match.search import search_candidates
+from tax.fiscal_match.search import candidates_for_context, search_candidates
 from tax.fiscal_match.selectors import (
     fiscal_match_counts,
     fiscal_match_detail_queryset,
@@ -22,7 +22,9 @@ from tax.fiscal_match.serializers import (
     FiscalMatchDetailSerializer,
     FiscalMatchFilterSerializer,
     FiscalMatchListSerializer,
+    InvoiceCandidateQuerySerializer,
     InvoiceCandidateSerializer,
+    InvoiceSearchItemSerializer,
     PurchaseOrderOptionSerializer,
     SearchItemSerializer,
     SearchQuerySerializer,
@@ -67,6 +69,7 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
                 "retrieve",
                 "counts",
                 "search",
+                "invoice_candidates",
                 "draft_suggestions",
                 "purchase_orders",
             ),
@@ -91,6 +94,16 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["get"])
     def counts(self, request):
         return Response(fiscal_match_counts(_filters(request.query_params)))
+
+    @action(detail=False, methods=["get"], url_path="invoice-candidates")
+    def invoice_candidates(self, request):
+        params = _valid(InvoiceCandidateQuerySerializer, request.query_params)
+        found = candidates_for_context(**params)
+        paginator = SearchPagination()
+        page = paginator.paginate_queryset(found.queryset, request, view=self)
+        return paginator.get_paginated_response(
+            InvoiceSearchItemSerializer(found.build(page), many=True).data
+        )
 
     @action(detail=True, methods=["get"])
     def search(self, request, pk=None):

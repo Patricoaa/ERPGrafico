@@ -75,4 +75,35 @@ export const fiscalMatchApi = {
         api.post<FiscalMatchDetail>(`${BASE}/${id}/confirm-draft/`, { invoice_id: invoiceId }, idem(key)).then(r => r.data),
     createDraft: (id: number, purchaseOrderId: number, key: string) =>
         api.post<FiscalMatchDetail>(`${BASE}/${id}/create-draft/`, { purchase_order_id: purchaseOrderId }, idem(key)).then(r => r.data),
+
+    // Candidatos para un documento o pre-contexto (asistido por cuadre)
+    invoiceCandidates: async (
+        params: {
+            invoice_id?: number | null
+            direction?: string
+            sii_code?: number
+            counterparty_rut?: string | null
+            amount?: number | null
+            q?: string
+            ordering?: string
+            page?: number
+        },
+        signal?: AbortSignal
+    ): Promise<Page<FiscalMatchSearchItem & { fiscal_match_id: number }>> => {
+        const query = new URLSearchParams()
+        if (params.invoice_id) query.set('invoice_id', String(params.invoice_id))
+        if (params.direction) query.set('direction', params.direction)
+        if (params.sii_code) query.set('sii_code', String(params.sii_code))
+        if (params.counterparty_rut) query.set('counterparty_rut', params.counterparty_rut)
+        if (params.amount) query.set('amount', String(params.amount))
+        if (params.q) query.set('q', params.q)
+        if (params.ordering) query.set('ordering', params.ordering)
+        query.set('page', String(params.page ?? 1))
+        const response = await api.get(`${BASE}/invoice-candidates/`, { params: query, signal })
+        return toPage<FiscalMatchSearchItem & { fiscal_match_id: number }>(
+            response.data,
+            params.page ?? 1,
+            FISCAL_MATCH_SEARCH_PAGE_SIZE
+        )
+    },
 }

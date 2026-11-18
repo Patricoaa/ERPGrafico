@@ -4,19 +4,14 @@
  * NoteStep_Registration
  *
  * Unified DTE registration step for both sales and purchase note wizards.
- * Covers: folio number, emission date, file attachment, and "pending" toggle.
- *
- * Replaces:
- *  - features/billing/components/checkout/Step3_Registration.tsx
- *  - The registration fields inside purchasing/notes/Step1_GeneralInfo
+ * Uses DteRegistrationPanel to offer assignment from RCV pending candidates
+ * as primary option, and manual registration as fallback.
  */
 
-import { DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
-import { FileText, Hash, ShieldAlert } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useServerDate } from '@/hooks/useServerDate'
-import { useEffect } from 'react'
-import type { NoteType, RegistrationData } from '@/features/notes'
+import { useMemo } from "react"
+import { DteRegistrationPanel } from "@/components/shared"
+import { DteClass, DteDirection, FiscalMatchContext, getDteSiiCode } from "@/lib/dte"
+import type { NoteType, RegistrationData } from "@/features/notes"
 
 interface NoteStep_RegistrationProps {
     isCreditNote: boolean
@@ -24,6 +19,10 @@ interface NoteStep_RegistrationProps {
     data: RegistrationData
     setData: (data: RegistrationData | ((prev: RegistrationData) => RegistrationData)) => void
     onPeriodValidityChange?: (isValid: boolean) => void
+    direction?: DteDirection
+    counterpartyRut?: string | null
+    total?: number
+    invoiceId?: number
 }
 
 export function NoteRegistrationStep({
@@ -32,105 +31,49 @@ export function NoteRegistrationStep({
     data,
     setData,
     onPeriodValidityChange,
+    direction = "sale",
+    counterpartyRut,
+    total,
+    invoiceId,
 }: NoteStep_RegistrationProps) {
-    const { dateString } = useServerDate()
-
-    // Sync server date when it arrives late
-    useEffect(() => {
-        if (dateString && !data.documentDate) {
-            setData(prev => ({ ...prev, documentDate: dateString }))
+    const fiscalContext = useMemo<FiscalMatchContext>(() => {
+        const code = getDteSiiCode(noteType as DteClass)
+        return {
+            direction,
+            sii_code: code ?? undefined,
+            counterparty_rut: counterpartyRut || undefined,
+            total: total && total > 0 ? total : undefined,
         }
-    }, [dateString]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [noteType, direction, counterpartyRut, total])
 
     return (
         <div className="w-full h-full flex flex-col space-y-6">
-            <div className="flex flex-col gap-1 text-left">
-                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Registro de Documento
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Ingrese la información relacionada al DTE y adjunte el respaldo legal.
-                </p>
-            </div>
-
-            <div className="space-y-4">
-                <LabeledSwitch
-                    label="Emisión"
-                    description={data.isPending ? "Emitiré/recibiré la nota luego" : "Emisión inmediata"}
-                    checked={data.isPending}
-                    onCheckedChange={(checked) => {
-                        const isChecked = !!checked
-                        if (isChecked) {
-                            setData(prev => ({
-                                ...prev,
-                                isPending: true,
-                                documentNumber: '',
-                                attachment: null,
-                            }))
-                            onPeriodValidityChange?.(true)
-                        } else {
-                            setData(prev => ({ ...prev, isPending: false }))
-                        }
-                    }}
-                    icon={<FileText className={cn("h-4 w-4 transition-colors", data.isPending ? "text-warning" : "text-muted-foreground/30")} />}
-                    className={cn(data.isPending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
-                />
-
-                {!data.isPending && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="grid grid-cols-2 gap-4">
-                            <LabeledInput
-                                label="N° de Folio"
-                                icon={<Hash className="h-3 w-3" />}
-                                placeholder="Ej: 45223"
-                                className="bg-background"
-                                value={data.documentNumber}
-                                onChange={(e) =>
-                                    setData(prev => ({ ...prev, documentNumber: e.target.value }))
-                                }
-                                required
-                            />
-
-                            <PeriodValidationDateInput
-                                    date={data.documentDate ? new Date(data.documentDate + 'T12:00:00') : undefined}
-                                    onDateChange={(d) => {
-                                        if (d) {
-                                            const year = d.getFullYear()
-                                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                                            const day = String(d.getDate()).padStart(2, '0')
-                                            setData(prev => ({ ...prev, documentDate: `${year}-${month}-${day}` }))
-                                        } else {
-                                            setData(prev => ({ ...prev, documentDate: '' }))
-                                        }
-                                    }}
-                                    validationType="both"
-                                    onValidityChange={onPeriodValidityChange}
-                                />
-
-                            <div className="col-span-2">
-                                <DocumentAttachmentDropzone
-                                    file={data.attachment}
-                                    onFileChange={(file) =>
-                                        setData(prev => ({ ...prev, attachment: file }))
-                                    }
-                                    dteType={noteType}
-                                    isPending={data.isPending}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-2 p-3 bg-primary/10 text-primary rounded-md text-2xs leading-tight">
-                            <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                            <p>
-                                {isCreditNote
-                                    ? 'Recuerde que la información ingresada debe coincidir exactamente con el documento tributario emitido en el SII.'
-                                    : 'Los datos del documento deben coincidir con los registros del proveedor y el SII.'}
-                            </p>
-                        </div>
-                    </div>
-                )}
-            </div>
+            <DteRegistrationPanel
+                data={{
+                    dteClass: noteType as DteClass,
+                    isPending: !!data.isPending,
+                    folio: data.documentNumber || "",
+                    issueDate: data.documentDate || "",
+                    attachment: data.attachment || null,
+                    pickedFiscalMatchId: data.pickedFiscalMatchId ?? null,
+                }}
+                onChange={(next) => {
+                    setData((prev) => ({
+                        ...prev,
+                        isPending: next.isPending,
+                        documentNumber: next.folio,
+                        documentDate: next.issueDate,
+                        attachment: next.attachment,
+                        pickedFiscalMatchId: next.pickedFiscalMatchId ?? null,
+                    }))
+                }}
+                direction={direction}
+                fiscalMatchContext={fiscalContext}
+                invoiceId={invoiceId}
+                allowTypeChange={false}
+                typeOptions={[noteType as DteClass]}
+                onPeriodValidityChange={onPeriodValidityChange}
+            />
         </div>
     )
 }

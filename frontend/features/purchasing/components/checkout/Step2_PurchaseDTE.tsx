@@ -1,160 +1,91 @@
 "use client"
 
-import {FileText, Receipt, AlertCircle} from "lucide-react"
-import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
-import { cn } from "@/lib/utils"
-import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer, ChoiceCard, ChoiceGroup, StepHeader } from '@/components/shared'
-
+import { useBillingSettingsQuery } from "@/features/settings"
+import { StepHeader, DteRegistrationPanel } from "@/components/shared"
+import { FileText } from "lucide-react"
+import { DteClass, FiscalMatchContext, getDteSiiCode } from "@/lib/dte"
 import { type DTEData } from "../../types"
 
 interface Step2_PurchaseDTEProps {
     dteData: DTEData
     setDteData: (data: DTEData) => void
     contactId?: number | string | null
+    supplierRut?: string | null
+    total?: number
     onValidityChange?: (isValid: boolean) => void
     onPeriodValidityChange?: (isValid: boolean) => void
 }
 
-export function Step2_PurchaseDTE({ 
-    dteData, 
+const DEFAULT_ALLOWED: DteClass[] = ["BOLETA", "FACTURA", "BOLETA_EXENTA", "FACTURA_EXENTA"]
+
+export function Step2_PurchaseDTE({
+    dteData,
     setDteData,
-    contactId,
+    supplierRut,
+    total,
     onValidityChange,
-    onPeriodValidityChange
+    onPeriodValidityChange,
 }: Step2_PurchaseDTEProps) {
-    // Fetch billing settings to get allowed DTE types
     const { settings } = useBillingSettingsQuery()
 
-    const allowedDteTypes = useMemo(() => {
-        if (!settings) return ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];
-        const allowed = settings.allowed_dte_types_receive || [];
-        return allowed.length > 0 ? allowed : ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];
+    const allowedDteTypes = useMemo<DteClass[]>(() => {
+        if (!settings) return DEFAULT_ALLOWED
+        const allowed = (settings.allowed_dte_types_receive || []) as DteClass[]
+        const valid = allowed.filter((t) => DEFAULT_ALLOWED.includes(t))
+        return valid.length > 0 ? valid : DEFAULT_ALLOWED
     }, [settings])
 
-    // Enforce allowed DTE types
     useEffect(() => {
-        if (!allowedDteTypes.includes(dteData.type)) {
-            // If current type is not allowed, switch to first allowed
-            setDteData({ ...dteData, type: allowedDteTypes[0] })
+        if (!allowedDteTypes.includes(dteData.type as DteClass)) {
+            setDteData({ ...dteData, type: allowedDteTypes[0], pickedFiscalMatchId: null })
         }
-    }, [dteData.type, setDteData, allowedDteTypes])
+    }, [dteData.type, allowedDteTypes, setDteData])
 
-    const dteOptions = [
-        { id: 'BOLETA', label: 'Boleta', code: '39', icon: Receipt },
-        { id: 'FACTURA', label: 'Factura', code: '33', icon: FileText },
-        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, iconClassName: 'text-warning' },
-        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, iconClassName: 'text-warning' },
-    ]
+    const fiscalContext = useMemo<FiscalMatchContext>(() => {
+        const code = getDteSiiCode(dteData.type as DteClass)
+        return {
+            direction: "purchase",
+            sii_code: code ?? undefined,
+            counterparty_rut: supplierRut || undefined,
+            total: total && total > 0 ? total : undefined,
+        }
+    }, [dteData.type, supplierRut, total])
 
-    const filteredOptions = useMemo(() => {
-        return dteOptions.filter(opt => allowedDteTypes.includes(opt.id));
-    }, [allowedDteTypes])
     return (
-        <div className="space-y-2">
-            <div className="flex flex-col gap-1 mb-2">
-                <StepHeader title="Registro de Documento" description="Ingrese la información relacionada al DTE y adjunte el respaldo legal." icon={FileText} />
-            </div>
-            <div className="space-y-2">
-                <LabeledContainer
-                    label="Tipo de Documento"
-                    className="border-none group-focus-within:border-transparent group-focus-within:ring-0 group-focus-within:shadow-none"
-                >
-                    <ChoiceGroup
-                        label="Tipo de Documento"
-                        columns="grid-cols-1 md:grid-cols-3"
-                        activation="select"
-                    >
-                        {filteredOptions.map((opt) => (
-                            <ChoiceCard
-                                variant="light"
-                                key={opt.id}
-                                selected={dteData.type === opt.id}
-                                onSelect={() => setDteData({ ...dteData, type: opt.id })}
-                                title={opt.label}
-                                description={`Código SII: ${opt.code}`}
-                                icon={opt.icon}
-                                iconClassName={opt.iconClassName}
-                            />
-                        ))}
-                    </ChoiceGroup>
-                </LabeledContainer>
-            </div>
+        <div className="space-y-6">
+            <StepHeader
+                title="Registro de Documento"
+                description="Asigne el documento pendiente desde el RCV del SII o regístrelo manualmente con su respaldo."
+                icon={FileText}
+            />
 
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <LabeledSwitch
-                    label="Recepción"
-                    description={dteData.isPending ? "Recibiré el documento luego" : "Recepción inmediata"}
-                    checked={!!dteData.isPending}
-                    onCheckedChange={(checked) => {
-                        const pending = !!checked;
-                        if (pending) {
-                            setDteData({ ...dteData, isPending: true, number: '', attachment: null });
-                            onValidityChange?.(true);
-                            onPeriodValidityChange?.(true);
-                        } else {
-                            setDteData({ ...dteData, isPending: false });
-                        }
-                    }}
-                    icon={<FileText className={cn("h-4 w-4 transition-colors", dteData.isPending ? "text-warning" : "text-muted-foreground/30")} />}
-                    className="h-full"
-                    color="info"
-                />
-
-                {!dteData.isPending && (
-                    <div className="grid grid-cols-2 gap-4">
-                        <FolioValidationInput
-                            value={dteData.number}
-                            onChange={(val: string) => setDteData({ ...dteData, number: val })}
-                            dteType={dteData.type}
-                            contactId={contactId ? Number(contactId) : undefined}
-                            isPurchase={true}
-                            onValidityChange={onValidityChange}
-                            disabled={dteData.isPending}
-                        />
-                        <PeriodValidationDateInput
-                            label="Fecha Emisión"
-                            required
-                            date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
-                            onDateChange={(d) => {
-                                if (d) {
-                                    const year = d.getFullYear()
-                                    const month = String(d.getMonth() + 1).padStart(2, '0')
-                                    const day = String(d.getDate()).padStart(2, '0')
-                                    setDteData({ ...dteData, date: `${year}-${month}-${day}` })
-                                } else {
-                                    setDteData({ ...dteData, date: "" })
-                                }
-                            }}
-                            validationType="both"
-                            onValidityChange={onPeriodValidityChange}
-                            disabled={dteData.isPending}
-                        />
-                        <div className="col-span-2">
-                            <DocumentAttachmentDropzone
-                                file={dteData.attachment}
-                                onFileChange={(file) => setDteData({ ...dteData, attachment: file })}
-                                dteType={dteData.type}
-                                isPending={dteData.isPending}
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {dteData.type === 'BOLETA' && !dteData.isPending && (
-                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-md text-xs leading-tight">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque &ldquo;Recibiré el documento luego&rdquo;.</p>
-                </div>
-            )}
-
-            {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-md text-xs leading-tight">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
-                </div>
-            )}
+            <DteRegistrationPanel
+                data={{
+                    dteClass: dteData.type as DteClass,
+                    isPending: !!dteData.isPending,
+                    folio: dteData.number || "",
+                    issueDate: dteData.date || "",
+                    attachment: dteData.attachment || null,
+                    pickedFiscalMatchId: dteData.pickedFiscalMatchId ?? null,
+                }}
+                onChange={(next) => {
+                    setDteData({
+                        ...dteData,
+                        type: next.dteClass,
+                        isPending: next.isPending,
+                        number: next.folio,
+                        date: next.issueDate,
+                        attachment: next.attachment,
+                        pickedFiscalMatchId: next.pickedFiscalMatchId ?? null,
+                    })
+                }}
+                direction="purchase"
+                fiscalMatchContext={fiscalContext}
+                typeOptions={allowedDteTypes}
+                onFolioValidityChange={onValidityChange}
+                onPeriodValidityChange={onPeriodValidityChange}
+            />
         </div>
     )
 }

@@ -303,6 +303,8 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                             onValidityChange={(isValid) => setIsFolioValid(isValid)}
                             onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                             touchMode={touchMode}
+                            customerRut={selectedCustomer?.tax_id}
+                            total={currentTotal}
                         />
                     </div>
                 )
@@ -353,6 +355,9 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     return { isValid: true }
 
                 case 'dte':
+                    if (dteData.pickedFiscalMatchId) {
+                        return { isValid: true }
+                    }
                     if (dteData.type !== 'BOLETA' && !dteData.isPending) {
                         if (!dteData.number || !dteData.date || !dteData.attachment) {
                             setStepError("Faltan datos obligatorios del documento DTE.")
@@ -556,6 +561,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
             if (dteData.number) formData.append('document_number', dteData.number)
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
+            if (dteData.pickedFiscalMatchId) formData.append('fiscal_match_id', dteData.pickedFiscalMatchId.toString())
             const multiPayments = paymentData.payments
             const hasMultiPayment = Array.isArray(multiPayments) && multiPayments.length > 0
 

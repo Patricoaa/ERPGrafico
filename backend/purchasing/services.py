@@ -1227,6 +1227,13 @@ class PurchasingService:
         if check_bank_id:
             check_bank_id = int(check_bank_id)
 
+        fiscal_match_id = data.get("fiscal_match_id")
+        if fiscal_match_id:
+            try:
+                fiscal_match_id = int(fiscal_match_id)
+            except (ValueError, TypeError):
+                fiscal_match_id = None
+
         installments_raw = data.get("installments", 1)
         try:
             installments = int(installments_raw) if installments_raw is not None else 1
@@ -1253,6 +1260,7 @@ class PurchasingService:
             "checkbook_id": data.get("checkbook_id"),
             "receipt_type": data.get("receipt_type", "IMMEDIATE"),
             "receipt_data": receipt_data,
+            "fiscal_match_id": fiscal_match_id,
             "user": request.user,
         }
         return PurchasingService.purchase_checkout(**params)
@@ -1295,6 +1303,7 @@ class PurchasingService:
         check_issue_date=None,
         check_due_date=None,
         checkbook_id=None,
+        fiscal_match_id=None,
     ):
         """
         Complete Purchase checkout: Create Order -> Register Bill -> Payment -> Receipt.
@@ -1494,6 +1503,22 @@ class PurchasingService:
                 subscription_dates=subscription_dates,
             )
         # DEFERRED: No receipt created
+
+        # 5. Link FiscalMatch if specified
+        if fiscal_match_id and invoice:
+            try:
+                from tax.fiscal_match import services as match_services
+                from tax.models import FiscalMatch
+
+                match_group = FiscalMatch.objects.filter(pk=fiscal_match_id, invoice__isnull=True).first()
+                if match_group:
+                    match_services.apply_changes(match_group, [{"op": "link", "part": "erp", "id": invoice.id}])
+            except Exception as e:
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    "No se pudo vincular FiscalMatch %s a la factura %s: %s", fiscal_match_id, invoice.id, e
+                )
 
         return {"order": order, "invoice": invoice, "payment": payment, "receipt": receipt}
 

@@ -1,8 +1,18 @@
-export { DeclarationWizard, TaxDeclarationsClientView, F29PaymentStep, F29CloseStep, FiscalMatchClientView, FiscalMatchDrawer } from './components'
+export {
+    DeclarationWizard,
+    TaxDeclarationsClientView,
+    F29PaymentStep,
+    F29CloseStep,
+    FiscalMatchClientView,
+    FiscalMatchDrawer,
+    FiscalMatchPickerPanel,
+    type FiscalMatchPickerPanelProps,
+} from './components'
 export { deriveF29Phase, type F29Phase } from './utils/f29Phase'
 export type { TaxPeriod, TaxDeclaration, TaxPaymentData } from './types'
 export { useTaxPeriods, useTaxPeriod, useClosePeriod, useReopenPeriod, useCreateTaxPayment } from './hooks'
 export { taxApi } from './api/taxApi'
+export { fiscalMatchApi, applyErrorOf } from './api/fiscalMatchApi'
 
 export { validateTaxPeriod } from './actions'
 export type {

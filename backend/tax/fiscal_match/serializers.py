@@ -274,3 +274,28 @@ class PurchaseOrderOptionSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = ["id", "display_id", "date", "total"]
         read_only_fields = fields
+
+
+class InvoiceCandidateQuerySerializer(serializers.Serializer):
+    """Query params para buscar grupos FiscalMatch candidatos para un documento o pre-contexto."""
+
+    invoice_id = serializers.IntegerField(required=False, default=None)
+    direction = serializers.ChoiceField(choices=["sale", "purchase"], required=False, default=None)
+    sii_code = serializers.IntegerField(required=False, default=None)
+    counterparty_rut = serializers.CharField(required=False, allow_blank=True, default="")
+    amount = serializers.DecimalField(max_digits=14, decimal_places=0, required=False, default=None)
+    date = serializers.DateField(required=False, default=None)
+    q = serializers.CharField(required=False, allow_blank=True, max_length=40, default="")
+    ordering = serializers.ChoiceField(choices=["score", "recent"], required=False, default="score")
+
+    def validate(self, data):
+        if not data.get("invoice_id") and not (data.get("direction") and data.get("sii_code")):
+            raise serializers.ValidationError("Debe indicar invoice_id o direction y sii_code.")
+        return data
+
+
+class InvoiceSearchItemSerializer(SearchItemSerializer):
+    """Tarjeta candidata de grupo FiscalMatch con referencia a su ID de grupo."""
+
+    fiscal_match_id = serializers.IntegerField(read_only=True)
+

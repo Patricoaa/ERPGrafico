@@ -10,6 +10,7 @@ export interface Step0_SupplierProps {
     selectedSupplierId: string | null
     setSelectedSupplierId: (id: string | null) => void
     setSelectedSupplierName: (name: string) => void
+    setSelectedSupplierRut?: (rut: string) => void
     selectedWorkOrderId: string | null
     setSelectedWorkOrderId: (id: string | null) => void
 }
@@ -18,6 +19,7 @@ export function Step0_Supplier({
     selectedSupplierId,
     setSelectedSupplierId,
     setSelectedSupplierName,
+    setSelectedSupplierRut,
     selectedWorkOrderId,
     setSelectedWorkOrderId
 }: Step0_SupplierProps) {
@@ -31,9 +33,10 @@ export function Step0_Supplier({
                     // Fetch contacts filtered by default vendor flag
                     const suppliers = await purchasingApi.getDefaultSupplier()
                     if (suppliers && suppliers.length > 0) {
-                        const defaultSupplier = suppliers[0] as { id: number; name: string }
+                        const defaultSupplier = suppliers[0] as { id: number; name: string; tax_id?: string }
                         setSelectedSupplierId(defaultSupplier.id.toString())
                         setSelectedSupplierName(defaultSupplier.name)
+                        if (defaultSupplier.tax_id) setSelectedSupplierRut?.(defaultSupplier.tax_id)
                     }
                 } catch (error) {
                     console.error("Failed to fetch default supplier", error)
@@ -43,7 +46,7 @@ export function Step0_Supplier({
             }
         }
         fetchDefaultSupplier()
-    }, [selectedSupplierId, setSelectedSupplierId, setSelectedSupplierName])
+    }, [selectedSupplierId, setSelectedSupplierId, setSelectedSupplierName, setSelectedSupplierRut])
 
     return (
         <div className="space-y-6">
@@ -68,6 +71,7 @@ export function Step0_Supplier({
                     onSelect={(contact) => {
                         setSelectedSupplierId(contact.id.toString())
                         setSelectedSupplierName(contact.name)
+                        if (contact.tax_id) setSelectedSupplierRut?.(contact.tax_id)
                     }}
                     contactType="SUPPLIER"
                     placeholder="Buscar por Nombre, RUT o Email..."

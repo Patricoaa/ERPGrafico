@@ -48,10 +48,9 @@ const wrap = (ui: React.ReactElement) =>
 describe("InvoiceRegistrationModal", () => {
     beforeEach(() => { getMock.mockReset(); postMock.mockReset() })
 
-    it("renders DTE type selector and folio/date/attachment fields", async () => {
+    it("renders DTE type selector and folio/date/attachment fields in manual mode", async () => {
         getMock.mockResolvedValue({ data: ORDERS })
-        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
-        // Wait for the modal to render — LabeledSelect uses fieldset/legend, find by role heading or text
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} defaultMode="manual" />)
         await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
         expect(screen.getByText(/n° de folio/i)).toBeInTheDocument()
         expect(screen.getAllByText(/adjunto/i).length).toBeGreaterThan(0)
@@ -59,7 +58,7 @@ describe("InvoiceRegistrationModal", () => {
 
     it("requires attachment for FACTURA on purchase side", async () => {
         getMock.mockResolvedValue({ data: ORDERS })
-        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} defaultMode="manual" />)
         await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
         // dteType defaults to FACTURA — attachment label should say "obligatorio"
         expect(screen.getByText(/obligatorio/i)).toBeInTheDocument()
@@ -74,7 +73,7 @@ describe("InvoiceRegistrationModal", () => {
 
     it("auto-fills all pending quantities on load", async () => {
         getMock.mockResolvedValue({ data: ORDERS })
-        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} defaultMode="manual" />)
         // Open the lines section first
         await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
         // Click to expand the lines section
@@ -86,7 +85,7 @@ describe("InvoiceRegistrationModal", () => {
 
     it("shows and hides the lines section with the toggle", async () => {
         getMock.mockResolvedValue({ data: ORDERS })
-        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} defaultMode="manual" />)
         await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
         // Lines section starts collapsed — product name not visible
         expect(screen.queryByText(/producto a/i)).not.toBeInTheDocument()
@@ -101,10 +100,11 @@ describe("InvoiceRegistrationModal", () => {
 
     it("hides attachment requirement in pending mode", async () => {
         getMock.mockResolvedValue({ data: ORDERS })
-        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} />)
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} defaultMode="manual" />)
         await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
-        // Click the pending checkbox
-        await userEvent.click(screen.getByLabelText(/aún no tengo/i))
+        // Click the emit later switch
+        const switchBtn = screen.getByRole("switch")
+        await userEvent.click(switchBtn)
         // In pending mode, attachment section is hidden — no "obligatorio" text
         expect(screen.queryByText(/obligatorio/i)).not.toBeInTheDocument()
         // Submit button should be enabled
@@ -117,7 +117,7 @@ describe("InvoiceRegistrationModal", () => {
             .mockResolvedValueOnce({ data: { id: 55, display_id: "OC-FACV-55" } })   // from-lines
             .mockResolvedValueOnce({ data: { id: 55, display_id: "OC-FACV-55" } })   // confirm
         const onSuccess = vi.fn()
-        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} onSuccess={onSuccess} />)
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} onSuccess={onSuccess} defaultMode="manual" />)
         await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
 
         // Type folio via fireEvent to avoid triggering Radix validation popover
@@ -143,10 +143,11 @@ describe("InvoiceRegistrationModal", () => {
         getMock.mockResolvedValue({ data: ORDERS })
         postMock.mockResolvedValue({ data: { id: 56, display_id: "OC-FACV-56" } })
         const onSuccess = vi.fn()
-        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} onSuccess={onSuccess} />)
+        wrap(<InvoiceRegistrationModal open onOpenChange={vi.fn()} side="purchase" orderId={7} partnerId={20} onSuccess={onSuccess} defaultMode="manual" />)
         await waitFor(() => expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument())
 
-        await userEvent.click(screen.getByLabelText(/aún no tengo/i))
+        const switchBtn = screen.getByRole("switch")
+        await userEvent.click(switchBtn)
         await userEvent.click(screen.getByRole("button", { name: /registrar documento/i }))
 
         await waitFor(() => {

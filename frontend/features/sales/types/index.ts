@@ -139,6 +139,7 @@ export interface CheckoutDTEData {
     date: string
     attachment: File | null
     isPending: boolean
+    pickedFiscalMatchId?: number | null
 }
 
 import type { PaymentAllocation } from "@/features/treasury"

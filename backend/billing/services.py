@@ -101,6 +101,13 @@ class BillingService:
         if check_bank_id:
             check_bank_id = int(check_bank_id)
 
+        fiscal_match_id = data.get("fiscal_match_id")
+        if fiscal_match_id:
+            try:
+                fiscal_match_id = int(fiscal_match_id)
+            except (ValueError, TypeError):
+                fiscal_match_id = None
+
         payments_raw = data.get("payments")
         payments = None
         if payments_raw:
@@ -141,6 +148,7 @@ class BillingService:
             "checkbook_id": data.get("checkbook_id"),
             "credit_approval_task_id": data.get("credit_approval_task_id"),
             "draft_id": data.get("draft_id"),
+            "fiscal_match_id": fiscal_match_id,
             "payments": payments,
             "user": request.user,
         }
@@ -911,6 +919,7 @@ class BillingService:
         check_due_date=None,
         checkbook_id=None,
         payments=None,
+        fiscal_match_id=None,
     ):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
@@ -1574,6 +1583,22 @@ class BillingService:
             task_data["consumed_at"] = str(timezone.now())
             resolved_approval_task.data = task_data
             resolved_approval_task.save(update_fields=["data"])
+
+        # 7. Asignar FiscalMatch si se indicó en checkout
+        if fiscal_match_id and invoice:
+            try:
+                from tax.fiscal_match import services as match_services
+                from tax.models import FiscalMatch
+
+                match_group = FiscalMatch.objects.filter(pk=fiscal_match_id, invoice__isnull=True).first()
+                if match_group:
+                    match_services.apply_changes(match_group, [{"op": "link", "part": "erp", "id": invoice.id}])
+            except Exception as e:
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    "No se pudo vincular FiscalMatch %s al invoice %s: %s", fiscal_match_id, invoice.id, e
+                )
 
         return invoice
 

@@ -158,6 +158,10 @@ export * from './EntityCard'
 export * from './SelectorTrigger'
 export type { SelectorTriggerProps } from './SelectorTrigger'
 export * from './SelectorItem'
+export * from './DteTypeSelector'
+export * from './DteEmitLaterSwitch'
+export * from './DteFolioFields'
+export * from './DteRegistrationPanel'
 export type { SelectorItemProps } from './SelectorItem'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system

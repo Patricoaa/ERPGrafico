@@ -290,3 +290,132 @@ def test_removed_endpoints_404(api, tenv):
     ):
         r = getattr(api, method)(f"{BASE}/{matched.id}/{path}/", {"part": "tuu", "id": 1}, format="json", **_key())
         assert r.status_code == 404, path
+
+
+def test_invoice_candidates_empty(api, tenv):
+    r = api.get(f"{BASE}/invoice-candidates/?direction=purchase&sii_code=33")
+    assert r.status_code == 200
+    assert r.json()["results"] == []
+
+
+def test_invoice_candidates_with_groups_and_scoring(api, tenv):
+    from accounting.models import RCVDocument, RCVImport
+    from billing.models import Invoice
+
+    today = timezone.localdate()
+    imp = RCVImport.objects.create(
+        direction="PURCHASE", year=today.year, month=today.month, status=RCVImport.Status.SUCCESS
+    )
+    # Grupo huérfano 1: monto exacto 15000, mismo día -> alto score
+    doc1 = RCVDocument.objects.create(
+        direction="PURCHASE",
+        dte_type=33,
+        folio=1001,
+        issue_date=today,
+        total_amount=15000,
+        counterparty_rut="76123456-7",
+        first_import=imp,
+        last_import=imp,
+    )
+    g1 = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.PURCHASE,
+        status=FiscalMatchStatus.MISSING_ERP,
+        dte_type=33,
+        issue_date=today,
+        rcv_amount=15000,
+        counterparty_rut="76123456-7",
+    )
+    doc1.fiscal_match = g1
+    doc1.save()
+
+    # Grupo huérfano 2: monto distinto 50000, otra fecha -> menor score
+    doc2 = RCVDocument.objects.create(
+        direction="PURCHASE",
+        dte_type=33,
+        folio=1002,
+        issue_date=today - timedelta(days=10),
+        total_amount=50000,
+        counterparty_rut="76999999-9",
+        first_import=imp,
+        last_import=imp,
+    )
+    g2 = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.PURCHASE,
+        status=FiscalMatchStatus.MISSING_ERP,
+        dte_type=33,
+        issue_date=today - timedelta(days=10),
+        rcv_amount=50000,
+        counterparty_rut="76999999-9",
+    )
+    doc2.fiscal_match = g2
+    doc2.save()
+
+    # Grupo 3: MATCHED -> no debe aparecer
+    g3 = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.PURCHASE,
+        status=FiscalMatchStatus.MATCHED,
+        dte_type=33,
+        issue_date=today,
+        rcv_amount=15000,
+    )
+
+    r = api.get(f"{BASE}/invoice-candidates/?direction=purchase&sii_code=33&amount=15000&counterparty_rut=76123456-7")
+    assert r.status_code == 200
+    results = r.json()["results"]
+    assert len(results) == 2
+    assert results[0]["fiscal_match_id"] == g1.id
+    assert results[0]["score"] > results[1]["score"]
+    assert all(item["fiscal_match_id"] != g3.id for item in results)
+
+    # Probando con invoice_id en lugar de pre-contexto
+    inv = Invoice.objects.create(
+        dte_type=Invoice.DTEType.PURCHASE_INV,
+        number="",
+        date=today,
+        total=15000,
+        status=Invoice.Status.DRAFT,
+        partner_tax_id_snapshot="76.123.456-7",
+    )
+    r_inv = api.get(f"{BASE}/invoice-candidates/?invoice_id={inv.id}")
+    assert r_inv.status_code == 200
+    results_inv = r_inv.json()["results"]
+    assert len(results_inv) >= 1
+    assert results_inv[0]["fiscal_match_id"] == g1.id
+
+
+def test_invoice_candidates_constant_queries(api, tenv):
+    from accounting.models import RCVDocument, RCVImport
+
+    today = timezone.localdate()
+    imp = RCVImport.objects.create(
+        direction="PURCHASE", year=today.year, month=today.month, status=RCVImport.Status.SUCCESS
+    )
+    for i in range(5):
+        doc = RCVDocument.objects.create(
+            direction="PURCHASE",
+            dte_type=33,
+            folio=2000 + i,
+            issue_date=today,
+            total_amount=10000 * (i + 1),
+            counterparty_rut="76123456-7",
+            first_import=imp,
+            last_import=imp,
+        )
+        g = FiscalMatch.objects.create(
+            direction=FiscalMatch.Direction.PURCHASE,
+            status=FiscalMatchStatus.MISSING_ERP,
+            dte_type=33,
+            issue_date=today,
+            rcv_amount=10000 * (i + 1),
+            counterparty_rut="76123456-7",
+        )
+        doc.fiscal_match = g
+        doc.save()
+
+    with CaptureQueriesContext(connection) as ctx:
+        r = api.get(f"{BASE}/invoice-candidates/?direction=purchase&sii_code=33")
+    assert r.status_code == 200
+    assert len(r.json()["results"]) == 5
+    # Query count constante
+    assert len(ctx.captured_queries) <= 6
+
