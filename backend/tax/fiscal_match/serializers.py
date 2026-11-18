@@ -31,21 +31,6 @@ class FiscalMatchFilterSerializer(serializers.Serializer):
         return statuses
 
 
-class OptionalPeriodSerializer(serializers.Serializer):
-    year = serializers.IntegerField(min_value=2000, max_value=2100, required=False)
-    month = serializers.IntegerField(min_value=1, max_value=12, required=False)
-
-    def validate(self, attrs):
-        if ("year" in attrs) != ("month" in attrs):
-            raise serializers.ValidationError("Indica año y mes juntos.")
-        return attrs
-
-
-class PeriodSerializer(serializers.Serializer):
-    year = serializers.IntegerField(min_value=2000, max_value=2100)
-    month = serializers.IntegerField(min_value=1, max_value=12)
-
-
 class CandidatesQuerySerializer(serializers.Serializer):
     part = serializers.ChoiceField(choices=["erp", "tuu", "rcv"])
 

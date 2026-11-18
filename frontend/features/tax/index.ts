@@ -16,9 +16,6 @@ export type {
     FiscalMatchLinkBody,
     FiscalMatchUnlinkBody,
     FiscalMatchCandidate,
-    MonthlySummaryRow,
-    PendingIssue,
-    PendingIssueItem,
     RcvDocumentCandidate,
     RcvPurchaseOrderOption,
 } from './types/fiscalMatch'
@@ -27,8 +24,6 @@ export {
     useFiscalMatchCounts,
     useFiscalMatch,
     useFiscalMatchCandidates,
-    useFiscalMatchSummary,
-    usePendingIssue,
     useLinkFiscalMatch,
     useUnlinkFiscalMatch,
     useReleaseFiscalMatch,

@@ -52,24 +52,6 @@ export function useFiscalMatchCandidates<P extends FiscalMatchPart>(id: number, 
     return { candidates: data ?? [], isLoading, isError, isRefetching, refetch }
 }
 
-export function useFiscalMatchSummary(year: number, month: number) {
-    const { data, isLoading, isError, isRefetching, refetch } = useQuery({
-        queryKey: FISCAL_MATCH_KEYS.summary(year, month),
-        queryFn: () => fiscalMatchApi.summary(year, month),
-        staleTime: staleTime.standard,
-    })
-    return { summary: data, isLoading, isError, isRefetching, refetch }
-}
-
-export function usePendingIssue(period?: { year: number; month: number }) {
-    const { data, isLoading, isError, isRefetching, refetch } = useQuery({
-        queryKey: [...FISCAL_MATCH_KEYS.pendingIssue(), period?.year ?? null, period?.month ?? null],
-        queryFn: () => fiscalMatchApi.pendingIssue(period),
-        staleTime: staleTime.standard,
-    })
-    return { pendingIssue: data, isLoading, isError, isRefetching, refetch }
-}
-
 /** Invalida el cuadre y las listas de RCV/TUU. */
 export function useInvalidateFiscalMatch() {
     const qc = useQueryClient()

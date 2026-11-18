@@ -16,8 +16,6 @@ export {
     useFiscalMatchCounts,
     useFiscalMatch,
     useFiscalMatchCandidates,
-    useFiscalMatchSummary,
-    usePendingIssue,
     useLinkFiscalMatch,
     useUnlinkFiscalMatch,
     useReleaseFiscalMatch,

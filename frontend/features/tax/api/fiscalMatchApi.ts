@@ -9,8 +9,6 @@ import type {
     FiscalMatchListItem,
     FiscalMatchPart,
     FiscalMatchUnlinkBody,
-    MonthlySummaryRow,
-    PendingIssue,
     RcvDocumentCandidate,
     RcvPurchaseOrderOption,
 } from '../types/fiscalMatch'
@@ -53,10 +51,6 @@ export const fiscalMatchApi = {
         api.post<FiscalMatchDetail>(`${BASE}/${id}/release/`, {}, idem(key)).then(r => r.data),
     retryIssue: (id: number, key: string) =>
         api.post<FiscalMatchDetail>(`${BASE}/${id}/retry-issue/`, {}, idem(key)).then(r => r.data),
-    summary: (year: number, month: number) =>
-        api.get<MonthlySummaryRow[]>(`${BASE}/summary/`, { params: { year, month } }).then(r => r.data),
-    pendingIssue: (period?: { year: number; month: number }) =>
-        api.get<PendingIssue>(`${BASE}/pending-issue/`, { params: period }).then(r => r.data),
 
     // Alimentación desde el RCV (documento RCV sin factura en el ERP)
     draftSuggestions: (id: number) =>

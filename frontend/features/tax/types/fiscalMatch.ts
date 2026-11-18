@@ -151,39 +151,6 @@ export interface FiscalMatchUnlinkBody {
     id: number
 }
 
-/** Fila del resumen mensual de boletas y comprobantes (39, 41, 48). `rcv_*`/`difference` son null sin importación RCV de ventas. */
-export interface MonthlySummaryRow {
-    dte_type: number
-    erp_count: number
-    erp_total: string
-    tuu_count: number
-    tuu_total: string
-    /** ERP más, en el 48, las ventas con tarjeta de facturas. */
-    expected_total: string
-    rcv_count: number | null
-    rcv_total: string | null
-    difference: string | null
-}
-
-export type PendingIssueReason = 'ERROR' | 'NO_TUU' | 'MANY_FOLIOS' | 'WAITING_RCV' | 'READY'
-
-export interface PendingIssueItem {
-    /** Id de la factura borrador. */
-    id: number
-    /** Id del grupo de cuadre. */
-    group: number
-    label: string
-    amount: string | null
-    date: string | null
-    reason: PendingIssueReason
-    error: string | null
-}
-
-export interface PendingIssue {
-    count: number
-    items: PendingIssueItem[]
-}
-
 /** Borrador de compra sugerido para un grupo con registro del SII sin factura. */
 export interface RcvDocumentCandidate {
     id: number

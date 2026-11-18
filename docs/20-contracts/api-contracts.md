@@ -1114,8 +1114,6 @@ Lectura exige `tax.view_taxperiod`; toda acción, `tax.change_taxperiod`. Cada g
 ```
 GET    /api/tax/fiscal-matches/                          lista paginada (filtros: direction, status repetible o con comas, incluye `ATTENTION`)
 GET    /api/tax/fiscal-matches/counts/                   conteos por estado con los mismos filtros, más `last_run_at` y `start_date` (`fiscal_match_start_date` o null)
-GET    /api/tax/fiscal-matches/summary/?year=&month=     resumen mensual 39/41/48
-GET    /api/tax/fiscal-matches/pending-issue/            borradores 39/41/48 sin folio y su motivo
 GET    /api/tax/fiscal-matches/{id}/                     ficha del grupo
 GET    /api/tax/fiscal-matches/{id}/candidates/?part=    candidatos erp | tuu | rcv para la unión manual
 POST   /api/tax/fiscal-matches/{id}/link/                unión manual (Idempotency-Key)
@@ -1127,6 +1125,8 @@ GET    /api/tax/fiscal-matches/{id}/purchase-orders/     OC elegibles para crear
 POST   /api/tax/fiscal-matches/{id}/confirm-draft/       asigna folio del RCV y emite el borrador (Idempotency-Key)
 POST   /api/tax/fiscal-matches/{id}/create-draft/        crea borrador desde una OC unido al grupo (Idempotency-Key)
 ```
+
+El resumen mensual (`summary/`) y los pendientes de folio (`pending-issue/`) se retiraron (ADR-0141 D10).
 
 `fiscal_mismatches` (`{count, by_status}` con `DIFF`, `AMBIGUOUS`, `MISSING_ERP`, `MISSING_EXTERNAL` del `fiscal_period`) también viaja en `status_check` y en la respuesta de calculate del F29. Solo informa, no bloquea.
 

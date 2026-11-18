@@ -59,9 +59,9 @@ Nuevos scopes de `Idempotency-Key`: `tax.fiscal_match.link`, `.unlink`, `.releas
 
 La emisión de borradores (ADR-0140 D3) se conserva, ahora leyendo el grupo y escribiendo `issue_attempted_at`/`issue_error` en él. Emite **por documento**, con una transacción por borrador: es una excepción acotada a ADR-0118 (la emisión asigna folio y publica el asiento; no se puede agrupar), no una lista que consulte por fila.
 
-### D10. Resumen mensual y F29
+### D10. Conteo del F29 (sin resumen mensual ni pendientes de folio)
 
-El **48 esperado** del resumen = comprobantes 48 del ERP + pagos TUU con tarjeta de facturas 33/34 del mes (confirmado por el usuario). La compuerta F29 `fiscal_mismatches` sigue en **Sugeridos** (no bloquea) con claves nuevas: `DIFF`, `AMBIGUOUS`, `MISSING_ERP`, `MISSING_EXTERNAL` del `fiscal_period`; `status_check`, el wizard F29 y el checklist de cierre se actualizaron.
+El resumen mensual 39/41/48 (con el **48 esperado** = comprobantes 48 del ERP + pagos TUU con tarjeta de facturas 33/34) y la lista de borradores pendientes de folio se **retiraron por decisión del usuario (2026-11-18)**: no tenían consumidor en la UI. Los endpoints `fiscal-matches/summary/` y `fiscal-matches/pending-issue/`, sus funciones y sus hooks ya no existen. Se mantiene `fiscal_mismatch_counts`: la compuerta F29 `fiscal_mismatches` sigue en **Sugeridos** (no bloquea) con claves nuevas: `DIFF`, `AMBIGUOUS`, `MISSING_ERP`, `MISSING_EXTERNAL` del `fiscal_period`; `status_check`, el wizard F29 y el checklist de cierre se actualizaron.
 
 ### D11. API y UI
 
