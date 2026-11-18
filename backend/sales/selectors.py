@@ -43,7 +43,7 @@ class SaleOrderSelector:
 
         lines = SaleLine.objects.select_related("uom").prefetch_related(
             Prefetch("product", queryset=products_with_availability_data()),
-            "work_orders",
+            Prefetch("work_orders", queryset=WorkOrder.objects.select_related("related_contact")),
         )
         work_orders = WorkOrder.objects.select_related(
             "sale_line__product__manufacturing_profile",

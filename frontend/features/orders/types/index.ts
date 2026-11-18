@@ -4,6 +4,13 @@ import { type LucideIcon } from 'lucide-react'
 export interface WorkOrderSummary {
     id: number | string
     status: string
+    display_id?: string | null
+    number?: string | number | null
+    status_display?: string | null
+    current_stage?: string | null
+    current_stage_display?: string | null
+    related_contact_id?: number | null
+    related_contact_name?: string | null
     production_progress?: number
     [key: string]: unknown
 }
