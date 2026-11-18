@@ -4,7 +4,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey'
-import { showApiError } from '@/lib/errors'
+import { errorStatus, showApiError } from '@/lib/errors'
 import { staleTime } from '@/lib/query-config'
 import { fiscalMatchApi } from '../api/fiscalMatchApi'
 import type { FiscalMatchFilters, FiscalMatchLinkBody, FiscalMatchPart, FiscalMatchUnlinkBody } from '../types/fiscalMatch'
@@ -32,14 +32,19 @@ export function useFiscalMatchCounts(filters: FiscalMatchFilters) {
     return { counts: data, isLoading, isError, isRefetching, refetch }
 }
 
+/**
+ * Ficha de un grupo. `notFound`: el grupo ya no existe (el motor o una unión manual borra los
+ * huérfanos que quedan vacíos); un 404 no se reintenta.
+ */
 export function useFiscalMatch(id: number | null | undefined) {
-    const { data, isLoading, isError, isRefetching, refetch } = useQuery({
+    const { data, error, isLoading, isError, isRefetching, refetch } = useQuery({
         queryKey: FISCAL_MATCH_KEYS.detail(id ?? 0),
         queryFn: () => fiscalMatchApi.get(id as number),
         enabled: typeof id === 'number' && id > 0,
         staleTime: staleTime.standard,
+        retry: (failures, e) => errorStatus(e) !== 404 && failures < 3,
     })
-    return { group: data, isLoading, isError, isRefetching, refetch }
+    return { group: data, isLoading, isError, notFound: errorStatus(error) === 404, isRefetching, refetch }
 }
 
 export function useFiscalMatchCandidates<P extends FiscalMatchPart>(id: number, part: P, enabled = true) {

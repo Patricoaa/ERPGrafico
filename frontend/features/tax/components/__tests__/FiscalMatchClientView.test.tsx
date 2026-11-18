@@ -76,7 +76,8 @@ vi.mock("@/components/providers", () => ({
     ),
 }))
 vi.mock("../FiscalMatchDrawer", () => ({
-    FiscalMatchDrawer: ({ id, open }: { id: number | null; open: boolean }) => (open ? <div>{`ficha del grupo #${id}`}</div> : null),
+    FiscalMatchDrawer: ({ id, open, onGroupChange }: { id: number | null; open: boolean; onGroupChange?: (id: number) => void }) =>
+        open ? <button type="button" onClick={() => onGroupChange?.(42)}>{`ficha del grupo #${id}`}</button> : null,
 }))
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ can: () => true, hasPermission: () => true }) }))
 
@@ -234,6 +235,14 @@ describe("FiscalMatchClientView", () => {
         m.selectedId = 5
         render(<FiscalMatchClientView />)
         expect(screen.getByTestId("panel-tab-tax.fiscalmatch")).toHaveTextContent("ficha del grupo #5")
+    })
+
+    it("la ficha que sigue a otro grupo actualiza `selected` en la URL", async () => {
+        m.selectedId = 5
+        m.query = "direction=sale&status=attention&selected=5"
+        render(<FiscalMatchClientView />)
+        await userEvent.click(screen.getByRole("button", { name: "ficha del grupo #5" }))
+        expect(m.replace).toHaveBeenCalledWith("/accounting/rcv/cuadre?direction=sale&status=attention&selected=42", { scroll: false })
     })
 
     it("start date banner", () => {

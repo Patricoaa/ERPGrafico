@@ -29,6 +29,8 @@ export interface FiscalMatchDrawerProps {
     onOpenChange: (open: boolean) => void
     /** El grupo no se edita como formulario: el modo efectivo siempre es `view`; las uniones son acciones. */
     mode?: DrawerMode
+    /** La ficha pasó a otro grupo tras una acción (el abierto se unió a otro): p. ej. para actualizar la URL. */
+    onGroupChange?: (id: number) => void
 }
 
 /** Toda acción del cuadre (unir, quitar, devolver, reintentar, alimentar) exige este permiso. */
@@ -58,23 +60,35 @@ function useRunAction() {
  * Ficha de un grupo de cuadre (`tax.fiscalmatch`): documento ERP, pagos TUU y registro RCV del SII,
  * con la unión manual de los tres registros (spec §5.5) y la alimentación de compras desde el RCV.
  */
-export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp }: FiscalMatchDrawerProps) {
+export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGroupChange }: FiscalMatchDrawerProps) {
     const { mode } = useDrawerMode({ mode: modeProp, initialData: id ? { id } : undefined, defaultMode: "view" })
     // Grupo al que se movió la ficha tras una unión; vale solo mientras el `id` abierto sea el mismo.
     const [moved, setMoved] = useState<{ from: number | null; to: number } | null>(null)
     const groupId = moved && moved.from === id ? moved.to : id
-    const { group, isLoading, isError } = useFiscalMatch(groupId)
+    const { group, isLoading, isError, notFound, refetch } = useFiscalMatch(groupId)
     const follow = useCallback(
-        (result: FiscalMatchDetail) => { if (result.id !== groupId) setMoved({ from: id, to: result.id }) },
-        [id, groupId],
+        (result: FiscalMatchDetail) => {
+            if (result.id === groupId) return
+            setMoved({ from: id, to: result.id })
+            onGroupChange?.(result.id)
+        },
+        [id, groupId, onGroupChange],
     )
     const identity = useDrawerIdentity("tax.fiscalmatch", mode, group, {
         overrideTitle: group ? groupTitle(group) : "Cuadre",
         overrideSubtitle: group ? `${DIRECTION_LABELS[group.direction]} · ${group.status_display}` : undefined,
     })
 
-    const detail = isError ? (
-        <EmptyState context="generic" title="No se pudo cargar el cuadre" description="Revisa tu conexión e intenta nuevamente." variant="compact" />
+    const detail = notFound ? (
+        <EmptyState context="generic" title="Este cuadre ya no existe" description="Sus registros pasaron a otro grupo." variant="compact" />
+    ) : isError ? (
+        <EmptyState
+            context="generic"
+            title="No se pudo cargar el cuadre"
+            description="Revisa tu conexión e intenta nuevamente."
+            variant="compact"
+            action={<Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>Reintentar</Button>}
+        />
     ) : (
         <SkeletonShell isLoading={isLoading || !group} ariaLabel="Cargando cuadre">
             {group && (

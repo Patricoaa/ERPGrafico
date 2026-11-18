@@ -8,6 +8,8 @@ const m = vi.hoisted(() => ({
     group: undefined as unknown,
     isLoading: false,
     isError: false,
+    notFound: false,
+    refetch: vi.fn(),
     requestedIds: [] as (number | null | undefined)[],
     candidates: { erp: [], tuu: [], rcv: [] } as Record<string, unknown[]>,
     candidateCalls: [] as [number, string, boolean][],
@@ -27,7 +29,7 @@ const mutation = (fn: () => unknown) => ({ mutateAsync: fn, isPending: false })
 vi.mock("../../hooks/useFiscalMatches", () => ({
     useFiscalMatch: (id: number | null | undefined) => {
         m.requestedIds.push(id)
-        return { group: m.group, isLoading: m.isLoading, isError: m.isError, isRefetching: false, refetch: vi.fn() }
+        return { group: m.group, isLoading: m.isLoading, isError: m.isError, notFound: m.notFound, isRefetching: false, refetch: m.refetch }
     },
     useFiscalMatchCandidates: (id: number, part: FiscalMatchPart, enabled = true) => {
         m.candidateCalls.push([id, part, enabled])
@@ -157,6 +159,8 @@ beforeEach(() => {
     m.group = voucher
     m.isLoading = false
     m.isError = false
+    m.notFound = false
+    m.refetch.mockReset()
     m.requestedIds = []
     m.candidates = { erp: [], tuu: [], rcv: [] }
     m.candidateCalls = []
@@ -380,5 +384,37 @@ describe("FiscalMatchDrawer", () => {
         m.isError = true
         renderDrawer(1)
         expect(screen.getByText("No se pudo cargar el cuadre")).toBeInTheDocument()
+    })
+
+    it("un error de carga ofrece reintentar", async () => {
+        const user = userEvent.setup()
+        m.group = undefined
+        m.isError = true
+        renderDrawer(1)
+        await user.click(screen.getByRole("button", { name: "Reintentar" }))
+        expect(m.refetch).toHaveBeenCalled()
+    })
+
+    it("un grupo que ya no existe (404) lo explica, sin culpar a la conexión", () => {
+        m.group = undefined
+        m.isError = true
+        m.notFound = true
+        renderDrawer(1)
+        expect(screen.getByText("Este cuadre ya no existe")).toBeInTheDocument()
+        expect(screen.getByText("Sus registros pasaron a otro grupo.")).toBeInTheDocument()
+        expect(screen.queryByText(/Revisa tu conexión/)).toBeNull()
+        expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull()
+    })
+
+    it("al seguir al grupo resultante avisa el nuevo id (para sincronizar la URL)", async () => {
+        const user = userEvent.setup()
+        const onGroupChange = vi.fn()
+        m.group = orphan
+        m.candidates.erp = [{ id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [] }]
+        m.link.mockResolvedValue({ ...voucher, id: 1 })
+        render(<FiscalMatchDrawer id={3} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
+        await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
+        await user.click(screen.getByRole("button", { name: "Vincular BOL-90" }))
+        await waitFor(() => expect(onGroupChange).toHaveBeenCalledWith(1))
     })
 })

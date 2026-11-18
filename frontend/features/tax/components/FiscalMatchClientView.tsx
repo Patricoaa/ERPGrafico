@@ -55,6 +55,12 @@ export function FiscalMatchClientView() {
         params.set("selected", String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
+    // La ficha siguió a otro grupo (el abierto se unió y se borró): `selected` apunta al nuevo.
+    const followGroup = useCallback((id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected", String(id))
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
     // Los conteos se calculan desde la URL (no desde `search`) para alimentar las opciones
     // dinámicas del unified search sin circular dependencias. Ignoran el estado del filtro.
     const rawParams = useMemo(() => Object.fromEntries(searchParams.entries()), [searchParams])
@@ -112,7 +118,7 @@ export function FiscalMatchClientView() {
             </div>
             <EntityPanelTab label={GROUP_LABEL} {...panel.tab}>
                 {(open) => (
-                    <FiscalMatchDrawer id={panel.selectedId} open={open} onOpenChange={(o) => { if (!o) panel.close() }} />
+                    <FiscalMatchDrawer id={panel.selectedId} open={open} onOpenChange={(o) => { if (!o) panel.close() }} onGroupChange={followGroup} />
                 )}
             </EntityPanelTab>
         </>
