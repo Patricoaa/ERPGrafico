@@ -20,6 +20,7 @@ from billing.fiscal_key import counterparty_rut
 from billing.models import Invoice
 from core.fiscal_match import FiscalMatchStatus, PartState, derive_group_status
 from tax.fiscal_match.boletas import BOLETA_SII_CODES
+from tax.fiscal_match.candidates import tuu_type_fits
 from tax.models import FiscalMatch, TaxPeriod
 from treasury.models import POSTerminal, TerminalSale, TerminalSyncRun, TreasuryMovement
 
@@ -336,7 +337,7 @@ def _tuu_state(
     ]
     # Una venta de otro tipo es diferencia aunque ningún pago espere TUU (p. ej. una
     # boleta TUU en efectivo dentro de una factura pagada en efectivo).
-    if any(s.document_type is not None and s.document_type != code for s in sales):
+    if not all(tuu_type_fits(s, code) for s in sales):
         return PartState.DIFF
     if not expected:
         return PartState.NOT_APPLICABLE

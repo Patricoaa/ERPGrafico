@@ -113,13 +113,22 @@ def terminals_by_device(device_ids: set[int]) -> dict[int, set[int]]:
     return out
 
 
+def cash_sale_fits(sale: TerminalSale, sii_code: int | None) -> bool:
+    """Solo una boleta 39/41 pagada en efectivo espera venta TUU (una factura en efectivo
+    no deja registro TUU): la venta en efectivo no respalda otro documento."""
+    return sale.payment_type != TerminalSale.PaymentType.CASH or sii_code in CASH_TUU_SII_CODES
+
+
+def tuu_type_fits(sale: TerminalSale, sii_code: int | None) -> bool:
+    """El tipo que informa TUU (si lo informa) es el del documento: un 33 de TUU es una factura 33."""
+    return sale.document_type is None or sale.document_type == sii_code
+
+
 def payment_compatible(
     sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]
 ) -> bool:
     if sale.payment_type == TerminalSale.PaymentType.CASH:
-        # Solo una boleta 39/41 pagada en efectivo espera venta TUU (una factura en
-        # efectivo no deja registro TUU): la venta en efectivo no respalda otro documento.
-        if m.payment_method != "CASH" or m.invoice.sii_code not in CASH_TUU_SII_CODES:
+        if m.payment_method != "CASH" or not cash_sale_fits(sale, m.invoice.sii_code):
             return False
         if sale.device_id is None:
             return True

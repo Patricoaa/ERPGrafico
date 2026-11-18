@@ -11,12 +11,21 @@ from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport
 from billing.models import Invoice
-from core.fiscal_match import PartState
+from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match import groups
 from tax.fiscal_match.engine import run_fiscal_match
 from tax.fiscal_match.groups import ensure_groups
 from tax.fiscal_match.services import (
+    MOVED,
+    NOT_COMPLETED,
+    OTHER_DIRECTION,
+    PAYMENT_REQUIRED,
+    PAYMENT_TAKEN,
+    SECOND_DOCUMENT,
+    SECOND_RCV,
+    TYPE_INCOMPATIBLE,
     FiscalMatchBusy,
+    FiscalMatchRuleError,
     group_candidates,
     link,
     link_invoice,
@@ -225,17 +234,15 @@ def test_link_invoice_moves_orphan_rcv(imp):
     assert target.rcv_linked_manually is True
 
 
-def test_link_rcv_document_validates_type_and_rut(imp):
+def test_link_rcv_document_validates_type(imp):
     inv = _purchase("999", 119000)
     good = _rcv(imp, 123, 119000)
-    other_rut = _rcv(imp, 124, 119000, rut="7777777-7")
     other_type = _rcv(imp, 125, 119000, dte_type=61)
     _ensure()
     group = _group_of(inv)
 
-    for bad in (other_rut, other_type):
-        with pytest.raises(ValidationError):
-            link_rcv_document(group, RCVDocument.objects.get(pk=bad.pk))
+    with pytest.raises(ValidationError):
+        link_rcv_document(group, RCVDocument.objects.get(pk=other_type.pk))
 
     assert [d.id for d in group_candidates(group, "rcv")] == [good.id]
     result = link_rcv_document(group, RCVDocument.objects.get(pk=good.pk))
@@ -376,14 +383,18 @@ def test_link_rcv_document_rejects_moved_doc(imp):
     assert doc.fiscal_match_id == _group_of(other).id
 
 
-def test_link_invoice_checks_orphan_rcv_type_and_rut(imp):
+def test_link_invoice_accepts_orphan_rcv_of_other_rut(imp):
+    """El RUT distinto ya no bloquea (spec §7c): se une y el grupo queda con advertencias."""
     inv = _purchase("999", 119000)
     doc = _rcv(imp, 123, 119000, rut="7777777-7")
     _ensure()
     doc.refresh_from_db()
 
-    with pytest.raises(ValidationError, match="otro RUT"):
-        link_invoice(doc.fiscal_match, inv)
+    target = link_invoice(doc.fiscal_match, inv)
+
+    doc.refresh_from_db()
+    assert doc.fiscal_match_id == target.pk
+    assert target.status == FiscalMatchStatus.DIFF
 
 
 def test_link_rejects_ignored_movement(imp, tenv):
@@ -506,3 +517,205 @@ def test_erp_candidates_for_orphan_rcv_boleta_are_same_day_and_amount(tenv):
     target = link_invoice(doc.fiscal_match, draft)  # RUT genérico del SII: no se exige
     doc.refresh_from_db()
     assert doc.fiscal_match_id == target.id
+
+
+# --- reglas bloqueantes de la unión manual (ficha en columnas, spec §7c) ------------
+
+
+def _rule_error(code: str):
+    return pytest.raises(FiscalMatchRuleError, check=lambda e: e.code == code)
+
+
+def test_rule_error_is_a_validation_error():
+    err = FiscalMatchRuleError(TYPE_INCOMPATIBLE)
+    assert isinstance(err, ValidationError)
+    assert err.code == "TYPE_INCOMPATIBLE" and err.messages and err.messages[0]
+
+
+def test_tuu_sale_of_other_type_is_type_incompatible(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(120))  # comprobante 48
+    sale = make_terminal_sale(tenv, 6000, _ago(300), document_type=39)
+    _ensure()
+    movement = TreasuryMovement.objects.get(invoice=inv)
+
+    with _rule_error(TYPE_INCOMPATIBLE):
+        link_terminal_sale(_group_of(inv), TerminalSale.objects.get(pk=sale.pk), movement)
+    sale.refresh_from_db()
+    with _rule_error(TYPE_INCOMPATIBLE):
+        link_invoice(sale.fiscal_match, inv)
+
+
+def test_tuu_factura_33_fits_factura_33(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(120), dte_type=Invoice.DTEType.FACTURA)
+    sale = make_terminal_sale(tenv, 6000, _ago(300), document_type=33)
+    _ensure()
+    result = link_terminal_sale(
+        _group_of(inv), TerminalSale.objects.get(pk=sale.pk), TreasuryMovement.objects.get(invoice=inv)
+    )
+    sale.refresh_from_db()
+    assert sale.fiscal_match_id == result.pk
+
+
+def test_cash_tuu_sale_only_backs_boletas(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(120), method="CASH")  # comprobante 48 en efectivo
+    sale = make_terminal_sale(
+        tenv, 6000, _ago(300), payment_type=TerminalSale.PaymentType.CASH, document_type=None
+    )
+    _ensure()
+    with _rule_error(TYPE_INCOMPATIBLE):
+        link_terminal_sale(
+            _group_of(inv), TerminalSale.objects.get(pk=sale.pk), TreasuryMovement.objects.get(invoice=inv)
+        )
+
+
+def test_taken_payment_is_payment_taken(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(120))
+    make_terminal_sale(tenv, 6000, _ago(118))
+    rival = make_terminal_sale(tenv, 6000, _ago(300))
+    run_fiscal_match()
+    rival.refresh_from_db()
+    assert rival.fiscal_match.invoice_id is None
+
+    with _rule_error(PAYMENT_TAKEN):
+        link_terminal_sale(_group_of(inv), rival, TreasuryMovement.objects.get(invoice=inv))
+
+
+def test_reversed_sale_is_not_completed(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(120))
+    sale = make_terminal_sale(tenv, 6000, _ago(300))
+    _ensure()
+    TerminalSale.objects.filter(pk=sale.pk).update(status=TerminalSale.Status.REVERSED)
+    sale.refresh_from_db()
+    movement = TreasuryMovement.objects.get(invoice=inv)
+
+    with _rule_error(NOT_COMPLETED):
+        link_terminal_sale(_group_of(inv), sale, movement)
+    with _rule_error(NOT_COMPLETED):
+        link_invoice(sale.fiscal_match, inv)
+
+
+def test_ambiguous_payment_is_payment_required(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(300))
+    first = TreasuryMovement.objects.get(invoice=inv)
+    TreasuryMovement.objects.create(
+        movement_type=TreasuryMovement.Type.INBOUND, payment_method="CARD", payment_method_new=tenv.card,
+        amount=Decimal(6000), created_by=tenv.user, contact=tenv.customer, to_account=tenv.cash_account,
+        invoice=inv, sale_order=inv.sale_order, pos_session=tenv.session, date=first.date,
+    )
+    sale = make_terminal_sale(tenv, 6000, _ago(118))
+    _ensure()
+    sale.refresh_from_db()
+
+    with _rule_error(PAYMENT_REQUIRED):
+        link_invoice(sale.fiscal_match, inv)
+    with _rule_error(PAYMENT_REQUIRED):
+        link(_group_of(inv), "tuu", sale.pk)
+
+
+def test_moved_record_is_moved(imp):
+    inv = _purchase("999", 119000)
+    other = _purchase("998", 119000)
+    doc = _rcv(imp, 123, 119000)
+    _ensure()
+    stale = RCVDocument.objects.get(pk=doc.pk)
+    RCVDocument.objects.filter(pk=doc.pk).update(fiscal_match=_group_of(other))
+
+    with _rule_error(MOVED):
+        link_rcv_document(_group_of(inv), stale)
+
+
+def test_rcv_of_other_type_is_type_incompatible(imp):
+    inv = _purchase("999", 119000)
+    doc = _rcv(imp, 125, 119000, dte_type=61)
+    _ensure()
+    with _rule_error(TYPE_INCOMPATIBLE):
+        link_rcv_document(_group_of(inv), RCVDocument.objects.get(pk=doc.pk))
+    doc.refresh_from_db()
+    with _rule_error(TYPE_INCOMPATIBLE):
+        link_invoice(doc.fiscal_match, inv)
+
+
+def test_rcv_of_other_direction_is_other_direction(imp, tenv):
+    inv = make_pos_document(tenv, 119000, _ago(120), dte_type=Invoice.DTEType.FACTURA)  # venta 33
+    doc = _rcv(imp, 123, 119000)  # compra 33
+    _ensure()
+    with _rule_error(OTHER_DIRECTION):
+        link_rcv_document(_group_of(inv), RCVDocument.objects.get(pk=doc.pk))
+    doc.refresh_from_db()
+    with _rule_error(OTHER_DIRECTION):
+        link_invoice(doc.fiscal_match, inv)
+
+
+def test_tuu_sale_into_purchase_is_other_direction(imp, tenv):
+    inv = _purchase("999", 6000)
+    pos = make_pos_document(tenv, 6000, _ago(120))
+    sale = make_terminal_sale(tenv, 6000, _ago(300))
+    _ensure()
+    sale.refresh_from_db()
+    with _rule_error(OTHER_DIRECTION):
+        link_invoice(sale.fiscal_match, inv)
+    with _rule_error(OTHER_DIRECTION):
+        link_terminal_sale(_group_of(inv), sale, TreasuryMovement.objects.get(invoice=pos))
+
+
+def test_group_with_document_is_second_document(imp):
+    inv = _purchase("999", 119000)
+    other = _purchase("998", 119000)
+    _ensure()
+    with _rule_error(SECOND_DOCUMENT):
+        link_invoice(_group_of(other), inv)
+
+
+def test_record_of_another_document_is_second_document(imp):
+    inv = _purchase("999", 119000)
+    other = _purchase("123", 119000)
+    doc = _rcv(imp, 123, 119000)
+    run_fiscal_match()
+    doc.refresh_from_db()
+    assert doc.fiscal_match_id == _group_of(other).id
+
+    with _rule_error(SECOND_DOCUMENT):
+        link_rcv_document(_group_of(inv), doc)
+
+
+def test_second_rcv_in_factura_is_second_rcv(imp):
+    inv = _purchase("123", 119000)
+    _rcv(imp, 123, 119000)
+    extra = _rcv(imp, 124, 119000)
+    run_fiscal_match()
+    group = _group_of(inv)
+    assert group.rcv_documents.count() == 1
+    extra.refresh_from_db()
+
+    with _rule_error(SECOND_RCV):
+        link_rcv_document(group, extra)
+    with _rule_error(SECOND_RCV):
+        link_invoice(extra.fiscal_match, inv)
+
+
+def test_boleta_rcv_accumulate(tenv):
+    at = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    draft = _draft_boleta(tenv, 5000, at)
+    day = timezone.localdate(at)
+    first = _rcv_boleta(day, 5000, 83001)
+    second = _rcv_boleta(day, 5000, 83002)
+    _ensure()
+    first.refresh_from_db()
+    target = link_invoice(first.fiscal_match, draft)
+    second.refresh_from_db()
+
+    result = link_rcv_document(target, second)
+
+    assert result.rcv_documents.count() == 2
+
+
+def test_other_rut_invoice_links_and_group_is_diff(imp):
+    inv = _purchase("999", 119000)
+    doc = _rcv(imp, 124, 119000, rut="7777777-7")
+    _ensure()
+
+    result = link_rcv_document(_group_of(inv), RCVDocument.objects.get(pk=doc.pk))
+
+    doc.refresh_from_db()
+    assert doc.fiscal_match_id == result.pk
+    assert result.status == FiscalMatchStatus.DIFF
