@@ -10,7 +10,8 @@ import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSea
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { useRcvDocuments } from "../../hooks/useRcvDocuments"
 import { rcvDocumentEntity, rcvPurchaseViews, rcvSaleViews } from "../../entity-view/rcvDocument.entity"
-import { RCV_MATCH_STATUSES, rcvDocumentUnifiedSearchDef, rcvSaleUnifiedSearchDef } from "../../unifiedSearchDef"
+import { isFiscalMatchStatus } from "@/lib/fiscal-match"
+import { rcvDocumentUnifiedSearchDef, rcvSaleUnifiedSearchDef } from "../../unifiedSearchDef"
 import type { RcvDirection, RcvDocumentFilters } from "../../types"
 import { RcvDocumentDrawer } from "./RcvDocumentDrawer"
 import { RcvImportModal } from "./RcvImportModal"
@@ -21,9 +22,6 @@ const toInt = (v: string | undefined): number | undefined => {
     const n = Number(v)
     return v && Number.isInteger(n) && n > 0 ? n : undefined
 }
-
-const isMatchFilter = (v: string | undefined): v is NonNullable<RcvDocumentFilters["match_status"]> =>
-    !!v && (RCV_MATCH_STATUSES as readonly string[]).includes(v)
 
 const isIsoDate = (v: string | undefined): v is string => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v)
 
@@ -40,7 +38,7 @@ function toRcvFilters(direction: RcvDirection, params: Record<string, string>): 
         issue_date_from: isIsoDate(params.issue_date_from) ? params.issue_date_from : undefined,
         issue_date_to: isIsoDate(params.issue_date_to) ? params.issue_date_to : undefined,
         missing: params.missing === "true" || params.missing === "false" ? params.missing : undefined,
-        match_status: isMatchFilter(params.match_status) ? params.match_status : undefined,
+        fiscal_match_status: isFiscalMatchStatus(params.fiscal_match_status) ? params.fiscal_match_status : undefined,
     }
 }
 

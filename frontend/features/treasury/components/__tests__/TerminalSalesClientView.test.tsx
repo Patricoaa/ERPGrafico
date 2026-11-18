@@ -74,7 +74,7 @@ const sale: TerminalSale = {
     instance: null, card_brand: "", card_issuer: "", installment_count: null, currency: "CLP",
     sale_amount: "3200", tip_amount: "0", cashback_amount: "0", total_amount: "3200",
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,
-    match_status: "", match_status_display: "", matched_invoice: null, matched_invoice_display: null, matched_manually: false, rcv_document: null, rcv_folio: null,
+    fiscal_match: { id: 4, status: "MISSING_ERP", status_display: "Falta en el ERP" }, matched_manually: false,
     issue_attempted_at: null, issue_error: "",
 }
 
@@ -102,6 +102,24 @@ describe("TerminalSalesClientView", () => {
         render(<TerminalSalesClientView />)
         expect(m.applyFilter).not.toHaveBeenCalled()
         expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining(PERIOD))
+    })
+
+    it("filtra por estado de cuadre desde la URL y descarta valores desconocidos", () => {
+        m.filters = { fiscal_match_status: "MISSING_ERP" }
+        const { unmount } = render(<TerminalSalesClientView />)
+        expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining({ fiscal_match_status: "MISSING_ERP" }))
+        unmount()
+        m.useTerminalSales.mockClear()
+        m.filters = { fiscal_match_status: "ONLY_ERP" }
+        render(<TerminalSalesClientView />)
+        expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining({ fiscal_match_status: undefined }))
+    })
+
+    it("muestra la columna Cuadre con el estado del grupo", () => {
+        m.sales = [sale]
+        render(<TerminalSalesClientView />)
+        expect(screen.getByRole("columnheader", { name: /Cuadre/ })).toBeInTheDocument()
+        expect(screen.getByText("Falta en el ERP")).toBeInTheDocument()
     })
 
     it("no muestra tarjetas de resumen", () => {

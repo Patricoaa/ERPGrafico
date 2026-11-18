@@ -177,6 +177,22 @@ describe("FiscalMatchClientView", () => {
         expect(within(quick).getByRole("button", { name: /Con diferencia\s*5/ })).toHaveAttribute("aria-pressed", "true")
     })
 
+    it("muestra el control Ventas | Compras con Ventas por defecto y cambia la dirección", async () => {
+        render(<FiscalMatchClientView />)
+        const control = screen.getByRole("group", { name: "Dirección" })
+        expect(within(control).getByRole("button", { name: "Ventas" })).toHaveAttribute("aria-pressed", "true")
+        expect(within(control).getByRole("button", { name: "Compras" })).toHaveAttribute("aria-pressed", "false")
+        await userEvent.click(within(control).getByRole("button", { name: "Compras" }))
+        expect(m.applyFilter).toHaveBeenCalledWith("direction", "purchase")
+    })
+
+    it("con direction=purchase en la URL marca Compras", () => {
+        m.filters = { direction: "purchase" }
+        render(<FiscalMatchClientView />)
+        const control = screen.getByRole("group", { name: "Dirección" })
+        expect(within(control).getByRole("button", { name: "Compras" })).toHaveAttribute("aria-pressed", "true")
+    })
+
     it("status=all lists every group", () => {
         m.filters = { status: "all" }
         render(<FiscalMatchClientView />)

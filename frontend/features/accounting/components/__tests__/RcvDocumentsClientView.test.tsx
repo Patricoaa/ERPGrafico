@@ -71,10 +71,8 @@ const doc: RcvDocument = {
     acknowledgement: "Recibo otorgado por el receptor", service_indicator: null, exempt_amount: "0", net_amount: "10000",
     vat_amount: "1900", vat_recoverable: "1900", vat_non_recoverable: "0", total_amount: "11900", other_taxes_total: "0",
     reference_dte_type: null, reference_folio: "", is_missing: false,
-    match_status: "AMOUNT_DIFF", match_status_display: "Diferencia de monto", matched_invoice: 3, matched_invoice_display: "FC-4521",
+    fiscal_match: { id: 12, status: "DIFF", status_display: "Con diferencia" },
     matched_manually: false,
-    terminal_sale: null,
-    terminal_sale_display: null,
 }
 
 describe("RcvDocumentsClientView", () => {
@@ -155,17 +153,17 @@ describe("RcvDocumentsClientView", () => {
         m.docs = [doc]
         render(<RcvDocumentsClientView direction="PURCHASES" />)
         expect(screen.getByRole("columnheader", { name: /Cuadre/ })).toBeInTheDocument()
-        expect(screen.getByText("Diferencia de monto")).toBeInTheDocument()
+        expect(screen.getByText("Con diferencia")).toBeInTheDocument()
     })
 
     it("filtra por estado de cuadre desde la URL y descarta valores desconocidos", () => {
-        m.filters = { match_status: "ONLY_EXTERNAL" }
+        m.filters = { fiscal_match_status: "MISSING_ERP" }
         const { unmount } = render(<RcvDocumentsClientView direction="SALES" />)
-        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ match_status: "ONLY_EXTERNAL" }))
+        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ fiscal_match_status: "MISSING_ERP" }))
         unmount()
         m.useRcvDocuments.mockClear()
-        m.filters = { match_status: "ONLY_ERP" }
+        m.filters = { fiscal_match_status: "ONLY_ERP" }
         render(<RcvDocumentsClientView direction="SALES" />)
-        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ match_status: undefined }))
+        expect(m.useRcvDocuments).toHaveBeenCalledWith(expect.objectContaining({ fiscal_match_status: undefined }))
     })
 })

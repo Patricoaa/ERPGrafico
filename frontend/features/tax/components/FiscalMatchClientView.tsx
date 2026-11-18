@@ -31,6 +31,7 @@ import {
     pendingIssueDocumentViews,
 } from "../entity-view/fiscalMatchSummary.entity"
 import {
+    DEFAULT_DIRECTION,
     FISCAL_MATCH_STATUSES,
     SETTLED_STATUSES,
     STATUS_ALL,
@@ -40,7 +41,7 @@ import {
     toFiscalMatchFilters,
 } from "../unifiedSearchDef"
 import type { UseUnifiedSearchReturn } from "@/types/unified-search"
-import type { FiscalMatchCounts, FiscalMatchFilters } from "../types/fiscalMatch"
+import type { FiscalMatchCounts, FiscalMatchDirection, FiscalMatchFilters } from "../types/fiscalMatch"
 import { FiscalMatchDrawer } from "./FiscalMatchDrawer"
 
 const GROUP_LABEL = "tax.fiscalmatch"
@@ -95,6 +96,7 @@ export function FiscalMatchClientView() {
             <div className="space-y-8 pt-4 pb-6">
                 {counts.counts && !counts.counts.start_date && <StartDateBanner />}
                 <div className="space-y-3">
+                    <DirectionControl direction={filters.direction ?? DEFAULT_DIRECTION} search={search} />
                     <StatusQuickFilters
                         counts={counts.counts}
                         isLoading={counts.isLoading}
@@ -156,6 +158,31 @@ function StartDateBanner() {
 function lastRunText(lastRunAt: string | null): string {
     if (!lastRunAt) return "Aún no hay revisiones"
     return `Última revisión: ${formatDistanceToNow(new Date(lastRunAt), { addSuffix: true, locale: es })}`
+}
+
+const DIRECTION_OPTIONS = [
+    { value: "sale", label: "Ventas" },
+    { value: "purchase", label: "Compras" },
+] as const
+
+/** Ventas | Compras: ligado al filtro `direction` (sin parámetro = Ventas). */
+function DirectionControl({ direction, search }: { direction: FiscalMatchDirection; search: UseUnifiedSearchReturn }) {
+    return (
+        <div role="group" aria-label="Dirección" className="inline-flex items-center gap-1 rounded-md border bg-muted/40 p-0.5">
+            {DIRECTION_OPTIONS.map((option) => (
+                <Button
+                    key={option.value}
+                    type="button"
+                    size="sm"
+                    variant={direction === option.value ? "secondary" : "ghost"}
+                    aria-pressed={direction === option.value}
+                    onClick={() => void search.applyFilter("direction", option.value)}
+                >
+                    {option.label}
+                </Button>
+            ))}
+        </div>
+    )
 }
 
 interface QuickFiltersProps {

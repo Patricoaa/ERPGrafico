@@ -9,7 +9,6 @@ export const TERMINAL_SALES_KEY = ['terminal-sales'] as const
 export const RECONCILIATION_KEYS = {
     all: FISCAL_RECONCILIATION_KEY,
     report: (year: number, month: number) => [...FISCAL_RECONCILIATION_KEY, 'report', year, month] as const,
-    rcvCandidates: (docId: number) => [...FISCAL_RECONCILIATION_KEY, 'rcv-candidates', docId] as const,
     rcvDraftSuggestions: (docId: number) => [...FISCAL_RECONCILIATION_KEY, 'rcv-draft-suggestions', docId] as const,
     rcvPurchaseOrders: (docId: number) => [...FISCAL_RECONCILIATION_KEY, 'rcv-purchase-orders', docId] as const,
 }

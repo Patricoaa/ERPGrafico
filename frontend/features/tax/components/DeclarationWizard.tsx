@@ -25,6 +25,7 @@ import {
     Scale,
 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
+import { cuadreAttentionHref } from "@/lib/fiscal-match"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration } from "../hooks/useTaxMutations"
 import { useTaxPeriod, useTaxDeclarations } from "../hooks/useTaxQueries"
@@ -296,7 +297,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             passed: fiscalMismatches === 0,
             detail: fiscalMismatches > 0 ? `${fiscalMismatches} diferencia(s) con TUU o el SII` : undefined,
             action: fiscalMismatches > 0
-                ? { text: "Ir al cuadre", href: "/accounting/rcv/reconciliation", variant: "ghost", icon: Scale }
+                ? { text: "Ir al cuadre", href: cuadreAttentionHref(period.year, period.month), variant: "ghost", icon: Scale }
                 : undefined,
         }],
     }

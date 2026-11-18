@@ -8,10 +8,8 @@ import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_s
 import { DocumentRelationsTab } from "@/features/documents"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
-import { getDteLabel } from "@/lib/entity-registry"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useTerminalSale } from "../hooks/useTerminalSales"
-import { useMatchTerminalSale, useTerminalSaleCandidates, useUnmatchTerminalSale } from "../hooks/useTerminalSaleMatch"
 import type { TerminalSaleDetail } from "../types"
 import {
     formatDteType,
@@ -113,7 +111,7 @@ function TerminalSaleDetailBody({ sale }: { sale: TerminalSaleDetail }) {
                 <Stat title="Fuentes" value={sale.sources.map((s) => SOURCE_LABELS[s] ?? s).join(" · ")} plain />
             </Section>
 
-            <TerminalSaleErpDocument sale={sale} />
+            <TerminalSaleFiscalMatch sale={sale} />
 
             <Section title="Pago">
                 <Stat title="Tipo de pago" value={<StatusBadge status={paymentType.status} label={paymentType.label} intent={paymentType.intent} size="sm" />} />
@@ -169,79 +167,25 @@ function Stat({ title, value, plain, strong }: { title: string; value: ReactNode
     return <Section.Row variant="stat" title={title} value={empty ? "—" : value} plain={plain} strong={strong} />
 }
 
-/** Boletas que el cuadre empareja con el RCV del SII (ADR-0139). */
-const BOLETA_DTE_TYPES: readonly number[] = [39, 41]
-
-/** Cuadre fiscal: documento ERP vinculado, o candidatos para vincular a mano. */
-function TerminalSaleErpDocument({ sale }: { sale: TerminalSaleDetail }) {
+/** Cuadre de la venta: estado de su grupo y acceso a la ficha del grupo (ADR-0141). */
+function TerminalSaleFiscalMatch({ sale }: { sale: TerminalSaleDetail }) {
     const { openEntity } = useGlobalModals()
-    const match = useMatchTerminalSale()
-    const unmatch = useUnmatchTerminalSale()
-    const linked = sale.matched_invoice !== null
-    const { candidates, isLoading, isError } = useTerminalSaleCandidates(sale.id, !linked)
-    const status = terminalSaleMatchStatus(sale.match_status, sale.match_status_display)
+    const status = terminalSaleMatchStatus(sale.fiscal_match)
+    const groupId = sale.fiscal_match?.id
 
     return (
-        <Section title="Documento ERP">
-            <Stat title="Cuadre fiscal" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
-            {sale.document_type !== null && BOLETA_DTE_TYPES.includes(sale.document_type) && (
-                <Stat
-                    title="Boleta SII"
-                    value={
-                        sale.rcv_document !== null ? (
-                            <Button variant="link" className="h-auto p-0" onClick={() => openEntity("accounting.rcvdocument", sale.rcv_document as number)}>
-                                {`Folio ${sale.rcv_folio ?? sale.rcv_document}`}
-                            </Button>
-                        ) : null
-                    }
-                />
-            )}
-            {sale.issue_error && (
-                // El texto va en la descripción, que ajusta líneas; el valor de la fila no se encoge.
-                <Section.Row
-                    title="Error al emitir"
-                    description={[sale.issue_error, sale.issue_attempted_at && `Intento: ${formatDate(sale.issue_attempted_at, true)}`]
-                        .filter(Boolean)
-                        .join(" · ")}
-                />
-            )}
-            {linked ? (
-                <Section.Row
-                    title="Documento vinculado"
-                    value={
-                        <Button variant="link" className="h-auto p-0" onClick={() => openEntity("billing.invoice", sale.matched_invoice as number)}>
-                            {sale.matched_invoice_display ?? `#${sale.matched_invoice}`}
+        <Section title="Cuadre">
+            <Section.Row
+                title="Cuadre"
+                value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />}
+                actions={
+                    groupId !== undefined ? (
+                        <Button size="sm" variant="outline" onClick={() => openEntity("tax.fiscalmatch", groupId)}>
+                            Ver cuadre
                         </Button>
-                    }
-                    actions={
-                        sale.matched_manually ? (
-                            <Button size="sm" variant="outline" disabled={unmatch.isPending} onClick={() => void unmatch.mutateAsync(sale.id).catch(() => undefined)}>
-                                Desvincular
-                            </Button>
-                        ) : undefined
-                    }
-                />
-            ) : isError ? (
-                <Stat title="Candidatos" value="No se pudieron cargar los candidatos." plain />
-            ) : isLoading ? (
-                <Stat title="Candidatos" value="Buscando…" plain />
-            ) : candidates.length === 0 ? (
-                <Stat title="Candidatos" value="Sin documentos candidatos" plain />
-            ) : (
-                candidates.map((c) => (
-                    <Section.Row
-                        key={c.id}
-                        title={c.display_id}
-                        description={`${getDteLabel(c.dte_type)} · ${formatDate(c.date)}`}
-                        value={<MoneyDisplay amount={c.total} currency={sale.currency} />}
-                        actions={
-                            <Button size="sm" variant="outline" disabled={match.isPending} onClick={() => void match.mutateAsync({ saleId: sale.id, invoiceId: c.id }).catch(() => undefined)}>
-                                Vincular
-                            </Button>
-                        }
-                    />
-                ))
-            )}
+                    ) : undefined
+                }
+            />
         </Section>
     )
 }

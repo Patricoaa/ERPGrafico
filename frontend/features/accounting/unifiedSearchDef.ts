@@ -1,6 +1,6 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { periodPresets } from '@/lib/date-presets'
-import { MATCH_STATUS_LABELS } from '@/lib/fiscal-match'
+import { FISCAL_MATCH_STATUS_OPTIONS } from '@/lib/fiscal-match'
 
 export const accountUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -93,8 +93,6 @@ export const fiscalYearUnifiedSearchDef: UnifiedSearchConfig = {
 
 export const RCV_FIRST_YEAR = 2017
 
-/** Estados de cuadre que puede tener un documento RCV (`ONLY_ERP` no: es una factura sin documento). */
-export const RCV_MATCH_STATUSES = ['MATCHED', 'AMOUNT_DIFF', 'TYPE_DIFF', 'AMBIGUOUS', 'PENDING_ERP', 'ONLY_EXTERNAL', 'EXCLUDED'] as const
 export const RCV_MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -160,12 +158,12 @@ export const rcvDocumentUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
     {
-      // Cuadre contra el ERP (ADR-0138); la pestaña Cuadre enlaza aquí con este filtro.
+      // Estado del grupo de cuadre del documento (ADR-0141).
       type: 'single',
-      key: 'match_status',
+      key: 'fiscal_match_status',
       label: 'Cuadre',
-      serverParam: 'match_status',
-      options: RCV_MATCH_STATUSES.map((value) => ({ label: MATCH_STATUS_LABELS[value], value })),
+      serverParam: 'fiscal_match_status',
+      options: FISCAL_MATCH_STATUS_OPTIONS,
     },
     {
       type: 'single',

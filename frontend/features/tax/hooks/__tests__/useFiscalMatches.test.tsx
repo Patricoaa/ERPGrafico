@@ -69,6 +69,20 @@ describe('mutaciones', () => {
         const keys = invalidate.mock.calls.map(c => (c[0] as { queryKey: readonly unknown[] }).queryKey)
         expect(keys).toEqual([['fiscal-match'], ['accounting-rcv', 'documents'], ['terminal-sales']])
     })
+    it('si el grupo resultante cambia de id, descarta el detalle viejo y no espera la invalidación', async () => {
+        link.mockResolvedValue({ id: 9 })
+        const { Wrapper, invalidate, client } = setup()
+        client.setQueryData(['fiscal-match', 'detail', 7], { id: 7 })
+        client.setQueryData(['fiscal-match', 'detail', 8], { id: 8 })
+        let finish: () => void = () => undefined
+        invalidate.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve }))
+        const { result } = renderHook(() => useLinkFiscalMatch(), { wrapper: Wrapper })
+        // La promesa resuelve sin esperar la invalidación: la ficha sigue al nuevo grupo de inmediato.
+        await act(async () => { await result.current.mutateAsync({ id: 7, body: { part: 'rcv', id: 3 } }) })
+        expect(client.getQueryData(['fiscal-match', 'detail', 7])).toBeUndefined()
+        expect(client.getQueryData(['fiscal-match', 'detail', 8])).toEqual({ id: 8 })
+        finish()
+    })
     it('conserva la clave ante un fallo incierto y reintenta con la misma', async () => {
         release.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({})
         const { Wrapper } = setup()

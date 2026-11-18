@@ -82,21 +82,33 @@ export function useInvalidateFiscalMatch() {
         ])
 }
 
+/** `id` numérico de un valor con forma de objeto (variables de la acción o grupo resultante). */
+function idOf(value: unknown): number | undefined {
+    if (typeof value !== 'object' || value === null || !('id' in value)) return undefined
+    return typeof value.id === 'number' ? value.id : undefined
+}
+
 /** Mutación con `Idempotency-Key` por intención; 409 (motor ocupado) muestra el mensaje del servidor. */
 export function useGroupMutation<V, R = unknown>(
     run: (vars: V, key: string) => Promise<R>,
     messages: { success: string; error: string },
 ) {
+    const qc = useQueryClient()
     const invalidate = useInvalidateFiscalMatch()
     const { markLocalMutation } = useRealtime()
     const { keyFor, succeeded, failed } = useIdempotencyKey()
     return useMutation({
         mutationFn: (vars: V) => run(vars, keyFor(vars)),
-        onSuccess: () => {
+        onSuccess: (result, vars) => {
             markLocalMutation()
             succeeded()
             toast.success(messages.success)
-            return invalidate()
+            // Si la acción deshizo un grupo (unir un huérfano), su detalle ya no existe: se descarta
+            // antes de invalidar para no refetchearlo (404 visible) y se resuelve sin esperar la
+            // invalidación, así la ficha sigue al grupo resultante de inmediato.
+            const from = idOf(vars)
+            if (from !== undefined && from !== idOf(result)) qc.removeQueries({ queryKey: FISCAL_MATCH_KEYS.detail(from) })
+            void invalidate()
         },
         onError: (e) => {
             failed(e)

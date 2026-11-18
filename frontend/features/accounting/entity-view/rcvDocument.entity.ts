@@ -1,5 +1,5 @@
 import { defineEntity, type StatusValue } from "@/components/entity-view"
-import { matchStatusValue } from "@/lib/fiscal-match"
+import { fiscalMatchRefValue } from "@/lib/fiscal-match"
 import type { RcvDocument } from "../types/rcv"
 
 /** "<código SII> · <nombre>" (p. ej. "33 · Factura Electrónica"). */
@@ -38,7 +38,7 @@ export const rcvDocumentEntity = defineEntity<RcvDocument>()((f) => ({
         acknowledgement: f.status((d) => rcvAcknowledgementStatus(d.acknowledgement), { label: "Acuse" }),
         receivedAt: f.date("received_at", { label: "Recepción SII", time: true }),
         missing: f.status((d) => rcvMissingStatus(d), { label: "Vigencia" }),
-        matchStatus: f.status((d) => matchStatusValue(d.match_status, d.match_status_display), { label: "Cuadre" }),
+        matchStatus: f.status((d) => fiscalMatchRefValue(d.fiscal_match), { label: "Cuadre" }),
     },
 }))
 

@@ -3,7 +3,7 @@
  * Espejo del contrato REST `/api/accounting/rcv-*`. Los montos llegan como `string` (Decimal DRF).
  */
 
-import type { MatchStatus } from '@/lib/fiscal-match'
+import type { FiscalMatchRef, FiscalMatchStatus } from '@/lib/fiscal-match'
 
 export type RcvDirection = 'PURCHASES' | 'SALES'
 
@@ -50,17 +50,10 @@ export interface RcvDocument {
     reference_dte_type: number | null
     reference_folio: string
     is_missing: boolean
-    /** Cuadre contra facturas y notas del ERP (ADR-0138 D5); `""` = no evaluado. */
-    match_status: MatchStatus
-    match_status_display: string
-    matched_invoice: number | null
-    matched_invoice_display: string | null
-    /** Vínculo hecho a mano: solo estos se pueden desvincular y el recálculo no los toca. */
+    /** Grupo de cuadre del documento; null si aún no se evalúa. */
+    fiscal_match: FiscalMatchRef | null
+    /** Vínculo hecho a mano: el cruce automático no lo toca. */
     matched_manually: boolean
-    /** Venta TUU emparejada con la boleta 39/41 (ADR-0139); null si no hay. */
-    terminal_sale: number | null
-    /** «Venta TUU {ID venta o N° secuencia}». */
-    terminal_sale_display: string | null
 }
 
 export interface RcvDocumentDetail extends RcvDocument {
@@ -200,7 +193,7 @@ export interface RcvDocumentFilters {
     acknowledgement?: string
     /** El backend solo acepta las cadenas "true" / "false". */
     missing?: 'true' | 'false'
-    match_status?: Exclude<MatchStatus, ''>
+    fiscal_match_status?: FiscalMatchStatus
     issue_date_from?: string
     issue_date_to?: string
     search?: string
