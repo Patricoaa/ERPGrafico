@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, Fragment, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, Fragment, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { ChevronRight, Scale } from "lucide-react"
 import { toast } from "sonner"
 import { Can } from "@/components/auth"
@@ -35,14 +35,14 @@ import {
     useRetryFiscalIssue,
 } from "../hooks/useFiscalMatches"
 import type { FiscalMatchDetail, FiscalMatchPart } from "../types/fiscalMatch"
-import { FiscalMatchColumn } from "./FiscalMatchColumn"
+import { FiscalMatchColumnPanel } from "./FiscalMatchColumnPanel"
 import { FiscalMatchRegisterSection } from "./FiscalMatchRegisterSection"
 
 export interface FiscalMatchDrawerProps {
     id: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
-    /** El grupo no se edita como formulario: el modo efectivo siempre es `view`; los cambios se guardan desde el pie. */
+    /** Modo de identidad del drawer (título/subtítulo); la superficie es `edit` con permiso de cambio y `view` sin él. */
     mode?: DrawerMode
     /** La ficha pasó a otro grupo tras una acción (el abierto se unió a otro): p. ej. para actualizar la URL. */
     onGroupChange?: (id: number) => void
@@ -61,14 +61,17 @@ const DIRECTION_LABELS: Record<FiscalMatchDetail["direction"], string> = { sale:
 
 /** Ventas: ERP → TUU → RCV. Compras: ERP → RCV. */
 const SALE_COLUMNS: ColumnDef[] = [
-    { part: "erp", title: "Documento ERP" , subtitle: ""},
-    { part: "tuu", title: "Pagos TUU" , subtitle: ""},
-    { part: "rcv", title: "RCV (SII)", subtitle: "" },
+    { part: "erp", title: "Documento ERP", subtitle: "Documento de origen" },
+    { part: "tuu", title: "Pagos TUU", subtitle: "Pagos del terminal" },
+    { part: "rcv", title: "RCV (SII)", subtitle: "Registro del SII" },
 ]
 const PURCHASE_COLUMNS: ColumnDef[] = [
-    { part: "erp", title: "Documento ERP", subtitle: "Factura o nota de compra" },
-    { part: "rcv", title: "RCV (SII)", subtitle: "Registro de compras y ventas" },
+    { part: "erp", title: "Documento ERP", subtitle: "Documento de origen" },
+    { part: "rcv", title: "RCV (SII)", subtitle: "Registro del SII" },
 ]
+
+/** Devolver y reintentar cambian el grupo de inmediato: con cambios en espera se bloquean. */
+const LOCKED_HINT = "Guarda o descarta los cambios"
 
 /**
  * Las acciones responden con el grupo resultante. Unir un huérfano lo borra y devuelve el grupo del
@@ -96,17 +99,19 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
     const { mode } = useDrawerMode({ mode: modeProp, initialData: id ? { id } : undefined, defaultMode: "view" })
     const { can } = useAuth()
     const readOnly = !can(CHANGE_PERMISSION)
-    // Grupo al que se movió la ficha tras una unión; vale solo mientras el `id` abierto sea el mismo.
+    // Grupo mostrado: sigue al `id` abierto salvo que haya cambios en espera (entonces se pregunta antes).
+    const [shownId, setShownId] = useState(id)
+    // Grupo al que se movió la ficha tras una unión; vale solo mientras el grupo mostrado sea el mismo.
     const [moved, setMoved] = useState<{ from: number | null; to: number } | null>(null)
-    const groupId = moved && moved.from === id ? moved.to : id
+    const groupId = moved && moved.from === shownId ? moved.to : shownId
     const { group, isLoading, isError, notFound, refetch } = useFiscalMatch(groupId)
     const follow = useCallback(
         (result: FiscalMatchDetail) => {
             if (result.id === groupId) return
-            setMoved({ from: id, to: result.id })
+            setMoved({ from: shownId, to: result.id })
             onGroupChange?.(result.id)
         },
-        [id, groupId, onGroupChange],
+        [shownId, groupId, onGroupChange],
     )
     const identity = useDrawerIdentity("tax.fiscalmatch", mode, group, {
         overrideTitle: group ? groupTitle(group) : "Cuadre",
@@ -121,6 +126,16 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
         setDraftGroup(groupId)
         discard()
     }
+    // Abrir otro grupo (cambia `id`) con cambios en espera pasa por la misma confirmación que cerrar.
+    const [confirm, setConfirm] = useState<{ kind: "close" } | { kind: "switch"; to: number | null } | null>(null)
+    const [seenId, setSeenId] = useState(id)
+    if (seenId !== id) {
+        setSeenId(id)
+        if (id !== shownId && draft.isDirty) setConfirm({ kind: "switch", to: id })
+        else setShownId(id)
+    }
+    const confirmed = useRef(false)
+
     // Tras cada refresco del grupo, lo que ya no aplica sale del borrador con un aviso.
     useEffect(() => {
         if (group) reconcile(group, {}).forEach((notice) => toast.info(notice))
@@ -138,17 +153,27 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
             // 400 con `change_index`: el motivo va en la tarjeta del cambio y en un solo aviso. El resto
             // (409 motor ocupado, red) ya lo avisó la mutación. El borrador se conserva siempre.
             const err = applyErrorOf(e)
-            if (err) {
+            if (err?.code === "MOVED") {
+                // Su registro se movió mientras se editaba: el cambio sale del borrador con el aviso de §7b.
+                const notice = draft.drop(err.changeIndex)
+                if (notice) toast.info(notice)
+            } else if (err) {
                 draft.markError(err.changeIndex, err.message)
                 toast.error("No se pudo guardar el cuadre", { description: err.message })
             }
         }
     }
 
-    const [confirmClose, setConfirmClose] = useState(false)
     const handleOpenChange = (next: boolean) => {
-        if (!next && draft.isDirty) setConfirmClose(true)
+        if (!next && draft.isDirty) setConfirm({ kind: "close" })
         else onOpenChange(next)
+    }
+    const confirmOpenChange = (next: boolean) => {
+        if (next) return
+        // «Seguir editando» al cambiar de grupo: la URL vuelve al grupo que sigue abierto.
+        if (!confirmed.current && confirm?.kind === "switch" && groupId !== null) onGroupChange?.(groupId)
+        confirmed.current = false
+        setConfirm(null)
     }
 
     const detail = notFound ? (
@@ -211,17 +236,18 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
                 />
             </Drawer>
             <ActionConfirmModal
-                open={confirmClose}
-                onOpenChange={setConfirmClose}
+                open={confirm !== null}
+                onOpenChange={confirmOpenChange}
                 onConfirm={() => {
+                    confirmed.current = true
                     discard()
-                    onOpenChange(false)
+                    if (confirm?.kind === "switch") setShownId(confirm.to)
+                    else onOpenChange(false)
                 }}
                 title="Hay cambios sin guardar"
-                description={draft.pending.length === 1
-                    ? "Si cierras la ficha se pierde 1 cambio en espera."
-                    : `Si cierras la ficha se pierden ${draft.pending.length} cambios en espera.`}
-                confirmText="Cerrar sin guardar"
+                description={`${confirm?.kind === "switch" ? "Si abres otro cuadre" : "Si cierras la ficha"} ${
+                    draft.pending.length === 1 ? "se pierde 1 cambio en espera." : `se pierden ${draft.pending.length} cambios en espera.`}`}
+                confirmText={confirm?.kind === "switch" ? "Descartar cambios" : "Cerrar sin guardar"}
                 cancelText="Seguir editando"
                 variant="warning"
             />
@@ -267,15 +293,16 @@ function FiscalMatchBody({ group, draft, readOnly }: { group: FiscalMatchDetail;
 
     return (
         <div className="space-y-6">
-            <FiscalMatchBanners group={group} />
+            <FiscalMatchBanners group={group} locked={draft.isDirty} />
 
             <Section
                 title="Grupo"
-                actions={isOrphan && manualMark ? <ReleaseAction groupId={group.id} /> : undefined}
+                actions={isOrphan && manualMark ? <ReleaseAction groupId={group.id} locked={draft.isDirty} /> : undefined}
             >
                 <Stat title="Estado" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
-            
+                <Stat title="Tipo" value={dteShortLabel(group.dte_type) ?? (group.dte_type === null ? null : `DTE ${group.dte_type}`)} plain />
                 <Stat title="Fecha" value={group.issue_date ? formatDate(group.issue_date) : null} plain />
+                <Stat title={group.direction === "purchase" ? "RUT proveedor" : "RUT cliente"} value={group.counterparty_rut} />
                 <Stat title="Última revisión" value={group.evaluated_at ? formatDate(group.evaluated_at, true) : null} plain />
             </Section>
 
@@ -284,11 +311,11 @@ function FiscalMatchBody({ group, draft, readOnly }: { group: FiscalMatchDetail;
                     {columns.map((col, i) => (
                         <Fragment key={col.part}>
                             {i > 0 && <ColumnArrow wide={columns.length === 3} />}
-                            <FiscalMatchColumn index={i + 1} part={col.part} title={col.title} subtitle={col.subtitle} group={group} draft={draft} readOnly={readOnly}>
+                            <FiscalMatchColumnPanel index={i + 1} part={col.part} title={col.title} subtitle={col.subtitle} group={group} draft={draft} readOnly={readOnly}>
                                 {col.part === "rcv" && feedingDoc && !readOnly && (
                                     <FiscalMatchRegisterSection groupId={group.id} doc={feedingDoc} onGroupChange={follow} />
                                 )}
-                            </FiscalMatchColumn>
+                            </FiscalMatchColumnPanel>
                         </Fragment>
                     ))}
                 </div>
@@ -308,7 +335,25 @@ function ColumnArrow({ wide }: { wide: boolean }) {
     )
 }
 
-function FiscalMatchBanners({ group }: { group: FiscalMatchDetail }) {
+/** Botón de acción inmediata; con cambios en espera queda deshabilitado y lo explica al pasar el cursor. */
+function ImmediateAction({ locked, pending, onClick, children }: { locked: boolean; pending: boolean; onClick: () => void; children: ReactNode }) {
+    const button = (
+        <Button type="button" size="sm" variant="outline" disabled={locked || pending} onClick={onClick}>
+            {children}
+        </Button>
+    )
+    if (!locked) return button
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span tabIndex={0}>{button}</span>
+            </TooltipTrigger>
+            <TooltipContent>{LOCKED_HINT}</TooltipContent>
+        </Tooltip>
+    )
+}
+
+function FiscalMatchBanners({ group, locked }: { group: FiscalMatchDetail; locked: boolean }) {
     const retry = useRetryFiscalIssue()
     const run = useRunAction()
     return (
@@ -319,15 +364,9 @@ function FiscalMatchBanners({ group }: { group: FiscalMatchDetail }) {
                     title="Error al emitir"
                     actions={
                         <Can permission={CHANGE_PERMISSION}>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={retry.isPending}
-                                onClick={() => run(() => retry.mutateAsync({ id: group.id }))}
-                            >
+                            <ImmediateAction locked={locked} pending={retry.isPending} onClick={() => run(() => retry.mutateAsync({ id: group.id }))}>
                                 Reintentar emisión
-                            </Button>
+                            </ImmediateAction>
                         </Can>
                     }
                 >
@@ -346,20 +385,14 @@ function FiscalMatchBanners({ group }: { group: FiscalMatchDetail }) {
     )
 }
 
-function ReleaseAction({ groupId }: { groupId: number }) {
+function ReleaseAction({ groupId, locked }: { groupId: number; locked: boolean }) {
     const release = useReleaseFiscalMatch()
     const run = useRunAction()
     return (
         <Can permission={CHANGE_PERMISSION}>
-            <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={release.isPending}
-                onClick={() => run(() => release.mutateAsync({ id: groupId }))}
-            >
+            <ImmediateAction locked={locked} pending={release.isPending} onClick={() => run(() => release.mutateAsync({ id: groupId }))}>
                 Devolver al cruce automático
-            </Button>
+            </ImmediateAction>
         </Can>
     )
 }

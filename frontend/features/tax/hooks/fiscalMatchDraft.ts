@@ -224,6 +224,26 @@ function prunePayments(entry: DraftEntry, group: FiscalMatchDetail): DraftEntry 
     return { ...entry, change: { ...entry.change, payments: next } }
 }
 
+/** Aviso de §7b para un cambio que se descarta porque su registro se movió. */
+function noLongerApplies(e: DraftEntry): string {
+    const { op, part, id } = e.change
+    const label = e.item?.label ?? `#${id}`
+    const why = op === 'unlink' ? 'ya no está unido a este grupo' : 'se cuadró en otro grupo'
+    return `1 cambio ya no aplica: ${PART_NAME[part]} ${label} ${why}`
+}
+
+/** El servidor rechazó el cambio `index` porque su registro se movió (`MOVED`): sale del borrador con su aviso. */
+export function dropEntry(entries: DraftEntry[], index: number): { entries: DraftEntry[]; notice: string | null } {
+    const entry = entries[index]
+    if (!entry) return { entries, notice: null }
+    return { entries: entries.filter((_, i) => i !== index), notice: noLongerApplies(entry) }
+}
+
+/** Tarjetas elegidas para unir en una parte (se muestran aunque ya no estén en la búsqueda visible). */
+export function pendingLinkItems(entries: DraftEntry[], part: FiscalMatchPart): FiscalMatchSearchItem[] {
+    return entries.flatMap(e => (e.change.op === 'link' && e.change.part === part && e.item ? [e.item] : []))
+}
+
 /**
  * Descarta los cambios cuyo registro ya no está disponible tras un refresco (cuadrado en otro
  * grupo, grupo que dejó de ser huérfano, registro que ya no está unido) y devuelve los avisos.
@@ -242,11 +262,7 @@ export function reconcileEntries(
             op === 'unlink'
                 ? !linkedIds(group, part).includes(id)
                 : (part === 'erp' && !isOrphan(group)) || (sets.has(part) && !sets.get(part)?.has(id))
-        if (gone) {
-            const label = e.item?.label ?? `#${id}`
-            const why = op === 'unlink' ? 'ya no está unido a este grupo' : 'se cuadró en otro grupo'
-            notices.push(`1 cambio ya no aplica: ${PART_NAME[part]} ${label} ${why}`)
-        }
+        if (gone) notices.push(noLongerApplies(e))
         return !gone
     })
     const pruned = kept.map(e => prunePayments(e, group))

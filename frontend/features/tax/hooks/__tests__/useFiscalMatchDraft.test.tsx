@@ -172,4 +172,23 @@ describe('useFiscalMatchDraft', () => {
         act(() => { h.result.current.reconcile(orphan({ terminal_sales: [] }), {}) })
         expect(h.result.current.pending[0].payments).toBeNull()
     })
+
+    it('drop quita el cambio rechazado por MOVED y devuelve el aviso de §7b', () => {
+        const h = setup(group())
+        act(() => { h.result.current.select('tuu', item(81, { label: '#81', compatible_movements: [mv(7)] })) })
+        act(() => { h.result.current.select('rcv', item(2)) })
+        let notice: string | null = null
+        act(() => { notice = h.result.current.drop(0) })
+        expect(notice).toBe('1 cambio ya no aplica: la venta TUU #81 se cuadró en otro grupo')
+        expect(h.result.current.pending).toEqual([{ op: 'link', part: 'rcv', id: 2 }])
+    })
+
+    it('pendingLinks: tarjetas elegidas por parte, independientes de la búsqueda', () => {
+        const h = setup(group())
+        act(() => { h.result.current.select('rcv', item(2)) })
+        act(() => { h.result.current.select('tuu', item(5, { compatible_movements: [mv(7)] })) })
+        expect(h.result.current.pendingLinks('rcv').map(i => i.id)).toEqual([2])
+        expect(h.result.current.pendingLinks('tuu').map(i => i.id)).toEqual([5])
+        expect(h.result.current.pendingLinks('erp')).toEqual([])
+    })
 })

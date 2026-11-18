@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import { CreditCard, FileText, Landmark, type LucideIcon } from "lucide-react"
 import { CardLead, CardSurface, Chip, LabeledSelect, MoneyDisplay, cardAnatomy } from "@/components/shared"
 import { formatDate, formatTimeOfDay } from "@/components/entity-view"
@@ -42,11 +43,11 @@ export interface FiscalMatchCandidateCardProps {
     onToggle?: () => void
     /** Registro unido: dejarlo en espera de quitar. */
     onRemove?: () => void
-    /** Registro en espera de quitar: cancelar la salida. */
+    /** Registro en espera (por quitar o por unir, sin `onToggle`): cancelar el cambio. */
     onUndo?: () => void
     /** Abre la ficha del registro (el título pasa a ser un enlace). */
     onOpen?: () => void
-    /** Venta TUU: pago del documento al que se asocia. */
+    /** Venta TUU: pago del documento al que se asocia (selector junto a la tarjeta). */
     payment?: FiscalMatchPaymentChoice
 }
 
@@ -64,17 +65,31 @@ export function FiscalMatchCandidateCard({
 }: FiscalMatchCandidateCardProps) {
     const Icon = PART_ICONS[part]
     const warnings = card.warnings ?? []
-    const blocked = warnings.some((w) => w.blocking)
+    const blocking = warnings.find((w) => w.blocking)
     const selectable = !readOnly && onToggle !== undefined && state !== "linked" && state !== "toRemove"
     const chosen = state === "selected" || state === "error"
+    const ids = useId()
+    const scoreId = `${ids}-score`
+    const chipsId = `${ids}-chips`
+    const blockedId = `${ids}-blocked`
+    const errorId = `${ids}-error`
+    const describedBy = [
+        card.score !== undefined && scoreId,
+        (warnings.length > 0 || state === "selected" || state === "toRemove") && chipsId,
+        blocking && blockedId,
+        error && errorId,
+    ].filter(Boolean).join(" ")
+    const showPayment = !readOnly && payment !== undefined && payment.options.length > 0
 
     return (
+        <div className="flex flex-col gap-1.5">
         <CardSurface
             kind="item"
             role="checkbox"
             aria-label={selectable ? card.label : undefined}
+            aria-describedby={describedBy || undefined}
             selected={selectable ? chosen : undefined}
-            unavailable={selectable && blocked && !chosen}
+            unavailable={selectable && blocking !== undefined && !chosen}
             onClick={selectable ? onToggle : undefined}
             className={cn(state === "toRemove" && "opacity-70", state === "error" && "border-destructive")}
         >
@@ -94,12 +109,14 @@ export function FiscalMatchCandidateCard({
                         {card.counterparty && <p className={cardAnatomy.entitySubtitle}>{card.counterparty}</p>}
                     </div>
                     {card.score !== undefined && (
-                        <Chip size="xs" intent={matchScoreIntent(card.score)}>{`${card.score} % coincidencia`}</Chip>
+                        <span id={scoreId}>
+                            <Chip size="xs" intent={matchScoreIntent(card.score)}>{`${card.score} % coincidencia`}</Chip>
+                        </span>
                     )}
                 </div>
 
                 {(warnings.length > 0 || state === "selected" || state === "toRemove") && (
-                    <div className="flex flex-wrap gap-1">
+                    <div id={chipsId} className="flex flex-wrap gap-1">
                         {state === "selected" && <Chip size="xs" intent="info">Por unir</Chip>}
                         {state === "toRemove" && <Chip size="xs" intent="warning">Se quitará</Chip>}
                         {warnings.map((w) => (
@@ -107,6 +124,7 @@ export function FiscalMatchCandidateCard({
                         ))}
                     </div>
                 )}
+                {blocking && <span id={blockedId} className="sr-only">{`No se puede unir: ${blocking.label}`}</span>}
 
                 <div className={cn(cardAnatomy.footer, "flex items-end justify-between gap-3")}>
                     <div>
@@ -122,20 +140,7 @@ export function FiscalMatchCandidateCard({
                 </div>
 
                 {error && (
-                    <p role="alert" className="text-2xs text-destructive">{error}</p>
-                )}
-
-                {!readOnly && payment && payment.options.length > 0 && (
-                    // El selector vive dentro de la tarjeta: su clic no la suelta.
-                    <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                        <LabeledSelect
-                            label="Pago"
-                            placeholder="Elige el pago"
-                            value={payment.value === null ? undefined : String(payment.value)}
-                            onChange={(v) => payment.onChange(Number(v))}
-                            options={payment.options.map((m) => ({ value: String(m.id), label: paymentLabel(m) }))}
-                        />
-                    </div>
+                    <p id={errorId} role="alert" className="text-2xs text-destructive">{error}</p>
                 )}
 
                 {!readOnly && state === "linked" && onRemove && (
@@ -145,7 +150,7 @@ export function FiscalMatchCandidateCard({
                         </Button>
                     </div>
                 )}
-                {!readOnly && onUndo && (state === "toRemove" || (state === "error" && !onToggle)) && (
+                {!readOnly && onUndo && !onToggle && state !== "linked" && state !== "idle" && (
                     <div className="flex justify-end">
                         <Button type="button" size="sm" variant="ghost" onClick={onUndo}>
                             Deshacer
@@ -154,5 +159,16 @@ export function FiscalMatchCandidateCard({
                 )}
             </div>
         </CardSurface>
+        {showPayment && (
+            // Junto a la tarjeta, no dentro: un control anidado en un role="checkbox" rompe la accesibilidad.
+            <LabeledSelect
+                label={`Pago de ${card.label}`}
+                placeholder="Elige el pago"
+                value={payment.value === null ? undefined : String(payment.value)}
+                onChange={(v) => payment.onChange(Number(v))}
+                options={payment.options.map((m) => ({ value: String(m.id), label: paymentLabel(m) }))}
+            />
+        )}
+        </div>
     )
 }

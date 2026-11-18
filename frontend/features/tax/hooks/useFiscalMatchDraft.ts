@@ -10,9 +10,11 @@ import {
     applyUnselect,
     clearEntryErrors,
     consequencesOf,
+    dropEntry,
     errorOf as errorOfEntries,
     hasMissingPayment,
     paymentOptionsOf as paymentOptionsOfEntries,
+    pendingLinkItems,
     reconcileEntries,
     stateOf as stateOfEntries,
     summarize,
@@ -69,6 +71,15 @@ export function useFiscalMatchDraft(group: FiscalMatchDetail | undefined) {
     const discard = useCallback(() => dispatch({ type: 'discard' }), [])
     const markError = useCallback((index: number, message: string) => dispatch({ type: 'error', index, message }), [])
     const clearErrors = useCallback(() => dispatch({ type: 'clearErrors' }), [])
+    /** Quita el cambio `index` (rechazado por `MOVED`) y devuelve el aviso a mostrar. */
+    const drop = useCallback((index: number): string | null => {
+        const { entries: kept, notice } = dropEntry(latest.current, index)
+        if (notice) {
+            latest.current = kept
+            dispatch({ type: 'replace', entries: kept })
+        }
+        return notice
+    }, [])
     const reconcile = useCallback((fresh: FiscalMatchDetail, visible: VisibleIds): string[] => {
         const { entries: kept, notices, changed } = reconcileEntries(latest.current, fresh, visible)
         if (changed) {
@@ -80,6 +91,7 @@ export function useFiscalMatchDraft(group: FiscalMatchDetail | undefined) {
 
     const stateOf = useCallback((part: FiscalMatchPart, id: number): DraftCardState => stateOfEntries(entries, group, part, id), [entries, group])
     const errorOf = useCallback((part: FiscalMatchPart, id: number): string | undefined => errorOfEntries(entries, part, id), [entries])
+    const pendingLinks = useCallback((part: FiscalMatchPart): FiscalMatchSearchItem[] => pendingLinkItems(entries, part), [entries])
     const paymentOptionsOf = useCallback((saleId: number): CandidateMovement[] => paymentOptionsOfEntries(entries, saleId), [entries])
     const paymentOf = useCallback((saleId: number): number | null => {
         for (const { change } of entries) {
@@ -97,7 +109,7 @@ export function useFiscalMatchDraft(group: FiscalMatchDetail | undefined) {
     return {
         pending, isDirty: entries.length > 0, needsPayment, consequences, summary,
         select, unselect, remove, setPayment, discard, stateOf, errorOf, paymentOf, paymentOptionsOf,
-        markError, clearErrors, reconcile,
+        pendingLinks, markError, clearErrors, drop, reconcile,
     }
 }
 

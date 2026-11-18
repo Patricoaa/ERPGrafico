@@ -21,6 +21,7 @@ const m = vi.hoisted(() => ({
     search: {} as Record<string, unknown[]>,
     searchCalls: [] as [number, string, unknown, boolean][],
     toastError: vi.fn(),
+    toastInfo: vi.fn(),
 }))
 
 const mutation = (fn: () => unknown) => ({ mutateAsync: fn, isPending: false })
@@ -55,7 +56,7 @@ vi.mock("../../hooks/useFiscalMatchFeeding", () => ({
     useConfirmFiscalMatchDraft: () => mutation(m.confirmDraft),
     useCreateFiscalMatchDraft: () => mutation(m.createDraft),
 }))
-vi.mock("sonner", () => ({ toast: { error: m.toastError, info: vi.fn(), success: vi.fn() } }))
+vi.mock("sonner", () => ({ toast: { error: m.toastError, info: m.toastInfo, success: vi.fn() } }))
 vi.mock("@/components/providers/GlobalModalProvider", () => ({
     useGlobalModalActions: () => ({ openEntity: m.openEntity }),
 }))
@@ -177,6 +178,7 @@ beforeEach(() => {
     for (const fn of [m.release, m.retry, m.confirmDraft, m.createDraft, m.apply]) fn.mockReset().mockResolvedValue(undefined)
     m.openEntity.mockReset()
     m.toastError.mockReset()
+    m.toastInfo.mockReset()
 })
 
 describe("FiscalMatchDrawer", () => {
@@ -185,6 +187,8 @@ describe("FiscalMatchDrawer", () => {
         renderDrawer(1)
         expect(m.requestedIds).toContain(1)
         expect(screen.getAllByRole("region", { name: /^0[123]/ })).toHaveLength(3)
+        expect(screen.getByText("Tipo")).toBeInTheDocument()
+        expect(screen.getByText("RUT cliente")).toBeInTheDocument()
 
         const erp = column("Documento ERP")
         expect(within(erp).getByText("01")).toBeInTheDocument()
@@ -195,6 +199,9 @@ describe("FiscalMatchDrawer", () => {
         const tuu = column("Pagos TUU")
         expect(within(tuu).getByText("02")).toBeInTheDocument()
         expect(within(tuu).getByText(/Pago #501/)).toBeInTheDocument()
+        expect(within(tuu).getByText("Pagos del terminal")).toBeInTheDocument()
+        expect(within(tuu).getByText(/TUU informó DTE 48/)).toBeInTheDocument()
+        expect(within(tuu).getByText("Total TUU")).toBeInTheDocument()
         await user.click(within(tuu).getByRole("button", { name: "Venta TUU #5" }))
         expect(m.openEntity).toHaveBeenCalledWith("treasury.terminalsale", 5)
 
@@ -272,6 +279,66 @@ describe("FiscalMatchDrawer", () => {
         expect(await within(column("RCV (SII)")).findByRole("alert")).toHaveTextContent("Ya hay un registro del SII")
         expect(m.toastError).toHaveBeenCalledTimes(1)
         expect(screen.getByText("1 cambio sin guardar")).toBeInTheDocument()
+    })
+
+    it("un 400 MOVED saca el cambio del borrador con el aviso de §7b", async () => {
+        const user = userEvent.setup()
+        m.group = invoiceMissingRcv
+        m.search = { rcv: [candidate(33)] }
+        m.apply.mockRejectedValue({ response: { status: 400, data: { error: { message: "Se movió", code: "MOVED", details: { change_index: 0 } } } } })
+        renderDrawer(2)
+        await user.click(within(column("RCV (SII)")).getByRole("checkbox", { name: /33 N° 33/ }))
+        await user.click(save())
+        await waitFor(() => expect(m.toastInfo).toHaveBeenCalledWith("1 cambio ya no aplica: el registro del SII 33 N° 33 se cuadró en otro grupo"))
+        expect(screen.queryByText("1 cambio sin guardar")).not.toBeInTheDocument()
+        expect(m.toastError).not.toHaveBeenCalled()
+    })
+
+    it("lo elegido queda en «En este cuadre» aunque cambie la búsqueda, con «Deshacer»", async () => {
+        const user = userEvent.setup()
+        m.group = invoiceMissingRcv
+        m.search = { rcv: [candidate(33)] }
+        renderDrawer(2)
+        const rcv = column("RCV (SII)")
+        await user.click(within(rcv).getByRole("checkbox", { name: /33 N° 33/ }))
+        m.search = { rcv: [] }
+        await user.type(within(rcv).getByRole("searchbox"), "zzz")
+        await waitFor(() => expect(within(rcv).queryByRole("checkbox")).not.toBeInTheDocument())
+        expect(within(rcv).getByText("33 N° 33")).toBeInTheDocument()
+        await user.click(within(rcv).getByRole("button", { name: "Deshacer" }))
+        expect(screen.queryByText("1 cambio sin guardar")).not.toBeInTheDocument()
+    })
+
+    it("con cambios en espera, devolver y reintentar quedan bloqueados", async () => {
+        const user = userEvent.setup()
+        m.group = { ...orphan, issue_error: "Falló", terminal_sales: [{ ...orphan.terminal_sales[0], linked_manually: true }] }
+        m.search = { erp: [candidate(90, { kind: "erp", label: "BOL-90" })] }
+        renderDrawer(3)
+        expect(screen.getByRole("button", { name: "Devolver al cruce automático" })).toBeEnabled()
+        await user.click(within(column("Documento ERP")).getByRole("checkbox", { name: /BOL-90/ }))
+        expect(screen.getByRole("button", { name: "Devolver al cruce automático" })).toBeDisabled()
+        expect(screen.getByRole("button", { name: "Reintentar emisión" })).toBeDisabled()
+    })
+
+    it("abrir otro grupo con cambios en espera pide confirmación", async () => {
+        const user = userEvent.setup()
+        const onGroupChange = vi.fn()
+        m.group = invoice
+        const view = render(<FiscalMatchDrawer id={2} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
+        await user.click(within(column("RCV (SII)")).getByRole("button", { name: "Quitar Folio 1532" }))
+        m.requestedIds = []
+        view.rerender(<FiscalMatchDrawer id={1} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
+        expect(screen.getByText("Hay cambios sin guardar")).toBeInTheDocument()
+        expect(m.requestedIds).not.toContain(1)
+        await user.click(screen.getByRole("button", { name: "Seguir editando" }))
+        expect(onGroupChange).toHaveBeenCalledWith(2)
+        expect(screen.getByText("Se quitará")).toBeInTheDocument()
+
+        view.rerender(<FiscalMatchDrawer id={2} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
+        view.rerender(<FiscalMatchDrawer id={1} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
+        await user.click(screen.getByRole("button", { name: "Descartar cambios" }))
+        await waitFor(() => expect(m.requestedIds).toContain(1))
+        expect(screen.queryByText("Se quitará")).not.toBeInTheDocument()
     })
 
     it("un 409 conserva el borrador", async () => {

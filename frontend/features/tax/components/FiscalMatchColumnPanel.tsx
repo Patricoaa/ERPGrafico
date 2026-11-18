@@ -3,7 +3,7 @@
 import { useId, useState, type ReactNode, type UIEvent } from "react"
 import { Search } from "lucide-react"
 import { toast } from "sonner"
-import { CardSkeleton, EmptyState, LabeledSelect, Section, StatusBadge } from "@/components/shared"
+import { CardSkeleton, EmptyState, LabeledSelect, MoneyDisplay, Section, StatusBadge } from "@/components/shared"
 import { formatDate } from "@/components/entity-view"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
@@ -11,13 +11,14 @@ import { Input } from "@/components/ui/input"
 import { useDebounce } from "@/hooks/useDebounce"
 import { getDteLabel } from "@/lib/entity-registry"
 import { partStateValue, type PartState } from "@/lib/fiscal-match"
+import { dteShortLabel } from "../entity-view/fiscalMatch.entity"
 import { isOrphan } from "../hooks/fiscalMatchDraft"
 import type { FiscalMatchDraft } from "../hooks/useFiscalMatchDraft"
 import { useFiscalMatchSearch } from "../hooks/useFiscalMatches"
 import type { FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem, FiscalMatchSearchOrdering } from "../types/fiscalMatch"
 import { FiscalMatchCandidateCard, type FiscalMatchCardData } from "./FiscalMatchCandidateCard"
 
-export interface FiscalMatchColumnProps {
+export interface FiscalMatchColumnPanelProps {
     /** Posición en la ficha: «01», «02», «03». */
     index: number
     part: FiscalMatchPart
@@ -79,6 +80,7 @@ function linkedCards(group: FiscalMatchDetail, part: FiscalMatchPart): FiscalMat
             label: `Venta TUU #${s.id}`,
             counterparty: [
                 s.matched_movement ? `Pago #${s.matched_movement.id} · ${formatDate(s.matched_movement.created_at, true)}` : "Sin pago asociado",
+                s.document_type !== null && `TUU informó DTE ${s.document_type}`,
                 s.linked_manually && "Unión manual",
             ].filter(Boolean).join(" · "),
             date: null,
@@ -89,7 +91,7 @@ function linkedCards(group: FiscalMatchDetail, part: FiscalMatchPart): FiscalMat
     return group.rcv_documents.map((d) => ({
         id: d.id,
         label: `Folio ${d.folio}`,
-        counterparty: [`DTE ${d.dte_type}`, group.rcv_linked_manually && "Unión manual"].filter(Boolean).join(" · "),
+        counterparty: [dteShortLabel(d.dte_type) ?? `DTE ${d.dte_type}`, group.rcv_linked_manually && "Unión manual"].filter(Boolean).join(" · "),
         date: d.issue_date,
         amount: d.total_amount,
     }))
@@ -100,12 +102,22 @@ function linkedCards(group: FiscalMatchDetail, part: FiscalMatchPart): FiscalMat
  * «En este cuadre» (registros unidos, con «Quitar») y «Sin cuadrar» (buscador, orden y candidatas
  * por coincidencia, con scroll infinito). Las selecciones van al borrador; nada se guarda aquí.
  */
-export function FiscalMatchColumn({ index, part, title, subtitle, group, draft, readOnly, children }: FiscalMatchColumnProps) {
+export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, draft, readOnly, children }: FiscalMatchColumnPanelProps) {
     const titleId = useId()
     const { openEntity } = useGlobalModalActions()
     const state = stateOf(group, part)
     const status = partStateValue(state)
     const linked = linkedCards(group, part)
+    // Lo elegido para unir se ve aquí aunque ya no esté en la página o la búsqueda de «Sin cuadrar».
+    const pending = draft.pendingLinks(part)
+    const paymentFor = (saleId: number) => {
+        const options = part === "tuu" ? draft.paymentOptionsOf(saleId) : []
+        return options.length > 0 ? {
+            options,
+            value: draft.paymentOf(saleId),
+            onChange: (movementId: number) => draft.setPayment(saleId, movementId),
+        } : undefined
+    }
     const number = String(index).padStart(2, "0")
 
     const notApplicable = notApplicableText(part, state)
@@ -126,33 +138,40 @@ export function FiscalMatchColumn({ index, part, title, subtitle, group, draft, 
             </header>
 
             <div className="flex flex-col gap-2">
-                <Section.Header title="En este cuadre" count={linked.length} />
-                {linked.length === 0 ? (
-                    <EmptyState variant="minimal" title="Sin registros unidos" />
-                ) : (
-                    linked.map((card) => {
-                        const cardState = draft.stateOf(part, card.id)
-                        const options = part === "tuu" ? draft.paymentOptionsOf(card.id) : []
-                        return (
-                            <FiscalMatchCandidateCard
-                                key={card.id}
-                                part={part}
-                                card={card}
-                                state={cardState}
-                                error={draft.errorOf(part, card.id)}
-                                readOnly={readOnly}
-                                onOpen={() => openEntity(ENTITY_LABELS[part], card.id)}
-                                onRemove={part === "erp" ? undefined : () => draft.remove(part, card.id)}
-                                onUndo={() => draft.unselect(part, card.id)}
-                                payment={options.length > 0 ? {
-                                    options,
-                                    value: draft.paymentOf(card.id),
-                                    onChange: (movementId) => draft.setPayment(card.id, movementId),
-                                } : undefined}
-                            />
-                        )
-                    })
+                <Section.Header title="En este cuadre" count={linked.length + pending.length} />
+                {part === "tuu" && group.tuu_amount !== null && (
+                    <p className="flex items-baseline justify-between gap-2 text-xs">
+                        <span className="text-muted-foreground">Total TUU</span>
+                        <MoneyDisplay amount={group.tuu_amount} currency="CLP" />
+                    </p>
                 )}
+                {linked.length === 0 && pending.length === 0 && <EmptyState variant="minimal" title="Sin registros unidos" />}
+                {linked.map((card) => (
+                    <FiscalMatchCandidateCard
+                        key={card.id}
+                        part={part}
+                        card={card}
+                        state={draft.stateOf(part, card.id)}
+                        error={draft.errorOf(part, card.id)}
+                        readOnly={readOnly}
+                        onOpen={() => openEntity(ENTITY_LABELS[part], card.id)}
+                        onRemove={part === "erp" ? undefined : () => draft.remove(part, card.id)}
+                        onUndo={() => draft.unselect(part, card.id)}
+                        payment={paymentFor(card.id)}
+                    />
+                ))}
+                {pending.map((item) => (
+                    <FiscalMatchCandidateCard
+                        key={`pending-${item.id}`}
+                        part={part}
+                        card={item}
+                        state={draft.stateOf(part, item.id)}
+                        error={draft.errorOf(part, item.id)}
+                        readOnly={readOnly}
+                        onUndo={() => draft.unselect(part, item.id)}
+                        payment={paymentFor(item.id)}
+                    />
+                ))}
             </div>
 
             {notApplicable !== null ? (
@@ -231,26 +250,17 @@ function CandidateList({ part, group, draft, readOnly }: { part: FiscalMatchPart
                 <EmptyState variant="minimal" context="search" title={q ? "Sin resultados" : "Sin registros por cuadrar"} />
             ) : (
                 <div className="flex max-h-[32rem] flex-col gap-2 overflow-y-auto pr-1" onScroll={onScroll}>
-                    {search.items.map((item) => {
-                        const cardState = draft.stateOf(part, item.id)
-                        const chosen = cardState === "selected" || cardState === "error"
-                        return (
-                            <FiscalMatchCandidateCard
-                                key={item.id}
-                                part={part}
-                                card={item}
-                                state={cardState}
-                                error={draft.errorOf(part, item.id)}
-                                readOnly={readOnly}
-                                onToggle={() => toggle(item)}
-                                payment={part === "tuu" && chosen ? {
-                                    options: draft.paymentOptionsOf(item.id),
-                                    value: draft.paymentOf(item.id),
-                                    onChange: (movementId) => draft.setPayment(item.id, movementId),
-                                } : undefined}
-                            />
-                        )
-                    })}
+                    {/* El error y el pago de lo elegido se muestran en «En este cuadre», una sola vez. */}
+                    {search.items.map((item) => (
+                        <FiscalMatchCandidateCard
+                            key={item.id}
+                            part={part}
+                            card={item}
+                            state={draft.stateOf(part, item.id)}
+                            readOnly={readOnly}
+                            onToggle={() => toggle(item)}
+                        />
+                    ))}
                     {search.hasNextPage && (
                         <Button type="button" size="sm" variant="ghost" disabled={search.isFetchingNextPage} onClick={loadMore}>
                             {search.isFetchingNextPage ? "Cargando…" : "Ver más"}

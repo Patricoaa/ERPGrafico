@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { FiscalMatchCandidateCard, type FiscalMatchCardData } from "../FiscalMatchCandidateCard"
@@ -110,5 +110,31 @@ describe("FiscalMatchCandidateCard", () => {
             />,
         )
         expect(screen.getByText("Elige el pago")).toBeInTheDocument()
+        // Sin controles anidados: el selector de pago va junto a la tarjeta, no dentro.
+        expect(within(screen.getByRole("checkbox", { name: /Venta TUU #81/ })).queryByText("Elige el pago")).toBeNull()
+    })
+
+    it("el puntaje, las advertencias y el motivo de bloqueo llegan como descripción accesible", () => {
+        render(
+            <FiscalMatchCandidateCard
+                part="tuu"
+                card={card({ warnings: [{ code: "OTHER_DAY", label: "Otro día", blocking: false }, { code: "TYPE_INCOMPATIBLE", label: "Efectivo solo en boletas", blocking: true }] })}
+                state="idle"
+                onToggle={vi.fn()}
+            />,
+        )
+        const el = screen.getByRole("checkbox", { name: /Venta TUU #81/ })
+        expect(el).toHaveAccessibleDescription(/95 % coincidencia/)
+        expect(el).toHaveAccessibleDescription(/Otro día/)
+        expect(el).toHaveAccessibleDescription(/No se puede unir: Efectivo solo en boletas/)
+    })
+
+    it("tarjeta elegida en «En este cuadre»: «Por unir» con «Deshacer»", async () => {
+        const user = userEvent.setup()
+        const onUndo = vi.fn()
+        render(<FiscalMatchCandidateCard part="rcv" card={card()} state="selected" onUndo={onUndo} />)
+        expect(screen.getByText("Por unir")).toBeInTheDocument()
+        await user.click(screen.getByRole("button", { name: "Deshacer" }))
+        expect(onUndo).toHaveBeenCalled()
     })
 })
