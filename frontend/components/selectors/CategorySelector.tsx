@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import { Check, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-import { LabeledContainer, SearchablePopover, SelectorItem, SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared"
+import { DynamicIcon, LabeledContainer, SearchablePopover, SelectorItem, SelectorTrigger, SELECTOR_VALUE_CLASS } from "@/components/shared"
 import { type ProductCategory } from "@/types/entities"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { CategoryDrawer } from "@/features/inventory/components/CategoryDrawer"
@@ -90,7 +90,9 @@ export function CategorySelector({
             createLabel="Nueva categoría"
             renderItem={(cat) => (
                 <SelectorItem
-                    icon={<Tag className="h-3.5 w-3.5 text-muted-foreground" />}
+                    icon={cat.icon
+                        ? <DynamicIcon name={cat.icon} className="h-3.5 w-3.5 text-muted-foreground" />
+                        : <Tag className="h-3.5 w-3.5 text-muted-foreground" />}
                     title={cat.name}
                     selected={selectedCategory?.id === cat.id}
                 />
@@ -107,7 +109,9 @@ export function CategorySelector({
                     chevronClassName="h-3 w-3 opacity-30"
                     className={variant === 'standalone' ? "h-full! min-h-0! px-2" : undefined}
                 >
-                    {!icon && <Tag className="h-3 w-3 shrink-0 text-primary" />}
+                    {!icon && (selectedCategory?.icon
+                        ? <DynamicIcon name={selectedCategory.icon} className="h-3 w-3 shrink-0 text-primary" />
+                        : <Tag className="h-3 w-3 shrink-0 text-primary" />)}
                     <span className={`${SELECTOR_VALUE_CLASS} truncate leading-none`}>{selectedCategory?.name}</span>
                 </SelectorTrigger>
             }
