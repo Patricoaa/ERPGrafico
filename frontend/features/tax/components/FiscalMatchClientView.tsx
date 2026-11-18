@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
@@ -25,6 +25,7 @@ import {
     fiscalMatchUnifiedSearchDef,
     selectedStatus,
     toFiscalMatchFilters,
+    withDefaultFilters,
 } from "../unifiedSearchDef"
 import { FiscalMatchDrawer } from "./FiscalMatchDrawer"
 
@@ -42,6 +43,13 @@ export function FiscalMatchClientView() {
     const searchParams = useSearchParams()
     // `?selected={id}` abre la ficha del grupo (enlaces directos, `detailUrlPattern` del registro).
     const panel = useEntityPanelRoute({ create: false })
+    // Los filtros por defecto viven en la URL: así se ven como chips y «Limpiar» vuelve a
+    // ellos de forma visible. Solo escribe si faltan (tras escribir, ya no faltan: sin bucle).
+    const query = searchParams.toString()
+    useEffect(() => {
+        const next = withDefaultFilters(query)
+        if (next !== null) router.replace(`${pathname}?${next}`, { scroll: false })
+    }, [query, pathname, router])
     const openGroup = useCallback((id: number) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set("selected", String(id))

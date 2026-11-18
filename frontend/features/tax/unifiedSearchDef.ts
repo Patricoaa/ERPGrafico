@@ -104,6 +104,18 @@ export function selectedStatus(params: Record<string, string>): FiscalMatchStatu
   return isStatus(v) ? v : STATUS_ATTENTION
 }
 
+/**
+ * La URL con los filtros por defecto que le faltan (`direction=sale`, `status=attention`), o
+ * `null` si ya los trae. Escritos en la URL, el buscador los muestra como chips y selecciones.
+ */
+export function withDefaultFilters(query: string): string | null {
+  const params = new URLSearchParams(query)
+  if (params.has('direction') && params.has('status')) return null
+  if (!params.has('direction')) params.set('direction', DEFAULT_DIRECTION)
+  if (!params.has('status')) params.set('status', STATUS_ATTENTION)
+  return params.toString()
+}
+
 /** Parámetros de la URL → filtros de la API. Los vacíos se omiten; «Ambos» no envía `direction`. */
 export function toFiscalMatchFilters(params: Record<string, string>): FiscalMatchFilters {
   const status = selectedStatus(params)

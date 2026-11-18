@@ -19,6 +19,8 @@ const m = vi.hoisted(() => ({
     countsError: false,
     countsRefetch: vi.fn(),
     push: vi.fn(),
+    replace: vi.fn(),
+    query: "status=attention",
     selectedId: null as number | null,
 }))
 
@@ -56,8 +58,8 @@ vi.mock("../../hooks/useFiscalMatches", () => ({
     useFiscalMatchCounts: () => ({ counts: m.counts, isLoading: m.countsLoading, isError: m.countsError, refetch: m.countsRefetch }),
 }))
 vi.mock("next/navigation", () => ({
-    useSearchParams: () => new URLSearchParams("status=attention"),
-    useRouter: () => ({ push: m.push, replace: vi.fn() }),
+    useSearchParams: () => new URLSearchParams(m.query),
+    useRouter: () => ({ push: m.push, replace: m.replace }),
     usePathname: () => "/accounting/rcv/cuadre",
 }))
 vi.mock("@/hooks/useEntityPanelRoute", () => ({
@@ -122,6 +124,8 @@ const counts: FiscalMatchCounts = {
 
 beforeEach(() => {
     m.filters = {}
+    m.query = "status=attention"
+    m.replace.mockReset()
     m.filterOptions = undefined
     m.applyFilter.mockReset()
     m.removeFilter.mockReset()
@@ -197,6 +201,26 @@ describe("FiscalMatchClientView", () => {
 
         await userEvent.click(within(table).getByRole("button", { name: /Boleta 39 · \$12\.500/ }))
         expect(m.push).toHaveBeenCalledWith("/accounting/rcv/cuadre?status=attention&selected=1", { scroll: false })
+    })
+
+    it("una URL limpia recibe los filtros por defecto (chips y «Limpiar» visibles)", () => {
+        m.query = ""
+        render(<FiscalMatchClientView />)
+        expect(m.replace).toHaveBeenCalledTimes(1)
+        expect(m.replace).toHaveBeenCalledWith("/accounting/rcv/cuadre?direction=sale&status=attention", { scroll: false })
+    })
+
+    it("conserva los parámetros presentes al completar los por defecto", () => {
+        m.query = "selected=5&status=all"
+        render(<FiscalMatchClientView />)
+        expect(m.replace).toHaveBeenCalledWith("/accounting/rcv/cuadre?selected=5&status=all&direction=sale", { scroll: false })
+    })
+
+    it("no reescribe la URL cuando ya trae dirección y estado", () => {
+        m.query = "direction=all&status=attention"
+        const { rerender } = render(<FiscalMatchClientView />)
+        rerender(<FiscalMatchClientView />)
+        expect(m.replace).not.toHaveBeenCalled()
     })
 
     it("has no recalculate buttons or summary selectors", () => {
