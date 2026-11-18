@@ -327,10 +327,12 @@ def _tuu_state(
             )
         )
     ]
-    if not expected:
-        return PartState.NOT_APPLICABLE
+    # Una venta de otro tipo es diferencia aunque ningún pago espere TUU (p. ej. una
+    # boleta TUU en efectivo dentro de una factura pagada en efectivo).
     if any(s.document_type is not None and s.document_type != code for s in sales):
         return PartState.DIFF
+    if not expected:
+        return PartState.NOT_APPLICABLE
     backed = {s.matched_movement_id for s in sales}
     unbacked = [(m, p) for m, p in expected if m.id not in backed]
     if not unbacked:

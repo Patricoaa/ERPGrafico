@@ -620,3 +620,16 @@ def test_evaluate_makes_no_queries(env, django_assert_num_queries):
         evaluate(groups, ctx)
 
     assert all(g.evaluated_at == ctx.now for g in groups)
+
+
+def test_factura_paid_cash_with_tuu_cash_boleta_attached_is_type_diff(env):
+    # Sin pagos que esperen TUU la parte sería NOT_APPLICABLE, pero una venta de otro tipo
+    # en el grupo es una diferencia (no se esconde bajo «no aplica»).
+    invoice, group = pos_group(env, 5000, dte_type=Invoice.DTEType.FACTURA, method="CASH")
+    sale_for(env, invoice, group, document_type=39)
+    rcv_doc(group, 5000, dte_type=33)
+
+    g = one(group)
+
+    assert g.tuu_state == D
+    assert g.status == FiscalMatchStatus.DIFF

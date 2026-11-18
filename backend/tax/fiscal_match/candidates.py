@@ -12,6 +12,9 @@ from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from tax.models import FiscalMatch
 from treasury.models import POSTerminal, TerminalSale, TreasuryMovement
 
+# Documentos cuyo pago en efectivo en una caja con TUU espera una venta TUU (boletas).
+CASH_TUU_SII_CODES = frozenset({39, 41})
+
 SALE_DTE_TYPES = (
     Invoice.DTEType.BOLETA,
     Invoice.DTEType.BOLETA_EXENTA,
@@ -114,7 +117,9 @@ def payment_compatible(
     sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]
 ) -> bool:
     if sale.payment_type == TerminalSale.PaymentType.CASH:
-        if m.payment_method != "CASH":
+        # Solo una boleta 39/41 pagada en efectivo espera venta TUU (una factura en
+        # efectivo no deja registro TUU): la venta en efectivo no respalda otro documento.
+        if m.payment_method != "CASH" or m.invoice.sii_code not in CASH_TUU_SII_CODES:
             return False
         if sale.device_id is None:
             return True

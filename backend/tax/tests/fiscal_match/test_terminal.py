@@ -434,3 +434,33 @@ def test_query_count_constant(env):
 
     assert r1.linked == 1 and r6.linked == 6
     assert many == few
+
+
+@pytest.mark.parametrize("dte_type", [Invoice.DTEType.FACTURA, Invoice.DTEType.FACTURA_EXENTA])
+def test_cash_tuu_boleta_never_backs_a_factura_paid_in_cash(env, dte_type):
+    # Una factura pagada en efectivo no deja registro TUU: la venta en efectivo 39 del
+    # mismo monto es de otra boleta y queda huérfana (no se esconde en la factura).
+    inv = make_pos_document(env, 5000, T0, dte_type=dte_type, method="CASH")
+    sale = make_terminal_sale(
+        env, 5000, T0 + timedelta(minutes=2), payment_type=TerminalSale.PaymentType.CASH, document_type=39
+    )
+
+    result = run()
+
+    _reload(sale)
+    assert result.linked == 0
+    assert sale.fiscal_match.invoice_id is None
+    assert sale.matched_movement_id is None
+    assert FiscalMatch.objects.get(invoice=inv).terminal_sales.count() == 0
+
+
+def test_cash_tuu_sale_still_backs_a_cash_boleta(env):
+    inv = make_pos_document(env, 5000, T0, dte_type=Invoice.DTEType.BOLETA, method="CASH")
+    sale = make_terminal_sale(
+        env, 5000, T0 + timedelta(minutes=2), payment_type=TerminalSale.PaymentType.CASH, document_type=39
+    )
+
+    run()
+
+    _reload(sale)
+    assert sale.fiscal_match.invoice_id == inv.id
