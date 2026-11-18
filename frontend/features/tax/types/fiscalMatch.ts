@@ -110,45 +110,56 @@ export interface CandidateMovement extends FiscalMatchMovementRef {
     method: string
 }
 
-export interface ErpCandidate {
+export type FiscalMatchSearchOrdering = 'score' | 'recent'
+
+export interface FiscalMatchSearchParams {
+    q?: string
+    ordering?: FiscalMatchSearchOrdering
+}
+
+export interface FiscalMatchWarning {
+    code: string
+    label: string
+    /** Un aviso bloqueante impide cuadrar la tarjeta. */
+    blocking: boolean
+}
+
+/** Tarjeta candidata de `GET fiscal-matches/{id}/search/` (opcionales solo en su parte). */
+export interface FiscalMatchSearchItem {
     id: number
-    display_id: string
-    dte_type: string
-    number: string
-    total: string | null
-    date: string | null
-    /** Cobros libres del monto de la venta TUU del huérfano; vacío si el huérfano no tiene venta. */
-    compatible_movements: CandidateMovement[]
+    kind: string
+    label: string
+    counterparty: string
+    date: string
+    datetime?: string
+    amount: string
+    score: number
+    warnings: FiscalMatchWarning[]
+    /** ERP/RCV con venta TUU de referencia: cobros libres compatibles. */
+    compatible_movements?: CandidateMovement[]
+    /** `{sale_id: cobros libres}` para documentos que se cuadran contra varias ventas. */
+    payments_by_sale?: Record<string, CandidateMovement[]>
 }
 
-export interface TuuCandidate extends FiscalMatchSaleRef {
-    document_type: number | null
-    payment_type: string
-    compatible_movements: CandidateMovement[]
-}
-
-export interface RcvCandidate extends FiscalMatchRcvDetail {
-    counterparty_rut: string
-}
-
-export interface FiscalMatchCandidateMap {
-    erp: ErpCandidate
-    tuu: TuuCandidate
-    rcv: RcvCandidate
-}
-
-export type FiscalMatchCandidate = FiscalMatchCandidateMap[FiscalMatchPart]
-
-export interface FiscalMatchLinkBody {
+/** Cambio en espera de la ficha (`POST fiscal-matches/{id}/apply/`). */
+export interface FiscalMatchChange {
+    op: 'link' | 'unlink'
     part: FiscalMatchPart
     id: number
-    /** Movimiento de tesorería a asociar (solo `tuu`). */
+    /** Movimiento de tesorería a asociar (link de una venta TUU / documento ERP). */
     movement?: number | null
+    /** `{sale_id: movement_id}` */
+    payments?: Record<number, number> | null
 }
 
-export interface FiscalMatchUnlinkBody {
-    part: 'tuu' | 'rcv'
-    id: number
+/** Error 400 de `apply`: sobre estándar del repo; `details.change_index` apunta al cambio culpable. */
+export interface FiscalMatchApplyError {
+    error: {
+        message: string
+        code: string
+        details: { change_index: number }
+        timestamp?: string
+    }
 }
 
 /** Borrador de compra sugerido para un grupo con registro del SII sin factura. */

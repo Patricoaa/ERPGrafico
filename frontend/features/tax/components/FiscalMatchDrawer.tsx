@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 import { Scale } from "lucide-react"
 import { Can } from "@/components/auth"
 import { Banner, Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
-import { formatDate, formatTimeOfDay } from "@/components/entity-view"
+import { formatDate } from "@/components/entity-view"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
@@ -14,13 +14,10 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { dteShortLabel } from "../entity-view/fiscalMatch.entity"
 import {
     useFiscalMatch,
-    useFiscalMatchCandidates,
-    useLinkFiscalMatch,
     useReleaseFiscalMatch,
     useRetryFiscalIssue,
-    useUnlinkFiscalMatch,
 } from "../hooks/useFiscalMatches"
-import type { CandidateMovement, FiscalMatchDetail } from "../types/fiscalMatch"
+import type { FiscalMatchDetail } from "../types/fiscalMatch"
 import { FiscalMatchRegisterSection } from "./FiscalMatchRegisterSection"
 
 export interface FiscalMatchDrawerProps {
@@ -35,9 +32,6 @@ export interface FiscalMatchDrawerProps {
 
 /** Toda acción del cuadre (unir, quitar, devolver, reintentar, alimentar) exige este permiso. */
 const CHANGE_PERMISSION = "tax.change_taxperiod"
-
-/** Partes RCV en que el SII no individualiza o no aplica: no hay registro que vincular. */
-const RCV_NOT_LINKABLE: readonly PartState[] = ["NOT_APPLICABLE", "SUMMARY_ONLY"]
 
 const DIRECTION_LABELS: Record<FiscalMatchDetail["direction"], string> = { sale: "Venta", purchase: "Compra" }
 
@@ -129,9 +123,6 @@ function FiscalMatchBody({ group }: { group: FiscalMatchDetail }) {
     const follow = useContext(FollowGroupContext)
     const status = fiscalMatchStatusValue(group.status, group.status_display)
     const isOrphan = group.invoice === null
-    const records = group.terminal_sales.length + group.rcv_documents.length
-    // Quitar de un huérfano con un solo registro solo lo movería a otro huérfano igual.
-    const canUnlink = !isOrphan || records > 1
     const manualMark = group.rcv_linked_manually || group.terminal_sales.some((s) => s.linked_manually)
     const feedingDoc = group.direction === "purchase" && isOrphan && group.rcv_documents.length === 1 ? group.rcv_documents[0] : null
 
@@ -151,8 +142,8 @@ function FiscalMatchBody({ group }: { group: FiscalMatchDetail }) {
             </Section>
 
             <ErpBlock group={group} />
-            {group.direction === "sale" && <TuuBlock group={group} canUnlink={canUnlink} />}
-            <RcvBlock group={group} canUnlink={canUnlink} />
+            {group.direction === "sale" && <TuuBlock group={group} />}
+            <RcvBlock group={group} />
 
             {feedingDoc && (
                 <Can permission={CHANGE_PERMISSION}>
@@ -220,92 +211,17 @@ function ReleaseAction({ groupId }: { groupId: number }) {
 }
 
 /** Botón de la cabecera que abre/cierra la lista de candidatos de una parte. */
-function ToggleAction({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
-    return (
-        <Can permission={CHANGE_PERMISSION}>
-            <Button type="button" size="sm" variant="outline" aria-expanded={open} onClick={onToggle}>
-                {label}
-            </Button>
-        </Can>
-    )
-}
-
 function PartStateRow({ state }: { state: PartState }) {
     const value = partStateValue(state)
     return <Stat title="Estado" value={<StatusBadge status={value.status} label={value.label} intent={value.intent} size="sm" />} />
 }
 
-/** «14:02 · Tarjeta»: hora local del cobro y su método. */
-function paymentLabel(movement: CandidateMovement): string {
-    return `${formatTimeOfDay(movement.created_at)} · ${movement.method}`
-}
-
-/**
- * Botones para unir un candidato: uno solo si hay un cobro compatible (o ninguno que elegir),
- * uno por cobro cuando hay varios del mismo monto y el usuario debe decidir a cuál corresponde.
- */
-function PaymentChoice({ movements, label, singleText, allowNone, disabled, onPick }: {
-    movements: CandidateMovement[]
-    /** Nombre accesible del candidato («venta TUU #40», «BOL-90»). */
-    label: string
-    singleText: string
-    /** Sin cobros compatibles se une igual (el huérfano no tiene venta TUU). */
-    allowNone: boolean
-    disabled: boolean
-    onPick: (movement: number | undefined) => void
-}) {
-    if (movements.length === 0) {
-        if (!allowNone) return <span className="text-xs text-muted-foreground">Sin pago compatible</span>
-        return (
-            <Button type="button" size="sm" variant="outline" disabled={disabled} aria-label={`${singleText} ${label}`} onClick={() => onPick(undefined)}>
-                {singleText}
-            </Button>
-        )
-    }
-    if (movements.length === 1) {
-        const [only] = movements
-        return (
-            <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={disabled}
-                aria-label={`${singleText} ${label} (pago ${paymentLabel(only)})`}
-                onClick={() => onPick(only.id)}
-            >
-                {singleText}
-            </Button>
-        )
-    }
-    return (
-        <span className="flex flex-wrap justify-end gap-2">
-            {movements.map((m) => (
-                <Button
-                    key={m.id}
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={disabled}
-                    aria-label={`${singleText} ${label} al pago ${paymentLabel(m)}`}
-                    onClick={() => onPick(m.id)}
-                >
-                    {paymentLabel(m)}
-                </Button>
-            ))}
-        </span>
-    )
-}
-
 function ErpBlock({ group }: { group: FiscalMatchDetail }) {
     const { openEntity } = useGlobalModalActions()
-    const [linking, setLinking] = useState(false)
     const invoice = group.invoice
 
     return (
-        <Section
-            title="Documento ERP"
-            actions={invoice === null ? <ToggleAction label="Vincular documento ERP" open={linking} onToggle={() => setLinking((v) => !v)} /> : undefined}
-        >
+        <Section title="Documento ERP">
             <PartStateRow state={group.erp_state} />
             {invoice ? (
                 <Section.Row
@@ -320,58 +236,15 @@ function ErpBlock({ group }: { group: FiscalMatchDetail }) {
             ) : (
                 <Stat title="Documento" value="Sin documento en el ERP" plain />
             )}
-            {invoice === null && linking && <ErpCandidates groupId={group.id} />}
         </Section>
     )
 }
 
-/** Documentos para un huérfano; si tiene venta TUU, el usuario elige el cobro cuando hay varios. */
-function ErpCandidates({ groupId }: { groupId: number }) {
-    const { candidates, isLoading, isError } = useFiscalMatchCandidates(groupId, "erp")
-    const link = useLinkFiscalMatch()
-    const run = useRunAction()
-    return (
-        <CandidateList isLoading={isLoading} isError={isError} isEmpty={candidates.length === 0} emptyText="Sin documentos candidatos">
-            {candidates.map((c) => (
-                <Section.Row
-                    key={c.id}
-                    title={c.display_id}
-                    description={[getDteLabel(c.dte_type), c.date && formatDate(c.date)].filter(Boolean).join(" · ")}
-                    value={<Money amount={c.total} />}
-                    actions={
-                        <PaymentChoice
-                            movements={c.compatible_movements}
-                            label={c.display_id}
-                            singleText="Vincular"
-                            allowNone
-                            disabled={link.isPending}
-                            onPick={(movement) =>
-                                run(() => link.mutateAsync({
-                                    id: groupId,
-                                    body: movement === undefined ? { part: "erp", id: c.id } : { part: "erp", id: c.id, movement },
-                                }))
-                            }
-                        />
-                    }
-                />
-            ))}
-        </CandidateList>
-    )
-}
-
-function TuuBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: boolean }) {
+function TuuBlock({ group }: { group: FiscalMatchDetail }) {
     const { openEntity } = useGlobalModalActions()
-    const unlink = useUnlinkFiscalMatch()
-    const run = useRunAction()
-    const [linking, setLinking] = useState(false)
-    // TUU «No aplica» (factura sin terminal): no hay cobro que respaldar con una venta.
-    const canAdd = group.invoice !== null && group.tuu_state !== "NOT_APPLICABLE"
 
     return (
-        <Section
-            title="Pagos TUU"
-            actions={canAdd ? <ToggleAction label="Agregar pago TUU" open={linking} onToggle={() => setLinking((v) => !v)} /> : undefined}
-        >
+        <Section title="Pagos TUU">
             <PartStateRow state={group.tuu_state} />
             {group.tuu_amount !== null && <Stat title="Total TUU" value={<Money amount={group.tuu_amount} />} />}
             {group.terminal_sales.map((s) => (
@@ -388,69 +261,17 @@ function TuuBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: b
                         s.linked_manually && "Unión manual",
                     ].filter(Boolean).join(" · ")}
                     value={<Money amount={s.sale_amount} />}
-                    actions={canUnlink ? (
-                        <Can permission={CHANGE_PERMISSION}>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={unlink.isPending}
-                                onClick={() => run(() => unlink.mutateAsync({ id: group.id, body: { part: "tuu", id: s.id } }))}
-                            >
-                                Quitar
-                            </Button>
-                        </Can>
-                    ) : undefined}
                 />
             ))}
-            {canAdd && linking && <TuuCandidates groupId={group.id} />}
         </Section>
     )
 }
 
-/** Ventas TUU huérfanas del día con el monto de algún pago; el usuario elige a qué pago corresponden. */
-function TuuCandidates({ groupId }: { groupId: number }) {
-    const { candidates, isLoading, isError } = useFiscalMatchCandidates(groupId, "tuu")
-    const link = useLinkFiscalMatch()
-    const run = useRunAction()
-    return (
-        <CandidateList isLoading={isLoading} isError={isError} isEmpty={candidates.length === 0} emptyText="Sin ventas TUU candidatas">
-            {candidates.map((c) => (
-                <Section.Row
-                    key={c.id}
-                    title={`Venta TUU #${c.id}`}
-                    description={[formatDate(c.transaction_at, true), c.document_type !== null && `DTE ${c.document_type}`].filter(Boolean).join(" · ")}
-                    value={<Money amount={c.sale_amount} />}
-                    actions={
-                        <PaymentChoice
-                            movements={c.compatible_movements}
-                            label={`venta TUU #${c.id}`}
-                            singleText="Agregar"
-                            allowNone={false}
-                            disabled={link.isPending}
-                            onPick={(movement) => {
-                                if (movement !== undefined) run(() => link.mutateAsync({ id: groupId, body: { part: "tuu", id: c.id, movement } }))
-                            }}
-                        />
-                    }
-                />
-            ))}
-        </CandidateList>
-    )
-}
-
-function RcvBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: boolean }) {
+function RcvBlock({ group }: { group: FiscalMatchDetail }) {
     const { openEntity } = useGlobalModalActions()
-    const unlink = useUnlinkFiscalMatch()
-    const run = useRunAction()
-    const [linking, setLinking] = useState(false)
-    const linkable = group.invoice !== null && group.rcv_documents.length === 0 && !RCV_NOT_LINKABLE.includes(group.rcv_state)
 
     return (
-        <Section
-            title="RCV (SII)"
-            actions={linkable ? <ToggleAction label="Vincular registro RCV" open={linking} onToggle={() => setLinking((v) => !v)} /> : undefined}
-        >
+        <Section title="RCV (SII)">
             <PartStateRow state={group.rcv_state} />
             {group.rcv_documents.map((d) => (
                 <Section.Row
@@ -464,68 +285,10 @@ function RcvBlock({ group, canUnlink }: { group: FiscalMatchDetail; canUnlink: b
                         .filter(Boolean)
                         .join(" · ")}
                     value={<Money amount={d.total_amount} />}
-                    actions={canUnlink ? (
-                        <Can permission={CHANGE_PERMISSION}>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={unlink.isPending}
-                                onClick={() => run(() => unlink.mutateAsync({ id: group.id, body: { part: "rcv", id: d.id } }))}
-                            >
-                                Quitar
-                            </Button>
-                        </Can>
-                    ) : undefined}
                 />
             ))}
-            {linkable && linking && <RcvCandidates groupId={group.id} />}
         </Section>
     )
-}
-
-function RcvCandidates({ groupId }: { groupId: number }) {
-    const { candidates, isLoading, isError } = useFiscalMatchCandidates(groupId, "rcv")
-    const link = useLinkFiscalMatch()
-    const run = useRunAction()
-    return (
-        <CandidateList isLoading={isLoading} isError={isError} isEmpty={candidates.length === 0} emptyText="Sin registros RCV candidatos">
-            {candidates.map((c) => (
-                <Section.Row
-                    key={c.id}
-                    title={`Folio ${c.folio}`}
-                    description={[`DTE ${c.dte_type}`, c.counterparty_rut, c.issue_date && formatDate(c.issue_date)].filter(Boolean).join(" · ")}
-                    value={<Money amount={c.total_amount} />}
-                    actions={
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={link.isPending}
-                            aria-label={`Vincular folio ${c.folio}`}
-                            onClick={() => run(() => link.mutateAsync({ id: groupId, body: { part: "rcv", id: c.id } }))}
-                        >
-                            Vincular
-                        </Button>
-                    }
-                />
-            ))}
-        </CandidateList>
-    )
-}
-
-/** Filas de candidatos con sus estados de carga, error y vacío. */
-function CandidateList({ isLoading, isError, isEmpty, emptyText, children }: {
-    isLoading: boolean
-    isError: boolean
-    isEmpty: boolean
-    emptyText: string
-    children: ReactNode
-}) {
-    if (isError) return <Stat title="Candidatos" value="No se pudieron cargar los candidatos." plain />
-    if (isLoading) return <Stat title="Candidatos" value="Buscando…" plain />
-    if (isEmpty) return <Stat title="Candidatos" value={emptyText} plain />
-    return <>{children}</>
 }
 
 function Money({ amount }: { amount: string | null }) {

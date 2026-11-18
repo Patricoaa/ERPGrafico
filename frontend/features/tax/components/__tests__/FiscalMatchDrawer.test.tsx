@@ -1,8 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { formatTimeOfDay } from "@/components/entity-view"
-import type { CandidateMovement, FiscalMatchDetail, FiscalMatchPart } from "../../types/fiscalMatch"
+import type { FiscalMatchDetail } from "../../types/fiscalMatch"
 
 const m = vi.hoisted(() => ({
     group: undefined as unknown,
@@ -11,11 +10,7 @@ const m = vi.hoisted(() => ({
     notFound: false,
     refetch: vi.fn(),
     requestedIds: [] as (number | null | undefined)[],
-    candidates: { erp: [], tuu: [], rcv: [] } as Record<string, unknown[]>,
-    candidateCalls: [] as [number, string, boolean][],
     can: true,
-    link: vi.fn(),
-    unlink: vi.fn(),
     release: vi.fn(),
     retry: vi.fn(),
     confirmDraft: vi.fn(),
@@ -31,12 +26,6 @@ vi.mock("../../hooks/useFiscalMatches", () => ({
         m.requestedIds.push(id)
         return { group: m.group, isLoading: m.isLoading, isError: m.isError, notFound: m.notFound, isRefetching: false, refetch: m.refetch }
     },
-    useFiscalMatchCandidates: (id: number, part: FiscalMatchPart, enabled = true) => {
-        m.candidateCalls.push([id, part, enabled])
-        return { candidates: enabled ? m.candidates[part] : [], isLoading: false, isError: false, isRefetching: false, refetch: vi.fn() }
-    },
-    useLinkFiscalMatch: () => mutation(m.link),
-    useUnlinkFiscalMatch: () => mutation(m.unlink),
     useReleaseFiscalMatch: () => mutation(m.release),
     useRetryFiscalIssue: () => mutation(m.retry),
 }))
@@ -148,9 +137,6 @@ const purchaseOrphan: FiscalMatchDetail = {
     counterparty_rut: "76123456-7",
 }
 
-const pay501: CandidateMovement = { id: 501, amount: "9990.00", created_at: "2026-11-10T11:39:00-03:00", method: "Tarjeta" }
-const pay502: CandidateMovement = { id: 502, amount: "9990.00", created_at: "2026-11-10T12:10:00-03:00", method: "Efectivo" }
-const time = (m: CandidateMovement) => formatTimeOfDay(m.created_at)
 
 const renderDrawer = (id: number) => render(<FiscalMatchDrawer id={id} open onOpenChange={vi.fn()} />)
 const section = (title: string) => screen.getByRole("heading", { name: title }).closest("section") as HTMLElement
@@ -162,11 +148,9 @@ beforeEach(() => {
     m.notFound = false
     m.refetch.mockReset()
     m.requestedIds = []
-    m.candidates = { erp: [], tuu: [], rcv: [] }
-    m.candidateCalls = []
     m.feedingCalls = []
     m.can = true
-    for (const fn of [m.link, m.unlink, m.release, m.retry, m.confirmDraft, m.createDraft]) fn.mockReset().mockResolvedValue(undefined)
+    for (const fn of [m.release, m.retry, m.confirmDraft, m.createDraft]) fn.mockReset().mockResolvedValue(undefined)
     m.openEntity.mockReset()
 })
 
@@ -189,8 +173,6 @@ describe("FiscalMatchDrawer", () => {
 
         const rcv = section("RCV (SII)")
         expect(within(rcv).getByText("Solo resumen")).toBeInTheDocument()
-        // Solo resumen: el SII no individualiza, no hay nada que vincular.
-        expect(within(rcv).queryByRole("button", { name: "Vincular registro RCV" })).not.toBeInTheDocument()
     })
 
     it("TUU «No aplica» en una factura sin terminal y enlace al registro RCV", async () => {
@@ -200,89 +182,6 @@ describe("FiscalMatchDrawer", () => {
         expect(within(section("Pagos TUU")).getByText("No aplica")).toBeInTheDocument()
         await user.click(within(section("RCV (SII)")).getByRole("button", { name: "Folio 1532" }))
         expect(m.openEntity).toHaveBeenCalledWith("accounting.rcvdocument", 9)
-    })
-
-    it("link TUU sends movement: el usuario elige la venta y el pago", async () => {
-        const user = userEvent.setup()
-        m.candidates.tuu = [
-            { id: 40, transaction_at: "2026-11-10T11:45:00-03:00", sale_amount: "9990.00", document_type: 48, payment_type: "CREDIT", compatible_movements: [pay501, pay502] },
-            { id: 41, transaction_at: "2026-11-10T11:50:00-03:00", sale_amount: "9990.00", document_type: 48, payment_type: "CREDIT", compatible_movements: [pay502] },
-        ]
-        renderDrawer(1)
-        // Los candidatos se piden solo al abrir la acción.
-        expect(m.candidateCalls.some(([, part, enabled]) => part === "tuu" && enabled)).toBe(false)
-        await user.click(screen.getByRole("button", { name: "Agregar pago TUU" }))
-        expect(m.candidateCalls).toContainEqual([1, "tuu", true])
-        // Varios cobros: un botón por cobro, rotulado con hora local y método.
-        const choice = screen.getByRole("button", { name: `Agregar venta TUU #40 al pago ${time(pay502)} · Efectivo` })
-        expect(choice).toHaveTextContent(`${time(pay502)} · Efectivo`)
-        await user.click(choice)
-        expect(m.link).toHaveBeenCalledWith({ id: 1, body: { part: "tuu", id: 40, movement: 502 } })
-        // Un solo cobro compatible: un único botón.
-        await user.click(screen.getByRole("button", { name: `Agregar venta TUU #41 (pago ${time(pay502)} · Efectivo)` }))
-        expect(m.link).toHaveBeenLastCalledWith({ id: 1, body: { part: "tuu", id: 41, movement: 502 } })
-    })
-
-    it("oculta «Agregar pago TUU» cuando TUU no aplica", () => {
-        m.group = invoice
-        renderDrawer(2)
-        expect(screen.queryByRole("button", { name: "Agregar pago TUU" })).not.toBeInTheDocument()
-    })
-
-    it("ERP con varios cobros del monto de la venta: el usuario elige el pago y se envía movement", async () => {
-        const user = userEvent.setup()
-        m.group = orphan
-        m.candidates.erp = [
-            { id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [pay501, pay502] },
-        ]
-        renderDrawer(3)
-        await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
-        await user.click(screen.getByRole("button", { name: `Vincular BOL-90 al pago ${time(pay501)} · Tarjeta` }))
-        expect(m.link).toHaveBeenCalledWith({ id: 3, body: { part: "erp", id: 90, movement: 501 } })
-    })
-
-    it("tras unir un huérfano, la ficha sigue al grupo del documento", async () => {
-        const user = userEvent.setup()
-        m.group = orphan
-        m.candidates.erp = [{ id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [] }]
-        m.link.mockResolvedValue({ ...voucher, id: 1 })
-        renderDrawer(3)
-        await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
-        m.group = voucher
-        await user.click(screen.getByRole("button", { name: "Vincular BOL-90" }))
-        expect(m.link).toHaveBeenCalledWith({ id: 3, body: { part: "erp", id: 90 } })
-        await waitFor(() => expect(m.requestedIds.at(-1)).toBe(1))
-        expect(screen.getByRole("button", { name: "CMP-77" })).toBeInTheDocument()
-    })
-
-    it("vincula documento ERP en un huérfano y registro RCV en un grupo con documento", async () => {
-        const user = userEvent.setup()
-        m.group = orphan
-        m.candidates.erp = [{ id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [pay501] }]
-        const { unmount } = renderDrawer(3)
-        expect(screen.queryByRole("button", { name: "Agregar pago TUU" })).not.toBeInTheDocument()
-        await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
-        await user.click(screen.getByRole("button", { name: `Vincular BOL-90 (pago ${time(pay501)} · Tarjeta)` }))
-        expect(m.link).toHaveBeenCalledWith({ id: 3, body: { part: "erp", id: 90, movement: 501 } })
-        unmount()
-
-        m.group = { ...invoice, rcv_state: "MISSING", rcv_documents: [] }
-        m.candidates.rcv = [{ id: 15, folio: "1532", dte_type: 33, issue_date: "2026-11-10", total_amount: "80000.00", period: "202611", counterparty_rut: "1-9" }]
-        renderDrawer(2)
-        expect(screen.queryByRole("button", { name: "Vincular documento ERP" })).not.toBeInTheDocument()
-        await user.click(screen.getByRole("button", { name: "Vincular registro RCV" }))
-        await user.click(screen.getByRole("button", { name: "Vincular folio 1532" }))
-        expect(m.link).toHaveBeenCalledWith({ id: 2, body: { part: "rcv", id: 15 } })
-    })
-
-    it("unlink: «Quitar» saca la venta TUU o el registro RCV del grupo", async () => {
-        const user = userEvent.setup()
-        m.group = { ...invoice, tuu_state: "MATCHED", terminal_sales: voucher.terminal_sales }
-        renderDrawer(2)
-        await user.click(within(section("Pagos TUU")).getByRole("button", { name: "Quitar" }))
-        expect(m.unlink).toHaveBeenCalledWith({ id: 2, body: { part: "tuu", id: 5 } })
-        await user.click(within(section("RCV (SII)")).getByRole("button", { name: "Quitar" }))
-        expect(m.unlink).toHaveBeenCalledWith({ id: 2, body: { part: "rcv", id: 9 } })
     })
 
     it("release only on orphan with manual mark", async () => {
@@ -409,12 +308,10 @@ describe("FiscalMatchDrawer", () => {
     it("al seguir al grupo resultante avisa el nuevo id (para sincronizar la URL)", async () => {
         const user = userEvent.setup()
         const onGroupChange = vi.fn()
-        m.group = orphan
-        m.candidates.erp = [{ id: 90, display_id: "BOL-90", dte_type: "BOLETA", number: "90", total: "7000.00", date: "2026-11-10", compatible_movements: [] }]
-        m.link.mockResolvedValue({ ...voucher, id: 1 })
+        m.group = { ...orphan, terminal_sales: [{ ...orphan.terminal_sales[0], linked_manually: true }] }
+        m.release.mockResolvedValue({ ...voucher, id: 1 })
         render(<FiscalMatchDrawer id={3} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
-        await user.click(screen.getByRole("button", { name: "Vincular documento ERP" }))
-        await user.click(screen.getByRole("button", { name: "Vincular BOL-90" }))
+        await user.click(screen.getByRole("button", { name: "Devolver al cruce automático" }))
         await waitFor(() => expect(onGroupChange).toHaveBeenCalledWith(1))
     })
 })

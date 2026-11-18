@@ -58,6 +58,20 @@ export function errorStatus(error: unknown): number | undefined {
 }
 
 /**
+ * Backend error envelope `{error: {message, code, details, timestamp}}` of an Axios-like error,
+ * or `null` when the response does not carry it (network error, DRF flat body…).
+ */
+export function errorEnvelope(error: unknown): { message: string; code: string; details: Record<string, unknown> } | null {
+    if (!isAxiosLikeError(error)) return null
+    const env = error.response?.data?.error
+    if (typeof env !== "object" || env === null) return null
+    const { message, code, details } = env as Record<string, unknown>
+    if (typeof message !== "string" || typeof code !== "string") return null
+    const detailsObj = typeof details === "object" && details !== null ? (details as Record<string, unknown>) : {}
+    return { message, code, details: detailsObj }
+}
+
+/**
  * Extract a user-friendly error message from any error type.
  * Handles: Axios errors, ApiError, native Error, and unknown.
  */

@@ -1,13 +1,13 @@
 'use client'
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey'
 import { errorStatus, showApiError } from '@/lib/errors'
 import { staleTime } from '@/lib/query-config'
 import { fiscalMatchApi } from '../api/fiscalMatchApi'
-import type { FiscalMatchFilters, FiscalMatchLinkBody, FiscalMatchPart, FiscalMatchUnlinkBody } from '../types/fiscalMatch'
+import type { FiscalMatchChange, FiscalMatchFilters, FiscalMatchPart, FiscalMatchSearchParams } from '../types/fiscalMatch'
 import { FISCAL_MATCH_KEYS, FISCAL_MATCH_KEY, RCV_DOCUMENTS_KEY, TERMINAL_SALES_KEY } from './fiscalMatchKeys'
 
 /** Página de grupos de cuadre; conserva la anterior mientras carga la siguiente. */
@@ -47,14 +47,29 @@ export function useFiscalMatch(id: number | null | undefined) {
     return { group: data, isLoading, isError, notFound: errorStatus(error) === 404, isRefetching, refetch }
 }
 
-export function useFiscalMatchCandidates<P extends FiscalMatchPart>(id: number, part: P, enabled = true) {
-    const { data, isLoading, isError, isRefetching, refetch } = useQuery({
-        queryKey: FISCAL_MATCH_KEYS.candidates(id, part),
-        queryFn: () => fiscalMatchApi.candidates(id, part),
+/**
+ * Búsqueda de candidatas de una columna, paginada en infinito (20 por página). `enabled` la
+ * activa solo cuando la columna está visible; cambiar `q`/`ordering` reinicia desde la página 1.
+ */
+export function useFiscalMatchSearch(id: number, part: FiscalMatchPart, params: FiscalMatchSearchParams, enabled = true) {
+    const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
+        queryKey: FISCAL_MATCH_KEYS.search(id, part, params),
+        queryFn: ({ pageParam, signal }) => fiscalMatchApi.search(id, part, params, pageParam, signal),
+        initialPageParam: 1,
+        getNextPageParam: (last) => (last.hasNextPage ? last.pageIndex + 1 : undefined),
         enabled: enabled && id > 0,
         staleTime: staleTime.standard,
     })
-    return { candidates: data ?? [], isLoading, isError, isRefetching, refetch }
+    return {
+        items: data?.pages.flatMap((p) => p.results) ?? [],
+        totalCount: data?.pages[0]?.count ?? 0,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+        isError,
+        refetch,
+    }
 }
 
 /** Invalida el cuadre y las listas de RCV/TUU. */
@@ -108,17 +123,11 @@ export function useGroupMutation<V, R = unknown>(
     })
 }
 
-export function useLinkFiscalMatch() {
+/** Guarda los cambios en espera de la ficha; sigue al grupo resultante (ver `useGroupMutation`). */
+export function useApplyFiscalMatch() {
     return useGroupMutation(
-        (v: { id: number; body: FiscalMatchLinkBody }, key) => fiscalMatchApi.link(v.id, v.body, key),
-        { success: 'Cuadre actualizado', error: 'No se pudo cuadrar' },
-    )
-}
-
-export function useUnlinkFiscalMatch() {
-    return useGroupMutation(
-        (v: { id: number; body: FiscalMatchUnlinkBody }, key) => fiscalMatchApi.unlink(v.id, v.body, key),
-        { success: 'Unión quitada', error: 'No se pudo quitar la unión' },
+        (v: { id: number; changes: FiscalMatchChange[] }, key) => fiscalMatchApi.apply(v.id, v.changes, key),
+        { success: 'Cuadre guardado', error: 'No se pudo guardar el cuadre' },
     )
 }
 
