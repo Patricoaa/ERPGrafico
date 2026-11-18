@@ -98,7 +98,7 @@ export function RcvImportsClientView() {
                     card={rcvImportViews.card}
                     emptyTitle="Aún no hay importaciones"
                     emptyDescription="Activa la importación automática en Contabilidad → Configuración → RCV / SII o usa «Sincronizar ahora»."
-                    emptyAction={impirtAction}
+                    emptyAction={importAction}
                     onResetFilters={search.clearAll}
                 />
             </Collection.Root>
