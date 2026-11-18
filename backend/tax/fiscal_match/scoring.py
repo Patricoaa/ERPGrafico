@@ -3,7 +3,7 @@
 Módulo puro: no consulta la base. La búsqueda precarga los datos y arma ``Reference`` y
 ``CandidateFacts``; aquí solo se puntúa. Las reglas de tipo reutilizan los predicados de
 ``candidates`` (los mismos que aplican las uniones manuales), y los códigos de advertencia
-son los de ``services`` cuando corresponden a una regla que bloquea el guardado.
+son los de ``codes`` (los mismos del 400) cuando corresponden a una regla que bloquea el guardado.
 """
 
 from dataclasses import dataclass, field
@@ -14,15 +14,23 @@ from typing import Literal
 from django.utils import timezone
 
 from accounting.integrations.rcv_normalizer import normalize_rut
-from tax.fiscal_match.candidates import BOLETA_SII_CODES, cash_sale_fits, tuu_type_fits
-from tax.fiscal_match.services import NOT_COMPLETED, OTHER_DIRECTION, TYPE_INCOMPATIBLE
+from tax.fiscal_match.candidates import (
+    BOLETA_SII_CODES,
+    cash_sale_fits,
+    sii_type_fits,
+    tuu_type_fits,
+)
+from tax.fiscal_match.codes import (
+    NOT_COMPLETED,
+    OTHER_AMOUNT,
+    OTHER_DAY,
+    OTHER_DIRECTION,
+    OTHER_RUT,
+    TYPE_INCOMPATIBLE,
+)
 from treasury.models import TerminalSale
 
 Kind = Literal["erp", "tuu", "rcv"]
-
-OTHER_AMOUNT = "OTHER_AMOUNT"
-OTHER_DAY = "OTHER_DAY"
-OTHER_RUT = "OTHER_RUT"
 
 W_AMOUNT = 40
 W_DAY = 25
@@ -158,7 +166,7 @@ def _type_warning(ref: Reference, cand: CandidateFacts) -> tuple[str, str] | Non
         if not cash_sale_fits(sale, code):
             return TYPE_INCOMPATIBLE, CASH_ONLY_BOLETAS_LABEL
         return None
-    if ref.sii_code is not None and cand.sii_code is not None and ref.sii_code != cand.sii_code:
+    if not sii_type_fits(ref.sii_code, cand.sii_code):
         return TYPE_INCOMPATIBLE, LABELS[TYPE_INCOMPATIBLE]
     return None
 

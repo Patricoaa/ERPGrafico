@@ -121,6 +121,11 @@ def cash_sale_fits(sale: TerminalSale, sii_code: int | None) -> bool:
     return sale.payment_type != TerminalSale.PaymentType.CASH or sii_code in BOLETA_SII_CODES
 
 
+def sii_type_fits(a: int | None, b: int | None) -> bool:
+    """Dos registros con tipo SII son compatibles si es el mismo; sin tipo, no se descarta."""
+    return a is None or b is None or a == b
+
+
 def tuu_type_fits(sale: TerminalSale, sii_code: int | None) -> bool:
     """El tipo que informa TUU (si lo informa) es el del documento: un 33 de TUU es una factura 33."""
     return sale.document_type is None or sale.document_type == sii_code

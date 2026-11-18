@@ -27,9 +27,26 @@ from tax.fiscal_match.candidates import (
     BOLETA_SII_CODES,
     cash_sale_fits,
     inbound_movements,
+    sii_type_fits,
     stamp_groups,
     taken_movements,
     tuu_type_fits,
+)
+from tax.fiscal_match.codes import (  # se re-exportan: los importan las pruebas y otros módulos
+    GONE,
+    IGNORED_PAYMENT,
+    MOVED,
+    NOT_ALLOWED,
+    NOT_COMPLETED,
+    NOT_FOUND,
+    OTHER_DIRECTION,
+    OTHER_DOCUMENT_PAYMENT,
+    PAYMENT_REQUIRED,
+    PAYMENT_TAKEN,
+    RCV_HAS_SALES,
+    SECOND_DOCUMENT,
+    SECOND_RCV,
+    TYPE_INCOMPATIBLE,
 )
 from tax.fiscal_match.groups import (
     group_for_invoice,
@@ -47,22 +64,7 @@ MANUAL_LOCK_TIMEOUT = 60  # s: una acción manual dura segundos; si se cae, el c
 BUSY_MESSAGE = "El cuadre automático se está ejecutando. Reintente en unos segundos."
 NOTHING_TO_ISSUE = "No hay nada para emitir en este grupo."
 
-# Códigos de las reglas que bloquean una unión manual (spec §7c). Viajan en el 400.
-TYPE_INCOMPATIBLE = "TYPE_INCOMPATIBLE"
-OTHER_DIRECTION = "OTHER_DIRECTION"
-PAYMENT_TAKEN = "PAYMENT_TAKEN"
-SECOND_DOCUMENT = "SECOND_DOCUMENT"
-SECOND_RCV = "SECOND_RCV"
-NOT_COMPLETED = "NOT_COMPLETED"
-MOVED = "MOVED"
-PAYMENT_REQUIRED = "PAYMENT_REQUIRED"
-NOT_ALLOWED = "NOT_ALLOWED"
-OTHER_DOCUMENT_PAYMENT = "OTHER_DOCUMENT_PAYMENT"
-GONE = "GONE"
-NOT_FOUND = "NOT_FOUND"
-IGNORED_PAYMENT = "IGNORED_PAYMENT"
-RCV_HAS_SALES = "RCV_HAS_SALES"
-
+# Mensajes de las reglas (los códigos viven en ``codes``).
 RULE_MESSAGES = {
     TYPE_INCOMPATIBLE: "El registro es de otro tipo de documento.",
     OTHER_DIRECTION: "El registro es de otra dirección (compra/venta).",
@@ -284,7 +286,7 @@ def _check_rcv(group: FiscalMatch, invoice: Invoice, doc: RCVDocument) -> None:
     """RCV ↔ documento: misma dirección y mismo tipo. El RUT distinto no bloquea: el grupo
     queda con advertencias (spec §7c)."""
     _check_direction(group, RCV_TO_FISCAL_DIRECTION[doc.direction])
-    if doc.dte_type != invoice.sii_code:
+    if not sii_type_fits(doc.dte_type, invoice.sii_code):
         raise FiscalMatchRuleError(
             TYPE_INCOMPATIBLE, "El registro del SII es de otro tipo de documento."
         )
