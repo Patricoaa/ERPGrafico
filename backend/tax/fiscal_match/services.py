@@ -197,6 +197,7 @@ def _check_rcv(group: FiscalMatch, invoice: Invoice, doc: RCVDocument) -> None:
 
 
 @_exclusive
+@transaction.atomic
 def link_invoice(
     group: FiscalMatch, invoice: Invoice, movement: TreasuryMovement | None = None
 ) -> FiscalMatch:
@@ -261,6 +262,7 @@ def _assign_payments(
 
 
 @_exclusive
+@transaction.atomic
 def link_terminal_sale(
     group: FiscalMatch, sale: TerminalSale, movement: TreasuryMovement
 ) -> FiscalMatch:
@@ -288,6 +290,7 @@ def link_terminal_sale(
 
 
 @_exclusive
+@transaction.atomic
 def link_rcv_document(group: FiscalMatch, doc: RCVDocument) -> FiscalMatch:
     """Agrega al documento un registro del SII huérfano del mismo tipo y RUT."""
     if doc.fiscal_match_id is None:
@@ -330,6 +333,7 @@ def link(
 
 
 @_exclusive
+@transaction.atomic
 def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
     """Saca un registro a un grupo huérfano nuevo marcado como manual (Review Focus 2)."""
     group = _locked(_lock_groups(group.pk), group.pk)
@@ -368,6 +372,7 @@ def unlink(group: FiscalMatch, part: UnlinkPart, record_id: int) -> FiscalMatch:
 
 
 @_exclusive
+@transaction.atomic
 def release(group: FiscalMatch) -> FiscalMatch:
     """Devuelve un huérfano al cruce automático: borra sus marcas manuales."""
     group = _locked(_lock_groups(group.pk), group.pk)
@@ -382,6 +387,7 @@ def release(group: FiscalMatch) -> FiscalMatch:
 
 
 @_exclusive
+@transaction.atomic
 def retry_issue(group: FiscalMatch) -> dict[str, int]:
     """Reintenta, sin esperar, la emisión del borrador del grupo (spec §5.5)."""
     group = _locked(_lock_groups(group.pk), group.pk)

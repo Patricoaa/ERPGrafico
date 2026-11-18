@@ -10,6 +10,7 @@ from accounting.models import JournalEntry
 from core.edit_policy import EditPolicy
 from core.fiscal_match import FiscalMatchStatus, PartState
 from core.models import User
+from core.models.abstracts import TimeStampedModel
 from core.storages import PrivateMediaStorage
 from core.utils import generic_upload_path
 from core.validators import validate_file_extension, validate_file_size
@@ -501,7 +502,7 @@ class F29Payment(models.Model):
 _MATCH_AMOUNT = {"max_digits": 14, "decimal_places": 0, "null": True, "blank": True}
 
 
-class FiscalMatch(models.Model):
+class FiscalMatch(TimeStampedModel):
     """Grupo de cuadre: un documento ERP con sus partes TUU y RCV."""
 
     class Direction(models.TextChoices):
@@ -546,8 +547,6 @@ class FiscalMatch(models.Model):
     notice = models.CharField(_("Aviso"), max_length=255, blank=True)
     closed_period_alert = models.BooleanField(_("Alerta de período cerrado"), default=False)
     evaluated_at = models.DateTimeField(_("Evaluado"), null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = _("Grupo de cuadre")
@@ -569,7 +568,7 @@ class FiscalMatch(models.Model):
         return f"Cuadre {self.pk} ({self.direction}, {self.status})"
 
 
-class FiscalMatchRun(models.Model):
+class FiscalMatchRun(TimeStampedModel):
     """Ejecución del motor de cuadre."""
 
     started_at = models.DateTimeField(_("Inicio"), auto_now_add=True)
