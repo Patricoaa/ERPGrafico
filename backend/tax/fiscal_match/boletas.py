@@ -17,11 +17,14 @@ from django.utils import timezone
 from accounting.models import RCVDocument, RCVImport, RCVSettings
 from billing.fiscal_key import parse_folio
 from billing.models import Invoice
-from tax.fiscal_match.candidates import LinkResult, local_midnight, stamp_groups
+from tax.fiscal_match.candidates import (
+    BOLETA_SII_CODES,
+    LinkResult,
+    local_midnight,
+    stamp_groups,
+)
 from tax.models import FiscalMatch
 from treasury.models import TerminalSale
-
-BOLETA_SII_CODES = frozenset({39, 41})
 
 PairKey = tuple[date, Decimal, int]
 

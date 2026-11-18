@@ -19,6 +19,7 @@ from tax.fiscal_match.services import (
     MOVED,
     NOT_COMPLETED,
     OTHER_DIRECTION,
+    OTHER_DOCUMENT_PAYMENT,
     PAYMENT_REQUIRED,
     PAYMENT_TAKEN,
     SECOND_DOCUMENT,
@@ -100,10 +101,10 @@ def test_link_terminal_sale_requires_matching_movement(tenv):
     movement = TreasuryMovement.objects.get(invoice=inv)
     other_movement = TreasuryMovement.objects.get(invoice=other)
 
-    with pytest.raises(ValidationError):
-        link_terminal_sale(group, wrong, movement)  # monto distinto
-    with pytest.raises(ValidationError):
+    wrong.refresh_from_db()
+    with _rule_error(OTHER_DOCUMENT_PAYMENT):
         link_terminal_sale(group, wrong, other_movement)  # cobro de otro documento
+    # Otro monto no bloquea: se une con advertencia (test_apply.py, Ruling C).
 
     orphan_id = TerminalSale.objects.get(pk=sale.pk).fiscal_match_id
     result = link_terminal_sale(group, TerminalSale.objects.get(pk=sale.pk), movement)

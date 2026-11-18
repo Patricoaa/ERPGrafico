@@ -339,6 +339,14 @@ def _tuu_state(
     # boleta TUU en efectivo dentro de una factura pagada en efectivo).
     if not all(tuu_type_fits(s, code) for s in sales):
         return PartState.DIFF
+    # Una venta unida a mano a un cobro de otro monto queda con advertencia (spec §7c).
+    paid = {m.id: m.amount for m in ctx.movements.get(invoice.id, ())}
+    if any(
+        s.matched_movement_id in paid
+        and Decimal(paid[s.matched_movement_id]) != Decimal(s.sale_amount)
+        for s in sales
+    ):
+        return PartState.DIFF
     if not expected:
         return PartState.NOT_APPLICABLE
     backed = {s.matched_movement_id for s in sales}
