@@ -637,17 +637,24 @@ def candidates_for_context(
         .prefetch_related("rcv_documents", "terminal_sales__device")
     )
     if sii_code is not None:
-        qs = qs.filter(Q(dte_type__isnull=True) | Q(dte_type=sii_code))
+        qs = qs.filter(rcv_documents__dte_type=sii_code)
 
-    qs = qs.filter(_match_group_q(q)).distinct() if q else qs.filter(issue_date__gte=_since())
+    # Solo mostrar grupos con al menos un RCV (excluir huérfanos solo-TUU)
+    qs = qs.filter(rcv_documents__isnull=False).distinct()
+
+    qs = qs.filter(_match_group_q(q)).distinct() if q else qs.filter(issue_date__gte=_since()).distinct()
 
     def _build(rows: list[FiscalMatch]) -> list[dict]:
         items = []
         for group in rows:
             rcvs = list(group.rcv_documents.all())
-            sales = list(group.terminal_sales.all())
             doc = rcvs[0] if rcvs else None
-            sale = sales[0] if sales else None
+
+            # Solo incluir grupos con RCV real del tipo solicitado
+            if doc is None:
+                continue
+            if sii_code is not None and doc.dte_type != sii_code:
+                continue
 
             if doc:
                 kind = "rcv"

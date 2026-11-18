@@ -1,13 +1,11 @@
 "use client"
 
 import { useId, useState, type ReactNode, type UIEvent } from "react"
-import { Search } from "lucide-react"
 import { toast } from "sonner"
-import { CardSkeleton, EmptyState, LabeledSelect, MoneyDisplay, Section, StatusBadge } from "@/components/shared"
+import { CardSkeleton, EmptyState, MoneyDisplay, Section, StatusBadge } from "@/components/shared"
 import { formatDate } from "@/components/entity-view"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useDebounce } from "@/hooks/useDebounce"
 import { getDteLabel } from "@/lib/entity-registry"
 import { partStateValue, type PartState } from "@/lib/fiscal-match"
@@ -17,6 +15,7 @@ import type { FiscalMatchDraft } from "../hooks/useFiscalMatchDraft"
 import { useFiscalMatchSearch } from "../hooks/useFiscalMatches"
 import type { FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem, FiscalMatchSearchOrdering } from "../types/fiscalMatch"
 import { FiscalMatchCandidateCard, type FiscalMatchCardData } from "./FiscalMatchCandidateCard"
+import { FiscalMatchSearchToolbar } from "./FiscalMatchSearchToolbar"
 
 export interface FiscalMatchColumnPanelProps {
     /** Posición en la ficha: «01», «02», «03». */
@@ -43,11 +42,6 @@ const SEARCH_PLACEHOLDERS: Record<FiscalMatchPart, string> = {
     tuu: "Buscar por venta, dispositivo o monto",
     rcv: "Buscar por folio, RUT o monto",
 }
-
-const ORDERING_OPTIONS: { value: FiscalMatchSearchOrdering; label: string }[] = [
-    { value: "score", label: "Mejor coincidencia" },
-    { value: "recent", label: "Más recientes" },
-]
 
 const SEARCH_DEBOUNCE_MS = 300
 /** Distancia al final de la lista a la que se pide la página siguiente. */
@@ -216,28 +210,15 @@ function CandidateList({ part, group, draft, readOnly }: { part: FiscalMatchPart
             <Section.Header
                 title="Sin cuadrar"
                 count={`${search.totalCount} ${search.totalCount === 1 ? "resultado" : "resultados"}`}
-                actions={
-                    <LabeledSelect
-                        variant="inline"
-                        aria-label="Orden"
-                        className="h-7 text-2xs"
-                        value={ordering}
-                        onChange={(v) => setOrdering(v === "recent" ? "recent" : "score")}
-                        options={ORDERING_OPTIONS}
-                    />
-                }
             />
-            <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                <Input
-                    type="search"
-                    aria-label={SEARCH_PLACEHOLDERS[part]}
-                    placeholder={SEARCH_PLACEHOLDERS[part]}
-                    className="h-8 pl-7 text-xs"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                />
-            </div>
+            <FiscalMatchSearchToolbar
+                search={text}
+                onSearchChange={setText}
+                ordering={ordering}
+                onOrderingChange={setOrdering}
+                placeholder={SEARCH_PLACEHOLDERS[part]}
+                ariaLabel={SEARCH_PLACEHOLDERS[part]}
+            />
             {search.isLoading ? (
                 <CardSkeleton variant="compact" count={3} ariaLabel="Cargando candidatos" />
             ) : search.isError ? (

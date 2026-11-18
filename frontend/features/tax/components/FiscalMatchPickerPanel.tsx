@@ -1,22 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Sparkles } from "lucide-react"
 import {
     ActionConfirmModal,
-    CardSurface,
-    Chip,
     EmptyState,
     MoneyDisplay,
     SkeletonShell,
 } from "@/components/shared"
-import { formatDate } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { matchScoreIntent } from "@/lib/fiscal-match"
 import { toast } from "sonner"
 import { useApplyFiscalMatch } from "../hooks/useFiscalMatches"
 import { useInvoiceFiscalMatchCandidates } from "../hooks/useInvoiceFiscalMatchCandidates"
+import { FiscalMatchCandidateCard } from "./FiscalMatchCandidateCard"
+import { FiscalMatchSearchToolbar } from "./FiscalMatchSearchToolbar"
 import type { FiscalMatchSearchItem } from "../types/fiscalMatch"
 
 export interface FiscalMatchPickerPanelProps {
@@ -94,41 +90,15 @@ export function FiscalMatchPickerPanel({
 
     return (
         <div className={className ?? "space-y-4"}>
-            <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
-                <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Buscar por folio, RUT, monto…"
-                        value={q}
-                        onChange={(e) => {
-                            setQ(e.target.value)
-                            setPage(1)
-                        }}
-                        className="pl-8 text-sm"
-                    />
-                </div>
-                <div className="flex items-center gap-1.5 self-end text-xs text-muted-foreground">
-                    <span>Ordenar por:</span>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant={ordering === "score" ? "secondary" : "ghost"}
-                        className="h-7 text-xs"
-                        onClick={() => setOrdering("score")}
-                    >
-                        Coincidencia
-                    </Button>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant={ordering === "recent" ? "secondary" : "ghost"}
-                        className="h-7 text-xs"
-                        onClick={() => setOrdering("recent")}
-                    >
-                        Recientes
-                    </Button>
-                </div>
-            </div>
+            <FiscalMatchSearchToolbar
+                search={q}
+                onSearchChange={(val) => {
+                    setQ(val)
+                    setPage(1)
+                }}
+                ordering={ordering}
+                onOrderingChange={setOrdering}
+            />
 
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando candidatos del SII">
                 {isError ? (
@@ -159,72 +129,26 @@ export function FiscalMatchPickerPanel({
                     <div className="grid gap-3 sm:grid-cols-2">
                         {items.map((item) => {
                             const isSelected = selectedFiscalMatchId === item.fiscal_match_id
-                            const scoreIntent = matchScoreIntent(item.score)
                             const blockingWarning = item.warnings?.find((w) => w.blocking)
-                            const folio = item.carried_rcv?.[0]?.folio || item.label.split("N°")[1]?.trim() || ""
 
                             return (
-                                <CardSurface
-                                    key={item.id}
-                                    className={`p-3 space-y-2 border transition-all ${
-                                        isSelected
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary shadow-sm"
-                                            : "hover:border-border/80"
-                                    }`}
-                                >
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="min-w-0">
-                                            <h4 className="text-sm font-semibold text-foreground truncate">
-                                                {item.label}
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                {item.counterparty}
-                                            </p>
-                                        </div>
-                                        {item.score !== undefined && (
-                                            <Chip intent={scoreIntent} size="sm">
-                                                <Sparkles className="size-3" />
-                                                {item.score}%
-                                            </Chip>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                        <span>{item.date ? formatDate(item.date) : "—"}</span>
-                                        {item.amount && (
-                                            <span className="font-medium text-foreground">
-                                                <MoneyDisplay amount={item.amount} currency="CLP" />
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {item.warnings && item.warnings.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 pt-1">
-                                            {item.warnings.map((w) => (
-                                                <Chip
-                                                    key={w.code}
-                                                    intent={w.blocking ? "destructive" : "warning"}
-                                                    size="sm"
-                                                >
-                                                    {w.label}
-                                                </Chip>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className="pt-2 flex justify-end">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant={isSelected ? "secondary" : "default"}
-                                            className="h-8 text-xs font-medium"
-                                            onClick={() => handleAssignClick(item)}
-                                            disabled={apply.isPending || !!blockingWarning}
-                                        >
-                                            {isSelected ? "Seleccionado" : "Asignar este DTE"}
-                                        </Button>
-                                    </div>
-                                </CardSurface>
+                                <div key={item.id} className="flex flex-col gap-1.5">
+                                    <FiscalMatchCandidateCard
+                                        part="rcv"
+                                        card={{
+                                            id: item.id,
+                                            label: item.label,
+                                            counterparty: item.counterparty ?? "",
+                                            date: item.date ?? null,
+                                            amount: item.amount ? String(item.amount) : null,
+                                            score: item.score,
+                                            warnings: item.warnings,
+                                        }}
+                                        state={isSelected ? "selected" : "idle"}
+                                        onToggle={() => handleAssignClick(item)}
+                                        readOnly={apply.isPending || !!blockingWarning}
+                                    />
+                                </div>
                             )
                         })}
                     </div>

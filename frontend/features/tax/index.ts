@@ -7,6 +7,11 @@ export {
     FiscalMatchDrawer,
     FiscalMatchPickerPanel,
     type FiscalMatchPickerPanelProps,
+    FiscalMatchCandidateCard,
+    type FiscalMatchCandidateCardProps,
+    type FiscalMatchCardData,
+    FiscalMatchSearchToolbar,
+    type FiscalMatchSearchToolbarProps,
 } from './components'
 export { deriveF29Phase, type F29Phase } from './utils/f29Phase'
 export type { TaxPeriod, TaxDeclaration, TaxPaymentData } from './types'

@@ -70,8 +70,6 @@ export function NoteRegistrationStep({
                 direction={direction}
                 fiscalMatchContext={fiscalContext}
                 invoiceId={invoiceId}
-                allowTypeChange={false}
-                typeOptions={[noteType as DteClass]}
                 onPeriodValidityChange={onPeriodValidityChange}
             />
         </div>

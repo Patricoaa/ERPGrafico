@@ -9,7 +9,9 @@ import {
     BaseModal,
     CancelButton,
     CollapsibleSection,
+    DteEmitLaterSwitch,
     DteRegistrationPanel,
+    DteTypeSelector,
     FormFooter,
     SubmitButton,
 } from "@/components/shared"
@@ -23,7 +25,7 @@ import { SALES_KEYS } from "@/features/sales"
 import { PURCHASING_KEYS } from "@/features/purchasing"
 import { DOCUMENTS_KEYS } from "@/features/documents"
 import { fiscalMatchApi } from "@/features/tax"
-import { DteClass, FiscalMatchContext, getDteSiiCode } from "@/lib/dte"
+import { DteClass, FiscalMatchContext, getDteSiiCode, isDteClassAutoIssued } from "@/lib/dte"
 import { invoiceRegistrationSchema, type InvoiceRegistrationFormValues, quantityKey } from "../schema"
 import { useInvoiceableLines, useCreateInvoiceFromLines } from "../hooks/useInvoiceFromLines"
 import { INVOICES_KEYS } from "../hooks/queryKeys"
@@ -276,6 +278,34 @@ export function InvoiceRegistrationModal({
             }
         >
             <div className="space-y-6 py-4">
+                {!isCompletingDraft && (
+                    <DteTypeSelector
+                        value={dteType as DteClass}
+                        onChange={(cls) => {
+                            form.setValue("dteType", cls)
+                            setPickedFiscalMatchId(null)
+                        }}
+                        options={ALLOWED_DTE[side]}
+                        direction={side === "purchase" ? "purchase" : "sale"}
+                        variant="select"
+                    />
+                )}
+                {!isDteClassAutoIssued(dteType as DteClass, side === "purchase" ? "purchase" : "sale") && (
+                    <DteEmitLaterSwitch
+                        isPending={isPending}
+                        onChange={(pending) => {
+                            form.setValue("isPending", pending)
+                            if (pending) {
+                                form.setValue("folio", "")
+                                form.setValue("attachment", null)
+                                setPickedFiscalMatchId(null)
+                                setIsFolioValid(true)
+                                setIsPeriodValid(true)
+                            }
+                        }}
+                        direction={side === "purchase" ? "purchase" : "sale"}
+                    />
+                )}
                 <DteRegistrationPanel
                     data={{
                         dteClass: dteType as DteClass,
@@ -298,9 +328,6 @@ export function InvoiceRegistrationModal({
                     direction={side === "purchase" ? "purchase" : "sale"}
                     fiscalMatchContext={fiscalMatchContext}
                     invoiceId={initialDraftId}
-                    allowTypeChange={!isCompletingDraft}
-                    typeOptions={ALLOWED_DTE[side]}
-                    selectorVariant="select"
                     onFolioValidityChange={setIsFolioValid}
                     onPeriodValidityChange={setIsPeriodValid}
                     contactId={partnerId ?? undefined}

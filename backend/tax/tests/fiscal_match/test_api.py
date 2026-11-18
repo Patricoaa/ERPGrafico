@@ -419,3 +419,31 @@ def test_invoice_candidates_constant_queries(api, tenv):
     # Query count constante
     assert len(ctx.captured_queries) <= 6
 
+
+def test_invoice_candidates_excludes_tuu_sales_without_rcv(api, tenv):
+    from treasury.models import TerminalSale
+
+    today = timezone.localdate()
+    sale = TerminalSale.objects.create(
+        provider=tenv.provider,
+        device=tenv.device,
+        sale_amount=5000,
+        transaction_at=timezone.now(),
+        document_type=39,
+    )
+    g_tuu = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.SALE,
+        status=FiscalMatchStatus.MISSING_ERP,
+        dte_type=39,
+        issue_date=today,
+        tuu_amount=5000,
+    )
+    sale.fiscal_match = g_tuu
+    sale.save()
+
+    r = api.get(f"{BASE}/invoice-candidates/?direction=sale&sii_code=39")
+    assert r.status_code == 200
+    results = r.json()["results"]
+    assert all(item["fiscal_match_id"] != g_tuu.id for item in results)
+
+

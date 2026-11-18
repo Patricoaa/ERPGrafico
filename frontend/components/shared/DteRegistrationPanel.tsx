@@ -4,13 +4,10 @@ import dynamic from "next/dynamic"
 import { useState } from "react"
 import { CheckCircle2, FileEdit, Landmark } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DteEmitLaterSwitch } from "./DteEmitLaterSwitch"
 import { DteFolioFields } from "./DteFolioFields"
-import { DteTypeSelector } from "./DteTypeSelector"
 import {
     getDteSiiCode,
     isDteClassAutoIssued,
-    type DteClass,
     type DteDirection,
     type DteRegistrationData,
     type FiscalMatchContext,
@@ -25,9 +22,6 @@ const FiscalMatchPickerPanel = dynamic<FiscalMatchPickerPanelProps>(
 export interface DteRegistrationPanelProps {
     data: DteRegistrationData
     onChange: (data: DteRegistrationData) => void
-    typeOptions: DteClass[]
-    allowTypeChange?: boolean
-    selectorVariant?: "choice-card" | "select"
     direction?: DteDirection
     contactId?: number | null
     touchMode?: boolean
@@ -44,9 +38,6 @@ export interface DteRegistrationPanelProps {
 export function DteRegistrationPanel({
     data,
     onChange,
-    typeOptions,
-    allowTypeChange = true,
-    selectorVariant,
     direction = "sale",
     contactId,
     touchMode = false,
@@ -85,46 +76,45 @@ export function DteRegistrationPanel({
           }
         : null
 
+    if (data.isPending) {
+        return (
+            <div className={className ?? "space-y-4"}>
+                <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-foreground flex items-center justify-between">
+                    <span>
+                        Ha seleccionado diferir la {direction === "sale" ? "emisión" : "recepción"} del documento. El registro del folio y cuadre queda pospuesto.
+                    </span>
+                </div>
+            </div>
+        )
+    }
+
+    const assignedBadge = data.pickedFiscalMatchId && (
+        <div className="rounded-md border border-primary/20 bg-primary/5 p-3 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-primary font-medium">
+                <CheckCircle2 className="size-4" />
+                <span>
+                    Asignado al grupo de cuadre #{data.pickedFiscalMatchId} (Folio SII:{" "}
+                    {data.pickedFiscalMatchFolio || data.folio})
+                </span>
+            </div>
+            <button
+                type="button"
+                onClick={() => {
+                    onChange({
+                        ...data,
+                        pickedFiscalMatchId: null,
+                        pickedFiscalMatchFolio: null,
+                    })
+                }}
+                className="text-muted-foreground hover:text-foreground underline underline-offset-2"
+            >
+                Desvincular
+            </button>
+        </div>
+    )
+
     const manualContent = (
         <div className="space-y-4 pt-1">
-            {allowTypeChange && (
-                <DteTypeSelector
-                    value={data.dteClass}
-                    onChange={(cls) => {
-                        onChange({
-                            ...data,
-                            dteClass: cls,
-                            pickedFiscalMatchId: null,
-                            pickedFiscalMatchFolio: null,
-                        })
-                    }}
-                    options={typeOptions}
-                    direction={direction}
-                    variant={selectorVariant}
-                />
-            )}
-
-            {!isAutoIssued && (
-                <DteEmitLaterSwitch
-                    isPending={data.isPending}
-                    onChange={(pending) => {
-                        onChange({
-                            ...data,
-                            isPending: pending,
-                            folio: pending ? "" : data.folio,
-                            attachment: pending ? null : data.attachment,
-                            pickedFiscalMatchId: null,
-                            pickedFiscalMatchFolio: null,
-                        })
-                        if (pending) {
-                            onFolioValidityChange?.(true)
-                            onPeriodValidityChange?.(true)
-                        }
-                    }}
-                    direction={direction}
-                />
-            )}
-
             {!data.isPending && !isAutoIssued && (
                 <DteFolioFields
                     folio={data.folio}
@@ -148,40 +138,22 @@ export function DteRegistrationPanel({
                     touchMode={touchMode}
                 />
             )}
-
-            {data.pickedFiscalMatchId && (
-                <div className="rounded-md border border-primary/20 bg-primary/5 p-3 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-primary font-medium">
-                        <CheckCircle2 className="size-4" />
-                        <span>
-                            Asignado al grupo de cuadre #{data.pickedFiscalMatchId} (Folio SII:{" "}
-                            {data.pickedFiscalMatchFolio || data.folio})
-                        </span>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            onChange({
-                                ...data,
-                                pickedFiscalMatchId: null,
-                                pickedFiscalMatchFolio: null,
-                            })
-                        }}
-                        className="text-muted-foreground hover:text-foreground underline underline-offset-2"
-                    >
-                        Desvincular
-                    </button>
-                </div>
-            )}
         </div>
     )
 
     if (!hasFiscalMatch) {
-        return <div className={className}>{manualContent}</div>
+        return (
+            <div className={className ?? "space-y-4"}>
+                {assignedBadge}
+                {manualContent}
+            </div>
+        )
     }
 
     return (
         <div className={className ?? "space-y-4"}>
+            {assignedBadge}
+
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "rcv" | "manual")}>
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="rcv" className="flex items-center gap-2">

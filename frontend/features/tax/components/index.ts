@@ -10,3 +10,4 @@ export * from './FiscalMatchClientView';
 export * from './FiscalMatchDrawer';
 export * from './FiscalMatchPickerPanel';
 export * from './FiscalMatchCandidateCard';
+export * from './FiscalMatchSearchToolbar';

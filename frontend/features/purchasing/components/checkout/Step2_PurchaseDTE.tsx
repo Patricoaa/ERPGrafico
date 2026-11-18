@@ -2,9 +2,9 @@
 
 import { useMemo, useEffect } from "react"
 import { useBillingSettingsQuery } from "@/features/settings"
-import { StepHeader, DteRegistrationPanel } from "@/components/shared"
+import { StepHeader, DteRegistrationPanel, DteTypeSelector, DteEmitLaterSwitch } from "@/components/shared"
 import { FileText } from "lucide-react"
-import { DteClass, FiscalMatchContext, getDteSiiCode } from "@/lib/dte"
+import { DteClass, FiscalMatchContext, getDteSiiCode, isDteClassAutoIssued } from "@/lib/dte"
 import { type DTEData } from "../../types"
 
 interface Step2_PurchaseDTEProps {
@@ -60,6 +60,33 @@ export function Step2_PurchaseDTE({
                 icon={FileText}
             />
 
+            <DteTypeSelector
+                value={dteData.type as DteClass}
+                onChange={(cls) => setDteData({ ...dteData, type: cls, pickedFiscalMatchId: null })}
+                options={allowedDteTypes}
+                direction="purchase"
+                disabled={allowedDteTypes.length <= 1}
+            />
+            {!isDteClassAutoIssued(dteData.type as DteClass, "purchase") && (
+                <DteEmitLaterSwitch
+                    isPending={!!dteData.isPending}
+                    onChange={(pending) => {
+                        setDteData({
+                            ...dteData,
+                            isPending: pending,
+                            number: pending ? "" : dteData.number,
+                            attachment: pending ? null : dteData.attachment,
+                            pickedFiscalMatchId: null,
+                        })
+                        if (pending) {
+                            onValidityChange?.(true)
+                            onPeriodValidityChange?.(true)
+                        }
+                    }}
+                    direction="purchase"
+                />
+            )}
+
             <DteRegistrationPanel
                 data={{
                     dteClass: dteData.type as DteClass,
@@ -82,7 +109,6 @@ export function Step2_PurchaseDTE({
                 }}
                 direction="purchase"
                 fiscalMatchContext={fiscalContext}
-                typeOptions={allowedDteTypes}
                 onFolioValidityChange={onValidityChange}
                 onPeriodValidityChange={onPeriodValidityChange}
             />

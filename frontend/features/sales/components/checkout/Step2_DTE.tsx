@@ -3,9 +3,9 @@
 import { useMemo, useEffect } from "react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Banner, StepHeader, DteRegistrationPanel } from "@/components/shared"
+import { Banner, StepHeader, DteRegistrationPanel, DteTypeSelector, DteEmitLaterSwitch } from "@/components/shared"
 import { FileText } from "lucide-react"
-import { DteClass, FiscalMatchContext, getDteSiiCode } from "@/lib/dte"
+import { DteClass, FiscalMatchContext, getDteSiiCode, isDteClassAutoIssued } from "@/lib/dte"
 import type { CheckoutDTEData } from "../../types"
 
 interface Step2_DTEProps {
@@ -83,6 +83,33 @@ export function Step2_DTE({
                 </Banner>
             )}
 
+            <DteTypeSelector
+                value={dteData.type as DteClass}
+                onChange={(cls) => setDteData({ ...dteData, type: cls, pickedFiscalMatchId: null })}
+                options={allowedDteTypes}
+                direction="sale"
+                disabled={isDefaultCustomer || allowedDteTypes.length <= 1}
+            />
+            {!isDteClassAutoIssued(dteData.type as DteClass, "sale") && (
+                <DteEmitLaterSwitch
+                    isPending={!!dteData.isPending}
+                    onChange={(pending) => {
+                        setDteData({
+                            ...dteData,
+                            isPending: pending,
+                            number: pending ? "" : dteData.number,
+                            attachment: pending ? null : dteData.attachment,
+                            pickedFiscalMatchId: null,
+                        })
+                        if (pending) {
+                            onValidityChange?.(true)
+                            onPeriodValidityChange?.(true)
+                        }
+                    }}
+                    direction="sale"
+                />
+            )}
+
             <DteRegistrationPanel
                 data={{
                     dteClass: dteData.type as DteClass,
@@ -105,7 +132,6 @@ export function Step2_DTE({
                 }}
                 direction="sale"
                 fiscalMatchContext={fiscalContext}
-                typeOptions={allowedDteTypes}
                 onFolioValidityChange={onValidityChange}
                 onPeriodValidityChange={onPeriodValidityChange}
                 touchMode={touchMode}
