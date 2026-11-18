@@ -160,7 +160,7 @@ function CuadreInfo({ counts }: { counts: ReturnType<typeof useFiscalMatchCounts
         }
         return counts.isLoading ? <Skeleton className="h-4 w-48 shrink-0" aria-label="Cargando conteos del cuadre" /> : null
     }
-    return <p className="shrink-0 text-xs text-muted-foreground">{lastRunText(counts.counts.last_run_at)}</p>
+    return <p className="shrink-0 text-xs text-muted-foreground p-1">{lastRunText(counts.counts.last_run_at)}</p>
 }
 
 export default FiscalMatchClientView
