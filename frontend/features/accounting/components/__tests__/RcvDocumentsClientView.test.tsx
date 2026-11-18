@@ -72,7 +72,6 @@ const doc: RcvDocument = {
     vat_amount: "1900", vat_recoverable: "1900", vat_non_recoverable: "0", total_amount: "11900", other_taxes_total: "0",
     reference_dte_type: null, reference_folio: "", is_missing: false,
     fiscal_match: { id: 12, status: "DIFF", status_display: "Con diferencia" },
-    matched_manually: false,
 }
 
 describe("RcvDocumentsClientView", () => {

@@ -723,11 +723,6 @@ export interface TerminalSale {
     settlement_amount: string | null
     /** Grupo de cuadre de la venta; null si aún no se evalúa. */
     fiscal_match: FiscalMatchRef | null
-    matched_manually: boolean
-    /** Último intento fallido de emitir el borrador con su folio (ADR-0140); null si no hubo. */
-    issue_attempted_at: string | null
-    /** Error del último intento de emisión; `""` si no hay. */
-    issue_error: string
 }
 
 export interface TerminalSaleDetail extends TerminalSale {

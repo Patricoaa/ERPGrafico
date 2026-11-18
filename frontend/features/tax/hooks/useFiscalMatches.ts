@@ -8,8 +8,7 @@ import { showApiError } from '@/lib/errors'
 import { staleTime } from '@/lib/query-config'
 import { fiscalMatchApi } from '../api/fiscalMatchApi'
 import type { FiscalMatchFilters, FiscalMatchLinkBody, FiscalMatchPart, FiscalMatchUnlinkBody } from '../types/fiscalMatch'
-import { FISCAL_MATCH_KEYS, FISCAL_MATCH_KEY } from './fiscalMatchKeys'
-import { RCV_DOCUMENTS_KEY, TERMINAL_SALES_KEY } from './reconciliationKeys'
+import { FISCAL_MATCH_KEYS, FISCAL_MATCH_KEY, RCV_DOCUMENTS_KEY, TERMINAL_SALES_KEY } from './fiscalMatchKeys'
 
 /** Página de grupos de cuadre; conserva la anterior mientras carga la siguiente. */
 export function useFiscalMatches(filters: FiscalMatchFilters, page = 1) {

@@ -11,8 +11,9 @@ import type {
     FiscalMatchUnlinkBody,
     MonthlySummaryRow,
     PendingIssue,
+    RcvDocumentCandidate,
+    RcvPurchaseOrderOption,
 } from '../types/fiscalMatch'
-import type { RcvDocumentCandidate, RcvPurchaseOrderOption } from '../types/reconciliation'
 
 const BASE = '/tax/fiscal-matches'
 export const FISCAL_MATCH_PAGE_SIZE = 50

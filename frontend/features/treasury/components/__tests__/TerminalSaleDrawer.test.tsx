@@ -42,8 +42,7 @@ const sale: TerminalSaleDetail = {
     commission_amount: null, net_amount: null, settlement_date: null, settlement_id: null, settlement_amount: null,
     natural_key: "cash:13347", card_bin: "", card_origin: "", installment_type: "", acquirer_id: null,
     sources: ["BRANCH"], items: [], reconciliations: [], raw: { branch: { saleId: "13347" } },
-    fiscal_match: null, matched_manually: false,
-    issue_attempted_at: null, issue_error: "",
+    fiscal_match: null,
     first_seen_run: 1, last_seen_run: 1, created_at: "2026-11-12T10:05:00-03:00", updated_at: "2026-11-12T10:05:00-03:00",
 }
 

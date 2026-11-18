@@ -52,8 +52,6 @@ export interface RcvDocument {
     is_missing: boolean
     /** Grupo de cuadre del documento; null si aún no se evalúa. */
     fiscal_match: FiscalMatchRef | null
-    /** Vínculo hecho a mano: el cruce automático no lo toca. */
-    matched_manually: boolean
 }
 
 export interface RcvDocumentDetail extends RcvDocument {

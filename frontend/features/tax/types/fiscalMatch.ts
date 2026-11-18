@@ -183,3 +183,22 @@ export interface PendingIssue {
     count: number
     items: PendingIssueItem[]
 }
+
+/** Borrador de compra sugerido para un grupo con registro del SII sin factura. */
+export interface RcvDocumentCandidate {
+    id: number
+    display_id: string
+    dte_type: string
+    total: string
+    /** ISO date */
+    date: string
+}
+
+/** OC no anulada del proveedor del grupo (para crear un borrador). */
+export interface RcvPurchaseOrderOption {
+    id: number
+    display_id: string
+    /** ISO date */
+    date: string
+    total: string
+}

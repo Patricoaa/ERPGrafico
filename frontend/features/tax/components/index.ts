@@ -6,6 +6,5 @@ export * from './AccountingPeriodSheet';
 export * from './AccountingPeriodDrawer';
 export * from './wizard/F29PaymentStep';
 export * from './wizard/F29CloseStep';
-export * from './FiscalReconciliationClientView';
 export * from './FiscalMatchClientView';
 export * from './FiscalMatchDrawer';
