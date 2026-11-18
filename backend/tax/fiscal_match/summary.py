@@ -5,11 +5,10 @@ con los documentos (ADR-0118).
 """
 
 import calendar
-from datetime import date, datetime, time, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db.models import Count, F, Q, QuerySet, Sum
-from django.utils import timezone
 
 from accounting.models import RCVImport, RCVImportSummary
 from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
@@ -17,7 +16,7 @@ from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match.boletas import BOLETA_SII_CODES
-from tax.fiscal_match.candidates import sale_document_status_q
+from tax.fiscal_match.candidates import local_midnight, sale_document_status_q
 from tax.models import FiscalMatch
 from treasury.models import TerminalSale
 
@@ -37,10 +36,6 @@ _CARD_PAYMENT_TYPES = (
     TerminalSale.PaymentType.PREPAID,
 )
 _ZERO = Decimal("0")
-
-
-def local_midnight(day: date) -> datetime:
-    return timezone.make_aware(datetime.combine(day, time.min))
 
 
 def annotated_invoices() -> QuerySet[Invoice]:

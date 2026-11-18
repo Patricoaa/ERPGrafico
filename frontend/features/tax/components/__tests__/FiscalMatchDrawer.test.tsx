@@ -38,7 +38,7 @@ vi.mock("../../hooks/useFiscalMatches", () => ({
     useReleaseFiscalMatch: () => mutation(m.release),
     useRetryFiscalIssue: () => mutation(m.retry),
 }))
-vi.mock("../../hooks/useRcvFeeding", () => ({
+vi.mock("../../hooks/useFiscalMatchFeeding", () => ({
     useFiscalMatchDraftSuggestions: (groupId: number, enabled: boolean) => {
         m.feedingCalls.push([groupId, enabled])
         return { suggestions: [{ id: 300, display_id: "FC-300", dte_type: "FACTURA", total: "45000", date: "2026-11-02" }], isLoading: false, isError: false }

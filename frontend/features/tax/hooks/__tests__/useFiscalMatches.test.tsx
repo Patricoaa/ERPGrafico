@@ -8,7 +8,7 @@ import {
     useLinkFiscalMatch,
     useReleaseFiscalMatch,
 } from '../useFiscalMatches'
-import { useConfirmFiscalMatchDraft } from '../useRcvFeeding'
+import { useConfirmFiscalMatchDraft } from '../useFiscalMatchFeeding'
 
 const list = vi.fn<(filters: unknown, page: number) => Promise<unknown>>()
 const counts = vi.fn<(filters: unknown) => Promise<unknown>>()

@@ -28,4 +28,4 @@ export {
     useFiscalMatchPurchaseOrders,
     useConfirmFiscalMatchDraft,
     useCreateFiscalMatchDraft,
-} from './useRcvFeeding'
+} from './useFiscalMatchFeeding'
