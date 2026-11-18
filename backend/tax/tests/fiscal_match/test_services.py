@@ -442,3 +442,67 @@ def test_link_invoice_rejects_orphan_with_reversed_sale(tenv):
 
     with pytest.raises(ValidationError, match="no está completada"):
         link_invoice(sale.fiscal_match, inv)
+
+
+def _rcv_boleta(day, total, folio):
+    imp = RCVImport.objects.create(
+        direction=RCVImport.Direction.SALES, year=day.year, month=day.month,
+        trigger=RCVImport.Trigger.MANUAL, status=RCVImport.Status.SUCCESS,
+    )
+    return RCVDocument.objects.create(
+        direction=RCVImport.Direction.SALES, company_rut="11111111-1", period=f"{day:%Y%m}", dte_type=39,
+        folio=folio, counterparty_rut="66666666-6", issue_date=day, total_amount=Decimal(total),
+        first_import=imp, last_import=imp,
+    )
+
+
+def _draft_boleta(tenv, total, at):
+    return make_pos_document(
+        tenv, total, at, dte_type=Invoice.DTEType.BOLETA, method="CASH", status=Invoice.Status.DRAFT
+    )
+
+
+def test_ambiguous_boleta_is_resolved_from_its_orphan_group(tenv):
+    """Dos boletas borrador y dos ventas TUU en efectivo iguales: el usuario une desde el huérfano."""
+    at = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    first = _draft_boleta(tenv, 5000, at)
+    second = _draft_boleta(tenv, 5000, at + timedelta(minutes=3))
+    cash = TerminalSale.PaymentType.CASH
+    s1 = make_terminal_sale(tenv, 5000, at + timedelta(minutes=1), payment_type=cash, document_type=39)
+    make_terminal_sale(tenv, 5000, at + timedelta(minutes=4), payment_type=cash, document_type=39)
+    run_fiscal_match()
+    day = timezone.localdate(at)
+    _rcv_boleta(day, 5000, 81001)
+    _rcv_boleta(day, 5000, 81002)
+    run_fiscal_match()
+    s1.refresh_from_db()
+    orphan = s1.fiscal_match
+    assert orphan.invoice_id is None and orphan.status == "AMBIGUOUS"
+    assert orphan.rcv_documents.count() == 1
+
+    found = group_candidates(orphan, "erp")
+
+    assert {i.id for i in found} == {first.id, second.id}
+    assert all(len(i.compatible_movements) == 1 for i in found)
+    target = link(orphan, "erp", first.pk, TreasuryMovement.objects.get(invoice=first).pk)
+    s1.refresh_from_db()
+    assert target.invoice_id == first.id
+    assert s1.fiscal_match_id == target.id
+    assert target.rcv_documents.count() == 1
+
+
+def test_erp_candidates_for_orphan_rcv_boleta_are_same_day_and_amount(tenv):
+    at = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    draft = _draft_boleta(tenv, 5000, at)
+    _draft_boleta(tenv, 4000, at)  # otro monto
+    day = timezone.localdate(at)
+    doc = _rcv_boleta(day, 5000, 82001)
+    _ensure()
+    doc.refresh_from_db()
+
+    found = group_candidates(doc.fiscal_match, "erp")
+
+    assert [i.id for i in found] == [draft.id]
+    target = link_invoice(doc.fiscal_match, draft)  # RUT genérico del SII: no se exige
+    doc.refresh_from_db()
+    assert doc.fiscal_match_id == target.id

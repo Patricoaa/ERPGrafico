@@ -22,6 +22,7 @@ from accounting.models import RCVDocument
 from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
 from billing.models import Invoice
 from core.exceptions import ERPGraficoError
+from tax.fiscal_match.boletas import BOLETA_SII_CODES
 from tax.fiscal_match.candidates import local_midnight, sale_document_status_q, stamp_groups
 from tax.fiscal_match.groups import (
     SALE_SII_CODES,
@@ -185,6 +186,9 @@ def _check_rcv(group: FiscalMatch, invoice: Invoice, doc: RCVDocument) -> None:
         raise ValidationError("El registro del SII es de otra dirección (compra/venta).")
     if doc.dte_type != invoice.sii_code:
         raise ValidationError("El registro del SII es de otro tipo de documento.")
+    # Las boletas llevan en el SII un RUT genérico: solo facturas y notas exigen el mismo RUT.
+    if doc.dte_type in BOLETA_SII_CODES:
+        return
     if normalize_rut(doc.counterparty_rut) != group.counterparty_rut:
         raise ValidationError("El registro del SII es de otro RUT.")
 
@@ -406,13 +410,20 @@ def group_candidates(group: FiscalMatch, part: LinkPart) -> list[models.Model]:
 
 
 def _erp_candidates(group: FiscalMatch) -> list[Invoice]:
-    """Documentos candidatos; con venta TUU, cada uno lleva sus cobros libres del monto de la venta."""
+    """Documentos candidatos; con venta TUU, cada uno lleva sus cobros libres del monto de la venta.
+
+    La venta manda (la unión le asigna un cobro); sin venta, una boleta RCV 39/41 busca
+    boletas (también borradores sin folio) del mismo día y monto, porque su RUT es genérico;
+    otro registro RCV busca por tipo, RUT y folio o total.
+    """
     sale = TerminalSale.objects.filter(fiscal_match=group).order_by("transaction_at", "id").first()
     doc = RCVDocument.objects.filter(fiscal_match=group).order_by("id").first()
-    if doc is not None:
-        invoices = list(rcv_group_candidates(doc))
-    elif sale is not None:
+    if sale is not None:
         invoices = _sale_invoice_candidates(sale)
+    elif doc is not None and doc.dte_type in BOLETA_SII_CODES:
+        invoices = _boleta_invoice_candidates(doc)
+    elif doc is not None:
+        invoices = list(rcv_group_candidates(doc))
     else:
         invoices = []
     _attach_free_payments(invoices, sale)
@@ -441,6 +452,29 @@ def _sale_invoice_candidates(sale: TerminalSale) -> list[Invoice]:
             fiscal_direction=FiscalMatch.Direction.SALE,
             sii__in=SALE_SII_CODES,
             date=timezone.localdate(sale.transaction_at),
+            fiscal_match_set__isnull=False,
+        )
+        .order_by("id")[:CANDIDATE_CAP]
+    )
+
+
+def _boleta_invoice_candidates(doc: RCVDocument) -> list[Invoice]:
+    """Boletas del ERP (emitidas o borrador sin folio) del día y monto del registro, sin otro RCV."""
+    taken = RCVDocument.objects.filter(fiscal_match__invoice=OuterRef("pk"))
+    evaluable = Q(status=Invoice.Status.POSTED) | (
+        sale_document_status_q() & Q(sale_order__isnull=False)
+    )
+    return list(
+        Invoice.objects.annotate(
+            fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
+        )
+        .filter(
+            evaluable,
+            ~Exists(taken),
+            fiscal_direction=FiscalMatch.Direction.SALE,
+            sii=doc.dte_type,
+            date=doc.issue_date,
+            total=abs(doc.total_amount),
             fiscal_match_set__isnull=False,
         )
         .order_by("id")[:CANDIDATE_CAP]
