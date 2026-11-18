@@ -154,16 +154,6 @@ export interface FiscalMatchChange {
     payments?: Record<number, number> | null
 }
 
-/** Error 400 de `apply`: sobre estándar del repo; `details.change_index` apunta al cambio culpable. */
-export interface FiscalMatchApplyError {
-    error: {
-        message: string
-        code: string
-        details: { change_index: number }
-        timestamp?: string
-    }
-}
-
 /** Borrador de compra sugerido para un grupo con registro del SII sin factura. */
 export interface RcvDocumentCandidate {
     id: number

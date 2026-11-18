@@ -129,4 +129,47 @@ describe('useFiscalMatchDraft', () => {
         expect(h.result.current.consequences).toEqual([])
         expect(h.result.current.stateOf('rcv', 40)).toBe('idle')
     })
+
+    it('clearErrors limpia los errores de un intento anterior; errorOf da el motivo', () => {
+        const h = setup(group())
+        act(() => { h.result.current.select('rcv', item(1)) })
+        act(() => { h.result.current.markError(0, 'Otro RUT') })
+        expect(h.result.current.errorOf('rcv', 1)).toBe('Otro RUT')
+        act(() => { h.result.current.clearErrors() })
+        expect(h.result.current.errorOf('rcv', 1)).toBeUndefined()
+        expect(h.result.current.stateOf('rcv', 1)).toBe('selected')
+    })
+
+    it('paymentOptionsOf: de la venta TUU elegida o de las ventas propias del huérfano en el cambio ERP', () => {
+        const h = setup(group())
+        act(() => { h.result.current.select('tuu', item(2, { compatible_movements: [mv(8), mv(9)] })) })
+        expect(h.result.current.paymentOptionsOf(2).map(m => m.id)).toEqual([8, 9])
+        expect(h.result.current.paymentOptionsOf(3)).toEqual([])
+        const o = setup(orphan())
+        act(() => { o.result.current.select('erp', item(10, { payments_by_sale: { '81': [mv(70), mv(71)] } })) })
+        expect(o.result.current.paymentOptionsOf(81).map(m => m.id)).toEqual([70, 71])
+    })
+
+    it('summary describe cada cambio con su etiqueta', () => {
+        const g = group({ rcv_documents: [{ id: 3, folio: '55', dte_type: 39, issue_date: null, total_amount: '1', period: '' }] })
+        const h = setup(g)
+        act(() => { h.result.current.remove('rcv', 3) })
+        act(() => { h.result.current.select('tuu', item(4, { label: 'Venta TUU #4', compatible_movements: [mv(1)] })) })
+        expect(h.result.current.summary).toEqual(['Quitar folio 55', 'Unir Venta TUU #4'])
+    })
+
+    it('consecuencias sin duplicados y con texto genérico fuera de boletas', () => {
+        const h = setup(group({ dte_type: 33 }))
+        act(() => { h.result.current.select('tuu', item(5, { compatible_movements: [mv(7)], carried_rcv: [{ id: 40, folio: '777' }] })) })
+        act(() => { h.result.current.select('tuu', item(6, { compatible_movements: [mv(8)], carried_rcv: [{ id: 40, folio: '777' }] })) })
+        expect(h.result.current.consequences).toEqual(['El registro SII folio 777 se moverá también'])
+    })
+
+    it('reconcile poda los pagos de ventas que ya no son del huérfano', () => {
+        const h = setup(orphan())
+        act(() => { h.result.current.select('erp', item(10, { payments_by_sale: { '81': [mv(70)] } })) })
+        expect(h.result.current.pending[0].payments).toEqual({ 81: 70 })
+        act(() => { h.result.current.reconcile(orphan({ terminal_sales: [] }), {}) })
+        expect(h.result.current.pending[0].payments).toBeNull()
+    })
 })

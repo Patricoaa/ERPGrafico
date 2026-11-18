@@ -17,7 +17,6 @@ export type {
     FiscalMatchSearchItem,
     FiscalMatchSearchParams,
     FiscalMatchWarning,
-    FiscalMatchApplyError,
     RcvDocumentCandidate,
     RcvPurchaseOrderOption,
 } from './types/fiscalMatch'

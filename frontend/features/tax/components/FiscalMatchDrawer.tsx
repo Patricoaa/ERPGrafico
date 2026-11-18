@@ -1,39 +1,74 @@
 "use client"
 
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
-import { Scale } from "lucide-react"
+import { createContext, Fragment, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
+import { ChevronRight, Scale } from "lucide-react"
+import { toast } from "sonner"
 import { Can } from "@/components/auth"
-import { Banner, Drawer, DrawerLayout, EmptyState, MoneyDisplay, Section, SkeletonShell, StatusBadge } from "@/components/shared"
-import { formatDate } from "@/components/entity-view"
-import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { Button } from "@/components/ui/button"
-import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
-import { getDteLabel } from "@/lib/entity-registry"
-import { fiscalMatchStatusValue, partStateValue, type PartState } from "@/lib/fiscal-match"
-import { formDrawerWidth } from "@/lib/form-widths"
-import { dteShortLabel } from "../entity-view/fiscalMatch.entity"
 import {
+    ActionConfirmModal,
+    Banner,
+    CancelButton,
+    Drawer,
+    DrawerLayout,
+    EmptyState,
+    FormFooter,
+    Section,
+    SkeletonShell,
+    StatusBadge,
+    SubmitButton,
+} from "@/components/shared"
+import { formatDate } from "@/components/entity-view"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useAuth } from "@/contexts/AuthContext"
+import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
+import { fiscalMatchStatusValue } from "@/lib/fiscal-match"
+import { formDrawerWidth } from "@/lib/form-widths"
+import { cn } from "@/lib/utils"
+import { applyErrorOf } from "../api/fiscalMatchApi"
+import { dteShortLabel } from "../entity-view/fiscalMatch.entity"
+import { useFiscalMatchDraft, type FiscalMatchDraft } from "../hooks/useFiscalMatchDraft"
+import {
+    useApplyFiscalMatch,
     useFiscalMatch,
     useReleaseFiscalMatch,
     useRetryFiscalIssue,
 } from "../hooks/useFiscalMatches"
-import type { FiscalMatchDetail } from "../types/fiscalMatch"
+import type { FiscalMatchDetail, FiscalMatchPart } from "../types/fiscalMatch"
+import { FiscalMatchColumn } from "./FiscalMatchColumn"
 import { FiscalMatchRegisterSection } from "./FiscalMatchRegisterSection"
 
 export interface FiscalMatchDrawerProps {
     id: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
-    /** El grupo no se edita como formulario: el modo efectivo siempre es `view`; las uniones son acciones. */
+    /** El grupo no se edita como formulario: el modo efectivo siempre es `view`; los cambios se guardan desde el pie. */
     mode?: DrawerMode
     /** La ficha pasó a otro grupo tras una acción (el abierto se unió a otro): p. ej. para actualizar la URL. */
     onGroupChange?: (id: number) => void
 }
 
-/** Toda acción del cuadre (unir, quitar, devolver, reintentar, alimentar) exige este permiso. */
+/** Toda acción del cuadre (guardar cambios, devolver, reintentar, alimentar) exige este permiso. */
 const CHANGE_PERMISSION = "tax.change_taxperiod"
 
+interface ColumnDef {
+    part: FiscalMatchPart
+    title: string
+    subtitle: string
+}
+
 const DIRECTION_LABELS: Record<FiscalMatchDetail["direction"], string> = { sale: "Venta", purchase: "Compra" }
+
+/** Ventas: ERP → TUU → RCV. Compras: ERP → RCV. */
+const SALE_COLUMNS: ColumnDef[] = [
+    { part: "erp", title: "Documento ERP" , subtitle: ""},
+    { part: "tuu", title: "Pagos TUU" , subtitle: ""},
+    { part: "rcv", title: "RCV (SII)", subtitle: "" },
+]
+const PURCHASE_COLUMNS: ColumnDef[] = [
+    { part: "erp", title: "Documento ERP", subtitle: "Factura o nota de compra" },
+    { part: "rcv", title: "RCV (SII)", subtitle: "Registro de compras y ventas" },
+]
 
 /**
  * Las acciones responden con el grupo resultante. Unir un huérfano lo borra y devuelve el grupo del
@@ -50,12 +85,17 @@ function useRunAction() {
     )
 }
 
+const pendingText = (n: number) => (n === 1 ? "1 cambio sin guardar" : `${n} cambios sin guardar`)
+
 /**
- * Ficha de un grupo de cuadre (`tax.fiscalmatch`): documento ERP, pagos TUU y registro RCV del SII,
- * con la unión manual de los tres registros (spec §5.5) y la alimentación de compras desde el RCV.
+ * Ficha de un grupo de cuadre (`tax.fiscalmatch`) en columnas (spec §5.1): documento ERP, pagos TUU
+ * y RCV del SII, con candidatas por coincidencia. Las uniones y salidas quedan en un borrador y se
+ * guardan juntas con «Guardar cambios» (`apply`); devolver y reintentar siguen siendo inmediatas.
  */
 export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGroupChange }: FiscalMatchDrawerProps) {
     const { mode } = useDrawerMode({ mode: modeProp, initialData: id ? { id } : undefined, defaultMode: "view" })
+    const { can } = useAuth()
+    const readOnly = !can(CHANGE_PERMISSION)
     // Grupo al que se movió la ficha tras una unión; vale solo mientras el `id` abierto sea el mismo.
     const [moved, setMoved] = useState<{ from: number | null; to: number } | null>(null)
     const groupId = moved && moved.from === id ? moved.to : id
@@ -73,6 +113,44 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
         overrideSubtitle: group ? `${DIRECTION_LABELS[group.direction]} · ${group.status_display}` : undefined,
     })
 
+    const draft = useFiscalMatchDraft(group)
+    const { discard, reconcile } = draft
+    // El borrador es de un grupo: abrir otro (o seguir al resultante) lo descarta.
+    const [draftGroup, setDraftGroup] = useState(groupId)
+    if (draftGroup !== groupId) {
+        setDraftGroup(groupId)
+        discard()
+    }
+    // Tras cada refresco del grupo, lo que ya no aplica sale del borrador con un aviso.
+    useEffect(() => {
+        if (group) reconcile(group, {}).forEach((notice) => toast.info(notice))
+    }, [group, reconcile])
+
+    const apply = useApplyFiscalMatch()
+    const save = async () => {
+        if (!group) return
+        draft.clearErrors()
+        try {
+            const result = await apply.mutateAsync({ id: group.id, changes: draft.pending })
+            discard()
+            follow(result)
+        } catch (e) {
+            // 400 con `change_index`: el motivo va en la tarjeta del cambio y en un solo aviso. El resto
+            // (409 motor ocupado, red) ya lo avisó la mutación. El borrador se conserva siempre.
+            const err = applyErrorOf(e)
+            if (err) {
+                draft.markError(err.changeIndex, err.message)
+                toast.error("No se pudo guardar el cuadre", { description: err.message })
+            }
+        }
+    }
+
+    const [confirmClose, setConfirmClose] = useState(false)
+    const handleOpenChange = (next: boolean) => {
+        if (!next && draft.isDirty) setConfirmClose(true)
+        else onOpenChange(next)
+    }
+
     const detail = notFound ? (
         <EmptyState context="generic" title="Este cuadre ya no existe" description="Sus registros pasaron a otro grupo." variant="compact" />
     ) : isError ? (
@@ -87,30 +165,90 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
         <SkeletonShell isLoading={isLoading || !group} ariaLabel="Cargando cuadre">
             {group && (
                 <FollowGroupContext.Provider value={follow}>
-                    <FiscalMatchBody group={group} />
+                    <FiscalMatchBody group={group} draft={draft} readOnly={readOnly} />
                 </FollowGroupContext.Provider>
             )}
         </SkeletonShell>
     )
 
+    const footer = readOnly || !group ? undefined : (
+        <FormFooter
+            leftActions={<DraftSummary draft={draft} />}
+            actions={
+                <>
+                    <CancelButton onClick={discard} disabled={!draft.isDirty || apply.isPending}>Descartar</CancelButton>
+                    <SubmitButton
+                        type="button"
+                        onClick={() => void save()}
+                        loading={apply.isPending}
+                        disabled={!draft.isDirty || draft.needsPayment}
+                    >
+                        Guardar cambios
+                    </SubmitButton>
+                </>
+            }
+        />
+    )
+
     return (
-        <Drawer
-            fillContent
-            contentClassName="p-0"
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("complex", false)}
-            mode="view"
-            icon={identity.icon}
-            title={identity.title}
-            subtitle={identity.subtitle}
-        >
-            <DrawerLayout
-                className="min-w-0 h-full overflow-hidden"
-                tabs={[{ value: "detail", label: "Cuadre", icon: Scale, content: detail }]}
+        <>
+            <Drawer
+                fillContent
+                contentClassName="p-0"
+                open={open}
+                onOpenChange={handleOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("master", false)}
+                mode={readOnly ? "view" : "edit"}
+                icon={identity.icon}
+                title={identity.title}
+                subtitle={identity.subtitle}
+                footer={footer}
+            >
+                <DrawerLayout
+                    className="min-w-0 h-full overflow-hidden"
+                    tabs={[{ value: "detail", label: "Cuadre", icon: Scale, content: detail }]}
+                />
+            </Drawer>
+            <ActionConfirmModal
+                open={confirmClose}
+                onOpenChange={setConfirmClose}
+                onConfirm={() => {
+                    discard()
+                    onOpenChange(false)
+                }}
+                title="Hay cambios sin guardar"
+                description={draft.pending.length === 1
+                    ? "Si cierras la ficha se pierde 1 cambio en espera."
+                    : `Si cierras la ficha se pierden ${draft.pending.length} cambios en espera.`}
+                confirmText="Cerrar sin guardar"
+                cancelText="Seguir editando"
+                variant="warning"
             />
-        </Drawer>
+        </>
+    )
+}
+
+/** «N cambios sin guardar» (con la lista al pasar el cursor), las consecuencias y si falta un pago. */
+function DraftSummary({ draft }: { draft: FiscalMatchDraft }) {
+    if (!draft.isDirty) return <span className="text-xs text-muted-foreground">Sin cambios</span>
+    return (
+        <div className="flex min-w-0 flex-col gap-0.5 text-xs">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span tabIndex={0} className="w-fit font-medium text-foreground underline decoration-dotted underline-offset-2">
+                        {pendingText(draft.pending.length)}
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <ul className="space-y-0.5">
+                        {draft.summary.map((line, i) => <li key={i}>{line}</li>)}
+                    </ul>
+                </TooltipContent>
+            </Tooltip>
+            {draft.consequences.map((line) => <span key={line} className="text-muted-foreground">{line}</span>)}
+            {draft.needsPayment && <span className="text-warning">Falta elegir el pago de una venta TUU</span>}
+        </div>
     )
 }
 
@@ -119,12 +257,13 @@ function groupTitle(group: FiscalMatchDetail): string {
     return `Cuadre ${dteShortLabel(group.dte_type) ?? ""} (sin documento)`.replace(/\s+/g, " ")
 }
 
-function FiscalMatchBody({ group }: { group: FiscalMatchDetail }) {
+function FiscalMatchBody({ group, draft, readOnly }: { group: FiscalMatchDetail; draft: FiscalMatchDraft; readOnly: boolean }) {
     const follow = useContext(FollowGroupContext)
     const status = fiscalMatchStatusValue(group.status, group.status_display)
     const isOrphan = group.invoice === null
     const manualMark = group.rcv_linked_manually || group.terminal_sales.some((s) => s.linked_manually)
     const feedingDoc = group.direction === "purchase" && isOrphan && group.rcv_documents.length === 1 ? group.rcv_documents[0] : null
+    const columns = group.direction === "sale" ? SALE_COLUMNS : PURCHASE_COLUMNS
 
     return (
         <div className="space-y-6">
@@ -135,21 +274,36 @@ function FiscalMatchBody({ group }: { group: FiscalMatchDetail }) {
                 actions={isOrphan && manualMark ? <ReleaseAction groupId={group.id} /> : undefined}
             >
                 <Stat title="Estado" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
-                <Stat title="Tipo" value={dteShortLabel(group.dte_type) ?? (group.dte_type === null ? null : `DTE ${group.dte_type}`)} plain />
+            
                 <Stat title="Fecha" value={group.issue_date ? formatDate(group.issue_date) : null} plain />
-                <Stat title={group.direction === "purchase" ? "RUT proveedor" : "RUT cliente"} value={group.counterparty_rut} />
                 <Stat title="Última revisión" value={group.evaluated_at ? formatDate(group.evaluated_at, true) : null} plain />
             </Section>
 
-            <ErpBlock group={group} />
-            {group.direction === "sale" && <TuuBlock group={group} />}
-            <RcvBlock group={group} />
+            <div className="@container">
+                <div className={cn("grid gap-3", columns.length === 3 ? "@4xl:grid-cols-[1fr_auto_1fr_auto_1fr]" : "@2xl:grid-cols-[1fr_auto_1fr]")}>
+                    {columns.map((col, i) => (
+                        <Fragment key={col.part}>
+                            {i > 0 && <ColumnArrow wide={columns.length === 3} />}
+                            <FiscalMatchColumn index={i + 1} part={col.part} title={col.title} subtitle={col.subtitle} group={group} draft={draft} readOnly={readOnly}>
+                                {col.part === "rcv" && feedingDoc && !readOnly && (
+                                    <FiscalMatchRegisterSection groupId={group.id} doc={feedingDoc} onGroupChange={follow} />
+                                )}
+                            </FiscalMatchColumn>
+                        </Fragment>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+}
 
-            {feedingDoc && (
-                <Can permission={CHANGE_PERMISSION}>
-                    <FiscalMatchRegisterSection groupId={group.id} doc={feedingDoc} onGroupChange={follow} />
-                </Can>
-            )}
+/** Flecha entre columnas (solo cuando caben en fila; apiladas sobra). */
+function ColumnArrow({ wide }: { wide: boolean }) {
+    return (
+        <div aria-hidden className={cn("hidden items-start justify-center pt-4", wide ? "@4xl:flex" : "@2xl:flex")}>
+            <span className="flex size-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
+                <ChevronRight className="h-3.5 w-3.5" />
+            </span>
         </div>
     )
 }
@@ -208,91 +362,6 @@ function ReleaseAction({ groupId }: { groupId: number }) {
             </Button>
         </Can>
     )
-}
-
-/** Botón de la cabecera que abre/cierra la lista de candidatos de una parte. */
-function PartStateRow({ state }: { state: PartState }) {
-    const value = partStateValue(state)
-    return <Stat title="Estado" value={<StatusBadge status={value.status} label={value.label} intent={value.intent} size="sm" />} />
-}
-
-function ErpBlock({ group }: { group: FiscalMatchDetail }) {
-    const { openEntity } = useGlobalModalActions()
-    const invoice = group.invoice
-
-    return (
-        <Section title="Documento ERP">
-            <PartStateRow state={group.erp_state} />
-            {invoice ? (
-                <Section.Row
-                    title={
-                        <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("billing.invoice", invoice.id)}>
-                            {invoice.display_id}
-                        </Button>
-                    }
-                    description={[getDteLabel(invoice.dte_type), invoice.date && formatDate(invoice.date)].filter(Boolean).join(" · ")}
-                    value={<Money amount={group.erp_amount ?? invoice.total} />}
-                />
-            ) : (
-                <Stat title="Documento" value="Sin documento en el ERP" plain />
-            )}
-        </Section>
-    )
-}
-
-function TuuBlock({ group }: { group: FiscalMatchDetail }) {
-    const { openEntity } = useGlobalModalActions()
-
-    return (
-        <Section title="Pagos TUU">
-            <PartStateRow state={group.tuu_state} />
-            {group.tuu_amount !== null && <Stat title="Total TUU" value={<Money amount={group.tuu_amount} />} />}
-            {group.terminal_sales.map((s) => (
-                <Section.Row
-                    key={s.id}
-                    title={
-                        <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("treasury.terminalsale", s.id)}>
-                            {`Venta TUU #${s.id} · ${formatDate(s.transaction_at, true)}`}
-                        </Button>
-                    }
-                    description={[
-                        s.matched_movement ? `Pago #${s.matched_movement.id} · ${formatDate(s.matched_movement.created_at, true)}` : "Sin pago asociado",
-                        s.document_type !== null && `TUU informó DTE ${s.document_type}`,
-                        s.linked_manually && "Unión manual",
-                    ].filter(Boolean).join(" · ")}
-                    value={<Money amount={s.sale_amount} />}
-                />
-            ))}
-        </Section>
-    )
-}
-
-function RcvBlock({ group }: { group: FiscalMatchDetail }) {
-    const { openEntity } = useGlobalModalActions()
-
-    return (
-        <Section title="RCV (SII)">
-            <PartStateRow state={group.rcv_state} />
-            {group.rcv_documents.map((d) => (
-                <Section.Row
-                    key={d.id}
-                    title={
-                        <Button type="button" variant="link" className="h-auto p-0" onClick={() => openEntity("accounting.rcvdocument", d.id)}>
-                            {`Folio ${d.folio}`}
-                        </Button>
-                    }
-                    description={[`DTE ${d.dte_type}`, d.issue_date && formatDate(d.issue_date), group.rcv_linked_manually && "Unión manual"]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    value={<Money amount={d.total_amount} />}
-                />
-            ))}
-        </Section>
-    )
-}
-
-function Money({ amount }: { amount: string | null }) {
-    return amount === null ? <>—</> : <MoneyDisplay amount={amount} currency="CLP" />
 }
 
 /** Key–value row; empty values show a dash so every field stays visible. */

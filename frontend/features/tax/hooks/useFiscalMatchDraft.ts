@@ -1,17 +1,21 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import type { FiscalMatchChange, FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem } from '../types/fiscalMatch'
+import type { CandidateMovement, FiscalMatchChange, FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem } from '../types/fiscalMatch'
 import {
     applyError,
     applyPayment,
     applyRemove,
     applySelect,
     applyUnselect,
+    clearEntryErrors,
     consequencesOf,
+    errorOf as errorOfEntries,
     hasMissingPayment,
+    paymentOptionsOf as paymentOptionsOfEntries,
     reconcileEntries,
     stateOf as stateOfEntries,
+    summarize,
     toBody,
     type DraftCardState,
     type DraftEntry,
@@ -25,6 +29,7 @@ type Action =
     | { type: 'remove'; group: FiscalMatchDetail; part: FiscalMatchPart; id: number }
     | { type: 'payment'; saleId: number; movementId: number }
     | { type: 'error'; index: number; message: string }
+    | { type: 'clearErrors' }
     | { type: 'replace'; entries: DraftEntry[] }
     | { type: 'discard' }
 
@@ -35,6 +40,7 @@ function reducer(entries: DraftEntry[], action: Action): DraftEntry[] {
         case 'remove': return applyRemove(entries, action.group, action.part, action.id)
         case 'payment': return applyPayment(entries, action.saleId, action.movementId)
         case 'error': return applyError(entries, action.index, action.message)
+        case 'clearErrors': return clearEntryErrors(entries)
         case 'replace': return action.entries
         case 'discard': return []
     }
@@ -62,17 +68,23 @@ export function useFiscalMatchDraft(group: FiscalMatchDetail | undefined) {
     const setPayment = useCallback((saleId: number, movementId: number) => dispatch({ type: 'payment', saleId, movementId }), [])
     const discard = useCallback(() => dispatch({ type: 'discard' }), [])
     const markError = useCallback((index: number, message: string) => dispatch({ type: 'error', index, message }), [])
+    const clearErrors = useCallback(() => dispatch({ type: 'clearErrors' }), [])
     const reconcile = useCallback((fresh: FiscalMatchDetail, visible: VisibleIds): string[] => {
-        const { entries: kept, notices } = reconcileEntries(latest.current, fresh, visible)
-        if (notices.length > 0) dispatch({ type: 'replace', entries: kept })
+        const { entries: kept, notices, changed } = reconcileEntries(latest.current, fresh, visible)
+        if (changed) {
+            latest.current = kept
+            dispatch({ type: 'replace', entries: kept })
+        }
         return notices
     }, [])
 
     const stateOf = useCallback((part: FiscalMatchPart, id: number): DraftCardState => stateOfEntries(entries, group, part, id), [entries, group])
+    const errorOf = useCallback((part: FiscalMatchPart, id: number): string | undefined => errorOfEntries(entries, part, id), [entries])
+    const paymentOptionsOf = useCallback((saleId: number): CandidateMovement[] => paymentOptionsOfEntries(entries, saleId), [entries])
     const paymentOf = useCallback((saleId: number): number | null => {
         for (const { change } of entries) {
             if (change.part === 'tuu' && change.id === saleId) return change.movement ?? null
-            if (change.part === 'erp') return change.payments?.[saleId] ?? null
+            if (change.part === 'erp' && change.payments?.[saleId] != null) return change.payments[saleId]
         }
         return null
     }, [entries])
@@ -80,9 +92,13 @@ export function useFiscalMatchDraft(group: FiscalMatchDetail | undefined) {
     const pending: FiscalMatchChange[] = useMemo(() => toBody(entries), [entries])
     const consequences = useMemo(() => consequencesOf(entries, group), [entries, group])
     const needsPayment = useMemo(() => hasMissingPayment(entries, group), [entries, group])
+    const summary = useMemo(() => summarize(entries, group), [entries, group])
 
     return {
-        pending, isDirty: entries.length > 0, needsPayment, consequences,
-        select, unselect, remove, setPayment, discard, stateOf, paymentOf, markError, reconcile,
+        pending, isDirty: entries.length > 0, needsPayment, consequences, summary,
+        select, unselect, remove, setPayment, discard, stateOf, errorOf, paymentOf, paymentOptionsOf,
+        markError, clearErrors, reconcile,
     }
 }
+
+export type FiscalMatchDraft = ReturnType<typeof useFiscalMatchDraft>

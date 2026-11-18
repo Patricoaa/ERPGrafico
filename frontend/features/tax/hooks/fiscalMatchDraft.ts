@@ -1,4 +1,5 @@
 import type {
+    CandidateMovement,
     FiscalMatchChange,
     FiscalMatchDetail,
     FiscalMatchPart,
@@ -119,6 +120,46 @@ export function applyError(entries: DraftEntry[], index: number, message: string
     return entries.map((e, i) => (i === index ? { ...e, error: message } : e))
 }
 
+/** Antes de cada intento de guardado: los errores del intento anterior ya no valen. */
+export function clearEntryErrors(entries: DraftEntry[]): DraftEntry[] {
+    return entries.some(e => e.error) ? entries.map(e => (e.error ? { ...e, error: undefined } : e)) : entries
+}
+
+export function errorOf(entries: DraftEntry[], part: FiscalMatchPart, id: number): string | undefined {
+    return entries.find(e => same(e, part, id))?.error
+}
+
+/** Pagos entre los que elegir para una venta TUU: los de su propia tarjeta o, en un huérfano, los del documento elegido. */
+export function paymentOptionsOf(entries: DraftEntry[], saleId: number): CandidateMovement[] {
+    for (const e of entries) {
+        if (e.change.op !== 'link') continue
+        if (e.change.part === 'tuu' && e.change.id === saleId) return e.item?.compatible_movements ?? []
+        if (e.change.part === 'erp') {
+            const options = e.item?.payments_by_sale?.[String(saleId)]
+            if (options) return options
+        }
+    }
+    return []
+}
+
+/** Etiqueta de un registro del grupo o de la tarjeta elegida. */
+function labelOf(entry: DraftEntry, group: FiscalMatchDetail | undefined): string {
+    if (entry.item) return entry.item.label
+    const { part, id } = entry.change
+    if (part === 'rcv') {
+        const doc = group?.rcv_documents.find(d => d.id === id)
+        if (doc) return `folio ${doc.folio}`
+    }
+    if (part === 'tuu') return `Venta TUU #${id}`
+    if (part === 'erp' && group?.invoice?.id === id) return group.invoice.display_id
+    return `#${id}`
+}
+
+/** Una línea por cambio en espera («Unir …», «Quitar …»), para el resumen del pie. */
+export function summarize(entries: DraftEntry[], group: FiscalMatchDetail | undefined): string[] {
+    return entries.map(e => `${e.change.op === 'link' ? 'Unir' : 'Quitar'} ${labelOf(e, group)}`)
+}
+
 export function stateOf(entries: DraftEntry[], group: FiscalMatchDetail | undefined, part: FiscalMatchPart, id: number): DraftCardState {
     const entry = entries.find(e => same(e, part, id))
     if (entry?.error) return 'error'
@@ -148,13 +189,39 @@ export function hasMissingPayment(entries: DraftEntry[], group: FiscalMatchDetai
     })
 }
 
-/** «Se moverá también»: al elegir un documento, los registros propios del huérfano viajan con él. */
+const isBoleta = (dteType: number | null | undefined): boolean => dteType != null && BOLETA_TYPES.includes(dteType)
+
+/** «La boleta SII …» en 39/41; «El registro SII …» en facturas y notas (33/34/56/61). */
+const rcvMoves = (folio: string, dteType: number | null | undefined): string =>
+    `${isBoleta(dteType) ? 'La boleta SII' : 'El registro SII'} folio ${folio} se moverá también`
+
+/**
+ * «Se moverá también»: al elegir un documento, los registros propios del huérfano viajan con él; al
+ * unir una venta TUU, el RCV de su huérfano (del mismo tipo que este grupo). Sin repetir registros.
+ */
 export function consequencesOf(entries: DraftEntry[], group: FiscalMatchDetail | undefined): string[] {
-    const carried = carriedRcv(entries).map(r => `La boleta SII folio ${r.folio} se moverá también`)
+    const seen = new Set<number>()
+    const carried: string[] = []
+    for (const r of carriedRcv(entries)) {
+        if (seen.has(r.id)) continue
+        seen.add(r.id)
+        carried.push(rcvMoves(r.folio, group?.dte_type))
+    }
     if (!group || !entries.some(e => e.change.part === 'erp' && e.change.op === 'link')) return carried
-    const rcv = group.rcv_documents.map(r => `La boleta SII folio ${r.folio} se moverá también`)
+    const rcv = group.rcv_documents.filter(r => !seen.has(r.id)).map(r => rcvMoves(r.folio, r.dte_type))
     const tuu = group.terminal_sales.map(s => `La venta TUU #${s.id} se moverá también`)
     return [...tuu, ...rcv, ...carried]
+}
+
+/** Deja en el mapa de pagos del cambio ERP solo las ventas que siguen siendo del huérfano. */
+function prunePayments(entry: DraftEntry, group: FiscalMatchDetail): DraftEntry {
+    const payments = entry.change.payments
+    if (entry.change.part !== 'erp' || !payments) return entry
+    const own = new Set(group.terminal_sales.map(s => s.id))
+    const kept = Object.entries(payments).filter(([saleId]) => own.has(Number(saleId)))
+    if (kept.length === Object.keys(payments).length) return entry
+    const next = kept.length > 0 ? Object.fromEntries(kept.map(([k, v]) => [Number(k), v])) : null
+    return { ...entry, change: { ...entry.change, payments: next } }
 }
 
 /**
@@ -165,7 +232,7 @@ export function reconcileEntries(
     entries: DraftEntry[],
     group: FiscalMatchDetail,
     visible: VisibleIds,
-): { entries: DraftEntry[]; notices: string[] } {
+): { entries: DraftEntry[]; notices: string[]; changed: boolean } {
     const sets = new Map<FiscalMatchPart, Set<number>>()
     for (const [part, ids] of Object.entries(visible) as [FiscalMatchPart, Iterable<number>][]) sets.set(part, new Set(ids))
     const notices: string[] = []
@@ -182,5 +249,6 @@ export function reconcileEntries(
         }
         return !gone
     })
-    return { entries: kept, notices }
+    const pruned = kept.map(e => prunePayments(e, group))
+    return { entries: pruned, notices, changed: notices.length > 0 || pruned.some((e, i) => e !== kept[i]) }
 }

@@ -30,6 +30,10 @@ vi.mock('../../api/fiscalMatchApi', () => ({
         release: (id: number, k: string): unknown => release(id, k),
         confirmDraft: (id: number, inv: number, k: string): unknown => confirmDraft(id, inv, k),
     },
+    applyErrorOf: (e: unknown) => {
+        const index = (e as { changeIndex?: number }).changeIndex
+        return typeof index === 'number' ? { code: 'X', changeIndex: index, message: 'x' } : null
+    },
 }))
 vi.mock('@/features/realtime', () => ({ useRealtime: () => ({ markLocalMutation }) }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
@@ -82,6 +86,17 @@ describe('useFiscalMatchSearch', () => {
         await waitFor(() => expect(result.current.items).toHaveLength(2))
         expect(result.current.hasNextPage).toBe(false)
     })
+    it('conserva los resultados anteriores mientras carga otra búsqueda', async () => {
+        search.mockImplementation((_i, _p, params) => (params as { q?: string }).q === 'b'
+            ? new Promise(() => undefined)
+            : Promise.resolve(pageOf(1, false)))
+        const { Wrapper } = setup()
+        const { result, rerender } = renderHook(({ q }) => useFiscalMatchSearch(7, 'rcv', { q }), { wrapper: Wrapper, initialProps: { q: 'a' } })
+        await waitFor(() => expect(result.current.items).toHaveLength(1))
+        rerender({ q: 'b' })
+        await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
+        expect(result.current.items).toHaveLength(1)
+    })
     it('no consulta si enabled es false', () => {
         const { Wrapper } = setup()
         renderHook(() => useFiscalMatchSearch(7, 'erp', {}, false), { wrapper: Wrapper })
@@ -113,6 +128,23 @@ describe('mutaciones', () => {
         expect(client.getQueryData(['fiscal-match', 'detail', 7])).toBeUndefined()
         expect(client.getQueryData(['fiscal-match', 'detail', 8])).toEqual({ id: 8 })
         finish()
+    })
+    it('si el grupo cambia de id, descarta también las búsquedas del grupo viejo', async () => {
+        link.mockResolvedValue({ id: 9 })
+        const { Wrapper, client } = setup()
+        client.setQueryData(['fiscal-match', 'search', 7, 'tuu', {}], { pages: [] })
+        client.setQueryData(['fiscal-match', 'search', 8, 'tuu', {}], { pages: [] })
+        const { result } = renderHook(() => useApplyFiscalMatch(), { wrapper: Wrapper })
+        await act(async () => { await result.current.mutateAsync({ id: 7, changes: CHANGES }) })
+        expect(client.getQueryData(['fiscal-match', 'search', 7, 'tuu', {}])).toBeUndefined()
+        expect(client.getQueryData(['fiscal-match', 'search', 8, 'tuu', {}])).toEqual({ pages: [] })
+    })
+    it('un 400 de apply con change_index no muestra el error genérico (lo muestra la ficha)', async () => {
+        link.mockRejectedValue(Object.assign(new Error('bad'), { changeIndex: 0 }))
+        const { Wrapper } = setup()
+        const { result } = renderHook(() => useApplyFiscalMatch(), { wrapper: Wrapper })
+        await act(async () => { await result.current.mutateAsync({ id: 1, changes: CHANGES }).catch(() => undefined) })
+        expect(showApiError).not.toHaveBeenCalled()
     })
     it('confirmar un borrador que disuelve el huérfano descarta su detalle viejo', async () => {
         confirmDraft.mockResolvedValue({ id: 9 })

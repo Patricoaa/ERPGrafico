@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { FISCAL_MATCH_KEY, cuadreAttentionHref, fiscalMatchStatusValue, partStateValue } from "../fiscal-match"
+import { FISCAL_MATCH_KEY, cuadreAttentionHref, fiscalMatchStatusValue, matchScoreIntent, partStateValue } from "../fiscal-match"
 
 describe("cuadre por grupo", () => {
     it("maps group statuses", () => {
@@ -14,6 +14,9 @@ describe("cuadre por grupo", () => {
         expect(partStateValue("MISSING").intent).toBe("destructive")
         expect(partStateValue("SUMMARY_ONLY")).toMatchObject({ label: "Solo resumen", intent: "neutral" })
         expect(partStateValue("AMBIGUOUS").intent).toBe("warning")
+    })
+    it("match score intents", () => {
+        expect([100, 90, 89, 60, 59, 0].map(matchScoreIntent)).toEqual(["success", "success", "warning", "warning", "neutral", "neutral"])
     })
     it("exposes the key prefix", () => {
         expect(FISCAL_MATCH_KEY).toEqual(["fiscal-match"])
