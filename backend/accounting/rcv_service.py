@@ -558,7 +558,7 @@ def apply_report(rcv_import: RCVImport, report: NormalizedReport) -> None:
     company_rut = normalize_rut(RCVSettings.get_settings().company_rut)
     direction = rcv_import.direction
     period = report.period
-    warnings = list(rcv_import.warnings)
+    warnings: list[str] = []
     requested = f"{rcv_import.year}{rcv_import.month:02d}"
     if period != requested:
         _warn(warnings, PERIOD_MISMATCH_WARNING.format(received=period, requested=requested))

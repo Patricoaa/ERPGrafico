@@ -182,6 +182,36 @@ def _normalize_summary(record: dict[str, Any]) -> NormalizedSummary:
     )
 
 
+def _consolidate_summaries(summaries: list[NormalizedSummary]) -> list[NormalizedSummary]:
+    """Consolida resúmenes por tipo de DTE.
+
+    En compras, el SII desglosa el resumen del mismo tipo DTE por estado
+    (p. ej. 'Confirmada' y 'Pendiente'). Para el control de completitud y
+    la presentación en el ERP, se consolidan en una única fila por tipo DTE
+    sumando documentos y montos.
+    """
+    by_type: dict[int, NormalizedSummary] = {}
+    for s in summaries:
+        if s.dte_type not in by_type:
+            by_type[s.dte_type] = s
+        else:
+            prev = by_type[s.dte_type]
+            status = prev.status if prev.status == s.status else ""
+            by_type[s.dte_type] = NormalizedSummary(
+                dte_type=s.dte_type,
+                dte_type_label=prev.dte_type_label or s.dte_type_label,
+                document_count=prev.document_count + s.document_count,
+                exempt_amount=prev.exempt_amount + s.exempt_amount,
+                net_amount=prev.net_amount + s.net_amount,
+                vat_recoverable=prev.vat_recoverable + s.vat_recoverable,
+                vat_common_use=prev.vat_common_use + s.vat_common_use,
+                vat_non_recoverable=prev.vat_non_recoverable + s.vat_non_recoverable,
+                total_amount=prev.total_amount + s.total_amount,
+                status=status,
+            )
+    return list(by_type.values())
+
+
 def _normalize_document(direction: str, record: dict[str, Any]) -> NormalizedDocument:
     purchases = direction == "PURCHASES"
     return NormalizedDocument(
@@ -227,6 +257,6 @@ def normalize_report(direction: str, body: dict[str, Any]) -> NormalizedReport:
     return NormalizedReport(
         period=period,
         company_rut=normalize_rut(caratula.get("rutEmpresa")),
-        summaries=[_normalize_summary(r) for r in section.get("resumenes") or []],
+        summaries=_consolidate_summaries([_normalize_summary(r) for r in section.get("resumenes") or []]),
         documents=[_normalize_document(direction, r) for r in section.get(detail_key) or []],
     )

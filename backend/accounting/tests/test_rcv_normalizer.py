@@ -88,3 +88,71 @@ def test_missing_section_raises():
         normalize_report("SALES", {"caratula": body["caratula"]})
     with pytest.raises(RCVFormatError):
         normalize_report("SALES", {"ventas": body["ventas"]})
+
+
+def test_purchases_summaries_with_multiple_statuses_are_consolidated():
+    body = {
+        "caratula": {
+            "rutEmpresa": "8973356-1",
+            "periodo": "202611",
+        },
+        "compras": {
+            "resumenes": [
+                {
+                    "tipoDte": 33,
+                    "tipoDteString": "FACTURA ELECTRÓNICA",
+                    "totalDocumentos": 10,
+                    "montoExento": 640,
+                    "montoNeto": 1129900,
+                    "ivaRecuperable": 214682,
+                    "ivaUsoComun": 0,
+                    "ivaNoRecuperable": 0,
+                    "montoTotal": 1345222,
+                    "estado": "Confirmada",
+                },
+                {
+                    "tipoDte": 33,
+                    "tipoDteString": "FACTURA ELECTRÓNICA",
+                    "totalDocumentos": 1,
+                    "montoExento": 0,
+                    "montoNeto": 278141,
+                    "ivaRecuperable": 52847,
+                    "ivaUsoComun": 0,
+                    "ivaNoRecuperable": 0,
+                    "montoTotal": 330988,
+                    "estado": "Pendiente",
+                },
+                {
+                    "tipoDte": 61,
+                    "tipoDteString": "NOTA DE CRÉDITO ELECTRÓNICA",
+                    "totalDocumentos": 2,
+                    "montoExento": 0,
+                    "montoNeto": 15109,
+                    "ivaRecuperable": 2871,
+                    "ivaUsoComun": 0,
+                    "ivaNoRecuperable": 0,
+                    "montoTotal": 17980,
+                    "estado": "Confirmada",
+                },
+            ],
+            "detalleCompras": [],
+        },
+    }
+    report = normalize_report("PURCHASES", body)
+    assert len(report.summaries) == 2
+    by_type = {s.dte_type: s for s in report.summaries}
+
+    s33 = by_type[33]
+    assert s33.document_count == 11
+    assert s33.exempt_amount == Decimal("640")
+    assert s33.net_amount == Decimal("1408041")
+    assert s33.vat_recoverable == Decimal("267529")
+    assert s33.total_amount == Decimal("1676210")
+    # Al tener estados distintos ("Confirmada" y "Pendiente"), queda vacío
+    assert s33.status == ""
+
+    s61 = by_type[61]
+    assert s61.document_count == 2
+    assert s61.total_amount == Decimal("17980")
+    assert s61.status == "Confirmada"
+
