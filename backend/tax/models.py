@@ -584,6 +584,9 @@ class FiscalMatchRun(models.Model):
 
     @classmethod
     def latest_finished(cls) -> "FiscalMatchRun | None":
+        """Última corrida terminada sin error: la marca del motor y la «última corrida» de la UI."""
         return (
-            cls.objects.filter(finished_at__isnull=False).order_by("-finished_at", "-id").first()
+            cls.objects.filter(finished_at__isnull=False, error="")
+            .order_by("-finished_at", "-id")
+            .first()
         )

@@ -111,12 +111,7 @@ def fiscal_match_counts(filters: dict) -> dict:
     rows = _filtered(filters, with_status=False).order_by().values("status").annotate(n=Count("id"))
     by_status = dict.fromkeys(FiscalMatchStatus.values, 0)
     by_status.update({row["status"]: row["n"] for row in rows})
-    run = (
-        FiscalMatchRun.objects.filter(finished_at__isnull=False, error="")
-        .order_by("-finished_at", "-id")
-        .only("finished_at")
-        .first()
-    )
+    run = FiscalMatchRun.latest_finished()
     start = RCVSettings.get_settings().fiscal_match_start_date
     return {
         "by_status": by_status,

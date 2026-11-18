@@ -71,3 +71,6 @@ def test_run_latest_finished():
     FiscalMatchRun.objects.create()  # sin terminar
     done = FiscalMatchRun.objects.create(finished_at=timezone.now())
     assert FiscalMatchRun.latest_finished() == done
+    # Una corrida fallida no cuenta: el motor solo avanza su marca con corridas sin error.
+    FiscalMatchRun.objects.create(finished_at=timezone.now(), error="RuntimeError: boom")
+    assert FiscalMatchRun.latest_finished() == done
