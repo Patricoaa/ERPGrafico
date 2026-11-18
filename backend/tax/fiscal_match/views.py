@@ -1,7 +1,7 @@
-"""API del cuadre por grupo: lista, conteos, ficha y unión manual (spec §5.5, §5.7)."""
+"""API del cuadre por grupo: lista, conteos, ficha y guardado de la unión manual (spec §5.3, §5.7)."""
 
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -14,17 +14,14 @@ from tax.fiscal_match.selectors import (
     fiscal_matches_queryset,
 )
 from tax.fiscal_match.serializers import (
-    CANDIDATE_SERIALIZERS,
-    CandidatesQuerySerializer,
+    ApplySerializer,
     ConfirmDraftSerializer,
     CreateDraftSerializer,
     FiscalMatchDetailSerializer,
     FiscalMatchFilterSerializer,
     FiscalMatchListSerializer,
     InvoiceCandidateSerializer,
-    LinkSerializer,
     PurchaseOrderOptionSerializer,
-    UnlinkSerializer,
 )
 from tax.models import FiscalMatch
 
@@ -60,14 +57,13 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
                 "list",
                 "retrieve",
                 "counts",
-                "candidates",
                 "draft_suggestions",
                 "purchase_orders",
             ),
             _VIEW,
         ),
         **dict.fromkeys(
-            ("link", "unlink", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE
+            ("apply", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE
         ),
     }
 
@@ -86,23 +82,17 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     def counts(self, request):
         return Response(fiscal_match_counts(_filters(request.query_params)))
 
-    @action(detail=True, methods=["get"])
-    def candidates(self, request, pk=None):
-        part = _valid(CandidatesQuerySerializer, request.query_params)["part"]
-        rows = services.group_candidates(self._group(pk), part)
-        return Response(CANDIDATE_SERIALIZERS[part](rows, many=True).data)
-
-    @idempotent_endpoint(scope="tax.fiscal_match.link")
+    @idempotent_endpoint(scope="tax.fiscal_match.apply")
     @action(detail=True, methods=["post"])
-    def link(self, request, pk=None):
-        body = _valid(LinkSerializer, request.data)
-        return _detail(services.link(self._group(pk), body["part"], body["id"], body["movement"]))
-
-    @idempotent_endpoint(scope="tax.fiscal_match.unlink")
-    @action(detail=True, methods=["post"])
-    def unlink(self, request, pk=None):
-        body = _valid(UnlinkSerializer, request.data)
-        return _detail(services.unlink(self._group(pk), body["part"], body["id"]))
+    def apply(self, request, pk=None):
+        body = _valid(ApplySerializer, request.data)
+        try:
+            return _detail(services.apply_changes(self._group(pk), body["changes"]))
+        except services.FiscalMatchRuleError as error:
+            return Response(
+                {"detail": error.message, "code": error.code, "change_index": error.change_index},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     @idempotent_endpoint(scope="tax.fiscal_match.release")
     @action(detail=True, methods=["post"])

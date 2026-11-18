@@ -55,7 +55,7 @@ Reemplaza `tax/reconciliation/` por `tax/fiscal_match/` con un único punto de e
 
 ### D8. Idempotencia
 
-Nuevos scopes de `Idempotency-Key`: `tax.fiscal_match.link`, `.unlink`, `.release`, `.retry_issue`, `.confirm_draft`, `.create_draft` (documentados en `docs/20-contracts/idempotency.md`).
+Nuevos scopes de `Idempotency-Key`: `tax.fiscal_match.apply` (reemplaza a `.link` y `.unlink`, retirados), `.release`, `.retry_issue`, `.confirm_draft`, `.create_draft` (documentados en `docs/20-contracts/idempotency.md`).
 
 ### D9. Emisión automática por documento
 

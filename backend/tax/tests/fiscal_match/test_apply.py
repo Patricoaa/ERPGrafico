@@ -383,3 +383,30 @@ def test_carry_orphan_rcv_stays_when_it_cannot_move(tenv):
     assert sale.fiscal_match_id == result.pk
     assert doc.fiscal_match_id == orphan.pk
     assert FiscalMatch.objects.filter(pk=orphan.pk).exists()
+
+
+def test_erp_auto_pick_skips_payment_claimed_by_a_tuu_change(tenv):
+    """Dos cobros libres del mismo monto: el que reclama otro cambio no se asigna solo."""
+    at = _at()
+    inv = _boleta(tenv, 6000, at)
+    first = TreasuryMovement.objects.get(invoice=inv)
+    second = _payment(tenv, inv, 6000)
+    auto = make_terminal_sale(tenv, 6000, at + timedelta(hours=3), document_type=39)
+    claimer = make_terminal_sale(tenv, 6000, at + timedelta(hours=4), document_type=39)
+    _ensure()
+    orphan, claimer_orphan = _orphan_of(auto), _orphan_of(claimer)
+    assert orphan.pk != claimer_orphan.pk
+
+    result = apply_changes(
+        orphan,
+        [
+            {"op": "link", "part": "erp", "id": inv.pk},
+            {"op": "link", "part": "tuu", "id": claimer.pk, "movement": first.pk},
+        ],
+    )
+
+    auto.refresh_from_db()
+    claimer.refresh_from_db()
+    assert result.invoice_id == inv.pk
+    assert claimer.matched_movement_id == first.pk
+    assert auto.matched_movement_id == second.pk

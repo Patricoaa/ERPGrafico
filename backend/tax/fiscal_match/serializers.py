@@ -31,19 +31,33 @@ class FiscalMatchFilterSerializer(serializers.Serializer):
         return statuses
 
 
-class CandidatesQuerySerializer(serializers.Serializer):
-    part = serializers.ChoiceField(choices=["erp", "tuu", "rcv"])
+MAX_CHANGES = 50
 
 
-class LinkSerializer(serializers.Serializer):
+class ChangeSerializer(serializers.Serializer):
+    """Un cambio en espera de la ficha; las reglas de negocio las valida ``apply_changes``."""
+
+    op = serializers.ChoiceField(choices=["link", "unlink"])
     part = serializers.ChoiceField(choices=["erp", "tuu", "rcv"])
     id = serializers.IntegerField(min_value=1)
-    movement = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)
+    movement = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    # ``{sale_id: movement_id}``; las claves JSON llegan como texto y se convierten a entero.
+    payments = serializers.DictField(
+        child=serializers.IntegerField(min_value=1), required=False, allow_null=True
+    )
+
+    def validate_payments(self, value: dict[str, int] | None) -> dict[int, int] | None:
+        if value is None:
+            return None
+        if not all(key.isdecimal() and int(key) > 0 for key in value):
+            raise serializers.ValidationError("Las claves de «payments» deben ser ids de venta.")
+        return {int(key): movement for key, movement in value.items()}
 
 
-class UnlinkSerializer(serializers.Serializer):
-    part = serializers.ChoiceField(choices=["tuu", "rcv"])
-    id = serializers.IntegerField(min_value=1)
+class ApplySerializer(serializers.Serializer):
+    changes = serializers.ListField(
+        child=ChangeSerializer(), min_length=1, max_length=MAX_CHANGES, allow_empty=False
+    )
 
 
 class ConfirmDraftSerializer(serializers.Serializer):
@@ -199,55 +213,6 @@ class CandidateMovementSerializer(serializers.ModelSerializer):
             if obj.payment_method_new
             else obj.get_payment_method_display()
         )
-
-
-class ErpCandidateSerializer(serializers.ModelSerializer):
-    display_id = serializers.CharField(read_only=True)
-    # Cobros libres del monto de la venta TUU del huérfano; vacío si no tiene venta.
-    compatible_movements = CandidateMovementSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Invoice
-        fields = ["id", "display_id", "dte_type", "number", "total", "date", "compatible_movements"]
-        read_only_fields = fields
-
-
-class TuuCandidateSerializer(serializers.ModelSerializer):
-    compatible_movements = CandidateMovementSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = TerminalSale
-        fields = [
-            "id",
-            "transaction_at",
-            "sale_amount",
-            "document_type",
-            "payment_type",
-            "compatible_movements",
-        ]
-        read_only_fields = fields
-
-
-class RcvCandidateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RCVDocument
-        fields = [
-            "id",
-            "folio",
-            "dte_type",
-            "issue_date",
-            "total_amount",
-            "period",
-            "counterparty_rut",
-        ]
-        read_only_fields = fields
-
-
-CANDIDATE_SERIALIZERS = {
-    "erp": ErpCandidateSerializer,
-    "tuu": TuuCandidateSerializer,
-    "rcv": RcvCandidateSerializer,
-}
 
 
 class InvoiceCandidateSerializer(serializers.ModelSerializer):

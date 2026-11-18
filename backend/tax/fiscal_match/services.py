@@ -9,46 +9,40 @@ el mismo par en la corrida siguiente hasta que el usuario lo devuelve (``release
 (spec §5.3): todo o nada, con el índice del cambio que rompe una regla.
 """
 
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Collection, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import timedelta
 from decimal import Decimal
 from functools import wraps
 from typing import Literal, NotRequired, ParamSpec, TypedDict, TypeVar
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
-from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument
-from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
 from billing.models import Invoice
 from core.exceptions import ERPGraficoError
 from tax.fiscal_match.candidates import (
     BOLETA_SII_CODES,
     cash_sale_fits,
-    local_midnight,
-    sale_document_status_q,
+    inbound_movements,
     stamp_groups,
+    taken_movements,
     tuu_type_fits,
 )
 from tax.fiscal_match.groups import (
-    SALE_SII_CODES,
     group_for_invoice,
     rcv_orphan_group,
     tuu_orphan_group,
 )
 from tax.fiscal_match.issuing import issue_fiscal_drafts
-from tax.fiscal_match.rcv import RCV_TO_FISCAL_DIRECTION, rcv_group_candidates, rut_body
+from tax.fiscal_match.rcv import RCV_TO_FISCAL_DIRECTION
 from tax.fiscal_match.states import STATE_FIELDS, build_context, evaluate
 from tax.models import FiscalMatch
 from tax.tasks import fiscal_match_lock
 from treasury.models import TerminalSale, TreasuryMovement
 
-CANDIDATE_CAP = 20
 MANUAL_LOCK_TIMEOUT = 60  # s: una acción manual dura segundos; si se cae, el candado expira pronto
 BUSY_MESSAGE = "El cuadre automático se está ejecutando. Reintente en unos segundos."
 NOTHING_TO_ISSUE = "No hay nada para emitir en este grupo."
@@ -215,7 +209,10 @@ def _finish(touched: set[int], *result_ids: int) -> FiscalMatch:
     _drop_empty(touched)
     _rederive(touched)
     found = FiscalMatch.objects.in_bulk(list(result_ids))
-    return next(found[i] for i in result_ids if i in found)
+    for i in result_ids:
+        if i in found:
+            return found[i]
+    raise FiscalMatchRuleError(GONE)
 
 
 def _require_invoice_group(group: FiscalMatch) -> Invoice:
@@ -239,24 +236,6 @@ def _target_of(invoice: Invoice) -> FiscalMatch:
     if target is None:
         raise FiscalMatchRuleError(NOT_ALLOWED, NOT_IN_MATCH)
     return target
-
-
-def _taken_movements(movement_ids: list[int], *, excluding: list[int] = ()) -> set[int]:
-    return set(
-        TerminalSale.objects.filter(matched_movement_id__in=movement_ids)
-        .exclude(id__in=excluding)
-        .values_list("matched_movement_id", flat=True)
-    )
-
-
-def _inbound(invoice: Invoice) -> list[TreasuryMovement]:
-    return list(
-        TreasuryMovement.objects.filter(
-            invoice=invoice, movement_type=TreasuryMovement.Type.INBOUND
-        )
-        .select_related("payment_method_new")
-        .order_by("id")
-    )
 
 
 def _check_direction(target: FiscalMatch, direction: str) -> None:
@@ -293,7 +272,7 @@ def _check_payment(sale: TerminalSale, movement: TreasuryMovement, invoice: Invo
 
 def _check_movement(sale: TerminalSale, movement: TreasuryMovement, invoice: Invoice) -> None:
     _check_payment(sale, movement, invoice)
-    if _taken_movements([movement.pk], excluding=[sale.pk]):
+    if taken_movements([movement.pk], excluding=[sale.pk]):
         raise FiscalMatchRuleError(PAYMENT_TAKEN)
 
 
@@ -342,6 +321,7 @@ def _link_invoice(
     *,
     movement: TreasuryMovement | None = None,
     payments: Mapping[int, TreasuryMovement] | None = None,
+    reserved: Collection[int] = (),
 ) -> None:
     """Pasa los registros del huérfano al grupo del documento.
 
@@ -364,7 +344,9 @@ def _link_invoice(
     for doc in docs:
         _check_rcv(target, invoice, doc)
     _check_rcv_room(invoice, len(docs), group=target)
-    _assign_payments(sales, invoice, {**_single_payment(sales, movement), **(payments or {})})
+    _assign_payments(
+        sales, invoice, {**_single_payment(sales, movement), **(payments or {})}, reserved
+    )
     if sales:
         for sale in sales:
             sale.fiscal_match, sale.linked_manually = target, True
@@ -391,10 +373,14 @@ def _single_payment(
 
 
 def _assign_payments(
-    sales: list[TerminalSale], invoice: Invoice, chosen: Mapping[int, TreasuryMovement]
+    sales: list[TerminalSale],
+    invoice: Invoice,
+    chosen: Mapping[int, TreasuryMovement],
+    reserved: Collection[int] = (),
 ) -> None:
     """A cada venta su cobro del documento: el elegido (``{sale_id: cobro}``) o, sin elegir,
-    el único libre del mismo monto y de un medio compatible; si no, ``PAYMENT_REQUIRED``."""
+    el único libre del mismo monto y de un medio compatible; si no, ``PAYMENT_REQUIRED``.
+    ``reserved``: cobros que otro cambio del mismo guardado reclama; no se asignan solos."""
     if set(chosen) - {s.pk for s in sales}:
         raise FiscalMatchRuleError(IGNORED_PAYMENT)
     if not sales:
@@ -402,9 +388,9 @@ def _assign_payments(
     picked = {m.pk for m in chosen.values()}
     if len(picked) != len(chosen):
         raise FiscalMatchRuleError(PAYMENT_TAKEN)
-    inbound = _inbound(invoice)
-    taken = _taken_movements([m.pk for m in inbound], excluding=[s.pk for s in sales])
-    free = [m for m in inbound if m.pk not in taken and m.pk not in picked]
+    inbound = inbound_movements(invoice)
+    taken = taken_movements([m.pk for m in inbound], excluding=[s.pk for s in sales])
+    free = [m for m in inbound if m.pk not in taken and m.pk not in picked and m.pk not in reserved]
     for sale in sales:
         movement = chosen.get(sale.pk)
         if movement is not None:
@@ -499,22 +485,6 @@ def _link_rcv_document(group: FiscalMatch, orphan: FiscalMatch, doc: RCVDocument
     group.save(update_fields=["rcv_linked_manually"])
 
 
-def link(
-    group: FiscalMatch, part: LinkPart, record_id: int, movement_id: int | None = None
-) -> FiscalMatch:
-    """Despacha la unión pedida por la API; devuelve el grupo resultante."""
-    if part == "rcv" and movement_id is not None:
-        raise FiscalMatchRuleError(IGNORED_PAYMENT)
-    movement = _get(TreasuryMovement, movement_id, "El pago") if movement_id is not None else None
-    if part == "erp":
-        return link_invoice(group, _get(Invoice, record_id, "El documento"), movement)
-    if part == "tuu":
-        if movement is None:
-            raise FiscalMatchRuleError(PAYMENT_REQUIRED)
-        return link_terminal_sale(group, _get(TerminalSale, record_id, "La venta TUU"), movement)
-    return link_rcv_document(group, _get(RCVDocument, record_id, "El registro del SII"))
-
-
 # --- quitar y devolver ----------------------------------------------------------------
 
 
@@ -578,6 +548,7 @@ class _Batch:
     invoices: dict[int, Invoice]
     targets: dict[int, int]  # id del documento → id de su grupo
     movements: dict[int, TreasuryMovement]
+    reserved: set[int] = field(default_factory=set)  # cobros que reclaman los link tuu
     carried: set[int] = field(default_factory=set)  # RCV que viajaron con su venta TUU
     unlinked: list[int] = field(default_factory=list)  # huérfanos creados al quitar
 
@@ -640,6 +611,11 @@ def _load(group: FiscalMatch, changes: list[Change]) -> _Batch:
         invoices=seen["erp"],
         targets=targets,
         movements=movements,
+        reserved={
+            c["movement"]
+            for c in changes
+            if c["op"] == "link" and c["part"] == "tuu" and c.get("movement")
+        },
     )
     for i, change in enumerate(changes):
         if change["part"] != "erp":
@@ -669,12 +645,12 @@ def _apply_one(batch: _Batch, current: FiscalMatch, change: Change) -> FiscalMat
         return current
     if change["part"] == "erp":
         invoice = batch.invoices[change["id"]]
-        target = batch.groups[batch.targets[invoice.pk]]
+        target = _locked(batch.groups, batch.targets[invoice.pk])
         payments = {
             int(sale_id): batch.movements[m]
             for sale_id, m in (change.get("payments") or {}).items()
         }
-        _link_invoice(current, target, invoice, payments=payments)
+        _link_invoice(current, target, invoice, payments=payments, reserved=batch.reserved)
         target.invoice = invoice
         return target
     if change["part"] == "tuu":
@@ -740,160 +716,3 @@ def retry_issue(group: FiscalMatch) -> dict[str, int]:
         raise ValidationError(NOTHING_TO_ISSUE)
     _rederive({group.pk})
     return result
-
-
-# --- candidatos -----------------------------------------------------------------------
-
-
-def group_candidates(group: FiscalMatch, part: LinkPart) -> list[models.Model]:
-    """Candidatos para la unión manual (máx. ``CANDIDATE_CAP``), con consultas fijas."""
-    if part == "erp":
-        _require_orphan(group)
-        return _erp_candidates(group)
-    invoice = _require_invoice_group(group)
-    if part == "tuu":
-        return _tuu_candidates(invoice)
-    return _rcv_candidates(group, invoice)
-
-
-def _erp_candidates(group: FiscalMatch) -> list[Invoice]:
-    """Documentos candidatos; con venta TUU, cada uno lleva sus cobros libres del monto de la venta.
-
-    La venta manda (la unión le asigna un cobro); sin venta, una boleta RCV 39/41 busca
-    boletas (también borradores sin folio) del mismo día y monto, porque su RUT es genérico;
-    otro registro RCV busca por tipo, RUT y folio o total.
-    """
-    sale = TerminalSale.objects.filter(fiscal_match=group).order_by("transaction_at", "id").first()
-    doc = RCVDocument.objects.filter(fiscal_match=group).order_by("id").first()
-    if sale is not None:
-        invoices = _sale_invoice_candidates(sale)
-    elif doc is not None and doc.dte_type in BOLETA_SII_CODES:
-        invoices = _boleta_invoice_candidates(doc)
-    elif doc is not None:
-        invoices = list(rcv_group_candidates(doc))
-    else:
-        invoices = []
-    _attach_free_payments(invoices, sale)
-    return invoices
-
-
-def _free_payments(amount: Decimal) -> "models.QuerySet[TreasuryMovement]":
-    """Cobros del monto indicado que ninguna venta TUU respalda."""
-    return TreasuryMovement.objects.filter(
-        movement_type=TreasuryMovement.Type.INBOUND, amount=amount
-    ).filter(~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
-
-
-def _sale_invoice_candidates(sale: TerminalSale) -> list[Invoice]:
-    free_payment = _free_payments(sale.sale_amount).filter(invoice=OuterRef("pk"))
-    evaluable = Q(status=Invoice.Status.POSTED) | (
-        sale_document_status_q() & Q(sale_order__isnull=False)
-    )
-    return list(
-        Invoice.objects.annotate(
-            fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
-        )
-        .filter(
-            evaluable,
-            Exists(free_payment),
-            fiscal_direction=FiscalMatch.Direction.SALE,
-            sii__in=SALE_SII_CODES,
-            date=timezone.localdate(sale.transaction_at),
-            fiscal_match_set__isnull=False,
-        )
-        .order_by("id")[:CANDIDATE_CAP]
-    )
-
-
-def _boleta_invoice_candidates(doc: RCVDocument) -> list[Invoice]:
-    """Boletas del ERP (emitidas o borrador sin folio) del día y monto del registro, sin otro RCV."""
-    taken = RCVDocument.objects.filter(fiscal_match__invoice=OuterRef("pk"))
-    evaluable = Q(status=Invoice.Status.POSTED) | (
-        sale_document_status_q() & Q(sale_order__isnull=False)
-    )
-    return list(
-        Invoice.objects.annotate(
-            fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
-        )
-        .filter(
-            evaluable,
-            ~Exists(taken),
-            fiscal_direction=FiscalMatch.Direction.SALE,
-            sii=doc.dte_type,
-            date=doc.issue_date,
-            total=abs(doc.total_amount),
-            fiscal_match_set__isnull=False,
-        )
-        .order_by("id")[:CANDIDATE_CAP]
-    )
-
-
-def _attach_free_payments(invoices: list[Invoice], sale: TerminalSale | None) -> None:
-    """``compatible_movements``: cobros libres del monto de la venta, en una sola consulta."""
-    by_invoice: dict[int, list[TreasuryMovement]] = {i.pk: [] for i in invoices}
-    if sale is not None and invoices:
-        rows = (
-            _free_payments(sale.sale_amount)
-            .filter(invoice_id__in=list(by_invoice))
-            .select_related("payment_method_new")
-            .order_by("created_at", "id")
-        )
-        for m in rows:
-            by_invoice[m.invoice_id].append(m)
-    for invoice in invoices:
-        invoice.compatible_movements = by_invoice[invoice.pk]
-
-
-def _tuu_candidates(invoice: Invoice) -> list[TerminalSale]:
-    """Ventas huérfanas del día de algún cobro, con el monto de un cobro libre del documento."""
-    inbound = _inbound(invoice)
-    taken = _taken_movements([m.pk for m in inbound])
-    free = [m for m in inbound if m.pk not in taken]
-    if not free:
-        return []
-    days = Q()
-    for day in {timezone.localdate(m.created_at) for m in inbound}:
-        days |= Q(
-            transaction_at__gte=local_midnight(day),
-            transaction_at__lt=local_midnight(day + timedelta(days=1)),
-        )
-    sales = list(
-        TerminalSale.objects.filter(
-            days,
-            status=TerminalSale.Status.COMPLETED,
-            fiscal_match__isnull=False,
-            fiscal_match__invoice__isnull=True,
-            sale_amount__in={m.amount for m in free},
-        ).order_by("transaction_at", "id")[:CANDIDATE_CAP]
-    )
-    for sale in sales:
-        sale.compatible_movements = [
-            m for m in free if Decimal(m.amount) == Decimal(sale.sale_amount)
-        ]
-    return sales
-
-
-def _rcv_candidates(group: FiscalMatch, invoice: Invoice) -> list[RCVDocument]:
-    """Registros del SII huérfanos (sin venta TUU) de la misma dirección, tipo y RUT."""
-    if not group.counterparty_rut:
-        return []
-    directions = [d for d, fiscal in RCV_TO_FISCAL_DIRECTION.items() if fiscal == group.direction]
-    rows = (
-        RCVDocument.objects.annotate(rut=rut_body("counterparty_rut"))
-        .filter(
-            ~Exists(TerminalSale.objects.filter(fiscal_match_id=OuterRef("fiscal_match_id"))),
-            direction__in=directions,
-            dte_type=invoice.sii_code,
-            rut=group.counterparty_rut.replace("-", "").upper(),
-            fiscal_match__isnull=False,
-            fiscal_match__invoice__isnull=True,
-        )
-        .order_by("issue_date", "id")
-    )
-    out: list[RCVDocument] = []
-    for doc in rows:
-        if normalize_rut(doc.counterparty_rut) == group.counterparty_rut:
-            out.append(doc)
-            if len(out) == CANDIDATE_CAP:
-                break
-    return out

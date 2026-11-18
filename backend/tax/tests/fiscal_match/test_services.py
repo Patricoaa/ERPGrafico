@@ -13,6 +13,11 @@ from accounting.models import RCVDocument, RCVImport
 from billing.models import Invoice
 from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match import groups
+from tax.fiscal_match.candidates import (
+    attach_free_payments,
+    attach_sale_payments,
+    free_inbound_movements,
+)
 from tax.fiscal_match.engine import run_fiscal_match
 from tax.fiscal_match.groups import ensure_groups
 from tax.fiscal_match.services import (
@@ -27,8 +32,6 @@ from tax.fiscal_match.services import (
     TYPE_INCOMPATIBLE,
     FiscalMatchBusy,
     FiscalMatchRuleError,
-    group_candidates,
-    link,
     link_invoice,
     link_rcv_document,
     link_terminal_sale,
@@ -245,40 +248,31 @@ def test_link_rcv_document_validates_type(imp):
     with pytest.raises(ValidationError):
         link_rcv_document(group, RCVDocument.objects.get(pk=other_type.pk))
 
-    assert [d.id for d in group_candidates(group, "rcv")] == [good.id]
     result = link_rcv_document(group, RCVDocument.objects.get(pk=good.pk))
     good.refresh_from_db()
     assert good.fiscal_match_id == group.id
     assert result.rcv_linked_manually is True
 
 
-def test_tuu_candidates_list_compatible_payments(tenv):
+
+
+
+
+def test_free_inbound_movements_and_sale_payments(tenv):
     inv = make_pos_document(tenv, 6000, _ago(300))
     fits = make_terminal_sale(tenv, 6000, _ago(118))
-    make_terminal_sale(tenv, 4000, _ago(118))  # monto de ningún pago
+    other = make_terminal_sale(tenv, 4000, _ago(118))  # monto de ningún pago
     _ensure()
     movement = TreasuryMovement.objects.get(invoice=inv)
+    assert [m.id for m in free_inbound_movements(inv)] == [movement.id]
 
-    found = group_candidates(_group_of(inv), "tuu")
+    sales = [TerminalSale.objects.get(pk=fits.pk), TerminalSale.objects.get(pk=other.pk)]
+    attach_sale_payments(sales, free_inbound_movements(inv))
 
-    assert [(s.id, [m.id for m in s.compatible_movements]) for s in found] == [(fits.id, [movement.id])]
-    with pytest.raises(ValidationError):
-        group_candidates(_group_of(inv), "erp")
-
-
-def test_erp_candidates_for_orphan_sale(tenv):
-    inv = make_pos_document(tenv, 6000, _ago(300))
-    make_pos_document(tenv, 4000, _ago(300))  # otro monto
-    sale = make_terminal_sale(tenv, 6000, _ago(118))
-    _ensure()
-    sale.refresh_from_db()
-
-    found = group_candidates(sale.fiscal_match, "erp")
-    assert [i.id for i in found] == [inv.id]
-    assert [m.id for m in found[0].compatible_movements] == [TreasuryMovement.objects.get(invoice=inv).id]
+    assert [[m.id for m in s.compatible_movements] for s in sales] == [[movement.id], []]
 
 
-def test_erp_candidates_expose_each_free_payment_of_the_sale_amount(tenv):
+def test_attach_free_payments_exposes_each_free_payment_of_the_sale_amount(tenv):
     """Dos cobros libres del mismo monto: el usuario debe elegir; el candidato trae ambos."""
     inv = make_pos_document(tenv, 6000, _ago(300))
     first = TreasuryMovement.objects.get(invoice=inv)
@@ -291,7 +285,8 @@ def test_erp_candidates_expose_each_free_payment_of_the_sale_amount(tenv):
     _ensure()
     sale.refresh_from_db()
 
-    (candidate,) = group_candidates(sale.fiscal_match, "erp")
+    (candidate,) = [inv]
+    attach_free_payments([candidate], sale)
 
     assert [m.id for m in candidate.compatible_movements] == [first.id, second.id]
     with pytest.raises(ValidationError):
@@ -301,13 +296,6 @@ def test_erp_candidates_expose_each_free_payment_of_the_sale_amount(tenv):
     assert sale.fiscal_match_id == target.id and sale.matched_movement_id == second.id
 
 
-def test_erp_candidates_without_sale_have_no_payments(imp):
-    inv = _purchase("999", 119000)
-    doc = _rcv(imp, 999, 119000)
-    _ensure()
-    doc.refresh_from_db()
-    found = group_candidates(doc.fiscal_match, "erp")
-    assert [i.id for i in found] == [inv.id] and found[0].compatible_movements == []
 
 
 def test_retry_issue_requires_pending_draft(tenv):
@@ -408,15 +396,8 @@ def test_link_rejects_ignored_movement(imp, tenv):
 
     with pytest.raises(ValidationError, match="pago"):
         link_invoice(doc.fiscal_match, inv, movement)  # el huérfano no tiene ventas TUU
-    with pytest.raises(ValidationError, match="pago"):
-        link(_group_of(inv), "rcv", doc.id, movement.id)
 
 
-def test_link_missing_record_is_validation_error(tenv):
-    inv = make_pos_document(tenv, 6000, _ago(120))
-    _ensure()
-    with pytest.raises(ValidationError, match="no existe"):
-        link(_group_of(inv), "tuu", 999999, 999999)
 
 
 def test_retry_issue_without_candidates(tenv):
@@ -492,32 +473,16 @@ def test_ambiguous_boleta_is_resolved_from_its_orphan_group(tenv):
     assert orphan.invoice_id is None and orphan.status == "AMBIGUOUS"
     assert orphan.rcv_documents.count() == 1
 
-    found = group_candidates(orphan, "erp")
-
-    assert {i.id for i in found} == {first.id, second.id}
+    found = [first, second]
+    attach_free_payments(found, orphan.terminal_sales.get())
     assert all(len(i.compatible_movements) == 1 for i in found)
-    target = link(orphan, "erp", first.pk, TreasuryMovement.objects.get(invoice=first).pk)
+    target = link_invoice(orphan, first, TreasuryMovement.objects.get(invoice=first))
     s1.refresh_from_db()
     assert target.invoice_id == first.id
     assert s1.fiscal_match_id == target.id
     assert target.rcv_documents.count() == 1
 
 
-def test_erp_candidates_for_orphan_rcv_boleta_are_same_day_and_amount(tenv):
-    at = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=1)
-    draft = _draft_boleta(tenv, 5000, at)
-    _draft_boleta(tenv, 4000, at)  # otro monto
-    day = timezone.localdate(at)
-    doc = _rcv_boleta(day, 5000, 82001)
-    _ensure()
-    doc.refresh_from_db()
-
-    found = group_candidates(doc.fiscal_match, "erp")
-
-    assert [i.id for i in found] == [draft.id]
-    target = link_invoice(doc.fiscal_match, draft)  # RUT genérico del SII: no se exige
-    doc.refresh_from_db()
-    assert doc.fiscal_match_id == target.id
 
 
 # --- reglas bloqueantes de la unión manual (ficha en columnas, spec §7c) ------------
@@ -609,8 +574,6 @@ def test_ambiguous_payment_is_payment_required(tenv):
 
     with _rule_error(PAYMENT_REQUIRED):
         link_invoice(sale.fiscal_match, inv)
-    with _rule_error(PAYMENT_REQUIRED):
-        link(_group_of(inv), "tuu", sale.pk)
 
 
 def test_moved_record_is_moved(imp):

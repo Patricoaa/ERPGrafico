@@ -3,8 +3,9 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q, QuerySet
 from django.utils import timezone
 
 from billing.models import Invoice
@@ -142,3 +143,71 @@ def payment_compatible(
         m.payment_method_new is not None
         and m.payment_method_new.linked_terminal_device_id == sale.device_id
     )
+
+
+# --- compatibilidad de cobros y documentos (la usan las uniones y la búsqueda) -----------
+
+
+def evaluable_invoice_q() -> Q:
+    """Documentos de venta que el cuadre puede evaluar: emitidos, o borradores POS sin folio."""
+    return Q(status=Invoice.Status.POSTED) | (
+        sale_document_status_q() & Q(sale_order__isnull=False)
+    )
+
+
+def inbound_movements(invoice: Invoice) -> list[TreasuryMovement]:
+    """Cobros del documento, con su medio de pago, en orden de id."""
+    return list(
+        TreasuryMovement.objects.filter(
+            invoice=invoice, movement_type=TreasuryMovement.Type.INBOUND
+        )
+        .select_related("payment_method_new")
+        .order_by("id")
+    )
+
+
+def taken_movements(movement_ids: list[int], *, excluding: list[int] = ()) -> set[int]:
+    """De los cobros dados, los que ya respalda alguna venta TUU (salvo las de ``excluding``)."""
+    return set(
+        TerminalSale.objects.filter(matched_movement_id__in=movement_ids)
+        .exclude(id__in=excluding)
+        .values_list("matched_movement_id", flat=True)
+    )
+
+
+def free_inbound_movements(invoice: Invoice) -> list[TreasuryMovement]:
+    """Cobros del documento que ninguna venta TUU respalda."""
+    inbound = inbound_movements(invoice)
+    taken = taken_movements([m.pk for m in inbound])
+    return [m for m in inbound if m.pk not in taken]
+
+
+def free_payments(amount: Decimal) -> "QuerySet[TreasuryMovement]":
+    """Cobros del monto indicado que ninguna venta TUU respalda."""
+    return TreasuryMovement.objects.filter(
+        movement_type=TreasuryMovement.Type.INBOUND, amount=amount
+    ).filter(~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
+
+
+def attach_free_payments(invoices: list[Invoice], sale: TerminalSale | None) -> None:
+    """``compatible_movements``: cobros libres del monto de la venta, en una sola consulta."""
+    by_invoice: dict[int, list[TreasuryMovement]] = {i.pk: [] for i in invoices}
+    if sale is not None and invoices:
+        rows = (
+            free_payments(sale.sale_amount)
+            .filter(invoice_id__in=list(by_invoice))
+            .select_related("payment_method_new")
+            .order_by("created_at", "id")
+        )
+        for m in rows:
+            by_invoice[m.invoice_id].append(m)
+    for invoice in invoices:
+        invoice.compatible_movements = by_invoice[invoice.pk]
+
+
+def attach_sale_payments(sales: list[TerminalSale], free: list[TreasuryMovement]) -> None:
+    """``compatible_movements`` de cada venta: los cobros libres del documento de su mismo monto."""
+    for sale in sales:
+        sale.compatible_movements = [
+            m for m in free if Decimal(m.amount) == Decimal(sale.sale_amount)
+        ]
