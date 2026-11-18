@@ -1,4 +1,5 @@
-"""API del cuadre por grupo: lista, conteos, ficha y guardado de la unión manual (spec §5.3, §5.7)."""
+"""API del cuadre por grupo: lista, conteos, ficha, búsqueda de candidatos y guardado de la
+unión manual (spec §5.2, §5.3, §5.7)."""
 
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -8,6 +9,7 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from tax.fiscal_match import feeding, services
+from tax.fiscal_match.search import search_candidates
 from tax.fiscal_match.selectors import (
     fiscal_match_counts,
     fiscal_match_detail_queryset,
@@ -22,6 +24,8 @@ from tax.fiscal_match.serializers import (
     FiscalMatchListSerializer,
     InvoiceCandidateSerializer,
     PurchaseOrderOptionSerializer,
+    SearchItemSerializer,
+    SearchQuerySerializer,
 )
 from tax.models import FiscalMatch
 
@@ -48,6 +52,10 @@ def _detail(group: FiscalMatch) -> Response:
     )
 
 
+class SearchPagination(StandardResultsSetPagination):
+    page_size = 20  # una página de tarjetas por columna (spec §5.2)
+
+
 class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     filter_backends: list = []
@@ -57,6 +65,7 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
                 "list",
                 "retrieve",
                 "counts",
+                "search",
                 "draft_suggestions",
                 "purchase_orders",
             ),
@@ -81,6 +90,16 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["get"])
     def counts(self, request):
         return Response(fiscal_match_counts(_filters(request.query_params)))
+
+    @action(detail=True, methods=["get"])
+    def search(self, request, pk=None):
+        params = _valid(SearchQuerySerializer, request.query_params)
+        found = search_candidates(self._group(pk), **params)
+        paginator = SearchPagination()
+        page = paginator.paginate_queryset(found.queryset, request, view=self)
+        return paginator.get_paginated_response(
+            SearchItemSerializer(found.build(page), many=True).data
+        )
 
     @idempotent_endpoint(scope="tax.fiscal_match.apply")
     @action(detail=True, methods=["post"])

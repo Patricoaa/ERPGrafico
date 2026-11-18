@@ -133,7 +133,7 @@ def reference_for(
             sii_code=rcv.dte_type,
             date=rcv.issue_date,
             rut=normalize_rut(rcv.counterparty_rut),
-            amount=rcv.total_amount,
+            amount=abs(rcv.total_amount),  # las notas de crédito llegan en negativo
             free_payment_amounts=frozenset(),
             folio=rcv.folio,
             kind="rcv",

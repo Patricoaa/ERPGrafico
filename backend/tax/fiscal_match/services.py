@@ -27,6 +27,7 @@ from tax.fiscal_match.candidates import (
     BOLETA_SII_CODES,
     cash_sale_fits,
     inbound_movements,
+    payment_type_fits,
     sii_type_fits,
     stamp_groups,
     taken_movements,
@@ -260,11 +261,6 @@ def _check_sale(target: FiscalMatch, invoice: Invoice, sale: TerminalSale) -> No
         raise FiscalMatchRuleError(TYPE_INCOMPATIBLE, CASH_ONLY_BOLETAS)
 
 
-def _payment_type_fits(sale: TerminalSale, movement: TreasuryMovement) -> bool:
-    """Una venta TUU en efectivo solo respalda un cobro en efectivo."""
-    return sale.payment_type != TerminalSale.PaymentType.CASH or movement.payment_method == "CASH"
-
-
 def _check_payment(sale: TerminalSale, movement: TreasuryMovement, invoice: Invoice) -> None:
     """Cobro ↔ venta TUU, sin consultar: cobro del documento y de un medio compatible.
 
@@ -272,7 +268,7 @@ def _check_payment(sale: TerminalSale, movement: TreasuryMovement, invoice: Invo
     """
     if movement.invoice_id != invoice.pk or movement.movement_type != TreasuryMovement.Type.INBOUND:
         raise FiscalMatchRuleError(OTHER_DOCUMENT_PAYMENT)
-    if not _payment_type_fits(sale, movement):
+    if not payment_type_fits(sale, movement):
         raise FiscalMatchRuleError(TYPE_INCOMPATIBLE, CASH_ONLY_CASH)
 
 
@@ -407,7 +403,7 @@ def _assign_payments(
             fits = [
                 m
                 for m in free
-                if Decimal(m.amount) == Decimal(sale.sale_amount) and _payment_type_fits(sale, m)
+                if Decimal(m.amount) == Decimal(sale.sale_amount) and payment_type_fits(sale, m)
             ]
             if len(fits) != 1:
                 raise FiscalMatchRuleError(PAYMENT_REQUIRED)

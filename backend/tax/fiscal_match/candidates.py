@@ -131,6 +131,11 @@ def tuu_type_fits(sale: TerminalSale, sii_code: int | None) -> bool:
     return sale.document_type is None or sale.document_type == sii_code
 
 
+def payment_type_fits(sale: TerminalSale, movement: TreasuryMovement) -> bool:
+    """Una venta TUU en efectivo solo respalda un cobro en efectivo (unión manual y búsqueda)."""
+    return sale.payment_type != TerminalSale.PaymentType.CASH or movement.payment_method == "CASH"
+
+
 def payment_compatible(
     sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]
 ) -> bool:

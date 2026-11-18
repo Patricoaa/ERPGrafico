@@ -215,6 +215,40 @@ class CandidateMovementSerializer(serializers.ModelSerializer):
         )
 
 
+class SearchQuerySerializer(serializers.Serializer):
+    """Query params de ``search`` (spec §5.2)."""
+
+    part = serializers.ChoiceField(choices=["erp", "tuu", "rcv"])
+    q = serializers.CharField(required=False, allow_blank=True, max_length=40, default="")
+    ordering = serializers.ChoiceField(choices=["score", "recent"], required=False, default="score")
+
+
+class MatchWarningSerializer(serializers.Serializer):
+    code = serializers.CharField(read_only=True)
+    label = serializers.CharField(read_only=True)
+    blocking = serializers.BooleanField(read_only=True)
+
+
+class SearchItemSerializer(serializers.Serializer):
+    """Tarjeta candidata de la búsqueda; los campos opcionales solo viajan en su parte."""
+
+    id = serializers.IntegerField(read_only=True)
+    kind = serializers.CharField(read_only=True)
+    label = serializers.CharField(read_only=True)
+    counterparty = serializers.CharField(read_only=True)
+    date = serializers.DateField(read_only=True)
+    datetime = serializers.DateTimeField(read_only=True, required=False)
+    amount = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    score = serializers.IntegerField(read_only=True)
+    warnings = MatchWarningSerializer(many=True, read_only=True)
+    compatible_movements = CandidateMovementSerializer(many=True, read_only=True, required=False)
+    payments_by_sale = serializers.DictField(
+        child=serializers.ListField(child=CandidateMovementSerializer()),
+        read_only=True,
+        required=False,
+    )
+
+
 class InvoiceCandidateSerializer(serializers.ModelSerializer):
     """Borrador sugerido para un documento de compra del SII que falta en el ERP."""
 

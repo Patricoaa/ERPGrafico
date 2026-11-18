@@ -243,3 +243,15 @@ def test_reference_for_orphan_rcv_uses_its_first_record():
         44,
         Decimal("900"),
     )
+
+
+def test_reference_for_rcv_credit_note_uses_absolute_amount():
+    group = SimpleNamespace(direction="sale")
+    rcv = SimpleNamespace(
+        dte_type=61,
+        issue_date=D,
+        counterparty_rut="76123456-7",
+        total_amount=Decimal("-900"),
+        folio=45,
+    )
+    assert reference_for(group, kind="rcv", rcv=rcv).amount == Decimal("900")
