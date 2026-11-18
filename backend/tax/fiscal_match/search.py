@@ -57,6 +57,7 @@ from tax.fiscal_match.scoring import (
     score_candidate,
 )
 from tax.fiscal_match.selectors import SETTLED, parse_search
+from tax.fiscal_match.services import rcv_would_travel
 from tax.models import FiscalMatch
 from treasury.models import TerminalSale, TreasuryMovement
 
@@ -415,10 +416,26 @@ def _tuu_search(g: _Group, q: str, ordering: Ordering) -> Search:
     return Search(_ordered(qs, g.ref, _TUU, ordering), lambda rows: _tuu_items(g, rows))
 
 
+def _carried_rcv(g: _Group, rows: list[TerminalSale]) -> dict[int, list[dict]]:
+    """Registros del SII del huérfano de cada venta que viajarían con ella al documento (una consulta)."""
+    by_group: dict[int, list[RCVDocument]] = {}
+    for doc in RCVDocument.objects.filter(
+        fiscal_match_id__in={s.fiscal_match_id for s in rows}
+    ).order_by("id"):
+        by_group.setdefault(doc.fiscal_match_id, []).append(doc)
+    invoice = g.group.invoice
+    return {
+        gid: [{"id": d.pk, "folio": str(d.folio)} for d in docs]
+        for gid, docs in by_group.items()
+        if rcv_would_travel(g.group, invoice, docs)
+    }
+
+
 def _tuu_items(g: _Group, rows: list[TerminalSale]) -> list[dict]:
     with_document = g.group.invoice_id is not None
     if with_document:
         attach_sale_payments(rows, g.free)
+    carried = _carried_rcv(g, rows) if with_document and not g.has_rcv else {}
     items = []
     for sale in rows:
         at = timezone.localtime(sale.transaction_at)
@@ -441,6 +458,7 @@ def _tuu_items(g: _Group, rows: list[TerminalSale]) -> list[dict]:
             item["compatible_movements"] = [
                 m for m in sale.compatible_movements if payment_type_fits(sale, m)
             ]
+            item["carried_rcv"] = carried.get(sale.fiscal_match_id, [])
         items.append(item)
     return items
 

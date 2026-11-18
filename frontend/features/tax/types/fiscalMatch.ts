@@ -137,6 +137,8 @@ export interface FiscalMatchSearchItem {
     warnings: FiscalMatchWarning[]
     /** ERP/RCV con venta TUU de referencia: cobros libres compatibles. */
     compatible_movements?: CandidateMovement[]
+    /** Venta TUU hacia un documento: registros del SII de su grupo huérfano que viajarían con ella. */
+    carried_rcv?: { id: number; folio: string }[]
     /** `{sale_id: cobros libres}` para documentos que se cuadran contra varias ventas. */
     payments_by_sale?: Record<string, CandidateMovement[]>
 }

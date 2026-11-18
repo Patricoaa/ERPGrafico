@@ -449,15 +449,24 @@ def _carry_orphan_rcv(orphan: FiscalMatch, group: FiscalMatch, invoice: Invoice)
     if RCVDocument.objects.filter(fiscal_match=group).exists():
         return []
     docs = list(RCVDocument.objects.select_for_update().filter(fiscal_match=orphan))
-    try:
-        for doc in docs:
-            _check_rcv(group, invoice, doc)
-        _check_rcv_room(invoice, len(docs), group=group)
-    except FiscalMatchRuleError:
+    if not rcv_would_travel(group, invoice, docs):
         return []
     if docs:
         RCVDocument.objects.filter(id__in=[d.pk for d in docs]).update(fiscal_match=group)
     return [d.pk for d in docs]
+
+
+def rcv_would_travel(group: FiscalMatch, invoice: Invoice, docs: list[RCVDocument]) -> bool:
+    """Regla de ``_carry_orphan_rcv`` para un documento sin registro del SII: todos los del
+    huérfano cumplen las reglas y caben. La reutiliza la búsqueda para anunciar qué viaja."""
+    try:
+        for doc in docs:
+            _check_rcv(group, invoice, doc)
+        if invoice.sii_code not in BOLETA_SII_CODES and len(docs) > 1:
+            raise FiscalMatchRuleError(SECOND_RCV)
+    except FiscalMatchRuleError:
+        return False
+    return True
 
 
 @_exclusive

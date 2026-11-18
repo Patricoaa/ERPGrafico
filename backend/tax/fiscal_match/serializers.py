@@ -229,6 +229,11 @@ class MatchWarningSerializer(serializers.Serializer):
     blocking = serializers.BooleanField(read_only=True)
 
 
+class CarriedRcvSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    folio = serializers.CharField(read_only=True)
+
+
 class SearchItemSerializer(serializers.Serializer):
     """Tarjeta candidata de la búsqueda; los campos opcionales solo viajan en su parte."""
 
@@ -242,6 +247,7 @@ class SearchItemSerializer(serializers.Serializer):
     score = serializers.IntegerField(read_only=True)
     warnings = MatchWarningSerializer(many=True, read_only=True)
     compatible_movements = CandidateMovementSerializer(many=True, read_only=True, required=False)
+    carried_rcv = CarriedRcvSerializer(many=True, read_only=True, required=False)
     payments_by_sale = serializers.DictField(
         child=serializers.ListField(child=CandidateMovementSerializer()),
         read_only=True,

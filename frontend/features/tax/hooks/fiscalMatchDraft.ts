@@ -123,7 +123,13 @@ export function stateOf(entries: DraftEntry[], group: FiscalMatchDetail | undefi
     const entry = entries.find(e => same(e, part, id))
     if (entry?.error) return 'error'
     if (entry) return entry.change.op === 'unlink' ? 'toRemove' : 'selected'
+    if (part === 'rcv' && carriedRcv(entries).some(d => d.id === id)) return 'linked'
     return group && linkedIds(group, part).includes(id) ? 'linked' : 'idle'
+}
+
+/** Registros del SII que viajan con las ventas TUU seleccionadas. */
+function carriedRcv(entries: DraftEntry[]): { id: number; folio: string }[] {
+    return entries.flatMap(e => (e.change.op === 'link' && e.change.part === 'tuu' ? (e.item?.carried_rcv ?? []) : []))
 }
 
 /** Cambios que viajan a `apply` (sin la tarjeta ni el error). */
@@ -144,10 +150,11 @@ export function hasMissingPayment(entries: DraftEntry[], group: FiscalMatchDetai
 
 /** «Se moverá también»: al elegir un documento, los registros propios del huérfano viajan con él. */
 export function consequencesOf(entries: DraftEntry[], group: FiscalMatchDetail | undefined): string[] {
-    if (!group || !entries.some(e => e.change.part === 'erp' && e.change.op === 'link')) return []
+    const carried = carriedRcv(entries).map(r => `La boleta SII folio ${r.folio} se moverá también`)
+    if (!group || !entries.some(e => e.change.part === 'erp' && e.change.op === 'link')) return carried
     const rcv = group.rcv_documents.map(r => `La boleta SII folio ${r.folio} se moverá también`)
     const tuu = group.terminal_sales.map(s => `La venta TUU #${s.id} se moverá también`)
-    return [...tuu, ...rcv]
+    return [...tuu, ...rcv, ...carried]
 }
 
 /**

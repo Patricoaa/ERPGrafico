@@ -119,4 +119,14 @@ describe('useFiscalMatchDraft', () => {
         expect(notices).toEqual(['1 cambio ya no aplica: la venta TUU #81 se cuadró en otro grupo'])
         expect(h.result.current.pending).toEqual([{ op: 'link', part: 'rcv', id: 2 }])
     })
+
+    it('una venta TUU seleccionada anuncia el RCV que viaja con ella', () => {
+        const h = setup(group())
+        act(() => { h.result.current.select('tuu', item(5, { compatible_movements: [mv(7)], carried_rcv: [{ id: 40, folio: '777' }] })) })
+        expect(h.result.current.consequences).toEqual(['La boleta SII folio 777 se moverá también'])
+        expect(h.result.current.stateOf('rcv', 40)).toBe('linked')
+        act(() => { h.result.current.unselect('tuu', 5) })
+        expect(h.result.current.consequences).toEqual([])
+        expect(h.result.current.stateOf('rcv', 40)).toBe('idle')
+    })
 })

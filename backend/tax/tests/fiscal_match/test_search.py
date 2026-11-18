@@ -536,3 +536,27 @@ def test_page_size_cannot_be_raised(api, tenv):
 
     assert body["count"] == 25
     assert len(body["results"]) == 20
+
+
+def test_tuu_item_announces_the_orphan_rcv_that_travels_with_it(api, tenv):
+    invoice = make_pos_document(tenv, 6100, _at(), dte_type=Invoice.DTEType.BOLETA)
+    sale = make_terminal_sale(tenv, 6100, _at(hour=16))
+    doc = _rcv(_today(), 6100, 777)
+    _groups()
+    _into(doc, _group_of(sale))
+    body = _search(api, _group_of(invoice), "tuu")
+    item = next(i for i in body["results"] if i["id"] == sale.id)
+    assert item["carried_rcv"] == [{"id": doc.id, "folio": "777"}]
+
+
+def test_tuu_item_carries_nothing_when_the_document_already_has_rcv(api, tenv):
+    invoice = make_pos_document(tenv, 6200, _at(), dte_type=Invoice.DTEType.BOLETA)
+    sale = make_terminal_sale(tenv, 6200, _at(hour=16))
+    own = _rcv(_today(), 6200, 801)
+    other = _rcv(_today(), 6200, 802)
+    _groups()
+    _into(other, _group_of(sale))
+    _into(own, _group_of(invoice))
+    body = _search(api, _group_of(invoice), "tuu")
+    item = next(i for i in body["results"] if i["id"] == sale.id)
+    assert item["carried_rcv"] == []
