@@ -75,7 +75,7 @@ def border_competitors(lo: datetime, hi: datetime, window: timedelta) -> list[Te
     )
     return list(
         TerminalSale.objects.filter(
-            near_border, status=TerminalSale.Status.COMPLETED, matched_manually=False
+            near_border, status=TerminalSale.Status.COMPLETED, linked_manually=False
         )
     )
 

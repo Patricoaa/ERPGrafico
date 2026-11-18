@@ -30,7 +30,7 @@ RCV_TO_FISCAL_DIRECTION = {
 _CANDIDATE_CAP = 20
 
 
-def _rcv_family(doc: RCVDocument) -> "models.QuerySet[Invoice]":
+def rcv_family(doc: RCVDocument) -> "models.QuerySet[Invoice]":
     """Facturas emitidas de la misma dirección y código SII que el documento RCV."""
     return Invoice.objects.annotate(
         fiscal_direction=fiscal_direction_expression(), sii=sii_code_expression()
@@ -56,7 +56,7 @@ def rcv_group_candidates(doc: RCVDocument) -> "models.QuerySet[Invoice]":
     total = abs(doc.total_amount)
     taken = RCVDocument.objects.filter(fiscal_match__invoice=OuterRef("pk")).exclude(pk=doc.pk)
     rows = (
-        _rcv_family(doc)
+        rcv_family(doc)
         .annotate(snapshot_rut=rut_body("partner_tax_id_snapshot"), contact_rut=rut_body("contact__tax_id"))
         .filter(Q(snapshot_rut=body) | Q(partner_tax_id_snapshot="", contact_rut=body))
         .filter(Q(total=total) | ~Q(number=""))

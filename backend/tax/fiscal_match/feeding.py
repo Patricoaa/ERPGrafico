@@ -4,13 +4,15 @@ Nada corre solo: cada función responde a un clic explícito en la ficha del gru
 a grupos de compra huérfanos con un único documento del SII, es decir, «Falta en el ERP».
 """
 
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, QuerySet
 from django.utils.translation import gettext as _
 
 from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument
-from billing.fiscal_key import sii_code_expression
+from billing.fiscal_key import fiscal_direction_expression, sii_code_expression
 from billing.models import SII_CODE_TO_DTE_TYPE, Invoice
 from purchasing.models import PurchaseOrder
 from tax.fiscal_match.groups import group_for_invoice
@@ -24,15 +26,31 @@ from tax.fiscal_match.services import (
     _rederive,
 )
 from tax.models import FiscalMatch
-from tax.reconciliation.feeding import (
-    MAX_PURCHASE_ORDERS,
-    MAX_SUGGESTIONS,
-    PURCHASE_BILL_SII_CODES,
-    SUGGESTION_TOLERANCE,
-    _draft_rut,
-    _purchase_drafts,
-)
 from treasury.models import TerminalSale
+
+# «Total parecido» para sugerir un borrador: diferencia de hasta 2 %.
+SUGGESTION_TOLERANCE = Decimal("0.02")
+MAX_SUGGESTIONS = 10
+MAX_PURCHASE_ORDERS = 20
+# Códigos que `create_purchase_bill` registra desde una OC; las notas (56/61) corrigen
+# una factura y el 48 es un comprobante de venta.
+PURCHASE_BILL_SII_CODES = frozenset({33, 34, 39, 41})
+
+
+def _draft_rut(invoice: Invoice) -> str:
+    """RUT del borrador: snapshot, luego contacto, luego proveedor de la OC."""
+    rut = invoice.partner_tax_id_snapshot
+    if not rut and invoice.contact_id:
+        rut = invoice.contact.tax_id
+    if not rut and invoice.purchase_order_id:
+        rut = invoice.purchase_order.supplier.tax_id
+    return normalize_rut(rut)
+
+
+def _purchase_drafts() -> "QuerySet[Invoice]":
+    return Invoice.objects.annotate(fiscal_direction=fiscal_direction_expression()).filter(
+        status=Invoice.Status.DRAFT, fiscal_direction="purchase"
+    )
 
 
 def _pending_doc(group: FiscalMatch) -> RCVDocument | None:

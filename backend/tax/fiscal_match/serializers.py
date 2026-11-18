@@ -218,3 +218,24 @@ CANDIDATE_SERIALIZERS = {
     "tuu": TuuCandidateSerializer,
     "rcv": RcvCandidateSerializer,
 }
+
+
+class InvoiceCandidateSerializer(serializers.ModelSerializer):
+    """Borrador sugerido para un documento de compra del SII que falta en el ERP."""
+
+    dte_type = serializers.CharField(read_only=True)
+    display_id = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Invoice
+        fields = ["id", "display_id", "dte_type", "total", "date"]
+        read_only_fields = fields
+
+
+class PurchaseOrderOptionSerializer(serializers.ModelSerializer):
+    display_id = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = PurchaseOrder
+        fields = ["id", "display_id", "date", "total"]
+        read_only_fields = fields

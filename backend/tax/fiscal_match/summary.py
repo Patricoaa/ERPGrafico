@@ -17,8 +17,8 @@ from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match.boletas import BOLETA_SII_CODES
+from tax.fiscal_match.candidates import sale_document_status_q
 from tax.models import FiscalMatch
-from tax.reconciliation.terminal import sale_document_status_q
 from treasury.models import TerminalSale
 
 SUMMARY_SII_CODES = (39, 41, 48)

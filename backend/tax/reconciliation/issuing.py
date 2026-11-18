@@ -19,7 +19,8 @@ from django.utils import timezone
 from billing.models import Invoice
 from billing.sale_documents import FOLIO_EXEMPT_DTE_TYPES
 from core.fiscal_match import MatchStatus
-from tax.fiscal_match.issuing import ISSUE_RETRY_MINUTES, _error_text, _issue, _tuu_number
+from tax.fiscal_match.issuing import ISSUE_RETRY_MINUTES, _error_text, _issue
+from tax.fiscal_match.issuing import tuu_number as _tuu_number
 from treasury.models import TerminalSale
 
 logger = logging.getLogger(__name__)

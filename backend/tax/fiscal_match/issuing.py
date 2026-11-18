@@ -98,8 +98,6 @@ def tuu_number(sale: TerminalSale) -> str:
     return (sale.sequence_number or "").strip()
 
 
-_tuu_number = tuu_number  # alias para tax.reconciliation.issuing (se borra en la limpieza)
-
 
 def _candidates(group_ids: list[int] | None, *, retry_failed: bool) -> list[FiscalMatch]:
     groups = FiscalMatch.objects.filter(

@@ -29,7 +29,7 @@ from tax.fiscal_match.rcv import (
     CANDIDATE_WINDOW,
     DOCUMENT_SII_CODES,
     RCV_TO_FISCAL_DIRECTION,
-    _rcv_family,
+    rcv_family as _rcv_family,
     rut_body,
 )
 
