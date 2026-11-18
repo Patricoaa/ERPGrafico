@@ -33,7 +33,9 @@ Cada venta TUU se cruza con un `TreasuryMovement` del documento (`TerminalSale.m
 ### D4. Cuántos registros por parte, y qué espera la caja
 
 - **RCV 0..N por grupo** (FK desde `RCVDocument`): no se sabe si TUU emite una boleta por venta o una por la venta completa. La parte RCV de una boleta cuadra si la suma de sus registros iguala el total del ERP o la suma de sus ventas TUU; otro monto es `DIFF`. Con varios folios la boleta no se emite sola: la parte ERP queda `PENDING` con aviso «varios folios en el SII».
-- **La caja espera TUU solo en boletas 39/41** (y los 48 por tarjeta); una factura 33/34 pagada con tarjeta tiene TUU esperado por pago integrado, pero sin TUU es `NOT_APPLICABLE`.
+- Los pagos con medio integrado esperan una venta TUU en cualquier documento de venta; los pagos en efectivo en una sesión POS con terminal TUU la esperan solo en boletas 39/41. Sin pagos que esperen TUU, la parte es `NOT_APPLICABLE`.
+- **Una venta TUU en efectivo solo respalda el cobro en efectivo de una boleta 39/41**: nunca se une sola al cobro en efectivo de una factura (que no deja registro TUU). Si una venta de otro tipo queda en el grupo (p. ej. unida a mano), la parte TUU es `DIFF` aunque ningún pago espere TUU: la revisión de tipo va antes de `NOT_APPLICABLE`.
+- **Una venta TUU no completada (anulada) no respalda su cobro**: no suma al monto TUU ni cuenta en la revisión de tipo. El motor la saca del grupo de su documento a un huérfano propio (sin cobro ni marca manual), que se evalúa `EXCLUDED`; el documento vuelve a esperar su venta. La unión manual rechaza ventas no completadas.
 
 ### D5. Motor sin meses: `run_fiscal_match`
 
@@ -49,7 +51,7 @@ Reemplaza `tax/reconciliation/` por `tax/fiscal_match/` con un único punto de e
 
 ### D7. Unión manual desde la ficha del grupo
 
-`FiscalMatchDrawer` (`tax.fiscalmatch`) concentra vincular documento ERP, agregar pago TUU (eligiendo el movimiento), vincular registro RCV, quitar, devolver al cruce automático y reintentar emisión. Quitar deja el registro en un grupo huérfano marcado como manual. Los servicios manuales toman el mismo candado de caché del motor y responden **409** si está ocupado (fallan rápido, sin esperar), y mutan bajo `@transaction.atomic`.
+`FiscalMatchDrawer` (`tax.fiscalmatch`) concentra vincular documento ERP, agregar pago TUU (eligiendo el movimiento), vincular registro RCV, quitar, devolver al cruce automático y reintentar emisión. Quitar deja el registro en un grupo huérfano marcado como manual. En un huérfano con venta TUU los documentos candidatos salen de la venta (día, cobro libre del monto); con solo una boleta RCV 39/41, son las boletas del ERP (emitidas o borradores sin folio) del mismo día y monto. Las boletas llevan en el SII un RUT genérico: la unión no exige el RUT en 39/41, solo en facturas y notas. Si la ficha pasa al grupo resultante (el abierto se borró), la página actualiza `selected`; un grupo que ya no existe (404) se explica como tal. Los servicios manuales toman el mismo candado de caché del motor y responden **409** si está ocupado (fallan rápido, sin esperar), y mutan bajo `@transaction.atomic`.
 
 ### D8. Idempotencia
 
@@ -57,11 +59,11 @@ Nuevos scopes de `Idempotency-Key`: `tax.fiscal_match.link`, `.unlink`, `.releas
 
 ### D9. Emisión automática por documento
 
-La emisión de borradores (ADR-0140 D3) se conserva, ahora leyendo el grupo y escribiendo `issue_attempted_at`/`issue_error` en él. Emite **por documento**, con una transacción por borrador: es una excepción acotada a ADR-0118 (la emisión asigna folio y publica el asiento; no se puede agrupar), no una lista que consulte por fila.
+La emisión de borradores (ADR-0140 D3) se conserva, ahora leyendo el grupo y escribiendo `issue_attempted_at`/`issue_error` en él. Exige la parte TUU `MATCHED` y, en boletas 39/41, también la RCV `MATCHED`: la boleta toma el folio de su registro RCV, y emitir con un registro de otro monto (o ambiguo o pendiente) fijaría un folio equivocado de forma irreversible (ADR-0091). Emite **por documento**, con una transacción por borrador: es una excepción acotada a ADR-0118 (la emisión asigna folio y publica el asiento; no se puede agrupar), no una lista que consulte por fila.
 
 ### D10. Conteo del F29 (sin resumen mensual ni pendientes de folio)
 
-El resumen mensual 39/41/48 (con el **48 esperado** = comprobantes 48 del ERP + pagos TUU con tarjeta de facturas 33/34) y la lista de borradores pendientes de folio se **retiraron por decisión del usuario (2026-11-18)**: no tenían consumidor en la UI. Los endpoints `fiscal-matches/summary/` y `fiscal-matches/pending-issue/`, sus funciones y sus hooks ya no existen. Se mantiene `fiscal_mismatch_counts`: la compuerta F29 `fiscal_mismatches` sigue en **Sugeridos** (no bloquea) con claves nuevas: `DIFF`, `AMBIGUOUS`, `MISSING_ERP`, `MISSING_EXTERNAL` del `fiscal_period`; `status_check`, el wizard F29 y el checklist de cierre se actualizaron.
+El resumen mensual 39/41/48 (con el **48 esperado** = comprobantes 48 del ERP + pagos TUU con tarjeta de facturas 33/34) y la lista de borradores pendientes de folio se **retiraron por decisión del usuario (2026-11-18)**: no tenían consumidor en la UI. Los endpoints `fiscal-matches/summary/` y `fiscal-matches/pending-issue/`, sus funciones y sus hooks ya no existen. Se mantiene `fiscal_mismatch_counts`: la compuerta F29 `fiscal_mismatches` sigue en **Sugeridos** (no bloquea) con claves nuevas: `DIFF`, `AMBIGUOUS`, `MISSING_ERP`, `MISSING_EXTERNAL` del `fiscal_period`; `status_check`, el wizard F29 y el checklist de cierre se actualizaron. Su enlace «Ir al cuadre» abre ambas direcciones (`direction=all`) y «necesita atención» del mes. El conteo agrupa por `fiscal_period` y el enlace filtra por fecha de emisión: en algún registro RCV cuyo período no es el mes de emisión pueden no coincidir.
 
 ### D11. API y UI
 
@@ -69,7 +71,7 @@ El resumen mensual 39/41/48 (con el **48 esperado** = comprobantes 48 del ERP + 
 
 ### D12. Datos y planificador
 
-La migración `tax.0010` crea los grupos desde los vínculos antiguos; otra posterior elimina los campos viejos. Como el beat corre con `DatabaseScheduler`, la migración `tax.0011` borra la fila `PeriodicTask` de `run_fiscal_reconciliation_10min` (la tarea retirada ya no existe); la entrada nueva se registra desde `CELERY_BEAT_SCHEDULE`.
+La migración `tax.0010` crea los grupos desde los vínculos antiguos; `treasury.0113` y `accounting.0051` (que dependen de `tax.0010`) eliminan después los campos viejos de `TerminalSale` y `RCVDocument`. Como el beat corre con `DatabaseScheduler`, la migración `tax.0011` borra la fila `PeriodicTask` de `run_fiscal_reconciliation_10min` (la tarea retirada ya no existe); la entrada nueva se registra desde `CELERY_BEAT_SCHEDULE`.
 
 ## Alternativas descartadas
 
@@ -83,5 +85,4 @@ La migración `tax.0010` crea los grupos desde los vínculos antiguos; otra post
 - Una sola tabla alimenta la página, los conteos, el F29 y la emisión; no hay dos fuentes de verdad.
 - Hay que revisar con datos reales si TUU emite una boleta por venta o una por la venta completa (D4).
 - Un vínculo automático equivocado antiguo persiste hasta una desvinculación manual (mismo día y monto: sin efecto en totales).
-- Entre las tareas 11 y 16 del plan el frontend quedó inconsistente; el árbol final es coherente.
 - Los vínculos de TUU 1 venta → N documentos siguen fuera de alcance.
