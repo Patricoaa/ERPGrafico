@@ -255,3 +255,26 @@ def test_reference_for_rcv_credit_note_uses_absolute_amount():
         folio=45,
     )
     assert reference_for(group, kind="rcv", rcv=rcv).amount == Decimal("900")
+
+
+def test_erp_candidate_scores_amount_on_a_free_payment_of_the_tuu_sale():
+    r = Reference(
+        direction="sale",
+        sii_code=48,
+        date=D,
+        rut="",
+        amount=Decimal("3000"),
+        free_payment_amounts=frozenset(),
+        folio=None,
+        kind="tuu",
+        payment_type="DEBIT",
+    )
+    two_cards = cand(
+        "erp",
+        sii_code=48,
+        amount=Decimal("5000"),
+        free_payment_amounts=frozenset({Decimal("3000")}),
+    )
+    assert score_candidate(r, two_cards) == (100, [])
+    score, warnings = score_candidate(r, cand("erp", sii_code=48, amount=Decimal("5000")))
+    assert score == 60 and codes(warnings) == {"OTHER_AMOUNT"}

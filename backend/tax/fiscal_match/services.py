@@ -479,7 +479,10 @@ def _link_rcv_document(group: FiscalMatch, orphan: FiscalMatch, doc: RCVDocument
     _require_record_orphan(orphan)
     _check_rcv(group, invoice, doc)
     _check_rcv_room(invoice, 1, group=group)
-    if TerminalSale.objects.filter(fiscal_match=orphan).exists():
+    # Las ventas anuladas no retienen el registro: quedan atrás y el motor las libera.
+    if TerminalSale.objects.filter(
+        fiscal_match=orphan, status=TerminalSale.Status.COMPLETED
+    ).exists():
         raise FiscalMatchRuleError(RCV_HAS_SALES)
     doc.fiscal_match = group
     doc.save(update_fields=["fiscal_match"])

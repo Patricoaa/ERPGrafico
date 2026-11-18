@@ -192,11 +192,12 @@ def free_inbound_movements(invoice: Invoice) -> list[TreasuryMovement]:
     return [m for m in inbound if m.pk not in taken]
 
 
-def free_payments(amount: Decimal) -> "QuerySet[TreasuryMovement]":
-    """Cobros del monto indicado que ninguna venta TUU respalda."""
-    return TreasuryMovement.objects.filter(
-        movement_type=TreasuryMovement.Type.INBOUND, amount=amount
-    ).filter(~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
+def free_payments(*amounts: Decimal) -> "QuerySet[TreasuryMovement]":
+    """Cobros que ninguna venta TUU respalda; con ``amounts``, solo los de esos montos."""
+    qs = TreasuryMovement.objects.filter(movement_type=TreasuryMovement.Type.INBOUND).filter(
+        ~Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk")))
+    )
+    return qs.filter(amount__in=set(amounts)) if amounts else qs
 
 
 def attach_free_payments(invoices: list[Invoice], sale: TerminalSale | None) -> None:

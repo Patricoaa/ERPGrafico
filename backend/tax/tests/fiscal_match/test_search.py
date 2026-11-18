@@ -16,6 +16,7 @@ from core.fiscal_match import FiscalMatchStatus
 from core.tests.rbac_factories import make_user
 from tax.fiscal_match.groups import ensure_groups, tuu_orphan_group
 from tax.fiscal_match.search import group_reference
+from tax.fiscal_match.services import link_rcv_document
 from tax.models import FiscalMatch
 from tax.tests.fiscal_match_helpers import (
     local_dt,
@@ -332,7 +333,15 @@ def test_constant_queries_with_3_and_25_rows(api, tenv, part):
         anchor_sale = make_terminal_sale(tenv, 9999, _at(hour=20))
         anchor_doc = make_pos_document(tenv, 9999, _at())
         for i in range(n):
-            if part == "erp":
+            if part == "erp" and i % 2:  # borrador POS sin folio ni ficha: el cliente de la venta
+                make_pos_document(
+                    tenv,
+                    1000 + i,
+                    _at(),
+                    dte_type=Invoice.DTEType.BOLETA,
+                    status=Invoice.Status.DRAFT,
+                )
+            elif part == "erp":
                 make_pos_document(tenv, 1000 + i, _at())
             elif part == "tuu":
                 make_terminal_sale(tenv, 9999, _at(hour=21, days_ago=i % 5))
@@ -404,6 +413,7 @@ def test_erp_document_with_two_card_payments_and_one_sale_is_still_offered(api, 
 
     assert [i["id"] for i in item] == [invoice.id]  # el pagado por completo no se ofrece
     assert [m["id"] for m in item[0]["payments_by_sale"][str(sale.id)]] == [second.id]
+    assert item[0]["score"] == 100  # la venta calza con un cobro libre, no con el total
 
 
 def test_erp_boleta_with_rcv_still_offered_and_factura_with_rcv_not(api, tenv):
@@ -422,3 +432,107 @@ def test_erp_boleta_with_rcv_still_offered_and_factura_with_rcv_not(api, tenv):
     assert boleta.id in ids
     assert free_factura.id in ids
     assert factura.id not in ids
+
+
+# --- revisión 1 ------------------------------------------------------------------------
+
+
+def test_excluded_rcv_orphan_is_not_offered(api, tenv):
+    invoice = make_pos_document(tenv, 5000, _at())
+    offered = _rcv(_today(), 5000, 401)
+    excluded = _rcv(_today(), 5000, 402, dte_type=46)
+    _groups()
+    FiscalMatch.objects.filter(pk=_group_of(excluded).pk).update(
+        status=FiscalMatchStatus.EXCLUDED  # como deja el motor a un código 46
+    )
+
+    assert _ids(_search(api, _group_of(invoice), "rcv")) == [offered.id]
+
+
+def test_excluded_tuu_orphan_is_not_offered_even_with_q(api, tenv):
+    invoice = make_pos_document(tenv, 5000, _at())
+    before_start = make_terminal_sale(tenv, 5000, _at(days_ago=85, hour=15))
+    _groups()
+    FiscalMatch.objects.filter(pk=_group_of(before_start).pk).update(
+        status=FiscalMatchStatus.EXCLUDED  # anterior al inicio del cuadre
+    )
+
+    assert _ids(_search(api, _group_of(invoice), "tuu", q="5000")) == []
+
+
+def test_erp_folio_matches_number_with_leading_zeros(api, tenv):
+    doc = _rcv(_today(), 5000, 42, dte_type=33)
+    numbered = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.FACTURA)
+    Invoice.objects.filter(pk=numbered.pk).update(number="0042")
+    make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.FACTURA)
+    _groups()
+
+    body = _search(api, _group_of(doc), "erp")
+
+    assert body["results"][0]["id"] == numbered.id
+    assert body["results"][0]["score"] == 100
+
+
+def test_erp_q_by_sale_order_customer_name(api, tenv):
+    sale = make_terminal_sale(tenv, 7777, _at(hour=15))
+    other = make_terminal_env()
+    other.customer.name = "Gráfica Andina"
+    other.customer.save(update_fields=["name"])
+    draft = make_pos_document(
+        other, 1000, _at(), dte_type=Invoice.DTEType.BOLETA, status=Invoice.Status.DRAFT
+    )
+    Invoice.objects.filter(pk=draft.pk).update(contact=None)
+    make_pos_document(tenv, 1000, _at())
+    _groups()
+
+    body = _search(api, _group_of(sale), "erp", q="andina")
+
+    assert _ids(body) == [draft.id]
+    assert body["results"][0]["counterparty"] == "Gráfica Andina"
+
+
+def test_rcv_on_a_factura_with_rcv_is_blocking_second_rcv(api, tenv):
+    factura = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.FACTURA)
+    boleta = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    held_factura = _rcv(_today(), 5000, 501, dte_type=33)
+    held_boleta = _rcv(_today(), 5000, 502, dte_type=39)
+    candidate = _rcv(_today(), 5000, 503, dte_type=33)
+    _groups()
+    _into(RCVDocument.objects.get(pk=held_factura.pk), _group_of(factura))
+    _into(RCVDocument.objects.get(pk=held_boleta.pk), _group_of(boleta))
+
+    def second_rcv(group):
+        item = next(i for i in _search(api, group, "rcv")["results"] if i["id"] == candidate.id)
+        return [w for w in item["warnings"] if w["code"] == "SECOND_RCV"]
+
+    assert second_rcv(_group_of(factura)) == [
+        {"code": "SECOND_RCV", "label": "Ya tiene registro del SII", "blocking": True}
+    ]
+    assert second_rcv(_group_of(boleta)) == []
+
+
+def test_rcv_orphan_with_only_a_reversed_sale_is_offered_and_links(api, tenv):
+    invoice = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    doc = _rcv(_today(), 5000, 601)
+    reversed_sale = make_terminal_sale(
+        tenv, 5000, _at(hour=16), status=TerminalSale.Status.REVERSED
+    )
+    _groups()
+    _into(reversed_sale, _group_of(doc))
+    group = _group_of(invoice)
+
+    assert _ids(_search(api, group, "rcv")) == [doc.id]
+    link_rcv_document(group, RCVDocument.objects.get(pk=doc.pk))
+    assert RCVDocument.objects.get(pk=doc.pk).fiscal_match_id == group.id
+
+
+def test_page_size_cannot_be_raised(api, tenv):
+    invoice = make_pos_document(tenv, 5000, _at())
+    for i in range(25):
+        _rcv(_today(), 1000 + i, 700 + i)
+    _groups()
+
+    body = _search(api, _group_of(invoice), "rcv", page_size=50)
+
+    assert body["count"] == 25
+    assert len(body["results"]) == 20

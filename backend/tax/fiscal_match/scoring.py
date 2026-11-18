@@ -26,6 +26,7 @@ from tax.fiscal_match.codes import (
     OTHER_DAY,
     OTHER_DIRECTION,
     OTHER_RUT,
+    SECOND_RCV,
     TYPE_INCOMPATIBLE,
 )
 from treasury.models import TerminalSale
@@ -47,6 +48,7 @@ LABELS = {
     TYPE_INCOMPATIBLE: "Tipo distinto",
     OTHER_DIRECTION: "Otra dirección",
     NOT_COMPLETED: "Venta anulada",
+    SECOND_RCV: "Ya tiene registro del SII",
 }
 CASH_ONLY_BOLETAS_LABEL = "Efectivo solo en boletas"
 
@@ -78,6 +80,9 @@ class CandidateFacts:
     payment_type: str | None = None
     status: str | None = None
     tuu_document_type: int | None = None  # tipo que informa TUU (solo kind="tuu")
+    # Montos de los cobros libres del documento (solo kind="erp" frente a una venta TUU):
+    # la venta respalda un cobro, no necesariamente el total.
+    free_payment_amounts: frozenset[Decimal] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -211,7 +216,8 @@ def score_candidate(ref: Reference, cand: CandidateFacts) -> tuple[int, list[Mat
         if cand.kind == "tuu" and ref.free_payment_amounts
         else {ref.amount}
     )
-    if cand.amount is not None and cand.amount in targets:
+    values = {cand.amount, *cand.free_payment_amounts} - {None}
+    if values & set(targets):
         out.score += W_AMOUNT
     else:
         out.warn(OTHER_AMOUNT, False)

@@ -54,6 +54,7 @@ def _detail(group: FiscalMatch) -> Response:
 
 class SearchPagination(StandardResultsSetPagination):
     page_size = 20  # una página de tarjetas por columna (spec §5.2)
+    page_size_query_param = None  # sin ``page_size``: la página es fija
 
 
 class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):

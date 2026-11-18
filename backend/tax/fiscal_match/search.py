@@ -34,20 +34,24 @@ from tax.fiscal_match.candidates import (
     attach_sale_payments,
     evaluable_invoice_q,
     free_inbound_movements,
+    free_payments,
     local_midnight,
     payment_type_fits,
 )
+from tax.fiscal_match.codes import SECOND_RCV
 from tax.fiscal_match.engine import SCAN_DAYS
 from tax.fiscal_match.rcv import RCV_TO_FISCAL_DIRECTION, rut_body
 from tax.fiscal_match.scoring import (
     DAY_BASE,
     DAY_STEP,
     FOLIO_SCORE,
+    LABELS,
     W_AMOUNT,
     W_DAY,
     W_RUT,
     W_TYPE,
     CandidateFacts,
+    MatchWarning,
     Reference,
     reference_for,
     score_candidate,
@@ -87,7 +91,7 @@ class _Group:
     ref: Reference | None
     own_sales: list[TerminalSale]  # ventas del huérfano (sin anuladas)
     free: list[TreasuryMovement]  # cobros libres del documento del grupo
-    has_rcv: bool
+    has_rcv: bool  # el grupo ya tiene algún registro del SII
 
 
 def _number_folio(number: str) -> int | None:
@@ -104,7 +108,8 @@ def _load_group(group: FiscalMatch) -> _Group:
             folio=_number_folio(group.invoice.number),
             free_payment_amounts=frozenset(Decimal(m.amount) for m in free),
         )
-        return _Group(group, ref, [], free, has_rcv=False)
+        has_rcv = RCVDocument.objects.filter(fiscal_match=group).exists()
+        return _Group(group, ref, [], free, has_rcv=has_rcv)
     sales = list(TerminalSale.objects.filter(fiscal_match=group).order_by("transaction_at", "id"))
     live = [s for s in sales if s.status != TerminalSale.Status.REVERSED]
     rcv = RCVDocument.objects.filter(fiscal_match=group).order_by("id").first()
@@ -165,7 +170,7 @@ _ERP = _Columns(
     day=_day_q("issue_date"),
     amount=lambda a: Q(erp_amount=a),
     amount_in=lambda s: Q(erp_amount__in=s),
-    folio=lambda f: Q(invoice__number=str(f)),
+    folio=lambda f: Q(invoice__number__regex=rf"^0*{f}$"),  # como int(number) en Python
     rut=lambda r: Q(counterparty_rut=r),  # el grupo guarda el RUT normalizado
     no_rut=Q(counterparty_rut=""),
     order_date="issue_date",
@@ -223,7 +228,12 @@ def _type_q(ref: Reference, cols: _Columns) -> Condition:
 def _amount_q(ref: Reference, cols: _Columns) -> Condition:
     if cols.kind == "tuu" and ref.free_payment_amounts:
         return cols.amount_in(ref.free_payment_amounts)
-    return False if ref.amount is None else cols.amount(ref.amount)
+    if ref.amount is None:
+        return False
+    if cols.kind == "erp" and ref.kind == "tuu":  # la venta respalda un cobro libre del documento
+        paid = free_payments(ref.amount).filter(invoice_id=OuterRef("invoice_id"))
+        return cols.amount(ref.amount) | Q(Exists(paid))
+    return cols.amount(ref.amount)
 
 
 def _day_score(ref: Reference, cols: _Columns) -> Expression:
@@ -277,6 +287,8 @@ def _erp_q(term: str) -> Q:
         Q(invoice__number=parsed.text)
         | Q(invoice__partner_name_snapshot__icontains=parsed.text)
         | Q(invoice__contact__name__icontains=parsed.text)
+        | Q(invoice__sale_order__customer__name__icontains=parsed.text)
+        | Q(invoice__purchase_order__supplier__name__icontains=parsed.text)
     )
     if parsed.rut:
         q |= Q(counterparty_rut=parsed.rut)
@@ -299,13 +311,14 @@ def _erp_search(g: _Group, q: str, ordering: Ordering) -> Search:
             invoice__in=Invoice.objects.filter(evaluable_invoice_q()),
         )
         .exclude(status__in=SETTLED)
-        .select_related("invoice__contact", "invoice__purchase_order__supplier")
+        .select_related(
+            "invoice__contact",
+            "invoice__sale_order__customer",
+            "invoice__purchase_order__supplier",
+        )
     )
     if g.own_sales:  # un documento admite varias ventas TUU: basta un cobro libre
-        free = TreasuryMovement.objects.filter(
-            invoice=OuterRef("invoice"), movement_type=TreasuryMovement.Type.INBOUND
-        ).exclude(Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
-        qs = qs.filter(Exists(free))
+        qs = qs.filter(Exists(free_payments().filter(invoice_id=OuterRef("invoice_id"))))
     if g.has_rcv:  # facturas y notas llevan un solo registro del SII; las boletas acumulan
         has_rcv = Exists(RCVDocument.objects.filter(fiscal_match=OuterRef("pk")))
         qs = qs.exclude(has_rcv & ~Q(dte_type__in=BOLETA_SII_CODES))
@@ -326,6 +339,7 @@ def _erp_items(g: _Group, rows: list[FiscalMatch]) -> list[dict]:
             rut=row.counterparty_rut,
             amount=row.erp_amount,
             folio=_number_folio(invoice.number),
+            free_payment_amounts=frozenset(Decimal(m.amount) for m in payments[invoice.pk]),
         )
         item = _item(g.ref, facts, invoice.pk, invoice.display_id, invoice.partner_display_name)
         if g.own_sales:
@@ -342,12 +356,8 @@ def _payments_by_invoice(
     if not sales or not invoice_ids:
         return out
     rows = (
-        TreasuryMovement.objects.filter(
-            invoice_id__in=invoice_ids,
-            movement_type=TreasuryMovement.Type.INBOUND,
-            amount__in={s.sale_amount for s in sales},
-        )
-        .exclude(Exists(TerminalSale.objects.filter(matched_movement=OuterRef("pk"))))
+        free_payments(*{s.sale_amount for s in sales})
+        .filter(invoice_id__in=invoice_ids)
         .select_related("payment_method_new")
         .order_by("created_at", "id")
     )
@@ -400,7 +410,7 @@ def _tuu_search(g: _Group, q: str, ordering: Ordering) -> Search:
         status=TerminalSale.Status.COMPLETED,
         fiscal_match__isnull=False,
         fiscal_match__invoice__isnull=True,
-    )
+    ).exclude(fiscal_match__status__in=SETTLED)
     qs = qs.filter(_tuu_q(q)) if q else qs.filter(transaction_at__gte=local_midnight(_since()))
     return Search(_ordered(qs, g.ref, _TUU, ordering), lambda rows: _tuu_items(g, rows))
 
@@ -465,13 +475,22 @@ def _rcv_search(g: _Group, q: str, ordering: Ordering) -> Search:
             fiscal_match__invoice__isnull=True,
             missing_since_import__isnull=True,
         )
-        .exclude(Exists(TerminalSale.objects.filter(fiscal_match=OuterRef("fiscal_match"))))
+        .exclude(fiscal_match__status__in=SETTLED)
+        .exclude(
+            Exists(
+                TerminalSale.objects.filter(
+                    fiscal_match=OuterRef("fiscal_match"), status=TerminalSale.Status.COMPLETED
+                )
+            )
+        )
     )
     qs = qs.filter(_rcv_q(q)) if q else qs.filter(issue_date__gte=_since())
     return Search(_ordered(qs, g.ref, _RCV, ordering), lambda rows: _rcv_items(g, rows))
 
 
 def _rcv_items(g: _Group, rows: list[RCVDocument]) -> list[dict]:
+    # Facturas y notas llevan un solo registro del SII: con uno ya unido, unir otro bloquea.
+    full = g.group.invoice_id is not None and g.has_rcv and g.group.dte_type not in BOLETA_SII_CODES
     items = []
     for doc in rows:
         facts = CandidateFacts(
@@ -485,7 +504,10 @@ def _rcv_items(g: _Group, rows: list[RCVDocument]) -> list[dict]:
         )
         label = f"{doc.dte_type} N° {doc.folio}"
         counterparty = doc.counterparty_name or normalize_rut(doc.counterparty_rut)
-        items.append(_item(g.ref, facts, doc.pk, label, counterparty))
+        item = _item(g.ref, facts, doc.pk, label, counterparty)
+        if full:
+            item["warnings"].append(MatchWarning(SECOND_RCV, LABELS[SECOND_RCV], True))
+        items.append(item)
     return items
 
 
