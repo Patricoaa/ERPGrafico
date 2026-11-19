@@ -129,3 +129,7 @@ La implementación de D4 ajustó tres puntos respecto del texto original, para q
 4. **Alias:** se retira `.table-compact` (sin consumidores). `.table-comfortable` se mantiene: lo usa `DataTable` (`density="comfortable"`) y Storybook.
 5. **Efecto en tablets:** los controles migrados heredan `min-height: var(--hit-role-min)` (48 px en táctil); antes los `h-7…h-9` literales quedaban exentos de la guarda. Es lo buscado, pero no se verificó visualmente.
 
+
+## Enmienda — `tailwindcss-animate` sustituido por `tw-animate-css` (2026-11-19)
+
+Con `--spacing: calc(0.25rem * var(--k, 1))` el plugin v3 `tailwindcss-animate` recibe del compat de Tailwind v4 un valor de espaciado que no es un número y lo itera como cadena: `slide-in-from-bottom-4` se compilaba a `--tw-enter-translate-y: (;` y rompía el parseo de `globals.css` (Turbopack: «Unexpected token CloseCurlyBracket»). Se reemplaza por `@import "tw-animate-css"` (ya era dependencia), que genera `calc(4 * var(--spacing))`. Los nombres de utilidad (`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-*-N`) no cambian. `tailwindcss-animate` queda sin uso en `package.json` (retirar en un cambio aparte).
