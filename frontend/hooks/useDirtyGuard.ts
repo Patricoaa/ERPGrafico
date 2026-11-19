@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useFormState, type FieldValues, type SubmitHandler, type UseFormReturn } from "react-hook-form"
 import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
@@ -106,3 +106,49 @@ export function useDirtyGuard<T extends FieldValues>({ form, open, name }: UseDi
         }
     }, [registerDirty, open, form, slot])
 }
+
+interface UseDraftDirtyGuardOptions {
+    /** Solo se registra mientras el drawer está abierto. */
+    open: boolean
+    /** Nombre del documento para el diálogo. */
+    name?: string
+    /** Hay cambios en espera. */
+    isDirty: boolean
+    /** El guardado está en curso: un cierre pedido ahora es el del guardado. */
+    isSubmitting?: boolean
+    /** Descarta los cambios en espera. */
+    discard: () => void
+    /** Guarda los cambios; `true` solo si quedaron guardados. */
+    save: () => Promise<boolean>
+}
+
+/**
+ * Variante de `useDirtyGuard` para borradores sin react-hook-form (p. ej. la ficha de cuadre): registra
+ * el estado del borrador en la misma guarda de GlobalModalProvider (cerrar la pestaña, salir de la
+ * página, abrir otro documento → Guardar / Descartar / Seguir editando). Sin provider no hace nada.
+ */
+export function useDraftDirtyGuard({ open, name, isDirty, isSubmitting = false, discard, save }: UseDraftDirtyGuardOptions): void {
+    const modals = useOptionalGlobalModalActions()
+    const latest = useRef({ name, isDirty, isSubmitting, discard, save })
+    useEffect(() => {
+        latest.current = { name, isDirty, isSubmitting, discard, save }
+    })
+    // Una entrada estable que lee el último estado: el registro no se rehace en cada render.
+    const [entry] = useState(() => ({
+        get name() { return latest.current.name },
+        isDirty: () => latest.current.isDirty && !latest.current.isSubmitting,
+        isSubmitting: () => latest.current.isSubmitting,
+        discard: () => {
+            // Limpia ya el espejo: otra guarda en la misma cadena no debe volver a preguntar.
+            latest.current = { ...latest.current, isDirty: false }
+            latest.current.discard()
+        },
+        save: () => latest.current.save(),
+    }))
+    const registerDirty = modals?.registerDirty
+    useEffect(() => {
+        if (!registerDirty || !open) return
+        return registerDirty(entry)
+    }, [registerDirty, open, entry])
+}
+
