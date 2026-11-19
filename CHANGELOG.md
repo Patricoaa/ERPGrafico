@@ -2,6 +2,146 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.124](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.123...v0.3.124) (2026-11-19)
+
+
+### 🚀 Maintenance
+
+* **seed:** el demo no crea OC/OV ni sus flujos derivados ([0744d6d](https://github.com/Patricoaa/ERPGrafico/commit/0744d6d269763ca8d7c16a37ba5bc0b4fa8a160f))
+
+
+### 🧪 Testing
+
+* **tax:** pruebas del motor de cuadre independientes de la hora ([e77a075](https://github.com/Patricoaa/ERPGrafico/commit/e77a0759b0ccd1bb3cd3cf842541c24080d1a0ee))
+
+
+### 💅 Styling
+
+* **tax:** espaciado del texto de última revisión del cuadre ([b9affdc](https://github.com/Patricoaa/ERPGrafico/commit/b9affdc258b2da4bca29ebfce97110184e35eaa1))
+* **tax:** ruff format del paquete fiscal_match ([d528301](https://github.com/Patricoaa/ERPGrafico/commit/d528301e7d832d8e6c5f0fcd4c1fea08086a0ec7))
+
+
+### 📚 Documentation
+
+* ADR-0140 emisión automática de boletas desde TUU y RCV, con su plan ([14bd647](https://github.com/Patricoaa/ERPGrafico/commit/14bd64755056a9cac3d7a63d7d943d5a8b1c3603))
+* ADR-0140 enmienda la emisión de boletas de ADR-0138 ([4c19ca2](https://github.com/Patricoaa/ERPGrafico/commit/4c19ca21039d2c608464a585ac8bfd35bbecdc68))
+* ADR-0140 notas de checkout, fechas locales y umbral ([7d04f9c](https://github.com/Patricoaa/ERPGrafico/commit/7d04f9c77ca0782c17acacb7a1dbd27fcc913e49))
+* ADR-0140 precisa la fecha del asiento y que TYPE_DIFF/AMBIGUOUS no se emiten; fiscal_mismatches incluye PENDING_ERP ([2763a76](https://github.com/Patricoaa/ERPGrafico/commit/2763a76fb0dd8410d11889cdf99e4e1792fe48d2))
+* ADR-0141 con la ficha de cuadre en columnas ([ca64430](https://github.com/Patricoaa/ERPGrafico/commit/ca644306f90b10637454a374bade116b98239511))
+* ADR-0141 cuadre unificado por grupo ([2e0ecc9](https://github.com/Patricoaa/ERPGrafico/commit/2e0ecc940dc3116c628a736272040caba46e5f6a))
+* diseño de la ficha de cuadre en columnas con guardado único ([3b6ba4c](https://github.com/Patricoaa/ERPGrafico/commit/3b6ba4c540bd372de6f12442fc64384ab6a9b9fe))
+* diseño y plan del cuadre unificado por grupo ([1cb34ec](https://github.com/Patricoaa/ERPGrafico/commit/1cb34eca6a004b334d3b6fb657e38bb577478c90))
+* el cuadre deja de llamarse «cuadre fiscal» y los contratos apuntan a /tax/fiscal-matches/ ([a2c31cc](https://github.com/Patricoaa/ERPGrafico/commit/a2c31ccc3b3c967520317d81639736fa43db846b))
+* plan de la ficha de cuadre en columnas ([222e196](https://github.com/Patricoaa/ERPGrafico/commit/222e1968908aeee06780f8b27f6ead0822fee259))
+* **tax:** ADR-0141 con las reglas de efectivo, anuladas y emisión de boletas ([9908b0a](https://github.com/Patricoaa/ERPGrafico/commit/9908b0af4213f79d1abc2f5d157a39aef04d4658))
+
+
+### ⚙️ Refactors
+
+* **accounting:** crear contactos del RCV sin asignar roles ([6fa507f](https://github.com/Patricoaa/ERPGrafico/commit/6fa507fa612e210520b84efbd55edcfb919f4e65))
+* elimina los vínculos de cuadre por pares ([0ebf65d](https://github.com/Patricoaa/ERPGrafico/commit/0ebf65d1cc1a45cd30ed9df4df3a798881627536))
+* fichas y listas enlazan al grupo de cuadre ([e07e924](https://github.com/Patricoaa/ERPGrafico/commit/e07e92475b5377ccf5c950e331cd47c521a70340))
+* listas RCV y TUU muestran el estado del grupo de cuadre ([57fcdc8](https://github.com/Patricoaa/ERPGrafico/commit/57fcdc8e589e5e80d34b5f5f4ffbe919cfe77d2c))
+* **tax,dte:** mejoras visuales y de funcionamiento en registro DTE y buscador ([106dac0](https://github.com/Patricoaa/ERPGrafico/commit/106dac0f6d619761b9fc6c101a8d8a6b49b89fc5))
+* **tax:** apply_changes es la única vía de escritura del cuadre ([91ac6e8](https://github.com/Patricoaa/ERPGrafico/commit/91ac6e899b5f8ea4b00d35e3b6dd9e52527eab47))
+* **tax:** códigos del cuadre en su módulo y regla de tipo SII compartida ([e8761f1](https://github.com/Patricoaa/ERPGrafico/commit/e8761f182b48e21971cad302e09054aea22a38b6))
+* **tax:** el cuadre por grupos deja de importar el esquema viejo ([e8912d1](https://github.com/Patricoaa/ERPGrafico/commit/e8912d1e809624f53b38eb5c829904edc3f00057))
+* **tax:** elimina el cuadre por pares, sus vistas, la tarea y sus tests ([db92480](https://github.com/Patricoaa/ERPGrafico/commit/db92480ffb7e90029dec83d677831e9681c417bf))
+* **tax:** FiscalMatchRun.latest_finished ignora las corridas fallidas ([4620d9d](https://github.com/Patricoaa/ERPGrafico/commit/4620d9d6e1f7561de49a15f3709fa010e8acbd5b))
+* **tax:** la alimentación desde el RCV trabaja sobre el grupo ([1ad046d](https://github.com/Patricoaa/ERPGrafico/commit/1ad046db2120fb3f4aea7ff121c3938e3171aa1d))
+* **tax:** quita del frontend la vista, la API y los tipos del cuadre por pares ([3e1daef](https://github.com/Patricoaa/ERPGrafico/commit/3e1daef15b2bd139db6c24e4fd0acd1810434513))
+* **tax:** retira el resumen mensual y los pendientes de folio del cuadre ([6030357](https://github.com/Patricoaa/ERPGrafico/commit/603035714607c7cf002493dfc2d3a9c9a1868be5))
+
+
+### 🐛 Bug Fixes
+
+* **accounting:** consolidate rcv summaries by dte_type to avoid false mismatch warnings ([769ca1e](https://github.com/Patricoaa/ERPGrafico/commit/769ca1ef1fc71361d05dda8f77ac157003504186))
+* **accounting:** corrige impirtAction en importaciones RCV ([0143f26](https://github.com/Patricoaa/ERPGrafico/commit/0143f26fe5c36fa401f737e70ce7033e97291a1e))
+* **billing:** el asiento del borrador toma la fecha fiscal al emitir y las ventas se fechan en hora local ([7256d6c](https://github.com/Patricoaa/ERPGrafico/commit/7256d6c26dd8aedc835e8a9a55fd9623f0785bca))
+* **billing:** el checkout reutiliza el documento existente aunque esté en borrador ([1211e40](https://github.com/Patricoaa/ERPGrafico/commit/1211e40670268cba560b8e6fee1be98f94c4a5c0))
+* **core:** fechas de negocio en hora local en lugar de UTC ([3fca390](https://github.com/Patricoaa/ERPGrafico/commit/3fca390268765bb520ce5c8952fc994b610e1aee))
+* el seguimiento del grupo cubre la alimentación y el control de dirección usa ToggleGroup ([6d5b308](https://github.com/Patricoaa/ERPGrafico/commit/6d5b30897df8054c9e082f43ceec90de18eef63e))
+* **entity-view:** traducir tags con dominio en los encabezados de agrupación ([1bc4ea4](https://github.com/Patricoaa/ERPGrafico/commit/1bc4ea4895b9734a54b42de43c248f923bb016d4))
+* **inventory:** usa el icono real de la categoría en CategorySelector ([cb0b643](https://github.com/Patricoaa/ERPGrafico/commit/cb0b643739d0d06a489338a0b0b128bd7a127783))
+* **tax:** «Ir al cuadre» muestra ventas y compras ([4e2bb6d](https://github.com/Patricoaa/ERPGrafico/commit/4e2bb6db4c0c2e226e8b4722b0ee743bbce4a0b2))
+* **tax:** aserción de unicidad de cobro compatible con SQLite ([e3fb32f](https://github.com/Patricoaa/ERPGrafico/commit/e3fb32fef0a4c3d410b92b2feed07ce93683ddf1))
+* **tax:** boletas RCV no duplican grupo tras el folio y usan días locales completos ([20beb47](https://github.com/Patricoaa/ERPGrafico/commit/20beb477551d72f4dea882ffaf5e6ea2ac3ad439))
+* **tax:** borra la entrada de Beat de la tarea retirada y unifica helpers ([41af0e9](https://github.com/Patricoaa/ERPGrafico/commit/41af0e90dfd7054e9ce54bc24056002a42c27641))
+* **tax:** búsqueda del cuadre sin grupos excluidos, sin N+1 y con la regla de cobro libre única ([25fba41](https://github.com/Patricoaa/ERPGrafico/commit/25fba418d6cfeb244082152c79b90615a41c7453))
+* **tax:** direccion del cuadre en minusculas y mutaciones de borrador sobre useGroupMutation ([cf17e41](https://github.com/Patricoaa/ERPGrafico/commit/cf17e41887ce25c6ca2ba60dc47078f37de54c2f))
+* **tax:** el 48 esperado ignora ventas reversadas y facturas anuladas ([80fac8f](https://github.com/Patricoaa/ERPGrafico/commit/80fac8f61f02a61387508999c51f9b3c9be96ee6))
+* **tax:** el candado del cuadre fiscal usa un token propio y la tarea tiene límite blando de 520 s ([b5ee9bb](https://github.com/Patricoaa/ERPGrafico/commit/b5ee9bb95231fa11dd0236056ec43c695286085a))
+* **tax:** el cobro que conserva una venta re-cuadrada no se entrega a otra ([93cbf3b](https://github.com/Patricoaa/ERPGrafico/commit/93cbf3b94a2654db450bcb581e776c6ae3c5b27a))
+* **tax:** el cuadre marca los grupos tocados en cada paso y une rangos de sincronización ([2e06146](https://github.com/Patricoaa/ERPGrafico/commit/2e06146636f239dc50a1de4fcf85c925e3269d8a))
+* **tax:** el efectivo solo espera venta TUU en boletas y la sincronización se lee por días de cobro ([6f274dc](https://github.com/Patricoaa/ERPGrafico/commit/6f274dcf804649471557195769ad3432b63f0a6d))
+* **tax:** ficha de cuadre — cabecera completa, pagos fuera de la tarjeta y cambios en espera visibles ([8df457d](https://github.com/Patricoaa/ERPGrafico/commit/8df457d4ae5b14d1f72b3b537d514e83ae436a21))
+* **tax:** la boleta ambigua se resuelve desde su grupo huérfano ([26c1cc3](https://github.com/Patricoaa/ERPGrafico/commit/26c1cc3f1456bdd16ce1b11c52b75ecfef3489f2))
+* **tax:** la búsqueda del cuadre ofrece todo pago libre compatible ([e805d50](https://github.com/Patricoaa/ERPGrafico/commit/e805d500196754d709a9a45873f17aabda4d5aae))
+* **tax:** la búsqueda ERP del cuadre admite acumular ventas TUU y RCV de boletas ([65c3623](https://github.com/Patricoaa/ERPGrafico/commit/65c362398e148e3279275c5c6d653223925c3fe4))
+* **tax:** la emisión automática solo toma vínculos MATCHED y re-lee el borrador bajo row-lock ([cb60eff](https://github.com/Patricoaa/ERPGrafico/commit/cb60eff9095e4afe0dcf6ea4d06f28fafb3cfc1e))
+* **tax:** la ficha de cuadre elige pagos según el monto y usa la guarda global ([0b60442](https://github.com/Patricoaa/ERPGrafico/commit/0b60442b0fd8e2d697351ed6d4dce451e1d4c22e))
+* **tax:** la ficha del cuadre distingue un grupo que ya no existe ([b2e61d8](https://github.com/Patricoaa/ERPGrafico/commit/b2e61d86d0eee11098e2170dbb87956cfa1eb60e))
+* **tax:** la ficha del cuadre sigue al grupo resultante y permite elegir el pago ([dc1b676](https://github.com/Patricoaa/ERPGrafico/commit/dc1b676c241a41a5156ef99e2677f9581248d088))
+* **tax:** la ruta anterior del cuadre conserva la query y «Ver cuadre» es type=button ([ec94236](https://github.com/Patricoaa/ERPGrafico/commit/ec9423697618ff2ec1d23e046b1ed9c156985068))
+* **tax:** la unión manual aplica las reglas del cuadre en el servidor ([6c3b601](https://github.com/Patricoaa/ERPGrafico/commit/6c3b601ba15bc23c22c8061dcbe9b372ade6fe7d))
+* **tax:** la unión manual del cuadre respeta el candado del motor ([4b38ca6](https://github.com/Patricoaa/ERPGrafico/commit/4b38ca60383b746bbdd916224c5a3756cfb40aff))
+* **tax:** la venta TUU en efectivo solo respalda boletas 39/41 ([9807839](https://github.com/Patricoaa/ERPGrafico/commit/980783910e459ccbb925ceb69ff52a21df372be7))
+* **tax:** las boletas 39/41 solo se emiten con el RCV cuadrado ([6e2378f](https://github.com/Patricoaa/ERPGrafico/commit/6e2378f1df57240222eea4b7fb41ac078acd9913))
+* **tax:** los errores de reglas del cuadre usan el sobre de errores del repositorio ([572bd4f](https://github.com/Patricoaa/ERPGrafico/commit/572bd4f922f876d9958d02908eff7f64ef6c3098))
+* **tax:** los filtros por defecto del cuadre se escriben en la URL ([9a1a6d2](https://github.com/Patricoaa/ERPGrafico/commit/9a1a6d2d3dab46adb32ca7627aa685abcde4a210))
+* **tax:** los invariantes del repo vuelven a pasar en el cuadre ([4a0a6f5](https://github.com/Patricoaa/ERPGrafico/commit/4a0a6f5bf193689774b85aaaec0dec962d70f2cd))
+* **tax:** nombres sin «fiscal» y test de unicidad de cobro más estricto ([df376da](https://github.com/Patricoaa/ERPGrafico/commit/df376daeba687006025ae18bcb56caebb3c87ce1))
+* **tax:** reintento manual de emisión y error legible en el cuadre ([101c1d5](https://github.com/Patricoaa/ERPGrafico/commit/101c1d5381ab4c96efa8edc434465475f042c2fa))
+* **tax:** resúmenes cuentan solo borradores de una orden de venta ([43e1857](https://github.com/Patricoaa/ERPGrafico/commit/43e18570abd87775f689f8710ef0f1f8ffad3eec))
+* **tax:** tests de ramas del cuadre y helper único del RUT de contraparte ([d187bc1](https://github.com/Patricoaa/ERPGrafico/commit/d187bc100baaf129ffbbb3dc309cb3a31f89d8b2))
+* **tax:** una corrida fallida del cuadre no avanza la marca de cambios ([f83b023](https://github.com/Patricoaa/ERPGrafico/commit/f83b023f97193f4f48d80ecce4f1ec6106791762))
+* **tax:** una venta TUU anulada deja de respaldar su cobro ([3b54106](https://github.com/Patricoaa/ERPGrafico/commit/3b5410651fdf16aa0493b12690c006ba176d4a03))
+* **treasury:** la sincronización TUU no se solapa y los intervalos cortos revisan solo ayer y hoy ([20feb59](https://github.com/Patricoaa/ERPGrafico/commit/20feb599f6d44e25773841681ccd699ad636522b))
+* **treasury:** la sincronización TUU recupera ejecuciones RUNNING colgadas tras 60 minutos ([ae27081](https://github.com/Patricoaa/ERPGrafico/commit/ae270811dbe71be2e98fff4e84f4c442e071aa40))
+* **treasury:** umbral de sincronización colgada según reintentos ([89c7247](https://github.com/Patricoaa/ERPGrafico/commit/89c7247019d84be6295f7de8aac4afefcdaf2399))
+
+
+### ✨ Features
+
+* **accounting:** crear contactos desde importaciones RCV ([368a187](https://github.com/Patricoaa/ERPGrafico/commit/368a18768a55f397fec3bd6973c7ea5b98d818a0))
+* **billing:** boletas y comprobantes sin folio nacen en borrador (ADR-0140 D1) ([bf13b1d](https://github.com/Patricoaa/ERPGrafico/commit/bf13b1d0c21405ffba4660c08add71c592f91bf5))
+* **hooks:** useDraftDirtyGuard, la guarda de cambios sin guardar para borradores sin formulario ([6b8912c](https://github.com/Patricoaa/ERPGrafico/commit/6b8912c81ce28bcc6309f460223fe74dd235105a))
+* **sales:** mostrar contacto relacionado de OT en desglose de productos de OV ([c583afb](https://github.com/Patricoaa/ERPGrafico/commit/c583afbca45f93a338c30839578a259129987a9e))
+* **tax,billing,sales,purchasing,notes:** registro de DTE asistido por cuadre fiscal y componentes unificados ([4e3af6b](https://github.com/Patricoaa/ERPGrafico/commit/4e3af6b438a21fe5f6ef69db2ce56f53491b214b))
+* **tax:** «Con advertencias» y el RUT distinto queda como advertencia del cuadre ([460dffe](https://github.com/Patricoaa/ERPGrafico/commit/460dffe36380fdcf095b4a084bdc2fe03507a3dd))
+* **tax:** API del cuadre por grupo con unión manual ([ce04db7](https://github.com/Patricoaa/ERPGrafico/commit/ce04db7761340788926efd6602ea2790de1ced56))
+* **tax:** boletas pendientes de folio con motivo y reintento espaciado ([cd5c99b](https://github.com/Patricoaa/ERPGrafico/commit/cd5c99b874c1ea8b7f9b8839a276d0f879361ae4))
+* **tax:** boletas RCV entran al grupo vía la venta TUU o el folio ([227ad12](https://github.com/Patricoaa/ERPGrafico/commit/227ad12b1635ca9f864bb4b0cf8f4dd9197ef6a8))
+* **tax:** borrador de cambios del cuadre ([23d31c6](https://github.com/Patricoaa/ERPGrafico/commit/23d31c6c7737ded0bf0348bf6e3ba0a63b70e760))
+* **tax:** búsqueda de candidatos del cuadre con puntaje ([d571ebf](https://github.com/Patricoaa/ERPGrafico/commit/d571ebf1c29650d627d259c15c6c82dc9953a4e3))
+* **tax:** cliente de búsqueda y guardado del cuadre ([2b5eea9](https://github.com/Patricoaa/ERPGrafico/commit/2b5eea93d791a1dacb53f981cd725f4f3c1fb15e))
+* **tax:** cliente del cuadre por grupo ([893b53c](https://github.com/Patricoaa/ERPGrafico/commit/893b53ca46cfea0ccfa66b1e0c66f9513d10720d))
+* **tax:** cruce TUU-RCV para facturas, corrección tuu_state en DTE 33 y creación de factura desde cuadre ([c4517d9](https://github.com/Patricoaa/ERPGrafico/commit/c4517d991a7776593d5339e320d1c17bf437a95e))
+* **tax:** cuadre fiscal automático cada 10 minutos (ADR-0140 D4) ([0a1c225](https://github.com/Patricoaa/ERPGrafico/commit/0a1c2252c4cbc6e62ae3201353a4c968a24a95cf))
+* **tax:** el cuadre crea un grupo por documento y por registro huérfano ([c098360](https://github.com/Patricoaa/ERPGrafico/commit/c09836090e2a0ad4329b9614b4e882dff29d6903))
+* **tax:** el cuadre incluye borradores sin folio y marca boletas sin documento ERP (ADR-0140 D2, D5) ([a8825dd](https://github.com/Patricoaa/ERPGrafico/commit/a8825ddbc9bc2b5d8bc65f1f28dc2fabed4a92fe))
+* **tax:** el cuadre une cada venta TUU con su pago, no con el total ([7bae7b7](https://github.com/Patricoaa/ERPGrafico/commit/7bae7b74eb26fd88422679f46d362d15e442d74a))
+* **tax:** emisión automática de boletas y comprobantes con folio RCV o id TUU (ADR-0140 D3) ([b0f1833](https://github.com/Patricoaa/ERPGrafico/commit/b0f1833da27ff4a2d279fd7b73f4c5a8cbe9f1ff))
+* **tax:** endpoint de guardado del cuadre y retiro de las uniones sueltas ([01e5923](https://github.com/Patricoaa/ERPGrafico/commit/01e5923fc7ce28607ec56d41f12de2ff21374503))
+* **tax:** estados de cada parte del grupo de cuadre ([3ed5c8e](https://github.com/Patricoaa/ERPGrafico/commit/3ed5c8e4636d75210082032ecb1947e024ea6223))
+* **tax:** estados de parte y de grupo del cuadre ([d7a431d](https://github.com/Patricoaa/ERPGrafico/commit/d7a431d7124bd28d9e76f786396290ee55cc9afa))
+* **tax:** facturas y notas del RCV entran al grupo por clave fiscal ([87f5561](https://github.com/Patricoaa/ERPGrafico/commit/87f55617c989b7035885600ad17f1270985ab922))
+* **tax:** ficha de cuadre en columnas con guardado único ([e073a90](https://github.com/Patricoaa/ERPGrafico/commit/e073a9010cfd1cbda9c31b89160af32180e694ea))
+* **tax:** ficha del grupo de cuadre con unión manual de los 3 registros ([98ff051](https://github.com/Patricoaa/ERPGrafico/commit/98ff05188e59e729e8910542baf447a7c13defd8))
+* **tax:** guardado atómico de los cambios del cuadre ([664032f](https://github.com/Patricoaa/ERPGrafico/commit/664032f9ef957f39953c93217825f74ede4738e5))
+* **tax:** la búsqueda de ventas TUU anuncia el RCV que viaja con ellas ([d5cff41](https://github.com/Patricoaa/ERPGrafico/commit/d5cff41cad35071a4f0d742f91dbafe96b145641))
+* **tax:** la emisión automática lee el grupo de cuadre ([467d79c](https://github.com/Patricoaa/ERPGrafico/commit/467d79c7294d171189f02b6c0e6fe2d7c3b36cdc))
+* **tax:** migra los vínculos de cuadre existentes a grupos ([51b7ce8](https://github.com/Patricoaa/ERPGrafico/commit/51b7ce8e29bd195b4a66333f6a02128c63cb8209))
+* **tax:** modelo FiscalMatch (grupo de cuadre) ([8266c2e](https://github.com/Patricoaa/ERPGrafico/commit/8266c2eda7ea27aa9ce8179d824dacd9c71bc5d6))
+* **tax:** motor único del cuadre cada 10 minutos, sin meses ([4aaccf7](https://github.com/Patricoaa/ERPGrafico/commit/4aaccf7b237bd8acf2d1c8b416c92e88a64524e2))
+* **tax:** página Cuadre por grupos sin meses ([362a6d7](https://github.com/Patricoaa/ERPGrafico/commit/362a6d7d72256485110480d3a505f5872c836f31))
+* **tax:** puntaje de coincidencia del cuadre ([abfb0d6](https://github.com/Patricoaa/ERPGrafico/commit/abfb0d60a027fcac9fa7f58c3dd671160c8cb9ec))
+* **tax:** resumen mensual con el 48 esperado de facturas con tarjeta ([8315188](https://github.com/Patricoaa/ERPGrafico/commit/8315188e2b4037e04fdd07bfe70accca821a4407))
+* **tax:** sección de boletas pendientes de folio en el cuadre ([caf55fd](https://github.com/Patricoaa/ERPGrafico/commit/caf55fdfb5a2f4a0f6000285c0291657baf5e49b))
+* **tax:** unifica el cuadre por dirección y concentra los filtros ([1a81606](https://github.com/Patricoaa/ERPGrafico/commit/1a816067f9108fa0f14230e4a922154bfac43afc))
+* **treasury:** sincronización TUU con intervalo en minutos, horas o días (ADR-0140 D6) ([624a142](https://github.com/Patricoaa/ERPGrafico/commit/624a1422e944fde367174a4a86779dab4a0363f9))
+* **treasury:** vista de importaciones de ventas TUU y «Importar ahora» en RCV ([17ee446](https://github.com/Patricoaa/ERPGrafico/commit/17ee4461ff2489909a5b712539c2745f335e0599))
+
 ### [0.3.123](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.122...v0.3.123) (2026-11-16)
 
 ### [0.3.122](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.121...v0.3.122) (2026-11-16)
