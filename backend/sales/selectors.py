@@ -75,6 +75,38 @@ class SaleOrderSelector:
         ])
 
     @staticmethod
+    def preload_invoices(orders) -> None:
+        """
+        Resuelve en 2 consultas fijas las facturas de cada orden (FK principal ∪ facturas
+        multi-orden por líneas, D1), igual que `InvoicingService.invoices_of` pero para toda
+        la página. `get_document_summary` lee el resultado en lugar de consultar por orden.
+        """
+        from billing.models import Invoice, InvoiceLine
+
+        orders = list(orders)
+        if not orders:
+            return
+        by_order: dict[int, dict[int, Invoice]] = {
+            order.pk: {inv.pk: inv for inv in order.invoices.all()} for order in orders
+        }
+        links = set(
+            InvoiceLine.objects.filter(sale_line__order__in=orders).values_list(
+                "invoice_id", "sale_line__order_id"
+            )
+        )
+        known = {pk for invoices in by_order.values() for pk in invoices}
+        missing = {invoice_id for invoice_id, _ in links} - known
+        fetched = {inv.pk: inv for inv in Invoice.objects.filter(pk__in=missing)} if missing else {}
+        for invoice_id, order_id in links:
+            inv = fetched.get(invoice_id) or next(
+                (invoices[invoice_id] for invoices in by_order.values() if invoice_id in invoices), None
+            )
+            if inv is not None:
+                by_order[order_id][invoice_id] = inv
+        for order in orders:
+            order._preloaded_invoices = sorted(by_order[order.pk].values(), key=lambda inv: inv.pk)
+
+    @staticmethod
     def get_analytics_queryset():
         """
         Orders for `SaleOrderAnalyticsService`: only what its loop reads (customer, lines → product,
@@ -165,7 +197,10 @@ class SaleOrderSelector:
 
         note_types = (Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO)
         summary: dict = {"invoices": [], "notes": [], "deliveries": []}
-        for inv in InvoicingService.invoices_of(order):
+        invoices = getattr(order, "_preloaded_invoices", None)
+        if invoices is None:
+            invoices = InvoicingService.invoices_of(order)
+        for inv in invoices:
             summary["notes" if inv.dte_type in note_types else "invoices"].append(invoice_summary(inv))
         for deliv in order.deliveries.all():
             if getattr(deliv, "related_note_id", None) is not None:

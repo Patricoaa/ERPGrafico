@@ -168,6 +168,7 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
     def list(self, request, *args, **kwargs):
         page = self.paginate_queryset(self.filter_queryset(self.get_queryset()))
         SaleOrderSelector.preload_reserved_stock(page)
+        SaleOrderSelector.preload_invoices(page)
         return self.get_paginated_response(self.get_serializer(page, many=True).data)
 
     def retrieve(self, request, *args, **kwargs):
