@@ -5,15 +5,17 @@
  *
  * Single wizard component that handles both Sales and Purchase note flows.
  *
+ * Surface: `Drawer` bottom/embedded a pantalla completa + `DrawerLayout`, el
+ * mismo patrón que `PurchaseCheckoutWizard`. El hook `useNoteWizardState` es la
+ * única fuente de verdad del paso (secuencia dinámica + validación).
+ *
  * Sales  (mode='sales'):
  *   Sequence: items → [manufacturing] → [logistics] → registration → payment
- *   Sidebar left:  NoteProcessSidebar  (steps + manufacturing/logistics flags)
- *   Sidebar right: NoteItemsSummary    (selected items + totals)
- *
  * Purchase (mode='purchase'):
  *   Sequence: type-selector → items → registration → review → payment
- *   Sidebar left:  PurchaseNoteSummarySidebar (totals + supplier info)
- *   Sidebar right: none
+ *
+ * Rail izquierdo: NoteProcessSidebar (redimensionable, colapsable, clicable).
+ * Rail derecho:   NoteItemsSummary   (ítems + totales, colapsable).
  *
  * The wizard itself owns NO API logic. Callers inject:
  *   fetchSource  — async function that returns NoteWizardSourceDocument
@@ -22,9 +24,9 @@
 
 import { showApiError } from '@/lib/errors'
 import { toast } from 'sonner'
+import { CheckCircle2, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 
-import { Chip, GenericWizard, SkeletonShell, type WizardStep } from "@/components/shared"
-import { Button } from "@/components/ui/button"
+import { CancelButton, Chip, Drawer, DrawerLayout, SkeletonShell, SubmitButton } from "@/components/shared"
 
 // Shared steps
 import {
@@ -33,20 +35,15 @@ import {
     NoteRegistrationStep,
     NoteReviewStep,
     NotePaymentStep,
-    NoteStep_Logistics,
+    NoteLogisticsStep,
 } from './steps'
 
-// Note-owned sidebars (moved here from billing / purchasing so notes has no
-// cross-feature imports).
 import { NoteProcessSidebar } from './sidebars/NoteProcessSidebar'
 import { NoteItemsSummary } from './sidebars/NoteItemsSummary'
-import { PurchaseNoteSummarySidebar } from './sidebars/PurchaseNoteSummarySidebar'
-
-// Shared shell
-import { FileText } from 'lucide-react'
 
 // Hook + types
 import { useNoteWizardState } from '../hooks/useNoteWizardState'
+import { useRailCollapsed } from '../hooks/useRailCollapsed'
 import { useServerDate } from '@/hooks/useServerDate'
 import type {
     NoteLineItem,
@@ -129,6 +126,8 @@ const STEP_LABELS: Record<string, string> = {
     payment: 'Pago',
 }
 
+const RAIL_COLLAPSED_STORAGE_KEY = 'erpgrafico.notes.railCollapsed'
+
 export function UnifiedNoteWizard({
     open,
     onOpenChange,
@@ -141,7 +140,6 @@ export function UnifiedNoteWizard({
     onSuccess,
     referenceLabel,
     supplierName,
-    warehouseName,
     orderReference,
     renderManufacturingStep,
 }: UnifiedNoteWizardProps) {
@@ -184,23 +182,16 @@ export function UnifiedNoteWizard({
         stepsSequence,
         currentStepIndex,
         totalStepsCount,
-        canGoBack,
+        isLastStep,
+        handleNext,
         handleBack,
+        goToStep,
         buildPayload,
         submitting,
         setSubmitting,
     } = state
 
-    // ---- Derived flags (for sidebars & step routing) ----
-    const requiresLogistics =
-        features.logistics &&
-        lines.some(l => l.createsStockMove || l.productType === 'MANUFACTURABLE' || l.hasBom)
-
-    const hasManufacturing =
-        features.manufacturing &&
-        noteType === 'NOTA_DEBITO' &&
-        lines.some(l => l.requiresAdvancedManufacturing || (l.productType === 'MANUFACTURABLE' && !l.hasBom))
-
+    // ---- Derived flags ----
     const isCreditNote = noteType === 'NOTA_CREDITO'
     const isExempt = sourceDocument?.isExempt ?? false
 
@@ -227,11 +218,11 @@ export function UnifiedNoteWizard({
     const renderStep = () => {
         if (initializing) {
             return (
-                <div className="h-[400px]">
-                    <SkeletonShell isLoading ariaLabel="Cargando wizard de nota">
-                        <div className="p-6" />
-                    </SkeletonShell>
-                </div>
+                <SkeletonShell isLoading ariaLabel="Cargando datos del documento" className="space-y-4">
+                    <div className="h-10 w-1/3 rounded-md bg-muted" />
+                    <div className="h-32 rounded-md bg-muted" />
+                    <div className="h-20 rounded-md bg-muted" />
+                </SkeletonShell>
             )
         }
 
@@ -274,18 +265,17 @@ export function UnifiedNoteWizard({
 
             case 'logistics':
                 return (
-                    <NoteStep_Logistics
+                    <NoteLogisticsStep
                         isCreditNote={isCreditNote}
-                        data={logisticsData as Record<string, unknown>}
+                        data={logisticsData}
                         setData={setLogisticsData}
-                        selectedItems={lines as unknown as Record<string, unknown>[]}
+                        selectedItems={lines}
                     />
                 )
 
             case 'registration':
                 return (
                     <NoteRegistrationStep
-                        isCreditNote={isCreditNote}
                         noteType={noteType}
                         data={registration}
                         setData={setRegistration}
@@ -325,106 +315,117 @@ export function UnifiedNoteWizard({
         }
     }
 
-    // ---- Next button disabled logic ----
+    // ---- Layout ----
+    const { collapsed: railCollapsed, toggle: toggleRail } = useRailCollapsed(RAIL_COLLAPSED_STORAGE_KEY)
+    const busy = submitting || initializing
+    const stepLabel = STEP_LABELS[currentStepId] ?? currentStepId
+    const counterpartyName = supplierName ?? sourceDocument?.counterpartyName
 
-    // The hook owns the step machine (dynamic sequence + per-step validation).
-    // GenericWizard mirrors the hook index through `initialStep`; its own
-    // navigation is replaced by a footer that delegates back to the hook, so
-    // there is exactly one source of truth.
-    const wizardSteps: WizardStep[] = stepsSequence.map((id, index) => ({
-        id,
-        title: STEP_LABELS[id] ?? id,
-        component: index === currentStepIndex - 1 ? renderStep() : null,
-        isValid: !(submitting || initializing),
-    }))
-
-    const leftSidebar = !initializing && (
-        mode === 'sales' ? (
-            <NoteProcessSidebar
-                currentStep={currentStepIndex}
-                totalSteps={totalStepsCount}
-                noteType={noteType}
-                requiresLogistics={requiresLogistics}
-                hasManufacturing={hasManufacturing}
-                itemsCount={lines.length}
-                dteNumber={registration.documentNumber || undefined}
-                paymentData={{
-                    method: String(payment.method ?? ''),
-                    amount: payment.amount,
-                }}
-            />
-        ) : (
-            <PurchaseNoteSummarySidebar
-                currentStep={currentStepIndex}
-                totalSteps={totalStepsCount}
-                orderNumber={orderReference}
-                referenceText={referenceLabel}
-                supplierName={supplierName}
-                warehouseName={warehouseName}
-                noteType={noteType}
-                totals={{ net: totalNet, tax: totalTax, total }}
-                isProcessing={submitting}
-            />
-        )
+    const content = (
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-6">
+            {renderStep()}
+        </div>
     )
 
-    const rightSidebar = mode === 'sales' && !initializing ? (
-        <NoteItemsSummary
-            items={lines}
-            totalNet={totalNet}
-            totalTax={totalTax}
-            total={total}
-            isExempt={isExempt}
-        />
-    ) : undefined
-
     return (
-        <GenericWizard
+        <Drawer
             open={open}
-            onOpenChange={(val) => !(submitting || initializing) && onOpenChange(val)}
-            onClose={() => onOpenChange(false)}
-            surface="drawer"
-            drawerSide="bottom"
-            drawerBoundary="embedded"
-            hideScrollArea
+            onOpenChange={(val) => { if (!busy) onOpenChange(val) }}
+            side="bottom"
+            boundary="embedded"
+            defaultSize="100%"
+            resizable={false}
+            fillContent
+            contentClassName="p-0 flex flex-col overflow-hidden bg-card"
             icon={FileText}
-            title={
-                <div className="flex items-center gap-3">
-                    <span>{title}</span>
+            title={title}
+            subtitle={
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="font-mono font-bold text-primary">
+                        {String(currentStepIndex).padStart(2, '0')} / {String(totalStepsCount).padStart(2, '0')}
+                    </span>
+                    <span>·</span>
+                    <span className="font-semibold text-foreground">{stepLabel}</span>
+                    {counterpartyName && (
+                        <>
+                            <span>·</span>
+                            <span className="truncate">{counterpartyName}</span>
+                        </>
+                    )}
+                </div>
+            }
+            headerActions={
+                <div className="flex items-center gap-2">
                     {isExempt && <Chip intent="success" size="sm">Documento Exento</Chip>}
-                    {referenceLabel && (
+                    {(referenceLabel ?? sourceDocument?.label ?? orderReference) && (
                         <Chip intent="neutral" size="sm" className="font-mono">
-                            Ref: {referenceLabel}
+                            Ref: {referenceLabel ?? sourceDocument?.label ?? orderReference}
                         </Chip>
                     )}
                 </div>
             }
-            subtitle={
-                noteType === 'NOTA_CREDITO'
-                    ? 'Asistente de emisión de Notas de Crédito, devoluciones y logística inversa.'
-                    : 'Asistente de emisión de Notas de Débito y cargos adicionales.'
+            footer={
+                <div className="flex items-center justify-between w-full">
+                    {currentStepIndex > 1 ? (
+                        <CancelButton onClick={handleBack} disabled={busy}>
+                            <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
+                            Atrás
+                        </CancelButton>
+                    ) : (
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={busy}>
+                            Cancelar
+                        </CancelButton>
+                    )}
+                    {isLastStep ? (
+                        <SubmitButton
+                            onClick={handleFinish}
+                            disabled={busy}
+                            loading={submitting}
+                            icon={CheckCircle2}
+                            className="bg-success hover:bg-success/90 text-success-foreground"
+                        >
+                            {isCreditNote ? 'Emitir Nota de Crédito' : 'Emitir Nota de Débito'}
+                        </SubmitButton>
+                    ) : (
+                        <SubmitButton onClick={handleNext} disabled={busy} icon={ChevronRight}>
+                            Siguiente
+                        </SubmitButton>
+                    )}
+                </div>
             }
-            steps={wizardSteps}
-            initialStep={Math.max(currentStepIndex - 1, 0)}
-            onComplete={handleFinish}
-            isCompleting={submitting}
-            isLoading={initializing}
-            completeButtonLabel="Finalizar Proceso"
-            footerLeft={
-                canGoBack ? (
-                    <Button
-                        variant="ghost"
-                        onClick={handleBack}
-                        disabled={submitting || initializing}
-                        className="h-control-touch px-6 font-medium"
-                    >
-                        Atrás
-                    </Button>
-                ) : undefined
-            }
-            leftSidebar={leftSidebar}
-            rightSidebar={rightSidebar}
-            contentClassName="p-10 custom-scrollbar"
-        />
+        >
+            <DrawerLayout
+                leftRail={!initializing && (
+                    <NoteProcessSidebar
+                        stepsSequence={stepsSequence}
+                        currentStep={currentStepIndex}
+                        noteType={noteType}
+                        itemsCount={lines.filter(l => l.noteQuantity > 0).length}
+                        dteNumber={registration.documentNumber || undefined}
+                        paymentData={payment.method ? { method: String(payment.method), amount: payment.amount } : undefined}
+                        collapsed={railCollapsed}
+                        onToggleCollapsed={toggleRail}
+                        onStepClick={goToStep}
+                    />
+                )}
+                leftRailRaw
+                leftRailWidth={railCollapsed ? "w-14" : "w-64"}
+                noPadding
+                rightRail={!initializing && (
+                    <NoteItemsSummary
+                        items={lines}
+                        totalNet={totalNet}
+                        totalTax={totalTax}
+                        total={total}
+                        isExempt={isExempt}
+                    />
+                )}
+                rightRailCollapsible
+                rightRailStorageKey="erpgrafico.drawer.sidebar.note_wizard"
+                rightRailWidth="w-80"
+            >
+                {content}
+            </DrawerLayout>
+        </Drawer>
     )
 }

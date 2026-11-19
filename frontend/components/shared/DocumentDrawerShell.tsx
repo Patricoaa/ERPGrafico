@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { getErrorMessage } from "@/lib/errors"
 import { cn } from "@/lib/utils"
+import { Banner } from "./Banner"
 import { Drawer } from "./Drawer"
 import { FormSplitLayout } from "./FormSplitLayout"
 import type { PanelBaseProps } from "./PanelHeader"
@@ -165,9 +166,9 @@ function DocumentSheetBody({
     }
     if (error) {
         return (
-            <p role="alert" className="p-6 text-sm text-destructive">
+            <Banner tone="destructive" className="mt-6">
                 No se pudo cargar el documento: {getErrorMessage(error)}
-            </p>
+            </Banner>
         )
     }
     return (

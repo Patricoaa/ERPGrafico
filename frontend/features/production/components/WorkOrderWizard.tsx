@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-import { AlertTriangle, Eye, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
+import { Eye, Factory, FileText, Plus, Keyboard, Printer, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 import {
@@ -18,6 +18,7 @@ import {
   DocumentActionsMenu,
   DrawerLayout,
   type DocumentActionItem,
+  Banner,
 } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { formatEntityDisplay, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
@@ -1115,14 +1116,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         description={
           <div className="space-y-3">
             <p>¿Está seguro de que desea <strong>ANULAR</strong> esta {getDomainConceptTitle('ot')}?</p>
-            <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
-              <AlertTriangle className="h-5 w-5 shrink-0" />
+            <Banner tone="warning" live="none">
               <ul className="list-disc pl-4 space-y-1">
                 <li>Se anularán las Órdenes de Compra vinculadas que aún no se hayan recibido.</li>
                 <li>Las aprobaciones pendientes de la OT se cancelarán.</li>
                 <li>La OT quedará en estado ANULADA y no podrá procesarse más.</li>
               </ul>
-            </div>
+            </Banner>
           </div>
         }
       />
@@ -1153,8 +1153,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         description={
           <div className="space-y-3">
             <p>La orden volverá a la etapa <strong>{STAGES.find((s) => s.id === pendingPrevStage)?.label}</strong> para que puedas modificarla.</p>
-            <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
-              <AlertTriangle className="h-5 w-5 shrink-0" />
+            <Banner tone="warning" live="none">
               <div className="space-y-1">
                 <p>Se reiniciará la aprobación de la etapa reabierta. Las aprobaciones de etapas posteriores se solicitarán de nuevo al volver a esas etapas.</p>
                 {order?.current_stage === 'RECTIFICATION' ? (
@@ -1163,7 +1162,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   <p>Los materiales, servicios y especificaciones se conservarán.</p>
                 )}
               </div>
-            </div>
+            </Banner>
           </div>
         }
       />

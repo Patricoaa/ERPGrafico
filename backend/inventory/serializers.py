@@ -474,6 +474,17 @@ class ProductListSerializer(serializers.ModelSerializer):
         prices = [variant.sale_price for variant in obj.variants.all() if variant.sale_price is not None]
         return min(prices) if prices else None
 
+    # Defaults que lee el wizard de compra desde el listado. `last_purchase_price` y
+    # `preferred_supplier_name` vienen anotados por `list_products` (sin joins ni N+1).
+    last_purchase_price = serializers.SerializerMethodField()
+    def get_last_purchase_price(self, obj):
+        value = getattr(obj, "annotated_last_purchase_price", None)
+        return float(value) if value is not None else 0.0
+
+    preferred_supplier_name = serializers.SerializerMethodField()
+    def get_preferred_supplier_name(self, obj):
+        return getattr(obj, "annotated_preferred_supplier_name", None)
+
     manufacturable_quantity = serializers.SerializerMethodField()
     def get_manufacturable_quantity(self, obj):
         qty = obj.get_manufacturable_quantity()
@@ -500,6 +511,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             "product_type", "image_thumbnail", "is_active", "is_favorite",
             "uom", "uom_name", "sale_uom", "sale_uom_name",
             "sale_price", "cost_price", "effective_price",
+            "purchase_uom", "receiving_warehouse", "preferred_supplier", "preferred_supplier_name",
+            "last_purchase_price",
             "current_stock", "qty_reserved", "qty_available",
             "track_inventory", "can_be_sold", "can_be_purchased",
             "has_variants", "variants_count", "variant_axis_label", "min_variant_price",

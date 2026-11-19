@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { BaseModal, CancelButton, Chip, FormFooter, StatCard } from '@/components/shared'
+import { Banner, BaseModal, CancelButton, Chip, FormFooter, StatCard } from '@/components/shared'
 import { CheckCircle2, Loader2, XCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { financeApi } from "../../api/financeApi"
@@ -242,9 +242,7 @@ export function AutoMatchProgressModal({
 
                 {/* Error message */}
                 {progress.status === 'FAILURE' && progress.error && (
-                    <div className="rounded-md bg-destructive/5 border border-destructive/20 p-3">
-                        <p className="text-xs font-medium text-destructive">{progress.error}</p>
-                    </div>
+                    <Banner tone="destructive">{progress.error}</Banner>
                 )}
 
                 {/* Pending message */}

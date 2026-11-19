@@ -1,8 +1,8 @@
 "use client"
 
 import type { ReactNode } from 'react'
-import {CheckCircle2, AlertTriangle, Copy} from 'lucide-react'
-import { SubmitButton, StepHeader, CardSurface } from "@/components/shared"
+import {CheckCircle2, Copy} from 'lucide-react'
+import { SubmitButton, StepHeader, CardSurface, Banner } from "@/components/shared"
 import type { WorkOrder } from '../../types'
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
@@ -81,22 +81,20 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating, headerActions 
       )}
 
       {discrepancy && (
-        <div className="w-full max-w-md p-4 rounded-md border border-warning/40 bg-warning/10 text-left flex gap-3">
-          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+        <Banner tone="warning" title="Discrepancia de cantidad" className="w-full max-w-md text-left">
           <div className="space-y-1">
-            <p className="text-sm font-bold text-warning">Discrepancia de cantidad</p>
-            <p className="text-xs text-muted-foreground">
+            <p>
               Se produjeron <span className="font-bold text-foreground">{discrepancy.produced}</span> unidades
               pero la {getDomainConceptTitle('ov').toLowerCase()} registra <span className="font-bold text-foreground">{discrepancy.sold}</span>.
               {' '}Delta: <span className={`font-bold ${discrepancy.delta > 0 ? 'text-success' : 'text-destructive'}`}>
                 {discrepancy.delta > 0 ? '+' : ''}{discrepancy.delta}
               </span>.
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p>
               El vendedor debe revisar el pedido para ajustar la cantidad o emitir un complemento.
             </p>
           </div>
-        </div>
+        </Banner>
       )}
 
       <div className="flex gap-3 flex-wrap justify-center">

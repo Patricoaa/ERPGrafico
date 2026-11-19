@@ -8,7 +8,7 @@ import {
 
 import { BOMDrawer } from "./BOMDrawer"
 
-import { ActionConfirmModal, LabeledSelect } from '@/components/shared'
+import { ActionConfirmModal, Banner, LabeledSelect } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { getDomainConceptCode, getDomainConceptLabel, getDomainConceptMessage, getDomainConceptTitle } from "@/lib/entity-registry"
 import { bomManagerActions, type BOMManagerActionsCtx } from './bomManagerActions'
@@ -292,9 +292,9 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         <p className="text-sm font-bold uppercase tracking-tight">
                             ¿Está seguro de que desea eliminar la LdM <strong>{bomToDelete?.name}</strong>?
                         </p>
-                        <p className="text-2xs font-medium text-muted-foreground bg-destructive/5 p-3 border-l-4 border-destructive">
+                        <Banner tone="destructive" live="none">
                             Esta acción no se puede deshacer y el producto perderá esta definición técnica de fabricación.
-                        </p>
+                        </Banner>
                     </div>
                 }
             />

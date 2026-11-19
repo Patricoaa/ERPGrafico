@@ -2,6 +2,7 @@
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Banner } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
 import { useBundles, useComposition, useSaveComposition } from "../hooks/useRbac"
 import type { AppGroup } from "@/types/entities"
@@ -105,18 +106,17 @@ export function RoleCompositionEditor({ group, onSuccess, readOnly }: RoleCompos
     return (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {group.is_system && (
-                <div data-testid="system-role-banner" className="rounded-md bg-muted p-3 text-sm text-muted-foreground border border-border">
+                <Banner data-testid="system-role-banner" tone="neutral">
                     Este rol del sistema no es editable.
-                </div>
+                </Banner>
             )}
 
             {activeSodWarnings.length > 0 && (
-                <div className="rounded-md bg-warning/10 border border-warning p-3 text-sm text-warning-foreground space-y-1">
-                    <p className="font-medium">Conflictos de separación de funciones:</p>
+                <Banner tone="warning" title="Conflictos de separación de funciones">
                     {activeSodWarnings.map(w => (
                         <p key={w.key}>• {w.label}</p>
                     ))}
-                </div>
+                </Banner>
             )}
 
             <div>

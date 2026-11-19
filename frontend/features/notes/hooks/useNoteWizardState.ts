@@ -10,11 +10,12 @@
  * keeps its own API dependency.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { PricingUtils } from '@/lib/pricing-utils'
 import type {
     NoteLineItem,
+    NoteLogisticsData,
     NoteType,
     NoteWizardFeatures,
     NoteWizardMode,
@@ -86,8 +87,8 @@ export interface NoteWizardState {
     setPayment: (p: PaymentData) => void
 
     // ---- Logistics (sales only) ----
-    logisticsData: Record<string, unknown> | null
-    setLogisticsData: (d: Record<string, unknown> | null) => void
+    logisticsData: NoteLogisticsData | null
+    setLogisticsData: (d: NoteLogisticsData | null) => void
 
     // ---- Period / folio validation ----
     isPeriodValid: boolean
@@ -105,6 +106,11 @@ export interface NoteWizardState {
 
     handleNext: () => Promise<void>
     handleBack: () => void
+    /**
+     * Salto desde el rail de pasos (índice 0-based). Retroceder es libre;
+     * avanzar solo se permite un paso y pasa por la validación del actual.
+     */
+    goToStep: (index0: number) => void
 
     /**
      * Builds the final payload and calls the caller's onSubmit.
@@ -198,7 +204,7 @@ export function useNoteWizardState({
     const [lines, setLines] = useState<NoteLineItem[]>([])
     const [registrationState, setRegistrationState] = useState<RegistrationData>(makeDefaultRegistration(serverDateString))
     const [paymentState, setPaymentState] = useState<PaymentData>(makeDefaultPayment())
-    const [logisticsData, setLogisticsData] = useState<Record<string, unknown> | null>(null)
+    const [logisticsData, setLogisticsData] = useState<NoteLogisticsData | null>(null)
 
     const [isPeriodValid, setIsPeriodValid] = useState(true)
 
@@ -207,25 +213,24 @@ export function useNoteWizardState({
     // the line selection changes — logistics / manufacturing steps appear / disappear).
     const [currentStepIndex0, setCurrentStepIndex0] = useState(0) // 0-based
 
-    // ---- Reset on open ----
+    // ---- Init (once per mount, on first open) ----
+    // El wizard puede vivir como pestaña montada que se oculta/muestra (`open` conmuta al cambiar de
+    // pestaña): reabrir no debe perder lo ingresado ni volver a pedir el documento origen.
+    const initialized = useRef(false)
+    const alive = useRef(true)
+
     useEffect(() => {
-        if (!open) return
+        alive.current = true
+        return () => { alive.current = false }
+    }, [])
 
-        let cancelled = false
-
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- React 18+ batches synchronous setState; this resets state on wizard open/reopen
-        setCurrentStepIndex0(0)
-        setNoteType(initialType)
-        setLines([])
-        setLogisticsData(null)
-        setRegistrationState(makeDefaultRegistration(serverDateString))
-        setPaymentState(makeDefaultPayment())
-        setIsPeriodValid(true)
-        setSourceDocument(null)
+    useEffect(() => {
+        if (!open || initialized.current) return
+        initialized.current = true
 
         fetchSource()
             .then((doc) => {
-                if (cancelled) return
+                if (!alive.current) return
                 setSourceDocument(doc)
                 const mappedLines = doc.lines.map(line => ({
                     ...line,
@@ -235,15 +240,13 @@ export function useNoteWizardState({
                 setPaymentState(makeDefaultPayment(doc.originalTotal))
             })
             .catch((err: unknown) => {
-                if (cancelled) return
+                if (!alive.current) return
                 console.error('[NoteWizard] fetchSource error:', err)
                 toast.error('Error al cargar los datos del documento original.')
             })
             .finally(() => {
-                if (!cancelled) setInitializing(false)
+                if (alive.current) setInitializing(false)
             })
-
-        return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open])
 
@@ -369,6 +372,15 @@ export function useNoteWizardState({
         setCurrentStepIndex0(prev => Math.max(prev - 1, 0))
     }, [])
 
+    const goToStep = useCallback((index0: number) => {
+        if (index0 === safeIndex) return
+        if (index0 < safeIndex) {
+            setCurrentStepIndex0(Math.max(index0, 0))
+        } else if (index0 === safeIndex + 1 && validateCurrentStep()) {
+            setCurrentStepIndex0(Math.min(index0, stepsSequence.length - 1))
+        }
+    }, [safeIndex, validateCurrentStep, stepsSequence.length])
+
     // ---- Build final payload ----
     const buildPayload = useCallback((): NoteWizardPayload => ({
         noteType,
@@ -417,6 +429,7 @@ export function useNoteWizardState({
 
         handleNext,
         handleBack,
+        goToStep,
         buildPayload,
 
         submitting,

@@ -19,6 +19,7 @@ import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
 
 import { type CheckoutLine } from "../../types"
+import { suggestedUnitCost } from "../../utils/suggestedUnitCost"
 import { type ProductMinimal, type UoM } from "@/types/entities"
 import { formatCurrency } from "@/lib/money"
 import { DataCell, MoneyDisplay, FormLineItemsTable, StepHeader } from '@/components/shared'
@@ -193,7 +194,7 @@ export function Step1_ProductSelection({
             form.setValue(`lines.${index}.product`, productId)
             form.setValue(`lines.${index}.name`, product.name)
             form.setValue(`lines.${index}.product_name`, product.name)
-            form.setValue(`lines.${index}.unit_cost`, parseFloat(String(product.last_purchase_price || 0)) || 0)
+            form.setValue(`lines.${index}.unit_cost`, suggestedUnitCost(product))
             const uomId = (product.purchase_uom || product.uom)?.toString() || ""
             form.setValue(`lines.${index}.uom`, uomId)
             form.setValue(`lines.${index}.uom_name`, uoms.find(u => u.id.toString() === uomId)?.name || "")

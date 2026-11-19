@@ -2,6 +2,9 @@
 export type {
     NoteType,
     NoteLineItem,
+    NoteDeliveryType,
+    NoteLogisticsData,
+    NoteLogisticsLineData,
     NoteWizardPayload,
     NoteWizardFeatures,
     NoteWizardMode,

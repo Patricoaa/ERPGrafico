@@ -1,11 +1,11 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { ActionConfirmModal, Chip, DataCell, EmptyState, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, Banner, Chip, DataCell, EmptyState, StatusBadge } from '@/components/shared'
 import { FormLineItemsTable } from "@/components/shared"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 
-import { Percent, Pencil, Info } from "lucide-react"
+import { Percent, Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -72,13 +72,10 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
 
             {/* Variant notice — rules are managed at template level */}
             {initialData && isVariant && (
-                <div className="flex items-start gap-3 p-4 rounded-md bg-info/5 border border-info/20 text-sm">
-                    <Info className="h-4 w-4 text-info mt-0.5 shrink-0" />
-                    <p className="text-info/80 font-medium text-xs leading-relaxed">
-                        Las reglas de precios se gestionan en el <strong>producto plantilla</strong>, no en variantes individuales.
-                        El precio efectivo de esta variante depende de su modo de precio (Hereda / Propio / Sobrecargo).
-                    </p>
-                </div>
+                <Banner tone="info">
+                    Las reglas de precios se gestionan en el <strong>producto plantilla</strong>, no en variantes individuales.
+                    El precio efectivo de esta variante depende de su modo de precio (Hereda / Propio / Sobrecargo).
+                </Banner>
             )}
 
             {initialData && !isDynamicPricing && (

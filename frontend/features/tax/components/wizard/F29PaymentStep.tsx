@@ -3,11 +3,11 @@
 import { useRef, useState } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { AlertCircle, Calendar, CheckCircle2, CreditCard, History, Plus } from "lucide-react"
+import { Calendar, CreditCard, History, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, Chip } from "@/components/shared"
+import { ActionConfirmModal, Banner, Chip } from "@/components/shared"
 import { PaymentModal } from "@/features/treasury"
 import { useServerDate } from "@/hooks/useServerDate"
 import { formatCurrency } from "@/lib/money"
@@ -85,21 +85,19 @@ export function F29PaymentStep({ declaration, onChanged }: F29PaymentStepProps) 
             </div>
 
             {isFullyPaid ? (
-                <div className="flex items-center gap-3 p-4 rounded-md bg-success/5 text-success border border-success/20">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <p className="text-sm font-medium">Esta declaración ha sido pagada en su totalidad.</p>
-                </div>
+                <Banner tone="success">Esta declaración ha sido pagada en su totalidad.</Banner>
             ) : (
-                <div className="flex items-center justify-between gap-3 p-4 rounded-md bg-primary/5 border border-primary/10">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle className="h-5 w-5 text-primary" />
-                        <p className="text-sm font-medium">Hay un saldo pendiente por pagar.</p>
-                    </div>
-                    <Button onClick={() => setIsRegisteringPayment(true)} className="bg-success hover:bg-success/90 text-success-foreground">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Registrar Abono
-                    </Button>
-                </div>
+                <Banner
+                    tone="info"
+                    actions={
+                        <Button onClick={() => setIsRegisteringPayment(true)} className="bg-success hover:bg-success/90 text-success-foreground">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Registrar Abono
+                        </Button>
+                    }
+                >
+                    Hay un saldo pendiente por pagar.
+                </Banner>
             )}
 
             <F29PaymentHistory payments={declaration.payments} onAnnul={setPaymentToAnnul} />

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
-import { ArrowLeftRight, Calculator, type LucideIcon } from "lucide-react"
+import { ArrowLeftRight, Calculator, FilePlus2, type LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata, type EntityLabel } from "@/lib/entity-registry"
@@ -41,16 +41,26 @@ export interface PanelTabState {
     display?: string
 }
 
-/** Pestaña efímera del espacio de trabajo: un documento (`entity`), una herramienta (`tool`), un drawer de la página (`panel`) o una mesa de conciliación (`workbench`). */
+/** Nota de crédito/débito en emisión sobre una factura (pestaña propia, ver `openNoteWizard`). */
+export interface NoteTabState {
+    invoiceId: number
+    noteType: "NOTA_CREDITO" | "NOTA_DEBITO"
+    /** Texto de la pestaña (p. ej. el folio de la factura origen). */
+    display?: string
+}
+
+/** Pestaña efímera del espacio de trabajo: un documento (`entity`), una herramienta (`tool`), un drawer de la página (`panel`), una mesa de conciliación (`workbench`) o una nota en emisión (`note`). */
 type WorkspaceTab =
     | ({ type: "entity" } & OpenEntityState)
     | { type: "tool"; tool: ToolTabId }
     | ({ type: "panel" } & PanelTabState)
     | { type: "workbench"; statementId: number; display?: string }
+    | ({ type: "note" } & NoteTabState)
 
 const entityKey = (label: string, id: number) => `${label}:${id}`
 const toolKey = (tool: ToolTabId) => `tool:${tool}`
 const workbenchKey = (statementId: number) => `workbench:${statementId}`
+const noteKey = ({ invoiceId, noteType }: Pick<NoteTabState, "invoiceId" | "noteType">) => `note:${noteType}:${invoiceId}`
 /** Clave de la pestaña de un drawer de la página (la usa `useEntityPanelTab` para saber si está activa). */
 export const panelTabKey = ({ label, id, variant }: Pick<PanelTabState, "label" | "id" | "variant">) => `panel:${label}${variant ? `:${variant}` : ""}:${id ?? "new"}`
 const panelKey = panelTabKey
@@ -58,6 +68,7 @@ const tabKey = (tab: WorkspaceTab) => {
     if (tab.type === "entity") return entityKey(tab.label, tab.id)
     if (tab.type === "tool") return toolKey(tab.tool)
     if (tab.type === "workbench") return workbenchKey(tab.statementId)
+    if (tab.type === "note") return noteKey(tab)
     return panelKey(tab)
 }
 
@@ -105,6 +116,12 @@ class LiveMirror {
     }
 }
 
+/** Wizard de NC/ND (pestaña propia, ver `openNoteWizard`). */
+const NoteWizardTab = dynamic(
+    () => import("@/features/orders").then(m => ({ default: m.NoteWizardTab })),
+    { ssr: false },
+)
+
 /** Mesa de conciliación de una cartola (pestaña propia, ver `openWorkbench`). */
 const ReconciliationWorkbenchTab = dynamic(
     () => import("@/features/finance").then(m => ({ default: m.ReconciliationWorkbenchTab })),
@@ -124,6 +141,12 @@ function entityTabLabel(entity: OpenEntityState): string {
 }
 
 function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | undefined): WorkspaceTabView {
+    if (tab.type === "note") {
+        const isCredit = tab.noteType === "NOTA_CREDITO"
+        const title = `${isCredit ? "NC" : "ND"}${tab.display ? ` · ${tab.display}` : ""}`
+        const kind = isCredit ? "Nota de crédito" : "Nota de débito"
+        return { key: noteKey(tab), kind: "tool", title, description: `Emitir ${kind.toLowerCase()}${tab.display ? ` sobre ${tab.display}` : ""}`, icon: FilePlus2, active }
+    }
     if (tab.type === "workbench") {
         const title = tab.display ?? "Mesa de conciliación"
         return { key: workbenchKey(tab.statementId), kind: "tool", title, description: `Mesa de conciliación ${title}`, icon: ArrowLeftRight, active }
@@ -170,6 +193,11 @@ interface GlobalModalActionsContextType {
      * la existente). Es la vía canónica: nunca un drawer ni una página nueva.
      */
     openWorkbench: (statementId: number, display?: string) => void
+    /**
+     * Abre el wizard de nota de crédito/débito sobre una factura como pestaña propia del espacio de
+     * trabajo (o activa la existente). La pestaña conserva lo ingresado al cambiar de pestaña.
+     */
+    openNoteWizard: (note: NoteTabState) => void
     /**
      * Registra un drawer montado por la página como pestaña activa (`useEntityPanelTab`). `onClose` se
      * invoca cuando el usuario cierra la pestaña (×, Delete): la página debe cerrar su drawer. Devuelve
@@ -471,6 +499,11 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         runGuarded(() => addTab({ type: "workbench", statementId, display }))
     }, [runGuarded, live, addTab])
 
+    const openNoteWizard = useCallback((note: NoteTabState) => {
+        if (live.activeKey === noteKey(note)) return
+        runGuarded(() => addTab({ type: "note", ...note }))
+    }, [runGuarded, live, addTab])
+
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
             const existingIndex = prev.findIndex(s => s.id === id)
@@ -551,6 +584,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         closeEntityByRef,
         openTool,
         openWorkbench,
+        openNoteWizard,
         registerPanelTab,
         activateTab,
         showPage,
@@ -561,7 +595,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, openWorkbench, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
         () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),
@@ -642,6 +676,9 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     // Las herramientas viven mientras su pestaña exista: así conservan su estado al cambiar de pestaña.
     const hasCalculatorTab = tabs.some(tab => tab.type === "tool" && tab.tool === "cost-calculator")
 
+    // Igual que las herramientas: la nota en emisión vive mientras su pestaña exista (conserva lo ingresado).
+    const noteTabs = tabs.filter((tab): tab is Extract<WorkspaceTab, { type: "note" }> => tab.type === "note")
+
     return (
         <GlobalModalActionsContext.Provider value={actionsValue}>
         <GlobalModalStateContext.Provider value={stateValue}>
@@ -650,6 +687,18 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             <ErrorBoundary variant="inline">
                 <PersistentPanelContext.Provider value={true}>
                     {renderActiveTab()}
+                    {noteTabs.map(note => {
+                        const key = noteKey(note)
+                        return (
+                            <NoteWizardTab
+                                key={key}
+                                invoiceId={note.invoiceId}
+                                noteType={note.noteType}
+                                open={activeKey === key}
+                                onOpenChange={handleDrawerOpenChange}
+                            />
+                        )
+                    })}
                     {hasCalculatorTab && (
                         <CostCalculatorDrawer
                             open={activeKey === toolKey("cost-calculator")}

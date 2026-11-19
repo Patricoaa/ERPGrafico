@@ -55,11 +55,35 @@ export interface NoteLineItem {
     /** Derived: whether this line triggers a stock move */
     createsStockMove?: boolean
 
+    /** Unidad de medida elegida para el movimiento (logística) */
+    uomId?: number
+
     /** Reason for the note (used in sales flow) */
     reason?: string
 
     /** Manufacturing configuration attached per-line (sales flow) */
     manufacturingData?: Record<string, unknown>
+}
+
+// ---------------------------------------------------------------------------
+// Logistics (contrato snake_case del backend: `logistics_data`)
+// ---------------------------------------------------------------------------
+
+export type NoteDeliveryType = 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL'
+
+export interface NoteLogisticsLineData {
+    line_id: number | string
+    product_id: number | string
+    quantity: number
+    uom_id?: number
+}
+
+export interface NoteLogisticsData {
+    warehouse_id: string
+    date: string
+    delivery_type: NoteDeliveryType
+    line_data: NoteLogisticsLineData[]
+    notes: string
 }
 
 // ---------------------------------------------------------------------------
@@ -94,7 +118,7 @@ export interface NoteWizardPayload {
     payment: PaymentData
 
     /** Logistics data — only present for sales notes with stock moves */
-    logistics?: Record<string, unknown>
+    logistics?: NoteLogisticsData
 }
 
 // ---------------------------------------------------------------------------

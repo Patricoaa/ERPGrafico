@@ -1,6 +1,6 @@
 "use client"
 
-import { Drawer, SkeletonShell } from "@/components/shared"
+import { Banner, Drawer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { type ProductInitialData } from "@/types/forms"
 import { useProduct } from "../hooks/useProducts"
@@ -33,7 +33,7 @@ export function ProductDrawerById({ id, open, onOpenChange, onSuccess }: Product
     return (
         <Drawer open={open} onOpenChange={onOpenChange} side="left" title="Producto" defaultSize={formDrawerWidth("master", true)} mode="view">
             {isError
-                ? <p role="alert" className="p-6 text-sm text-destructive">No se pudo cargar el producto.</p>
+                ? <Banner tone="destructive" bleed="none" className="mt-6">No se pudo cargar el producto.</Banner>
                 : <SkeletonShell isLoading={isLoading} ariaLabel="Cargando producto" className="h-40 m-6 rounded-md bg-muted" />}
         </Drawer>
     )

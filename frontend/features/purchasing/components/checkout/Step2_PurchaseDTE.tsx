@@ -2,7 +2,7 @@
 
 import { useMemo, useEffect } from "react"
 import { useBillingSettingsQuery } from "@/features/settings"
-import { StepHeader, DteRegistrationPanel, DteTypeSelector, DteEmitLaterSwitch } from "@/components/shared"
+import { Banner, StepHeader, DteRegistrationPanel, DteTypeSelector, DteEmitLaterSwitch } from "@/components/shared"
 import { FileText } from "lucide-react"
 import { DteClass, FiscalMatchContext, getDteSiiCode, isDteClassAutoIssued } from "@/lib/dte"
 import { type DTEData } from "../../types"
@@ -54,6 +54,12 @@ export function Step2_PurchaseDTE({
 
     return (
         <div className="space-y-6">
+            {dteData.isPending && (
+                <Banner tone="warning" bleed="lg">
+                    Ha seleccionado diferir la recepción del documento. El registro del folio y cuadre queda pospuesto.
+                </Banner>
+            )}
+
             <StepHeader
                 title="Registro de Documento"
                 description="Asigne el documento pendiente desde el RCV del SII o regístrelo manualmente con su respaldo."

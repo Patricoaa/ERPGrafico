@@ -9,16 +9,16 @@
  */
 
 import { useMemo } from "react"
-import { DteRegistrationPanel } from "@/components/shared"
-import { DteClass, DteDirection, FiscalMatchContext, getDteSiiCode } from "@/lib/dte"
+import { Banner, DteEmitLaterSwitch, DteRegistrationPanel } from "@/components/shared"
+import { type DteClass, type DteDirection, type FiscalMatchContext, getDteSiiCode, isDteClassAutoIssued } from "@/lib/dte"
 import type { NoteType, RegistrationData } from "@/features/notes"
 
 interface NoteStep_RegistrationProps {
-    isCreditNote: boolean
     noteType: NoteType
     data: RegistrationData
     setData: (data: RegistrationData | ((prev: RegistrationData) => RegistrationData)) => void
     onPeriodValidityChange?: (isValid: boolean) => void
+    onFolioValidityChange?: (isValid: boolean) => void
     direction?: DteDirection
     counterpartyRut?: string | null
     total?: number
@@ -26,11 +26,11 @@ interface NoteStep_RegistrationProps {
 }
 
 export function NoteRegistrationStep({
-    isCreditNote,
     noteType,
     data,
     setData,
     onPeriodValidityChange,
+    onFolioValidityChange,
     direction = "sale",
     counterpartyRut,
     total,
@@ -48,6 +48,32 @@ export function NoteRegistrationStep({
 
     return (
         <div className="w-full h-full flex flex-col space-y-6">
+            {data.isPending && (
+                <Banner tone="warning" bleed="lg">
+                    Ha seleccionado diferir la {direction === "sale" ? "emisión" : "recepción"} del documento. El registro del folio y cuadre queda pospuesto.
+                </Banner>
+            )}
+
+            {!isDteClassAutoIssued(noteType as DteClass, direction) && (
+                <DteEmitLaterSwitch
+                    isPending={!!data.isPending}
+                    onChange={(pending) => {
+                        setData((prev) => ({
+                            ...prev,
+                            isPending: pending,
+                            documentNumber: pending ? "" : prev.documentNumber,
+                            attachment: pending ? null : prev.attachment,
+                            pickedFiscalMatchId: null,
+                        }))
+                        if (pending) {
+                            onFolioValidityChange?.(true)
+                            onPeriodValidityChange?.(true)
+                        }
+                    }}
+                    direction={direction}
+                />
+            )}
+
             <DteRegistrationPanel
                 data={{
                     dteClass: noteType as DteClass,
@@ -70,6 +96,7 @@ export function NoteRegistrationStep({
                 direction={direction}
                 fiscalMatchContext={fiscalContext}
                 invoiceId={invoiceId}
+                onFolioValidityChange={onFolioValidityChange}
                 onPeriodValidityChange={onPeriodValidityChange}
             />
         </div>

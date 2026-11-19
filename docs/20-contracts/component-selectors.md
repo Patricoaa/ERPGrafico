@@ -409,7 +409,7 @@ One anatomy for every context (POS, calculator, production); only the price and 
 
 **⚠️ VirtuosoGrid constraint:** The parent container **must** have a defined height (`flex-1 min-h-0` or fixed px). A zero-height container renders nothing.
 
-> **Variante ligera (`ChoiceCard variant="light"`, ADR-0096):** para wizards/selectores sin media strip — lead 32×32 | título+descripción | rail derecho w-9 con `SelectionCheck`. ~60px alto. Usada en `Step2_PurchaseDTE`, `Step4_Receipt`, `NoteStep_Logistics`, `ContactDrawer`, `ProductManufacturingTab`, `PartnerWithdrawalWizard`, `PartnerContributionWizard`.
+> **Variante ligera (`ChoiceCard variant="light"`, ADR-0096):** para wizards/selectores sin media strip — lead 32×32 | título+descripción | rail derecho w-9 con `SelectionCheck`. ~60px alto. Usada en `Step2_PurchaseDTE`, `Step4_Receipt`, `NoteLogisticsStep`, `ContactDrawer`, `ProductManufacturingTab`, `PartnerWithdrawalWizard`, `PartnerContributionWizard`.
 
 ## CategorySelector 🟢
 

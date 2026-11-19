@@ -229,7 +229,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                         />
                     )}
                 />
-                {rootError && <p role="alert" className="text-xs text-destructive">{rootError}</p>}
+                {rootError && <Banner tone="destructive" live="alert">{rootError}</Banner>}
 
                 {isPartial && (
                     <Banner tone="warning">

@@ -49,7 +49,7 @@ const ANIMATE_ALLOWLIST = [
     "features/accounting/components/closures/NewFiscalYearWizard.tsx",
     "features/auth/components/LoginForm.tsx",
     "features/notes/components/sidebars/NoteItemsSummary.tsx",
-    "features/notes/components/steps/NoteStep_Logistics.tsx",
+    "features/notes/components/steps/NoteLogisticsStep.tsx",
     "features/credits/components/CreditAssignmentModal.tsx",
     "features/finance/bank-reconciliation/components/ImportPreviewStep.tsx",
     "features/finance/bank-reconciliation/components/ReconciliationIntelligencePanel.tsx",

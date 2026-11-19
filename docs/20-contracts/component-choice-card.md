@@ -139,7 +139,7 @@ Para wizards y pasos de checkout sin media strip real (icono + título + 1–2 l
 
 **Shell**: mismo `Button` + `selectableCardClass` con override `h-auto flex-row items-stretch`. El riel (`SelectionRail`) muestra un círculo vacío decorativo (`○`, `border-foreground/25`, `group-hover:border-foreground/50`) cuando `!selected`; al elegir (`selected`) aparece el `SelectionCheck` relleno (`●`, check blanco en fondo primario). La cinta CMYK superior se mantiene.
 
-**Comportamiento del icono en `disabled`**: el color se fuerza a `text-muted-foreground/40` aunque el caller pase `iconClassName="text-primary"` (caso `NoteStep_Logistics`).
+**Comportamiento del icono en `disabled`**: el color se fuerza a `text-muted-foreground/40` aunque el caller pase `iconClassName="text-primary"` (caso `NoteLogisticsStep`).
 
 **Sitios migrados** (14 instancias):
 
@@ -147,7 +147,7 @@ Para wizards y pasos de checkout sin media strip real (icono + título + 1–2 l
 |---|---|---|
 | `Step2_PurchaseDTE` | Tipo de documento | `1 / md:3` |
 | `Step4_Receipt` | Tipo de recepción | `1 / md:3` |
-| `NoteStep_Logistics` | Opciones de procesamiento | `1 / md:3` (1 disabled) |
+| `NoteLogisticsStep` | Opciones de procesamiento | `1 / md:3` (1 disabled) |
 | `ContactDrawer` | Preferencias comerciales | `2` |
 | `ProductManufacturingTab` | Modo de producción | `3` |
 | `PartnerWithdrawalWizard` | Tipo de recurso | `2` |

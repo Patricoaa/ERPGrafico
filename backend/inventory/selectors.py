@@ -109,11 +109,17 @@ def list_products(*, user, params: dict) -> QuerySet:
         .order_by("-order__date", "-id")
         .values("unit_cost")[:1]
     )
+    # Nombre del proveedor preferido por subquery: un JOIN a contacts encarece el plan del listado.
+    from contacts.models import Contact
+
     queryset = queryset.annotate(
         annotated_last_purchase_price=Subquery(
             last_purchase_qs,
             output_field=DecimalField(max_digits=14, decimal_places=4),
-        )
+        ),
+        annotated_preferred_supplier_name=Subquery(
+            Contact.objects.filter(pk=OuterRef("preferred_supplier_id")).values("name")[:1]
+        ),
     )
 
     if user and user.is_authenticated:

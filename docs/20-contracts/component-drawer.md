@@ -84,10 +84,10 @@ Usar el helper `formDrawerWidth(complexity, hasSidebar)` de `@/lib/form-widths`.
 
 **Excepción:** `defaultSize="100%"` está autorizado para wizards `side="bottom"` con `boundary="embedded"` que ocupan el viewport completo (ej: `WorkOrderWizard`, `UnifiedNoteWizard`, `PurchaseCheckoutWizard`).
 
-> Los wizards de notas y compras construyen este drawer a través de
-> `GenericWizard` con `surface="drawer"` (`drawerSide="bottom"`,
-> `drawerBoundary="embedded"`); ver **[component-modal.md](./component-modal.md)**
-> para la API completa de `GenericWizard` y los slots de sidebar.
+> Los wizards de notas (`UnifiedNoteWizard`) y compras (`PurchaseCheckoutWizard`) usan `Drawer` + `DrawerLayout`
+> con rail de pasos (`DrawerResizableRail` + `WizardStepsSidebar`) y rail de resumen colapsable; ver
+> [ADR-0143](../10-architecture/adr/0143-wizard-de-notas-sobre-drawer-layout.md). `GenericWizard`
+> (`surface="drawer"`) se reserva para wizards sin rail de proceso; API en **[component-modal.md](./component-modal.md)**.
 
 | `FormComplexity` | Campos | Creación | Edición (con sidebar) |
 |:----------------:|:------:|:--------:|:---------------------:|

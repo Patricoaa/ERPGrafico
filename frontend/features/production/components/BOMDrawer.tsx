@@ -23,7 +23,7 @@ import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import type { Product } from "@/types/entities"
-import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, FormSplitLayout, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
+import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, FormSplitLayout, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell, Banner } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatQuantity } from "@/lib/money"
@@ -771,14 +771,14 @@ export function BOMDrawer({
                                     </FormLineItemsTable>
 
                                     {form.formState.errors.lines && (
-                                        <div className="rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive mt-2">
+                                        <Banner tone="destructive" className="mt-2">
                                             {(() => {
                                                 const linesRoot = (form.formState.errors.lines as unknown as { root?: { message?: string } }).root
                                                 return linesRoot?.message
                                                     ? linesRoot.message
                                                     : `Hay errores en ${Object.keys(form.formState.errors.lines).length} componente(s). Verifique los campos en rojo.`
                                             })()}
-                                        </div>
+                                        </Banner>
                                     )}
 
                                     {/* ═══════════════════════════════════════════════════════════════ */}

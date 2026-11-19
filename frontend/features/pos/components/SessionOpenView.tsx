@@ -4,11 +4,11 @@ import Link from "next/link"
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, LogOut, Monitor, RefreshCw, Store, Unlock, Users } from "lucide-react"
+import { LogOut, Monitor, RefreshCw, Store, Unlock, Users } from "lucide-react"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import { usePOSJustifyOptions } from "../hooks/usePOSSessions"
-import { ChoiceCard, ChoiceGroup, Chip, EmptyState, Numpad, Skeleton } from "@/components/shared"
+import { Banner, ChoiceCard, ChoiceGroup, Chip, EmptyState, Numpad, Skeleton } from "@/components/shared"
 import { useTouchMode } from "@/hooks/useTouchMode"
 import { formatTimeWith } from "@/lib/utils"
 import type { POSSession, POSSessionMode, POSTerminal } from "@/types/pos"
@@ -407,10 +407,9 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
                         {justifyReason === "PARTNER_WITHDRAWAL" && partner && summaryRow("Retiró", partner.name)}
                     </section>
                     {!hasDiff && (
-                        <div className="flex items-center gap-4 rounded-lg border border-success/40 bg-success/10 p-5 text-lg">
-                            <CheckCircle2 className="size-8 shrink-0 text-success" aria-hidden />
-                            <span>El fondo contado coincide con el sistema.</span>
-                        </div>
+                        <Banner tone="success" className="py-4 [&_p]:text-base" iconClassName="size-6">
+                            El fondo contado coincide con el sistema.
+                        </Banner>
                     )}
                 </div>
             )

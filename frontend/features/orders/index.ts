@@ -29,3 +29,4 @@ export {
 export { useSaleOrderSearch } from './hooks/useSaleOrderSearch'
 export { useAnnulPayment, useCancelPayment, useRegisterPaymentReturn, useCancelInvoice, useConfirmInvoice } from './hooks'
 export { AnnulPaymentModal } from './components/AnnulPaymentModal'
+export { NoteWizardTab, type NoteWizardTabProps } from './components/NoteWizardTab'

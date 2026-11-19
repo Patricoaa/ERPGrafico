@@ -12,7 +12,7 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { LabeledInput, SubmitButton } from '@/components/shared'
+import { Banner, LabeledInput, SubmitButton } from '@/components/shared'
 
 const formSchema = z.object({
     username: z.string().min(2, {
@@ -98,12 +98,10 @@ export function LoginForm() {
 
                     {/* Error message */}
                     {error && (
-                        <div className="animate-in fade-in slide-in-from-top-1 duration-200 fill-mode-both flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20"
-                        >
-                            <div className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
-                            <p className="text-xs font-medium text-destructive">{error}</p>
-                            </div>
-                        )}
+                        <Banner tone="destructive" live="alert" className="animate-in fade-in slide-in-from-top-1 duration-200 fill-mode-both">
+                            {error}
+                        </Banner>
+                    )}
 
                     {/* Submit */}
                     <SubmitButton
