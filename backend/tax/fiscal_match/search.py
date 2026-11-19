@@ -666,34 +666,14 @@ def candidates_for_context(
             if sii_code is not None and doc.dte_type != sii_code:
                 continue
 
-            if doc:
-                kind = "rcv"
-                f_sii = doc.dte_type
-                f_date = doc.issue_date
-                f_rut = doc.counterparty_rut
-                f_amount = abs(doc.total_amount)
-                f_folio = doc.folio
-                f_name = doc.counterparty_name or normalize_rut(doc.counterparty_rut) or doc.counterparty_rut
-                label = f"DTE {group.dte_type or doc.dte_type} N° {doc.folio}"
-            elif sale:
-                kind = "tuu"
-                f_sii = sale.document_type
-                at = timezone.localtime(sale.transaction_at)
-                f_date = at.date()
-                f_rut = None
-                f_amount = sale.sale_amount
-                f_folio = None
-                f_name = sale.device.name if sale.device else "Venta TUU"
-                label = f"Venta TUU #{sale.pk}"
-            else:
-                kind = "rcv"
-                f_sii = group.dte_type
-                f_date = group.issue_date
-                f_rut = group.counterparty_rut
-                f_amount = group.rcv_amount or group.tuu_amount or Decimal(0)
-                f_folio = None
-                f_name = group.counterparty_rut
-                label = f"Grupo #{group.pk}"
+            kind = "rcv"
+            f_sii = doc.dte_type
+            f_date = doc.issue_date
+            f_rut = doc.counterparty_rut
+            f_amount = abs(doc.total_amount)
+            f_folio = doc.folio
+            f_name = doc.counterparty_name or normalize_rut(doc.counterparty_rut) or doc.counterparty_rut
+            label = f"DTE {group.dte_type or doc.dte_type} N° {doc.folio}"
 
             facts = CandidateFacts(
                 kind=kind,

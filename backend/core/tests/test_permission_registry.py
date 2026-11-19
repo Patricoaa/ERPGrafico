@@ -196,14 +196,16 @@ def test_post_migrate_creates_registered_permissions():
 def test_post_migrate_sync_is_additive():
     from django.core.management import call_command
 
-    from core.permissions import Roles
+    from core.rbac.seed import SEEDED_ROLES
 
-    # I10 fix: sysadmin gets new perms via its bundles (core.manage ⊃ new perm),
+    # I10 fix: ROLE groups get new perms via their bundles (core.manage ⊃ new perm),
     # so sync_permissions must run first to configure the profile's bundles.
+    # El sysadmin ya no incluye core.manage (solo core.read + core.security), así que
+    # se usa Gerencia —que sí tiene core.manage— como rol representativo.
     call_command("sync_permissions", verbosity=0)
 
-    # Get the now-configured admin group and create an unrelated TEAM group.
-    admin = Group.objects.get(name=Roles.SYSTEM_ADMIN)
+    # Get the now-configured ROLE group and create an unrelated TEAM group.
+    admin = Group.objects.get(name=SEEDED_ROLES["gerencia"]["name"])
     operator, _ = Group.objects.get_or_create(name="OperadorTest")
     extra = Permission.objects.filter(codename="view_user").first()
     operator.permissions.add(extra)
@@ -219,7 +221,7 @@ def test_post_migrate_sync_is_additive():
     # TEAM group's permissions must be preserved (materialize_all skips non-ROLE groups)
     assert operator.permissions.filter(pk=extra.pk).exists()
     new = Permission.objects.get(codename="pm_test_perm2")
-    # Sysadmin gets the new core.* perm via materialize_all + core.manage bundle
+    # Gerencia gets the new core.* perm via materialize_all + core.manage bundle
     assert admin.permissions.filter(pk=new.pk).exists()
     assert not operator.permissions.filter(pk=new.pk).exists()
 
