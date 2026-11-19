@@ -89,6 +89,7 @@ export * from './SectionHeader';
 export * from './Section';
 
 export * from './Separators';
+export * from './DensityScope';
 
 // Loading States
 export * from './LoadingFallback';

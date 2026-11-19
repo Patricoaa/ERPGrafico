@@ -9,17 +9,18 @@ Cada fase es un PR independiente, termina con `npm run type-check`, `npm run lin
 - **Criterio de salida:** capturas guardadas; un solo `useDeviceContext`; tests verdes.
 
 ## Fase 1 — Tokens y tipografía (0.5 d)
-- [ ] `globals.css`: reemplazar `--text-3xs/2xs/xs…3xl` por los `clamp` del ADR (D2); `--text-4xs` fijo.
-- [ ] Eliminar `--space-fluid-*` y `--spacing-r-*` (0 consumidores; confirmar con grep antes).
-- [ ] Reescribir `typography.contract.test.ts` (tokens del ADR, sin asertar `3xs = 0.625rem`).
-- [ ] Actualizar `typography-scale.md` (micro fluido, ventana 1024→1440) y `DESIGN.md`.
+- [x] `globals.css`: reemplazar `--text-3xs/2xs/xs…3xl` por los `clamp` del ADR (D2); `--text-4xs` fijo.
+- [x] Eliminar `--space-fluid-*` y `--spacing-r-*` (0 consumidores; confirmar con grep antes).
+- [x] Reescribir `typography.contract.test.ts` (tokens del ADR, sin asertar `3xs = 0.625rem`).
+- [x] Actualizar `typography-scale.md` (micro fluido, ventana 1024→1440) y `DESIGN.md`.
 - **Salida:** a 1024 px las capturas coinciden con la referencia; a ≥1280 solo difieren micro/`2xl`/`3xl`.
+- Nota: el único consumidor real de `--spacing-r-lg` era un `margin` de `hr` en `globals.css` (la auditoría solo había mirado TSX); pasó a `calc(var(--spacing) * 6)`. Las capturas de verificación visual se omitieron por decisión del usuario.
 
 ## Fase 2 — Dial `--k` y ejes (1 d)
-- [ ] `--spacing: calc(0.25rem * var(--k))`, `--k: 1` por defecto; `[data-density="comfortable"]` y `@media (pointer: coarse)`/`[data-input="touch"]` → `1.125`.
-- [ ] Derivar `--table-*` de `--spacing`; mantener `.table-compact/.table-comfortable` como alias.
-- [ ] Proveedor mínimo que fija `data-density`/`data-input` en `<html>` (preferencia persistida) y ámbito por superficie.
-- [ ] Actualizar `density-system.md` (§1 reescrita sobre `--spacing`, §3 densidad global).
+- [x] `--spacing: calc(0.25rem * var(--k, 1))` en `@theme inline`, `--k = max(--k-density, --k-input)`; `[data-density="comfortable"]` y `[data-input="touch"]` → `1.125`; `pointer: coarse` solo bajo `data-input="auto"` (activación global en Fases 4/5, para no alterar teléfonos/tablets antes de revisar layouts).
+- [x] Derivar `--table-*` de `--u` (re-declarados por ámbito); `.table-compact/.table-comfortable` se mantienen.
+- [x] `DensityScope` (ámbito por superficie, `display: contents`). La preferencia de usuario persistida en `<html>` pasa a la Fase 5.
+- [x] Actualizar `density-system.md` (§1 reescrita sobre `--spacing`, §3 densidad global).
 - **Salida:** con `--k: 1` capturas idénticas; en `comfortable` revisar drawers/paneles (`w-NN`) y anotar ajustes.
 
 ## Fase 3 — Tokens de altura y guarda de Fitts (1.5 d)

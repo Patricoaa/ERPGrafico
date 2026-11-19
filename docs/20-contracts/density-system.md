@@ -15,17 +15,33 @@ Este contrato define los tokens de densidad de tabla (`--table-cell-*`, `--table
 
 ---
 
-## 1. Escala de ritmo
+## 1. El dial de densidad (`--k`) — ADR-0142
 
-> **Retirado (ADR-0142, 2026-11-19):** `--spacing-r-*` (y `--space-fluid-*`) tenían un único consumidor y fueron eliminados. El espaciado es la **escala estándar de Tailwind** (`--spacing`, base 0.25rem). La Fase 2 del plan de escala unificada la vuelve sensible a densidad y puntero mediante un multiplicador discreto `--k`; este apartado se reescribirá allí.
+El espaciado es la **escala de Tailwind** (`--spacing`), hecha dinámica: `--spacing = 0.25rem × --k`. Toda utilidad de espaciado (`p-*`, `gap-*`, `h-*`, `w-*`, `size-*`…) y los iconos `size-4` responden al dial sin editar clases. `--spacing-r-*` y `--space-fluid-*` fueron retirados.
 
-**Regla vigente:** usar la escala de Tailwind (`p-2`, `gap-4`…) y, para valores del propio CSS global, `calc(var(--spacing) * n)` en vez de rem literales. No introducir una escala de espaciado paralela.
+| Eje | Atributo | Valores | `--k-*` |
+|-----|----------|---------|---------|
+| Densidad | `data-density` | `compact` (default) · `comfortable` | 1 · 1.125 |
+| Puntero | `data-input` | `mouse` · `touch` · `auto` (sigue `pointer: coarse`) | 1 · 1.125 · 1 / 1.125 |
+
+`--k = max(--k-density, --k-input)`. Es **discreto, nunca continuo** (evita alturas fraccionarias y bordes borrosos). Con `--k = 1` (estado por defecto) el resultado es idéntico a la escala estándar.
+
+```tsx
+import { DensityScope } from '@/components/shared'
+
+<DensityScope density="comfortable" input="auto">…</DensityScope>
+```
+
+- Los atributos se pueden poner en cualquier ancestro; `DensityScope` (sin caja propia, `display: contents`) es la forma recomendada en React.
+- El valor se resuelve **por elemento**: `--spacing` está en `@theme inline`, así que cada utilidad emite `calc(0.25rem * var(--k, 1))`. En CSS propio, usar `var(--u)` (la unidad `0.25rem × k` declarada en cada ámbito); **no** `var(--spacing)` en un bloque `:root`, que se congelaría con el `--k` de la raíz.
+- **`data-input="auto"` aún no está activado globalmente:** sin el atributo el eje de puntero vale 1 aunque el dispositivo sea táctil. Se activa por superficie en la Fase 4 (POS) y globalmente en la Fase 5.
+- Valores fuera de la escala: `calc(var(--u) * n)` con comentario de contexto; no valores en bruto (`p-2.5`) para un ritmo que la escala ya cubre.
 
 ---
 
 ## 2. Tokens de densidad de tabla
 
-Definidos en `:root` de `globals.css`. Son la única fuente de verdad para el padding/altura de las filas y cabeceras de tabla — ninguna variante de tabla puede usar padding ad-hoc.
+Definidos en `:root` de `globals.css`. Son la única fuente de verdad para el padding/altura de las filas y cabeceras de tabla — ninguna variante de tabla puede usar padding ad-hoc. Desde ADR-0142 se **derivan de `--u`** (ver §1) y se re-declaran en cada ámbito del dial, de modo que siguen a `data-density`/`data-input`.
 
 | Token | Default (compact) | Descripción |
 |-------|-------------------|-------------|

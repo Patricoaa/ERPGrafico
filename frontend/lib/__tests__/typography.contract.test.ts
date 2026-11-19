@@ -97,6 +97,34 @@ describe('typography contract', () => {
     }
   });
 
+  describe('density dial (ADR-0142)', () => {
+    it('--spacing is derived from --k inside @theme inline (per-element resolution)', () => {
+      const theme = css.slice(css.indexOf('@theme inline {'));
+      expect(/--spacing:\s*calc\(0\.25rem \* var\(--k, 1\)\)/.test(theme)).toBe(true);
+    });
+
+    it('--k is max(density, input); comfortable and touch are 1.125, default 1', () => {
+      expect(/--k:\s*max\(var\(--k-density\),\s*var\(--k-input\)\)/.test(css)).toBe(true);
+      expect(/\[data-density="comfortable"\]\s*\{\s*--k-density:\s*1\.125/.test(css)).toBe(true);
+      expect(/\[data-input="touch"\]\s*\{\s*--k-input:\s*1\.125/.test(css)).toBe(true);
+      expect(/:root\s*\{\s*--k-density:\s*1;\s*--k-input:\s*1;/.test(css)).toBe(true);
+    });
+
+    it('pointer-coarse only activates under data-input="auto" (no global auto-activation yet)', () => {
+      expect(/@media \(pointer: coarse\)\s*\{\s*\[data-input="auto"\]\s*\{\s*--k-input:\s*1\.125/.test(css)).toBe(true);
+    });
+
+    it('table tokens derive from --u and are re-declared on every dial scope', () => {
+      const scoped = css.match(/:root,\s*\[data-density\],\s*\[data-input\]\s*\{[^}]*\}/);
+      expect(scoped, 'scoped dial block').not.toBeNull();
+      const block = (scoped as RegExpMatchArray)[0];
+      expect(/--u:\s*calc\(0\.25rem \* var\(--k\)\)/.test(block)).toBe(true);
+      for (const t of ['--table-cell-py', '--table-cell-px', '--table-header-py', '--table-header-px', '--table-header-h']) {
+        expect(new RegExp(`${t}:\\s*calc\\(var\\(--u\\)`).test(block), `${t} derives from --u`).toBe(true);
+      }
+    });
+  });
+
   it('retired spacing scales are gone (ADR-0142)', () => {
     expect(/--spacing-r-[a-z]+\s*:/.test(css), '--spacing-r-* retired').toBe(false);
     expect(/--space-fluid-[a-z]+\s*:/.test(css), '--space-fluid-* retired').toBe(false);

@@ -212,7 +212,54 @@
 }
 }
 
+
+/*
+ * DENSITY DIAL — ADR-0142. Two axes, one multiplier.
+ *   --k-density: compact (default) 1 | comfortable 1.125   [data-density]
+ *   --k-input:   fine/auto 1 | touch 1.125                  [data-input]
+ *   --k = max(density, input). `--u` is the density-aware unit (0.25rem * k).
+ * Declared on every scope so descendants resolve --k/--u against the nearest
+ * scope (a value declared only on :root would be frozen at the root).
+ * `data-input="auto"` follows the pointer (coarse → touch); without the attribute
+ * the input axis stays at 1 (pointer-coarse auto-activation ships in Phase 4/5).
+ */
+:root {
+  --k-density: 1;
+  --k-input: 1;
+}
+[data-density="compact"] { --k-density: 1; }
+[data-density="comfortable"] { --k-density: 1.125; }
+[data-input="mouse"] { --k-input: 1; }
+[data-input="touch"] { --k-input: 1.125; }
+@media (pointer: coarse) {
+  [data-input="auto"] { --k-input: 1.125; }
+}
+:root,
+[data-density],
+[data-input] {
+  --k: max(var(--k-density), var(--k-input));
+  --u: calc(0.25rem * var(--k));
+
+  /* TABLE SYSTEM tokens (density-system.md §2) — derived from the dial */
+  --table-cell-py: calc(var(--u) * 2);   /* 8px at k=1  */
+  --table-cell-px: calc(var(--u) * 3);   /* 12px        */
+  --table-header-py: calc(var(--u) * 1); /* 4px         */
+  --table-header-px: calc(var(--u) * 3); /* 12px, aligned with cell padding */
+  --table-header-h: calc(var(--u) * 9);  /* 36px        */
+  --table-cell-py-compact: calc(var(--u) * 2);
+  --table-header-h-compact: calc(var(--u) * 9);
+}
+
 @theme inline {
+  /*
+   * DENSITY DIAL (ADR-0142) — every spacing utility (p-*, gap-*, h-*, w-*, size-*…)
+   * is `n × --spacing`. `inline` makes Tailwind emit `calc(0.25rem * var(--k, 1))`
+   * in each utility, so --k is resolved PER ELEMENT and `data-density` /
+   * `data-input` scopes work. With --k = 1 (default) the output is identical to
+   * the stock 0.25rem scale.
+   */
+  --spacing: calc(0.25rem * var(--k, 1));
+
   --color-background: oklch(var(--background-raw));
   --color-foreground: oklch(var(--foreground-raw));
   --color-card: oklch(var(--card-raw));
@@ -352,27 +399,13 @@
    */
   /* TABLE SYSTEM — Shared tokens for all table variants */
   /* Used by DataTable, FormLineItemsTable, ReportTable, and variant="minimal" */
-  --table-cell-py: 0.5rem;
-  /* py-2 - Compact (default) */
-  --table-cell-px: 0.75rem;
-  /* px-3 */
-  --table-header-py: 0.25rem;
-  /* py-1 - Header vertical padding */
-  --table-header-px: 0.75rem;
-  /* px-3 - Aligned with cell padding (prevents header/cell misalignment) */
-  --table-header-h: 2.25rem;
-  /* ~h-9 - Compact header height */
+  /* Cell/header paddings and heights are derived from the density dial in the
+     scoped block below (:root, [data-density], [data-input]) so they follow --k. */
   --table-row-hover: oklch(var(--muted-raw) / 0.5);
   --table-header-bg: transparent;
   --table-footer-bg: oklch(var(--muted-raw) / 0.5);
   --table-expanded-bg: oklch(var(--muted-raw) / 0.3);
   --table-row-border: oklch(var(--border-raw) / 0.4);
-
-  /* DENSITY MODES — Compact for power users, Comfortable for mixed audiences */
-  --table-cell-py-compact: 0.5rem;
-  /* py-2 */
-  --table-header-h-compact: 2.25rem;
-  /* ~h-9 */
 
   --notched-pad-x: 0.75rem;
   /* Horizontal padding inside fieldset */
