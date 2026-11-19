@@ -18,7 +18,7 @@ import {
     User, KeyRound,
     Download,
     Check, Sun, Moon, Monitor,
-    ShieldCheck, Users,
+    ShieldCheck, Users, Rows2, Rows3,
 } from "lucide-react"
 import { EmptyState, LabeledInput, StatusBadge } from "@/components/shared"
 import { EmployeePayrollModal } from "./EmployeePayrollModal"
@@ -31,6 +31,7 @@ import { payrollEntity, payrollViews } from "../entity-view/payroll.entity"
 import type { UnifiedPayment } from "../entity-view/unifiedPayment.entity"
 
 import { useTheme } from "next-themes"
+import { useDensityPreference } from "@/hooks/useDensityPreference"
 import { useThemeSync } from "../hooks/useThemeSync"
 import { passwordSchema } from "../schema"
 import type { PasswordFormValues } from "../schema"
@@ -90,6 +91,12 @@ function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
                 </FadeIn>
             )}
 
+            {activeSubTab === "preferences" && (
+                <FadeIn delay={0.15} yOffset={10}>
+                    <DensitySelectionSection />
+                </FadeIn>
+            )}
+
             {activeSubTab === "security" && (
                 <>
                     <FadeIn delay={0.1} yOffset={10}>
@@ -130,6 +137,34 @@ function ThemeSelectionSection() {
                         title={label}
                         description={description}
                         onClick={() => changeTheme(value)}
+                        pressed={selected}
+                        actions={selected ? <Check className="h-4 w-4 shrink-0 text-foreground" aria-label="Seleccionado" /> : undefined}
+                        className="min-h-16"
+                    />
+                )
+            })}
+        </Section>
+    )
+}
+
+function DensitySelectionSection() {
+    const { density, setDensity } = useDensityPreference()
+    const options = [
+        { value: "compact", label: "Compacta", description: "Más información en pantalla; recomendada para escritorio", icon: Rows3 },
+        { value: "comfortable", label: "Cómoda", description: "Más espacio entre elementos; las tablas conservan su densidad. Se guarda en este dispositivo", icon: Rows2 },
+    ] as const
+
+    return (
+        <Section as="h2" title="Densidad de la interfaz" description="Ajuste el espaciado general de la aplicación en este dispositivo.">
+            {options.map(({ value, label, description, icon: Icon }) => {
+                const selected = density === value
+                return (
+                    <Section.Row
+                        key={value}
+                        leading={<Icon className={cn("h-4 w-4", selected ? "text-foreground" : "text-muted-foreground")} aria-hidden="true" />}
+                        title={label}
+                        description={description}
+                        onClick={() => setDensity(value)}
                         pressed={selected}
                         actions={selected ? <Check className="h-4 w-4 shrink-0 text-foreground" aria-label="Seleccionado" /> : undefined}
                         className="min-h-16"

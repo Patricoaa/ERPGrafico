@@ -32,17 +32,17 @@ Cada fase es un PR independiente, termina con `npm run type-check`, `npm run lin
 
 ## Fase 4 — POS y modo táctil (1.5 d)
 - [x] `@custom-variant touch`; `Cart.tsx` y `CartItem.tsx` pasan a la variante (sin ramas `isTouchPOS`); `POSShell` publica `data-input` en `<html>`. **No** se declara `comfortable` en el POS (ver enmienda del ADR).
-- [x] Resto de consumidores migrado (ver enmienda 4b del ADR): `ProductCard`, `CategoryFilter`, `ContactCardGrid`, `ApprovalRequestBanner`. Lo demás es comportamiento/layout y se queda en JS. **Pendiente de decisión:** `GenericWizard.touchMode` (código dormido).
+- [x] Resto de consumidores migrado (ver enmienda 4b del ADR): `ProductCard`, `CategoryFilter`, `ContactCardGrid`, `ApprovalRequestBanner`. Lo demás es comportamiento/layout y se queda en JS. `GenericWizard.touchMode` eliminado en la Fase 5.
 - [x] `useTouchMode` redefinido (`auto|touch|mouse`, solo comportamiento) + `useApplyInputMode`; sin default `true`.
 - [x] `density-system.md` §6 y `component-modal.md` actualizados. [ ] Nota de enmienda en ADR-0127 y patrón táctil en `component-button.md` (con la migración del resto de consumidores).
 - **Salida:** POS en tablet (coarse) y escritorio (fine) sin ramas JS de tamaño; pruebas de POS verdes.
 
 ## Fase 5 — Activación y limpieza (1 d)
-- [ ] Migrar `ui/select` (y `LabeledSelect`) y `Chip`/`Badge`/`StatusBadge` a roles, midiendo alturas efectivas antes y después.
-- [ ] Revisión visual de `comfortable` en settings/reportes y ajuste de `w-NN` afectados.
+- [x] `ui/select` (vía `--control-h-*`) y `Badge` xs/sm migrados; `LabeledSelect` queda con su `h-9` explícito. `Chip`/`StatusBadge` heredan de `Badge`.
+- [ ] Revisión visual de `comfortable` en settings/reportes y ajuste de `w-NN` afectados (pendiente: sin capturas).
 - [x] Activación del eje táctil por dispositivo (tablets), adelantada a la Fase 4b.
-- [ ] Decidir dónde se ofrece `comfortable` al usuario (preferencia de perfil).
-- [ ] Lint `controls/token-height` en modo aviso; inventario de `h-7…h-10` restantes en controles.
+- [x] `comfortable` ofrecido en Perfil → Preferencias (`useDensityPreference`, por dispositivo).
+- [x] Lint `controls/token-height` en aviso; inventario inicial 232 avisos / 116 archivos.
 - [ ] Actualizar índice del ADR (README), `DESIGN.md` y `docs/README.md`.
 
 ## Fase 6 — Endurecimiento (posterior, opcional)

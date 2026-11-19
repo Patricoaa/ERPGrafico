@@ -16,6 +16,7 @@ import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
 import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
+import controlsTokenHeight from "./eslint-rules/controls-token-height.mjs";
 import noDirectDialogUsage from "./eslint-rules/no-direct-dialog-usage.mjs";
 import entityViewGuards from "./eslint-rules/entity-view-guards.mjs";
 import dateHandling from "./eslint-rules/date-handling.mjs";
@@ -396,6 +397,15 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   },
   rules: {
     "typography/token-first": "error",
+  },
+}, // Control heights come from roles — ADR-0142 D4 (warn until the literal inventory reaches 0)
+{
+  files: ["features/**/*.tsx", "components/**/*.tsx", "app/**/*.tsx"],
+  plugins: {
+    controls: { rules: { "token-height": controlsTokenHeight } },
+  },
+  rules: {
+    "controls/token-height": "warn",
   },
 }, // Forms must use react-hook-form + zodResolver — GOVERNANCE.md §6 rule 29
 {

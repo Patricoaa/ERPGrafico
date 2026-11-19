@@ -61,8 +61,8 @@ const badgeVariants = cva(
              * xs/sm follow Chip scale. md/lg follow StatusBadge scale.
              */
             size: {
-                xs: 'h-[18px] px-2 text-xs gap-1',
-                sm: 'h-[22px] px-2.5 text-xs gap-1',
+                xs: 'h-4.5 px-2 text-xs gap-1',
+                sm: 'h-5.5 px-2.5 text-xs gap-1',
                 md: 'px-2 py-0.5 text-xs gap-1',
                 lg: 'h-8 px-4 text-sm gap-1.5',
                 xl: 'h-10 px-6 text-base gap-2',

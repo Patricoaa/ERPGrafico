@@ -110,8 +110,8 @@ describe('typography contract', () => {
       expect(/:root\s*\{\s*--k-density:\s*1;\s*--k-input:\s*1;/.test(css)).toBe(true);
     });
 
-    it('pointer-coarse only activates under data-input="auto" (no global auto-activation yet)', () => {
-      expect(/@media \(pointer: coarse\)\s*\{\s*\[data-input="auto"\]\s*\{\s*--k-input:\s*1\.125/.test(css)).toBe(true);
+    it('tablet-class coarse pointer raises the input axis unless data-input="mouse"', () => {
+      expect(/@media \(pointer: coarse\) and \(min-width: 64rem\)\s*\{\s*:root:not\(\[data-input="mouse"\]\),\s*\[data-input="auto"\]\s*\{\s*--k-input:\s*1\.125/.test(css)).toBe(true);
     });
 
     it('table tokens derive from --u and are re-declared on every dial scope', () => {

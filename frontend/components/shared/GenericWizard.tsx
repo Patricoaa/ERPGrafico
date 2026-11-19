@@ -62,12 +62,6 @@ export interface GenericWizardProps extends Omit<BaseModalProps, "children" | "t
     successContent?: React.ReactNode
     /** Optional footer-left element (e.g. "Suspender" button) */
     footerLeft?: React.ReactNode
-    /**
-     * Touch-optimized layout: larger step counter, larger tap targets in the
-     * footer (h-12 buttons, bigger icons) and extra content padding.
-     * Intended for touch-first surfaces such as POS open/close flows.
-     */
-    touchMode?: boolean
 
     /** Surface layout. Default: "modal" */
     surface?: "modal" | "drawer" | "inline"
@@ -153,7 +147,6 @@ export function GenericWizard({
     surface = "modal",
     drawerSide = "right",
     drawerBoundary = "embedded",
-    touchMode = false,
     leftSidebar,
     rightSidebar,
     leftSidebarWidth = "w-64",
@@ -251,22 +244,13 @@ export function GenericWizard({
         totalSteps,
     }), [handleNext, handleBack, goTo, isLastStep, onComplete, safeStep, totalSteps])
 
-    const touchCloseButton = "h-12 w-12 [&_svg]:h-6 [&_svg]:w-6"
-    const touchFooterButton = "h-14 min-w-36 px-8 text-sm active:scale-[0.98]"
-
     // Industrial step indicator: "01 / 03 — Título del Paso"
     const stepDescription = (
-        <div className={cn("flex items-center gap-3", touchMode && "gap-4")}>
-            <span className={cn(
-                "font-mono font-black text-primary tracking-wider",
-                touchMode ? "text-base" : "text-xs"
-            )}>
+        <div className="flex items-center gap-3">
+            <span className="font-mono font-black text-primary tracking-wider text-xs">
                 {String(safeStep + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
             </span>
-            <span className={cn(
-                "font-black uppercase tracking-wider text-muted-foreground",
-                touchMode ? "text-sm" : "text-3xs"
-            )}>
+            <span className="font-black uppercase tracking-wider text-muted-foreground text-3xs">
                 {currentStepData?.title}
             </span>
         </div>
@@ -280,18 +264,15 @@ export function GenericWizard({
             {/* Navigation */}
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                    {/* En táctil no se muestra un "Anterior" inerte en el primer paso */}
-                    {!(touchMode && isFirstStep) && (
                     <Button
                         variant="ghost"
                         onClick={handleBack}
                         disabled={isFirstStep || isCompleting || isStepTransitioning}
-                        className={cn("gap-2", touchMode && touchFooterButton)}
+                        className="gap-2"
                     >
-                        <ChevronLeft className={cn("h-4 w-4", touchMode && "h-6 w-6")} />
+                        <ChevronLeft className="h-4 w-4" />
                         Anterior
                     </Button>
-                    )}
                     {footerLeft}
                 </div>
 
@@ -301,7 +282,7 @@ export function GenericWizard({
                         disabled={currentStepData?.isValid === false || isCompleting || isStepTransitioning}
                         loading={isCompleting || isStepTransitioning}
                         icon={isCompleting || isStepTransitioning ? undefined : (completeButtonIcon ?? CheckCircle2)}
-                        className={cn("bg-success hover:bg-success/90 text-success-foreground", touchMode && touchFooterButton)}
+                        className="bg-success hover:bg-success/90 text-success-foreground"
                     >
                         {completeButtonLabel}
                     </SubmitButton>
@@ -311,7 +292,6 @@ export function GenericWizard({
                         disabled={currentStepData?.isValid === false || isCompleting || isStepTransitioning}
                         loading={isStepTransitioning}
                         icon={isStepTransitioning ? undefined : ChevronRight}
-                        className={cn(touchMode && touchFooterButton)}
                     >
                         Siguiente
                     </SubmitButton>
@@ -361,7 +341,6 @@ export function GenericWizard({
                                 onClose?.()
                                 onOpenChange(false)
                             }}
-                            className={cn(touchMode && touchFooterButton)}
                         >Cerrar</Button>
                     </div>
                 </Drawer>
@@ -382,7 +361,6 @@ export function GenericWizard({
                 title={title}
                 size={size}
                 showCloseButton={true}
-                closeButtonClassName={touchMode ? touchCloseButton : undefined}
                 {...props}
             >
                 <div className="py-8">
@@ -394,7 +372,6 @@ export function GenericWizard({
                             onClose?.()
                             onOpenChange(false)
                         }}
-                        className={cn(touchMode && touchFooterButton)}
                     >Cerrar</Button>
                 </div>
             </BaseModal>
@@ -407,7 +384,7 @@ export function GenericWizard({
     const stepContent = (
         <div className={cn(
             "animate-in fade-in slide-in-from-right-4 duration-300",
-            touchMode ? "px-2 py-2" : "px-1 py-1",
+            "px-1 py-1",
             (isStepTransitioning || isLoading) && "opacity-50 pointer-events-none"
         )}>
             {isLoading ? (
@@ -494,7 +471,6 @@ export function GenericWizard({
             footer={footer ?? undefined}
             hideScrollArea
             className={cn(stableHeight && "h-[min(85vh,48rem)]", cardSurface && "bg-card")}
-            closeButtonClassName={touchMode ? touchCloseButton : undefined}
             {...props}
         >
             {/* Scroll propio: el contenido del paso siempre puede desplazarse dentro del modal. */}

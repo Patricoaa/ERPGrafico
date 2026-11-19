@@ -8,6 +8,7 @@ import { SkeletonShell } from '@/components/shared'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { ThemeProvider } from 'next-themes'
 import { fetchEntityPrefixes, fetchEntityConfig } from '@/lib/api/entity-prefixes'
+import { useApplyDensityPreference } from '@/hooks/useDensityPreference'
 
 function EntityConfigInitializer({ children }: { children: ReactNode }) {
     useEffect(() => {
@@ -18,6 +19,8 @@ function EntityConfigInitializer({ children }: { children: ReactNode }) {
 }
 
 export default function Providers({ children }: { children: ReactNode }) {
+    // ADR-0142: per-device density preference → <html data-density>
+    useApplyDensityPreference()
     return (
         <NuqsAdapter>
             <QueryClientProvider client={queryClient}>

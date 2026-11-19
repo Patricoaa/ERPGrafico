@@ -141,3 +141,10 @@ Los roles se derivan de `--u`, así que escalan con `--k` (comfortable: ×1.125)
 - [component-datatable-views.md](component-datatable-views.md) — contratos de las variantes de DataTable
 - [component-skeleton.md](component-skeleton.md) — estados de carga con densidad consistente
 - Implementation: `frontend/app/globals.css` (`:root`, sección "RHYTHM & SPACING" / "TABLE SYSTEM" / "DENSITY MODES") y `frontend/components/shared/DataTable.tsx` (prop `density`)
+
+## 7. Preferencia de usuario y lint
+
+- **Preferencia:** `useDensityPreference()` (`hooks/useDensityPreference.ts`) guarda `compact | comfortable` en `localStorage` (`ui_density`, por dispositivo) y `Providers` la publica en `<html data-density>`. Se cambia en Perfil → Preferencias. `comfortable` sube `--k` a 1.125 en todo el chrome; las tablas conservan su `data-density`.
+- **Lint:** `controls/token-height` (aviso) reporta alturas literales `h-7…h-12` en controles; usa `h-control-*`/`size-control-*`. Pasa a error al llegar a 0 (ADR-0142, Fase 6).
+- **Select/Badge:** el trigger de `ui/select` usa `--control-h-md/sm`; `Badge` xs/sm usan `h-4.5`/`h-5.5` (escalan con `--k`).
+
