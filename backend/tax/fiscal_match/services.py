@@ -449,19 +449,22 @@ def _link_rcv_document(group: FiscalMatch, orphan: FiscalMatch, doc: RCVDocument
 # --- quitar y devolver ----------------------------------------------------------------
 
 
-def _unlink(group: FiscalMatch, record: Record) -> FiscalMatch:
-    """Saca el registro (ya bloqueado, del grupo) a un huérfano nuevo; lo devuelve."""
-    if isinstance(record, TerminalSale):
-        orphan = tuu_orphan_group(record)
-        orphan.save()
-        record.fiscal_match, record.matched_movement, record.linked_manually = orphan, None, True
-        record.save(update_fields=["fiscal_match", "matched_movement", "linked_manually"])
-        return orphan
-    orphan = rcv_orphan_group(record)
+def _unlink_sale(sale: TerminalSale) -> FiscalMatch:
+    """Saca la venta TUU (ya bloqueada, del grupo) a un huérfano nuevo; lo devuelve."""
+    orphan = tuu_orphan_group(sale)
+    orphan.save()
+    sale.fiscal_match, sale.matched_movement, sale.linked_manually = orphan, None, True
+    sale.save(update_fields=["fiscal_match", "matched_movement", "linked_manually"])
+    return orphan
+
+
+def _unlink_rcv(group: FiscalMatch, doc: RCVDocument) -> FiscalMatch:
+    """Saca el registro del SII (ya bloqueado, del grupo) a un huérfano nuevo; lo devuelve."""
+    orphan = rcv_orphan_group(doc)
     orphan.rcv_linked_manually = True
     orphan.save()
-    record.fiscal_match = orphan
-    record.save(update_fields=["fiscal_match"])
+    doc.fiscal_match = orphan
+    doc.save(update_fields=["fiscal_match"])
     if group.rcv_linked_manually and not RCVDocument.objects.filter(fiscal_match=group).exists():
         group.rcv_linked_manually = False
         group.save(update_fields=["rcv_linked_manually"])
@@ -607,7 +610,11 @@ def _apply_one(batch: _Batch, current: FiscalMatch, change: Change) -> FiscalMat
         record = batch.record(change)
         if record.fiscal_match_id != current.pk:
             raise FiscalMatchRuleError(MOVED)
-        batch.unlinked.append(_unlink(current, record).pk)
+        if change["part"] == "tuu":
+            orphan = _unlink_sale(batch.sales[change["id"]])
+        else:
+            orphan = _unlink_rcv(current, batch.docs[change["id"]])
+        batch.unlinked.append(orphan.pk)
         return current
     if change["part"] == "erp":
         invoice = batch.invoices[change["id"]]
