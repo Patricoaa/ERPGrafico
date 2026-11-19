@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { useFiscalMatchDraft } from '../useFiscalMatchDraft'
 import type { FiscalMatchDetail, FiscalMatchSearchItem, CandidateMovement } from '../../types/fiscalMatch'
 
-const mv = (id: number): CandidateMovement => ({ id, amount: '1000', created_at: '2026-11-01T10:00:00Z', method: 'Tarjeta' })
+const mv = (id: number, sameAmount = true): CandidateMovement => ({ id, amount: '1000', created_at: '2026-11-01T10:00:00Z', method: 'Tarjeta', same_amount: sameAmount })
 const item = (id: number, over: Partial<FiscalMatchSearchItem> = {}): FiscalMatchSearchItem => ({
     id, kind: 'x', label: `L${id}`, counterparty: '', date: '2026-11-01', amount: '1000', score: 80, warnings: [], ...over,
 })
@@ -190,5 +190,71 @@ describe('useFiscalMatchDraft', () => {
         expect(h.result.current.pendingLinks('rcv').map(i => i.id)).toEqual([2])
         expect(h.result.current.pendingLinks('tuu').map(i => i.id)).toEqual([5])
         expect(h.result.current.pendingLinks('erp')).toEqual([])
+    })
+
+    describe('pagos (Ruling K)', () => {
+        const twoSales = () => orphan({
+            terminal_sales: [
+                { id: 81, transaction_at: '', sale_amount: '1000', document_type: 39, payment_type: 'CARD', matched_movement: null, linked_manually: false },
+                { id: 82, transaction_at: '', sale_amount: '1000', document_type: 39, payment_type: 'CARD', matched_movement: null, linked_manually: false },
+            ],
+        })
+
+        it('TUU: se asigna solo el único pago del mismo monto; otro monto exige elegir', () => {
+            const h = setup(group())
+            act(() => { h.result.current.select('tuu', item(1, { compatible_movements: [mv(7), mv(8, false)] })) })
+            expect(h.result.current.pending[0].movement).toBe(7)
+            act(() => { h.result.current.select('tuu', item(2, { compatible_movements: [mv(9, false)] })) })
+            expect(h.result.current.pending[1].movement).toBeNull()
+            expect(h.result.current.needsPayment).toBe(true)
+            expect(h.result.current.isMissingPayment(2)).toBe(true)
+            act(() => { h.result.current.setPayment(2, 9) })
+            expect(h.result.current.needsPayment).toBe(false)
+        })
+
+        it('un pago elegido por una venta no se ofrece ni se asigna solo a otra', () => {
+            const h = setup(group())
+            act(() => { h.result.current.select('tuu', item(1, { compatible_movements: [mv(7)] })) })
+            act(() => { h.result.current.select('tuu', item(2, { compatible_movements: [mv(7), mv(8, false)] })) })
+            expect(h.result.current.pending[1].movement).toBeNull()
+            expect(h.result.current.paymentOptionsOf(2).map(m => m.id)).toEqual([8])
+            expect(h.result.current.paymentOptionsOf(1).map(m => m.id)).toEqual([7])
+        })
+
+        it('ERP con dos ventas propias y dos pagos: auto solo sin repetir y el resto se elige', () => {
+            const h = setup(twoSales())
+            act(() => { h.result.current.select('erp', item(10, { payments_by_sale: { '81': [mv(70), mv(71, false)], '82': [mv(70), mv(71, false)] } })) })
+            expect(h.result.current.pending[0].payments).toEqual({ 81: 70 })
+            expect(h.result.current.isMissingPayment(82)).toBe(true)
+            expect(h.result.current.paymentOptionsOf(82).map(m => m.id)).toEqual([71])
+            act(() => { h.result.current.setPayment(82, 71) })
+            expect(h.result.current.needsPayment).toBe(false)
+            expect(h.result.current.pending[0].payments).toEqual({ 81: 70, 82: 71 })
+        })
+
+        it('una venta propia con «Quitar» en espera no exige pago ni viaja con el documento', () => {
+            const h = setup(twoSales())
+            act(() => { h.result.current.remove('tuu', 82) })
+            act(() => { h.result.current.select('erp', item(10, { payments_by_sale: { '81': [mv(70)], '82': [mv(71, false)] } })) })
+            expect(h.result.current.needsPayment).toBe(false)
+            expect(h.result.current.pending).toEqual([
+                { op: 'unlink', part: 'tuu', id: 82 },
+                { op: 'link', part: 'erp', id: 10, payments: { 81: 70 } },
+            ])
+            expect(h.result.current.consequences).not.toContain('La venta TUU #82 se moverá también')
+        })
+
+        it('«Ya tiene registro del SII» deja de bloquear si el RCV unido se quita en el mismo guardado', () => {
+            const factura = group({ dte_type: 33, rcv_documents: [{ id: 3, folio: '1', dte_type: 33, issue_date: null, total_amount: '1', period: '' }] })
+            const h = setup(factura)
+            const second = item(4, { warnings: [{ code: 'SECOND_RCV', label: 'Ya tiene registro del SII', blocking: true }] })
+            let r = { ok: true } as ReturnType<typeof h.result.current.select>
+            act(() => { r = h.result.current.select('rcv', second) })
+            expect(r.ok).toBe(false)
+            act(() => { h.result.current.remove('rcv', 3) })
+            expect(h.result.current.warningsOf('rcv', second)).toEqual([])
+            act(() => { r = h.result.current.select('rcv', second) })
+            expect(r.ok).toBe(true)
+        })
     })
 })

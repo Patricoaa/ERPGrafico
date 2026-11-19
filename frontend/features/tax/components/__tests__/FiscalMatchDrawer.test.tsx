@@ -1,6 +1,6 @@
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import type { FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem, FiscalMatchSearchParams } from "../../types/fiscalMatch"
 
 const m = vi.hoisted(() => ({
@@ -19,7 +19,12 @@ const m = vi.hoisted(() => ({
     feedingCalls: [] as [number, boolean][],
     openEntity: vi.fn(),
     search: {} as Record<string, unknown[]>,
-    searchCalls: [] as [number, string, unknown, boolean][],
+    searchCalls: [] as [number, string, unknown][],
+    invalidate: vi.fn(),
+    applyPending: false,
+    /** Guarda global (GlobalModalProvider) simulada: entradas registradas y `runGuarded`. */
+    dirty: [] as { name?: string; isDirty: () => boolean; save: () => Promise<boolean>; discard: () => void }[],
+    runGuarded: vi.fn(),
     toastError: vi.fn(),
     toastInfo: vi.fn(),
 }))
@@ -31,17 +36,18 @@ vi.mock("../../hooks/useFiscalMatches", () => ({
         m.requestedIds.push(id)
         return { group: m.group, isLoading: m.isLoading, isError: m.isError, notFound: m.notFound, isRefetching: false, refetch: m.refetch }
     },
-    useFiscalMatchSearch: (id: number, part: FiscalMatchPart, params: FiscalMatchSearchParams, enabled: boolean) => {
-        m.searchCalls.push([id, part, params, enabled])
-        const items = enabled ? (m.search[part] ?? []) : []
+    useFiscalMatchSearch: (id: number, part: FiscalMatchPart, params: FiscalMatchSearchParams) => {
+        m.searchCalls.push([id, part, params])
+        const items = m.search[part] ?? []
         return {
             items, totalCount: items.length, fetchNextPage: vi.fn(), hasNextPage: false, isFetchingNextPage: false,
             isLoading: false, isError: false, refetch: vi.fn(),
         }
     },
-    useApplyFiscalMatch: () => mutation(m.apply),
+    useApplyFiscalMatch: () => ({ mutateAsync: m.apply, isPending: m.applyPending }),
     useReleaseFiscalMatch: () => mutation(m.release),
     useRetryFiscalIssue: () => mutation(m.retry),
+    useInvalidateFiscalMatch: () => m.invalidate,
 }))
 vi.mock("../../hooks/useFiscalMatchFeeding", () => ({
     useFiscalMatchDraftSuggestions: (groupId: number, enabled: boolean) => {
@@ -59,6 +65,14 @@ vi.mock("../../hooks/useFiscalMatchFeeding", () => ({
 vi.mock("sonner", () => ({ toast: { error: m.toastError, info: m.toastInfo, success: vi.fn() } }))
 vi.mock("@/components/providers/GlobalModalProvider", () => ({
     useGlobalModalActions: () => ({ openEntity: m.openEntity }),
+    useOptionalGlobalModalActions: () => ({
+        openEntity: m.openEntity,
+        runGuarded: m.runGuarded,
+        registerDirty: (entry: (typeof m.dirty)[number]) => {
+            m.dirty.push(entry)
+            return () => { m.dirty = m.dirty.filter((e) => e !== entry) }
+        },
+    }),
 }))
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ can: () => m.can, hasPermission: () => m.can }) }))
 vi.mock("@/features/_shared", async (importOriginal) => ({
@@ -155,6 +169,37 @@ const purchaseOrphan: FiscalMatchDetail = {
     counterparty_rut: "76123456-7",
 }
 
+// El selector de pago (Radix Select) necesita estas APIs del DOM que jsdom no trae.
+beforeAll(() => {
+    Element.prototype.hasPointerCapture ??= () => false
+    Element.prototype.releasePointerCapture ??= () => undefined
+    Element.prototype.scrollIntoView ??= () => undefined
+})
+
+const payment = (id: number, sameAmount = true) => ({
+    id, amount: sameAmount ? "7000.00" : "5000.00", created_at: "2026-11-10T11:39:00-03:00", method: `Pago ${id}`, same_amount: sameAmount,
+})
+
+/** Boleta 39 cobrada en partes, sin ventas TUU aún. */
+const boletaPending: FiscalMatchDetail = {
+    ...voucher,
+    id: 7,
+    dte_type: 39,
+    tuu_state: "MISSING",
+    rcv_state: "MATCHED",
+    invoice: { id: 79, display_id: "BOL-79", dte_type: "BOLETA", number: "79", status: "POSTED", total: "12000.00", date: "2026-11-10" },
+    terminal_sales: [],
+}
+
+/** Selector «Pago de …» junto a la tarjeta (la leyenda nombra el campo). */
+const paymentSelect = (saleLabel: string) =>
+    within(screen.getByText(`Pago de ${saleLabel}`).closest("fieldset") as HTMLElement).getByRole("combobox")
+
+async function choosePayment(user: ReturnType<typeof userEvent.setup>, saleLabel: string, option: RegExp) {
+    await user.click(paymentSelect(saleLabel))
+    await user.click(await screen.findByRole("option", { name: option }))
+}
+
 const candidate = (id: number, over: Partial<FiscalMatchSearchItem> = {}): FiscalMatchSearchItem => ({
     id, kind: "rcv", label: `33 N° ${id}`, counterparty: "Cliente Uno", date: "2026-11-10", amount: "80000.00", score: 100, warnings: [], ...over,
 })
@@ -179,6 +224,13 @@ beforeEach(() => {
     m.openEntity.mockReset()
     m.toastError.mockReset()
     m.toastInfo.mockReset()
+    m.invalidate.mockReset()
+    m.applyPending = false
+    m.dirty = []
+    // Sin cambios en espera la guarda deja pasar; con cambios, el test decide.
+    m.runGuarded.mockReset().mockImplementation((action: () => void) => {
+        if (!m.dirty.some((e) => e.isDirty())) action()
+    })
 })
 
 describe("FiscalMatchDrawer", () => {
@@ -187,8 +239,11 @@ describe("FiscalMatchDrawer", () => {
         renderDrawer(1)
         expect(m.requestedIds).toContain(1)
         expect(screen.getAllByRole("region", { name: /^0[123]/ })).toHaveLength(3)
-        expect(screen.getByText("Tipo")).toBeInTheDocument()
-        expect(screen.getByText("RUT cliente")).toBeInTheDocument()
+        // Cabecera «Grupo»: dirección en vez de tipo y RUT (decisión del usuario).
+        expect(screen.getByText("Dirección")).toBeInTheDocument()
+        expect(screen.getAllByText("Venta").length).toBeGreaterThan(0)
+        expect(screen.queryByText("Tipo")).not.toBeInTheDocument()
+        expect(screen.queryByText("RUT cliente")).not.toBeInTheDocument()
 
         const erp = column("Documento ERP")
         expect(within(erp).getByText("01")).toBeInTheDocument()
@@ -223,7 +278,7 @@ describe("FiscalMatchDrawer", () => {
         m.group = invoice
         renderDrawer(2)
         expect(within(column("Pagos TUU")).getByText("Este documento no espera pagos TUU")).toBeInTheDocument()
-        expect(m.searchCalls.some(([, part, , enabled]) => part === "tuu" && enabled)).toBe(false)
+        expect(m.searchCalls.some(([, part]) => part === "tuu")).toBe(false)
     })
 
     it("seleccionar un candidato y guardar envía el cuerpo de apply", async () => {
@@ -233,7 +288,7 @@ describe("FiscalMatchDrawer", () => {
         m.apply.mockResolvedValue(invoiceMissingRcv)
         renderDrawer(2)
         expect(save()).toBeDisabled()
-        await user.click(within(column("RCV (SII)")).getByRole("checkbox", { name: /33 N° 33/ }))
+        await user.click(within(column("RCV (SII)")).getByRole("radio", { name: /33 N° 33/ }))
         expect(screen.getByText("1 cambio sin guardar")).toBeInTheDocument()
         await user.click(save())
         expect(m.apply).toHaveBeenCalledWith({ id: 2, changes: [{ op: "link", part: "rcv", id: 33 }] })
@@ -274,7 +329,7 @@ describe("FiscalMatchDrawer", () => {
         m.search = { rcv: [candidate(33)] }
         m.apply.mockRejectedValue({ response: { status: 400, data: { error: { message: "Ya hay un registro del SII", code: "SECOND_RCV", details: { change_index: 0 } } } } })
         renderDrawer(2)
-        await user.click(within(column("RCV (SII)")).getByRole("checkbox", { name: /33 N° 33/ }))
+        await user.click(within(column("RCV (SII)")).getByRole("radio", { name: /33 N° 33/ }))
         await user.click(save())
         expect(await within(column("RCV (SII)")).findByRole("alert")).toHaveTextContent("Ya hay un registro del SII")
         expect(m.toastError).toHaveBeenCalledTimes(1)
@@ -287,7 +342,7 @@ describe("FiscalMatchDrawer", () => {
         m.search = { rcv: [candidate(33)] }
         m.apply.mockRejectedValue({ response: { status: 400, data: { error: { message: "Se movió", code: "MOVED", details: { change_index: 0 } } } } })
         renderDrawer(2)
-        await user.click(within(column("RCV (SII)")).getByRole("checkbox", { name: /33 N° 33/ }))
+        await user.click(within(column("RCV (SII)")).getByRole("radio", { name: /33 N° 33/ }))
         await user.click(save())
         await waitFor(() => expect(m.toastInfo).toHaveBeenCalledWith("1 cambio ya no aplica: el registro del SII 33 N° 33 se cuadró en otro grupo"))
         expect(screen.queryByText("1 cambio sin guardar")).not.toBeInTheDocument()
@@ -300,10 +355,10 @@ describe("FiscalMatchDrawer", () => {
         m.search = { rcv: [candidate(33)] }
         renderDrawer(2)
         const rcv = column("RCV (SII)")
-        await user.click(within(rcv).getByRole("checkbox", { name: /33 N° 33/ }))
+        await user.click(within(rcv).getByRole("radio", { name: /33 N° 33/ }))
         m.search = { rcv: [] }
         await user.type(within(rcv).getByRole("searchbox"), "zzz")
-        await waitFor(() => expect(within(rcv).queryByRole("checkbox")).not.toBeInTheDocument())
+        await waitFor(() => expect(within(rcv).queryByRole("radio")).not.toBeInTheDocument())
         expect(within(rcv).getByText("33 N° 33")).toBeInTheDocument()
         await user.click(within(rcv).getByRole("button", { name: "Deshacer" }))
         expect(screen.queryByText("1 cambio sin guardar")).not.toBeInTheDocument()
@@ -315,12 +370,12 @@ describe("FiscalMatchDrawer", () => {
         m.search = { erp: [candidate(90, { kind: "erp", label: "BOL-90" })] }
         renderDrawer(3)
         expect(screen.getByRole("button", { name: "Devolver al cruce automático" })).toBeEnabled()
-        await user.click(within(column("Documento ERP")).getByRole("checkbox", { name: /BOL-90/ }))
+        await user.click(within(column("Documento ERP")).getByRole("radio", { name: /BOL-90/ }))
         expect(screen.getByRole("button", { name: "Devolver al cruce automático" })).toBeDisabled()
         expect(screen.getByRole("button", { name: "Reintentar emisión" })).toBeDisabled()
     })
 
-    it("abrir otro grupo con cambios en espera pide confirmación", async () => {
+    it("abrir otro grupo con cambios en espera pasa por la guarda global", async () => {
         const user = userEvent.setup()
         const onGroupChange = vi.fn()
         m.group = invoice
@@ -328,17 +383,54 @@ describe("FiscalMatchDrawer", () => {
         await user.click(within(column("RCV (SII)")).getByRole("button", { name: "Quitar Folio 1532" }))
         m.requestedIds = []
         view.rerender(<FiscalMatchDrawer id={1} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
-        expect(screen.getByText("Hay cambios sin guardar")).toBeInTheDocument()
+        await waitFor(() => expect(m.runGuarded).toHaveBeenCalled())
         expect(m.requestedIds).not.toContain(1)
-        await user.click(screen.getByRole("button", { name: "Seguir editando" }))
+        // «Seguir editando»: la URL vuelve al grupo abierto y el borrador sigue.
+        const [action, onCancel] = m.runGuarded.mock.calls[0] as [() => void, () => void]
+        act(() => onCancel())
         expect(onGroupChange).toHaveBeenCalledWith(2)
         expect(screen.getByText("Se quitará")).toBeInTheDocument()
-
-        view.rerender(<FiscalMatchDrawer id={2} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
-        view.rerender(<FiscalMatchDrawer id={1} open onOpenChange={vi.fn()} onGroupChange={onGroupChange} />)
-        await user.click(screen.getByRole("button", { name: "Descartar cambios" }))
+        // «Descartar y continuar»: la guarda descarta y abre el otro grupo.
+        act(() => {
+            m.dirty.forEach((e) => e.discard())
+            action()
+        })
         await waitFor(() => expect(m.requestedIds).toContain(1))
         expect(screen.queryByText("Se quitará")).not.toBeInTheDocument()
+    })
+
+    it("registra el borrador en la guarda global: sucio, descartar y guardar", async () => {
+        const user = userEvent.setup()
+        m.group = invoice
+        m.apply.mockResolvedValue(invoice)
+        renderDrawer(2)
+        expect(m.dirty).toHaveLength(1)
+        const entry = m.dirty[0]
+        expect(entry.name).toBe("Cuadre FAC-1532")
+        expect(entry.isDirty()).toBe(false)
+        await user.click(within(column("RCV (SII)")).getByRole("button", { name: "Quitar Folio 1532" }))
+        await waitFor(() => expect(entry.isDirty()).toBe(true))
+        act(() => entry.discard())
+        await waitFor(() => expect(screen.queryByText("Se quitará")).not.toBeInTheDocument())
+        expect(entry.isDirty()).toBe(false)
+
+        await user.click(within(column("RCV (SII)")).getByRole("button", { name: "Quitar Folio 1532" }))
+        let saved = false
+        await act(async () => { saved = await entry.save() })
+        expect(saved).toBe(true)
+        expect(m.apply).toHaveBeenCalledWith({ id: 2, changes: [{ op: "unlink", part: "rcv", id: 9 }] })
+    })
+
+    it("«Guardar y continuar» que falla devuelve false y conserva el borrador", async () => {
+        const user = userEvent.setup()
+        m.group = invoice
+        m.apply.mockRejectedValue({ response: { status: 400, data: { error: { message: "No", code: "NOT_ALLOWED", details: { change_index: 0 } } } } })
+        renderDrawer(2)
+        await user.click(within(column("RCV (SII)")).getByRole("button", { name: "Quitar Folio 1532" }))
+        let saved = true
+        await act(async () => { saved = await m.dirty[0].save() })
+        expect(saved).toBe(false)
+        expect(screen.getByText("1 cambio sin guardar")).toBeInTheDocument()
     })
 
     it("un 409 conserva el borrador", async () => {
@@ -347,33 +439,23 @@ describe("FiscalMatchDrawer", () => {
         m.search = { rcv: [candidate(33)] }
         m.apply.mockRejectedValue({ response: { status: 409, data: { error: { message: "El cuadre está en curso", code: "BUSY", details: {} } } } })
         renderDrawer(2)
-        await user.click(within(column("RCV (SII)")).getByRole("checkbox", { name: /33 N° 33/ }))
+        await user.click(within(column("RCV (SII)")).getByRole("radio", { name: /33 N° 33/ }))
         await user.click(save())
         await waitFor(() => expect(m.apply).toHaveBeenCalled())
         expect(screen.getByText("1 cambio sin guardar")).toBeInTheDocument()
-        expect(within(column("RCV (SII)")).getByRole("checkbox", { name: /33 N° 33/ })).toHaveAttribute("aria-checked", "true")
+        expect(within(column("RCV (SII)")).getByRole("radio", { name: /33 N° 33/ })).toHaveAttribute("aria-checked", "true")
     })
 
-    it("cerrar con cambios pide confirmación; sin cambios cierra directo", async () => {
+    it("cerrar delega en quien abrió la ficha (su cierre pasa por la guarda global)", async () => {
         const user = userEvent.setup()
         const onOpenChange = vi.fn()
         m.group = invoice
         renderDrawer(2, { onOpenChange })
-        await user.click(screen.getAllByRole("button", { name: "Cerrar" })[0])
-        expect(onOpenChange).toHaveBeenCalledWith(false)
-        onOpenChange.mockReset()
-
         await user.click(within(column("RCV (SII)")).getByRole("button", { name: "Quitar Folio 1532" }))
         await user.click(screen.getAllByRole("button", { name: "Cerrar" })[0])
-        expect(onOpenChange).not.toHaveBeenCalled()
-        expect(screen.getByText("Hay cambios sin guardar")).toBeInTheDocument()
-        await user.click(screen.getByRole("button", { name: "Seguir editando" }))
-        expect(onOpenChange).not.toHaveBeenCalled()
-        expect(screen.getByText("Se quitará")).toBeInTheDocument()
-
-        await user.click(screen.getAllByRole("button", { name: "Cerrar" })[0])
-        await user.click(screen.getByRole("button", { name: "Cerrar sin guardar" }))
-        await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
+        expect(onOpenChange).toHaveBeenCalledWith(false)
+        expect(screen.queryByText("Hay cambios sin guardar")).not.toBeInTheDocument()
+        expect(m.dirty[0].isDirty()).toBe(true)
     })
 
     it("solo lectura sin tax.change_taxperiod: sin selección, sin «Quitar» ni pie, pero con enlaces", () => {
@@ -382,6 +464,7 @@ describe("FiscalMatchDrawer", () => {
         m.search = { rcv: [candidate(33)] }
         renderDrawer(2)
         expect(screen.queryByRole("checkbox")).not.toBeInTheDocument()
+        expect(screen.queryByRole("radio")).not.toBeInTheDocument()
         expect(screen.queryByRole("button", { name: "Guardar cambios" })).not.toBeInTheDocument()
         expect(screen.queryByRole("button", { name: /^Quitar/ })).not.toBeInTheDocument()
         expect(screen.getByRole("button", { name: "FAC-1532" })).toBeInTheDocument()
@@ -396,7 +479,7 @@ describe("FiscalMatchDrawer", () => {
         renderDrawer(3, { onGroupChange })
         // Sin documento, TUU no ofrece candidatos: solo sus registros propios.
         expect(within(column("Pagos TUU")).getByText(/Primero elige el documento ERP/)).toBeInTheDocument()
-        await user.click(within(column("Documento ERP")).getByRole("checkbox", { name: /BOL-90/ }))
+        await user.click(within(column("Documento ERP")).getByRole("radio", { name: /BOL-90/ }))
         expect(screen.getByText("La venta TUU #6 se moverá también")).toBeInTheDocument()
         await user.click(save())
         expect(m.apply).toHaveBeenCalledWith({ id: 3, changes: [{ op: "link", part: "erp", id: 90, payments: null }] })
@@ -496,5 +579,97 @@ describe("FiscalMatchDrawer", () => {
         renderDrawer(1)
         expect(screen.getByText("Este cuadre ya no existe")).toBeInTheDocument()
         expect(screen.queryByText(/Revisa tu conexión/)).toBeNull()
+    })
+
+    describe("pagos (Ruling K)", () => {
+        it("venta TUU con dos pagos: «Guardar» espera el pago y el cuerpo lo lleva", async () => {
+            const user = userEvent.setup()
+            m.group = boletaPending
+            m.search = { tuu: [candidate(81, { kind: "tuu", label: "Venta TUU #81", amount: "7000.00", compatible_movements: [payment(501), payment(502, false)] })] }
+            m.apply.mockResolvedValue(boletaPending)
+            renderDrawer(7)
+            await user.click(within(column("Pagos TUU")).getByRole("checkbox", { name: /Venta TUU #81/ }))
+            // Un solo pago del mismo monto: se asigna solo.
+            expect(save()).toBeEnabled()
+            await choosePayment(user, "Venta TUU #81", /Otro monto/)
+            await user.click(save())
+            expect(m.apply).toHaveBeenCalledWith({ id: 7, changes: [{ op: "link", part: "tuu", id: 81, movement: 502 }] })
+        })
+
+        it("sin un único pago del mismo monto, «Guardar» queda deshabilitado con el motivo en la tarjeta", async () => {
+            const user = userEvent.setup()
+            m.group = boletaPending
+            m.search = { tuu: [candidate(81, { kind: "tuu", label: "Venta TUU #81", amount: "7000.00", compatible_movements: [payment(501), payment(503)] })] }
+            m.apply.mockResolvedValue(boletaPending)
+            renderDrawer(7)
+            await user.click(within(column("Pagos TUU")).getByRole("checkbox", { name: /Venta TUU #81/ }))
+            expect(save()).toBeDisabled()
+            expect(within(column("Pagos TUU")).getByText("Falta elegir el pago")).toBeInTheDocument()
+            await choosePayment(user, "Venta TUU #81", /Pago 503/)
+            expect(save()).toBeEnabled()
+            expect(within(column("Pagos TUU")).queryByText("Falta elegir el pago")).not.toBeInTheDocument()
+            await user.click(save())
+            expect(m.apply).toHaveBeenCalledWith({ id: 7, changes: [{ op: "link", part: "tuu", id: 81, movement: 503 }] })
+        })
+
+        it("dos ventas no pueden elegir el mismo pago", async () => {
+            const user = userEvent.setup()
+            m.group = boletaPending
+            m.search = {
+                tuu: [
+                    candidate(81, { kind: "tuu", label: "Venta TUU #81", compatible_movements: [payment(501)] }),
+                    candidate(82, { kind: "tuu", label: "Venta TUU #82", compatible_movements: [payment(501), payment(502, false)] }),
+                ],
+            }
+            renderDrawer(7)
+            const tuu = column("Pagos TUU")
+            await user.click(within(tuu).getByRole("checkbox", { name: /Venta TUU #81/ }))
+            await user.click(within(tuu).getByRole("checkbox", { name: /Venta TUU #82/ }))
+            expect(save()).toBeDisabled()
+            await user.click(paymentSelect("Venta TUU #82"))
+            expect(screen.queryByRole("option", { name: /Pago 501/ })).not.toBeInTheDocument()
+            expect(screen.getByRole("option", { name: /Pago 502/ })).toBeInTheDocument()
+        })
+
+        it("huérfano con venta propia y documento con dos pagos: elige el pago en la columna TUU", async () => {
+            const user = userEvent.setup()
+            m.group = orphan
+            m.search = { erp: [candidate(90, { kind: "erp", label: "BOL-90", payments_by_sale: { "6": [payment(601), payment(602)] } })] }
+            m.apply.mockResolvedValue({ ...voucher, id: 1 })
+            renderDrawer(3)
+            await user.click(within(column("Documento ERP")).getByRole("radio", { name: /BOL-90/ }))
+            expect(save()).toBeDisabled()
+            expect(within(column("Pagos TUU")).getByText("Falta elegir el pago")).toBeInTheDocument()
+            // Elegido el documento, ya no se pide elegirlo.
+            expect(within(column("Pagos TUU")).queryByText(/Primero elige el documento ERP/)).not.toBeInTheDocument()
+            await choosePayment(user, "Venta TUU #6", /Pago 602/)
+            await user.click(save())
+            expect(m.apply).toHaveBeenCalledWith({ id: 3, changes: [{ op: "link", part: "erp", id: 90, payments: { 6: 602 } }] })
+        })
+
+        it("mientras guarda, las tarjetas y «Quitar» no se pueden cambiar", async () => {
+            const user = userEvent.setup()
+            m.applyPending = true
+            m.group = { ...invoice, dte_type: 39 }
+            m.search = { rcv: [candidate(33)] }
+            renderDrawer(2)
+            const rcv = column("RCV (SII)")
+            const card = within(rcv).getByRole("checkbox", { name: /33 N° 33/ })
+            expect(card).toHaveAttribute("aria-disabled", "true")
+            await user.click(card)
+            expect(screen.queryByText("1 cambio sin guardar")).not.toBeInTheDocument()
+            expect(within(rcv).getByRole("button", { name: "Quitar Folio 1532" })).toBeDisabled()
+        })
+
+        it("un MOVED refresca las listas del cuadre", async () => {
+            const user = userEvent.setup()
+            m.group = invoiceMissingRcv
+            m.search = { rcv: [candidate(33)] }
+            m.apply.mockRejectedValue({ response: { status: 400, data: { error: { message: "Se movió", code: "MOVED", details: { change_index: 0 } } } } })
+            renderDrawer(2)
+            await user.click(within(column("RCV (SII)")).getByRole("radio", { name: /33 N° 33/ }))
+            await user.click(save())
+            await waitFor(() => expect(m.invalidate).toHaveBeenCalled())
+        })
     })
 })

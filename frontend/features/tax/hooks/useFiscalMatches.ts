@@ -48,16 +48,16 @@ export function useFiscalMatch(id: number | null | undefined) {
 }
 
 /**
- * Búsqueda de candidatas de una columna, paginada en infinito (20 por página). `enabled` la
- * activa solo cuando la columna está visible; cambiar `q`/`ordering` reinicia desde la página 1.
+ * Búsqueda de candidatas de una columna, paginada en infinito (20 por página). Solo la monta la
+ * columna que ofrece candidatas; cambiar `q`/`ordering` reinicia desde la página 1.
  */
-export function useFiscalMatchSearch(id: number, part: FiscalMatchPart, params: FiscalMatchSearchParams, enabled = true) {
+export function useFiscalMatchSearch(id: number, part: FiscalMatchPart, params: FiscalMatchSearchParams) {
     const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
         queryKey: FISCAL_MATCH_KEYS.search(id, part, params),
         queryFn: ({ pageParam, signal }) => fiscalMatchApi.search(id, part, params, pageParam, signal),
         initialPageParam: 1,
         getNextPageParam: (last) => (last.hasNextPage ? last.pageIndex + 1 : undefined),
-        enabled: enabled && id > 0,
+        enabled: id > 0,
         staleTime: staleTime.standard,
         // Al escribir en el buscador la columna no se vacía mientras llega la nueva búsqueda.
         placeholderData: keepPreviousData,

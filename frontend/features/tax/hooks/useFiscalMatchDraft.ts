@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import type { CandidateMovement, FiscalMatchChange, FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem } from '../types/fiscalMatch'
+import type { CandidateMovement, FiscalMatchChange, FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem, FiscalMatchWarning } from '../types/fiscalMatch'
 import {
     applyError,
     applyPayment,
@@ -12,13 +12,14 @@ import {
     consequencesOf,
     dropEntry,
     errorOf as errorOfEntries,
-    hasMissingPayment,
+    missingPaymentSales,
     paymentOptionsOf as paymentOptionsOfEntries,
     pendingLinkItems,
     reconcileEntries,
     stateOf as stateOfEntries,
     summarize,
     toBody,
+    warningsOf as warningsOfEntries,
     type DraftCardState,
     type DraftEntry,
     type SelectResult,
@@ -26,7 +27,7 @@ import {
 } from './fiscalMatchDraft'
 
 type Action =
-    | { type: 'select'; group: FiscalMatchDetail; part: FiscalMatchPart; item: FiscalMatchSearchItem; movement?: number | null }
+    | { type: 'select'; group: FiscalMatchDetail; part: FiscalMatchPart; item: FiscalMatchSearchItem }
     | { type: 'unselect'; part: FiscalMatchPart; id: number }
     | { type: 'remove'; group: FiscalMatchDetail; part: FiscalMatchPart; id: number }
     | { type: 'payment'; saleId: number; movementId: number }
@@ -37,7 +38,7 @@ type Action =
 
 function reducer(entries: DraftEntry[], action: Action): DraftEntry[] {
     switch (action.type) {
-        case 'select': return applySelect(entries, action.group, action.part, action.item, action.movement).entries
+        case 'select': return applySelect(entries, action.group, action.part, action.item).entries
         case 'unselect': return applyUnselect(entries, action.part, action.id)
         case 'remove': return applyRemove(entries, action.group, action.part, action.id)
         case 'payment': return applyPayment(entries, action.saleId, action.movementId)
@@ -57,10 +58,10 @@ export function useFiscalMatchDraft(group: FiscalMatchDetail | undefined) {
     const latest = useRef(entries)
     useEffect(() => { latest.current = entries }, [entries])
 
-    const select = useCallback((part: FiscalMatchPart, item: FiscalMatchSearchItem, movement?: number | null): SelectResult => {
+    const select = useCallback((part: FiscalMatchPart, item: FiscalMatchSearchItem): SelectResult => {
         if (!group) return { ok: false, reason: 'El grupo aún no está cargado.' }
-        const { result } = applySelect(latest.current, group, part, item, movement)
-        if (result.ok) dispatch({ type: 'select', group, part, item, movement })
+        const { result } = applySelect(latest.current, group, part, item)
+        if (result.ok) dispatch({ type: 'select', group, part, item })
         return result
     }, [group])
     const unselect = useCallback((part: FiscalMatchPart, id: number) => dispatch({ type: 'unselect', part, id }), [])
@@ -103,12 +104,19 @@ export function useFiscalMatchDraft(group: FiscalMatchDetail | undefined) {
 
     const pending: FiscalMatchChange[] = useMemo(() => toBody(entries), [entries])
     const consequences = useMemo(() => consequencesOf(entries, group), [entries, group])
-    const needsPayment = useMemo(() => hasMissingPayment(entries, group), [entries, group])
+    const missingPayments = useMemo(() => missingPaymentSales(entries, group), [entries, group])
+    const needsPayment = missingPayments.length > 0
+    /** A la venta le falta elegir el pago (motivo visible en su tarjeta). */
+    const isMissingPayment = useCallback((saleId: number) => missingPayments.includes(saleId), [missingPayments])
+    const warningsOf = useCallback(
+        (part: FiscalMatchPart, item: FiscalMatchSearchItem): FiscalMatchWarning[] => (group ? warningsOfEntries(entries, group, part, item) : item.warnings),
+        [entries, group],
+    )
     const summary = useMemo(() => summarize(entries, group), [entries, group])
 
     return {
         pending, isDirty: entries.length > 0, needsPayment, consequences, summary,
-        select, unselect, remove, setPayment, discard, stateOf, errorOf, paymentOf, paymentOptionsOf,
+        select, unselect, remove, setPayment, discard, stateOf, errorOf, paymentOf, paymentOptionsOf, isMissingPayment, warningsOf,
         pendingLinks, markError, clearErrors, drop, reconcile,
     }
 }

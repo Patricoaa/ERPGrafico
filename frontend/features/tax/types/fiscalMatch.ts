@@ -108,6 +108,8 @@ export interface FiscalMatchCounts {
 export interface CandidateMovement extends FiscalMatchMovementRef {
     /** Nombre del método de pago («Tarjeta», «Efectivo»). */
     method: string
+    /** Es del monto de la venta TUU; otro monto se puede elegir con advertencia (Ruling K). */
+    same_amount: boolean
 }
 
 export type FiscalMatchSearchOrdering = 'score' | 'recent'
@@ -135,11 +137,11 @@ export interface FiscalMatchSearchItem {
     amount: string
     score: number
     warnings: FiscalMatchWarning[]
-    /** ERP/RCV con venta TUU de referencia: cobros libres compatibles. */
+    /** Venta TUU hacia un documento: cobros libres de un medio compatible, los de su monto primero. */
     compatible_movements?: CandidateMovement[]
     /** Venta TUU hacia un documento: registros del SII de su grupo huérfano que viajarían con ella. */
     carried_rcv?: { id: number; folio: string }[]
-    /** `{sale_id: cobros libres}` para documentos que se cuadran contra varias ventas. */
+    /** Documento para un huérfano con ventas TUU: `{sale_id: cobros libres compatibles}`, los del monto primero. */
     payments_by_sale?: Record<string, CandidateMovement[]>
 }
 

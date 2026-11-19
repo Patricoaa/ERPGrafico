@@ -6,6 +6,7 @@ import { CardLead, CardSurface, Chip, LabeledSelect, MoneyDisplay, cardAnatomy }
 import { formatDate, formatTimeOfDay } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { matchScoreIntent } from "@/lib/fiscal-match"
+import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { DraftCardState } from "../hooks/fiscalMatchDraft"
 import type { CandidateMovement, FiscalMatchPart, FiscalMatchWarning } from "../types/fiscalMatch"
@@ -29,6 +30,8 @@ export interface FiscalMatchPaymentChoice {
     options: CandidateMovement[]
     value: number | null
     onChange: (movementId: number) => void
+    /** Falta elegirlo: el guardado queda deshabilitado y el motivo se ve aquí. */
+    missing?: boolean
 }
 
 export interface FiscalMatchCandidateCardProps {
@@ -49,11 +52,17 @@ export interface FiscalMatchCandidateCardProps {
     onOpen?: () => void
     /** Venta TUU: pago del documento al que se asocia (selector junto a la tarjeta). */
     payment?: FiscalMatchPaymentChoice
+    /** Columna de una sola elección (ERP, RCV de facturas y notas): semántica de radio. */
+    single?: boolean
+    /** Guardado en curso: nada se puede cambiar. */
+    disabled?: boolean
 }
 
 const PART_ICONS: Record<FiscalMatchPart, LucideIcon> = { erp: FileText, tuu: CreditCard, rcv: Landmark }
 
-const paymentLabel = (m: CandidateMovement) => `${formatTimeOfDay(m.created_at)} · ${m.method}`
+/** Hora y medio; un pago de otro monto lo dice (se puede elegir: la parte queda con advertencia). */
+const paymentLabel = (m: CandidateMovement) =>
+    [formatTimeOfDay(m.created_at), m.method, !m.same_amount && `Otro monto (${formatMoney(m.amount)})`].filter(Boolean).join(" · ")
 
 /**
  * Tarjeta de la ficha de cuadre (spec §5.1) sobre `CardSurface`: etiqueta, contraparte, fecha, total,
@@ -61,7 +70,7 @@ const paymentLabel = (m: CandidateMovement) => `${formatTimeOfDay(m.created_at)}
  * el estado (por unir, se quitará, error) va también en texto, nunca solo en el color.
  */
 export function FiscalMatchCandidateCard({
-    part, card, state, error, readOnly = false, onToggle, onRemove, onUndo, onOpen, payment,
+    part, card, state, error, readOnly = false, onToggle, onRemove, onUndo, onOpen, payment, single = false, disabled = false,
 }: FiscalMatchCandidateCardProps) {
     const Icon = PART_ICONS[part]
     const warnings = card.warnings ?? []
@@ -79,17 +88,18 @@ export function FiscalMatchCandidateCard({
         blocking && blockedId,
         error && errorId,
     ].filter(Boolean).join(" ")
-    const showPayment = !readOnly && payment !== undefined && payment.options.length > 0
+    const showPayment = !readOnly && payment !== undefined && (payment.options.length > 0 || payment.missing === true)
 
     return (
         <div className="flex flex-col gap-1.5">
         <CardSurface
             kind="item"
-            role="checkbox"
+            role={single ? "radio" : "checkbox"}
             aria-label={selectable ? card.label : undefined}
             aria-describedby={describedBy || undefined}
             selected={selectable ? chosen : undefined}
-            unavailable={selectable && blocking !== undefined && !chosen}
+            unavailable={selectable && (disabled || (blocking !== undefined && !chosen))}
+            // `unavailable` (bloqueada o guardando) ya ignora el clic.
             onClick={selectable ? onToggle : undefined}
             className={cn(state === "toRemove" && "opacity-70", state === "error" && "border-destructive")}
         >
@@ -145,14 +155,14 @@ export function FiscalMatchCandidateCard({
 
                 {!readOnly && state === "linked" && onRemove && (
                     <div className="flex justify-end">
-                        <Button type="button" size="sm" variant="ghost" aria-label={`Quitar ${card.label}`} onClick={onRemove}>
+                        <Button type="button" size="sm" variant="ghost" aria-label={`Quitar ${card.label}`} disabled={disabled} onClick={onRemove}>
                             Quitar
                         </Button>
                     </div>
                 )}
                 {!readOnly && onUndo && !onToggle && state !== "linked" && state !== "idle" && (
                     <div className="flex justify-end">
-                        <Button type="button" size="sm" variant="ghost" onClick={onUndo}>
+                        <Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={onUndo}>
                             Deshacer
                         </Button>
                     </div>
@@ -164,6 +174,8 @@ export function FiscalMatchCandidateCard({
             <LabeledSelect
                 label={`Pago de ${card.label}`}
                 placeholder="Elige el pago"
+                disabled={disabled}
+                error={payment.missing ? "Falta elegir el pago" : undefined}
                 value={payment.value === null ? undefined : String(payment.value)}
                 onChange={(v) => payment.onChange(Number(v))}
                 options={payment.options.map((m) => ({ value: String(m.id), label: paymentLabel(m) }))}

@@ -4,6 +4,7 @@ import type {
     FiscalMatchDetail,
     FiscalMatchPart,
     FiscalMatchSearchItem,
+    FiscalMatchWarning,
 } from '../types/fiscalMatch'
 
 /**
@@ -45,14 +46,55 @@ export function linkedIds(group: FiscalMatchDetail, part: FiscalMatchPart): numb
 const same = (e: DraftEntry, part: FiscalMatchPart, id: number): boolean =>
     e.change.part === part && e.change.id === id
 
-/** Pagos de las ventas propias del huérfano para el documento elegido; se asigna solo si hay una opción. */
-function ownPayments(group: FiscalMatchDetail, item: FiscalMatchSearchItem): Record<number, number> | null {
+/** Registros con «Quitar» en espera en una parte. */
+function removedIds(entries: DraftEntry[], part: FiscalMatchPart): Set<number> {
+    return new Set(entries.filter(e => e.change.op === 'unlink' && e.change.part === part).map(e => e.change.id))
+}
+
+/** Pagos ya elegidos por otras ventas del borrador (un pago respalda una sola venta). */
+export function takenPayments(entries: DraftEntry[], exceptSaleId?: number): Set<number> {
+    const out = new Set<number>()
+    for (const { change } of entries) {
+        if (change.op !== 'link') continue
+        if (change.part === 'tuu' && change.id !== exceptSaleId && change.movement != null) out.add(change.movement)
+        if (change.part === 'erp') {
+            for (const [saleId, m] of Object.entries(change.payments ?? {})) if (Number(saleId) !== exceptSaleId) out.add(m)
+        }
+    }
+    return out
+}
+
+/** El pago se asigna solo si hay exactamente uno del mismo monto (y nadie más lo eligió). */
+function autoPayment(options: CandidateMovement[] | undefined, taken: Set<number>): number | null {
+    const same = (options ?? []).filter(m => m.same_amount)
+    return same.length === 1 && !taken.has(same[0].id) ? same[0].id : null
+}
+
+/** Pagos de las ventas propias del huérfano (salvo las que se quitan) para el documento elegido. */
+function ownPayments(entries: DraftEntry[], group: FiscalMatchDetail, item: FiscalMatchSearchItem): Record<number, number> | null {
     const out: Record<number, number> = {}
+    const taken = takenPayments(entries)
+    const removed = removedIds(entries, 'tuu')
     for (const sale of group.terminal_sales) {
-        const options = item.payments_by_sale?.[String(sale.id)] ?? []
-        if (options.length === 1) out[sale.id] = options[0].id
+        if (removed.has(sale.id)) continue
+        const only = autoPayment(item.payments_by_sale?.[String(sale.id)], taken)
+        if (only !== null) {
+            out[sale.id] = only
+            taken.add(only)
+        }
     }
     return Object.keys(out).length > 0 ? out : null
+}
+
+/**
+ * Advertencias vigentes de una candidata según el borrador: «Ya tiene registro del SII» deja de
+ * bloquear si el registro unido del grupo está por quitarse (el servidor quita antes de unir).
+ */
+export function warningsOf(entries: DraftEntry[], group: FiscalMatchDetail, part: FiscalMatchPart, item: FiscalMatchSearchItem): FiscalMatchWarning[] {
+    if (part !== 'rcv' || group.rcv_documents.length === 0) return item.warnings
+    const removed = removedIds(entries, 'rcv')
+    if (!group.rcv_documents.every(d => removed.has(d.id))) return item.warnings
+    return item.warnings.filter(w => w.code !== 'SECOND_RCV')
 }
 
 export function applySelect(
@@ -60,9 +102,8 @@ export function applySelect(
     group: FiscalMatchDetail,
     part: FiscalMatchPart,
     item: FiscalMatchSearchItem,
-    movement?: number | null,
 ): { entries: DraftEntry[]; result: SelectResult } {
-    const blocking = item.warnings.find(w => w.blocking)
+    const blocking = warningsOf(entries, group, part, item).find(w => w.blocking)
     if (blocking) return { entries, result: { ok: false, reason: blocking.label } }
     if (part === 'erp' && !isOrphan(group)) {
         return { entries, result: { ok: false, reason: 'Solo un grupo sin documento puede elegir uno.' } }
@@ -78,10 +119,9 @@ export function applySelect(
 
     const change: FiscalMatchChange = { op: 'link', part, id: item.id }
     if (part === 'tuu') {
-        const only = item.compatible_movements?.length === 1 ? item.compatible_movements[0].id : null
-        change.movement = movement ?? only
+        change.movement = autoPayment(item.compatible_movements, takenPayments(next))
     } else if (part === 'erp') {
-        change.payments = ownPayments(group, item)
+        change.payments = ownPayments(next, group, item)
     }
     return { entries: [...next, { change, item }], result: { ok: true } }
 }
@@ -129,14 +169,18 @@ export function errorOf(entries: DraftEntry[], part: FiscalMatchPart, id: number
     return entries.find(e => same(e, part, id))?.error
 }
 
-/** Pagos entre los que elegir para una venta TUU: los de su propia tarjeta o, en un huérfano, los del documento elegido. */
+/**
+ * Pagos entre los que elegir para una venta TUU: los de su propia tarjeta o, en un huérfano, los del
+ * documento elegido; sin los que ya eligió otra venta del borrador.
+ */
 export function paymentOptionsOf(entries: DraftEntry[], saleId: number): CandidateMovement[] {
+    const taken = takenPayments(entries, saleId)
     for (const e of entries) {
         if (e.change.op !== 'link') continue
-        if (e.change.part === 'tuu' && e.change.id === saleId) return e.item?.compatible_movements ?? []
+        if (e.change.part === 'tuu' && e.change.id === saleId) return (e.item?.compatible_movements ?? []).filter(m => !taken.has(m.id))
         if (e.change.part === 'erp') {
             const options = e.item?.payments_by_sale?.[String(saleId)]
-            if (options) return options
+            if (options) return options.filter(m => !taken.has(m.id))
         }
     }
     return []
@@ -173,19 +217,29 @@ function carriedRcv(entries: DraftEntry[]): { id: number; folio: string }[] {
     return entries.flatMap(e => (e.change.op === 'link' && e.change.part === 'tuu' ? (e.item?.carried_rcv ?? []) : []))
 }
 
-/** Cambios que viajan a `apply` (sin la tarjeta ni el error). */
-export const toBody = (entries: DraftEntry[]): FiscalMatchChange[] => entries.map(e => e.change)
+/**
+ * Cambios que viajan a `apply` (sin la tarjeta ni el error). Una venta propia del huérfano con
+ * «Quitar» en espera sale antes de unir el documento: su pago no viaja.
+ */
+export function toBody(entries: DraftEntry[]): FiscalMatchChange[] {
+    const removed = removedIds(entries, 'tuu')
+    return entries.map(({ change }) => {
+        if (change.part !== 'erp' || !change.payments || removed.size === 0) return change
+        const kept = Object.entries(change.payments).filter(([saleId]) => !removed.has(Number(saleId)))
+        return { ...change, payments: kept.length > 0 ? Object.fromEntries(kept.map(([k, v]) => [Number(k), v])) : null }
+    })
+}
 
-/** Falta elegir algún pago: no se puede guardar todavía. */
-export function hasMissingPayment(entries: DraftEntry[], group: FiscalMatchDetail | undefined): boolean {
-    return entries.some(e => {
-        if (e.change.op !== 'link') return false
-        if (e.change.part === 'tuu') return e.change.movement == null
-        if (e.change.part !== 'erp' || !group) return false
-        return group.terminal_sales.some(s => {
-            const options = e.item?.payments_by_sale?.[String(s.id)] ?? []
-            return options.length > 0 && e.change.payments?.[s.id] == null
-        })
+/** Ventas TUU a las que les falta elegir el pago: no se puede guardar todavía. */
+export function missingPaymentSales(entries: DraftEntry[], group: FiscalMatchDetail | undefined): number[] {
+    const removed = removedIds(entries, 'tuu')
+    return entries.flatMap(e => {
+        if (e.change.op !== 'link') return []
+        if (e.change.part === 'tuu') return e.change.movement == null ? [e.change.id] : []
+        if (e.change.part !== 'erp' || !group) return []
+        return group.terminal_sales
+            .filter(s => !removed.has(s.id) && (e.item?.payments_by_sale?.[String(s.id)] ?? []).length > 0 && e.change.payments?.[s.id] == null)
+            .map(s => s.id)
     })
 }
 
@@ -208,8 +262,11 @@ export function consequencesOf(entries: DraftEntry[], group: FiscalMatchDetail |
         carried.push(rcvMoves(r.folio, group?.dte_type))
     }
     if (!group || !entries.some(e => e.change.part === 'erp' && e.change.op === 'link')) return carried
-    const rcv = group.rcv_documents.filter(r => !seen.has(r.id)).map(r => rcvMoves(r.folio, r.dte_type))
-    const tuu = group.terminal_sales.map(s => `La venta TUU #${s.id} se moverá también`)
+    // Lo que se quita en el mismo guardado no viaja con el documento.
+    const removedRcv = removedIds(entries, 'rcv')
+    const removedTuu = removedIds(entries, 'tuu')
+    const rcv = group.rcv_documents.filter(r => !seen.has(r.id) && !removedRcv.has(r.id)).map(r => rcvMoves(r.folio, r.dte_type))
+    const tuu = group.terminal_sales.filter(s => !removedTuu.has(s.id)).map(s => `La venta TUU #${s.id} se moverá también`)
     return [...tuu, ...rcv, ...carried]
 }
 

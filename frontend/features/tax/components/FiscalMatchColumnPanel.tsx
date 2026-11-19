@@ -10,7 +10,7 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { getDteLabel } from "@/lib/entity-registry"
 import { partStateValue, type PartState } from "@/lib/fiscal-match"
 import { dteShortLabel } from "../entity-view/fiscalMatch.entity"
-import { isOrphan } from "../hooks/fiscalMatchDraft"
+import { isOrphan, maxSelection } from "../hooks/fiscalMatchDraft"
 import type { FiscalMatchDraft } from "../hooks/useFiscalMatchDraft"
 import { useFiscalMatchSearch } from "../hooks/useFiscalMatches"
 import type { FiscalMatchDetail, FiscalMatchPart, FiscalMatchSearchItem, FiscalMatchSearchOrdering } from "../types/fiscalMatch"
@@ -27,6 +27,8 @@ export interface FiscalMatchColumnPanelProps {
     draft: FiscalMatchDraft
     /** Sin `tax.change_taxperiod`: sin selección ni «Quitar». */
     readOnly: boolean
+    /** Guardado en curso: tarjetas y pagos deshabilitados. */
+    disabled?: boolean
     /** Contenido bajo la columna (alimentación de compras en la columna RCV). */
     children?: ReactNode
 }
@@ -96,7 +98,7 @@ function linkedCards(group: FiscalMatchDetail, part: FiscalMatchPart): FiscalMat
  * «En este cuadre» (registros unidos, con «Quitar») y «Sin cuadrar» (buscador, orden y candidatas
  * por coincidencia, con scroll infinito). Las selecciones van al borrador; nada se guarda aquí.
  */
-export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, draft, readOnly, children }: FiscalMatchColumnPanelProps) {
+export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, draft, readOnly, disabled = false, children }: FiscalMatchColumnPanelProps) {
     const titleId = useId()
     const { openEntity } = useGlobalModalActions()
     const state = stateOf(group, part)
@@ -105,13 +107,18 @@ export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, dr
     // Lo elegido para unir se ve aquí aunque ya no esté en la página o la búsqueda de «Sin cuadrar».
     const pending = draft.pendingLinks(part)
     const paymentFor = (saleId: number) => {
-        const options = part === "tuu" ? draft.paymentOptionsOf(saleId) : []
-        return options.length > 0 ? {
+        // Una venta que se quita no lleva pago.
+        if (part !== "tuu" || draft.stateOf(part, saleId) === "toRemove") return undefined
+        const options = draft.paymentOptionsOf(saleId)
+        const missing = draft.isMissingPayment(saleId)
+        return options.length > 0 || missing ? {
             options,
+            missing,
             value: draft.paymentOf(saleId),
             onChange: (movementId: number) => draft.setPayment(saleId, movementId),
         } : undefined
     }
+    const single = maxSelection(group, part) === 1
     const number = String(index).padStart(2, "0")
 
     const notApplicable = notApplicableText(part, state)
@@ -148,6 +155,7 @@ export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, dr
                         state={draft.stateOf(part, card.id)}
                         error={draft.errorOf(part, card.id)}
                         readOnly={readOnly}
+                        disabled={disabled}
                         onOpen={() => openEntity(ENTITY_LABELS[part], card.id)}
                         onRemove={part === "erp" ? undefined : () => draft.remove(part, card.id)}
                         onUndo={() => draft.unselect(part, card.id)}
@@ -158,10 +166,11 @@ export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, dr
                     <FiscalMatchCandidateCard
                         key={`pending-${item.id}`}
                         part={part}
-                        card={item}
+                        card={{ ...item, warnings: draft.warningsOf(part, item) }}
                         state={draft.stateOf(part, item.id)}
                         error={draft.errorOf(part, item.id)}
                         readOnly={readOnly}
+                        disabled={disabled}
                         onUndo={() => draft.unselect(part, item.id)}
                         payment={paymentFor(item.id)}
                     />
@@ -171,8 +180,9 @@ export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, dr
             {notApplicable !== null ? (
                 <EmptyState variant="minimal" title={notApplicable} />
             ) : offersCandidates ? (
-                <CandidateList part={part} group={group} draft={draft} readOnly={readOnly} />
-            ) : part !== "erp" ? (
+                // Por grupo: al cambiar de grupo no se ven (ni eligen) candidatas del anterior.
+                <CandidateList key={group.id} part={part} group={group} draft={draft} readOnly={readOnly} disabled={disabled} single={single} />
+            ) : part !== "erp" && draft.pendingLinks("erp").length === 0 ? (
                 <EmptyState
                     variant="minimal"
                     title="Primero elige el documento ERP"
@@ -185,11 +195,13 @@ export function FiscalMatchColumnPanel({ index, part, title, subtitle, group, dr
     )
 }
 
-function CandidateList({ part, group, draft, readOnly }: { part: FiscalMatchPart; group: FiscalMatchDetail; draft: FiscalMatchDraft; readOnly: boolean }) {
+function CandidateList({ part, group, draft, readOnly, disabled, single }: {
+    part: FiscalMatchPart; group: FiscalMatchDetail; draft: FiscalMatchDraft; readOnly: boolean; disabled: boolean; single: boolean
+}) {
     const [text, setText] = useState("")
     const [ordering, setOrdering] = useState<FiscalMatchSearchOrdering>("score")
     const q = useDebounce(text.trim(), SEARCH_DEBOUNCE_MS)
-    const search = useFiscalMatchSearch(group.id, part, { q: q || undefined, ordering }, true)
+    const search = useFiscalMatchSearch(group.id, part, { q: q || undefined, ordering })
 
     const loadMore = () => {
         if (search.hasNextPage && !search.isFetchingNextPage) void search.fetchNextPage()
@@ -236,9 +248,11 @@ function CandidateList({ part, group, draft, readOnly }: { part: FiscalMatchPart
                         <FiscalMatchCandidateCard
                             key={item.id}
                             part={part}
-                            card={item}
+                            card={{ ...item, warnings: draft.warningsOf(part, item) }}
                             state={draft.stateOf(part, item.id)}
                             readOnly={readOnly}
+                            disabled={disabled}
+                            single={single}
                             onToggle={() => toggle(item)}
                         />
                     ))}

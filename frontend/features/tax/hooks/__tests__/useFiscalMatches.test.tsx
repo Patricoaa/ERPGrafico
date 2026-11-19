@@ -97,9 +97,9 @@ describe('useFiscalMatchSearch', () => {
         await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
         expect(result.current.items).toHaveLength(1)
     })
-    it('no consulta si enabled es false', () => {
+    it('no consulta sin un grupo', () => {
         const { Wrapper } = setup()
-        renderHook(() => useFiscalMatchSearch(7, 'erp', {}, false), { wrapper: Wrapper })
+        renderHook(() => useFiscalMatchSearch(0, 'erp', {}), { wrapper: Wrapper })
         expect(search).not.toHaveBeenCalled()
     })
 })

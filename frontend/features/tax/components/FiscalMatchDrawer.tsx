@@ -5,7 +5,6 @@ import { ChevronRight, Scale } from "lucide-react"
 import { toast } from "sonner"
 import { Can } from "@/components/auth"
 import {
-    ActionConfirmModal,
     Banner,
     CancelButton,
     Drawer,
@@ -20,10 +19,12 @@ import {
 import { formatDate } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { fiscalMatchStatusValue } from "@/lib/fiscal-match"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { useDraftDirtyGuard } from "@/hooks/useDirtyGuard"
 import { cn } from "@/lib/utils"
 import { applyErrorOf } from "../api/fiscalMatchApi"
 import { dteShortLabel } from "../entity-view/fiscalMatch.entity"
@@ -31,6 +32,7 @@ import { useFiscalMatchDraft, type FiscalMatchDraft } from "../hooks/useFiscalMa
 import {
     useApplyFiscalMatch,
     useFiscalMatch,
+    useInvalidateFiscalMatch,
     useReleaseFiscalMatch,
     useRetryFiscalIssue,
 } from "../hooks/useFiscalMatches"
@@ -126,15 +128,6 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
         setDraftGroup(groupId)
         discard()
     }
-    // Abrir otro grupo (cambia `id`) con cambios en espera pasa por la misma confirmación que cerrar.
-    const [confirm, setConfirm] = useState<{ kind: "close" } | { kind: "switch"; to: number | null } | null>(null)
-    const [seenId, setSeenId] = useState(id)
-    if (seenId !== id) {
-        setSeenId(id)
-        if (id !== shownId && draft.isDirty) setConfirm({ kind: "switch", to: id })
-        else setShownId(id)
-    }
-    const confirmed = useRef(false)
 
     // Tras cada refresco del grupo, lo que ya no aplica sale del borrador con un aviso.
     useEffect(() => {
@@ -142,39 +135,59 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
     }, [group, reconcile])
 
     const apply = useApplyFiscalMatch()
-    const save = async () => {
-        if (!group) return
+    const invalidate = useInvalidateFiscalMatch()
+    /** Guarda el borrador; `true` si quedó guardado (lo usa también «Guardar y continuar» de la guarda). */
+    const save = async (): Promise<boolean> => {
+        if (!group) return false
         draft.clearErrors()
         try {
             const result = await apply.mutateAsync({ id: group.id, changes: draft.pending })
             discard()
             follow(result)
+            return true
         } catch (e) {
             // 400 con `change_index`: el motivo va en la tarjeta del cambio y en un solo aviso. El resto
             // (409 motor ocupado, red) ya lo avisó la mutación. El borrador se conserva siempre.
             const err = applyErrorOf(e)
             if (err?.code === "MOVED") {
-                // Su registro se movió mientras se editaba: el cambio sale del borrador con el aviso de §7b.
+                // Su registro se movió mientras se editaba: el cambio sale del borrador con el aviso de §7b
+                // y las listas se refrescan para no volver a ofrecerlo.
                 const notice = draft.drop(err.changeIndex)
                 if (notice) toast.info(notice)
+                void invalidate()
             } else if (err) {
                 draft.markError(err.changeIndex, err.message)
                 toast.error("No se pudo guardar el cuadre", { description: err.message })
             }
+            return false
         }
     }
 
-    const handleOpenChange = (next: boolean) => {
-        if (!next && draft.isDirty) setConfirm({ kind: "close" })
-        else onOpenChange(next)
-    }
-    const confirmOpenChange = (next: boolean) => {
-        if (next) return
-        // «Seguir editando» al cambiar de grupo: la URL vuelve al grupo que sigue abierto.
-        if (!confirmed.current && confirm?.kind === "switch" && groupId !== null) onGroupChange?.(groupId)
-        confirmed.current = false
-        setConfirm(null)
-    }
+    // Guarda de toda la app (cerrar la ficha o su pestaña, salir de la página, abrir otro documento):
+    // Guardar y continuar / Descartar y continuar / Seguir editando.
+    useDraftDirtyGuard({
+        open,
+        name: group ? groupTitle(group) : undefined,
+        isDirty: draft.isDirty,
+        isSubmitting: apply.isPending,
+        discard,
+        save,
+    })
+
+    // Abrir otro grupo (cambia `id`) con cambios en espera pasa por la misma guarda; «Seguir editando»
+    // devuelve la URL al grupo que sigue abierto.
+    const runGuarded = useOptionalGlobalModalActions()?.runGuarded
+    const handledId = useRef(id)
+    useEffect(() => {
+        if (handledId.current === id) return
+        handledId.current = id
+        if (id === shownId) return
+        const go = () => setShownId(id)
+        if (!runGuarded) return go()
+        runGuarded(go, () => {
+            if (groupId !== null) onGroupChange?.(groupId)
+        })
+    }, [id, shownId, groupId, runGuarded, onGroupChange])
 
     const detail = notFound ? (
         <EmptyState context="generic" title="Este cuadre ya no existe" description="Sus registros pasaron a otro grupo." variant="compact" />
@@ -190,7 +203,7 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
         <SkeletonShell isLoading={isLoading || !group} ariaLabel="Cargando cuadre">
             {group && (
                 <FollowGroupContext.Provider value={follow}>
-                    <FiscalMatchBody group={group} draft={draft} readOnly={readOnly} />
+                    <FiscalMatchBody group={group} draft={draft} readOnly={readOnly} saving={apply.isPending} />
                 </FollowGroupContext.Provider>
             )}
         </SkeletonShell>
@@ -216,12 +229,11 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
     )
 
     return (
-        <>
-            <Drawer
+        <Drawer
                 fillContent
                 contentClassName="p-0"
                 open={open}
-                onOpenChange={handleOpenChange}
+                onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("master", false)}
                 mode={readOnly ? "view" : "edit"}
@@ -235,23 +247,6 @@ export function FiscalMatchDrawer({ id, open, onOpenChange, mode: modeProp, onGr
                     tabs={[{ value: "detail", label: "Cuadre", icon: Scale, content: detail }]}
                 />
             </Drawer>
-            <ActionConfirmModal
-                open={confirm !== null}
-                onOpenChange={confirmOpenChange}
-                onConfirm={() => {
-                    confirmed.current = true
-                    discard()
-                    if (confirm?.kind === "switch") setShownId(confirm.to)
-                    else onOpenChange(false)
-                }}
-                title="Hay cambios sin guardar"
-                description={`${confirm?.kind === "switch" ? "Si abres otro cuadre" : "Si cierras la ficha"} ${
-                    draft.pending.length === 1 ? "se pierde 1 cambio en espera." : `se pierden ${draft.pending.length} cambios en espera.`}`}
-                confirmText={confirm?.kind === "switch" ? "Descartar cambios" : "Cerrar sin guardar"}
-                cancelText="Seguir editando"
-                variant="warning"
-            />
-        </>
     )
 }
 
@@ -283,7 +278,7 @@ function groupTitle(group: FiscalMatchDetail): string {
     return `Cuadre ${dteShortLabel(group.dte_type) ?? ""} (sin documento)`.replace(/\s+/g, " ")
 }
 
-function FiscalMatchBody({ group, draft, readOnly }: { group: FiscalMatchDetail; draft: FiscalMatchDraft; readOnly: boolean }) {
+function FiscalMatchBody({ group, draft, readOnly, saving }: { group: FiscalMatchDetail; draft: FiscalMatchDraft; readOnly: boolean; saving: boolean }) {
     const follow = useContext(FollowGroupContext)
     const status = fiscalMatchStatusValue(group.status, group.status_display)
     const isOrphan = group.invoice === null
@@ -300,9 +295,8 @@ function FiscalMatchBody({ group, draft, readOnly }: { group: FiscalMatchDetail;
                 actions={isOrphan && manualMark ? <ReleaseAction groupId={group.id} locked={draft.isDirty} /> : undefined}
             >
                 <Stat title="Estado" value={<StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />} />
-                <Stat title="Tipo" value={dteShortLabel(group.dte_type) ?? (group.dte_type === null ? null : `DTE ${group.dte_type}`)} plain />
+                <Stat title="Dirección" value={DIRECTION_LABELS[group.direction]} plain />
                 <Stat title="Fecha" value={group.issue_date ? formatDate(group.issue_date) : null} plain />
-                <Stat title={group.direction === "purchase" ? "RUT proveedor" : "RUT cliente"} value={group.counterparty_rut} />
                 <Stat title="Última revisión" value={group.evaluated_at ? formatDate(group.evaluated_at, true) : null} plain />
             </Section>
 
@@ -311,7 +305,7 @@ function FiscalMatchBody({ group, draft, readOnly }: { group: FiscalMatchDetail;
                     {columns.map((col, i) => (
                         <Fragment key={col.part}>
                             {i > 0 && <ColumnArrow wide={columns.length === 3} />}
-                            <FiscalMatchColumnPanel index={i + 1} part={col.part} title={col.title} subtitle={col.subtitle} group={group} draft={draft} readOnly={readOnly}>
+                            <FiscalMatchColumnPanel index={i + 1} part={col.part} title={col.title} subtitle={col.subtitle} group={group} draft={draft} readOnly={readOnly} disabled={saving}>
                                 {col.part === "rcv" && feedingDoc && !readOnly && (
                                     <FiscalMatchRegisterSection groupId={group.id} doc={feedingDoc} onGroupChange={follow} />
                                 )}

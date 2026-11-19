@@ -101,8 +101,8 @@ describe("FiscalMatchCandidateCard", () => {
                 onToggle={vi.fn()}
                 payment={{
                     options: [
-                        { id: 7, amount: "9990.00", created_at: "2026-11-10T11:39:00-03:00", method: "Tarjeta" },
-                        { id: 8, amount: "9990.00", created_at: "2026-11-10T12:10:00-03:00", method: "Efectivo" },
+                        { id: 7, amount: "9990.00", created_at: "2026-11-10T11:39:00-03:00", method: "Tarjeta", same_amount: true },
+                        { id: 8, amount: "9990.00", created_at: "2026-11-10T12:10:00-03:00", method: "Efectivo", same_amount: true },
                     ],
                     value: null,
                     onChange: vi.fn(),
