@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { ActionConfirmModal, MoneyDisplay, Section } from "@/components/shared"
-import { formatDate } from "@/components/entity-view"
+import { formatDate, formatMoneyValue } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { dteShortLabel } from "../entity-view/fiscalMatch.entity"
 import { useCreateFiscalMatchSale } from "../hooks/useFiscalMatchFeeding"
@@ -55,7 +55,7 @@ export function FiscalMatchRegisterSaleSection({ groupId, doc, onGroupChange }: 
                         .catch(() => undefined)
                 }
                 title={`Crear ${dteLabel} Folio ${doc.folio}`}
-                description={`Se registrará la factura de venta en el ERP por un total de $${Number(doc.total_amount).toLocaleString("es-CL")} y quedará automáticamente cuadrada con el registro del SII y sus pagos TUU.`}
+                description={`Se registrará la factura de venta en el ERP por un total de ${formatMoneyValue(doc.total_amount)} y quedará automáticamente cuadrada con el registro del SII y sus pagos TUU.`}
                 confirmText="Crear factura"
                 cancelText="Cancelar"
                 variant="default"
