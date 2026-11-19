@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.127](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.126...v0.3.127) (2026-11-19)
+
+
+### 🐛 Bug Fixes
+
+* **treasury:** alinea nombres de tareas en Celery Beat y agenda alertas faltantes ([c0956cb](https://github.com/Patricoaa/ERPGrafico/commit/c0956cb5450846b19d7124f665cd8c5ea7409572)), closes [#261](https://github.com/Patricoaa/ERPGrafico/issues/261)
+
 ### [0.3.126](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.125...v0.3.126) (2026-11-19)
 
 
