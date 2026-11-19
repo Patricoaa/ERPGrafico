@@ -16,21 +16,15 @@ from django.db.models import Value
 from django.db.models.functions import Replace, Upper
 
 from accounting.integrations.rcv_normalizer import is_valid_rut, normalize_rut
-from contacts.models import Contact, ContactRole
+from contacts.models import Contact
 
 # Las boletas del RCV comparten este RUT genérico y no tienen razón social.
 GENERIC_RUTS = frozenset({"66666666-6"})
-
-ROLE_BY_DIRECTION = {
-    "PURCHASES": ContactRole.SUPPLIER.value,
-    "SALES": ContactRole.CUSTOMER.value,
-}
 
 
 @dataclass
 class ContactOutcome:
     created: int = 0
-    updated: int = 0
     skipped: int = 0
 
 
@@ -62,14 +56,13 @@ def _candidate_ruts(documents, company_rut: str) -> dict[str, str]:
     return candidates
 
 
-def ensure_contacts_for_documents(documents, direction: str, company_rut: str) -> ContactOutcome:
-    """Crea o actualiza los contactos de las contrapartes de un reporte del RCV.
+def ensure_contacts_for_documents(documents, company_rut: str) -> ContactOutcome:
+    """Crea los contactos que falten entre las contrapartes de un reporte del RCV.
 
     ``documents`` es un iterable de ``NormalizedDocument``. Un mismo RUT se procesa una
-    sola vez y gana ambas direcciones si aparece en compras y ventas en distintas
-    importaciones. Los errores de un contacto quedan en ``skipped``; el resto sigue.
+    sola vez. Los contactos se crean sin roles: el sistema los asigna después. Los
+    errores de un contacto quedan en ``skipped``; el resto sigue.
     """
-    role = ROLE_BY_DIRECTION[direction]
     candidates = _candidate_ruts(documents, company_rut)
     outcome = ContactOutcome()
     if not candidates:
@@ -83,28 +76,11 @@ def ensure_contacts_for_documents(documents, direction: str, company_rut: str) -
                 # Savepoint propio: un IntegrityError no debe invalidar la transacción
                 # que ya guardó los documentos del RCV.
                 with transaction.atomic():
-                    contact = Contact.objects.create(
-                        name=name or f"RUT {rut} (RCV)", tax_id=rut, roles=[role]
-                    )
+                    Contact.objects.create(name=name or f"RUT {rut} (RCV)", tax_id=rut)
             except (IntegrityError, ValidationError):
                 # Otra importación pudo crear el contacto entre la búsqueda y el alta.
-                contact = _contacts_by_rut([rut]).get(rut)
-                if contact is None:
+                if _contacts_by_rut([rut]).get(rut) is None:
                     outcome.skipped += 1
-                    continue
-                existing[rut] = contact
             else:
                 outcome.created += 1
-                existing[rut] = contact
-                continue
-        roles = contact.roles or []
-        if role in roles:
-            continue
-        contact.roles = [*roles, role]
-        try:
-            contact.save(update_fields=["roles", "updated_at"])
-        except (IntegrityError, ValidationError):
-            outcome.skipped += 1
-            continue
-        outcome.updated += 1
     return outcome

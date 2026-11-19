@@ -476,9 +476,7 @@ def _execute(
                 raise _Failed("FORMAT", FORMAT_MESSAGE.format(detail=detail)) from None
             # Los contactos se derivan del reporte, fuera del upsert: así el
             # número de queries de ``apply_report`` no crece con los documentos.
-            customers = ensure_contacts_for_documents(
-                report.documents, rcv_import.direction, company_rut
-            )
+            customers = ensure_contacts_for_documents(report.documents, company_rut)
             rcv_import.contacts_created_count = customers.created
             return
 
