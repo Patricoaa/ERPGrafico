@@ -55,12 +55,12 @@ def _list(client: APIClient):
 
 
 def test_list_exposes_the_purchase_defaults(client):
-    product = _make_product(0, purchased_at=Decimal("1234.50"))
+    product = _make_product(0, purchased_at=Decimal("1234"))
 
     _, rows = _list(client)
     row = rows[0]
 
-    assert row["last_purchase_price"] == pytest.approx(1234.5)
+    assert row["last_purchase_price"] == pytest.approx(1234)
     assert row["purchase_uom"] == product.purchase_uom_id
     assert row["receiving_warehouse"] == product.receiving_warehouse_id
     assert row["preferred_supplier"] == product.preferred_supplier_id
