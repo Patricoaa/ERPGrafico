@@ -210,7 +210,8 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
     }
 
     const draftInvoice = resolvedInvoices.find((inv) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)
-    const noteSourceInvoice = resolvedInvoices.find((inv) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))
+    // El backend solo admite como origen un documento POSTED que no sea nota.
+    const noteSourceInvoice = resolvedInvoices.find((inv) => inv.status === 'POSTED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))
 
     const host = order && activeModal ? (
         <SkeletonShell isLoading ariaLabel="Cargando modal de acción">

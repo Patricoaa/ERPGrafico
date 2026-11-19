@@ -17,6 +17,12 @@ import {
     PlusCircle
 } from 'lucide-react'
 
+/** DTE que una NC/ND puede corregir. Debe coincidir con el backend (billing.note_checkout_service). */
+export const CORRECTABLE_DTE_TYPES: readonly string[] = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA', 'COMPROBANTE_PAGO']
+
+const isCorrectableDte = (inv: Record<string, unknown>) => CORRECTABLE_DTE_TYPES.includes(inv.dte_type as string)
+const isPostedCorrectableDte = (inv: Record<string, unknown>) => isCorrectableDte(inv) && inv.status === 'POSTED'
+
 /**
  * Sale Order Action Registry
  * Defines all available actions for sale orders with permission requirements
@@ -309,25 +315,12 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
                     if (!order) return false
-                    // Show if there is any DTE associated with the order
-                    const invoices = order.invoices || []
-                    const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
-                    return invoices.some((inv: Record<string, unknown>) => validDTEs.includes(inv.dte_type as string))
+                    // Visible si la orden tiene algún DTE corregible (incluye el 48)
+                    return (order.invoices || []).some(isCorrectableDte)
                 },
-                isDisabled: (order) => {
-                    const invoices = order.invoices || []
-
-                    const hasIssuedDTEWithFolio = invoices.some((inv: Record<string, unknown>) =>
-                        inv.status !== 'DRAFT' &&
-                        inv.number &&
-                        inv.number !== 'Draft'
-                    )
-
-                    return !hasIssuedDTEWithFolio
-                },
-
-                // Única condición real (isDisabled): una factura emitida con folio
-                disabledTooltip: "Debe existir una factura emitida con folio asignado"
+                // El backend exige POSTED, no folio (los 39/41/48 no llevan folio manual)
+                isDisabled: (order) => !(order.invoices || []).some(isPostedCorrectableDte),
+                disabledTooltip: "Debe existir un documento publicado (factura, boleta o comprobante de pago)"
             },
             {
                 id: 'create-debit-note',
@@ -337,25 +330,12 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
                     if (!order) return false
-                    // Show if there is any DTE associated with the order
-                    const invoices = order.invoices || []
-                    const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
-                    return invoices.some((inv: Record<string, unknown>) => validDTEs.includes(inv.dte_type as string))
+                    // Visible si la orden tiene algún DTE corregible (incluye el 48)
+                    return (order.invoices || []).some(isCorrectableDte)
                 },
-                isDisabled: (order) => {
-                    const invoices = order.invoices || []
-
-                    const hasIssuedDTEWithFolio = invoices.some((inv: Record<string, unknown>) =>
-                        inv.status !== 'DRAFT' &&
-                        inv.number &&
-                        inv.number !== 'Draft'
-                    )
-
-                    return !hasIssuedDTEWithFolio
-                },
-
-                // Única condición real (isDisabled): una factura emitida con folio
-                disabledTooltip: "Debe existir una factura emitida con folio asignado"
+                // El backend exige POSTED, no folio (los 39/41/48 no llevan folio manual)
+                isDisabled: (order) => !(order.invoices || []).some(isPostedCorrectableDte),
+                disabledTooltip: "Debe existir un documento publicado (factura, boleta o comprobante de pago)"
             }
         ]
     },
