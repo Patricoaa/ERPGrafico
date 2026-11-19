@@ -505,22 +505,35 @@ CELERY_BEAT_SCHEDULE = {
     # ── Treasury / Loans (Fase 2 — F2.10) ──────────────────────────────────
     # Marca OVERDUE las cuotas vencidas y notifica las próximas a vencer.
     "mark_overdue_loan_installments_daily": {
-        "task": "treasury.tasks.mark_overdue_loan_installments",
+        "task": "treasury.mark_overdue_loan_installments",
         "schedule": crontab(hour=8, minute=0),  # Diario a las 08:00
     },
     # ── Treasury / Tarjeta de crédito propia (Fase 3 — F3.7, ADR-0037) ───
     # Marca OVERDUE los estados de cuenta vencidos y notifica los próximos
     # a vencer (cierra el gap A: estado OVERDUE persistido).
     "mark_overdue_credit_card_statements_daily": {
-        "task": "treasury.tasks.mark_overdue_credit_card_statements",
+        "task": "treasury.mark_overdue_credit_card_statements",
         "schedule": crontab(hour=8, minute=5),  # Diario a las 08:05
     },
     # ── Treasury / Loans (Fase 2 — F2.9, opt-in) ───────────────────────────
     # Devenga el interés del mes para créditos ACTIVE. No-op si no hay
     # cuentas de gasto/pasivo configuradas en AccountingSettings (F5.1).
     "accrue_monthly_loan_interest": {
-        "task": "treasury.tasks.accrue_monthly_loan_interest",
+        "task": "treasury.accrue_monthly_loan_interest",
         "schedule": crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
+    },
+    # ── Treasury / Alertas y vencimientos (ADR-0035, 0036, 0049) ───────────
+    "treasury_check_alerts_daily": {
+        "task": "treasury.check_alerts",
+        "schedule": crontab(hour=8, minute=10),  # Diario a las 08:10
+    },
+    "treasury_unified_maturity_alerts_daily": {
+        "task": "treasury.unified_maturity_alerts",
+        "schedule": crontab(hour=8, minute=15),  # Diario a las 08:15
+    },
+    "treasury_check_credit_line_expirations_daily": {
+        "task": "treasury.check_credit_line_expirations",
+        "schedule": crontab(hour=8, minute=20),  # Diario a las 08:20
     },
     # ── Treasury / Ventas de terminal (TUU) ─────────────────────────────────
     # Cada minuto revisa si se cumplió el intervalo configurado en TerminalSyncSettings

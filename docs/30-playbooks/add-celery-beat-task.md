@@ -74,7 +74,7 @@ from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
     'mark-overdue-loans-nightly': {
-        'task': 'treasury.tasks.mark_overdue_loan_installments',
+        'task': 'treasury.mark_overdue_loan_installments',
         'schedule': crontab(hour=2, minute=0),
     },
     'purge-old-exports-weekly': {
@@ -91,8 +91,8 @@ Do not mix: if a task is in `CELERY_BEAT_SCHEDULE`, do not create a DB record fo
 ## 3. Reference BEAT Tasks
 
 Before adding a new task, check existing ones to understand the domain conventions:
-- `treasury.tasks.mark_overdue_loan_installments`
-- `treasury.tasks.mark_overdue_card_statements`
+- `treasury.mark_overdue_loan_installments`
+- `treasury.mark_overdue_credit_card_statements`
 - `core.tasks.purge_old_exports`
 - `inventory.tasks.check_subscription_renewals`
 
