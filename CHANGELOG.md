@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.128](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.127...v0.3.128) (2026-11-19)
+
+
+### 🧪 Testing
+
+* **core:** actualiza tests obsoletos de audit log y permission registry ([124e976](https://github.com/Patricoaa/ERPGrafico/commit/124e976f0db04d714e5e1114e74f772085a985ef)), closes [#248](https://github.com/Patricoaa/ERPGrafico/issues/248)
+
+
+### 🐛 Bug Fixes
+
+* **tax:** elimina ramas inalcanzables con 'sale' indefinido en fiscal_match/search ([fbab9ee](https://github.com/Patricoaa/ERPGrafico/commit/fbab9ee5dd85c25666846e47c6b9824686585c13))
+
 ### [0.3.127](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.126...v0.3.127) (2026-11-19)
 
 
