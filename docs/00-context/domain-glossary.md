@@ -52,8 +52,8 @@ Inside the "Terminal de cobro" section, sub-tab labels may be shortened ("Provee
 | **Estado de parte** (`PartState`) | De cada parte (ERP, TUU, RCV): `MATCHED` Cuadrado, `PENDING` Pendiente, `MISSING` Falta, `DIFF` Advertencia, `AMBIGUOUS` Ambiguo, `NOT_APPLICABLE` No aplica, `SUMMARY_ONLY` Solo resumen. |
 | **Estado de grupo** (`FiscalMatchStatus`) | Derivado de las partes, por prioridad: `EXCLUDED`, `AMBIGUOUS`, `DIFF` (Con advertencias), `MISSING_ERP` (Falta en el ERP), `MISSING_EXTERNAL` (Falta en SII/TUU), `PENDING`, `MATCHED`. |
 | **Puntaje de coincidencia** | Número 0–100 que ordena los candidatos de una columna de la ficha de cuadre: monto 40, día 25, RUT 20, tipo 15; el mismo folio compatible vale 100. Solo ordena, nunca bloquea (ADR-0141 D13). |
-| **Advertencia bloqueante** | Aviso de un candidato que corresponde a una regla que el guardado rechaza (tipo distinto, otra dirección, venta anulada, segundo registro del SII). Las demás («Otro monto», «Otro día», «Otro RUT») no bloquean: el usuario decide. |
-| **Con advertencias / Advertencia** | Etiqueta del estado `DIFF`: «Con advertencias» en el grupo y «Advertencia» en una parte (reemplaza a «Con diferencia»). Un monto de pago TUU distinto al de la venta lo deja así. |
+| **Advertencia bloqueante** | Aviso de un candidato que corresponde a una regla que el guardado rechaza (tipo distinto, otra dirección, venta anulada, segundo registro del SII, sin pago libre compatible). Las demás («Otro monto», «Otro día», «Otro RUT») no bloquean: el usuario decide. |
+| **Con advertencias / Advertencia** | Etiqueta del estado `DIFF`: «Con advertencias» en el grupo y «Advertencia» en una parte (reemplaza a «Con diferencia»). Lo dejan así, una vez guardado: un pago TUU de otro monto que el de la venta, un RCV de otro monto y, en facturas y notas, un RCV de otro RUT. «Otro día» solo avisa en la tarjeta: no cambia el estado. |
 | **Cambios en espera** | Uniones y quitas de la ficha de cuadre aún no guardadas; «Guardar» las envía juntas, todo o nada (`apply/`). |
 
 ## Production

@@ -181,3 +181,79 @@ def create_draft_from_rcv(group: FiscalMatch, purchase_order: PurchaseOrder) -> 
         status=Invoice.Status.DRAFT,
     )
     return _adopt(orphan, doc, invoice)
+
+
+@_exclusive
+def create_sale_from_rcv(
+    group: FiscalMatch, contact_id: int | None = None
+) -> FiscalMatch:
+    """Crea una Factura de venta emitida en el ERP a partir de un RCV huérfano de venta y la vincula."""
+    from contacts.models import Contact
+
+    group = _locked(_lock_groups(group.pk), group.pk)
+    if group.direction != FiscalMatch.Direction.SALE or group.invoice_id is not None:
+        raise ValidationError(_("Solo se registran documentos de venta que faltan en el ERP."))
+
+    docs = list(RCVDocument.objects.filter(fiscal_match=group).order_by("id")[:2])
+    if len(docs) != 1:
+        raise ValidationError(_("El grupo debe tener exactamente un registro del SII."))
+    doc = docs[0]
+    if doc.dte_type not in (33, 34):
+        raise ValidationError(_("Solo se pueden registrar facturas de venta (DTE 33 o 34)."))
+
+    rut = normalize_rut(doc.counterparty_rut)
+    contact = None
+    if contact_id:
+        contact = Contact.objects.filter(pk=contact_id).first()
+        if not contact:
+            raise ValidationError(_("El cliente seleccionado no existe."))
+    if not contact and rut:
+        contact = Contact.objects.filter(tax_id=rut).first()
+    if not contact:
+        contact = Contact.objects.create(
+            name=doc.counterparty_name or (f"Cliente {rut}" if rut else "Cliente Venta"),
+            tax_id=rut or "",
+        )
+
+    dte_type = SII_CODE_TO_DTE_TYPE[doc.dte_type]
+    has_tuu = TerminalSale.objects.filter(fiscal_match=group).exists()
+    payment_method = "CARD" if has_tuu else "TRANSFER"
+
+    invoice = Invoice.objects.create(
+        dte_type=dte_type,
+        number=str(doc.folio),
+        date=doc.issue_date,
+        status=Invoice.Status.POSTED,
+        contact=contact,
+        partner_tax_id_snapshot=rut,
+        partner_name_snapshot=contact.name,
+        total_net=doc.net_amount if doc.net_amount is not None else abs(doc.total_amount),
+        total_tax=doc.vat_amount if doc.vat_amount is not None else Decimal("0"),
+        total=abs(doc.total_amount),
+        payment_method=payment_method,
+    )
+
+    target = group_for_invoice(invoice)
+    if target is None:
+        raise ValidationError(_("El documento creado no entra al cuadre."))
+    target = _locked(_lock_groups(group.pk, target.pk), target.pk)
+
+    doc.fiscal_match = target
+    doc.save(update_fields=["fiscal_match"])
+
+    sales = list(TerminalSale.objects.filter(fiscal_match=group))
+    for s in sales:
+        s.fiscal_match = target
+    if sales:
+        TerminalSale.objects.bulk_update(sales, ["fiscal_match"])
+
+    target.rcv_linked_manually = True
+    update = ["rcv_linked_manually"]
+    if not target.counterparty_rut and rut:
+        target.counterparty_rut = rut
+        update.append("counterparty_rut")
+    target.save(update_fields=update)
+
+    _drop_empty({group.pk})
+    _rederive({group.pk, target.pk})
+    return _fresh(target.pk)

@@ -502,8 +502,31 @@ def test_orphan_rcv_is_missing_erp(env):
 
     g = one(orphan)
 
-    assert parts(g) == (MI, NA, M, FiscalMatchStatus.MISSING_ERP)
+    # Para facturas 33/34 en venta huérfanas, tuu_state queda PENDING porque puede haber pago con tarjeta en TUU
+    assert parts(g) == (MI, PD, M, FiscalMatchStatus.MISSING_ERP)
     assert g.erp_amount is None
+
+
+def test_orphan_rcv_dte_34_tuu_state_is_pending(env):
+    orphan = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.SALE, dte_type=34, issue_date=date(2026, 11, 13), fiscal_period="202611"
+    )
+    rcv_doc(orphan, 1000, dte_type=34)
+
+    g = one(orphan)
+
+    assert parts(g) == (MI, PD, M, FiscalMatchStatus.MISSING_ERP)
+
+
+def test_orphan_rcv_boleta_39_tuu_state_is_not_applicable(env):
+    orphan = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.SALE, dte_type=39, issue_date=date(2026, 11, 13), fiscal_period="202611"
+    )
+    rcv_doc(orphan, 1000, dte_type=39)
+
+    g = one(orphan)
+
+    assert parts(g) == (MI, NA, M, FiscalMatchStatus.MISSING_ERP)
 
 
 def test_orphan_tuu_sale_erp_pending_until_window_then_missing(env):

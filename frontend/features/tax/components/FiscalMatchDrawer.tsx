@@ -39,6 +39,7 @@ import {
 import type { FiscalMatchDetail, FiscalMatchPart } from "../types/fiscalMatch"
 import { FiscalMatchColumnPanel } from "./FiscalMatchColumnPanel"
 import { FiscalMatchRegisterSection } from "./FiscalMatchRegisterSection"
+import { FiscalMatchRegisterSaleSection } from "./FiscalMatchRegisterSaleSection"
 
 export interface FiscalMatchDrawerProps {
     id: number | null
@@ -284,6 +285,7 @@ function FiscalMatchBody({ group, draft, readOnly, saving }: { group: FiscalMatc
     const isOrphan = group.invoice === null
     const manualMark = group.rcv_linked_manually || group.terminal_sales.some((s) => s.linked_manually)
     const feedingDoc = group.direction === "purchase" && isOrphan && group.rcv_documents.length === 1 ? group.rcv_documents[0] : null
+    const feedingSaleDoc = group.direction === "sale" && isOrphan && group.rcv_documents.length === 1 && [33, 34].includes(group.rcv_documents[0].dte_type) ? group.rcv_documents[0] : null
     const columns = group.direction === "sale" ? SALE_COLUMNS : PURCHASE_COLUMNS
 
     return (
@@ -308,6 +310,9 @@ function FiscalMatchBody({ group, draft, readOnly, saving }: { group: FiscalMatc
                             <FiscalMatchColumnPanel index={i + 1} part={col.part} title={col.title} subtitle={col.subtitle} group={group} draft={draft} readOnly={readOnly} disabled={saving}>
                                 {col.part === "rcv" && feedingDoc && !readOnly && (
                                     <FiscalMatchRegisterSection groupId={group.id} doc={feedingDoc} onGroupChange={follow} />
+                                )}
+                                {col.part === "erp" && feedingSaleDoc && !readOnly && (
+                                    <FiscalMatchRegisterSaleSection groupId={group.id} doc={feedingSaleDoc} onGroupChange={follow} />
                                 )}
                             </FiscalMatchColumnPanel>
                         </Fragment>

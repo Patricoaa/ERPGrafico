@@ -11,3 +11,4 @@ export * from './FiscalMatchDrawer';
 export * from './FiscalMatchPickerPanel';
 export * from './FiscalMatchCandidateCard';
 export * from './FiscalMatchSearchToolbar';
+export * from './FiscalMatchRegisterSaleSection';

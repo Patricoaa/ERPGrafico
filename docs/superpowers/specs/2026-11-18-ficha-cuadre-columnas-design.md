@@ -68,7 +68,7 @@ Valen todas las reglas de ADR-0141, en particular:
 ### 5.1 Ficha
 
 - **Ancho:** `master` (75 %) del sistema de anchos de ficha (`lib/form-widths.ts`). Si en pantallas estrechas no caben las columnas, se apilan.
-- **Encabezado:** igual que hoy (título del grupo, `StatusBadge` del grupo, tipo, fecha, RUT, última revisión). Los avisos (`notice`, alerta de período cerrado, error de emisión) siguen ahí.
+- **Encabezado:** título del grupo, `StatusBadge` del grupo, dirección («Venta»/«Compra»), fecha y última revisión (sin tipo ni RUT: decisión del usuario, 2026-11-18). Los avisos (`notice`, alerta de período cerrado, error de emisión) siguen ahí.
 - **Acciones inmediatas:** «Reintentar emisión» y «Devolver al cruce automático» siguen siendo inmediatas en el encabezado, porque no son uniones.
 - **Columnas,** con numeración y flechas entre ellas como en la captura. Cada columna tiene:
   - título, subtítulo y el `StatusBadge` de su parte (`erp_state` / `tuu_state` / `rcv_state`);
@@ -182,7 +182,7 @@ El servidor endurece la unión manual (hoy solo la UI evita estos casos):
   - otro día;
   - otro monto.
 
-  El grupo queda en el estado `DIFF` hasta que se corrija. Las tarjetas muestran esas advertencias, que no son bloqueantes.
+  Otro RUT y otro monto dejan el grupo en el estado `DIFF` hasta que se corrija; otro día solo avisa en la tarjeta y no cambia el estado (decisión del usuario, 2026-11-18). Las tarjetas muestran esas advertencias, que no son bloqueantes.
 - **Etiquetas:** el estado de grupo `DIFF` pasa de «Con diferencia» a **«Con advertencias»** (en el backend `FiscalMatchStatus`, en `lib/fiscal-match.ts`, en el glosario y en ADR-0141). Por coherencia, el estado de parte `DIFF` pasa de «Diferencia» a **«Advertencia»** (llamada mía).
 - **Advertencias bloqueantes:** en la búsqueda (§5.2), las advertencias que bloquean llevan `blocking: true`. La tarjeta se muestra deshabilitada con el motivo y no se puede seleccionar.
 - **RUT en el puntaje:** el criterio «otro RUT» deja de ser una regla bloqueante para facturas y notas (ajusta §5.2).

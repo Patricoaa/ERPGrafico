@@ -47,4 +47,5 @@ export {
     useFiscalMatchPurchaseOrders,
     useConfirmFiscalMatchDraft,
     useCreateFiscalMatchDraft,
+    useCreateFiscalMatchSale,
 } from './hooks'

@@ -25,6 +25,7 @@ export {
     useFiscalMatchPurchaseOrders,
     useConfirmFiscalMatchDraft,
     useCreateFiscalMatchDraft,
+    useCreateFiscalMatchSale,
 } from './useFiscalMatchFeeding'
 export { useFiscalMatchDraft } from './useFiscalMatchDraft'
 export { useInvoiceFiscalMatchCandidates } from './useInvoiceFiscalMatchCandidates'

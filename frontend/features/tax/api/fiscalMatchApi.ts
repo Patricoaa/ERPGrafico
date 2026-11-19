@@ -75,6 +75,8 @@ export const fiscalMatchApi = {
         api.post<FiscalMatchDetail>(`${BASE}/${id}/confirm-draft/`, { invoice_id: invoiceId }, idem(key)).then(r => r.data),
     createDraft: (id: number, purchaseOrderId: number, key: string) =>
         api.post<FiscalMatchDetail>(`${BASE}/${id}/create-draft/`, { purchase_order_id: purchaseOrderId }, idem(key)).then(r => r.data),
+    createSale: (id: number, contactId: number | undefined, key: string) =>
+        api.post<FiscalMatchDetail>(`${BASE}/${id}/create-sale/`, contactId ? { contact_id: contactId } : {}, idem(key)).then(r => r.data),
 
     // Candidatos para un documento o pre-contexto (asistido por cuadre)
     invoiceCandidates: async (

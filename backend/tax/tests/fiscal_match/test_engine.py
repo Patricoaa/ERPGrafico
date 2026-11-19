@@ -356,3 +356,45 @@ def test_boleta_draft_not_issued_while_rcv_differs(tenv):
     _reload(inv, group)
     assert (inv.status, inv.number) == (Invoice.Status.DRAFT, "")
     assert (group.rcv_state, group.status) == (PartState.DIFF, FiscalMatchStatus.DIFF)
+
+
+def test_orphan_tuu_and_rcv_factura_33_are_paired_into_same_group(tenv):
+    sale = make_terminal_sale(tenv, 10000, _ago(30), document_type=33)
+    doc = _rcv(10000, dte_type=33, folio=6513, rut="76225990-7")
+
+    run_fiscal_match()
+
+    _reload(sale, doc)
+    assert sale.fiscal_match_id == doc.fiscal_match_id
+    group = doc.fiscal_match
+    assert group.invoice_id is None
+    assert group.counterparty_rut == "76225990-7"
+    assert group.dte_type == 33
+    assert group.rcv_amount == Decimal("10000")
+    assert group.tuu_amount == Decimal("10000")
+    assert group.erp_state == PartState.MISSING
+    assert group.tuu_state == PartState.MATCHED
+    assert group.rcv_state == PartState.MATCHED
+    assert group.status == FiscalMatchStatus.MISSING_ERP
+
+
+def test_orphan_tuu_and_rcv_factura_different_amount_not_paired(tenv):
+    sale = make_terminal_sale(tenv, 10000, _ago(30), document_type=33)
+    doc = _rcv(20000, dte_type=33, folio=6514, rut="76225990-7")
+
+    run_fiscal_match()
+
+    _reload(sale, doc)
+    assert sale.fiscal_match_id != doc.fiscal_match_id
+
+
+def test_orphan_tuu_and_rcv_factura_multiple_candidates_ambiguous(tenv):
+    sale1 = make_terminal_sale(tenv, 10000, _ago(30), document_type=33)
+    sale2 = make_terminal_sale(tenv, 10000, _ago(25), document_type=33)
+    doc1 = _rcv(10000, dte_type=33, folio=6515, rut="11111111-1")
+
+    run_fiscal_match()
+
+    _reload(sale1, sale2, doc1)
+    assert sale1.fiscal_match_id != doc1.fiscal_match_id
+    assert sale2.fiscal_match_id != doc1.fiscal_match_id

@@ -26,6 +26,8 @@ from treasury.models import POSTerminal, TerminalSale, TerminalSyncRun, Treasury
 
 # Tipos del RCV sin equivalente local: el grupo queda excluido (spec §5.2).
 EXCLUDED_SII_CODES = frozenset({43, 46, 110, 111, 112, 914})
+# Tipos de factura de venta que pueden cobrarse con tarjeta en el momento y generar registro TUU.
+FACTURA_SII_CODES = frozenset({33, 34})
 SUMMARY_SII_CODE = 48
 SEVERAL_FOLIOS_NOTICE = "Varios folios en el SII"
 # Meses de RCV de compras (el de emisión y los dos siguientes) antes de dar por faltante.
@@ -323,7 +325,13 @@ def _tuu_state(
     if group.id in ctx.tuu_ambiguous:
         return PartState.AMBIGUOUS
     if invoice is None:
-        return PartState.MATCHED if sales else PartState.NOT_APPLICABLE
+        if sales:
+            return PartState.MATCHED
+        # Un RCV-huérfano de factura de venta (33, 34) puede haberse cobrado con tarjeta en TUU
+        # y encontrarse aún en un grupo huérfano separado o pendiente de confirmación.
+        if group.direction == FiscalMatch.Direction.SALE and code in FACTURA_SII_CODES:
+            return PartState.PENDING
+        return PartState.NOT_APPLICABLE
     if group.direction == FiscalMatch.Direction.PURCHASE:
         return PartState.NOT_APPLICABLE
     expected = [
