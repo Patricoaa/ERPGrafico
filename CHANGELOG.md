@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.129](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.128...v0.3.129) (2026-11-19)
+
+
+### 🐛 Bug Fixes
+
+* **sales:** precarga las facturas del listado de OV y elimina el N+1 ([583f400](https://github.com/Patricoaa/ERPGrafico/commit/583f4007882371713b4d503dc9c6678e530b65e6))
+
 ### [0.3.128](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.127...v0.3.128) (2026-11-19)
 
 
