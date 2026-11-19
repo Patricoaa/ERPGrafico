@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.132](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.131...v0.3.132) (2026-11-19)
+
+
+### 🧪 Testing
+
+* **inventory:** usa costo entero en test de defaults de compra ([e5df29b](https://github.com/Patricoaa/ERPGrafico/commit/e5df29b53c07d25aaa6814065dbb9ec91a9ef953)), closes [#269](https://github.com/Patricoaa/ERPGrafico/issues/269)
+
 ### [0.3.131](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.130...v0.3.131) (2026-11-19)
 
 
