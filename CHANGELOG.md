@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.125](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.124...v0.3.125) (2026-11-19)
+
+
+### ✨ Features
+
+* **dte:** selector de tipo en una fila y registro SII directo salvo boletas de compra ([3c179bd](https://github.com/Patricoaa/ERPGrafico/commit/3c179bded149604586ad7dbdf399933650fac75f))
+
 ### [0.3.124](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.123...v0.3.124) (2026-11-19)
 
 
