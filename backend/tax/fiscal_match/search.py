@@ -31,14 +31,15 @@ from accounting.models import RCVDocument
 from billing.models import Invoice
 from tax.fiscal_match.candidates import (
     BOLETA_SII_CODES,
-    attach_sale_payments,
+    PaymentOption,
     evaluable_invoice_q,
     free_inbound_movements,
     free_payments,
     local_midnight,
-    payment_type_fits,
+    payment_options,
+    payments_assignable,
 )
-from tax.fiscal_match.codes import SECOND_RCV
+from tax.fiscal_match.codes import NO_FREE_PAYMENT, SECOND_RCV, TYPE_INCOMPATIBLE
 from tax.fiscal_match.engine import SCAN_DAYS
 from tax.fiscal_match.rcv import RCV_TO_FISCAL_DIRECTION, rut_body
 from tax.fiscal_match.scoring import (
@@ -55,6 +56,7 @@ from tax.fiscal_match.scoring import (
     Reference,
     reference_for,
     score_candidate,
+    type_warning,
 )
 from tax.fiscal_match.selectors import SETTLED, parse_search
 from tax.fiscal_match.services import rcv_would_travel
@@ -93,6 +95,9 @@ class _Group:
     own_sales: list[TerminalSale]  # ventas del huérfano (sin anuladas)
     free: list[TreasuryMovement]  # cobros libres del documento del grupo
     has_rcv: bool  # el grupo ya tiene algún registro del SII
+    # Huérfano: una referencia por registro propio (ventas vivas y RCV); el tipo de una tarjeta
+    # ERP se compara contra todos, como ``_link_invoice``.
+    own_refs: tuple[Reference, ...] = ()
 
 
 def _number_folio(number: str) -> int | None:
@@ -100,7 +105,7 @@ def _number_folio(number: str) -> int | None:
 
 
 def _load_group(group: FiscalMatch) -> _Group:
-    """Llama a ``reference_for`` una vez: el documento, o la primera venta TUU o RCV del huérfano."""
+    """Llama a ``reference_for`` por registro: el documento, o las ventas TUU y RCV del huérfano."""
     if group.invoice_id is not None:
         free = free_inbound_movements(group.invoice)
         ref = reference_for(
@@ -113,19 +118,18 @@ def _load_group(group: FiscalMatch) -> _Group:
         return _Group(group, ref, [], free, has_rcv=has_rcv)
     sales = list(TerminalSale.objects.filter(fiscal_match=group).order_by("transaction_at", "id"))
     live = [s for s in sales if s.status != TerminalSale.Status.REVERSED]
-    rcv = RCVDocument.objects.filter(fiscal_match=group).order_by("id").first()
+    docs = list(RCVDocument.objects.filter(fiscal_match=group).order_by("id"))
+    own_refs = tuple(
+        [reference_for(group, kind="tuu", sale=s) for s in live]
+        + [reference_for(group, kind="rcv", rcv=d) for d in docs]
+    )
     if sales:
         ref = reference_for(group, kind="tuu", sale=(live or sales)[0])
-    elif rcv is not None:
-        ref = reference_for(group, kind="rcv", rcv=rcv)
+    elif docs:
+        ref = own_refs[0]
     else:
         ref = None
-    return _Group(group, ref, live, [], has_rcv=rcv is not None)
-
-
-def group_reference(group: FiscalMatch) -> Reference | None:
-    """Referencia del puntaje del grupo (``None`` en un huérfano vacío)."""
-    return _load_group(group).ref
+    return _Group(group, ref, live, [], has_rcv=bool(docs), own_refs=own_refs)
 
 
 # --- puntaje aproximado en SQL --------------------------------------------------------
@@ -305,6 +309,8 @@ def _erp_search(g: _Group, q: str, ordering: Ordering) -> Search:
     group = g.group
     if group.invoice_id is not None or g.ref is None:
         return _empty()
+    if not g.own_sales and not g.has_rcv:  # solo ventas anuladas: no hay nada que unir
+        return _empty()
     qs = (
         FiscalMatch.objects.filter(
             invoice__isnull=False,
@@ -343,21 +349,40 @@ def _erp_items(g: _Group, rows: list[FiscalMatch]) -> list[dict]:
             free_payment_amounts=frozenset(Decimal(m.amount) for m in payments[invoice.pk]),
         )
         item = _item(g.ref, facts, invoice.pk, invoice.display_id, invoice.partner_display_name)
+        _warn_other_types(item, g, facts)
         if g.own_sales:
-            item["payments_by_sale"] = _sale_payments(g.own_sales, payments[invoice.pk])
+            by_sale = {s.pk: payment_options(s, payments[invoice.pk]) for s in g.own_sales}
+            item["payments_by_sale"] = by_sale
+            if not payments_assignable({s: [o.movement.pk for o in opts] for s, opts in by_sale.items()}):
+                _warn_no_payment(item)
         items.append(item)
     return items
+
+
+def _warn_other_types(item: dict, g: _Group, facts: CandidateFacts) -> None:
+    """El tipo de la tarjeta ERP contra cada registro del huérfano, no solo el de referencia."""
+    if any(w.code == TYPE_INCOMPATIBLE for w in item["warnings"]):
+        return
+    for ref in g.own_refs:
+        warning = type_warning(ref, facts)
+        if warning is not None:
+            item["warnings"].append(warning)
+            return
+
+
+def _warn_no_payment(item: dict) -> None:
+    item["warnings"].append(MatchWarning(NO_FREE_PAYMENT, LABELS[NO_FREE_PAYMENT], True))
 
 
 def _payments_by_invoice(
     sales: list[TerminalSale], invoice_ids: list[int]
 ) -> dict[int, list[TreasuryMovement]]:
-    """Cobros libres de los documentos de la página con el monto de alguna venta, en una consulta."""
+    """Cobros libres de los documentos de la página, en una consulta (los ofrece cada venta propia)."""
     out: dict[int, list[TreasuryMovement]] = {i: [] for i in invoice_ids}
     if not sales or not invoice_ids:
         return out
     rows = (
-        free_payments(*{s.sale_amount for s in sales})
+        free_payments()
         .filter(invoice_id__in=invoice_ids)
         .select_related("payment_method_new")
         .order_by("created_at", "id")
@@ -365,20 +390,6 @@ def _payments_by_invoice(
     for m in rows:
         out[m.invoice_id].append(m)
     return out
-
-
-def _sale_payments(
-    sales: list[TerminalSale], free: list[TreasuryMovement]
-) -> dict[int, list[TreasuryMovement]]:
-    """Por venta, los cobros libres del documento de su monto y de un medio compatible."""
-    return {
-        s.pk: [
-            m
-            for m in free
-            if Decimal(m.amount) == Decimal(s.sale_amount) and payment_type_fits(s, m)
-        ]
-        for s in sales
-    }
 
 
 # --- tuu ------------------------------------------------------------------------------
@@ -433,8 +444,6 @@ def _carried_rcv(g: _Group, rows: list[TerminalSale]) -> dict[int, list[dict]]:
 
 def _tuu_items(g: _Group, rows: list[TerminalSale]) -> list[dict]:
     with_document = g.group.invoice_id is not None
-    if with_document:
-        attach_sale_payments(rows, g.free)
     carried = _carried_rcv(g, rows) if with_document and not g.has_rcv else {}
     items = []
     for sale in rows:
@@ -455,9 +464,10 @@ def _tuu_items(g: _Group, rows: list[TerminalSale]) -> list[dict]:
         item = _item(g.ref, facts, sale.pk, f"Venta TUU #{sale.pk}", device)
         item["datetime"] = sale.transaction_at
         if with_document:
-            item["compatible_movements"] = [
-                m for m in sale.compatible_movements if payment_type_fits(sale, m)
-            ]
+            options: list[PaymentOption] = payment_options(sale, g.free)
+            item["compatible_movements"] = options
+            if not options:
+                _warn_no_payment(item)
             item["carried_rcv"] = carried.get(sale.fiscal_match_id, [])
         items.append(item)
     return items

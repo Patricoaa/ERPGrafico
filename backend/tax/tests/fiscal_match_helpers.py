@@ -137,3 +137,30 @@ def make_terminal_sale(
         total_amount=amount,
         **extra,
     )
+
+
+# --- un cambio por guardado: la única vía de escritura de la ficha (``apply_changes``) ---------
+
+
+def link_erp(orphan, invoice: Invoice, payments: dict | None = None):
+    """Une el huérfano al documento; ``payments``: ``{sale_id: cobro}``."""
+    from tax.fiscal_match.services import apply_changes
+
+    change = {"op": "link", "part": "erp", "id": invoice.pk}
+    if payments:
+        change["payments"] = {sale_id: m.pk for sale_id, m in payments.items()}
+    return apply_changes(orphan, [change])
+
+
+def link_tuu(group, sale: TerminalSale, movement: TreasuryMovement):
+    from tax.fiscal_match.services import apply_changes
+
+    return apply_changes(
+        group, [{"op": "link", "part": "tuu", "id": sale.pk, "movement": movement.pk}]
+    )
+
+
+def link_rcv(group, doc):
+    from tax.fiscal_match.services import apply_changes
+
+    return apply_changes(group, [{"op": "link", "part": "rcv", "id": doc.pk}])

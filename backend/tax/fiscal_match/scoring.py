@@ -21,6 +21,7 @@ from tax.fiscal_match.candidates import (
     tuu_type_fits,
 )
 from tax.fiscal_match.codes import (
+    NO_FREE_PAYMENT,
     NOT_COMPLETED,
     OTHER_AMOUNT,
     OTHER_DAY,
@@ -49,6 +50,7 @@ LABELS = {
     OTHER_DIRECTION: "Otra dirección",
     NOT_COMPLETED: "Venta anulada",
     SECOND_RCV: "Ya tiene registro del SII",
+    NO_FREE_PAYMENT: "Sin pago libre compatible",
 }
 CASH_ONLY_BOLETAS_LABEL = "Efectivo solo en boletas"
 
@@ -174,6 +176,12 @@ def _type_warning(ref: Reference, cand: CandidateFacts) -> tuple[str, str] | Non
     if not sii_type_fits(ref.sii_code, cand.sii_code):
         return TYPE_INCOMPATIBLE, LABELS[TYPE_INCOMPATIBLE]
     return None
+
+
+def type_warning(ref: Reference, cand: CandidateFacts) -> MatchWarning | None:
+    """Advertencia bloqueante de tipo del candidato frente a la referencia (``None`` si calza)."""
+    issue = _type_warning(ref, cand)
+    return MatchWarning(issue[0], issue[1], True) if issue else None
 
 
 def _day_points(ref_day: date | None, cand_day: date | None) -> int:

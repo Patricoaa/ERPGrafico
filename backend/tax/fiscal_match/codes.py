@@ -19,8 +19,13 @@ GONE = "GONE"
 NOT_FOUND = "NOT_FOUND"
 IGNORED_PAYMENT = "IGNORED_PAYMENT"
 RCV_HAS_SALES = "RCV_HAS_SALES"
+DUPLICATE_CHANGE = "DUPLICATE_CHANGE"
 
 # Advertencias que no bloquean el guardado.
 OTHER_AMOUNT = "OTHER_AMOUNT"
 OTHER_DAY = "OTHER_DAY"
 OTHER_RUT = "OTHER_RUT"
+
+# Advertencia bloqueante solo de la búsqueda: la tarjeta no tiene un cobro libre que la venta
+# TUU pueda respaldar (el guardado respondería ``PAYMENT_REQUIRED`` o ``PAYMENT_TAKEN``).
+NO_FREE_PAYMENT = "NO_FREE_PAYMENT"

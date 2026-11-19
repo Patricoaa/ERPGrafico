@@ -73,6 +73,10 @@ class CreateDraftSerializer(serializers.Serializer):
     )
 
 
+class CreateSaleSerializer(serializers.Serializer):
+    contact_id = serializers.IntegerField(required=False, allow_null=True)
+
+
 # --- lista --------------------------------------------------------------------
 
 
@@ -197,22 +201,24 @@ class FiscalMatchDetailSerializer(FiscalMatchListSerializer):
 # --- candidatos ---------------------------------------------------------------
 
 
-class CandidateMovementSerializer(serializers.ModelSerializer):
-    """Cobro del documento al que puede corresponder una venta TUU (``payment_method_new`` precargado)."""
+class CandidateMovementSerializer(serializers.Serializer):
+    """Cobro libre del documento que la venta TUU puede respaldar (``PaymentOption``, Ruling K).
 
+    ``same_amount``: es del monto de la venta; otro monto se puede elegir con advertencia.
+    ``payment_method_new`` viene precargado.
+    """
+
+    id = serializers.IntegerField(source="movement.pk", read_only=True)
+    amount = serializers.DecimalField(
+        source="movement.amount", max_digits=12, decimal_places=2, read_only=True
+    )
+    created_at = serializers.DateTimeField(source="movement.created_at", read_only=True)
     method = serializers.SerializerMethodField()
+    same_amount = serializers.BooleanField(read_only=True)
 
-    class Meta:
-        model = TreasuryMovement
-        fields = ["id", "amount", "created_at", "method"]
-        read_only_fields = fields
-
-    def get_method(self, obj: TreasuryMovement) -> str:
-        return (
-            obj.payment_method_new.name
-            if obj.payment_method_new
-            else obj.get_payment_method_display()
-        )
+    def get_method(self, obj) -> str:
+        m = obj.movement
+        return m.payment_method_new.name if m.payment_method_new else m.get_payment_method_display()
 
 
 class SearchQuerySerializer(serializers.Serializer):

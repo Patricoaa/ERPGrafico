@@ -200,25 +200,37 @@ def free_payments(*amounts: Decimal) -> "QuerySet[TreasuryMovement]":
     return qs.filter(amount__in=set(amounts)) if amounts else qs
 
 
-def attach_free_payments(invoices: list[Invoice], sale: TerminalSale | None) -> None:
-    """``compatible_movements``: cobros libres del monto de la venta, en una sola consulta."""
-    by_invoice: dict[int, list[TreasuryMovement]] = {i.pk: [] for i in invoices}
-    if sale is not None and invoices:
-        rows = (
-            free_payments(sale.sale_amount)
-            .filter(invoice_id__in=list(by_invoice))
-            .select_related("payment_method_new")
-            .order_by("created_at", "id")
-        )
-        for m in rows:
-            by_invoice[m.invoice_id].append(m)
-    for invoice in invoices:
-        invoice.compatible_movements = by_invoice[invoice.pk]
+@dataclass(frozen=True)
+class PaymentOption:
+    """Cobro libre del documento que una venta TUU puede respaldar; ``same_amount``: es de su monto."""
+
+    movement: TreasuryMovement
+    same_amount: bool
 
 
-def attach_sale_payments(sales: list[TerminalSale], free: list[TreasuryMovement]) -> None:
-    """``compatible_movements`` de cada venta: los cobros libres del documento de su mismo monto."""
-    for sale in sales:
-        sale.compatible_movements = [
-            m for m in free if Decimal(m.amount) == Decimal(sale.sale_amount)
-        ]
+def payment_options(sale: TerminalSale, free: list[TreasuryMovement]) -> list[PaymentOption]:
+    """Los cobros libres de un medio compatible con la venta, los de su mismo monto primero
+    (Ruling K): otro monto se puede elegir y deja la parte TUU con advertencia (spec §7c)."""
+    options = [
+        PaymentOption(m, Decimal(m.amount) == Decimal(sale.sale_amount))
+        for m in free
+        if payment_type_fits(sale, m)
+    ]
+    return sorted(options, key=lambda o: not o.same_amount)
+
+
+def payments_assignable(options: dict[int, list[int]]) -> bool:
+    """Cada venta (clave) puede quedarse con un cobro distinto de sus opciones (emparejamiento)."""
+    owner: dict[int, int] = {}
+
+    def place(sale: int, seen: set[int]) -> bool:
+        for m in options[sale]:
+            if m in seen:
+                continue
+            seen.add(m)
+            if m not in owner or place(owner[m], seen):
+                owner[m] = sale
+                return True
+        return False
+
+    return all(place(sale, set()) for sale in options)

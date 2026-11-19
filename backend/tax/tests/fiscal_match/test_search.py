@@ -15,8 +15,8 @@ from billing.models import Invoice
 from core.fiscal_match import FiscalMatchStatus
 from core.tests.rbac_factories import make_user
 from tax.fiscal_match.groups import ensure_groups, tuu_orphan_group
-from tax.fiscal_match.search import group_reference
-from tax.fiscal_match.services import link_rcv_document
+from tax.fiscal_match.search import _load_group
+from tax.fiscal_match.services import apply_changes
 from tax.models import FiscalMatch
 from tax.tests.fiscal_match_helpers import (
     local_dt,
@@ -112,9 +112,9 @@ def test_reference_kind_per_group(tenv):
     doc = _rcv(_today(), 1000, 900)
     _groups()
 
-    assert group_reference(_group_of(invoice)).kind == "erp"
-    assert group_reference(_group_of(sale)).kind == "tuu"
-    assert group_reference(_group_of(doc)).kind == "rcv"
+    assert _load_group(_group_of(invoice)).ref.kind == "erp"
+    assert _load_group(_group_of(sale)).ref.kind == "tuu"
+    assert _load_group(_group_of(doc)).ref.kind == "rcv"
 
 
 # --- universo por parte ----------------------------------------------------------------
@@ -138,7 +138,8 @@ def test_erp_universe_skips_settled_groups_and_documents_without_free_payment(ap
     item = body["results"][0]
     assert item["kind"] == "erp"
     assert item["label"] == open_doc.display_id
-    assert item["payments_by_sale"] == {str(sale.id): []}  # el cobro es de otro monto
+    (option,) = item["payments_by_sale"][str(sale.id)]  # el cobro es de otro monto: se ofrece igual
+    assert option["same_amount"] is False
 
 
 def test_erp_payments_by_sale_lists_free_payments_of_the_sale_amount(api, tenv):
@@ -522,7 +523,7 @@ def test_rcv_orphan_with_only_a_reversed_sale_is_offered_and_links(api, tenv):
     group = _group_of(invoice)
 
     assert _ids(_search(api, group, "rcv")) == [doc.id]
-    link_rcv_document(group, RCVDocument.objects.get(pk=doc.pk))
+    apply_changes(group, [{"op": "link", "part": "rcv", "id": doc.pk}])
     assert RCVDocument.objects.get(pk=doc.pk).fiscal_match_id == group.id
 
 
@@ -560,3 +561,192 @@ def test_tuu_item_carries_nothing_when_the_document_already_has_rcv(api, tenv):
     body = _search(api, _group_of(invoice), "tuu")
     item = next(i for i in body["results"] if i["id"] == sale.id)
     assert item["carried_rcv"] == []
+
+
+# --- pagos de la tarjeta (Ruling K) -----------------------------------------------------
+
+
+def _card_payment(tenv, invoice, amount, *, method="CARD"):
+    return TreasuryMovement.objects.create(
+        movement_type=TreasuryMovement.Type.INBOUND,
+        payment_method=method,
+        payment_method_new=tenv.card if method == "CARD" else tenv.cash,
+        amount=Decimal(amount),
+        created_by=tenv.user,
+        contact=tenv.customer,
+        to_account=tenv.cash_account,
+        invoice=invoice,
+        sale_order=invoice.sale_order,
+        pos_session=tenv.session,
+        date=invoice.date,
+    )
+
+
+def _tuu_item(api, group, sale):
+    return next(i for i in _search(api, group, "tuu")["results"] if i["id"] == sale.id)
+
+
+def _blocking(item) -> list[str]:
+    return [w["code"] for w in item["warnings"] if w["blocking"]]
+
+
+def test_tuu_item_lists_other_amount_payments_same_amount_first(api, tenv):
+    invoice = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    other = TreasuryMovement.objects.get(invoice=invoice)
+    same = _card_payment(tenv, invoice, 3000)
+    sale = make_terminal_sale(tenv, 3000, _at(hour=15), document_type=39)
+    _groups()
+
+    item = _tuu_item(api, _group_of(invoice), sale)
+
+    assert [(m["id"], m["same_amount"]) for m in item["compatible_movements"]] == [
+        (same.id, True),
+        (other.id, False),
+    ]
+    assert _blocking(item) == []
+
+
+def test_tuu_other_amount_payment_from_search_saves_with_warning(api, tenv):
+    from core.fiscal_match import PartState
+
+    invoice = make_pos_document(tenv, 6000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    sale = make_terminal_sale(tenv, 5000, _at(hour=15), document_type=39)
+    _groups()
+    group = _group_of(invoice)
+
+    item = _tuu_item(api, group, sale)
+    assert [m["same_amount"] for m in item["compatible_movements"]] == [False]
+    assert "OTHER_AMOUNT" in [w["code"] for w in item["warnings"]]
+
+    movement = item["compatible_movements"][0]["id"]
+    result = apply_changes(group, [{"op": "link", "part": "tuu", "id": sale.id, "movement": movement}])
+
+    assert TerminalSale.objects.get(pk=sale.pk).matched_movement_id == movement
+    assert result.tuu_state == PartState.DIFF
+    assert result.status == FiscalMatchStatus.DIFF
+
+
+def test_tuu_item_without_a_fitting_free_payment_is_blocking(api, tenv):
+    invoice = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.BOLETA)  # pago con tarjeta
+    sale = make_terminal_sale(
+        tenv, 5000, _at(hour=15), payment_type=TerminalSale.PaymentType.CASH, document_type=39
+    )
+    _groups()
+
+    item = _tuu_item(api, _group_of(invoice), sale)
+
+    assert item["compatible_movements"] == []
+    assert {"code": "NO_FREE_PAYMENT", "label": "Sin pago libre compatible", "blocking": True} in item[
+        "warnings"
+    ]
+
+
+def test_erp_item_lists_every_fitting_payment_per_own_sale(api, tenv):
+    sale = make_terminal_sale(tenv, 3000, _at(hour=15), document_type=39)
+    invoice = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    other = TreasuryMovement.objects.get(invoice=invoice)
+    same = _card_payment(tenv, invoice, 3000)
+    _groups()
+
+    item = _search(api, _group_of(sale), "erp")["results"][0]
+
+    assert [(m["id"], m["same_amount"]) for m in item["payments_by_sale"][str(sale.id)]] == [
+        (same.id, True),
+        (other.id, False),
+    ]
+    assert _blocking(item) == []
+
+
+def test_erp_other_amount_payment_from_search_saves_with_warning(api, tenv):
+
+    sale = make_terminal_sale(tenv, 5000, _at(hour=15), document_type=39)
+    invoice = make_pos_document(tenv, 6000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    _groups()
+    orphan = _group_of(sale)
+
+    item = _search(api, orphan, "erp")["results"][0]
+    (option,) = item["payments_by_sale"][str(sale.id)]
+    assert option["same_amount"] is False
+
+    result = apply_changes(
+        orphan,
+        [{"op": "link", "part": "erp", "id": invoice.id, "payments": {sale.id: option["id"]}}],
+    )
+
+    assert result.invoice_id == invoice.id
+    assert result.status == FiscalMatchStatus.DIFF
+
+
+def test_orphan_with_two_sales_and_document_with_two_payments(api, tenv):
+
+    first = make_terminal_sale(tenv, 3000, _at(hour=15), document_type=39)
+    second = make_terminal_sale(tenv, 2000, _at(hour=16), document_type=39)
+    invoice = make_pos_document(tenv, 3000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    m3000 = TreasuryMovement.objects.get(invoice=invoice)
+    m2000 = _card_payment(tenv, invoice, 2000)
+    _groups()
+    orphan = _group_of(first)
+    _into(TerminalSale.objects.get(pk=second.pk), orphan)
+    FiscalMatch.objects.filter(terminal_sales__isnull=True, rcv_documents__isnull=True, invoice__isnull=True).delete()
+
+    item = next(i for i in _search(api, orphan, "erp")["results"] if i["id"] == invoice.id)
+
+    by_sale = item["payments_by_sale"]
+    assert [m["id"] for m in by_sale[str(first.id)]] == [m3000.id, m2000.id]
+    assert [m["id"] for m in by_sale[str(second.id)]] == [m2000.id, m3000.id]
+    assert _blocking(item) == []
+
+    result = apply_changes(
+        orphan,
+        [
+            {
+                "op": "link",
+                "part": "erp",
+                "id": invoice.id,
+                "payments": {first.id: m3000.id, second.id: m2000.id},
+            }
+        ],
+    )
+    assert TerminalSale.objects.get(pk=first.pk).matched_movement_id == m3000.id
+    assert TerminalSale.objects.get(pk=second.pk).matched_movement_id == m2000.id
+    assert result.invoice_id == invoice.id
+
+
+def test_erp_item_blocks_when_payments_cannot_cover_every_own_sale(api, tenv):
+    first = make_terminal_sale(tenv, 3000, _at(hour=15), document_type=39)
+    second = make_terminal_sale(tenv, 3000, _at(hour=16), document_type=39)
+    invoice = make_pos_document(tenv, 3000, _at(), dte_type=Invoice.DTEType.BOLETA)  # un solo cobro
+    _groups()
+    orphan = _group_of(first)
+    _into(TerminalSale.objects.get(pk=second.pk), orphan)
+
+    item = next(i for i in _search(api, orphan, "erp")["results"] if i["id"] == invoice.id)
+
+    assert "NO_FREE_PAYMENT" in _blocking(item)
+
+
+# --- huérfanos: todos sus registros (M1) ------------------------------------------------
+
+
+def test_orphan_with_only_reversed_sales_gets_no_erp_candidates(api, tenv):
+    sale = make_terminal_sale(tenv, 5000, _at(hour=15), status=TerminalSale.Status.REVERSED)
+    make_pos_document(tenv, 5000, _at())
+    _groups()
+    holder = tuu_orphan_group(sale)
+    holder.save()
+    _into(sale, holder)
+
+    assert _search(api, holder, "erp")["count"] == 0
+
+
+def test_erp_type_warning_checks_every_own_record(api, tenv):
+    sale = make_terminal_sale(tenv, 5000, _at(hour=15), document_type=None)
+    doc = _rcv(_today(), 5000, 951, dte_type=33)
+    boleta = make_pos_document(tenv, 5000, _at(), dte_type=Invoice.DTEType.BOLETA)
+    _groups()
+    orphan = _group_of(sale)
+    _into(doc, orphan)
+
+    item = next(i for i in _search(api, orphan, "erp")["results"] if i["id"] == boleta.id)
+
+    assert "TYPE_INCOMPATIBLE" in _blocking(item)
