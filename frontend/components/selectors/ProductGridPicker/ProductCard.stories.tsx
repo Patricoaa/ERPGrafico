@@ -26,7 +26,6 @@ const meta = {
         categoryIcon: "Layers",
         isDisabled: false,
         isSelected: false,
-        isTouch: false,
         onProductClick: fn(),
         onToggleFavorite: fn(),
     },
@@ -52,7 +51,11 @@ export const CalculatorCost: Story = {
         priceRenderer: () => <><span className="text-lg font-semibold tabular-nums">$ 310</span><span className="ml-1 text-2xs text-muted-foreground">/ pliego</span></>,
     },
 }
-export const TouchTablet: Story = { args: { isTouch: true, product: WITH_VARIANTS } }
+/** Touch sizes come from the `touch:` variant: the story forces the input axis on a wrapper (ADR-0142). */
+export const TouchTablet: Story = {
+    args: { product: WITH_VARIANTS },
+    decorators: [(Story) => <div data-input="touch"><Story /></div>],
+}
 
 /** The five states side by side, as in the design reference. */
 export const Anatomy: Story = {

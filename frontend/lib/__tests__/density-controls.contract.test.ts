@@ -80,19 +80,39 @@ describe('cn() understands height roles (tailwind-merge extension)', () => {
   });
 });
 
-describe('touch variant (ADR-0142 D5)', () => {
-  it('@custom-variant touch matches data-input="touch" and data-input="auto" under a coarse pointer', () => {
+describe('touch variant and device-driven input axis (ADR-0142 D5)', () => {
+  const TABLET = /@media \(pointer: coarse\) and \(min-width: 64rem\)/;
+
+  it('@custom-variant touch = data-input="touch" OR tablet-class coarse pointer not forced to mouse', () => {
     const m = css.match(/@custom-variant touch \{[\s\S]*?\n\}/);
     expect(m, 'touch variant').not.toBeNull();
     const block = (m as RegExpMatchArray)[0];
     expect(/\[data-input="touch"\]/.test(block)).toBe(true);
-    expect(/@media \(pointer: coarse\)/.test(block) && /\[data-input="auto"\]/.test(block)).toBe(true);
+    expect(TABLET.test(block)).toBe(true);
+    expect(/:not\(\[data-input="mouse"\]/.test(block)).toBe(true);
+  });
+
+  it('the dial follows the same condition by default (no attribute) and under "auto"; "mouse" resets it', () => {
+    const m = css.match(/@media \(pointer: coarse\) and \(min-width: 64rem\) \{\s*:root:not\(\[data-input="mouse"\]\),\s*\[data-input="auto"\] \{[^}]*\}/);
+    expect(m, 'tablet-class dial rule').not.toBeNull();
+    const rule = (m as RegExpMatchArray)[0];
+    expect(/--k-input:\s*1\.125/.test(rule) && /--hit-min:\s*3rem/.test(rule) && /--hit-role-min:\s*3rem/.test(rule)).toBe(true);
+    expect(/\[data-input="mouse"\]\s*\{\s*--k-input:\s*1;\s*--hit-min:\s*2\.5rem;\s*--hit-role-min:\s*0px/.test(css)).toBe(true);
   });
 
   it('POS cart has no JS size branches (isTouchPOS) — sizes come from the touch: variant', () => {
     const cart = read('../../features/pos/components/Cart.tsx');
     expect(/isTouchPOS|isTouchMode/.test(cart)).toBe(false);
     expect(/touch:h-14 touch:text-xl/.test(cart)).toBe(true);
+  });
+
+  it('product picker styling uses touch:, not an isTouch prop or isTouchPOS branches', () => {
+    const card = read('../../components/selectors/ProductGridPicker/ProductCard.tsx');
+    const filter = read('../../components/selectors/ProductGridPicker/CategoryFilter.tsx');
+    expect(/\bisTouch\b/.test(card)).toBe(false);
+    expect(/touch:h-9 touch:w-9/.test(card)).toBe(true);
+    expect(/isTouchPOS/.test(filter)).toBe(false);
+    expect(/touch:h-9 touch:px-4\.5 touch:text-xs/.test(filter)).toBe(true);
   });
 
   it('POSShell publishes the input mode on <html>', () => {

@@ -110,7 +110,6 @@ function ProductGridComponent({
                         limit={limits[`prod_${product.id}`]}
                         isDisabled={isProductDisabled(product)}
                         isSelected={selectedProductIds?.has(product.id) ?? false}
-                        isTouch={isTouchPOS}
                         onProductClick={onProductClick}
                         onToggleFavorite={onToggleFavorite}
                         priceRenderer={priceRenderer}

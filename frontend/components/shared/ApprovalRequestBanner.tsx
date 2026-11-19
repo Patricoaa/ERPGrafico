@@ -4,7 +4,6 @@ import * as React from "react"
 import { AlertCircle, CheckCircle2, Loader2, XCircle } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useTouchMode } from "@/hooks/useTouchMode"
 import { Banner, type BannerTone } from "./Banner"
 import { cn } from "@/lib/utils"
 
@@ -79,11 +78,10 @@ export function ApprovalRequestBanner({
     onVerify,
     className,
 }: ApprovalRequestBannerProps) {
-    const { isTouchMode } = useTouchMode()
     const { title: defaultTitle, tone, icon: Icon, iconClass } = STATE_CONFIG[state]
     const title = titleOverride ?? defaultTitle
 
-    const btnH = isTouchMode ? "h-11 text-sm" : "h-9 text-xs"
+    const btnH = "h-9 text-xs touch:h-10 touch:text-sm"
     const btnBase = "rounded-sm font-medium uppercase tracking-tight"
 
     const hasActions = state === 'waiting' || state === 'required'

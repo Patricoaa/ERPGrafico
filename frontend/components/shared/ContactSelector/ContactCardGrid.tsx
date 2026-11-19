@@ -5,7 +5,7 @@
 // Blobatar on the media strip, kind chip, RUT in mono, name, and the credit position pinned at the bottom.
 
 import { useState } from "react"
-import { cn, formatPlainDate } from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useContactSearch } from "@/features/contacts"
 import { useDeviceContext } from "@/hooks/useDeviceContext"
@@ -164,7 +164,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                             selected={selectedId === contact.id.toString()}
                             onSelect={onSelect}
                             contactType={contactType}
-                            className={cn(isTouchPOS && "active:scale-[0.98]")}
+                            className="touch:active:scale-[0.98]"
                         />
                     ))}
                 </ChoiceGroup>

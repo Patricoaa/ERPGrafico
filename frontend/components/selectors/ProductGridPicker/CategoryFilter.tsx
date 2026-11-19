@@ -24,7 +24,7 @@ export function CategoryFilter({
     onSelectCategory
 }: CategoryFilterProps) {
     const scrollRef = useRef<HTMLDivElement>(null)
-    const { isTouchPOS, isTouch } = useDeviceContext()
+    const { isTouch } = useDeviceContext()
 
     const scrollLeft = () => {
         scrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' })
@@ -60,7 +60,7 @@ export function CategoryFilter({
                     variant={selectedCategoryId === null ? "default" : "outline"}
                     className={cn(
                         "whitespace-nowrap flex items-center justify-center rounded-md font-medium uppercase tracking-wider transition-all border shadow-none",
-                        isTouchPOS ? "h-10 px-5 text-xs" : "h-8 px-3 text-3xs",
+                        "h-8 px-3 text-3xs touch:h-9 touch:px-4.5 touch:text-xs",
                         selectedCategoryId === null
                             ? "bg-primary text-primary-foreground border-primary shadow-card"
                             : "bg-background border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
@@ -77,7 +77,7 @@ export function CategoryFilter({
                         variant={selectedCategoryId === cat.id ? "default" : "outline"}
                         className={cn(
                             "whitespace-nowrap flex items-center justify-center gap-1.5 rounded-md font-medium uppercase tracking-wider transition-all border shadow-none",
-                            isTouchPOS ? "h-10 px-5 text-xs" : "h-8 px-3 text-3xs",
+                            "h-8 px-3 text-3xs touch:h-9 touch:px-4.5 touch:text-xs",
                             selectedCategoryId === cat.id
                                 ? "bg-primary text-primary-foreground border-primary shadow-card"
                                 : "bg-background border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
@@ -85,7 +85,7 @@ export function CategoryFilter({
                         )}
                         onClick={() => onSelectCategory(cat.id)}
                     >
-                        {cat.icon && <DynamicIcon name={cat.icon} className={isTouchPOS ? "h-4 w-4" : "h-3 w-3"} />}
+                        {cat.icon && <DynamicIcon name={cat.icon} className="h-3 w-3 touch:h-3.5 touch:w-3.5" />}
                         {cat.name}
                     </Button>
                 ))}

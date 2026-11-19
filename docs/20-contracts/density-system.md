@@ -22,7 +22,7 @@ El espaciado es la **escala de Tailwind** (`--spacing`), hecha dinámica: `--spa
 | Eje | Atributo | Valores | `--k-*` |
 |-----|----------|---------|---------|
 | Densidad | `data-density` | `compact` (default) · `comfortable` | 1 · 1.125 |
-| Puntero | `data-input` | `mouse` · `touch` · `auto` (sigue `pointer: coarse`) | 1 · 1.125 · 1 / 1.125 |
+| Puntero | `data-input` | sin atributo / `auto` (sigue el dispositivo) · `touch` · `mouse` | 1 o 1.125 · 1.125 · 1 |
 
 `--k = max(--k-density, --k-input)`. Es **discreto, nunca continuo** (evita alturas fraccionarias y bordes borrosos). Con `--k = 1` (estado por defecto) el resultado es idéntico a la escala estándar.
 
@@ -34,7 +34,7 @@ import { DensityScope } from '@/components/shared'
 
 - Los atributos se pueden poner en cualquier ancestro; `DensityScope` (sin caja propia, `display: contents`) es la forma recomendada en React.
 - El valor se resuelve **por elemento**: `--spacing` está en `@theme inline`, así que cada utilidad emite `calc(0.25rem * var(--k, 1))`. En CSS propio, usar `var(--u)` (la unidad `0.25rem × k` declarada en cada ámbito); **no** `var(--spacing)` en un bloque `:root`, que se congelaría con el `--k` de la raíz.
-- **`data-input="auto"` aún no está activado globalmente:** sin el atributo el eje de puntero vale 1 aunque el dispositivo sea táctil. Se activa por superficie en la Fase 4 (POS) y globalmente en la Fase 5.
+- **Táctil por dispositivo (global):** sin atributo, o con `data-input="auto"`, el eje de puntero vale 1.125 en un dispositivo táctil de clase tablet (`pointer: coarse` **y** ancho ≥ 64rem, la misma prueba que el antiguo `isTouchPOS`). Los teléfonos conservan la escala compacta. `data-input="mouse"` lo fuerza a 1 en un subárbol; `data-input="touch"` lo fuerza a 1.125 con cualquier ancho.
 - Valores fuera de la escala: `calc(var(--u) * n)` con comentario de contexto; no valores en bruto (`p-2.5`) para un ritmo que la escala ya cubre.
 
 ---
@@ -124,7 +124,9 @@ Los roles se derivan de `--u`, así que escalan con `--k` (comfortable: ×1.125)
 <Button className="h-11 text-base touch:h-14 touch:text-xl" />   // 44px normal, 56px en táctil
 ```
 
-`touch:` aplica bajo `data-input="touch"` (o `auto` con `pointer: coarse`) en el elemento o en un ancestro. **Regla de doble escala:** el eje táctil ya sube `--k` a 1.125, así que toda utilidad de espaciado crece 12,5 % por sí sola; un `touch:` solo se añade para lo que deba crecer *más* que eso (alturas de botones, tamaño de texto). Los valores `touch:` del POS se calcularon dividiendo el tamaño táctil deseado entre 1,125 (p. ej. 64 px → `touch:h-14`).
+`touch:` aplica bajo `data-input="touch"` o en un dispositivo táctil de clase tablet (coarse + ≥ 64rem) salvo `data-input="mouse"`, en el elemento o en un ancestro. Es la misma condición que sube el dial, de modo que no hace falta ningún atributo para que un iPad reciba los tamaños táctiles en cualquier pantalla. **Regla de doble escala:** el eje táctil ya sube `--k` a 1.125, así que toda utilidad de espaciado crece 12,5 % por sí sola; un `touch:` solo se añade para lo que deba crecer *más* que eso (alturas de botones, tamaño de texto). Los valores `touch:` del POS se calcularon dividiendo el tamaño táctil deseado entre 1,125 (p. ej. 64 px → `touch:h-14`).
+
+**Qué sigue en JS (a propósito).** Lo que no es tamaño: abrir el teclado numérico al tocar, `readOnly` en inputs, ocultar flechas de scroll, `snap`, número de columnas del grid y la elección de layout (`useDeviceContext`/`useTouchMode`). Y `SearchBar`, cuyo alto depende de `isTouch` en cualquier ancho (también teléfonos), distinto de la condición de la variante.
 
 **Estado.** `useTouchMode()` (`hooks/useTouchMode.ts`) expone el modo resuelto (`isTouchMode`) **solo para comportamiento** (teclado numérico al tocar, decimales…), nunca para tamaños. El modo es `auto | touch | mouse`: por defecto `auto` (sigue el puntero; ya no arranca en `touch` en escritorio) y el operador puede forzarlo con el conmutador del POS (se guarda en `sessionStorage`, clave `pos_input_mode`).
 

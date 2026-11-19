@@ -220,8 +220,8 @@
  *   --k = max(density, input). `--u` is the density-aware unit (0.25rem * k).
  * Declared on every scope so descendants resolve --k/--u against the nearest
  * scope (a value declared only on :root would be frozen at the root).
- * `data-input="auto"` follows the pointer (coarse → touch); without the attribute
- * the input axis stays at 1 (pointer-coarse auto-activation ships in Phase 4/5).
+ * Without the attribute (or with "auto") the input axis follows the device: tablet-class touch
+ * (pointer: coarse AND width >= 64rem) → 1.125; "mouse" forces 1; "touch" forces 1.125 at any width.
  */
 :root {
   --k-density: 1;
@@ -234,11 +234,14 @@
 }
 [data-density="compact"] { --k-density: 1; }
 [data-density="comfortable"] { --k-density: 1.125; }
-[data-input="mouse"] { --k-input: 1; }
 [data-input="touch"] { --k-input: 1.125; --hit-min: 3rem; --hit-role-min: 3rem; }
-@media (pointer: coarse) {
+/* Default (no attribute) and data-input="auto": follow the device. Tablet-class touch = coarse pointer
+   AND width >= 64rem; phones keep the compact scale unless a surface forces data-input="touch". */
+@media (pointer: coarse) and (min-width: 64rem) {
+  :root:not([data-input="mouse"]),
   [data-input="auto"] { --k-input: 1.125; --hit-min: 3rem; --hit-role-min: 3rem; }
 }
+[data-input="mouse"] { --k-input: 1; --hit-min: 2.5rem; --hit-role-min: 0px; }
 :root,
 [data-density],
 [data-input] {
@@ -277,14 +280,17 @@
 
 /*
  * `touch:` variant (ADR-0142 D5) — replaces the JS branches `isTouch ? "a" : "b"`:
- *   className="h-11 touch:h-14"  →  44px normally, 56px under data-input="touch" (or "auto" + pointer: coarse).
- * Remember that the touch axis also sets --k = 1.125, so every spacing utility is already 12.5% larger
- * under touch: only add `touch:` overrides for what must grow BEYOND that.
+ *   className="h-11 touch:h-14"  →  44px normally, 56px on touch.
+ * Active under data-input="touch" (any width), or on a tablet-class touch device (pointer: coarse AND
+ * width >= 64rem, exactly the old `isTouchPOS` test) unless the subtree is forced to mouse.
+ * The same condition raises the dial (--k = 1.125) and the hit targets, so under touch every spacing
+ * utility is already 12.5% larger: only add `touch:` overrides for what must grow BEYOND that
+ * (target size ÷ 1.125).
  */
 @custom-variant touch {
   &:where([data-input="touch"], [data-input="touch"] *) { @slot; }
-  @media (pointer: coarse) {
-    &:where([data-input="auto"], [data-input="auto"] *) { @slot; }
+  @media (pointer: coarse) and (min-width: 64rem) {
+    &:where(:not([data-input="mouse"], [data-input="mouse"] *)) { @slot; }
   }
 }
 

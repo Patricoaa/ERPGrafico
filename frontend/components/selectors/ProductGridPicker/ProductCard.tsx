@@ -30,7 +30,6 @@ export interface ProductCardProps {
     limit?: number
     isDisabled: boolean
     isSelected: boolean
-    isTouch: boolean
     onProductClick: (product: BaseProduct) => void
     onToggleFavorite?: (productId: number) => void
     /** Replaces the default price amount. Returning null hides the price block (e.g. production picker). */
@@ -75,7 +74,6 @@ function ProductCardComponent({
     limit,
     isDisabled,
     isSelected,
-    isTouch,
     onProductClick,
     onToggleFavorite,
     priceRenderer,
@@ -98,10 +96,10 @@ function ProductCardComponent({
             onClick={() => !unavailable && onProductClick(product)}
             className={cn(
                 "h-full",
-                isTouch && !unavailable && "active:scale-[0.98]"
+                !unavailable && "touch:active:scale-[0.98]"
             )}
         >
-            <div className={cn("relative h-22 w-full shrink-0 overflow-hidden bg-muted", isTouch && "h-28", unavailable && "bg-muted/60")}>
+            <div className={cn("relative h-22 w-full shrink-0 overflow-hidden bg-muted", "touch:h-25", unavailable && "bg-muted/60")}>
                 {photo ? (
                     <Image src={photo} alt="" fill sizes="(min-width: 1024px) 20vw, 40vw" className="object-cover" />
                 ) : (
@@ -127,7 +125,7 @@ function ProductCardComponent({
                         variant="ghost"
                         className={cn(
                             "absolute right-2 top-2 cursor-pointer rounded-full border border-border bg-background p-0 transition-colors hover:bg-background",
-                            isTouch ? "h-10 w-10" : "h-7 w-7",
+                            "h-7 w-7 touch:h-9 touch:w-9",
                             product.is_favorite ? "text-destructive" : "text-muted-foreground hover:text-foreground"
                         )}
                         aria-pressed={Boolean(product.is_favorite)}
@@ -138,7 +136,7 @@ function ProductCardComponent({
                             onToggleFavorite(product.id)
                         }}
                     >
-                        <Heart className={cn(isTouch ? "h-5 w-5" : "h-3.5 w-3.5", product.is_favorite && "fill-current")} />
+                        <Heart className={cn("h-3.5 w-3.5 touch:h-4.5 touch:w-4.5", product.is_favorite && "fill-current")} />
                     </Button>
                 )}
 
@@ -151,14 +149,14 @@ function ProductCardComponent({
                 {isSelected && <SelectionCheck />}
             </div>
 
-            <div className={cn(cardAnatomy.body, isTouch && "pt-3")}>
+            <div className={cn(cardAnatomy.body, "touch:pt-2.5")}>
                 {unavailable && (
                     <div className="flex min-h-4 items-center justify-end gap-2">
                         <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="No disponible" />
                     </div>
                 )}
 
-                <h3 className={cn(cardAnatomy.title, isTouch ? "text-base" : "text-sm", unavailable && "text-muted-foreground")}>
+                <h3 className={cn(cardAnatomy.title, "text-sm touch:text-base", unavailable && "text-muted-foreground")}>
                     {product.name}
                 </h3>
 
@@ -176,12 +174,12 @@ function ProductCardComponent({
                             {priceRenderer ? (
                                 <div className="flex items-baseline">{customPrice}</div>
                             ) : model.price.kind === 'dynamic' ? (
-                                <p className={cn("font-semibold", isTouch ? "text-base" : "text-sm", unavailable ? "text-muted-foreground" : "text-info")}>
+                                <p className={cn("font-semibold", "text-sm touch:text-base", unavailable ? "text-muted-foreground" : "text-info")}>
                                     Precio dinámico
                                 </p>
                             ) : (
                                 <p className="flex items-baseline gap-1">
-                                    <span className={cn(cardAnatomy.amount, isTouch ? "text-xl" : "", unavailable && "text-muted-foreground")}>
+                                    <span className={cn(cardAnatomy.amount, "touch:text-xl", unavailable && "text-muted-foreground")}>
                                         {formatCurrency(model.price.gross ?? 0)}
                                     </span>
                                     {model.price.unit && (
