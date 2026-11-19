@@ -275,6 +275,19 @@
 @utility size-control-lg { width: var(--control-h-lg); height: var(--control-h-lg); min-height: var(--hit-role-min); }
 @utility size-control-touch { width: var(--control-h-touch); height: var(--control-h-touch); min-height: var(--hit-role-min); }
 
+/*
+ * `touch:` variant (ADR-0142 D5) — replaces the JS branches `isTouch ? "a" : "b"`:
+ *   className="h-11 touch:h-14"  →  44px normally, 56px under data-input="touch" (or "auto" + pointer: coarse).
+ * Remember that the touch axis also sets --k = 1.125, so every spacing utility is already 12.5% larger
+ * under touch: only add `touch:` overrides for what must grow BEYOND that.
+ */
+@custom-variant touch {
+  &:where([data-input="touch"], [data-input="touch"] *) { @slot; }
+  @media (pointer: coarse) {
+    &:where([data-input="auto"], [data-input="auto"] *) { @slot; }
+  }
+}
+
 @theme inline {
   /*
    * DENSITY DIAL (ADR-0142) — every spacing utility (p-*, gap-*, h-*, w-*, size-*…)

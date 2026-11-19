@@ -31,9 +31,10 @@ Cada fase es un PR independiente, termina con `npm run type-check`, `npm run lin
 - **Salida:** capturas idénticas en compact; test de contrato nuevo verde; grep de `.h-9` en la guarda = 0.
 
 ## Fase 4 — POS y modo táctil (1.5 d)
-- [ ] POS declara `data-density="comfortable"`; `ChoiceCard size="touch"`, `touchMode` de modales y `Cart.tsx` pasan a tokens/atributos (eliminar las ~10 ramas `isTouchPOS`).
-- [ ] Retirar o redefinir `useTouchMode` (override manual → `data-input`); eliminar el default `true`.
-- [ ] Actualizar `component-modal.md`, ADR-0127 (nota de enmienda) y `component-button.md` (patrón táctil).
+- [x] `@custom-variant touch`; `Cart.tsx` y `CartItem.tsx` pasan a la variante (sin ramas `isTouchPOS`); `POSShell` publica `data-input` en `<html>`. **No** se declara `comfortable` en el POS (ver enmienda del ADR).
+- [ ] Migrar a `touch:` el resto de consumidores: `GenericWizard` (`touchMode`), `ProductGridPicker`, pasos del checkout, `ContactCardGrid`, `Dte*`, `ApprovalRequestBanner`, `ChoiceCard size="touch"`/`CashModeChoice`, `OperatorPickerModal`.
+- [x] `useTouchMode` redefinido (`auto|touch|mouse`, solo comportamiento) + `useApplyInputMode`; sin default `true`.
+- [x] `density-system.md` §6 y `component-modal.md` actualizados. [ ] Nota de enmienda en ADR-0127 y patrón táctil en `component-button.md` (con la migración del resto de consumidores).
 - **Salida:** POS en tablet (coarse) y escritorio (fine) sin ramas JS de tamaño; pruebas de POS verdes.
 
 ## Fase 5 — Activación y limpieza (1 d)

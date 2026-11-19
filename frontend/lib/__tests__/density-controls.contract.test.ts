@@ -79,3 +79,23 @@ describe('cn() understands height roles (tailwind-merge extension)', () => {
     expect(cn('h-control-md', 'px-4')).toBe('h-control-md px-4');
   });
 });
+
+describe('touch variant (ADR-0142 D5)', () => {
+  it('@custom-variant touch matches data-input="touch" and data-input="auto" under a coarse pointer', () => {
+    const m = css.match(/@custom-variant touch \{[\s\S]*?\n\}/);
+    expect(m, 'touch variant').not.toBeNull();
+    const block = (m as RegExpMatchArray)[0];
+    expect(/\[data-input="touch"\]/.test(block)).toBe(true);
+    expect(/@media \(pointer: coarse\)/.test(block) && /\[data-input="auto"\]/.test(block)).toBe(true);
+  });
+
+  it('POS cart has no JS size branches (isTouchPOS) — sizes come from the touch: variant', () => {
+    const cart = read('../../features/pos/components/Cart.tsx');
+    expect(/isTouchPOS|isTouchMode/.test(cart)).toBe(false);
+    expect(/touch:h-14 touch:text-xl/.test(cart)).toBe(true);
+  });
+
+  it('POSShell publishes the input mode on <html>', () => {
+    expect(/useApplyInputMode\(\)/.test(read('../../features/pos/components/POSShell.tsx'))).toBe(true);
+  });
+});

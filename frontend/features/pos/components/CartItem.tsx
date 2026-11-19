@@ -121,7 +121,7 @@ function CartItemComponent({
         <CardSurface
             kind="item"
             interactive={false}
-            className={cn("gap-2", isTouchMode ? "p-3" : "p-2.5")}
+            className="gap-2 p-2.5"
             style={isTouchMode ? { touchAction: 'manipulation' } : undefined}
         >
             {/* Top Row: Name and Total/Delete */}
@@ -131,7 +131,7 @@ function CartItemComponent({
                         <TooltipTrigger asChild>
                             <span className={cn(
                                 "font-medium truncate block cursor-default text-foreground/90", 
-                                isTouchMode ? "text-base" : "text-sm"
+                                "text-sm touch:text-base"
                             )}>
                                 {item.name}
                             </span>
@@ -145,7 +145,7 @@ function CartItemComponent({
                             onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} 
                             className={cn(
                                 "text-primary text-left underline-offset-2 hover:underline font-medium transition-colors mt-0.5", 
-                                isTouchMode ? "text-xs" : "text-2xs"
+                                "text-2xs touch:text-xs"
                             )} 
                             type="button"
                         >
@@ -164,7 +164,7 @@ function CartItemComponent({
                                         variant="ghost"
                                         className={cn(
                                             "font-medium transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
-                                            isTouchMode ? "h-10 px-2 text-sm" : "h-7 px-2 text-xs"
+                                            "h-7 px-2 text-xs touch:h-9 touch:text-sm"
                                         )}
                                         onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
                                         type="button"
@@ -177,13 +177,13 @@ function CartItemComponent({
                                         variant="ghost"
                                         className={cn(
                                             "flex items-center justify-center transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted",
-                                            isTouchMode ? "h-10 w-10" : "h-7 w-7"
+                                            "h-7 w-7 touch:h-9 touch:w-9"
                                         )}
                                         onClick={() => onOpenNumpad(item.cartItemId, 'discount', 0)}
                                         type="button"
                                         title="Agregar descuento"
                                     >
-                                        <Percent className={cn(isTouchMode ? "h-5 w-5" : "h-4 w-4")} />
+                                        <Percent className={cn("h-4 w-4 touch:h-4.5 touch:w-4.5")} />
                                     </Button>
                                 )}
                             </TooltipTrigger>
@@ -200,7 +200,7 @@ function CartItemComponent({
                         <TooltipTrigger asChild>
                             <span className={cn(
                                 "font-bold text-primary leading-none cursor-help",
-                                isTouchMode ? "text-lg ml-1" : "text-base ml-1"
+                                "text-base ml-1 touch:text-lg"
                             )}>
                                 {formatCurrency(item.total_gross)}
                             </span>
@@ -218,13 +218,13 @@ function CartItemComponent({
                             variant="ghost"
                             className={cn(
                                 "flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-md shrink-0 ml-1 border-none shadow-none",
-                                isTouchMode ? "h-10 w-10" : "h-7 w-7"
+                                "h-7 w-7 touch:h-9 touch:w-9"
                             )}
                             onClick={() => onRemove(item.cartItemId)}
                             type="button"
                             title="Eliminar"
                         >
-                            <Trash2 className={isTouchMode ? "h-5 w-5" : "h-4 w-4"} />
+                            <Trash2 className="h-4 w-4 touch:h-4.5 touch:w-4.5" />
                         </Button>
                     )}
                 </div>
@@ -239,7 +239,7 @@ function CartItemComponent({
                             type="button"
                             className={cn(
                                 "font-semibold underline underline-offset-2 border-none bg-transparent text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center px-1 rounded-sm hover:bg-primary/5 shadow-none",
-                                isTouchMode ? "text-sm h-8" : "text-xs h-6"
+                                "text-xs h-6 touch:text-sm touch:h-7"
                             )}
                             onClick={() => setUomDialogOpen(true)}
                         >
@@ -248,7 +248,7 @@ function CartItemComponent({
                     ) : (
                         <span className={cn(
                             "text-muted-foreground/70 font-medium px-1", 
-                            isTouchMode ? "text-sm" : "text-xs"
+                            "text-xs touch:text-sm"
                         )}>
                             {item.uom_name}
                         </span>
@@ -260,13 +260,13 @@ function CartItemComponent({
                     {/* Pill Stepper */}
                     <div className={cn(
                         "flex items-center bg-muted/40 border border-border/50 rounded-md overflow-hidden",
-                        isTouchMode ? "h-9" : "h-7"
+                        "h-7 touch:h-8"
                     )}>
                     <Button
                         variant="ghost"
                         className={cn(
                             "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
-                            isTouchMode ? "w-10 h-full" : "w-7 h-full"
+                            "w-7 h-full touch:w-9"
                         )}
                         {...(isTouchMode ? {
                             onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(-1) },
@@ -278,7 +278,7 @@ function CartItemComponent({
                         disabled={item.qty <= 0.01}
                         type="button"
                     >
-                        <Minus className={cn("text-foreground", isTouchMode ? "h-4 w-4" : "h-3 w-3")} />
+                        <Minus className={cn("text-foreground h-3 w-3 touch:h-3.5 touch:w-3.5")} />
                     </Button>
 
                     <div className="flex flex-col items-center justify-center border-x border-border/50 bg-background/50 h-full">
@@ -287,7 +287,7 @@ function CartItemComponent({
                                 <span className={cn(
                                     "font-bold text-foreground", 
                                     isOverLimit && "text-destructive", 
-                                    isTouchMode ? "text-sm" : "text-xs"
+                                    "text-xs touch:text-sm"
                                 )}>
                                     {item.qty}
                                 </span>
@@ -311,7 +311,7 @@ function CartItemComponent({
                         variant="ghost"
                         className={cn(
                             "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
-                            isTouchMode ? "w-10 h-full" : "w-7 h-full"
+                            "w-7 h-full touch:w-9"
                         )}
                         {...(isTouchMode ? {
                             onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(1) },
@@ -323,14 +323,14 @@ function CartItemComponent({
                         disabled={maxQty !== undefined && maxQty !== Infinity && item.qty >= maxQty}
                         type="button"
                     >
-                        <Plus className={cn("text-foreground", isTouchMode ? "h-4 w-4" : "h-3 w-3")} />
+                        <Plus className={cn("text-foreground h-3 w-3 touch:h-3.5 touch:w-3.5")} />
                     </Button>
                 </div>
 
                 {maxQty !== undefined && maxQty !== Infinity && (
                     <div className={cn(
                         "absolute -bottom-2 flex items-center px-1.5 py-px rounded-full font-bold uppercase tracking-wider border shadow-sm",
-                        isTouchMode ? "text-4xs" : "text-4xs",
+                        "text-4xs",
                         isOverLimit 
                             ? "bg-destructive text-destructive-foreground border-destructive" 
                             : "bg-background text-muted-foreground border-border/70"

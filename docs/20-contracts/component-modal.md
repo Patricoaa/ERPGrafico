@@ -243,7 +243,7 @@ interface GenericWizardHandle {
 | `isLoading` | `boolean` | ❌ | `false` | Full wizard loading state |
 | `successContent` | `ReactNode` | ❌ | — | Shown after `onComplete` resolves |
 | `footerLeft` | `ReactNode` | ❌ | — | Left slot in footer |
-| `touchMode` | `boolean` | ❌ | `false` | Pantalla táctil: step counter, título y footer agrandados (targets ≥ 48px). Usar con `useTouchMode()` |
+| `touchMode` | `boolean` | ❌ | `false` | Pantalla táctil: step counter, título y footer agrandados (targets ≥ 48px). Usar con `useTouchMode()`. **Transitorio (ADR-0142):** el camino nuevo es la variante CSS `touch:` + `<html data-input>` (ver `density-system.md` §6); la prop se mantendrá hasta migrar `GenericWizard` a la variante |
 | `onStepChange` | `(index: number) => void` | ❌ | — | Notifica el paso activo (0-indexed) al avanzar/retroceder/saltar |
 | `surface` | `'modal' \| 'drawer' \| 'inline'` | ❌ | `'modal'` | `'inline'` no monta chrome: el consumidor pinta header/footer |
 | `drawerSide` | `'top' \| 'right' \| 'bottom' \| 'left'` | ❌ | `'right'` | Solo con `surface='drawer'` |

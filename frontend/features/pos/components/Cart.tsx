@@ -12,8 +12,6 @@ import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
-import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM, StockLimits } from '../types'
 import { useSalesSettings } from '@/features/settings'
 
@@ -92,8 +90,6 @@ export function Cart({
     checkoutLoading = false,
 }: CartProps) {
     const { rate } = useVatRate()
-    const { isTouchPOS } = useDeviceContext()
-    const { isTouchMode } = useTouchMode()
     const { canApplyLineDiscount, canApplyGlobalDiscount } = useSalesSettings()
 
     const showLineDiscounts = canApplyLineDiscount
@@ -104,7 +100,7 @@ export function Cart({
             <Card className="surface-panel flex-1 flex flex-col overflow-hidden border-border/60 shadow-lg shadow-black/10 p-2 flex-shrink-0">
                 <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                     {/* Header */}
-                    <div className={cn("px-2 border-b border-border/40 bg-transparent shrink-0 flex justify-between items-center gap-2", isTouchPOS ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
+                    <div className={cn("px-2 border-b border-border/40 bg-transparent shrink-0 flex justify-between items-center gap-2", "pb-1.5 mb-1.5")}>
                         <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
                         <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -112,11 +108,11 @@ export function Cart({
                                         variant="ghost"
                                         className={cn(
                                             "flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md border-none shadow-none shrink-0",
-                                            isTouchMode ? "h-10 w-10" : "h-7 w-7"
+                                            "h-7 w-7 touch:h-9 touch:w-9"
                                         )}
                                         type="button"
                                     >
-                                        <MoreVertical className={cn(isTouchMode ? "h-5 w-5" : "h-4 w-4")} />
+                                        <MoreVertical className={cn("h-4 w-4 touch:h-4.5 touch:w-4.5")} />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
@@ -149,7 +145,7 @@ export function Cart({
                                 </div>
                             </div>
                         ) : (
-                            <div className={cn("flex flex-col p-3 bg-card", isTouchMode ? "gap-3" : "gap-2")}>
+                            <div className={cn("flex flex-col p-3 bg-card", "gap-2 touch:gap-2.5")}>
                                 {items.map((item) => {
                                     const originalProduct = products.find(p => p.id === item.id)
                                     const maxQty = limits[`cart_${item.cartItemId}`]
@@ -219,14 +215,14 @@ export function Cart({
                                 variant="secondary"
                                 className={cn(
                                     "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card",
-                                    isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                    "h-11 text-base touch:h-14 touch:text-xl"
                                 )}
                                 size="lg"
                                 disabled={loading || items.length === 0 || !canQuickSale.allowed}
                                 onClick={onQuickSale}
                                 title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
                             >
-                                <Zap className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                <Zap className={cn("mr-2 rounded-sm", "h-5 w-5 touch:h-5.5 touch:w-5.5")} />
                                 {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
                             </Button>
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
@@ -234,12 +230,12 @@ export function Cart({
                                     variant="outline"
                                     className={cn(
                                         "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
-                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                        "h-11 text-base touch:h-14 touch:text-xl"
                                     )}
                                     size="lg"
                                     onClick={onWithdrawClick}
                                 >
-                                    <ShoppingCart className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                    <ShoppingCart className={cn("mr-2 rounded-sm", "h-5 w-5 touch:h-5.5 touch:w-5.5")} />
                                     Retiro de Socio
                                 </Button>
                             )}
@@ -249,7 +245,7 @@ export function Cart({
                             id="confirm-sale-btn"
                             className={cn(
                                 "w-full rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
-                                isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                "h-11 text-base touch:h-14 touch:text-xl"
                             )}
                             size="lg"
                             disabled={loading || saving || items.length === 0}
@@ -257,7 +253,7 @@ export function Cart({
                         >
                             <ShoppingCart className={cn(
                                 "mr-2 rounded-sm",
-                                isTouchPOS ? "h-6 w-6" : "h-5 w-5"
+                                "h-5 w-5 touch:h-5.5 touch:w-5.5"
                             )} />
                             {loading || saving ? "Procesando..." : "Confirmar Venta"}
                         </Button>
@@ -271,13 +267,13 @@ export function Cart({
                                 variant="outline"
                                 className={cn(
                                     "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
-                                    isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                    "h-11 text-base touch:h-14 touch:text-xl"
                                 )}
                                 size="lg"
                                 onClick={onCancel}
                                 disabled={checkoutLoading}
                             >
-                                <ShoppingCart className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                <ShoppingCart className={cn("mr-2 rounded-sm", "h-5 w-5 touch:h-5.5 touch:w-5.5")} />
                                 Volver al Carrito
                             </Button>
                             {isLastStep && (
@@ -285,13 +281,13 @@ export function Cart({
                                     variant="outline"
                                     className={cn(
                                         "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
-                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                        "h-11 text-base touch:h-14 touch:text-xl"
                                     )}
                                     size="lg"
                                     onClick={onSuspend}
                                     disabled={checkoutLoading}
                                 >
-                                    <Repeat className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                    <Repeat className={cn("mr-2 rounded-sm", "h-5 w-5 touch:h-5.5 touch:w-5.5")} />
                                     Pagar en otra sesión
                                 </Button>
                             )}
@@ -304,11 +300,11 @@ export function Cart({
                                 disabled={checkoutLoading}
                                 className={cn(
                                     "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-border/60",
-                                    isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                    "h-11 text-base touch:h-14 touch:text-xl"
                                 )}
                                 size="lg"
                             >
-                                <ChevronLeft className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                <ChevronLeft className={cn("mr-2 rounded-sm", "h-5 w-5 touch:h-5.5 touch:w-5.5")} />
                                 Atrás
                             </Button>
                             {!isLastStep ? (
@@ -317,12 +313,12 @@ export function Cart({
                                     disabled={checkoutLoading}
                                     className={cn(
                                         "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
-                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                        "h-11 text-base touch:h-14 touch:text-xl"
                                     )}
                                     size="lg"
                                 >
                                     Siguiente
-                                    <ChevronRight className={cn("ml-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                    <ChevronRight className={cn("ml-2 rounded-sm", "h-5 w-5 touch:h-5.5 touch:w-5.5")} />
                                 </Button>
                             ) : (
                                 <Button
@@ -330,11 +326,11 @@ export function Cart({
                                     disabled={checkoutLoading}
                                     className={cn(
                                         "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
-                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                        "h-11 text-base touch:h-14 touch:text-xl"
                                     )}
                                     size="lg"
                                 >
-                                    <Check className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                    <Check className={cn("mr-2 rounded-sm", "h-5 w-5 touch:h-5.5 touch:w-5.5")} />
                                     Finalizar Venta
                                 </Button>
                             )}

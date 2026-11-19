@@ -116,6 +116,22 @@ Los roles se derivan de `--u`, así que escalan con `--k` (comfortable: ×1.125)
 
 ---
 
+## 6. Eje de puntero: variante `touch:` y modo táctil (ADR-0142 D5)
+
+**Estilos.** Se escriben con la variante Tailwind `touch:`, sin ramas JS:
+
+```tsx
+<Button className="h-11 text-base touch:h-14 touch:text-xl" />   // 44px normal, 56px en táctil
+```
+
+`touch:` aplica bajo `data-input="touch"` (o `auto` con `pointer: coarse`) en el elemento o en un ancestro. **Regla de doble escala:** el eje táctil ya sube `--k` a 1.125, así que toda utilidad de espaciado crece 12,5 % por sí sola; un `touch:` solo se añade para lo que deba crecer *más* que eso (alturas de botones, tamaño de texto). Los valores `touch:` del POS se calcularon dividiendo el tamaño táctil deseado entre 1,125 (p. ej. 64 px → `touch:h-14`).
+
+**Estado.** `useTouchMode()` (`hooks/useTouchMode.ts`) expone el modo resuelto (`isTouchMode`) **solo para comportamiento** (teclado numérico al tocar, decimales…), nunca para tamaños. El modo es `auto | touch | mouse`: por defecto `auto` (sigue el puntero; ya no arranca en `touch` en escritorio) y el operador puede forzarlo con el conmutador del POS (se guarda en `sessionStorage`, clave `pos_input_mode`).
+
+**Publicación.** `useApplyInputMode()` escribe el modo en `<html data-input>` mientras la superficie está montada (el POS lo hace en `POSShell`). Va en `<html>` y no en un `DensityScope` porque los diálogos y sheets de Radix se renderizan en un portal fuera del árbol del POS.
+
+---
+
 ## 4. Referencias
 
 - [ADR-0070 — Primary = Process Black K100](../10-architecture/adr/0070-primary-process-black.md) (criterio de densidad operativa)
