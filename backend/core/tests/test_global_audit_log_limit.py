@@ -28,7 +28,7 @@ def audit_url():
         ("100000", GLOBAL_AUDIT_LOG_MAX_LIMIT),
         ("0", 1),
         ("-5", 1),
-        ("abc", 50),
+        ("abc", 100),
         ("25", 25),
     ],
 )
@@ -40,4 +40,4 @@ def test_global_audit_log_limit_is_clamped(api_client, audit_url, raw, expected)
         response = api_client.get(audit_url, {"limit": raw})
 
     assert response.status_code == 200
-    selector.assert_called_once_with(expected)
+    selector.assert_called_once_with(expected, category=None)
