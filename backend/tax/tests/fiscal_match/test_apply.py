@@ -11,9 +11,10 @@ from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVImport
 from billing.models import Invoice
-from core.fiscal_match import PartState
+from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match.groups import ensure_groups
 from tax.fiscal_match.services import (
+    DUPLICATE_CHANGE,
     MOVED,
     NOT_ALLOWED,
     OTHER_DOCUMENT_PAYMENT,
@@ -22,12 +23,12 @@ from tax.fiscal_match.services import (
     FiscalMatchBusy,
     FiscalMatchRuleError,
     apply_changes,
-    link_invoice,
-    link_terminal_sale,
 )
 from tax.models import FiscalMatch
 from tax.tasks import FISCAL_MATCH_LOCK_KEY
 from tax.tests.fiscal_match_helpers import (
+    link_erp,
+    link_tuu,
     make_pos_document,
     make_terminal_env,
     make_terminal_sale,
@@ -311,7 +312,7 @@ def test_tuu_sale_of_other_amount_links_with_warning(tenv):
     sale = make_terminal_sale(tenv, 5000, at + timedelta(hours=3), document_type=39)
     _ensure()
 
-    result = link_terminal_sale(
+    result = link_tuu(
         _group_of(inv),
         TerminalSale.objects.get(pk=sale.pk),
         TreasuryMovement.objects.get(invoice=inv),
@@ -334,8 +335,8 @@ def test_cash_tuu_sale_only_backs_cash_payment(tenv):
     )
     _ensure()
 
-    with _rule_error(TYPE_INCOMPATIBLE):
-        link_terminal_sale(
+    with _rule_error(TYPE_INCOMPATIBLE, 0):
+        link_tuu(
             _group_of(inv),
             TerminalSale.objects.get(pk=sale.pk),
             TreasuryMovement.objects.get(invoice=inv),
@@ -355,7 +356,7 @@ def test_link_invoice_leaves_reversed_sales_behind(tenv):
     )
     lone.delete()
 
-    target = link_invoice(orphan, inv)
+    target = link_erp(orphan, inv)
 
     live.refresh_from_db()
     reversed_sale.refresh_from_db()
@@ -372,7 +373,7 @@ def test_carry_orphan_rcv_stays_when_it_cannot_move(tenv):
     orphan = _orphan_of(sale)
     RCVDocument.objects.filter(pk=doc.pk).update(fiscal_match=orphan)
 
-    result = link_terminal_sale(
+    result = link_tuu(
         _group_of(inv),
         TerminalSale.objects.get(pk=sale.pk),
         TreasuryMovement.objects.get(invoice=inv),
@@ -410,3 +411,57 @@ def test_erp_auto_pick_skips_payment_claimed_by_a_tuu_change(tenv):
     assert result.invoice_id == inv.pk
     assert claimer.matched_movement_id == first.pk
     assert auto.matched_movement_id == second.pk
+
+
+# --- forma del guardado y grupos cerrados (M1) ----------------------------------------
+
+
+def test_repeated_change_is_duplicate_change(tenv):
+    at = _at()
+    inv = _boleta(tenv, 6000, at)
+    sale = make_terminal_sale(tenv, 6000, at + timedelta(hours=3), document_type=39)
+    _ensure()
+    movement = TreasuryMovement.objects.get(invoice=inv)
+    change = {"op": "link", "part": "tuu", "id": sale.pk, "movement": movement.pk}
+
+    with _rule_error(DUPLICATE_CHANGE, 1):
+        apply_changes(_group_of(inv), [change, dict(change)])
+
+
+def test_link_from_an_excluded_orphan_is_not_allowed(tenv):
+    at = _at()
+    inv = _boleta(tenv, 6000, at)
+    sale = make_terminal_sale(tenv, 6000, at + timedelta(hours=3), document_type=39)
+    _ensure()
+    FiscalMatch.objects.filter(pk=_orphan_of(sale).pk).update(status=FiscalMatchStatus.EXCLUDED)
+    movement = TreasuryMovement.objects.get(invoice=inv)
+
+    with _rule_error(NOT_ALLOWED, 0):
+        apply_changes(
+            _group_of(inv), [{"op": "link", "part": "tuu", "id": sale.pk, "movement": movement.pk}]
+        )
+
+
+def test_link_into_a_settled_document_is_not_allowed(tenv):
+    at = _at()
+    inv = _boleta(tenv, 6000, at)
+    sale = make_terminal_sale(tenv, 6000, at + timedelta(hours=3), document_type=39)
+    _ensure()
+    FiscalMatch.objects.filter(invoice=inv).update(status=FiscalMatchStatus.MATCHED)
+
+    with _rule_error(NOT_ALLOWED, 0):
+        apply_changes(_orphan_of(sale), [{"op": "link", "part": "erp", "id": inv.pk}])
+
+
+def test_editing_an_excluded_group_is_not_allowed(tenv):
+    at = _at()
+    inv = _boleta(tenv, 6000, at)
+    sale = make_terminal_sale(tenv, 6000, at + timedelta(hours=3), document_type=39)
+    _ensure()
+    FiscalMatch.objects.filter(invoice=inv).update(status=FiscalMatchStatus.EXCLUDED)
+    movement = TreasuryMovement.objects.get(invoice=inv)
+
+    with _rule_error(NOT_ALLOWED, 0):
+        apply_changes(
+            _group_of(inv), [{"op": "link", "part": "tuu", "id": sale.pk, "movement": movement.pk}]
+        )

@@ -19,6 +19,7 @@ from tax.fiscal_match.serializers import (
     ApplySerializer,
     ConfirmDraftSerializer,
     CreateDraftSerializer,
+    CreateSaleSerializer,
     FiscalMatchDetailSerializer,
     FiscalMatchFilterSerializer,
     FiscalMatchListSerializer,
@@ -76,7 +77,7 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
             _VIEW,
         ),
         **dict.fromkeys(
-            ("apply", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE
+            ("apply", "release", "retry_issue", "confirm_draft", "create_draft", "create_sale"), _CHANGE
         ),
     }
 
@@ -89,7 +90,8 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
         return FiscalMatchListSerializer if self.action == "list" else FiscalMatchDetailSerializer
 
     def _group(self, pk) -> FiscalMatch:
-        return get_object_or_404(FiscalMatch, pk=pk)
+        # La búsqueda y las acciones leen ``group.invoice``: una sola consulta.
+        return get_object_or_404(FiscalMatch.objects.select_related("invoice"), pk=pk)
 
     @action(detail=False, methods=["get"])
     def counts(self, request):
@@ -160,5 +162,15 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     def create_draft(self, request, pk=None):
         body = _valid(CreateDraftSerializer, request.data)
         response = _detail(feeding.create_draft_from_rcv(self._group(pk), body["purchase_order"]))
+        response.status_code = 201
+        return response
+
+    @idempotent_endpoint(scope="tax.fiscal_match.create_sale")
+    @action(detail=True, methods=["post"], url_path="create-sale")
+    def create_sale(self, request, pk=None):
+        body = _valid(CreateSaleSerializer, request.data) if request.data else {}
+        response = _detail(
+            feeding.create_sale_from_rcv(self._group(pk), body.get("contact_id"))
+        )
         response.status_code = 201
         return response
