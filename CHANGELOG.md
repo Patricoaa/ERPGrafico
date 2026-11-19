@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.130](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.129...v0.3.130) (2026-11-19)
+
+
+### 🐛 Bug Fixes
+
+* **tax:** usa formatMoneyValue en la confirmación de factura de venta ([c6c4a25](https://github.com/Patricoaa/ERPGrafico/commit/c6c4a258a66c890a9691ced684841c6164d7d960)), closes [#267](https://github.com/Patricoaa/ERPGrafico/issues/267)
+
 ### [0.3.129](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.128...v0.3.129) (2026-11-19)
 
 
