@@ -185,7 +185,7 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
                                 value={barcodeValue}
                                 onChange={(e) => setBarcodeValue(e.target.value)}
                                 placeholder="Ingrese el código..."
-                                className="font-mono font-bold border-0 focus-visible:ring-0 h-8 flex-1"
+                                className="font-mono font-bold border-0 focus-visible:ring-0 h-control-sm flex-1"
                             />
                             <Button
                                 type="button"
@@ -193,7 +193,7 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
                                 size="icon"
                                 onClick={generateRandomBarcode}
                                 title="Generar nuevo código"
-                                className="h-8 w-8 shrink-0"
+                                className="h-control-sm w-8 shrink-0"
                             >
                                 <RefreshCw className="h-4 w-4" />
                             </Button>

@@ -77,7 +77,7 @@ export function AttachmentList({
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            className="h-control-sm w-8 text-muted-foreground hover:text-primary"
                             asChild
                         >
                             <a href={file.file} target="_blank" rel="noopener noreferrer">
@@ -89,7 +89,7 @@ export function AttachmentList({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                className="h-control-sm w-8 text-muted-foreground hover:text-destructive"
                                 onClick={() => onDelete(file.id)}
                                 disabled={isDeleting === file.id}
                             >

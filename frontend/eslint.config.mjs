@@ -405,7 +405,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
     controls: { rules: { "token-height": controlsTokenHeight } },
   },
   rules: {
-    "controls/token-height": "warn",
+    "controls/token-height": "error",
   },
 }, // Forms must use react-hook-form + zodResolver — GOVERNANCE.md §6 rule 29
 {

@@ -386,7 +386,7 @@ export function WizardRightSidebar({
                 title="Especificaciones"
                 aria-label="Especificaciones"
                 onClick={() => { setSpecsOpen(true); onToggleCollapse?.() }}
-                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                className="flex h-control-xs w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             >
                 <Settings2 className="h-3.5 w-3.5" />
             </button>
@@ -396,7 +396,7 @@ export function WizardRightSidebar({
                     title="Aprobación pendiente"
                     aria-label="Aprobación"
                     onClick={() => { setApprovalOpen(true); onToggleCollapse?.() }}
-                    className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    className="flex h-control-xs w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 >
                     <ClipboardCheck className="h-3.5 w-3.5" />
                 </button>
@@ -406,7 +406,7 @@ export function WizardRightSidebar({
                 title="Historial"
                 aria-label="Historial"
                 onClick={() => { setHistoryOpen(true); onToggleCollapse?.() }}
-                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                className="flex h-control-xs w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             >
                 <History className="h-3.5 w-3.5" />
             </button>

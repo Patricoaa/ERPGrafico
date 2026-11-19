@@ -361,7 +361,7 @@ export function BulkVariantEditForm({
             <Button
               type="button"
               variant="outline"
-              className="w-full h-9 text-xs font-medium border-dashed"
+              className="w-full h-control-md text-xs font-medium border-dashed"
               onClick={() => setBomModalOpen(true)}
             >
               <PlusCircle className="h-3.5 w-3.5 mr-2" />
@@ -402,7 +402,7 @@ export function BulkVariantEditForm({
                 />
                 <Button
                   type="button"
-                  className="w-full font-medium h-9"
+                  className="w-full font-medium h-control-md"
                   variant="secondary"
                   disabled={cloneSourceId === 'none'}
                   onClick={handleCloneBOM}

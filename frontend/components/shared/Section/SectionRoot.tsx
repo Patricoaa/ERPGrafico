@@ -45,7 +45,7 @@ export function SectionRoot({
         body = (
             <div role="alert" className="flex items-center justify-between gap-3 py-3 text-sm text-muted-foreground">
                 <span>No se pudo cargar el contenido.</span>
-                {onRetry && <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={onRetry}>Reintentar</Button>}
+                {onRetry && <Button type="button" variant="outline" size="sm" className="h-control-xs text-xs" onClick={onRetry}>Reintentar</Button>}
             </div>
         )
     } else if (isEmpty) {

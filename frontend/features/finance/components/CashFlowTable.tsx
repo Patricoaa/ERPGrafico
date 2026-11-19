@@ -204,7 +204,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         variant="destructive" 
                         size="sm" 
                         onClick={() => setAuditModalOpen(true)}
-                        className="font-medium uppercase tracking-widest text-3xs h-8"
+                        className="font-medium uppercase tracking-widest text-3xs h-control-sm"
                     >
                         Auditar Diferencia
                     </Button>

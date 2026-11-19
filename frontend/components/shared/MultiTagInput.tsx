@@ -140,7 +140,7 @@ export function MultiTagInput({
                             placeholder={values.length === 0 ? placeholder : ""}
                             disabled={disabled}
                             className={cn(
-                                "flex-1 min-w-[80px] bg-transparent border-none outline-none text-sm h-7",
+                                "flex-1 min-w-[80px] bg-transparent border-none outline-none text-sm h-control-xs",
                                 "placeholder:text-muted-foreground/50"
                             )}
                         />

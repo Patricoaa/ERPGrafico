@@ -268,7 +268,7 @@ export function ManufacturingSpecsEditor({
                       size="sm"
                       disabled={phaseDisabled('press')}
                       className={cn(
-                        "h-7 text-3xs uppercase font-medium tracking-tight transition-all",
+                        "h-control-xs text-3xs uppercase font-medium tracking-tight transition-all",
                         value.print_type === type
                           ? "bg-primary text-primary-foreground shadow-card"
                           : "text-muted-foreground hover:bg-primary/5 hover:text-primary"

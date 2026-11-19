@@ -218,7 +218,7 @@ export function CommentComposerForm({
                                     onClick={() => fileInputRef.current?.click()}
                                     aria-label="Adjuntar archivos"
                                     title={`Adjuntar archivos (máx. ${COMMENT_MAX_FILES}, 10 MB c/u)`}
-                                    className="absolute bottom-1.5 right-9 size-7 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                    className="absolute bottom-1.5 right-9 size-control-xs text-muted-foreground hover:bg-primary/10 hover:text-primary"
                                 >
                                     <Paperclip className="size-3.5" />
                                 </Button>
@@ -233,7 +233,7 @@ export function CommentComposerForm({
                             aria-label={submitLabel}
                             aria-busy={submitting}
                             title={`${submitLabel} (Enter)`}
-                            className="absolute bottom-1.5 right-1.5 size-7 hover:bg-primary/10 hover:text-primary"
+                            className="absolute bottom-1.5 right-1.5 size-control-xs hover:bg-primary/10 hover:text-primary"
                         >
                             <Send className={cn("size-3.5", submitting && "animate-pulse")} />
 

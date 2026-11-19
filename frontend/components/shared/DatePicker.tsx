@@ -80,10 +80,10 @@ export function DatePicker({
                 contentClassName="flex flex-col items-center pb-6"
                 footer={
                     <>
-                        <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1 h-10">
+                        <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1 h-control-lg">
                             Cancelar
                         </Button>
-                        <Button type="button" onClick={() => { onDateChange(tempDate); setOpen(false) }} className="flex-1 h-10">
+                        <Button type="button" onClick={() => { onDateChange(tempDate); setOpen(false) }} className="flex-1 h-control-lg">
                             Aceptar
                         </Button>
                     </>

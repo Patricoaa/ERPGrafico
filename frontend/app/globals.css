@@ -689,11 +689,6 @@
 }
 
 /* Density modes for DataTable */
-.table-compact {
-  --table-cell-py: var(--table-cell-py-compact);
-  --table-header-h: var(--table-header-h-compact);
-}
-
 .table-comfortable {
   --table-cell-py: 0.75rem;
   --table-header-h: 2.75rem;
@@ -879,17 +874,17 @@ table [data-notched-field] {
      Controls WITH a role (h-control-* / size-control-*) are exempt by cascade: the role utility
      sets its own min-height (--hit-role-min, 0 by default, 48px on touch), so no class-name
      exclusions are needed for them.
-     TRANSITIONAL: the legacy literals .h-9/.h-8/.h-7 stay excluded until the inventory of literal
-     heights on interactive controls reaches zero (plan phase 6); then these :not() chains go away.
+     Literal heights (h-7…h-10) on controls are forbidden by the `controls/token-height` lint rule,
+     so no legacy class-name exclusions remain (ADR-0142, plan phase 6).
      Dense data surfaces (`[data-density="compact"]`, e.g. entity-view tables) lower --hit-min to 0
      with a fine pointer only; on touch the target stays.
   */
-  button:not(.size-icon):not(.variant-link):not(.h-9):not(.h-8):not(.h-7):not([role="switch"]):not([role="radio"]):not([role="checkbox"]):not([role="menuitem"]) {
+  button:not(.size-icon):not(.variant-link):not([role="switch"]):not([role="radio"]):not([role="checkbox"]):not([role="menuitem"]) {
     min-height: var(--hit-min);
   }
 
-  input:not([type="checkbox"]):not([type="radio"]):not(.h-9):not(.h-8):not(.h-7),
-  select:not(.h-9):not(.h-8):not(.h-7) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select {
     min-height: max(2.5rem, var(--hit-role-min)); /* 40px base target; 48px on touch */
   }
 

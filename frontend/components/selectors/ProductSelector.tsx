@@ -253,7 +253,7 @@ export function ProductSelector({
                     <div className="flex items-center px-3 border rounded-sm relative flex-1 min-w-0">
                         <Search className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                         <input
-                            className="flex h-9 w-full bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-control-md w-full bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50"
                             placeholder="Buscar por nombre o código..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -271,7 +271,7 @@ export function ProductSelector({
                                         variant="outline"
                                         size="icon"
                                         aria-label={createLabel}
-                                        className="h-9 w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary"
+                                        className="h-control-md w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary"
                                         onClick={() => {
                                             setOpen(false)
                                             setIsCreateOpen(true)

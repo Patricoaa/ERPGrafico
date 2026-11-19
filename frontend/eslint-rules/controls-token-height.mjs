@@ -19,7 +19,7 @@ const CONTROLS = new Set([
 ]);
 
 // h-7|8|9|10|11|12 and size-7..12, with optional variant prefixes (md:, hover:, ...).
-const LITERAL_HEIGHT = /(?:^|[\s:])((?:h|size)-(?:7|8|9|10|11|12))(?=\s|$)/;
+const LITERAL_HEIGHT = /(?:^|[\s:])((?:h|size)-(?:7|8|9|10|12))(?=\s|$)/;
 
 function findLiteralHeight(className) {
   if (typeof className !== 'string') return null;

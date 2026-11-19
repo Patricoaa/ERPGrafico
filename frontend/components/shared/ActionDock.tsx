@@ -122,7 +122,7 @@ export function SelectionDock({ count, onClear, children }: SelectionDockProps) 
                 </span>
             </div>
             {children}
-            <Button variant="ghost" size="sm" onClick={onClear} className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted">
+            <Button variant="ghost" size="sm" onClick={onClear} className="h-control-md rounded-full px-4 text-xs text-muted-foreground hover:bg-muted">
                 <X className="mr-1.5 h-3 w-3" aria-hidden />
                 Limpiar
             </Button>

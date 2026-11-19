@@ -789,7 +789,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             onClick={() => setActionDialog({ open: true, type: 'automatch' })}
                             loading={isAutoMatching}
                             icon={<Wand2 className="h-3.5 w-3.5" />}
-                            className="h-9 gap-1.5 px-3 text-xs font-semibold text-success bg-success/10 hover:bg-success/15"
+                            className="h-control-md gap-1.5 px-3 text-xs font-semibold text-success bg-success/10 hover:bg-success/15"
                         >
                             Auto-match
                         </SubmitButton>
@@ -801,7 +801,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     aria-label="Configurar inteligencia de conciliación"
                                     aria-pressed={intelOpen}
                                     className={cn(
-                                        "h-9 w-9 p-0 transition-all",
+                                        "h-control-md w-9 p-0 transition-all",
                                         intelOpen && "bg-primary text-primary-foreground hover:bg-primary/90"
                                     )}
                                 >
@@ -1131,7 +1131,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 size="sm"
                                                 disabled={isUnmatchingGroup}
                                                 onClick={() => setUnmatchGroupDialog({ open: true, lineId: lines[0].id })}
-                                                className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 gap-1.5"
+                                                className="h-control-xs text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 gap-1.5"
                                             >
                                                 <Undo2 className="h-3 w-3" />
                                                 Revertir conciliación
@@ -1472,7 +1472,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 rounded-full px-4 text-xs font-semibold text-success hover:bg-success/10 hover:text-success"
+                                className="h-control-md rounded-full px-4 text-xs font-semibold text-success hover:bg-success/10 hover:text-success"
                                 disabled={restoringLines}
                                 onClick={() => { void handleRestoreExcluded() }}
                             >
@@ -1484,7 +1484,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 rounded-full px-4 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                className="h-control-md rounded-full px-4 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
                             >
                                 <Ban className="h-3.5 w-3.5 mr-1.5" />
@@ -1495,7 +1495,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <Button
                             variant="ghost"
                             size="sm"
-                                className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
+                                className="h-control-md rounded-full px-4 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
                                 onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
                         >
                             <X className="h-3.5 w-3.5 mr-1.5" />
@@ -1507,7 +1507,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             icon={<CheckCircle2 className="mr-2 h-4 w-4" />}
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
                             disabled={selectedLines.length === 0 || selectedPayments.length === 0}
-                            className="h-9 rounded-full px-6 text-xs font-bold shadow-floating transition-transform active:scale-95"
+                            className="h-control-md rounded-full px-6 text-xs font-bold shadow-floating transition-transform active:scale-95"
                         >
                             Conciliar
                         </SubmitButton>

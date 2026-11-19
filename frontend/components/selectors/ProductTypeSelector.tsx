@@ -58,7 +58,7 @@ export function ProductTypeSelector({
                     SELECTOR_TRIGGER_BASE,
                     variant === 'standalone'
                         ? "h-6! min-h-0! py-0 px-2 border-none bg-transparent hover:bg-transparent"
-                        : cn("h-9 py-0 px-2 bg-background hover:bg-primary/[0.02]", className)
+                        : cn("h-control-md py-0 px-2 bg-background hover:bg-primary/[0.02]", className)
                 )}
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0 h-full">

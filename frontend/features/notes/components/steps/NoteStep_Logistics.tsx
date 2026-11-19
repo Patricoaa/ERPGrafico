@@ -35,7 +35,7 @@ function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string
 
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
-            <SelectTrigger className="h-7 text-3xs w-24">
+            <SelectTrigger className="h-control-xs text-3xs w-24">
                 <SelectValue placeholder="Seleccionar..." />
             </SelectTrigger>
             <SelectContent>

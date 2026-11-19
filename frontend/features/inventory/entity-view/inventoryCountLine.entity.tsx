@@ -72,7 +72,7 @@ function QtyInputCell({ value: row }: ValueRenderProps<"inventoryCountQtyInput">
                 onBlur={handleBlur}
                 placeholder="--"
                 className={cn(
-                    "w-24 h-8 text-center text-sm font-mono",
+                    "w-24 h-control-sm text-center text-sm font-mono",
                     hasDifference && "border-warning bg-warning/10",
                 )}
                 disabled={!_isInProgress}
@@ -81,7 +81,7 @@ function QtyInputCell({ value: row }: ValueRenderProps<"inventoryCountQtyInput">
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 shrink-0"
+                    className="h-control-sm w-8 shrink-0"
                     onClick={handleEquals}
                     title="Igualar a stock teórico"
                 >

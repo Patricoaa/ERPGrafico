@@ -284,7 +284,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                                     <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
                                                                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                                         <input
-                                                                            className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                            className="flex h-control-md w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                                                                             placeholder="Buscar categoría..."
                                                                             onChange={(e) => {
                                                                                 const val = e.target.value.toLowerCase()
@@ -306,7 +306,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                                                     type="button"
                                                                                     variant="outline"
                                                                                     size="icon"
-                                                                                    className="h-9 w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                                                                    className="h-control-md w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
                                                                                     onClick={() => {
                                                                                         document.body.click()
                                                                                         setIsCreateCategoryOpen(true)

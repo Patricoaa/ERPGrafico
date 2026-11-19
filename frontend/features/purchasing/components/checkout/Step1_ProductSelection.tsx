@@ -75,7 +75,7 @@ function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: 
                                 placeholder="Ej: 11.900"
                                 value={grossInput}
                                 onChange={(e) => setGrossInput(e.target.value)}
-                                className="h-8 text-sm"
+                                className="h-control-sm text-sm"
                             />
                         </div>
                         {netResult !== null && (
@@ -261,7 +261,7 @@ export function Step1_ProductSelection({
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    className="w-full text-center h-8 bg-background"
+                                    className="w-full text-center h-control-sm bg-background"
                                     value={lineQty}
                                     onChange={(e) => form.setValue(`lines.${index}.quantity`, parseFloat(e.target.value) || 0)}
                                 />
@@ -287,7 +287,7 @@ export function Step1_ProductSelection({
                                 <Input
                                     type="number"
                                     step="1"
-                                    className="w-full h-8 bg-background"
+                                    className="w-full h-control-sm bg-background"
                                     value={lineCost}
                                     onChange={(e) => form.setValue(`lines.${index}.unit_cost`, parseFloat(e.target.value) || 0)}
                                 />

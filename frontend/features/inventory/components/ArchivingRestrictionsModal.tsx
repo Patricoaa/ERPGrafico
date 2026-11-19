@@ -88,7 +88,7 @@ export function ArchivingRestrictionsModal({
                                 )}
                             </div>
                             <Link href={restriction.link} target="_blank">
-                                <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary hover:text-primary hover:bg-primary/10">
+                                <Button variant="ghost" size="sm" className="h-control-sm gap-1 text-primary hover:text-primary hover:bg-primary/10">
                                     <span className="text-xs">Ver</span>
                                     <ExternalLink className="h-3 w-3" />
                                 </Button>

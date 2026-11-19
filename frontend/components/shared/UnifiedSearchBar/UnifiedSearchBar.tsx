@@ -181,7 +181,7 @@ export function UnifiedSearchBar({
                 aria-label="Abrir filtros y búsqueda"
                 aria-expanded={menuOpen}
                 className={cn(
-                  "relative size-8 shrink-0 cursor-pointer rounded-none rounded-r-sm outline-none transition-colors",
+                  "relative size-control-sm shrink-0 cursor-pointer rounded-none rounded-r-sm outline-none transition-colors",
                   "hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50",
                   "before:absolute before:inset-y-1.5 before:left-0 before:w-px before:bg-border/40",
                 )}

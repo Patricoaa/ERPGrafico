@@ -66,7 +66,7 @@ export function SearchBar({
                 className={cn(
                     'flex-1 bg-transparent border-none outline-none py-0',
                     'text-muted-foreground placeholder:text-muted-foreground/40',
-                    isTouchDevice ? 'h-10 text-base' : 'h-7 text-xs'
+                    isTouchDevice ? 'h-control-lg text-base' : 'h-control-xs text-xs'
                 )}
                 style={isTouch ? { fontSize: `${MIN_MOBILE_FONT_SIZE}px` } : undefined}
                 value={value}

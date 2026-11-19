@@ -72,7 +72,7 @@ export function SessionCashSummary({ data, expected, sessionId, className }: Ses
                         {data?.sale_order_count !== undefined ? ` · ${data.sale_order_count} ${data.sale_order_count === 1 ? "venta" : "ventas"}` : ""}
                     </p>
                 </div>
-                <Button variant="outline" className="h-12 shrink-0 gap-2 px-4 text-base" onClick={() => void handlePdf()} disabled={downloading}>
+                <Button variant="outline" className="h-control-touch shrink-0 gap-2 px-4 text-base" onClick={() => void handlePdf()} disabled={downloading}>
                     <Download className="size-5" aria-hidden />
                     PDF
                 </Button>

@@ -365,7 +365,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           variant="outline"
           size="sm"
           onClick={() => setViewingStepIndex(actualStepIndex)}
-          className="gap-1.5 h-8 text-xs"
+          className="gap-1.5 h-control-sm text-xs"
         >
           <Eye className="h-3.5 w-3.5" />Etapa actual
         </Button>

@@ -147,7 +147,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="md:hidden h-8 w-8 shrink-0 mb-0.5"
+                            className="md:hidden h-control-sm w-8 shrink-0 mb-0.5"
                             onClick={() => setIsMobileNavOpen(true)}
                             aria-label="Abrir navegación"
                         >

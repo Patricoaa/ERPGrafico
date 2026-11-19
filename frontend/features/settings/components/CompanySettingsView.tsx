@@ -391,7 +391,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                                 type="button"
                                                                 variant="secondary"
                                                                 size="sm"
-                                                                className="h-8 px-2 text-3xs font-medium"
+                                                                className="h-control-sm px-2 text-3xs font-medium"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation()
                                                                     fileInputRef.current?.click()

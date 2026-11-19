@@ -248,7 +248,7 @@ describe('typography contract', () => {
 
     it('LabeledSelect inline variant stays compact for tables', () => {
       const src = formPrimitives.labeledSelect;
-      expect(/h-9/.test(src)).toBe(true);
+      expect(/h-control-md/.test(src)).toBe(true);
     });
   });
 

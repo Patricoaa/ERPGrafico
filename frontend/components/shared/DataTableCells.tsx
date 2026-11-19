@@ -475,7 +475,7 @@ export const DataCell = {
                             <Button
                                 variant={variant}
                                 size="icon"
-                                className={cn("h-7 w-7 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", className)}
+                                className={cn("h-control-xs w-7 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", className)}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onClick?.(e);
@@ -529,7 +529,7 @@ export const DataCell = {
                             variant="ghost"
                             size="icon"
                             className={cn(
-                                "h-7 w-7 rounded-full transition-all duration-200",
+                                "h-control-xs w-7 rounded-full transition-all duration-200",
                                 "opacity-20 group-hover:opacity-100",
                                 "hover:scale-110 active:scale-95",
                                 "hover:bg-accent hover:text-accent-foreground",
@@ -598,7 +598,7 @@ export const DataCell = {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className={cn("h-7 w-7 rounded-md transition-all duration-200 hover:scale-105 active:scale-95", className)}
+                                    className={cn("h-control-xs w-7 rounded-md transition-all duration-200 hover:scale-105 active:scale-95", className)}
                                     onClick={(e) => e.stopPropagation()}
                                     aria-label={title}
                                 >

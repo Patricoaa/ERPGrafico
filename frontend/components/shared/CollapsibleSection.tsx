@@ -29,7 +29,7 @@ export function CollapsibleSection({
         type="button"
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
-        className="flex h-10 w-full shrink-0 items-center gap-2 border-b border-border/60 px-4 text-left hover:bg-muted/40 transition-colors"
+        className="flex h-control-lg w-full shrink-0 items-center gap-2 border-b border-border/60 px-4 text-left hover:bg-muted/40 transition-colors"
       >
         <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
         <span className="text-2xs font-bold uppercase tracking-looser text-muted-foreground/80 flex-1 truncate">

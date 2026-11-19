@@ -180,7 +180,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                                         disabled={isDisabled}
                                                         value={byKey.get(key)?.textValues?.[name] ?? ""}
                                                         onChange={(e) => setTextValue(key, name, e.target.value)}
-                                                        className={cn("h-8 w-40", error && "border-destructive")}
+                                                        className={cn("h-control-sm w-40", error && "border-destructive")}
                                                     />
                                                     {error && (
                                                         <span id={errorId} role="alert" className="mt-0.5 block text-2xs text-destructive">{error}</span>
@@ -216,7 +216,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                                     disabled={isDisabled}
                                                     value={byKey.get(key)?.values[name] ?? 0}
                                                     onChange={(e) => setValue(key, name, e.target.value === "" ? 0 : Number(e.target.value))}
-                                                    className={cn("ml-auto h-8 w-28 text-right tabular-nums", error && "border-destructive")}
+                                                    className={cn("ml-auto h-control-sm w-28 text-right tabular-nums", error && "border-destructive")}
                                                 />
                                                 {error ? (
                                                     <span id={errorId} role="alert" className="mt-0.5 block text-2xs text-destructive">{error}</span>

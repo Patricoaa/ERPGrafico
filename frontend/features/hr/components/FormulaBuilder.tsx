@@ -113,7 +113,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                                             <Button 
                                                 variant="outline" 
                                                 size="sm" 
-                                                className="h-7 px-2 text-3xs font-mono hover:border-primary hover:text-primary"
+                                                className="h-control-xs px-2 text-3xs font-mono hover:border-primary hover:text-primary"
                                                 onClick={() => insert(f.val)}
                                             >
                                                 {f.label}
@@ -138,7 +138,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                                         key={op.label}
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-7 w-7 p-0 flex items-center justify-center font-medium text-xs ring-1 ring-border"
+                                        className="h-control-xs w-7 p-0 flex items-center justify-center font-medium text-xs ring-1 ring-border"
                                         onClick={() => insert(op.val)}
                                     >
                                         {op.icon ? <op.icon className="h-3 w-3" /> : op.label}
@@ -157,7 +157,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                         <Button 
                             variant="secondary" 
                             size="sm" 
-                            className="w-full h-8 text-3xs font-mono gap-2 border border-dashed border-primary/40 bg-transparent text-primary hover:bg-primary/10"
+                            className="w-full h-control-sm text-3xs font-mono gap-2 border border-dashed border-primary/40 bg-transparent text-primary hover:bg-primary/10"
                             onClick={() => insert(" VALOR if CONDICION else OTRO_VALOR")}
                         >
                             IF TERNARIO: [Ture] if [Cond] else [False]

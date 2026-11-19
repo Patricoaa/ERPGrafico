@@ -85,7 +85,7 @@ export function PaymentReferenceModal({
                 <div className="flex w-full gap-2">
                     <CancelButton onClick={() => onOpenChange(false)} className="flex-1" />
                     <SubmitButton
-                        className="flex-[2] bg-income hover:bg-income/90 h-12 text-lg font-bold"
+                        className="flex-[2] bg-income hover:bg-income/90 h-control-touch text-lg font-bold"
                         onClick={handleSave}
                         disabled={!selectedPaymentId || !transactionNumber}
                         loading={isUpdating}

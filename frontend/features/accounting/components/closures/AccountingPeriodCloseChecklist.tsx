@@ -167,7 +167,7 @@ export function AccountingPeriodCloseChecklistModal({
                             onClick={onConfirm}
                             disabled={!canClose || isLoading || isFetching}
                             loading={isLoading}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-2xs h-10 px-6"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-2xs h-control-lg px-6"
                         >
                             {canClose ? 'Confirmar Cierre' : 'Revisar Pendientes'}
                         </SubmitButton>
@@ -190,7 +190,7 @@ export function AccountingPeriodCloseChecklistModal({
                             tone="destructive"
                             title="Error"
                             actions={
-                                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { void refetch() }}>
+                                <Button variant="outline" size="sm" className="h-control-xs text-xs" onClick={() => { void refetch() }}>
                                     Reintentar
                                 </Button>
                             }

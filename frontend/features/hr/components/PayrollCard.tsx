@@ -280,7 +280,7 @@ export function PayrollCard({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="rounded-sm text-3xs font-medium uppercase tracking-wider h-9 px-4 gap-2 border-dashed bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-card"
+                            className="rounded-sm text-3xs font-medium uppercase tracking-wider h-control-md px-4 gap-2 border-dashed bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-card"
                             onClick={onAddItem}
                         >
                             <Plus className="h-3.5 w-3.5" /> Agregar Concepto Manual

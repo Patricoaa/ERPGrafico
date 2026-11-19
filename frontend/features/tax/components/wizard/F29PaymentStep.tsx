@@ -171,7 +171,7 @@ export function F29PaymentHistory({ payments, onAnnul }: F29PaymentHistoryProps)
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                                            className="h-control-xs text-xs text-muted-foreground hover:text-destructive"
                                             onClick={() => onAnnul(payment.id)}
                                         >
                                             Anular

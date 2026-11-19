@@ -121,3 +121,11 @@ La implementación de D4 ajustó tres puntos respecto del texto original, para q
 5. **Lint `controls/token-height` (warn):** reporta `h-7…h-12`/`size-7…12` literales en `button`, `input`, `select`, `Button`, `IconButton`, `SubmitButton`, `CancelButton`, `DangerButton`, `Input`, `SelectTrigger`, `TabsTrigger`. Inventario inicial: 232 avisos en 116 archivos (`h-8` 70, `h-7` 58, `h-9` 47, `h-10` 28). Pasa a error cuando llegue a 0 (Fase 6).
 6. **Sin verificar:** la revisión visual de `comfortable` (ajuste de `w-NN`) no se hizo; la preferencia queda disponible pero no se ha mirado en navegador.
 
+## Enmienda — Fase 6: endurecimiento (2026-11-19)
+
+1. **Inventario a 0:** los 224 literales `h-7/8/9/10/12` y `size-7…` en controles se migraron a `h-control-xs/sm/md/lg/touch` (mapeo 1:1 con la altura previa en compact; los prefijos de variante, p. ej. `touch:`, se conservan). `controls/token-height` pasa a **error**.
+2. **`h-11` queda fuera de la regla:** 44 px no corresponde a ningún rol; solo lo usa el POS (`Cart`, con `touch:h-14`).
+3. **Guarda de Fitts:** se eliminan las exclusiones `:not(.h-9):not(.h-8):not(.h-7)`; los controles con rol quedan exentos por cascada.
+4. **Alias:** se retira `.table-compact` (sin consumidores). `.table-comfortable` se mantiene: lo usa `DataTable` (`density="comfortable"`) y Storybook.
+5. **Efecto en tablets:** los controles migrados heredan `min-height: var(--hit-role-min)` (48 px en táctil); antes los `h-7…h-9` literales quedaban exentos de la guarda. Es lo buscado, pero no se verificó visualmente.
+

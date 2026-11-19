@@ -122,7 +122,7 @@ export function Banner({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0"
+                                className="h-control-xs w-7 p-0"
                                 onClick={onDismiss}
                                 aria-label={dismissLabel}
                             >

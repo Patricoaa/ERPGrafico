@@ -135,7 +135,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 variant={isInboxOpen ? "default" : "ghost"}
                                 onClick={onInboxToggle}
                                 className={cn(
-                                    "relative flex items-center justify-center h-10 w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
+                                    "relative flex items-center justify-center h-control-lg w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isInboxOpen
                                         ? ""
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -164,7 +164,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 variant={isCalculatorOpen ? "default" : "ghost"}
                                 onClick={() => openTool("cost-calculator")}
                                 className={cn(
-                                    "relative flex items-center justify-center h-10 w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
+                                    "relative flex items-center justify-center h-control-lg w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isCalculatorOpen
                                         ? ""
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

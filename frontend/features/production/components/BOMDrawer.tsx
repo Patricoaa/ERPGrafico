@@ -759,7 +759,7 @@ export function BOMDrawer({
                                                         <IconButton
                                                             onClick={() => removeMaterial(index)}
                                                             disabled={isView}
-                                                            className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
+                                                            className="h-control-sm w-8 text-muted-foreground/30 hover:text-destructive"
                                                             title="Eliminar línea"
                                                         >
                                                             <Trash2 className="h-3.5 w-3.5" />
@@ -976,7 +976,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                         <IconButton
                                                             onClick={() => removeService(index)}
                                                             disabled={isView}
-                                                            className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
+                                                            className="h-control-sm w-8 text-muted-foreground/30 hover:text-destructive"
                                                             title="Eliminar servicio"
                                                         >
                                                             <Trash2 className="h-3.5 w-3.5" />

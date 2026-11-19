@@ -130,7 +130,7 @@ export function CreditContactLedgerDrawer({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 gap-2 border-destructive/20 text-destructive hover:bg-destructive/5"
+                            className="h-control-sm gap-2 border-destructive/20 text-destructive hover:bg-destructive/5"
                             onClick={() => setShowRecoveryDialog(true)}
                         >
                             <DollarSign className="h-3.5 w-3.5" />
@@ -139,7 +139,7 @@ export function CreditContactLedgerDrawer({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 gap-2 border-success/20 text-success hover:bg-success/5"
+                            className="h-control-sm gap-2 border-success/20 text-success hover:bg-success/5"
                             disabled={unblocking}
                             onClick={handleUnblock}
                         >

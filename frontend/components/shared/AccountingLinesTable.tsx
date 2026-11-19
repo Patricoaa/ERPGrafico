@@ -182,7 +182,7 @@ export function AccountingLinesTable({ control, name, isLoading, disabled }: Acc
                             <TableCell className="p-3 text-center">
                                 <IconButton
                                     onClick={() => remove(index)}
-                                    className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
+                                    className="h-control-sm w-8 text-muted-foreground/30 hover:text-destructive"
                                     title="Eliminar línea"
                                 >
                                     <Trash2 className="h-3.5 w-3.5" />

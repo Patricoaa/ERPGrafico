@@ -144,7 +144,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         e.stopPropagation()
                                         handleCreate()
                                     }}
-                                    className="h-9 px-5 gap-2 rounded-sm font-medium uppercase tracking-widest text-3xs shadow-card transition-all hover:-translate-y-0.5"
+                                    className="h-control-md px-5 gap-2 rounded-sm font-medium uppercase tracking-widest text-3xs shadow-card transition-all hover:-translate-y-0.5"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Nueva Lista
@@ -181,7 +181,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                             e.stopPropagation()
                                             handleCreate()
                                         }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-medium uppercase tracking-widest text-2xs  transition-all hover:-translate-y-0.5"
+                                        className="w-full md:w-auto h-control-lg px-6 gap-2 rounded-sm font-medium uppercase tracking-widest text-2xs  transition-all hover:-translate-y-0.5"
                                         disabled={selectedVariantId === "all"}
                                     >
                                         <Plus className="h-4 w-4" />
@@ -205,7 +205,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 e.stopPropagation()
                                 handleCreate()
                             }}
-                            className="h-8 gap-2 rounded-sm text-3xs font-medium uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
+                            className="h-control-sm gap-2 rounded-sm text-3xs font-medium uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
                             variant="outline"
                         >
                             <Plus className="h-3.5 w-3.5" />
@@ -230,7 +230,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 <Button
                                     type="button"
                                     onClick={handleCreate}
-                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-elevated hover:-translate-y-0.5 transition-transform"
+                                    className="gap-2 h-control-lg px-6 text-xs font-black uppercase tracking-widest shadow-elevated hover:-translate-y-0.5 transition-transform"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Crear LdM base
@@ -242,7 +242,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         // TODO: Implement generate from history
                                         handleCreate()
                                     }}
-                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5"
+                                    className="gap-2 h-control-lg px-6 text-xs font-black uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5"
                                     title="Próximamente: Auto-completar según OTs manuales previas"
                                 >
                                     <History className="h-4 w-4" />

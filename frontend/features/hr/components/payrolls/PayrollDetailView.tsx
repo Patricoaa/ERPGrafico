@@ -182,7 +182,7 @@ export function PayrollDetailView({
                         {viewMode === 'admin' && !isPosted && (
                             <>
                                 <SubmitButton
-                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
                                     icon={Sparkles}
@@ -192,7 +192,7 @@ export function PayrollDetailView({
                                 </SubmitButton>
 
                                 <SubmitButton
-                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
@@ -207,7 +207,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         salaroPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
@@ -222,7 +222,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         previredPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
@@ -263,7 +263,7 @@ export function PayrollDetailView({
                             variant="ghost"
                             size="icon"
                             onClick={() => router.push('/hr/payrolls')}
-                            className="rounded-sm h-10 w-10 text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
+                            className="rounded-sm h-control-lg w-10 text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
@@ -295,7 +295,7 @@ export function PayrollDetailView({
                         {viewMode === 'admin' && !isPosted && (
                             <>
                                 <SubmitButton
-                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md"
                                     onClick={handleGenerateProforma}
                                     loading={generating}
                                     icon={Sparkles}
@@ -305,7 +305,7 @@ export function PayrollDetailView({
                                 </SubmitButton>
 
                                 <SubmitButton
-                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-3xs sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md"
                                     loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
                                     icon={BookOpen}
@@ -320,7 +320,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         salaroPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
@@ -335,7 +335,7 @@ export function PayrollDetailView({
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         previredPaid
                                             ? "bg-success/10 text-success border-success/20"
                                             : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
@@ -624,7 +624,7 @@ function AdvancesSection({ payrollId, employeeId, advances, isPosted, onChanged 
                                     </div>
                                     <SubmitButton
                                         size="sm"
-                                        className="h-7 text-xs rounded-sm"
+                                        className="h-control-xs text-xs rounded-sm"
                                         onClick={() => handleLink(adv.id)}
                                         loading={linking === adv.id}
                                     >

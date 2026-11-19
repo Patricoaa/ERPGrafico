@@ -84,7 +84,7 @@ export function DocumentAttachmentDropzone({
                     <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full shrink-0"
+                        className="h-control-xs w-7 text-destructive hover:bg-destructive/10 rounded-full shrink-0"
                         onClick={(e) => {
                             e.preventDefault()
                             onFileChange(null)

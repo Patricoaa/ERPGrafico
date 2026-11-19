@@ -72,7 +72,7 @@ function JobActionsCell({ value }: ValueRenderProps<"jobActions">) {
     if (!value) return null
     if (value.status === "COMPLETED" && value.resultFileUrl) {
         return (
-            <Button size="sm" variant="outline" className="h-8 py-1"
+            <Button size="sm" variant="outline" className="h-control-sm py-1"
                 onClick={() => window.open(value.resultFileUrl ?? "", "_blank")}>
                 <Download className="w-3.5 h-3.5 mr-1" />
                 Descargar

@@ -873,7 +873,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                                             setIsWaitingApproval(false)
                                             setCreditApprovalRequired(false)
                                         }}
-                                        className="h-8 shrink-0 uppercase font-medium text-3xs"
+                                        className="h-control-sm shrink-0 uppercase font-medium text-3xs"
                                     >
                                         Entendido
                                     </Button>
@@ -963,7 +963,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     <div className="w-full pt-4">
                         <Button
                             variant="default"
-                            className="w-full h-12 font-black uppercase tracking-widest text-xs rounded-sm "
+                            className="w-full h-control-touch font-black uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 executeCheckout()

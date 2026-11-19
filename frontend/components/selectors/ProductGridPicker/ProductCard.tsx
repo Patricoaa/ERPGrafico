@@ -125,7 +125,7 @@ function ProductCardComponent({
                         variant="ghost"
                         className={cn(
                             "absolute right-2 top-2 cursor-pointer rounded-full border border-border bg-background p-0 transition-colors hover:bg-background",
-                            "h-7 w-7 touch:h-9 touch:w-9",
+                            "h-control-xs w-7 touch:h-control-md touch:w-9",
                             product.is_favorite ? "text-destructive" : "text-muted-foreground hover:text-foreground"
                         )}
                         aria-pressed={Boolean(product.is_favorite)}

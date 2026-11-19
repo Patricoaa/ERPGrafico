@@ -157,7 +157,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                                 <td className="px-3 py-2">
                                                     <Input
                                                         type="number"
-                                                        className={`h-8 text-2xs font-mono text-right ${isOver ? 'border-destructive text-destructive focus-visible:ring-destructive' : ''}`}
+                                                        className={`h-control-sm text-2xs font-mono text-right ${isOver ? 'border-destructive text-destructive focus-visible:ring-destructive' : ''}`}
                                                         value={payments[line.partner] !== undefined ? payments[line.partner] : ''}
                                                         onChange={(e) => {
                                                             const val = e.target.value === '' ? 0 : parseFloat(e.target.value)

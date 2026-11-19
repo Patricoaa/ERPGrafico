@@ -394,7 +394,7 @@ export function DraftCartsClientView({
                                         <DangerButton
                                             variant="destructive"
                                             className={cn(
-                                                "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                                                "h-control-xs w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
                                                 cannotDelete && "!opacity-0 pointer-events-none"
                                             )}
                                             loading={deletingId === d.id}
@@ -410,7 +410,7 @@ export function DraftCartsClientView({
                                             size="sm"
                                             variant="ghost"
                                             className={cn(
-                                                "h-7 px-2 text-2xs font-medium gap-0.5",
+                                                "h-control-xs px-2 text-2xs font-medium gap-0.5",
                                                 cannotLoad
                                                     ? "text-muted-foreground cursor-not-allowed"
                                                     : "hover:bg-primary/10 hover:text-primary"

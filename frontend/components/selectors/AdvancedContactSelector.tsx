@@ -142,7 +142,7 @@ export function AdvancedContactSelector({
                                             <Button
                                                 variant="outline"
                                                 size="icon"
-                                                className="h-9 w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                                className="h-control-md w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
                                                 onClick={() => {
                                                     setOpen(false)
                                                     setIsCreateModalOpen(true)

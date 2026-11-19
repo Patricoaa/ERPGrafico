@@ -168,7 +168,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                             <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                                                 <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                 <input
-                                                    className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
+                                                    className={cn("flex h-control-md w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
                                                     placeholder="Buscar proveedor..."
                                                     onChange={(e) => {
                                                         const val = e.target.value.toLowerCase()

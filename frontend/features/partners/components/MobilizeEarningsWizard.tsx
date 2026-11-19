@@ -141,7 +141,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                                     <td className="py-3 px-3">
                                                         <Input
                                                             type="number"
-                                                            className={`h-8 font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
+                                                            className={`h-control-sm font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
                                                             value={divValue || ""}
                                                             placeholder="0"
                                                             onChange={(e) => {
@@ -156,7 +156,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                                     <td className="py-3 px-3">
                                                         <Input
                                                             type="number"
-                                                            className={`h-8 font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
+                                                            className={`h-control-sm font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
                                                             value={reinvValue || ""}
                                                             placeholder="0"
                                                             onChange={(e) => {

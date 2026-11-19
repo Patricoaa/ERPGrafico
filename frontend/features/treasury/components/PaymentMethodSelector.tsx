@@ -547,7 +547,7 @@ export function PaymentMethodSelector({
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={exitMultiMode}
-                                className="size-7 rounded-md text-primary-foreground hover:bg-primary-foreground/20"
+                                className="size-control-xs rounded-md text-primary-foreground hover:bg-primary-foreground/20"
                             >
                                 <X className="size-4" />
                             </Button>
@@ -582,7 +582,7 @@ export function PaymentMethodSelector({
                                                             type="button"
                                                             variant="ghost"
                                                             onClick={() => handleEditAmount(allocIndex)}
-                                                            className="size-7 rounded-sm p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                                            className="size-control-xs rounded-sm p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
                                                             aria-label="Editar monto"
                                                         >
                                                             <Pencil className="size-4" />
@@ -597,7 +597,7 @@ export function PaymentMethodSelector({
                                                                 variant="ghost"
                                                                 type="button"
                                                                 onClick={() => setShowFieldsForIndex(showFieldsForIndex === allocIndex ? null : allocIndex)}
-                                                                className="size-7 rounded-sm p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                                                className="size-control-xs rounded-sm p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
                                                                 aria-label="Campos adicionales"
                                                             >
                                                                 <Layers className="size-4" />
@@ -612,7 +612,7 @@ export function PaymentMethodSelector({
                                                             variant="ghost"
                                                             type="button"
                                                             onClick={() => removePayment(allocIndex)}
-                                                            className="size-7 rounded-sm p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                                            className="size-control-xs rounded-sm p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                                                             aria-label="Eliminar pago"
                                                         >
                                                             <Trash2 className="size-4" />
@@ -695,7 +695,7 @@ export function PaymentMethodSelector({
                 centered
                 footer={
                     <Button
-                        className="w-full h-12 lg:h-14 bg-primary hover:bg-primary font-black uppercase tracking-widest text-sm lg:text-base active:scale-95 transition-transform"
+                        className="w-full h-control-touch lg:h-14 bg-primary hover:bg-primary font-black uppercase tracking-widest text-sm lg:text-base active:scale-95 transition-transform"
                         onClick={handleAmountConfirm}
                     >
                         CONFIRMAR

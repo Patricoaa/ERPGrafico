@@ -68,7 +68,7 @@ export const SelectorTrigger = forwardRef<HTMLButtonElement, SelectorTriggerProp
                     SELECTOR_TRIGGER_BASE,
                     variant === "standalone"
                         ? "h-6! min-h-0! py-0 px-3 border-none bg-transparent hover:bg-primary/[0.03]"
-                        : "h-9 py-0 px-2 bg-background hover:bg-primary/[0.02]",
+                        : "h-control-md py-0 px-2 bg-background hover:bg-primary/[0.02]",
                     className
                 )}
                 {...ariaProps}

@@ -126,7 +126,7 @@ export function TaskActionCard({
                                     <LabeledContainer label="Adjuntar Evidencia">
                                         <Input
                                             type="file"
-                                            className="border-0 shadow-none focus-visible:ring-0 text-xs h-8"
+                                            className="border-0 shadow-none focus-visible:ring-0 text-xs h-control-sm"
                                             onChange={(e) => onFileChange?.(e.target.files ? e.target.files[0] : null)}
                                         />
                                     </LabeledContainer>

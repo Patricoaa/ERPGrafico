@@ -454,7 +454,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                         <div className="flex items-center gap-1">
                                                             <Input
                                                                 type="number"
-                                                                className="h-9 text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                className="h-control-md text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                                 value={getAmount('DIVIDEND') || ''}
                                                                 onChange={(e) => handleAmountChange(line.id, 'DIVIDEND', e.target.value)}
                                                                 placeholder="0"
@@ -463,7 +463,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
+                                                                className="h-control-sm w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
                                                                 title="Abrir teclado numérico"
                                                                 onClick={() => openCellNumpad('DIVIDEND', 'Dividendos')}
                                                             >
@@ -475,7 +475,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                         <div className="flex items-center gap-1">
                                                             <Input
                                                                 type="number"
-                                                                className="h-9 text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                className="h-control-md text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                                 value={getAmount('REINVEST') || ''}
                                                                 onChange={(e) => handleAmountChange(line.id, 'REINVEST', e.target.value)}
                                                                 placeholder="0"
@@ -484,7 +484,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
+                                                                className="h-control-sm w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
                                                                 title="Abrir teclado numérico"
                                                                 onClick={() => openCellNumpad('REINVEST', 'Reinversión')}
                                                             >
@@ -496,7 +496,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                         <div className="flex items-center gap-1">
                                                             <Input
                                                                 type="number"
-                                                                className="h-9 text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                className="h-control-md text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                                 value={getAmount('RETAINED') || ''}
                                                                 onChange={(e) => handleAmountChange(line.id, 'RETAINED', e.target.value)}
                                                                 placeholder="0"
@@ -505,7 +505,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
+                                                                className="h-control-sm w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
                                                                 title="Abrir teclado numérico"
                                                                 onClick={() => openCellNumpad('RETAINED', 'Retenido')}
                                                             >

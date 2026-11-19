@@ -245,7 +245,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
                                                     type="button"
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                                    className="h-control-sm w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                                                     onClick={() => {
                                                         setBomToEdit(bom)
                                                         setIsBomModalOpen(true)
@@ -257,7 +257,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
                                                     type="button"
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                    className="h-control-sm w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                                     onClick={() => bom.id != null && setConfirmDeleteBomId(bom.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />

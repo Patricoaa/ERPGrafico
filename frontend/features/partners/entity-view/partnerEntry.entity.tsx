@@ -40,7 +40,7 @@ function PartnerEntryAmountInputCell({ value: row }: ValueRenderProps<"partnerEn
                 type="number"
                 value={row.amount || ""}
                 onChange={(e) => row._onAmountChange(row._index, e.target.value)}
-                className="pl-7 text-right font-mono h-9"
+                className="pl-7 text-right font-mono h-control-md"
                 placeholder="0"
             />
         </div>

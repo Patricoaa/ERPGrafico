@@ -62,7 +62,7 @@ export function DocumentActionsMenu({ primary, actions = [], onPrint, label = "A
                                 variant="ghost"
                                 size="icon"
                                 aria-label={label}
-                                className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground active:scale-95 data-[state=open]:bg-muted data-[state=open]:text-foreground"
+                                className="relative h-control-sm w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground active:scale-95 data-[state=open]:bg-muted data-[state=open]:text-foreground"
                             >
                                 <MoreVertical className="h-4 w-4" />
                                 {primary && (

@@ -108,7 +108,7 @@ export function Cart({
                                         variant="ghost"
                                         className={cn(
                                             "flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md border-none shadow-none shrink-0",
-                                            "h-7 w-7 touch:h-9 touch:w-9"
+                                            "h-control-xs w-7 touch:h-control-md touch:w-9"
                                         )}
                                         type="button"
                                     >

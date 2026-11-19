@@ -371,7 +371,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
             <div className="mt-6 flex justify-center gap-3 print:hidden">
                 <Button
                     onClick={handlePrint}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium uppercase tracking-widest text-3xs h-10 px-6 rounded-sm shadow-elevated border-2 border-primary/20"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium uppercase tracking-widest text-3xs h-control-lg px-6 rounded-sm shadow-elevated border-2 border-primary/20"
                 >
                     <Printer className="mr-2 h-4 w-4" />
                     Imprimir
@@ -379,7 +379,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                 <Button
                     onClick={handleDownloadPdf}
                     variant="outline"
-                    className="font-medium uppercase tracking-widest text-3xs h-10 px-6 rounded-sm"
+                    className="font-medium uppercase tracking-widest text-3xs h-control-lg px-6 rounded-sm"
                 >
                     <Download className="mr-2 h-4 w-4" />
                     PDF

@@ -409,7 +409,7 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
                                 type="number"
                                 min="1"
                                 max="28"
-                                className="h-7 w-12 text-center text-xs p-0 font-mono"
+                                className="h-control-xs w-12 text-center text-xs p-0 font-mono"
                                 value={field.value}
                                 onChange={(e) => field.onChange(
                                     e.target.value === "" ? NaN : parseInt(e.target.value, 10)
@@ -480,7 +480,7 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
                             type="number"
                             min="0"
                             step="0.01"
-                            className="h-8 text-xs text-right pr-5"
+                            className="h-control-sm text-xs text-right pr-5"
                             value={field.value}
                             onChange={(e) => field.onChange(
                                 e.target.value === "" ? 0 : parseFloat(e.target.value)

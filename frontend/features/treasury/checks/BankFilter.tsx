@@ -35,7 +35,7 @@ export function BankFilter() {
                         variant="ghost"
                         size="sm"
                         className={cn(
-                            'h-7 px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
+                            'h-control-xs px-2 text-3xs uppercase font-medium tracking-widest gap-1 rounded-sm shrink-0',
                             bankParam
                                 ? 'bg-accent/50 text-foreground'
                                 : 'text-muted-foreground hover:text-foreground',

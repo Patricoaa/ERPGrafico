@@ -66,7 +66,7 @@ export interface DocumentDrawerShellProps {
 /** Botón «Volver» para el header de una ficha hija: vuelve al drawer que la abrió. */
 export function DocumentBackAction({ label = "Volver", onClick }: { label?: string; onClick: () => void }) {
     return (
-        <Button variant="ghost" size="sm" onClick={onClick} className="h-10 gap-1.5 px-3 text-sm font-semibold">
+        <Button variant="ghost" size="sm" onClick={onClick} className="h-control-lg gap-1.5 px-3 text-sm font-semibold">
             <ArrowLeft className="size-4 shrink-0" aria-hidden />
             <span>{label}</span>
         </Button>

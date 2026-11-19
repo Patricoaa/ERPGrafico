@@ -167,7 +167,7 @@ export function AccountDrawer({
         if (openProp !== undefined) return null; // Controlled mode might not need internal trigger
 
         return triggerVariant === "circular" ? (
-            <Button size="icon" className="rounded-full h-8 w-8" title="Crear Cuenta Contable" onClick={() => setOpen(true)}>
+            <Button size="icon" className="rounded-full h-control-sm w-8" title="Crear Cuenta Contable" onClick={() => setOpen(true)}>
                 <Plus className="h-4 w-4" />
             </Button>
         ) : (

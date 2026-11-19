@@ -465,7 +465,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
             currentStep={safeIndex - 1}
             progressLabel="Progreso de la apertura"
             exitAction={
-                <Button asChild variant="ghost" className="h-12 gap-2 px-4 text-base">
+                <Button asChild variant="ghost" className="h-control-touch gap-2 px-4 text-base">
                     <Link href={exitHref}>
                         <LogOut className="size-5" aria-hidden />
                         Salir

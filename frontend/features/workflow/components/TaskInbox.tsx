@@ -520,7 +520,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    className="flex-1 text-3xs h-7 px-2 border-destructive/30 text-destructive hover:bg-destructive/10 rounded-sm font-semibold uppercase tracking-wide"
+                                    className="flex-1 text-3xs h-control-xs px-2 border-destructive/30 text-destructive hover:bg-destructive/10 rounded-sm font-semibold uppercase tracking-wide"
                                     onClick={(e) => handleApprovalAction(e, task, 'REJECT')}
                                     disabled={actioningTask === task.id}
                                 >
@@ -528,7 +528,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                                 </Button>
                                 <Button
                                     size="sm"
-                                    className="flex-1 text-3xs h-7 px-2 bg-success/90 hover:bg-success text-success-foreground font-semibold rounded-sm uppercase tracking-wide"
+                                    className="flex-1 text-3xs h-control-xs px-2 bg-success/90 hover:bg-success text-success-foreground font-semibold rounded-sm uppercase tracking-wide"
                                     onClick={(e) => handleApprovalAction(e, task, 'APPROVE')}
                                     disabled={actioningTask === task.id}
                                 >

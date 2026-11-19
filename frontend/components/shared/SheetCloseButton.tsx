@@ -38,7 +38,7 @@ export function SheetCloseButton({
             onClick={onClick}
             type="button"
             className={cn(
-                "rounded-full h-8 w-8 text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200",
+                "rounded-full h-control-sm w-8 text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200",
                 className
             )}
         >

@@ -416,7 +416,7 @@ export function UnifiedNoteWizard({
                         variant="ghost"
                         onClick={handleBack}
                         disabled={submitting || initializing}
-                        className="h-12 px-6 font-medium"
+                        className="h-control-touch px-6 font-medium"
                     >
                         Atrás
                     </Button>

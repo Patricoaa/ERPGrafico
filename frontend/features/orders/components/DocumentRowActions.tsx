@@ -40,7 +40,7 @@ export function DocumentRowActions(props: DocumentRowActionsProps) {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-md transition-all duration-200 hover:scale-105 active:scale-95"
+                    className="h-control-xs w-7 rounded-md transition-all duration-200 hover:scale-105 active:scale-95"
                     onClick={(e) => { e.stopPropagation(); setArmed(true) }}
                     aria-label="Más acciones"
                     type="button"

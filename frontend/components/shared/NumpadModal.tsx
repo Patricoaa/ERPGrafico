@@ -63,7 +63,7 @@ export function NumpadModal({
             centered
             footer={
                 <Button
-                    className="w-full h-12 lg:h-14 bg-primary hover:bg-primary font-black uppercase tracking-widest text-sm lg:text-base active:scale-95 transition-transform"
+                    className="w-full h-control-touch lg:h-14 bg-primary hover:bg-primary font-black uppercase tracking-widest text-sm lg:text-base active:scale-95 transition-transform"
                     onClick={onConfirm}
                 >
                     CONFIRMAR

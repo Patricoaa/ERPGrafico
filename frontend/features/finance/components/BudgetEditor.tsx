@@ -81,7 +81,7 @@ const BudgetAccountRow = React.memo(({
                 <div key={m} className="flex-1 border-r p-1 bg-card/10">
                     <Input
                         type="number"
-                        className="h-8 text-2xs text-right px-1 border-none bg-transparent focus-visible:bg-accent/40 font-medium"
+                        className="h-control-sm text-2xs text-right px-1 border-none bg-transparent focus-visible:bg-accent/40 font-medium"
                         placeholder="0"
                         value={monthlyData?.[m] || ''}
                         onChange={e => onAmountChange(account.id, m, e.target.value)}
@@ -260,7 +260,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             placeholder="Buscar cuenta por nombre o código..."
                             value={filter}
                             onChange={e => setFilter(e.target.value)}
-                            className={cn("h-9 text-sm bg-background border border-border rounded-md px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", "bg-background")}
+                            className={cn("h-control-md text-sm bg-background border border-border rounded-md px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", "bg-background")}
                         />
                         <TooltipProvider>
                             <Tooltip>
@@ -288,7 +288,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             size="sm"
                             onClick={handleCopyPreviousYear}
                             disabled={loading}
-                            className="h-9 px-4"
+                            className="h-control-md px-4"
                         >
                             <History className="h-4 w-4 mr-2 text-primary" />
                             Cargar Real Año Anterior

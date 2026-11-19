@@ -114,7 +114,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                 onClick={() => handleSave(false)}
                                 disabled={isAllocating || fields.length === 0}
                                 type="button"
-                                className="h-9 px-5 text-3xs font-medium tracking-widest uppercase rounded-sm shadow-card"
+                                className="h-control-md px-5 text-3xs font-medium tracking-widest uppercase rounded-sm shadow-card"
                             >
                                 Guardar Borrador
                             </Button>
@@ -168,7 +168,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                             value={form.watch(`allocations.${idx}.invoice`) ? String(form.watch(`allocations.${idx}.invoice`)) : undefined}
                                             onValueChange={(val) => form.setValue(`allocations.${idx}.invoice`, parseInt(val))}
                                         >
-                                            <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectTrigger className="w-full h-control-sm text-xs">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -183,13 +183,13 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                     <TableCell>
                                         <Input
                                             {...form.register(`allocations.${idx}.notes`)}
-                                            className="h-8 text-xs"
+                                            className="h-control-sm text-xs"
                                             />
                                     </TableCell>
                                     <TableCell>
                                         <Input
                                             {...form.register(`allocations.${idx}.amount`)}
-                                            className="h-8 font-mono text-right text-xs"
+                                            className="h-control-sm font-mono text-right text-xs"
                                             type="number"
                                             step="1"
                                             onChange={(e) => form.setValue(`allocations.${idx}.amount`, parseFloat(e.target.value) || 0)}
@@ -197,7 +197,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <IconButton
-                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            className="h-control-sm w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                             onClick={() => remove(idx)}
                                             type="button"
                                         >

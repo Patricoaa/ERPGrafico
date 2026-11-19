@@ -36,7 +36,7 @@ export function FacetedFilter({
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" className={`h-9 px-3 rounded-none ${SEG_TEXT} tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0`}>
+                <Button variant="ghost" className={`h-control-md px-3 rounded-none ${SEG_TEXT} tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0`}>
                     <PlusCircle className="mr-2 h-3.5 w-3.5 opacity-50" />
                     <span>{title}</span>
                     {selectedSet.size > 0 && (
@@ -118,7 +118,7 @@ export function FacetedFilter({
                         <div className="p-1">
                             <Button
                                 variant="ghost"
-                                className={`w-full justify-center ${SEG_DROPDOWN_ITEM} h-8 hover:bg-destructive/10 hover:text-destructive rounded-sm`}
+                                className={`w-full justify-center ${SEG_DROPDOWN_ITEM} h-control-sm hover:bg-destructive/10 hover:text-destructive rounded-sm`}
                                 onClick={() => onSelect([])}
                             >
                                 Limpiar filtros

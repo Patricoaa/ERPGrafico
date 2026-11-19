@@ -42,7 +42,7 @@ export function UserSidebarMenu({ onProfileOpen, onNavigate }: UserSidebarMenuPr
                                 variant="outline"
                                 size="icon"
                                 aria-label={userLabel}
-                                className="h-8 w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
+                                className="h-control-sm w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
                             >
                                 <Blobatar name={userLabel} className="h-full w-full rounded-full bg-transparent" />
                             </Button>

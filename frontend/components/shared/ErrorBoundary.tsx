@@ -110,7 +110,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             <Button
                                 variant="outline"
                                 onClick={this.handleFullReset}
-                                className="h-10 px-6 rounded-none border-foreground group relative overflow-hidden"
+                                className="h-control-lg px-6 rounded-none border-foreground group relative overflow-hidden"
                             >
                                 <span className="relative z-10 flex items-center gap-2 uppercase font-medium tracking-widest text-2xs">
                                     <RefreshCw className="h-3 w-3 group-hover:rotate-180 transition-transform duration-500" />

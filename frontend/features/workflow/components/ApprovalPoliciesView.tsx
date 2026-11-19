@@ -66,7 +66,7 @@ function PolicyForm({ defaultValues, onSubmit }: PolicyFormProps) {
                 <select
                     id="document_type"
                     {...register("document_type")}
-                    className="h-9 w-full rounded-sm border border-input bg-background px-3 text-sm"
+                    className="h-control-md w-full rounded-sm border border-input bg-background px-3 text-sm"
                 >
                     <option value="" disabled>Seleccionar tipo de documento…</option>
                     {defaultValues?.document_type && !DOCUMENT_TYPES.some((item) => item.value === defaultValues.document_type) && (
@@ -182,13 +182,13 @@ export function ApprovalPoliciesView() {
                                 </p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(policy)}>
+                                <Button size="icon" variant="ghost" className="h-control-xs w-7" onClick={() => openEdit(policy)}>
                                     <Pencil className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    className="h-control-xs w-7 text-destructive hover:text-destructive"
                                     onClick={() => setDeleteTarget(policy)}
                                 >
                                     <Trash2 className="h-3.5 w-3.5" />

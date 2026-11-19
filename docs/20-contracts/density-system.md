@@ -65,7 +65,6 @@ Definidos en `:root` de `globals.css`. Son la única fuente de verdad para el pa
 | `.table-row-hover` | Transición + hover con `--table-row-hover` |
 | `.table-footer` | Fondo con `--table-footer-bg` |
 | `.table-header-compact` | Cabecera extra-densa (`--table-header-h: 2rem`) para vistas de lista |
-| `.table-compact` | Scope que fija `--table-cell-py`/`--table-header-h` a los valores compact |
 | `.table-comfortable` | Scope que afloja: `--table-cell-py: 0.75rem`, `--table-header-h: 2.75rem` |
 
 **Regla invariante (PR Reject):** toda variante de tabla (DataTable, FormLineItemsTable, ReportTable, `variant="minimal"`) debe consumir `.table-cell`/`.table-header` en vez de clases de padding sueltas.
@@ -145,6 +144,6 @@ Los roles se derivan de `--u`, así que escalan con `--k` (comfortable: ×1.125)
 ## 7. Preferencia de usuario y lint
 
 - **Preferencia:** `useDensityPreference()` (`hooks/useDensityPreference.ts`) guarda `compact | comfortable` en `localStorage` (`ui_density`, por dispositivo) y `Providers` la publica en `<html data-density>`. Se cambia en Perfil → Preferencias. `comfortable` sube `--k` a 1.125 en todo el chrome; las tablas conservan su `data-density`.
-- **Lint:** `controls/token-height` (aviso) reporta alturas literales `h-7…h-12` en controles; usa `h-control-*`/`size-control-*`. Pasa a error al llegar a 0 (ADR-0142, Fase 6).
+- **Lint:** `controls/token-height` (error) reporta alturas literales `h-7…h-12` en controles; usa `h-control-*`/`size-control-*`. Es **error** desde la Fase 6 (inventario 0; `h-11` fuera de la regla).
 - **Select/Badge:** el trigger de `ui/select` usa `--control-h-md/sm`; `Badge` xs/sm usan `h-4.5`/`h-5.5` (escalan con `--k`).
 

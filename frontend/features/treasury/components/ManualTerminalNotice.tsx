@@ -200,14 +200,14 @@ export function ManualTerminalNotice({
                 <div className="flex w-full gap-3">
                     <Button
                         variant="outline"
-                        className="flex-1 rounded-md h-12 border-muted-foreground/20 hover:bg-muted/5 font-medium uppercase tracking-widest text-xs"
+                        className="flex-1 rounded-md h-control-touch border-muted-foreground/20 hover:bg-muted/5 font-medium uppercase tracking-widest text-xs"
                         onClick={onCancel}
                         disabled={isLoading}
                     >
                         Cancelar
                     </Button>
                     <SubmitButton
-                        className="flex-[1.5] h-12 shadow-floating shadow-primary/10 active:translate-y-1 transition-all"
+                        className="flex-[1.5] h-control-touch shadow-floating shadow-primary/10 active:translate-y-1 transition-all"
                         onClick={onConfirm}
                         disabled={isLoading}
                     >
@@ -218,7 +218,7 @@ export function ManualTerminalNotice({
                 {canSwitchMethod && (
                     <Button
                         variant="ghost"
-                        className="w-full h-10 text-xs uppercase font-medium tracking-widest text-primary hover:bg-primary/5"
+                        className="w-full h-control-lg text-xs uppercase font-medium tracking-widest text-primary hover:bg-primary/5"
                         onClick={onSwitchPaymentMethod}
                         disabled={isLoading}
                     >

@@ -62,7 +62,7 @@ export function DateRangeFilter({
                 className={cn(
                     "justify-start text-left transition-all group",
                     variant === 'outline'
-                        ? "w-full text-xs font-semibold tracking-tight bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3"
+                        ? "w-full text-xs font-semibold tracking-tight bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-control-md px-3"
                         : SEG_TRIGGER,
                     !date && "text-muted-foreground",
                     className
@@ -112,10 +112,10 @@ export function DateRangeFilter({
                 contentClassName="flex flex-col items-center pb-6"
                 footer={
                     <>
-                        <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1 h-10">
+                        <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1 h-control-lg">
                             Cancelar
                         </Button>
-                        <Button type="button" onClick={handleConfirm} className="flex-1 h-10">
+                        <Button type="button" onClick={handleConfirm} className="flex-1 h-control-lg">
                             Aceptar
                         </Button>
                     </>

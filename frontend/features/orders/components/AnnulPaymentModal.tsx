@@ -80,7 +80,7 @@ export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount
                 <div className="flex w-full gap-2">
                     <CancelButton onClick={() => onOpenChange(false)} className="flex-1" />
                     <Button
-                        className="flex-[2] bg-warning hover:bg-warning/90 h-12 text-lg font-medium"
+                        className="flex-[2] bg-warning hover:bg-warning/90 h-control-touch text-lg font-medium"
                         onClick={handleAnnul}
                         disabled={
                             isAnnuling ||

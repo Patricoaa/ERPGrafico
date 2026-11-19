@@ -139,7 +139,7 @@ export function UoMSelector({
                     <div className="flex items-center px-3 border rounded-sm mb-2 bg-background">
                         <Search className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                         <input
-                            className="flex h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+                            className="flex h-control-sm w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
                             placeholder="Buscar UdM..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}

@@ -91,7 +91,7 @@ export function BudgetVarianceView() {
                 titleActions={
                     <div className="flex items-center gap-3">
                         <Select value={selectedBudget} onValueChange={setSelectedBudget}>
-                            <SelectTrigger className="w-[200px] h-9 bg-background">
+                            <SelectTrigger className="w-[200px] h-control-md bg-background">
                                 <Target className="mr-2 h-4 w-4 text-primary" />
                                 <SelectValue />
                             </SelectTrigger>
@@ -103,7 +103,7 @@ export function BudgetVarianceView() {
                         </Select>
 
                         <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                            <SelectTrigger className="w-[140px] h-9 bg-background">
+                            <SelectTrigger className="w-[140px] h-control-md bg-background">
                                 <CalendarDays className="mr-2 h-4 w-4 text-primary" />
                                 <SelectValue placeholder="Mes" />
                             </SelectTrigger>
@@ -115,7 +115,7 @@ export function BudgetVarianceView() {
                         </Select>
 
                         <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                            <SelectTrigger className="w-[100px] h-9 bg-background">
+                            <SelectTrigger className="w-[100px] h-control-md bg-background">
                                 <SelectValue placeholder="Año" />
                             </SelectTrigger>
                             <SelectContent>
@@ -125,7 +125,7 @@ export function BudgetVarianceView() {
                             </SelectContent>
                         </Select>
 
-                        <Button variant="outline" size="sm" className="h-9">
+                        <Button variant="outline" size="sm" className="h-control-md">
                             <FileDown className="mr-2 h-4 w-4" />
                             Exportar
                         </Button>

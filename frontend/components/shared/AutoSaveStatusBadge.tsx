@@ -96,7 +96,7 @@ export function AutoSaveStatusBadge({
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 px-2 text-xs"
+                    className="h-control-xs px-2 text-xs"
                     onClick={() => void onRetry()}
                 >
                     <RefreshCcw className="mr-1 h-3 w-3" />

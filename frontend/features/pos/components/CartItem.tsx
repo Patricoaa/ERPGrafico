@@ -164,7 +164,7 @@ function CartItemComponent({
                                         variant="ghost"
                                         className={cn(
                                             "font-medium transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
-                                            "h-7 px-2 text-xs touch:h-9 touch:text-sm"
+                                            "h-control-xs px-2 text-xs touch:h-control-md touch:text-sm"
                                         )}
                                         onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
                                         type="button"
@@ -177,7 +177,7 @@ function CartItemComponent({
                                         variant="ghost"
                                         className={cn(
                                             "flex items-center justify-center transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted",
-                                            "h-7 w-7 touch:h-9 touch:w-9"
+                                            "h-control-xs w-7 touch:h-control-md touch:w-9"
                                         )}
                                         onClick={() => onOpenNumpad(item.cartItemId, 'discount', 0)}
                                         type="button"
@@ -218,7 +218,7 @@ function CartItemComponent({
                             variant="ghost"
                             className={cn(
                                 "flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-md shrink-0 ml-1 border-none shadow-none",
-                                "h-7 w-7 touch:h-9 touch:w-9"
+                                "h-control-xs w-7 touch:h-control-md touch:w-9"
                             )}
                             onClick={() => onRemove(item.cartItemId)}
                             type="button"
@@ -239,7 +239,7 @@ function CartItemComponent({
                             type="button"
                             className={cn(
                                 "font-semibold underline underline-offset-2 border-none bg-transparent text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center px-1 rounded-sm hover:bg-primary/5 shadow-none",
-                                "text-xs h-6 touch:text-sm touch:h-7"
+                                "text-xs h-6 touch:text-sm touch:h-control-xs"
                             )}
                             onClick={() => setUomDialogOpen(true)}
                         >

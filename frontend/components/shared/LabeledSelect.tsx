@@ -98,7 +98,7 @@ export const LabeledSelect = forwardRef<
                     "[&_*[data-placeholder]]:text-sm [&_*[data-placeholder]]:text-muted-foreground/60 [&_*[data-placeholder]]:font-normal",
                     variant === 'standalone'
                         ? "h-6! border-0 bg-transparent hover:bg-primary/[0.03]"
-                        : cn("h-9 bg-transparent hover:bg-primary/[0.02]", className),
+                        : cn("h-control-md bg-transparent hover:bg-primary/[0.02]", className),
                     !value && "text-muted-foreground"
                 )}
             >

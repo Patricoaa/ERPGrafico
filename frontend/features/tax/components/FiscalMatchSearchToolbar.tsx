@@ -46,7 +46,7 @@ export function FiscalMatchSearchToolbar({
                     type="button"
                     size="sm"
                     variant={ordering === "score" ? "secondary" : "ghost"}
-                    className="h-7 text-xs"
+                    className="h-control-xs text-xs"
                     onClick={() => onOrderingChange("score")}
                     disabled={disabled}
                 >
@@ -56,7 +56,7 @@ export function FiscalMatchSearchToolbar({
                     type="button"
                     size="sm"
                     variant={ordering === "recent" ? "secondary" : "ghost"}
-                    className="h-7 text-xs"
+                    className="h-control-xs text-xs"
                     onClick={() => onOrderingChange("recent")}
                     disabled={disabled}
                 >

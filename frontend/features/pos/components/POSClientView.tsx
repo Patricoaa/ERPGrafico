@@ -520,7 +520,7 @@ export function POSClientView() {
                                                         variant="outline"
                                                         size="sm"
                                                         className={cn(
-                                                            "h-10 min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm flex-nowrap",
+                                                            "h-control-lg min-w-[40px] px-2 text-2xs font-medium transition-all duration-300 gap-1.5 relative rounded-sm flex-nowrap",
                                                             isCurrent
                                                                 ? "bg-primary/5 border-primary shadow-card border-solid ring-1 ring-primary/20"
                                                                 : "border-dashed",
@@ -746,7 +746,7 @@ export function POSClientView() {
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
-                            className="flex-1 h-10 rounded-sm text-sm font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-card group"
+                            className="flex-1 h-control-lg rounded-sm text-sm font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-card group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -757,7 +757,7 @@ export function POSClientView() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="flex-1 h-10 border-primary/20 text-sm font-black hover:bg-primary/5 rounded-sm text-lg font-black"
+                            className="flex-1 h-control-lg border-primary/20 text-sm font-black hover:bg-primary/5 rounded-sm text-lg font-black"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar

@@ -93,7 +93,7 @@ export function SearchablePopover<TItem>({
                         >
                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                             <input
-                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                className="flex h-control-lg w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                                 placeholder={searchPlaceholder}
                                 value={searchValue}
                                 onChange={(e) => onSearchChange(e.target.value)}
@@ -115,7 +115,7 @@ export function SearchablePopover<TItem>({
                                             type="button"
                                             variant="outline"
                                             size="icon"
-                                            className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                            className="h-control-lg w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
                                             onClick={onCreate}
                                         >
                                             <Plus className="h-4 w-4" />

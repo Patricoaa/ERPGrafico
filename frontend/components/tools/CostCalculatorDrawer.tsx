@@ -244,7 +244,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-0">
                                                         <Button
-                                                            className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                                            className="rounded-full h-control-sm w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                                             onClick={() => {
                                                                 const qty = Math.max(0.01, item.quantity - 1)
                                                                 updateQuantity(item.id, qty)
@@ -258,7 +258,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                         <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
 
                                                         <Button
-                                                            className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors"
+                                                            className="rounded-full h-control-sm w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors"
                                                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                             type="button"
                                                         >
@@ -290,7 +290,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
 
                                                 <div>
                                                     <Button
-                                                        className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-all h-8 w-8 rounded-full hover:bg-destructive/10"
+                                                        className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-all h-control-sm w-8 rounded-full hover:bg-destructive/10"
                                                         onClick={() => removeItem(item.id)}
                                                         type="button"
                                                     >

@@ -47,7 +47,7 @@ export function CardCarousel({ children }: CardCarouselProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => goTo(current - 1)}
-                        className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 shadow-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+                        className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 h-control-xs w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 shadow-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity"
                         aria-label="Anterior"
                     >
                         <ChevronLeft className="h-3.5 w-3.5" />
@@ -60,7 +60,7 @@ export function CardCarousel({ children }: CardCarouselProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => goTo(current + 1)}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 shadow-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 h-control-xs w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 shadow-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity"
                         aria-label="Siguiente"
                     >
                         <ChevronRight className="h-3.5 w-3.5" />

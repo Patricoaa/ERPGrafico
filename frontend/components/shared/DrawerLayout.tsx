@@ -214,7 +214,7 @@ export function DrawerLayout({
                                     size="icon"
                                     title="Actividad / Información"
                                     aria-label="Expandir panel lateral"
-                                    className="flex h-7 w-7 items-center justify-center rounded p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                                    className="flex h-control-xs w-7 items-center justify-center rounded p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                                 >
                                     <Clock className="h-3.5 w-3.5" />
                                 </Button>

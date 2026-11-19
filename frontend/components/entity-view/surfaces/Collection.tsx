@@ -596,7 +596,7 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                                             {isTree && id === treeColumn && <TreeToggleAll table={table} />}
                                             {column?.getCanSort() ? (
                                                 // Compact header height; the Fitts guard is lifted by `data-density="compact"` (R3).
-                                                <Button variant="ghost" size="sm" className={cn("-mx-2 h-7 gap-1", align === "end" && "flex-row-reverse")} onClick={column.getToggleSortingHandler()}>
+                                                <Button variant="ghost" size="sm" className={cn("-mx-2 h-control-xs gap-1", align === "end" && "flex-row-reverse")} onClick={column.getToggleSortingHandler()}>
                                                     {/* Same header text treatment as DataTableColumnHeader (canonical header, track B). */}
                                                     <span className={HEADER_TEXT}>{def.header ?? def.label}</span>
                                                     <SortIcon dir={dir} />
@@ -862,7 +862,7 @@ function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: Car
                         avatar={!mediaOnTop && !rail && Avatar ? <Avatar row={data} /> : undefined}
                         title={
                             ctx.canOpen ? (
-                                <Button data-card-open variant="link" className={cn("min-w-0 max-w-full justify-start p-0 text-left text-sm font-semibold text-foreground after:absolute after:inset-0 after:content-[''] hover:no-underline focus-visible:no-underline focus-visible:ring-0", mediaOnTop ? "h-auto min-h-0 whitespace-normal leading-tight" : "h-7")} onClick={() => ctx.open(data)}>
+                                <Button data-card-open variant="link" className={cn("min-w-0 max-w-full justify-start p-0 text-left text-sm font-semibold text-foreground after:absolute after:inset-0 after:content-[''] hover:no-underline focus-visible:no-underline focus-visible:ring-0", mediaOnTop ? "h-auto min-h-0 whitespace-normal leading-tight" : "h-control-xs")} onClick={() => ctx.open(data)}>
                                     {/* A flex button cannot ellipsize its own text: the span does. */}
                                     <span className={mediaOnTop ? "line-clamp-2" : "truncate"}>{title}</span>
                                 </Button>

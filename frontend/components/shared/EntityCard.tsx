@@ -875,7 +875,7 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
                 size="icon"
                 onClick={onToggle}
                 className={cn(
-                    "h-7 w-7 rounded-full transition-all duration-200",
+                    "h-control-xs w-7 rounded-full transition-all duration-200",
                     "hover:scale-105 active:scale-95 hover:bg-accent hover:text-accent-foreground",
                     isSelected
                         ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"

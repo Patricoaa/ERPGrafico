@@ -46,8 +46,9 @@ Cada fase es un PR independiente, termina con `npm run type-check`, `npm run lin
 - [ ] Actualizar índice del ADR (README), `DESIGN.md` y `docs/README.md`.
 
 ## Fase 6 — Endurecimiento (posterior, opcional)
-- [ ] Lint `controls/token-height` como error cuando el inventario llegue a 0.
-- [ ] Retirar alias `.table-compact/.table-comfortable` si no quedan usos.
+- [x] Lint `controls/token-height` como error (inventario 0).
+- [x] Retiradas las exclusiones `:not(.h-N)` de la guarda de Fitts.
+- [x] `.table-compact` retirado; `.table-comfortable` se mantiene (lo usa `DataTable`).
 
 ## Riesgos y mitigaciones
 | Riesgo | Mitigación |

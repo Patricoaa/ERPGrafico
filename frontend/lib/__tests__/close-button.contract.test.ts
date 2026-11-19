@@ -44,9 +44,9 @@ describe('close-button contract', () => {
       expect(/export \* from ['"].\/SheetCloseButton/.test(src)).toBe(true);
     });
 
-    it('has canonical circular ghost markup: rounded-full h-8 w-8', () => {
+    it('has canonical circular ghost markup: rounded-full h-control-sm w-8', () => {
       const src = shared.sheetCloseButton;
-      expect(/rounded-full h-8 w-8/.test(src)).toBe(true);
+      expect(/rounded-full h-control-sm w-8/.test(src)).toBe(true);
     });
 
     it('uses ghost variant with hover:bg-muted transition', () => {

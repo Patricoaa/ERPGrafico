@@ -127,7 +127,7 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
                     type="button"
                     onClick={() => setOpen(true)}
                     aria-label="Búsqueda universal (Ctrl+K)"
-                    className="group h-8 w-8 rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="group h-control-sm w-8 rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                 >
                     <Search className="h-4 w-4 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
                 </Button>

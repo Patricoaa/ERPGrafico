@@ -480,7 +480,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                                                     form.setValue("mapping", newMapping)
                                                 }}
                                             >
-                                                <SelectTrigger className="h-9 text-xs font-bold uppercase bg-background">
+                                                <SelectTrigger className="h-control-md text-xs font-bold uppercase bg-background">
                                                     <SelectValue placeholder="Ignorar Columna" />
                                                 </SelectTrigger>
                                                 <SelectContent>

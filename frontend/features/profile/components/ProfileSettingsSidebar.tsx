@@ -63,7 +63,7 @@ export function ProfileSettingsSidebar({ profile, activeSection, onSectionChange
                                     title={label}
                                     onClick={() => onSectionChange(value)}
                                     className={cn(
-                                        "h-8 w-full justify-start gap-2 rounded-sm px-2 text-left text-xs font-normal transition-colors",
+                                        "h-control-sm w-full justify-start gap-2 rounded-sm px-2 text-left text-xs font-normal transition-colors",
                                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
                                         isActive
                                             ? "bg-card font-medium text-foreground shadow-card"

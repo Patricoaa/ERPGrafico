@@ -216,7 +216,7 @@ export function FormLineItemsTable({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="text-3xs font-medium uppercase tracking-widest text-primary hover:bg-primary/5 h-7 px-2"
+                                className="text-3xs font-medium uppercase tracking-widest text-primary hover:bg-primary/5 h-control-xs px-2"
                                 onClick={onAdd}
                                 disabled={isLoading || disabledAdd}
                             >

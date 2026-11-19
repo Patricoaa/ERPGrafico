@@ -137,8 +137,8 @@ export function PaymentHardwareClientView({
         params.set("modal", modal)
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
-    const providerCreateAction = createAction || <Button onClick={() => openCreate("new-provider")} className="h-9">Configurar proveedor</Button>
-    const deviceCreateAction = createAction || <Button onClick={() => openCreate("new-device")} className="h-9">Registrar terminal de cobro</Button>
+    const providerCreateAction = createAction || <Button onClick={() => openCreate("new-provider")} className="h-control-md">Configurar proveedor</Button>
+    const deviceCreateAction = createAction || <Button onClick={() => openCreate("new-device")} className="h-control-md">Registrar terminal de cobro</Button>
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

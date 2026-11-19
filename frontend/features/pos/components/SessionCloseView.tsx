@@ -221,7 +221,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                                 <span className="flex-1">
                                     El esperado pasó de {formatCurrency(baselineExpected)} a {formatCurrency(expected)} mientras contaba (hubo una venta o un movimiento).
                                 </span>
-                                <Button variant="outline" className="h-12 px-5" onClick={() => setBaselineExpected(expected)}>Entendido</Button>
+                                <Button variant="outline" className="h-control-touch px-5" onClick={() => setBaselineExpected(expected)}>Entendido</Button>
                             </div>
                         )}
                         <SessionCashSummary data={report} expected={expected} sessionId={session.id} />
@@ -475,7 +475,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
             currentStep={safeIndex}
             progressLabel="Progreso del cierre"
             exitAction={
-                <Button variant="ghost" className="h-12 gap-2 px-4 text-base" onClick={onCancel} disabled={submitting}>
+                <Button variant="ghost" className="h-control-touch gap-2 px-4 text-base" onClick={onCancel} disabled={submitting}>
                     <X className="size-5" aria-hidden />
                     Cancelar
                 </Button>

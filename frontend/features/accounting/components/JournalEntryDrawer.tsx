@@ -772,7 +772,7 @@ export function JournalEntryDrawer({
             {showTrigger && (
                 <div onClick={() => setOpenState(true)}>
                     {triggerVariant === "circular" ? (
-                        <IconButton circular title="Nuevo Asiento" className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90">
+                        <IconButton circular title="Nuevo Asiento" className="h-control-sm w-8 bg-primary text-primary-foreground hover:bg-primary/90">
                             <Plus className="h-4 w-4" />
                         </IconButton>
                     ) : (

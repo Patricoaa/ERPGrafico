@@ -79,7 +79,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
             const params = new URLSearchParams(searchParams.toString())
             params.set("modal", "new")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }} className="h-9">
+        }} className="h-control-md">
             <Plus className="mr-2 h-4 w-4" /> Crear Punto de Venta
         </Button>
     )

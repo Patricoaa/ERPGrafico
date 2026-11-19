@@ -78,7 +78,7 @@ export function RangeFilterAccordion({
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               placeholder={def.placeholderFrom ?? '0'}
-              className="h-8 rounded-sm text-xs"
+              className="h-control-sm rounded-sm text-xs"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -88,7 +88,7 @@ export function RangeFilterAccordion({
               value={to}
               onChange={(e) => setTo(e.target.value)}
               placeholder={def.placeholderTo ?? '999999'}
-              className="h-8 rounded-sm text-xs"
+              className="h-control-sm rounded-sm text-xs"
             />
           </div>
           <div className="flex items-center gap-2 pt-1">

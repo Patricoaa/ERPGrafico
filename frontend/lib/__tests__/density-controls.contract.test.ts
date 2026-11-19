@@ -32,12 +32,12 @@ describe('control height roles (ADR-0142 D4)', () => {
     expect(/@media \(pointer: fine\)\s*\{\s*\[data-density="compact"\]\s*\{\s*--hit-min:\s*0px/.test(css)).toBe(true);
   });
 
-  it('Interaction Guard reads --hit-min (no --fitts-button-min) and keeps only the transitional h-7/8/9 exclusions', () => {
+  it('Interaction Guard reads --hit-min (no --fitts-button-min) and has no legacy h-7/8/9 class exclusions', () => {
     expect(/--fitts-button-min/.test(css)).toBe(false);
     expect(/min-height:\s*var\(--hit-min\)/.test(css)).toBe(true);
     // Role controls are exempt by cascade, not by class name:
     expect(/:not\(\.h-control/.test(css)).toBe(false);
-    expect(/TRANSITIONAL/.test(css)).toBe(true);
+    expect(/:not\(\.h-[789]\)/.test(css)).toBe(false);
   });
 });
 
@@ -110,9 +110,9 @@ describe('touch variant and device-driven input axis (ADR-0142 D5)', () => {
     const card = read('../../components/selectors/ProductGridPicker/ProductCard.tsx');
     const filter = read('../../components/selectors/ProductGridPicker/CategoryFilter.tsx');
     expect(/\bisTouch\b/.test(card)).toBe(false);
-    expect(/touch:h-9 touch:w-9/.test(card)).toBe(true);
+    expect(/touch:h-control-md touch:w-9/.test(card)).toBe(true);
     expect(/isTouchPOS/.test(filter)).toBe(false);
-    expect(/touch:h-9 touch:px-4\.5 touch:text-xs/.test(filter)).toBe(true);
+    expect(/touch:h-control-md touch:px-4\.5 touch:text-xs/.test(filter)).toBe(true);
   });
 
   it('POSShell publishes the input mode on <html>', () => {

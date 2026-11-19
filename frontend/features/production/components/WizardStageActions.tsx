@@ -71,7 +71,7 @@ export function WizardStageActions({ isTerminal, capabilities, editing, onEditin
                     )}
                 </div>
                 {canReopen && (
-                    <Button type="button" variant="outline" size="sm" onClick={onReopen} className="h-8 gap-1.5 text-xs">
+                    <Button type="button" variant="outline" size="sm" onClick={onReopen} className="h-control-sm gap-1.5 text-xs">
                         <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                         Reabrir etapa
                     </Button>

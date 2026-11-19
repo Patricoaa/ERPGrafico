@@ -356,7 +356,7 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
                 description="Defina el comportamiento y la cuenta contable de este ítem de nómina."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <SubmitButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs">
+                        <SubmitButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-control-lg font-bold uppercase tracking-widest text-2xs">
                             Validar y Guardar Cambios
                         </SubmitButton>
                     </div>
@@ -531,7 +531,7 @@ function AFPDialog({ afp, onSaved, onCreate, onUpdate }: { afp?: AFP, onSaved: (
     return (
         <>
             {afp ? (
-                <Button variant="outline" size="icon" className="h-7 w-7 border-2 rounded-sm" onClick={() => setOpen(true)}>
+                <Button variant="outline" size="icon" className="h-control-xs w-7 border-2 rounded-sm" onClick={() => setOpen(true)}>
                     <Settings2 className="h-3.5 w-3.5" />
                 </Button>
             ) : (
@@ -550,7 +550,7 @@ function AFPDialog({ afp, onSaved, onCreate, onUpdate }: { afp?: AFP, onSaved: (
                 description="Configure las tasas vigentes para las cotizaciones previsionales."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <SubmitButton type="submit" form="afp-form" loading={saving} disabled={saving} className="w-full h-10 font-bold uppercase tracking-widest text-2xs">
+                        <SubmitButton type="submit" form="afp-form" loading={saving} disabled={saving} className="w-full h-control-lg font-bold uppercase tracking-widest text-2xs">
                             Guardar Institución
                         </SubmitButton>
                     </div>

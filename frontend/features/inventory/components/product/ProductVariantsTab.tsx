@@ -231,7 +231,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-9 px-4 text-3xs font-medium uppercase tracking-widest"
+                                className="h-control-md px-4 text-3xs font-medium uppercase tracking-widest"
                                 onClick={() => setSelectedVariantIds([])}
                             >
                                 <X className="h-3.5 w-3.5 mr-2" />
@@ -241,7 +241,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="submit"
                                 form="bulk-edit-form"
                                 size="sm"
-                                className="h-9 px-5 text-3xs font-medium uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
+                                className="h-control-md px-5 text-3xs font-medium uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
                             >
                                 Guardar Variantes
                             </Button>
@@ -252,7 +252,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-9 px-4 text-3xs font-medium uppercase tracking-widest"
+                                className="h-control-md px-4 text-3xs font-medium uppercase tracking-widest"
                                 onClick={() => setSelectedVariantIds([])}
                             >
                                 <X className="h-3.5 w-3.5 mr-2" />
@@ -262,7 +262,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                 type="submit"
                                 form="quick-edit-form"
                                 size="sm"
-                                className="h-9 px-5 text-3xs font-medium uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
+                                className="h-control-md px-5 text-3xs font-medium uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
                             >
                                 Guardar Variante
                             </Button>
