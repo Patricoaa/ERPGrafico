@@ -87,7 +87,7 @@ Equivalencias canónicas (el rango micro es exclusivo para chrome denso; desde A
 | **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-black` | `tracking-tighter` | `uppercase` | "Algo salió mal" |
 | **N1 — Sección** | FormSection, SectionHeader, ActivitySidebar | `text-2xs font-bold` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
 | **N2 — Etiqueta de campo** | LabeledInput legend | `text-2xs font-bold` | `tracking-widest` | `uppercase` | "Nombre / Razón Social" |
-| **N2 — Botón acción** | SubmitButton, CancelButton | `text-3xs font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
+| **N2 — Botón acción** | SubmitButton, CancelButton | `text-3xs font-black h-control-md` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
 | **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-3xs font-bold` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
 | **N2 — Badge/Chip** | Chip, EntityBadge | `text-xs font-medium font-sans` | `normal` | normal | "Pagado", "Pendiente" |
 | **N2 — StatusBadge** | StatusBadge (badge) | `text-xs font-medium font-sans` | `normal` | normal | "En Proceso", "Sin Conciliar" |
@@ -142,15 +142,15 @@ Roles tipográficos de los consumidores del shell (`DashboardShell`, `ModuleRail
 Todos los botones de acción del sistema usan un patrón unificado:
 
 ```
-h-9  text-3xs  font-black  uppercase  tracking-widest
+h-control-md  text-3xs  font-black  uppercase  tracking-widest   (36px en compact; rol de altura, ADR-0142)
 ```
 
 | Componente | Variante | Nota |
 |------------|----------|------|
-| `<SubmitButton>` | Primary (relleno) | `px-4 h-9 text-3xs font-black`; touch mode vía `className="h-12 px-6 text-xs"` |
-| `<CancelButton>` | Outline | `px-5 h-9 text-3xs font-black shadow-card` |
+| `<SubmitButton>` | Primary (relleno) | `px-4 h-control-md text-3xs font-black`; touch mode vía `className="h-control-touch px-6 text-xs"` |
+| `<CancelButton>` | Outline | `px-5 h-control-md text-3xs font-black shadow-card` |
 | `<DangerButton>` | Destructive | Extremo izquierdo del footer; icono opcional |
-| `<ToolbarCreateButton>` | Primary (toolbar) | Excepción: `h-9 text-xs font-semibold tracking-widest` (superficie toolbar, no footer de formulario) |
+| `<ToolbarCreateButton>` | Primary (toolbar) | Excepción: `size="sm"` (= `h-control-md`) `text-xs font-semibold tracking-widest` (superficie toolbar, no footer de formulario) |
 
 **Fuente del contrato:** [component-button.md](component-button.md) + [form-layout-architecture.md](form-layout-architecture.md)
 

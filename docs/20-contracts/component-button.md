@@ -43,14 +43,17 @@ Tamaños disponibles:
 
 | Size       | Altura | Uso típico                      |
 |------------|--------|---------------------------------|
-| `default`  | 40px   | Botones estándar en modales/forms |
-| `sm`       | 36px   | Toolbars, filtros, acciones de fila |
-| `lg`       | 48px   | CTAs destacadas de página       |
+| `default`  | 40px (`h-control-lg`)   | Botones estándar en modales/forms |
+| `sm`       | 36px (`h-control-md`)   | Toolbars, filtros, acciones de fila |
+| `lg`       | 48px (`h-control-touch`)   | CTAs destacadas de página       |
 | `icon`     | 40×40  | Botón cuadrado con solo ícono   |
 | `icon-sm`  | 36×36  | Ícono en tabla/sidebar          |
 | `icon-lg`  | 48×48  | Ícono en hero                   |
 
 > **Nota:** `asChild` permite delegar el renderizado a un componente hijo (ej. `Link`). Solo usar para casos de navegación.
+
+
+> **Alturas por rol (ADR-0142 D4):** los tamaños de `Button` e `IconButton` usan las utilidades `h-control-{xs,sm,md,lg,touch}` / `size-control-{…}` (28/32/36/40/48 px a `--k = 1`), no literales `h-N`. `cn()` conoce estas utilidades: `className="h-control-touch"` reemplaza al rol por defecto. Con `data-input="touch"` (o `auto` + puntero grueso) el piso `--hit-role-min` sube todos los roles a 48 px.
 
 ---
 
@@ -58,7 +61,7 @@ Tamaños disponibles:
 
 **Importación única:** `import { SubmitButton, CancelButton, DangerButton, IconButton } from "@/components/shared"`
 
-Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Se construyen directamente sobre `ui/button.tsx` (Capa 1, ver ADR-0088) y adoptan automáticamente: altura `h-9`, tipografía `text-3xs`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
+Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Se construyen directamente sobre `ui/button.tsx` (Capa 1, ver ADR-0088) y adoptan automáticamente: altura `h-control-md` (36px), tipografía `text-3xs`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
 
 ### `SubmitButton` — Guardar / Procesar / Confirmar
 
@@ -138,7 +141,7 @@ El botón cinético con animación slide-in fue **retirado por completo** (archi
 | `variant="success"` / `warning` puntual | `SubmitButton`/`DangerButton` + `className="bg-success…"` / `"bg-warning…"` |
 | `variant="muted"` | `Button variant="outline"` (o `SubmitButton variant="outline"` si hay `loading`) |
 | `size="icon"` | `IconButton` |
-| Target táctil POS (`touchMode`, antes `size="lg"`) | `SubmitButton className="h-12 px-6 text-xs"` |
+| Target táctil POS (`touchMode`, antes `size="lg"`) | `SubmitButton className="h-control-touch px-6 text-xs"` |
 
 ---
 
@@ -154,7 +157,7 @@ Para el botón **"+ Nueva entidad"** en toolbars de listas.
 <ToolbarCreateButton label="Nuevo Producto" href="/inventory/products/new" />
 ```
 
-> Ya incluye estilos de `h-9`, `text-xs`, `font-semibold`, `tracking-widest` y `shadow-card`. Es una excepción de la superficie toolbar (no es un botón de footer de formulario). No pasar `className` para sobreescribir estos estilos salvo casos excepcionales.
+> Ya incluye estilos de `size="sm"` (`h-control-md`), `text-xs`, `font-semibold`, `tracking-widest` y `shadow-card`. Es una excepción de la superficie toolbar (no es un botón de footer de formulario). No pasar `className` para sobreescribir estos estilos salvo casos excepcionales.
 
 ---
 
@@ -232,7 +235,7 @@ Si un botón tiene un estilo recurrente que no existe en las 3 capas, proponer s
 
 ```tsx
 // MAL — rompe la consistencia; esta es la variante "ghost" disfrazada
-<Button variant="outline" className="h-9 px-4 text-3xs font-black uppercase tracking-widest 
+<Button variant="outline" className="h-control-md px-4 text-3xs font-black uppercase tracking-widest 
   bg-transparent border border-primary/30 text-primary hover:bg-primary/10 
   transition-all rounded-full shadow-none">
   Agregar

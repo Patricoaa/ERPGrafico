@@ -96,6 +96,26 @@ Definidos en `:root` de `globals.css`. Son la única fuente de verdad para el pa
 
 ---
 
+## 5. Alturas de control por rol (ADR-0142 D4)
+
+| Token | Valor (`--k = 1`) | Utilidad | Uso |
+|-------|------------------|----------|-----|
+| `--control-h-xs` | 28 px | `h-control-xs` / `size-control-xs` | toolbar muy denso |
+| `--control-h-sm` | 32 px | `h-control-sm` | nav del shell, toolbar estándar |
+| `--control-h-md` | 36 px | `h-control-md` | acción ERP por defecto (`Button size="sm"`, botones de acción, tabs) |
+| `--control-h-lg` | 40 px | `h-control-lg` | `Button`/`Input` por defecto, controles de formulario |
+| `--control-h-touch` | 48 px | `h-control-touch` | objetivos táctiles (`Button size="lg"`) |
+
+Los roles se derivan de `--u`, así que escalan con `--k` (comfortable: ×1.125). Cada utilidad fija además `min-height: var(--hit-role-min)` — `0` por defecto, `3rem` con `data-input="touch"` — de modo que en táctil todo control con rol llega a 48 px sin tocar el componente.
+
+**Guarda de Fitts (GOVERNANCE #17).** Los controles *sin* rol reciben `min-height: var(--hit-min)` (40 px; `0` en `[data-density="compact"]` con puntero fino; 48 px en táctil). Los controles *con* rol quedan exentos por cascada (la utilidad vive en una capa superior a la guarda), sin listar nombres de clase. Transitorio: `.h-7/.h-8/.h-9` literales siguen excluidos hasta que el inventario de alturas literales en controles llegue a 0 (Fase 6).
+
+`cn()` (`lib/utils.ts`) extiende `tailwind-merge` para que `h-control-*`/`size-control-*` entren en los grupos `h`/`size`: un `className="h-7"` sigue reemplazando al rol por defecto y viceversa.
+
+**Fuera de la Fase 3** (decisión explícita): `ui/select` (el `SelectTrigger` es un `<button>` que hoy recibe el piso de 40 px por la guarda y se sobreescribe con `h-9` en `LabeledSelect`; migrarlo cambiaría alturas efectivas) y `Chip`/`Badge`/`StatusBadge` (no son controles interactivos; sus alturas `h-[18px]`/`h-[22px]` no son roles). Se tratan en la Fase 5.
+
+---
+
 ## 4. Referencias
 
 - [ADR-0070 — Primary = Process Black K100](../10-architecture/adr/0070-primary-process-black.md) (criterio de densidad operativa)

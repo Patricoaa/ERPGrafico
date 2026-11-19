@@ -88,3 +88,11 @@ Altura efectiva = `max(rol, --hit-min)`, con `--hit-min`: `0` en compact + punte
 - **Más difícil:** `--spacing` dinámico afecta cualquier `w-NN`/`h-NN`; requiere revisión visual en drawers, paneles y POS al activar comfortable. Reescribir tests de contrato es costoso y deliberado.
 - **Riesgo controlado:** compact (`--k: 1`) es idéntico al estado actual; el cambio visible aparece solo con `comfortable`/táctil y en los micro/`2xl`/`3xl` de pantallas ≥1024 px.
 - **Neutral:** sin cambios de backend ni de API.
+
+## Enmienda — Fase 3 (2026-11-19)
+
+La implementación de D4 ajustó tres puntos respecto del texto original, para que el estado por defecto siga siendo idéntico al actual:
+
+1. **Piso por rol, no `max(rol, --hit-min)`.** Hoy los controles con altura explícita (`h-9`, `h-8`, `h-7`) están exentos del mínimo de 40 px; aplicar `--hit-min` a todos los roles habría subido los botones de acción de 36 a 40 px. Se separaron dos pisos: `--hit-min` (controles *sin* rol: 40 px; `0` en compact + puntero fino; 48 px táctil) y `--hit-role-min` (controles *con* rol: `0` por defecto; 48 px táctil). Resultado: sin cambios en escritorio; en táctil todo rol llega a 48 px.
+2. **Exención por cascada, con residuo transitorio.** Los roles quedan exentos porque la utilidad `h-control-*` fija su propio `min-height` en una capa superior a la guarda. Los literales `.h-7/.h-8/.h-9` siguen excluidos por nombre de clase hasta el inventario a 0 (Fase 6); sólo entonces desaparecen las cadenas `:not()`.
+3. **Alcance.** `ui/select` y `Chip`/`Badge`/`StatusBadge` pasan a la Fase 5: el `SelectTrigger` es un `<button>` que hoy recibe el piso de 40 px por la guarda (y `LabeledSelect` lo sobreescribe con `h-9`), de modo que migrarlo cambiaría alturas efectivas; los badges no son controles interactivos y sus alturas (18/22 px) no son roles. `cn()` extiende `tailwind-merge` para que los roles reemplacen/sean reemplazados por literales `h-N`/`size-N`.

@@ -226,13 +226,18 @@
 :root {
   --k-density: 1;
   --k-input: 1;
+  /* Hit targets (ADR-0142 D4 / GOVERNANCE #17):
+     --hit-min       floor for controls WITHOUT a height role (40px; 0 in compact + fine pointer)
+     --hit-role-min  floor applied by h-control-* / size-control-* (0 by default; 48px on touch) */
+  --hit-min: 2.5rem;
+  --hit-role-min: 0px;
 }
 [data-density="compact"] { --k-density: 1; }
 [data-density="comfortable"] { --k-density: 1.125; }
 [data-input="mouse"] { --k-input: 1; }
-[data-input="touch"] { --k-input: 1.125; }
+[data-input="touch"] { --k-input: 1.125; --hit-min: 3rem; --hit-role-min: 3rem; }
 @media (pointer: coarse) {
-  [data-input="auto"] { --k-input: 1.125; }
+  [data-input="auto"] { --k-input: 1.125; --hit-min: 3rem; --hit-role-min: 3rem; }
 }
 :root,
 [data-density],
@@ -248,7 +253,27 @@
   --table-header-h: calc(var(--u) * 9);  /* 36px        */
   --table-cell-py-compact: calc(var(--u) * 2);
   --table-header-h-compact: calc(var(--u) * 9);
+
+  /* CONTROL HEIGHT ROLES (ADR-0142 D4) — consumed via h-control-* / size-control-* */
+  --control-h-xs: calc(var(--u) * 7);     /* 28px — dense toolbar            */
+  --control-h-sm: calc(var(--u) * 8);     /* 32px — shell nav, std toolbar   */
+  --control-h-md: calc(var(--u) * 9);     /* 36px — ERP action default       */
+  --control-h-lg: calc(var(--u) * 10);    /* 40px — form control, Button/Input default */
+  --control-h-touch: calc(var(--u) * 12); /* 48px — touch targets            */
 }
+
+/* Height-role utilities. They set their own min-height, so they override the
+   Interaction Guard below (utilities layer > base layer) without class-name exclusions. */
+@utility h-control-xs { height: var(--control-h-xs); min-height: var(--hit-role-min); }
+@utility h-control-sm { height: var(--control-h-sm); min-height: var(--hit-role-min); }
+@utility h-control-md { height: var(--control-h-md); min-height: var(--hit-role-min); }
+@utility h-control-lg { height: var(--control-h-lg); min-height: var(--hit-role-min); }
+@utility h-control-touch { height: var(--control-h-touch); min-height: var(--hit-role-min); }
+@utility size-control-xs { width: var(--control-h-xs); height: var(--control-h-xs); min-height: var(--hit-role-min); }
+@utility size-control-sm { width: var(--control-h-sm); height: var(--control-h-sm); min-height: var(--hit-role-min); }
+@utility size-control-md { width: var(--control-h-md); height: var(--control-h-md); min-height: var(--hit-role-min); }
+@utility size-control-lg { width: var(--control-h-lg); height: var(--control-h-lg); min-height: var(--hit-role-min); }
+@utility size-control-touch { width: var(--control-h-touch); height: var(--control-h-touch); min-height: var(--hit-role-min); }
 
 @theme inline {
   /*
@@ -830,25 +855,28 @@ table [data-notched-field] {
     }
   }
 
-  /* Interaction Guards (Ley de Fitts) 
-     Target: 40px height for primary interactive elements.
-     Excludes: small variants (h-9, h-8, h-7) to maintain density in toolbars/tabs.
-     Dense data surfaces (`[data-density="compact"]`, e.g. entity-view tables) lower the button target
-     with a fine pointer only; on touch the 40px target stays (GOVERNANCE #17, ADR-0087 R3).
+  /* Interaction Guards (Ley de Fitts) — GOVERNANCE #17, ADR-0087 R3, ADR-0142 D4.
+     Controls WITHOUT a height role get a minimum hit target of --hit-min (40px; 48px on touch).
+     Controls WITH a role (h-control-* / size-control-*) are exempt by cascade: the role utility
+     sets its own min-height (--hit-role-min, 0 by default, 48px on touch), so no class-name
+     exclusions are needed for them.
+     TRANSITIONAL: the legacy literals .h-9/.h-8/.h-7 stay excluded until the inventory of literal
+     heights on interactive controls reaches zero (plan phase 6); then these :not() chains go away.
+     Dense data surfaces (`[data-density="compact"]`, e.g. entity-view tables) lower --hit-min to 0
+     with a fine pointer only; on touch the target stays.
   */
   button:not(.size-icon):not(.variant-link):not(.h-9):not(.h-8):not(.h-7):not([role="switch"]):not([role="radio"]):not([role="checkbox"]):not([role="menuitem"]) {
-    min-height: var(--fitts-button-min, 2.5rem);
+    min-height: var(--hit-min);
   }
 
   input:not([type="checkbox"]):not([type="radio"]):not(.h-9):not(.h-8):not(.h-7),
   select:not(.h-9):not(.h-8):not(.h-7) {
-    min-height: 2.5rem;
-    /* 40px base target */
+    min-height: max(2.5rem, var(--hit-role-min)); /* 40px base target; 48px on touch */
   }
 
   @media (pointer: fine) {
     [data-density="compact"] {
-      --fitts-button-min: 0px;
+      --hit-min: 0px;
     }
   }
 

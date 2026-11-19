@@ -13,7 +13,7 @@ type ActionIcon = React.ReactNode | LucideIcon
  * asserted by lib/__tests__/typography.contract.test.ts — do not merge them.
  */
 const ACTION_BUTTON_CLASSES = cn(
-  "h-9 px-4 text-3xs",
+  "h-control-md px-4 text-3xs",
   "font-black tracking-widest uppercase rounded-sm shadow-card cursor-pointer"
 )
 
@@ -97,7 +97,7 @@ export const CancelButton = React.forwardRef<HTMLButtonElement, ButtonBaseProps>
         ref={ref} 
         variant="outline" 
         type={type} 
-        className={cn("h-9 px-5 text-3xs font-black tracking-widest uppercase shadow-card", className)}
+        className={cn("h-control-md px-5 text-3xs font-black tracking-widest uppercase shadow-card", className)}
         {...props}
       >
         {children}
@@ -120,7 +120,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         size="icon" 
         type={type} 
         className={cn(
-          "h-9 w-9 hover:scale-110 transition-transform", 
+          "size-control-md hover:scale-110 transition-transform", 
           circular ? "rounded-full" : "rounded-sm",
           className
         )} 

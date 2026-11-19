@@ -24,10 +24,10 @@ Cada fase es un PR independiente, termina con `npm run type-check`, `npm run lin
 - **Salida:** con `--k: 1` capturas idénticas; en `comfortable` revisar drawers/paneles (`w-NN`) y anotar ajustes.
 
 ## Fase 3 — Tokens de altura y guarda de Fitts (1.5 d)
-- [ ] `--control-h-*` y `--hit-min` en `globals.css`; `@utility h-control-*`.
-- [ ] Reescribir la guarda de Fitts sobre `[data-slot]` + `--hit-min` (sin `:not(.h-N)`); documentar en GOVERNANCE #17 que la intención se mantiene.
-- [ ] Migrar `ui/button`, `ui/input`, `ui/select`, `ui/tabs`, `Chip`/`Badge`/`StatusBadge` y los wrappers (`SubmitButton`, `CancelButton`, `ToolbarCreateButton`, `IconButton`) a las utilidades.
-- [ ] Actualizar `component-button.md`, `component-input.md`, `component-chip.md`, `typography.contract.test.ts` (alturas por token).
+- [x] `--control-h-*`, `--hit-min`/`--hit-role-min` en `globals.css`; `@utility h-control-*` y `size-control-*`; `cn()` extiende tailwind-merge.
+- [x] Guarda de Fitts sobre `--hit-min`; los roles quedan exentos por cascada (sin nombres de clase). Residuo transitorio: `.h-7/.h-8/.h-9` hasta la Fase 6. GOVERNANCE #17 actualizado.
+- [x] Migrados `ui/button`, `ui/input`, `ui/tabs` y los wrappers (`SubmitButton`, `CancelButton`, `ToolbarCreateButton` vía `size="sm"`, `IconButton`). **Movidos a la Fase 5:** `ui/select` y `Chip`/`Badge`/`StatusBadge` (ver enmienda del ADR).
+- [x] Actualizados `component-button.md`, `component-input.md`, `typography-scale.md`, `density-system.md` (§5), `typography.contract.test.ts` y nuevo `density-controls.contract.test.ts`. (`component-chip.md` sin cambios: los chips no migran en esta fase.)
 - **Salida:** capturas idénticas en compact; test de contrato nuevo verde; grep de `.h-9` en la guarda = 0.
 
 ## Fase 4 — POS y modo táctil (1.5 d)
@@ -37,6 +37,7 @@ Cada fase es un PR independiente, termina con `npm run type-check`, `npm run lin
 - **Salida:** POS en tablet (coarse) y escritorio (fine) sin ramas JS de tamaño; pruebas de POS verdes.
 
 ## Fase 5 — Activación y limpieza (1 d)
+- [ ] Migrar `ui/select` (y `LabeledSelect`) y `Chip`/`Badge`/`StatusBadge` a roles, midiendo alturas efectivas antes y después.
 - [ ] Revisión visual de `comfortable` en settings/reportes y ajuste de `w-NN` afectados.
 - [ ] Decidir dónde se ofrece `comfortable` al usuario (preferencia de perfil).
 - [ ] Lint `controls/token-height` en modo aviso; inventario de `h-7…h-10` restantes en controles.

@@ -184,7 +184,7 @@ describe('typography contract', () => {
 
   it('action buttons use font-black (Submit/Danger/Cancel share the scale)', () => {
     expect(/text-3xs"?,\s*"font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
-    expect(/h-9 px-5 text-3xs font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
+    expect(/h-control-md px-5 text-3xs font-black tracking-widest uppercase/.test(shell.actionButtons)).toBe(true);
   });
 
   describe('N2 field legends — single source via FieldLegend', () => {

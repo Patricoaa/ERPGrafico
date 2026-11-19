@@ -1,5 +1,18 @@
 import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
+
+/** Height roles of the density dial (ADR-0142 D4): `h-control-*` / `size-control-*` utilities in globals.css. */
+const CONTROL_ROLES = ["xs", "sm", "md", "lg", "touch"].map((role) => `control-${role}`)
+
+/** tailwind-merge that knows the control-height utilities, so `className="h-8"` still overrides `h-control-lg` (and vice versa). */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      h: [{ h: CONTROL_ROLES }],
+      size: [{ size: CONTROL_ROLES }],
+    },
+  },
+})
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
