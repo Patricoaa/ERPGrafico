@@ -1,10 +1,10 @@
 "use client"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { isAxiosError } from "axios"
-import { AlertTriangle, ArrowRightLeft, CheckCircle2, HandCoins, Lock, Receipt, UserMinus, X } from "lucide-react"
+import { ArrowRightLeft, HandCoins, Lock, Receipt, UserMinus, X } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { ChoiceCard, ChoiceGroup, Numpad } from "@/components/shared"
+import { Banner, ChoiceCard, ChoiceGroup, Numpad } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import { useTouchMode } from "@/hooks/useTouchMode"
@@ -216,13 +216,15 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                 <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-start">
                     <div className="space-y-4">
                         {baselineExpected !== null && expected !== baselineExpected && (
-                            <div role="status" className="flex flex-wrap items-center gap-4 rounded-lg border border-warning/40 bg-warning/10 p-4 text-base">
-                                <AlertTriangle className="size-6 shrink-0 text-warning" aria-hidden />
-                                <span className="flex-1">
-                                    El esperado pasó de {formatCurrency(baselineExpected)} a {formatCurrency(expected)} mientras contaba (hubo una venta o un movimiento).
-                                </span>
-                                <Button variant="outline" className="h-control-touch px-5" onClick={() => setBaselineExpected(expected)}>Entendido</Button>
-                            </div>
+                            <Banner
+                                tone="warning"
+                                className="py-4 [&_p]:text-base"
+                                iconClassName="size-6"
+                                title={`El esperado pasó de ${formatCurrency(baselineExpected)} a ${formatCurrency(expected)}`}
+                                actions={<Button variant="outline" className="h-control-touch px-5" onClick={() => setBaselineExpected(expected)}>Entendido</Button>}
+                            >
+                                Hubo una venta o un movimiento mientras contaba.
+                            </Banner>
                         )}
                         <SessionCashSummary data={report} expected={expected} sessionId={session.id} />
                     </div>
@@ -446,10 +448,9 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                     </section>
                     <div className="space-y-6">
                     {!hasDiff && (
-                        <div className="flex items-center gap-4 rounded-lg border border-success/40 bg-success/10 p-5 text-lg">
-                            <CheckCircle2 className="size-8 shrink-0 text-success" aria-hidden />
-                            <span>El efectivo contado coincide con el sistema.</span>
-                        </div>
+                        <Banner tone="success" className="py-4 [&_p]:text-base" iconClassName="size-6">
+                            El efectivo contado coincide con el sistema.
+                        </Banner>
                     )}
                     <label className="block space-y-2">
                         <span className="text-base font-medium">Notas (opcional)</span>

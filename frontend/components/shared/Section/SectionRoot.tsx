@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { Banner } from "../Banner"
 import { EmptyState } from "../EmptyState"
 import { SkeletonShell } from "../SkeletonShell"
 import { RecordCountScope } from "./RecordCountContext"
@@ -43,10 +44,12 @@ export function SectionRoot({
         body = <SkeletonShell isLoading ariaLabel={title ? `Cargando ${title}` : "Cargando"} />
     } else if (isError) {
         body = (
-            <div role="alert" className="flex items-center justify-between gap-3 py-3 text-sm text-muted-foreground">
-                <span>No se pudo cargar el contenido.</span>
-                {onRetry && <Button type="button" variant="outline" size="sm" className="h-control-xs text-xs" onClick={onRetry}>Reintentar</Button>}
-            </div>
+            <Banner
+                tone="destructive"
+                actions={onRetry && <Button type="button" variant="outline" size="sm" className="h-control-xs text-xs" onClick={onRetry}>Reintentar</Button>}
+            >
+                No se pudo cargar el contenido.
+            </Banner>
         )
     } else if (isEmpty) {
         body = <EmptyState variant="minimal" title={emptyTitle} description={emptyDescription} />

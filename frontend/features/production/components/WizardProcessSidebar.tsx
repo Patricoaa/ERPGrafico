@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { Banner } from "@/components/shared"
 import { ProductionStepsSidebar } from "./ProductionStepsSidebar"
 
 import type { WorkOrderStage, WorkOrder, WizardStepMode } from "../types"
@@ -47,13 +48,9 @@ export function WizardProcessSidebar({
     const isTerminal = isCancelled || isFinished
 
     const headerNote = isCancelled ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-2xs font-medium leading-snug text-destructive">
-            Orden cancelada · solo lectura
-        </div>
+        <Banner tone="destructive" live="none">Orden cancelada · solo lectura</Banner>
     ) : isFinished ? (
-        <div className="rounded-md border border-success/30 bg-success/5 px-2 py-1.5 text-2xs font-medium leading-snug text-success">
-            Producción finalizada
-        </div>
+        <Banner tone="success" live="none">Producción finalizada</Banner>
     ) : undefined
 
     return (

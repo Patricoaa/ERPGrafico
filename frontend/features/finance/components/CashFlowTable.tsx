@@ -10,8 +10,8 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { cn, formatPlainDate } from "@/lib/utils";
-import {AlertCircle, CheckCircle2, Info, Calendar} from "lucide-react";
-import { BaseModal, Chip, DataCell, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
+import {AlertCircle, Info, Calendar} from "lucide-react";
+import { Banner, BaseModal, Chip, DataCell, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
 import { Button } from "@/components/ui/button";
 
 interface CulpritAccount {
@@ -190,32 +190,26 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
         <div className="space-y-6">
             {/* Integrity Alert Banner */}
             {!data.is_balanced && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle className="h-6 w-6" />
-                        <div>
-                            <h4 className="font-black text-destructive uppercase tracking-tighter text-sm">Discrepancia detectada</h4>
-                            <p className="text-xs text-muted-foreground">
-                                El flujo calculado por actividades difiere en <b><MoneyDisplay amount={data.discrepancy} inline weight="bold" /></b> del saldo real bancario.
-                            </p>
-                        </div>
-                    </div>
-                    <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => setAuditModalOpen(true)}
-                        className="font-medium uppercase tracking-widest text-3xs h-control-sm"
-                    >
-                        Auditar Diferencia
-                    </Button>
-                </div>
+                <Banner
+                    tone="destructive"
+                    title="Discrepancia detectada"
+                    actions={
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setAuditModalOpen(true)}
+                            className="font-medium uppercase tracking-widest text-3xs h-control-sm"
+                        >
+                            Auditar Diferencia
+                        </Button>
+                    }
+                >
+                    El flujo calculado por actividades difiere en <b><MoneyDisplay amount={data.discrepancy} inline weight="bold" /></b> del saldo real bancario.
+                </Banner>
             )}
 
             {data.is_balanced && (
-                <div className="bg-success/5 border border-success/20 rounded-md p-3 flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-success" />
-                    <span className="text-xs font-bold text-success uppercase tracking-widest">Estado: Conciliado con Tesorería</span>
-                </div>
+                <Banner tone="success" title="Estado: Conciliado con Tesorería" />
             )}
 
             <div className={cn(!embedded && "surface-panel shadow-card overflow-hidden", !data.is_balanced && "border-destructive/30")}>

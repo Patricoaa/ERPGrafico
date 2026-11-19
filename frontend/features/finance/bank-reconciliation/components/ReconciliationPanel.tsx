@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, SubmitButton, BaseModal, CancelButton, Chip, Drawer, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from "@/components/shared"
+import { ActionConfirmModal, ActionDock, SubmitButton, BaseModal, CancelButton, Chip, Drawer, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner, Banner } from "@/components/shared"
 import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
@@ -1268,13 +1268,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     }
                 >
                     <div className="space-y-4 py-4">
-                        <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
-                                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                                <div className="space-y-1">
-                                    <p className="text-2xs font-bold uppercase text-destructive leading-none">Acción Irreversible</p>
-                                    <p className="text-3xs text-destructive/80 font-medium">Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.</p>
-                                </div>
-                        </div>
+                        <Banner tone="destructive" icon={Ban} title="Acción irreversible" live="none">
+                            Una vez confirmada, esta conciliación y su ajuste contable no podrán ser revertidos desde este workbench.
+                        </Banner>
                         <LabeledSelect
                             label="Motivo del Ajuste"
                             value={diffType}

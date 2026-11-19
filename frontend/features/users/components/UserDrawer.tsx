@@ -13,7 +13,7 @@ import { useSingleUser } from "../hooks/useUserSearch"
 import { useBundles } from "../hooks/useRbac"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
-import { Plus, User, ShieldCheck, Users, AlertTriangle, Crown } from "lucide-react"
+import { Plus, User, ShieldCheck, Users, Crown } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
 import {
     Drawer,
@@ -27,6 +27,7 @@ import {
     FormSelectionGroup,
     type FormSelectionOption,
     Section,
+    Banner,
 } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
@@ -586,14 +587,12 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSup
                     />
                     {/* Confirm banner */}
                     {pendingSuperuserGrant && (
-                        <div className="flex items-start gap-3 mt-3 rounded-md border border-warning/40 bg-warning/8 px-4 py-3">
-                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                            <div className="flex-1 space-y-2">
-                                <p className="text-sm font-medium text-foreground">¿Confirmar acceso total?</p>
-                                <p className="text-xs text-muted-foreground">
-                                    El usuario obtendrá acceso completo al sistema, omitiendo todos los controles de permisos. Esta acción queda registrada en el log de auditoría.
-                                </p>
-                                <div className="flex gap-2 pt-1">
+                        <Banner
+                            tone="warning"
+                            className="mt-3"
+                            title="¿Confirmar acceso total?"
+                            actions={
+                                <>
                                     <button type="button" onClick={onConfirmSuperuser}
                                         className="rounded-sm bg-warning px-3 py-1 text-xs font-semibold text-warning-foreground hover:bg-warning/90">
                                         Confirmar
@@ -602,9 +601,11 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSup
                                         className="rounded-sm px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground">
                                         Cancelar
                                     </button>
-                                </div>
-                            </div>
-                        </div>
+                                </>
+                            }
+                        >
+                            El usuario obtendrá acceso completo al sistema, omitiendo todos los controles de permisos. Esta acción queda registrada en el log de auditoría.
+                        </Banner>
                     )}
                 </div>
             )}
@@ -636,9 +637,8 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSup
 
             {/* Error banner */}
             {roleError && !isSuperuser && (
-                <div className="shrink-0 flex items-center gap-2 mx-8 mt-2 rounded-md border border-destructive/30 bg-destructive/8 px-3 py-2.5">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
-                    <p className="text-xs text-destructive">{roleError}</p>
+                <div className="shrink-0 px-8 mt-2">
+                    <Banner tone="destructive" live="alert">{roleError}</Banner>
                 </div>
             )}
 

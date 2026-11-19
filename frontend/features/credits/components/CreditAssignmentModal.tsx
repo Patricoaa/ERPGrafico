@@ -5,7 +5,6 @@ import { useForm, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
-    AlertCircle,
     Banknote,
     TrendingUp,
 } from "lucide-react"
@@ -14,7 +13,7 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import { SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from "@/components/shared"
+import { Banner, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from "@/components/shared"
 
 import { useContactMutations } from "@/features/contacts"
 import { type CreditContact } from '@/features/credits/api/creditsApi'
@@ -160,13 +159,10 @@ export default function CreditAssignmentModal({
                                                 className="font-mono font-bold"
                                                 onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                                             />
-                                            <div className="flex items-start gap-2 p-3 rounded-md bg-warning/5 border border-warning/10 mt-2">
-                                                <AlertCircle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
-                                                <p className="text-2xs text-warning leading-tight">
-                                                    Establezca 0 o deje vacío para deshabilitar el crédito.
-                                                    Los días de plazo se aplican automáticamente según la política global.
-                                                </p>
-                                            </div>
+                                            <Banner tone="warning" live="none" className="mt-2">
+                                                Establezca 0 o deje vacío para deshabilitar el crédito.
+                                                Los días de plazo se aplican automáticamente según la política global.
+                                            </Banner>
                                         </FormItem>
                                     )}
                                 />

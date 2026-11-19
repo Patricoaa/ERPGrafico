@@ -4,6 +4,7 @@ import { createElement, useMemo, useState } from "react"
 import { Link2Off } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
+    Banner,
     EmptyState,
     RelatedDocumentRow,
     SkeletonShell,
@@ -225,9 +226,9 @@ export function DocumentRelationsTab({
     }
     if (error) {
         return (
-            <p role="alert" className={cn("text-sm text-destructive", className)}>
+            <Banner tone="destructive" className={className}>
                 No se pudieron cargar los documentos relacionados: {getErrorMessage(error)}
-            </p>
+            </Banner>
         )
     }
     if (groups.length === 0) {

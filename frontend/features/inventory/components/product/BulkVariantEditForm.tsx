@@ -10,8 +10,8 @@ import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { TabBar, TabBarContent } from "@/components/shared"
 import { LabeledInput, LabeledSelect, SkeletonShell } from "@/components/shared"
-import { Factory, AlertCircle, Copy, PlusCircle, DollarSign, Users } from "lucide-react"
-import { Chip } from "@/components/shared"
+import { Factory, Copy, PlusCircle, DollarSign, Users } from "lucide-react"
+import { Banner, Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
@@ -322,10 +322,9 @@ export function BulkVariantEditForm({
 
               {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') &&
                 !!((templateData as unknown as Record<string, unknown>)?.discount_active) && (
-                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-2xs font-bold text-warning-foreground">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
+                  <Banner tone="warning">
                     El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado de estas variantes.
-                  </div>
+                  </Banner>
                 )}
 
             </div>

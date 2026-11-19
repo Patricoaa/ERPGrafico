@@ -2,7 +2,7 @@
 "use client"
 
 import { type UoM, type Product } from "@/types/entities"
-import { ActionConfirmModal, FormLineItemsTable, LabeledContainer, LabeledSeparator, LabeledSwitch, FormSelectionGroup, Badge, Section } from '@/components/shared'
+import { ActionConfirmModal, Banner, FormLineItemsTable, LabeledContainer, LabeledSeparator, LabeledSwitch, FormSelectionGroup, Badge, Section } from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
@@ -177,13 +177,10 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
 
                     {/* Contextual note for templates with variants */}
                     {hasVariants && (
-                        <div className="flex items-start gap-3 p-3 rounded-md bg-info/5 border border-info/20 mb-4">
-                            <Info className="h-3.5 w-3.5 text-info mt-0.5 shrink-0" />
-                            <p className="text-3xs text-info/80 font-medium leading-relaxed">
-                                Esta LdM aplica al <strong>producto plantilla</strong>.
-                                Para gestionar las LdM de las variantes, use <strong>&quot;Clonar LdM&quot;</strong> en el Tab Variantes.
-                            </p>
-                        </div>
+                        <Banner tone="info" className="mb-4">
+                            Esta LdM aplica al <strong>producto plantilla</strong>.
+                            Para gestionar las LdM de las variantes, use <strong>&quot;Clonar LdM&quot;</strong> en el Tab Variantes.
+                        </Banner>
                     )}
 
                     {!initialData?.id ? (

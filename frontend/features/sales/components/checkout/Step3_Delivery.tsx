@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, Banner} from "@/components/shared"
-import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
+import {Truck, Package, Calendar} from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import { LabeledSelect } from "@/components/shared"
 import {
@@ -252,17 +252,15 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
             )}
 
             {hasRestrictedItems && (
-                <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-md text-destructive [&>svg]:text-destructive">
-                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium">Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
-                </div>
+                <Banner tone="destructive">
+                    Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.
+                </Banner>
             )}
 
             {isMixedMode && (
-                <div className="flex items-start gap-3 p-4 bg-info/10 border border-info/30 rounded-md text-info [&>svg]:text-info">
-                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium">Los servicios se cumplen según la fecha programada. Solo los productos físicos aparecen en el detalle de despacho.</p>
-                </div>
+                <Banner tone="info">
+                    Los servicios se cumplen según la fecha programada. Solo los productos físicos aparecen en el detalle de despacho.
+                </Banner>
             )}
 
             {isTouchMode && numpadTarget && (

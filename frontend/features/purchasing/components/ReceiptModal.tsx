@@ -226,7 +226,7 @@ function ReceiptForm({ order, warehouses, isRefund, filterType, onSubmittingChan
                     />
                 )}
             />
-            {rootError && <p role="alert" className="text-xs text-destructive">{rootError}</p>}
+            {rootError && <Banner tone="destructive" live="alert">{rootError}</Banner>}
 
             {isPartial && (
                 <Banner tone="warning">

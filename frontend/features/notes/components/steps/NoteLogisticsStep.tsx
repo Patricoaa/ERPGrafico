@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect } from "react"
-import {LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, StepHeader} from "@/components/shared"
-import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
+import {LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, StepHeader, Banner} from "@/components/shared"
+import { Truck, Package, Calendar, ShoppingBag } from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import { cn } from "@/lib/utils"
 import type { NoteLineItem, NoteLogisticsData, NoteLogisticsLineData } from "../../types"
@@ -101,13 +101,9 @@ export function NoteLogisticsStep({
             <StepHeader title="Opciones de Logística" description="Configure cómo se procesará el movimiento de inventario." icon={ShoppingBag} />
 
             {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive mt-2">
-                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                            <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
-                            <p className="text-xs font-medium">Hay {restrictedItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
-                        </div>
-                    </div>
+                <Banner tone="destructive" title="Producción requerida" className="mt-2">
+                    Hay {restrictedItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.
+                </Banner>
             )}
 
             <LabeledContainer

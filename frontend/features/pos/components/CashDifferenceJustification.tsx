@@ -1,11 +1,11 @@
 "use client"
 
 import {
-    AlertTriangle, ArrowLeftRight, Calculator, CircleHelp, Coins, Cpu, Download,
+    ArrowLeftRight, Calculator, CircleHelp, Coins, Cpu, Download,
     HandCoins, Landmark, Receipt, ShieldAlert, Undo2, UserMinus, UserRound, Wallet,
 } from "lucide-react"
 import type { ComponentType } from "react"
-import { ChoiceCard, ChoiceGroup, EmptyState } from "@/components/shared"
+import { Banner, ChoiceCard, ChoiceGroup, EmptyState } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { JustifyOption } from "@/features/pos/utils/reasons"
@@ -33,18 +33,17 @@ const REASON_ICONS: Record<string, ComponentType<{ className?: string }>> = {
 export function CashDifferenceBanner({ diff, className }: { diff: number; className?: string }) {
     const isShortage = diff < 0
     return (
-        <div
-            role="status"
-            className={cn("mx-auto flex w-full max-w-4xl items-center justify-between gap-4 rounded-lg border border-warning/40 bg-warning/10 px-6 py-4", className)}
-        >
-            <span className="flex items-center gap-3 text-lg font-semibold text-foreground">
-                <AlertTriangle className="size-7 shrink-0 text-warning" aria-hidden />
-                {isShortage ? "Falta efectivo" : "Sobra efectivo"}
-            </span>
-            <span className="font-mono text-3xl font-black tabular-nums text-foreground">
-                {isShortage ? "−" : "+"}{formatCurrency(Math.abs(diff))}
-            </span>
-        </div>
+        <Banner
+            tone="warning"
+            title={isShortage ? "Falta efectivo" : "Sobra efectivo"}
+            className={cn("mx-auto max-w-4xl py-4 [&_p]:text-lg", className)}
+            iconClassName="size-6"
+            actions={
+                <span className="font-mono text-3xl font-black tabular-nums">
+                    {isShortage ? "−" : "+"}{formatCurrency(Math.abs(diff))}
+                </span>
+            }
+        />
     )
 }
 
