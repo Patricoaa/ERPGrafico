@@ -172,3 +172,28 @@ def test_list_builds_each_nested_serializer_only_once(catalog):
     assert len(response.data["results"]) == 3
     assert lines.call_count == 1
     assert work_orders.call_count == 1
+
+
+def test_list_shows_multi_order_invoices_like_invoices_of(catalog):
+    """D1 (ADR-0081): una factura con FK en la OV A y líneas de la OV B aparece en ambas, y la precarga lo respeta."""
+    from billing.invoicing import InvoicingService
+    from billing.models import Invoice, InvoiceLine
+
+    client = _authenticated_client()
+    first, second = _make_order(0, catalog), _make_order(1, catalog)
+    invoice = Invoice.objects.create(
+        dte_type=Invoice.DTEType.FACTURA, number="F-9102", status=Invoice.Status.POSTED,
+        sale_order=first, contact=catalog["customer"], total=Decimal("238"),
+    )
+    for order in (first, second):
+        line = order.lines.first()
+        InvoiceLine.objects.create(
+            invoice=invoice, sale_line=line, quantity=Decimal("1"), uom=catalog["kilo"], unit_price=Decimal("100")
+        )
+
+    rows = {row["id"]: row for row in client.get("/api/sales/orders/").data["results"]}
+
+    for order in (first, second):
+        expected = [inv.pk for inv in InvoicingService.invoices_of(order)]
+        assert expected == [invoice.pk]
+        assert [inv["id"] for inv in rows[order.pk]["invoices"]] == expected
