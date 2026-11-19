@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.131](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.130...v0.3.131) (2026-11-19)
+
+
+### ⚙️ Refactors
+
+* **tax:** separa _unlink por tipo de registro en vez de isinstance ([35ca994](https://github.com/Patricoaa/ERPGrafico/commit/35ca9943ab8c21576a4396c01c4bc027f6ac6125)), closes [#268](https://github.com/Patricoaa/ERPGrafico/issues/268)
+
 ### [0.3.130](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.129...v0.3.130) (2026-11-19)
 
 
