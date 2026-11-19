@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.126](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.125...v0.3.126) (2026-11-19)
+
+
+### 🚀 Maintenance
+
+* **ui:** elimina ModuleLauncher, unifica useDeviceContext y propone ADR-0142 de escala unificada ([1bab6d1](https://github.com/Patricoaa/ERPGrafico/commit/1bab6d1b2a5c5c4430ae43c28675b8cf24f0bf3b))
+
+
+### 🐛 Bug Fixes
+
+* **sales:** NC/ND disponibles para comprobante de pago (48) y habilitadas por estado POSTED ([c24a355](https://github.com/Patricoaa/ERPGrafico/commit/c24a355d8ea27f48cad16335d51998bde8774964))
+* **ui:** sustituye tailwindcss-animate por tw-animate-css (rompía globals.css con --spacing dinámico) ([d21cc76](https://github.com/Patricoaa/ERPGrafico/commit/d21cc76d9eba6ac8d49c9e145232bfa5ee093c60))
+
+
+### ✨ Features
+
+* **notes:** wizard NC/ND como pestaña del espacio de trabajo + precios de compra (ADR-0143) ([7e23699](https://github.com/Patricoaa/ERPGrafico/commit/7e23699beeaf386e91effdae6b726e47fa7d00c6))
+* **pos:** eje de puntero como atributo CSS y variante touch: (ADR-0142, fase 4) ([d402b7f](https://github.com/Patricoaa/ERPGrafico/commit/d402b7fb5c9b9912479bbe1fe47a79bc7690087e))
+* **ui:** alturas de control por rol y guarda de Fitts sin nombres de clase (ADR-0142, fase 3) ([6f7a22a](https://github.com/Patricoaa/ERPGrafico/commit/6f7a22aaf8955069e890776a049d948c88061d47)), closes [#17](https://github.com/Patricoaa/ERPGrafico/issues/17)
+* **ui:** dial de densidad --k y DensityScope (ADR-0142, fase 2) ([7dd89b1](https://github.com/Patricoaa/ERPGrafico/commit/7dd89b15534c9d87b3653bde584ea42ab84b0ac8))
+* **ui:** endurece alturas de control: inventario a 0 y lint en error (ADR-0142, fase 6) ([839176a](https://github.com/Patricoaa/ERPGrafico/commit/839176a7ced41d3e0a2926de27a4c94b334a87b7))
+* **ui:** escala tipográfica fluida con ventana única 1024-1440px (ADR-0142, fase 1) ([3e5f848](https://github.com/Patricoaa/ERPGrafico/commit/3e5f84812fe9024a6a1e1f1c44664872cd0f31d8))
+* **ui:** migra el resto de consumidores táctiles a la variante touch: (ADR-0142, fase 4b) ([1ee80e2](https://github.com/Patricoaa/ERPGrafico/commit/1ee80e27e875cc1b4983504fe251a04d979ddff8))
+* **ui:** select, badges, preferencia de densidad y lint de alturas (ADR-0142, fase 5) ([a6a0137](https://github.com/Patricoaa/ERPGrafico/commit/a6a0137614104e0006ae3c65ba546138dd43c479))
+
+
+### ⚙️ Refactors
+
+* **ui:** migra avisos hechos a mano al componente Banner ([3bda325](https://github.com/Patricoaa/ERPGrafico/commit/3bda3256f4cec4cf5461980207e0f7f2f5b3627e))
+
+
+### 📚 Documentation
+
+* **ui:** amplía el contrato component-banner con variantes y exclusiones ([fd97e5e](https://github.com/Patricoaa/ERPGrafico/commit/fd97e5e4bc7c63349354944a46f496bb7b21fee1))
+
 ### [0.3.125](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.124...v0.3.125) (2026-11-19)
 
 
