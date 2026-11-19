@@ -17,6 +17,8 @@ Este contrato define la escala de ritmo (`--spacing-r-*`), los tokens de densida
 
 ## 1. Escala de ritmo (`--spacing-r-*`)
 
+> **Deprecado (ADR-0142, 2026-11-19):** `--spacing-r-*` no tiene consumidores en el código (el espaciado real es la escala de Tailwind). Será retirado en la Fase 1 del plan de escala unificada y reemplazado por `--spacing` dinámico (`--k`, densidad × puntero). No adoptarlo en código nuevo; la «regla invariante» de abajo queda suspendida hasta esa migración.
+
 Prefijo `r-` para evitar colisión con la escala estándar de Tailwind. Definida en `:root` de `globals.css`.
 
 | Token | Valor | Uso |

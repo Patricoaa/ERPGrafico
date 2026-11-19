@@ -87,7 +87,6 @@ export * from './DrawerResizableRail';
 export * from './EmptyState';
 export * from './SectionHeader';
 export * from './Section';
-export * from './ModuleLauncher';
 
 export * from './Separators';
 

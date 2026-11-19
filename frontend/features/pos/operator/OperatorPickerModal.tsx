@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { BaseModal, Skeleton } from "@/components/shared"
 import { Blobatar } from "@/components/ui/blobatar"
 import { Input } from "@/components/ui/input"
-import { MIN_TOUCH_TARGET } from "../hooks/useDeviceContext"
+import { MIN_TOUCH_TARGET } from "@/hooks/useDeviceContext"
 import type { PosOperator } from "../types"
 
 const SEARCH_THRESHOLD = 12

@@ -204,5 +204,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0139](0139-cuadre-boletas-rcv-via-tuu-y-reloj-de-depuracion.md) | Las boletas del RCV se cuadran una a una vía la venta TUU (día + monto, en orden); reloj de depuración para desarrollo | Accepted |
 | [0140](0140-emision-automatica-de-boletas-desde-tuu-y-rcv.md) | Boletas y comprobantes nacen en borrador y se emiten automáticamente con el folio del RCV o el id de TUU; cuadre cada 10 min y sincronización TUU con intervalo | Accepted |
 | [0141](0141-cuadre-unificado-por-grupo.md) | El cuadre es un solo registro por grupo (documento ERP, pagos TUU, registros RCV) que el motor resuelve cada 10 minutos; sin vínculos por pares ni recálculo manual | Accepted |
+| [0142](0142-escala-unificada-fluida-densidad-y-puntero.md) | Escala unificada: tipografía fluida (Utopia), espaciado y alturas de control dirigidos por un dial (densidad × puntero) en atributos CSS | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

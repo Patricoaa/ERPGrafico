@@ -19,7 +19,7 @@ Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/compone
 |---|---|---|---|
 | `choice` | elegir uno (radiogroup) | `selectableCardClass()` · `kind="choice"` | `ChoiceCard`, `ProductCard`, `ContactCard` |
 | `item` | abrir / navegar; selección masiva opcional | `CardSurface kind="item"`; en entity-view la card se abre por enlace extendido del título | `EntityCard` (entity-view), `TaskInbox`, tarjeta del Kanban de órdenes de trabajo |
-| `nav` | enlace | `card-flat` + `CardLead` + chevron | `ModuleGrid` (fila), `ModuleLauncher` (loseta centrada) |
+| `nav` | enlace | `card-flat` + `CardLead` + chevron | `ModuleGrid` (fila) |
 | `metric` | informativa o enlace | `surface-panel` + tipografía `kpi-value` | `StatCard` |
 | `panel` | ninguna | `Card` shadcn / `surface-panel` | secciones de Settings, filas de configuración, paneles de edición, Cart, errores |
 

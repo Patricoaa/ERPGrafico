@@ -347,7 +347,7 @@ Input de búsqueda o filtro dentro de una **barra de herramientas** de tabla o p
     <Input
         type="text"
         placeholder="Buscar..."
-        className="h-7 pl-7 text-[10px] font-medium rounded-md w-32"
+        className="h-7 pl-7 text-3xs font-medium rounded-md w-32"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
     />
@@ -358,10 +358,10 @@ Input de búsqueda o filtro dentro de una **barra de herramientas** de tabla o p
 
 ```tsx
 <div className="flex items-center gap-1.5">
-    <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
+    <span className="text-4xs font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
     <Input
         type="date"
-        className="h-7 w-28 px-1 text-[10px] font-medium"
+        className="h-7 w-28 px-1 text-3xs font-medium"
         value={dateFrom}
         onChange={(e) => setDateFrom(e.target.value)}
     />
@@ -372,7 +372,7 @@ Input de búsqueda o filtro dentro de una **barra de herramientas** de tabla o p
 
 ```tsx
 <Select value={filter} onValueChange={setFilter}>
-    <SelectTrigger className="h-7 w-[150px] text-[10px] font-medium">
+    <SelectTrigger className="h-7 w-[150px] text-3xs font-medium">
         <SelectValue placeholder="Todos" />
     </SelectTrigger>
     <SelectContent>
@@ -388,7 +388,7 @@ Input de búsqueda o filtro dentro de una **barra de herramientas** de tabla o p
 | Prop | Valor estándar |
 |------|---------------|
 | Altura | `h-7` (toolbar muy compacto) o `h-8` (toolbar estándar) |
-| Texto | `text-[10px]` o `text-xs` |
+| Texto | `text-3xs` o `text-xs` (tokens; px crudos prohibidos por `typography/token-first`) |
 | Border radius | `rounded-md` (no `rounded-sm` del notched) |
 
 ### Forbidden
