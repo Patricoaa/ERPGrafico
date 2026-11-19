@@ -55,7 +55,7 @@ export function DteTypeSelector({
     return (
         <ChoiceGroup
             label="Tipo de Documento"
-            columns="grid-cols-1 sm:grid-cols-2"
+            columns="grid-flow-col auto-cols-fr"
             activation="select"
             className={className}
         >

@@ -150,6 +150,46 @@ export function DteRegistrationPanel({
         )
     }
 
+    if (!hasFiscalMatch) {
+        return (
+            <div className={className ?? "space-y-4"}>
+                {assignedBadge}
+                {manualContent}
+            </div>
+        )
+    }
+
+    const rcvDescription = (
+        <p className="text-xs text-muted-foreground">
+            Seleccione el documento del RCV para registrar el folio localmente y vincular el cuadre fiscal en un solo paso.
+        </p>
+    )
+
+    const renderPicker = (onSwitchToManual?: () => void) => (
+        <FiscalMatchPickerPanel
+            invoiceId={invoiceId}
+            preInvoiceContext={preContext}
+            selectedFiscalMatchId={data.pickedFiscalMatchId}
+            onAssign={handleAssignMatch}
+            invoiceDisplayId={invoiceDisplayId}
+            invoiceTotal={invoiceTotal}
+            onSwitchToManual={onSwitchToManual}
+        />
+    )
+
+    // Only purchase boletas may be registered manually; everything else goes straight to the SII/RCV picker.
+    const allowsManual = direction === "purchase" && (data.dteClass === "BOLETA" || data.dteClass === "BOLETA_EXENTA")
+
+    if (!allowsManual) {
+        return (
+            <div className={className ?? "space-y-4"}>
+                {assignedBadge}
+                {rcvDescription}
+                {renderPicker()}
+            </div>
+        )
+    }
+
     return (
         <div className={className ?? "space-y-4"}>
             {assignedBadge}
@@ -167,18 +207,8 @@ export function DteRegistrationPanel({
                 </TabsList>
 
                 <TabsContent value="rcv" className="pt-4 space-y-4">
-                    <p className="text-xs text-muted-foreground">
-                        Seleccione el documento del RCV para registrar el folio localmente y vincular el cuadre fiscal en un solo paso.
-                    </p>
-                    <FiscalMatchPickerPanel
-                        invoiceId={invoiceId}
-                        preInvoiceContext={preContext}
-                        selectedFiscalMatchId={data.pickedFiscalMatchId}
-                        onAssign={handleAssignMatch}
-                        invoiceDisplayId={invoiceDisplayId}
-                        invoiceTotal={invoiceTotal}
-                        onSwitchToManual={() => setActiveTab("manual")}
-                    />
+                    {rcvDescription}
+                    {renderPicker(() => setActiveTab("manual"))}
                 </TabsContent>
 
                 <TabsContent value="manual" className="pt-2">
