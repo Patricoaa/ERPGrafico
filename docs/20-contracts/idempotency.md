@@ -52,8 +52,7 @@ La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el c�
 | `hr.payroll.draft` | `POST /api/hr/payrolls/create_draft_payrolls/` | Generación de borradores de nómina masivos |
 | `tax.period.close` | `POST /api/tax/periods/{id}/close/` + `POST /api/tax/accounting-periods/{id}/close/` | Cierre de período (ambos viewsets usan el mismo scope) |
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` | Registrar declaración F29 — crea registro oficial ante SII, no reversible |
-| `tax.fiscal_match.link` | `POST /api/tax/fiscal-matches/{id}/link/` | Unión manual del cuadre: mueve ventas TUU / registros SII entre grupos |
-| `tax.fiscal_match.unlink` | `POST /api/tax/fiscal-matches/{id}/unlink/` | Quita un vínculo del cuadre a un grupo huérfano manual |
+| `tax.fiscal_match.apply` | `POST /api/tax/fiscal-matches/{id}/apply/` | Guarda de una vez los cambios de la ficha de cuadre (uniones y quitas, todo o nada); reemplaza a `link` y `unlink` |
 | `tax.fiscal_match.release` | `POST /api/tax/fiscal-matches/{id}/release/` | Devuelve un huérfano al cruce automático |
 | `tax.fiscal_match.retry_issue` | `POST /api/tax/fiscal-matches/{id}/retry-issue/` | Reintenta la emisión del borrador (asigna folio fiscal) |
 | `tax.fiscal_match.confirm_draft` | `POST /api/tax/fiscal-matches/{id}/confirm-draft/` | Asigna folio del RCV a un borrador de compra, lo emite y lo une al grupo |
@@ -327,8 +326,7 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 | `hr.payroll.draft` | `POST /api/hr/payrolls/create_draft_payrolls/` |
 | `tax.period.close` (x2) | `POST /api/tax/periods/{id}/close/` + `POST /api/tax/accounting-periods/{id}/close/` |
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` |
-| `tax.fiscal_match.link` | `POST /api/tax/fiscal-matches/{id}/link/` |
-| `tax.fiscal_match.unlink` | `POST /api/tax/fiscal-matches/{id}/unlink/` |
+| `tax.fiscal_match.apply` | `POST /api/tax/fiscal-matches/{id}/apply/` |
 | `tax.fiscal_match.release` | `POST /api/tax/fiscal-matches/{id}/release/` |
 | `tax.fiscal_match.retry_issue` | `POST /api/tax/fiscal-matches/{id}/retry-issue/` |
 | `tax.fiscal_match.confirm_draft` | `POST /api/tax/fiscal-matches/{id}/confirm-draft/` |

@@ -31,19 +31,33 @@ class FiscalMatchFilterSerializer(serializers.Serializer):
         return statuses
 
 
-class CandidatesQuerySerializer(serializers.Serializer):
-    part = serializers.ChoiceField(choices=["erp", "tuu", "rcv"])
+MAX_CHANGES = 50
 
 
-class LinkSerializer(serializers.Serializer):
+class ChangeSerializer(serializers.Serializer):
+    """Un cambio en espera de la ficha; las reglas de negocio las valida ``apply_changes``."""
+
+    op = serializers.ChoiceField(choices=["link", "unlink"])
     part = serializers.ChoiceField(choices=["erp", "tuu", "rcv"])
     id = serializers.IntegerField(min_value=1)
-    movement = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)
+    movement = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    # ``{sale_id: movement_id}``; las claves JSON llegan como texto y se convierten a entero.
+    payments = serializers.DictField(
+        child=serializers.IntegerField(min_value=1), required=False, allow_null=True
+    )
+
+    def validate_payments(self, value: dict[str, int] | None) -> dict[int, int] | None:
+        if value is None:
+            return None
+        if not all(key.isdecimal() and int(key) > 0 for key in value):
+            raise serializers.ValidationError("Las claves de «payments» deben ser ids de venta.")
+        return {int(key): movement for key, movement in value.items()}
 
 
-class UnlinkSerializer(serializers.Serializer):
-    part = serializers.ChoiceField(choices=["tuu", "rcv"])
-    id = serializers.IntegerField(min_value=1)
+class ApplySerializer(serializers.Serializer):
+    changes = serializers.ListField(
+        child=ChangeSerializer(), min_length=1, max_length=MAX_CHANGES, allow_empty=False
+    )
 
 
 class ConfirmDraftSerializer(serializers.Serializer):
@@ -57,6 +71,10 @@ class CreateDraftSerializer(serializers.Serializer):
     purchase_order_id = serializers.PrimaryKeyRelatedField(
         queryset=PurchaseOrder.objects.select_related("supplier"), source="purchase_order"
     )
+
+
+class CreateSaleSerializer(serializers.Serializer):
+    contact_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 # --- lista --------------------------------------------------------------------
@@ -183,71 +201,64 @@ class FiscalMatchDetailSerializer(FiscalMatchListSerializer):
 # --- candidatos ---------------------------------------------------------------
 
 
-class CandidateMovementSerializer(serializers.ModelSerializer):
-    """Cobro del documento al que puede corresponder una venta TUU (``payment_method_new`` precargado)."""
+class CandidateMovementSerializer(serializers.Serializer):
+    """Cobro libre del documento que la venta TUU puede respaldar (``PaymentOption``, Ruling K).
 
+    ``same_amount``: es del monto de la venta; otro monto se puede elegir con advertencia.
+    ``payment_method_new`` viene precargado.
+    """
+
+    id = serializers.IntegerField(source="movement.pk", read_only=True)
+    amount = serializers.DecimalField(
+        source="movement.amount", max_digits=12, decimal_places=2, read_only=True
+    )
+    created_at = serializers.DateTimeField(source="movement.created_at", read_only=True)
     method = serializers.SerializerMethodField()
+    same_amount = serializers.BooleanField(read_only=True)
 
-    class Meta:
-        model = TreasuryMovement
-        fields = ["id", "amount", "created_at", "method"]
-        read_only_fields = fields
-
-    def get_method(self, obj: TreasuryMovement) -> str:
-        return (
-            obj.payment_method_new.name
-            if obj.payment_method_new
-            else obj.get_payment_method_display()
-        )
+    def get_method(self, obj) -> str:
+        m = obj.movement
+        return m.payment_method_new.name if m.payment_method_new else m.get_payment_method_display()
 
 
-class ErpCandidateSerializer(serializers.ModelSerializer):
-    display_id = serializers.CharField(read_only=True)
-    # Cobros libres del monto de la venta TUU del huérfano; vacío si no tiene venta.
-    compatible_movements = CandidateMovementSerializer(many=True, read_only=True)
+class SearchQuerySerializer(serializers.Serializer):
+    """Query params de ``search`` (spec §5.2)."""
 
-    class Meta:
-        model = Invoice
-        fields = ["id", "display_id", "dte_type", "number", "total", "date", "compatible_movements"]
-        read_only_fields = fields
+    part = serializers.ChoiceField(choices=["erp", "tuu", "rcv"])
+    q = serializers.CharField(required=False, allow_blank=True, max_length=40, default="")
+    ordering = serializers.ChoiceField(choices=["score", "recent"], required=False, default="score")
 
 
-class TuuCandidateSerializer(serializers.ModelSerializer):
-    compatible_movements = CandidateMovementSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = TerminalSale
-        fields = [
-            "id",
-            "transaction_at",
-            "sale_amount",
-            "document_type",
-            "payment_type",
-            "compatible_movements",
-        ]
-        read_only_fields = fields
+class MatchWarningSerializer(serializers.Serializer):
+    code = serializers.CharField(read_only=True)
+    label = serializers.CharField(read_only=True)
+    blocking = serializers.BooleanField(read_only=True)
 
 
-class RcvCandidateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RCVDocument
-        fields = [
-            "id",
-            "folio",
-            "dte_type",
-            "issue_date",
-            "total_amount",
-            "period",
-            "counterparty_rut",
-        ]
-        read_only_fields = fields
+class CarriedRcvSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    folio = serializers.CharField(read_only=True)
 
 
-CANDIDATE_SERIALIZERS = {
-    "erp": ErpCandidateSerializer,
-    "tuu": TuuCandidateSerializer,
-    "rcv": RcvCandidateSerializer,
-}
+class SearchItemSerializer(serializers.Serializer):
+    """Tarjeta candidata de la búsqueda; los campos opcionales solo viajan en su parte."""
+
+    id = serializers.IntegerField(read_only=True)
+    kind = serializers.CharField(read_only=True)
+    label = serializers.CharField(read_only=True)
+    counterparty = serializers.CharField(read_only=True)
+    date = serializers.DateField(read_only=True)
+    datetime = serializers.DateTimeField(read_only=True, required=False)
+    amount = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    score = serializers.IntegerField(read_only=True)
+    warnings = MatchWarningSerializer(many=True, read_only=True)
+    compatible_movements = CandidateMovementSerializer(many=True, read_only=True, required=False)
+    carried_rcv = CarriedRcvSerializer(many=True, read_only=True, required=False)
+    payments_by_sale = serializers.DictField(
+        child=serializers.ListField(child=CandidateMovementSerializer()),
+        read_only=True,
+        required=False,
+    )
 
 
 class InvoiceCandidateSerializer(serializers.ModelSerializer):
@@ -269,3 +280,28 @@ class PurchaseOrderOptionSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = ["id", "display_id", "date", "total"]
         read_only_fields = fields
+
+
+class InvoiceCandidateQuerySerializer(serializers.Serializer):
+    """Query params para buscar grupos FiscalMatch candidatos para un documento o pre-contexto."""
+
+    invoice_id = serializers.IntegerField(required=False, default=None)
+    direction = serializers.ChoiceField(choices=["sale", "purchase"], required=False, default=None)
+    sii_code = serializers.IntegerField(required=False, default=None)
+    counterparty_rut = serializers.CharField(required=False, allow_blank=True, default="")
+    amount = serializers.DecimalField(max_digits=14, decimal_places=0, required=False, default=None)
+    date = serializers.DateField(required=False, default=None)
+    q = serializers.CharField(required=False, allow_blank=True, max_length=40, default="")
+    ordering = serializers.ChoiceField(choices=["score", "recent"], required=False, default="score")
+
+    def validate(self, data):
+        if not data.get("invoice_id") and not (data.get("direction") and data.get("sii_code")):
+            raise serializers.ValidationError("Debe indicar invoice_id o direction y sii_code.")
+        return data
+
+
+class InvoiceSearchItemSerializer(SearchItemSerializer):
+    """Tarjeta candidata de grupo FiscalMatch con referencia a su ID de grupo."""
+
+    fiscal_match_id = serializers.IntegerField(read_only=True)
+

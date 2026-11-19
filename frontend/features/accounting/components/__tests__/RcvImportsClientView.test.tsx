@@ -61,7 +61,7 @@ import { RcvImportsClientView } from "../rcv/RcvImportsClientView"
 const row: RcvImport = {
     id: 1, direction: "PURCHASES", year: 2026, month: 10, period: "2026-10", trigger: "SCHEDULED", status: "SUCCESS",
     triggered_by: null, triggered_by_name: null, started_at: "2026-11-14T10:00:00-03:00", finished_at: "2026-11-14T10:02:03-03:00",
-    error_code: "", error_message: "", warnings: [], received_count: 12, created_count: 10, updated_count: 2, missing_count: 0,
+    error_code: "", error_message: "", warnings: [], received_count: 12, created_count: 10, updated_count: 2, missing_count: 0, contacts_created_count: 3,
     api_key: 1, masked_key: "••••4472", created_at: "2026-11-14T10:00:00-03:00",
 }
 

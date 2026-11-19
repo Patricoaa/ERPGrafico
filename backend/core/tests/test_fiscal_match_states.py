@@ -21,6 +21,8 @@ def test_derive_group_status(erp, tuu, rcv, has_invoice, excluded, expected):
 
 
 def test_labels():
+    assert FiscalMatchStatus.DIFF.label == "Con advertencias"
+    assert PartState.DIFF.label == "Advertencia"
     assert PartState.NOT_APPLICABLE.label == "No aplica"
     assert PartState.SUMMARY_ONLY.label == "Solo resumen"
     assert FiscalMatchStatus.MISSING_EXTERNAL.label == "Falta en SII/TUU"

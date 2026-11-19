@@ -1,4 +1,5 @@
-"""API del cuadre por grupo: lista, conteos, ficha y unión manual (spec §5.5, §5.7)."""
+"""API del cuadre por grupo: lista, conteos, ficha, búsqueda de candidatos y guardado de la
+unión manual (spec §5.2, §5.3, §5.7)."""
 
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -8,23 +9,26 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from tax.fiscal_match import feeding, services
+from tax.fiscal_match.search import candidates_for_context, search_candidates
 from tax.fiscal_match.selectors import (
     fiscal_match_counts,
     fiscal_match_detail_queryset,
     fiscal_matches_queryset,
 )
 from tax.fiscal_match.serializers import (
-    CANDIDATE_SERIALIZERS,
-    CandidatesQuerySerializer,
+    ApplySerializer,
     ConfirmDraftSerializer,
     CreateDraftSerializer,
+    CreateSaleSerializer,
     FiscalMatchDetailSerializer,
     FiscalMatchFilterSerializer,
     FiscalMatchListSerializer,
+    InvoiceCandidateQuerySerializer,
     InvoiceCandidateSerializer,
-    LinkSerializer,
+    InvoiceSearchItemSerializer,
     PurchaseOrderOptionSerializer,
-    UnlinkSerializer,
+    SearchItemSerializer,
+    SearchQuerySerializer,
 )
 from tax.models import FiscalMatch
 
@@ -51,6 +55,11 @@ def _detail(group: FiscalMatch) -> Response:
     )
 
 
+class SearchPagination(StandardResultsSetPagination):
+    page_size = 20  # una página de tarjetas por columna (spec §5.2)
+    page_size_query_param = None  # sin ``page_size``: la página es fija
+
+
 class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     filter_backends: list = []
@@ -60,14 +69,15 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
                 "list",
                 "retrieve",
                 "counts",
-                "candidates",
+                "search",
+                "invoice_candidates",
                 "draft_suggestions",
                 "purchase_orders",
             ),
             _VIEW,
         ),
         **dict.fromkeys(
-            ("link", "unlink", "release", "retry_issue", "confirm_draft", "create_draft"), _CHANGE
+            ("apply", "release", "retry_issue", "confirm_draft", "create_draft", "create_sale"), _CHANGE
         ),
     }
 
@@ -80,29 +90,38 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
         return FiscalMatchListSerializer if self.action == "list" else FiscalMatchDetailSerializer
 
     def _group(self, pk) -> FiscalMatch:
-        return get_object_or_404(FiscalMatch, pk=pk)
+        # La búsqueda y las acciones leen ``group.invoice``: una sola consulta.
+        return get_object_or_404(FiscalMatch.objects.select_related("invoice"), pk=pk)
 
     @action(detail=False, methods=["get"])
     def counts(self, request):
         return Response(fiscal_match_counts(_filters(request.query_params)))
 
+    @action(detail=False, methods=["get"], url_path="invoice-candidates")
+    def invoice_candidates(self, request):
+        params = _valid(InvoiceCandidateQuerySerializer, request.query_params)
+        found = candidates_for_context(**params)
+        paginator = SearchPagination()
+        page = paginator.paginate_queryset(found.queryset, request, view=self)
+        return paginator.get_paginated_response(
+            InvoiceSearchItemSerializer(found.build(page), many=True).data
+        )
+
     @action(detail=True, methods=["get"])
-    def candidates(self, request, pk=None):
-        part = _valid(CandidatesQuerySerializer, request.query_params)["part"]
-        rows = services.group_candidates(self._group(pk), part)
-        return Response(CANDIDATE_SERIALIZERS[part](rows, many=True).data)
+    def search(self, request, pk=None):
+        params = _valid(SearchQuerySerializer, request.query_params)
+        found = search_candidates(self._group(pk), **params)
+        paginator = SearchPagination()
+        page = paginator.paginate_queryset(found.queryset, request, view=self)
+        return paginator.get_paginated_response(
+            SearchItemSerializer(found.build(page), many=True).data
+        )
 
-    @idempotent_endpoint(scope="tax.fiscal_match.link")
+    @idempotent_endpoint(scope="tax.fiscal_match.apply")
     @action(detail=True, methods=["post"])
-    def link(self, request, pk=None):
-        body = _valid(LinkSerializer, request.data)
-        return _detail(services.link(self._group(pk), body["part"], body["id"], body["movement"]))
-
-    @idempotent_endpoint(scope="tax.fiscal_match.unlink")
-    @action(detail=True, methods=["post"])
-    def unlink(self, request, pk=None):
-        body = _valid(UnlinkSerializer, request.data)
-        return _detail(services.unlink(self._group(pk), body["part"], body["id"]))
+    def apply(self, request, pk=None):
+        body = _valid(ApplySerializer, request.data)
+        return _detail(services.apply_changes(self._group(pk), body["changes"]))
 
     @idempotent_endpoint(scope="tax.fiscal_match.release")
     @action(detail=True, methods=["post"])
@@ -143,5 +162,15 @@ class FiscalMatchViewSet(viewsets.ReadOnlyModelViewSet):
     def create_draft(self, request, pk=None):
         body = _valid(CreateDraftSerializer, request.data)
         response = _detail(feeding.create_draft_from_rcv(self._group(pk), body["purchase_order"]))
+        response.status_code = 201
+        return response
+
+    @idempotent_endpoint(scope="tax.fiscal_match.create_sale")
+    @action(detail=True, methods=["post"], url_path="create-sale")
+    def create_sale(self, request, pk=None):
+        body = _valid(CreateSaleSerializer, request.data) if request.data else {}
+        response = _detail(
+            feeding.create_sale_from_rcv(self._group(pk), body.get("contact_id"))
+        )
         response.status_code = 201
         return response

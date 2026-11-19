@@ -82,6 +82,7 @@ export interface RcvImport {
     created_count: number
     updated_count: number
     missing_count: number
+    contacts_created_count: number
     /** id de la API key usada */
     api_key: number | null
     masked_key: string | null

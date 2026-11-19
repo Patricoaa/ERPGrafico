@@ -1,6 +1,7 @@
 """Lecturas del cuadre por grupo con consultas fijas (ADR-0118, spec §5.7)."""
 
 import re
+from dataclasses import dataclass
 from decimal import Decimal
 
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
@@ -12,7 +13,7 @@ from tax.models import FiscalMatch, FiscalMatchRun
 from treasury.models import TerminalSale
 
 ATTENTION = "attention"
-_SETTLED = (FiscalMatchStatus.MATCHED, FiscalMatchStatus.EXCLUDED)
+SETTLED = (FiscalMatchStatus.MATCHED, FiscalMatchStatus.EXCLUDED)
 _LIST_SALE_FIELDS = ("id", "fiscal_match_id", "transaction_at", "sale_amount")
 _LIST_RCV_FIELDS = ("id", "fiscal_match_id", "folio")
 _DETAIL_SALE_FIELDS = (
@@ -31,23 +32,42 @@ _DETAIL_RCV_FIELDS = (*_LIST_RCV_FIELDS, "dte_type", "issue_date", "total_amount
 def _status_q(statuses: list[str]) -> Q:
     q = Q(status__in=[s for s in statuses if s != ATTENTION])
     if ATTENTION in statuses:
-        q |= ~Q(status__in=_SETTLED)
+        q |= ~Q(status__in=SETTLED)
     return q
+
+
+@dataclass(frozen=True)
+class SearchTerm:
+    """Texto de búsqueda interpretado: el texto, un RUT normalizado y un número entero."""
+
+    text: str
+    rut: str | None
+    number: int | None
+
+
+def parse_search(term: str) -> SearchTerm:
+    """RUT si tiene forma de RUT; número si son solo dígitos (con ``$``, puntos o espacios)."""
+    term = term.strip()
+    rut = normalize_rut(term)
+    digits = re.sub(r"[$.\s]", "", term)
+    number = int(digits) if digits.isdigit() and len(digits) <= 15 else None  # cabe en BigInteger
+    return SearchTerm(
+        text=term,
+        rut=rut if re.fullmatch(r"\d{1,9}-[0-9K]", rut) else None,
+        number=number,
+    )
 
 
 def _search_q(term: str) -> Q:
     """Folio RCV, número del documento ERP, RUT de la contraparte o monto exacto."""
-    term = term.strip()
-    q = Q(invoice__number=term)
-    rut = normalize_rut(term)
-    if re.fullmatch(r"\d{1,9}-[0-9K]", rut):
-        q |= Q(counterparty_rut=rut)
-    digits = re.sub(r"[$.\s]", "", term)
-    if digits.isdigit() and len(digits) <= 15:  # cabe en BigInteger y en los montos
-        value = int(digits)
-        amount = Decimal(value)
+    parsed = parse_search(term)
+    q = Q(invoice__number=parsed.text)
+    if parsed.rut:
+        q |= Q(counterparty_rut=parsed.rut)
+    if parsed.number is not None:
+        amount = Decimal(parsed.number)
         q |= Q(erp_amount=amount) | Q(tuu_amount=amount) | Q(rcv_amount=amount)
-        q |= Exists(RCVDocument.objects.filter(fiscal_match=OuterRef("pk"), folio=value))
+        q |= Exists(RCVDocument.objects.filter(fiscal_match=OuterRef("pk"), folio=parsed.number))
     return q
 
 

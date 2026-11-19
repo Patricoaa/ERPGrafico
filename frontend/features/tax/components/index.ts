@@ -8,3 +8,7 @@ export * from './wizard/F29PaymentStep';
 export * from './wizard/F29CloseStep';
 export * from './FiscalMatchClientView';
 export * from './FiscalMatchDrawer';
+export * from './FiscalMatchPickerPanel';
+export * from './FiscalMatchCandidateCard';
+export * from './FiscalMatchSearchToolbar';
+export * from './FiscalMatchRegisterSaleSection';

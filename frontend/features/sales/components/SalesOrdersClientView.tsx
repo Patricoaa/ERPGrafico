@@ -160,6 +160,8 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                                      isExempt: (inv.dte_type as string) === 'FACTURA_EXENTA' || (inv.dte_type as string) === 'BOLETA_EXENTA',
                                      originalTotal: inv.total as number,
                                      lines: invLines,
+                                     counterpartyRut: ((inv.customer_tax_id || inv.tax_id || '') as string) || undefined,
+                                     invoiceId: inv.id as number,
                                  }
                              }}
                              onSubmit={async (payload) => {
@@ -179,8 +181,14 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                                  }))))
                                  if (payload.logistics) formData.append('logistics_data', JSON.stringify(payload.logistics))
                                  const reg = payload.registration
-                                 formData.append('registration_data', JSON.stringify({ document_number: reg.documentNumber, document_date: reg.documentDate, is_pending: reg.isPending }))
+                                 formData.append('registration_data', JSON.stringify({
+                                     document_number: reg.documentNumber,
+                                     document_date: reg.documentDate,
+                                     is_pending: reg.isPending,
+                                     fiscal_match_id: reg.pickedFiscalMatchId ?? null,
+                                 }))
                                  if (reg.attachment) formData.append('document_attachment', reg.attachment)
+                                 if (reg.pickedFiscalMatchId) formData.append('fiscal_match_id', String(reg.pickedFiscalMatchId))
                                  if (payload.payment.method) formData.append('payment_data', JSON.stringify(payload.payment))
                                  await billingApi.noteWorkflowCheckout(formData)
                              }}

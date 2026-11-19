@@ -15,9 +15,8 @@ export {
     useFiscalMatches,
     useFiscalMatchCounts,
     useFiscalMatch,
-    useFiscalMatchCandidates,
-    useLinkFiscalMatch,
-    useUnlinkFiscalMatch,
+    useFiscalMatchSearch,
+    useApplyFiscalMatch,
     useReleaseFiscalMatch,
     useRetryFiscalIssue,
 } from './useFiscalMatches'
@@ -26,4 +25,7 @@ export {
     useFiscalMatchPurchaseOrders,
     useConfirmFiscalMatchDraft,
     useCreateFiscalMatchDraft,
+    useCreateFiscalMatchSale,
 } from './useFiscalMatchFeeding'
+export { useFiscalMatchDraft } from './useFiscalMatchDraft'
+export { useInvoiceFiscalMatchCandidates } from './useInvoiceFiscalMatchCandidates'

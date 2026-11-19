@@ -81,6 +81,7 @@ export const rcvImportEntity = defineEntity<RcvImport>()((f) => ({
         created: f.number("created_count", { ...fixed, label: "Nuevos" }),
         updated: f.number("updated_count", { ...fixed, label: "Actualizados" }),
         missing: f.number("missing_count", { ...fixed, label: "Faltantes" }),
+        contactsCreated: f.number("contacts_created_count", { ...fixed, label: "Contactos creados" }),
         apiKey: f.code((i) => i.masked_key ?? "", { ...fixed, label: "API key" }),
         duration: f.text((i) => formatRcvDuration(i.started_at, i.finished_at), { ...fixed, label: "Duración" }),
         detail: f.text((i) => rcvImportDetail(i), { ...fixed, label: "Detalle", truncate: true }),

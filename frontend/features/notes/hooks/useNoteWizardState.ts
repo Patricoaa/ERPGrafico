@@ -33,6 +33,7 @@ export interface RegistrationData {
     documentDate: string   // YYYY-MM-DD
     isPending: boolean
     attachment: File | null
+    pickedFiscalMatchId?: number | null
 }
 
 // ---------------------------------------------------------------------------
@@ -329,6 +330,9 @@ export function useNoteWizardState({
                 return true
 
             case 'registration':
+                if (registration.pickedFiscalMatchId) {
+                    return true
+                }
                 if (!registration.isPending) {
                     if (!registration.attachment) {
                         toast.error('El archivo adjunto es obligatorio.')

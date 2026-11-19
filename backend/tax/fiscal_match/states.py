@@ -14,15 +14,20 @@ from decimal import Decimal
 from django.db.models import Q
 from django.utils import timezone
 
+from accounting.integrations.rcv_normalizer import normalize_rut
 from accounting.models import RCVDocument, RCVImport, RCVSettings
+from billing.fiscal_key import counterparty_rut
 from billing.models import Invoice
 from core.fiscal_match import FiscalMatchStatus, PartState, derive_group_status
 from tax.fiscal_match.boletas import BOLETA_SII_CODES
+from tax.fiscal_match.candidates import tuu_type_fits
 from tax.models import FiscalMatch, TaxPeriod
 from treasury.models import POSTerminal, TerminalSale, TerminalSyncRun, TreasuryMovement
 
 # Tipos del RCV sin equivalente local: el grupo queda excluido (spec §5.2).
 EXCLUDED_SII_CODES = frozenset({43, 46, 110, 111, 112, 914})
+# Tipos de factura de venta que pueden cobrarse con tarjeta en el momento y generar registro TUU.
+FACTURA_SII_CODES = frozenset({33, 34})
 SUMMARY_SII_CODE = 48
 SEVERAL_FOLIOS_NOTICE = "Varios folios en el SII"
 # Meses de RCV de compras (el de emisión y los dos siguientes) antes de dar por faltante.
@@ -123,7 +128,7 @@ def build_context(
     group_ids = [g.id for g in groups]
     invoice_ids = [g.invoice_id for g in groups if g.invoice_id is not None]
 
-    invoices = {i.id: i for i in Invoice.objects.filter(id__in=invoice_ids)}
+    invoices = {i.id: i for i in Invoice.objects.filter(id__in=invoice_ids).select_related("contact")}
     sales = _group_by(
         TerminalSale.objects.filter(fiscal_match_id__in=group_ids).order_by("id"), "fiscal_match_id"
     )
@@ -320,7 +325,13 @@ def _tuu_state(
     if group.id in ctx.tuu_ambiguous:
         return PartState.AMBIGUOUS
     if invoice is None:
-        return PartState.MATCHED if sales else PartState.NOT_APPLICABLE
+        if sales:
+            return PartState.MATCHED
+        # Un RCV-huérfano de factura de venta (33, 34) puede haberse cobrado con tarjeta en TUU
+        # y encontrarse aún en un grupo huérfano separado o pendiente de confirmación.
+        if group.direction == FiscalMatch.Direction.SALE and code in FACTURA_SII_CODES:
+            return PartState.PENDING
+        return PartState.NOT_APPLICABLE
     if group.direction == FiscalMatch.Direction.PURCHASE:
         return PartState.NOT_APPLICABLE
     expected = [
@@ -334,7 +345,15 @@ def _tuu_state(
     ]
     # Una venta de otro tipo es diferencia aunque ningún pago espere TUU (p. ej. una
     # boleta TUU en efectivo dentro de una factura pagada en efectivo).
-    if any(s.document_type is not None and s.document_type != code for s in sales):
+    if not all(tuu_type_fits(s, code) for s in sales):
+        return PartState.DIFF
+    # Una venta unida a mano a un cobro de otro monto queda con advertencia (spec §7c).
+    paid = {m.id: m.amount for m in ctx.movements.get(invoice.id, ())}
+    if any(
+        s.matched_movement_id in paid
+        and Decimal(paid[s.matched_movement_id]) != Decimal(s.sale_amount)
+        for s in sales
+    ):
         return PartState.DIFF
     if not expected:
         return PartState.NOT_APPLICABLE
@@ -345,6 +364,14 @@ def _tuu_state(
     if all(_sync_covers(m, p, ctx) for m, p in unbacked):
         return PartState.MISSING
     return PartState.PENDING
+
+
+def _same_rut(invoice: Invoice, docs: tuple[RCVDocument, ...]) -> bool:
+    """Facturas y notas: el RUT del RCV debe ser el del documento (si ambos lo informan)."""
+    expected = counterparty_rut(invoice)
+    if not expected:
+        return True
+    return all(not (rut := normalize_rut(d.counterparty_rut)) or rut == expected for d in docs)
 
 
 def _rcv_state(
@@ -366,7 +393,7 @@ def _rcv_state(
         if code in BOLETA_SII_CODES:
             ok = group.rcv_amount in (group.erp_amount, group.tuu_amount)
         else:
-            ok = group.rcv_amount == invoice.total
+            ok = group.rcv_amount == invoice.total and _same_rut(invoice, docs)
         return PartState.MATCHED if ok else PartState.DIFF
     direction = _RCV_DIRECTION[group.direction]
     months = _rcv_months(group, group.fiscal_period)

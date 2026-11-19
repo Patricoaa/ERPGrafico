@@ -8,6 +8,7 @@ import type { OrderLine } from "../types"
 export interface OrderLineWorkOrderValue {
     workOrderId?: number | null
     display?: string | null
+    relatedContactName?: string | null
     isManufacturable: boolean
     line: OrderLine
 }
@@ -24,11 +25,13 @@ function OrderLineWorkOrderCell({ value }: ValueRenderProps<"orderLineWorkOrder"
     if (!value) return <span className="text-xs text-muted-foreground">—</span>
 
     if (value.workOrderId) {
+        const otDisplay = value.display ?? `OT-${value.workOrderId}`
+        const display = value.relatedContactName ? `${otDisplay} · ${value.relatedContactName}` : otDisplay
         return (
             <DocumentRefLink
                 label="production.workorder"
                 id={value.workOrderId}
-                display={value.display ?? `OT-${value.workOrderId}`}
+                display={display}
                 mono={false}
             />
         )
@@ -227,9 +230,13 @@ export const orderLineEntity = defineEntity<OrderLine>()((f) => ({
                     l.is_manufacturable ||
                     (typeof l.product === "object" && l.product !== null && (l.product as { requires_advanced_manufacturing?: boolean }).requires_advanced_manufacturing)
                 )
+                const relatedContactName = typeof wo?.related_contact_name === "string" && wo.related_contact_name.trim()
+                    ? wo.related_contact_name
+                    : null
                 return {
                     workOrderId: wo?.id ? Number(wo.id) : null,
                     display: wo?.id ? String(wo.display_id ?? wo.number ?? `OT-${wo.id}`) : null,
+                    relatedContactName,
                     isManufacturable: isMfg,
                     line: l,
                 }

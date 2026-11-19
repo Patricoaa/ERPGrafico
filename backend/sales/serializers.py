@@ -144,6 +144,8 @@ class SaleLineSerializer(serializers.ModelSerializer):
             "status_display": ot.get_status_display(),
             "current_stage": ot.current_stage,
             "current_stage_display": ot.get_current_stage_display(),
+            "related_contact_id": ot.related_contact_id,
+            "related_contact_name": ot.related_contact.name if ot.related_contact_id else None,
         }
 
     delivery_status = serializers.SerializerMethodField()

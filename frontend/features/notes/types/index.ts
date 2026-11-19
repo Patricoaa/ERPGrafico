@@ -87,6 +87,7 @@ export interface NoteWizardPayload {
         documentDate: string   // ISO date string YYYY-MM-DD
         isPending: boolean
         attachment: File | null
+        pickedFiscalMatchId?: number | null
     }
 
     /** Payment data (may be empty/pending) */
@@ -139,6 +140,12 @@ export interface NoteWizardSourceDocument {
 
     /** Supplier or customer name */
     counterpartyName?: string
+
+    /** Counterparty RUT / Tax ID for fiscal matching */
+    counterpartyRut?: string
+
+    /** Source invoice ID if creating a note for an existing invoice */
+    invoiceId?: number
 
     /** Contact id for folio duplicate validation (purchase flow) */
     contactId?: number

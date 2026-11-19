@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { FileText, List } from "lucide-react"
@@ -9,14 +9,12 @@ import {
     BaseModal,
     CancelButton,
     CollapsibleSection,
-    DocumentAttachmentDropzone,
-    FolioValidationInput,
+    DteEmitLaterSwitch,
+    DteRegistrationPanel,
+    DteTypeSelector,
     FormFooter,
-    LabeledSelect,
-    PeriodValidationDateInput,
     SubmitButton,
 } from "@/components/shared"
-import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { invalidateCrossFeature } from "@/lib/invalidation"
@@ -26,24 +24,16 @@ import { useConfirmInvoice } from "@/features/orders"
 import { SALES_KEYS } from "@/features/sales"
 import { PURCHASING_KEYS } from "@/features/purchasing"
 import { DOCUMENTS_KEYS } from "@/features/documents"
-import { ATTACHMENT_REQUIRED_DTE, invoiceRegistrationSchema, type InvoiceRegistrationFormValues, quantityKey } from "../schema"
+import { fiscalMatchApi } from "@/features/tax"
+import { DteClass, FiscalMatchContext, getDteSiiCode, isDteClassAutoIssued } from "@/lib/dte"
+import { invoiceRegistrationSchema, type InvoiceRegistrationFormValues, quantityKey } from "../schema"
 import { useInvoiceableLines, useCreateInvoiceFromLines } from "../hooks/useInvoiceFromLines"
 import { INVOICES_KEYS } from "../hooks/queryKeys"
 import type { InvoiceSide, InvoiceableLine, InvoiceableOrder, InvoiceFromLinesPayload } from "../types"
 
-const DTE_OPTIONS: Record<InvoiceSide, { value: string; label: string }[]> = {
-    sale: [
-        { value: "FACTURA", label: "Factura" },
-        { value: "FACTURA_EXENTA", label: "Factura exenta" },
-        { value: "BOLETA", label: "Boleta" },
-        { value: "BOLETA_EXENTA", label: "Boleta exenta" },
-    ],
-    purchase: [
-        { value: "FACTURA", label: "Factura" },
-        { value: "PURCHASE_INV", label: "Factura de compra" },
-        { value: "FACTURA_EXENTA", label: "Factura exenta" },
-        { value: "BOLETA", label: "Boleta" },
-    ],
+const ALLOWED_DTE: Record<InvoiceSide, DteClass[]> = {
+    sale: ["FACTURA", "FACTURA_EXENTA", "BOLETA", "BOLETA_EXENTA"],
+    purchase: ["FACTURA", "PURCHASE_INV", "FACTURA_EXENTA", "BOLETA"],
 }
 
 export interface InvoiceRegistrationModalProps {
@@ -52,11 +42,13 @@ export interface InvoiceRegistrationModalProps {
     side: InvoiceSide
     orderId: number
     partnerId?: number | null
+    counterpartyRut?: string | null
     onSuccess?: () => void
     /** Pre-existing DRAFT invoice id — skips createInvoiceFromLines, goes straight to confirm. */
     initialDraftId?: number
     /** DTE type already set on the existing draft — pre-selects and disables the selector. */
     initialDteType?: string
+    defaultMode?: "rcv" | "manual"
 }
 
 export function InvoiceRegistrationModal({
@@ -65,15 +57,18 @@ export function InvoiceRegistrationModal({
     side,
     orderId,
     partnerId,
+    counterpartyRut,
     onSuccess,
     initialDraftId,
     initialDteType,
+    defaultMode,
 }: InvoiceRegistrationModalProps) {
     const { dateString } = useServerDate()
     const [linesOpen, setLinesOpen] = useState(false)
     const [isFolioValid, setIsFolioValid] = useState(true)
     const [isPeriodValid, setIsPeriodValid] = useState(true)
     const [submitting, setSubmitting] = useState(false)
+    const [pickedFiscalMatchId, setPickedFiscalMatchId] = useState<number | null>(null)
 
     const isCompletingDraft = initialDraftId !== undefined
 
@@ -96,6 +91,7 @@ export function InvoiceRegistrationModal({
     const isPending = form.watch("isPending")
     const attachment = form.watch("attachment")
     const issueDateVal = form.watch("issueDate")
+    const folioVal = form.watch("folio")
 
     // Sync server date
     useEffect(() => {
@@ -114,10 +110,18 @@ export function InvoiceRegistrationModal({
     // Reset form when modal closes
     useEffect(() => {
         if (!open) {
-            form.reset({ dteType: initialDteType ?? "FACTURA", folio: "", issueDate: dateString ?? "", attachment: null, isPending: false, quantities: {} })
+            form.reset({
+                dteType: initialDteType ?? "FACTURA",
+                folio: "",
+                issueDate: dateString ?? "",
+                attachment: null,
+                isPending: false,
+                quantities: {},
+            })
             setLinesOpen(false)
             setIsFolioValid(true)
             setIsPeriodValid(true)
+            setPickedFiscalMatchId(null)
             draftIdRef.current = null
             idempotencyKeyRef.current = generateUuidV4()
         }
@@ -141,9 +145,6 @@ export function InvoiceRegistrationModal({
         form.setValue("quantities", next)
     }, [orders, form])
 
-    const requiresAttachment = ATTACHMENT_REQUIRED_DTE.has(dteType)
-    const attachmentLabel = requiresAttachment && !isPending ? "Adjunto (obligatorio)" : "Adjunto (opcional)"
-
     const lineCount = orders?.reduce((acc, o) => acc + o.lines.length, 0) ?? 0
 
     const idempotencyKeyRef = useRef(generateUuidV4())
@@ -152,22 +153,32 @@ export function InvoiceRegistrationModal({
     const createInvoice = useCreateInvoiceFromLines()
     const { confirmInvoice } = useConfirmInvoice()
 
+    const fiscalMatchContext = useMemo<FiscalMatchContext>(() => {
+        const code = getDteSiiCode(dteType as DteClass)
+        return {
+            direction: side === "purchase" ? "purchase" : "sale",
+            sii_code: code ?? undefined,
+            counterparty_rut: counterpartyRut || undefined,
+        }
+    }, [dteType, side, counterpartyRut])
+
     const handleSubmit = async () => {
-        const folio = form.getValues("folio")
-        const issueDate = form.getValues("issueDate")
-        const att = form.getValues("attachment")
+        const currentFolio = form.getValues("folio")
+        const currentIssueDate = form.getValues("issueDate")
+        const currentAtt = form.getValues("attachment")
         const quantities = form.getValues("quantities")
 
-        if (!isPending) {
-            if (!folio) {
+        if (!isPending && !pickedFiscalMatchId) {
+            if (!currentFolio) {
                 toast.error("El folio es obligatorio")
                 return
             }
-            if (!issueDate) {
+            if (!currentIssueDate) {
                 toast.error("La fecha de emisión es requerida")
                 return
             }
-            if (requiresAttachment && !att) {
+            const requiresAttachment = dteType === "FACTURA" || dteType === "PURCHASE_INV"
+            if (requiresAttachment && !currentAtt) {
                 toast.error("El adjunto es obligatorio para este tipo de documento")
                 return
             }
@@ -210,15 +221,21 @@ export function InvoiceRegistrationModal({
                 draftIdRef.current = invoiceId
             }
 
+            if (pickedFiscalMatchId) {
+                await fiscalMatchApi.apply(
+                    pickedFiscalMatchId,
+                    [{ op: "link", part: "erp", id: invoiceId }],
+                    generateUuidV4()
+                )
+            }
+
             if (!isPending) {
                 const fd = new FormData()
-                fd.append("number", folio)
-                fd.append("date", issueDate)
-                if (att) fd.append("document_attachment", att)
-                // useConfirmInvoice.onSuccess handles cache invalidation for the POSTED path
+                fd.append("number", currentFolio)
+                fd.append("date", currentIssueDate)
+                if (currentAtt) fd.append("document_attachment", currentAtt)
                 await confirmInvoice({ id: invoiceId, formData: fd })
             } else {
-                // Pending path: no confirm call, invalidate manually
                 invalidateCrossFeature(queryClient, [INVOICES_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all, DOCUMENTS_KEYS.all])
             }
 
@@ -229,7 +246,6 @@ export function InvoiceRegistrationModal({
             onSuccess?.()
         } catch (error: unknown) {
             showApiError(error, "Error al registrar el documento")
-            // draftIdRef preserved on error so retry goes directly to confirmInvoice
         } finally {
             setSubmitting(false)
         }
@@ -239,11 +255,11 @@ export function InvoiceRegistrationModal({
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size="md"
+            size="lg"
             asDialog
             icon={FileText}
             title="Registrar Documento"
-            description="Ingrese los datos del documento tributario."
+            description="Asigne el documento pendiente desde el SII / RCV o regístrelo manualmente."
             footer={
                 <FormFooter
                     actions={
@@ -252,7 +268,7 @@ export function InvoiceRegistrationModal({
                             <SubmitButton
                                 onClick={handleSubmit}
                                 loading={submitting}
-                                disabled={submitting || (!isPending && (!isFolioValid || !isPeriodValid))}
+                                disabled={submitting || (!isPending && !pickedFiscalMatchId && (!isFolioValid || !isPeriodValid))}
                             >
                                 Registrar Documento
                             </SubmitButton>
@@ -262,74 +278,61 @@ export function InvoiceRegistrationModal({
             }
         >
             <div className="space-y-6 py-4">
-                {/* DTE type — read-only when completing an existing draft */}
-                <LabeledSelect
-                    label="Tipo de Documento"
-                    value={dteType}
-                    onChange={(v) => { if (!isCompletingDraft) form.setValue("dteType", v) }}
-                    options={DTE_OPTIONS[side]}
-                    disabled={isCompletingDraft}
-                />
-
-                {/* Pending toggle */}
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        id="pending-check"
-                        checked={isPending}
-                        onChange={(e) => {
-                            const pending = e.target.checked
+                {!isCompletingDraft && (
+                    <DteTypeSelector
+                        value={dteType as DteClass}
+                        onChange={(cls) => {
+                            form.setValue("dteType", cls)
+                            setPickedFiscalMatchId(null)
+                        }}
+                        options={ALLOWED_DTE[side]}
+                        direction={side === "purchase" ? "purchase" : "sale"}
+                        variant="select"
+                    />
+                )}
+                {!isDteClassAutoIssued(dteType as DteClass, side === "purchase" ? "purchase" : "sale") && (
+                    <DteEmitLaterSwitch
+                        isPending={isPending}
+                        onChange={(pending) => {
                             form.setValue("isPending", pending)
                             if (pending) {
                                 form.setValue("folio", "")
                                 form.setValue("attachment", null)
+                                setPickedFiscalMatchId(null)
                                 setIsFolioValid(true)
                                 setIsPeriodValid(true)
                             }
                         }}
-                        className="h-4 w-4 rounded border text-primary"
-                        aria-label="Aún no tengo el folio/adjunto"
+                        direction={side === "purchase" ? "purchase" : "sale"}
                     />
-                    <Label htmlFor="pending-check" className="text-sm font-medium cursor-pointer">
-                        Aún no tengo el folio/adjunto
-                    </Label>
-                </div>
-
-                {/* Folio + date */}
-                {!isPending && (
-                    <div className="grid grid-cols-2 gap-4">
-                        <FolioValidationInput
-                            value={form.watch("folio")}
-                            onChange={(v) => form.setValue("folio", v)}
-                            onValidityChange={(valid) => setIsFolioValid(valid)}
-                            contactId={partnerId ?? undefined}
-                            isPurchase={side === "purchase"}
-                            dteType={dteType}
-                            disabled={isPending}
-                        />
-                        <PeriodValidationDateInput
-                            label="Fecha de Emisión"
-                            date={issueDateVal ? new Date(issueDateVal + "T12:00:00") : undefined}
-                            onDateChange={(d) => form.setValue("issueDate", d ? d.toISOString().split("T")[0] : "")}
-                            validationType="both"
-                            onValidityChange={setIsPeriodValid}
-                            disabled={isPending}
-                        />
-                    </div>
                 )}
-
-                {/* Attachment */}
-                {!isPending && (
-                    <div className="space-y-2">
-                        <DocumentAttachmentDropzone
-                            file={attachment}
-                            onFileChange={(f) => form.setValue("attachment", f)}
-                            dteType={dteType}
-                            isPending={isPending}
-                            disabled={isPending}
-                        />
-                    </div>
-                )}
+                <DteRegistrationPanel
+                    data={{
+                        dteClass: dteType as DteClass,
+                        isPending: !!isPending,
+                        folio: folioVal || "",
+                        issueDate: issueDateVal || "",
+                        attachment: attachment || null,
+                        pickedFiscalMatchId: pickedFiscalMatchId,
+                    }}
+                    onChange={(next) => {
+                        if (!isCompletingDraft) {
+                            form.setValue("dteType", next.dteClass)
+                        }
+                        form.setValue("isPending", next.isPending)
+                        form.setValue("folio", next.folio)
+                        form.setValue("issueDate", next.issueDate)
+                        form.setValue("attachment", next.attachment)
+                        setPickedFiscalMatchId(next.pickedFiscalMatchId ?? null)
+                    }}
+                    direction={side === "purchase" ? "purchase" : "sale"}
+                    fiscalMatchContext={fiscalMatchContext}
+                    invoiceId={initialDraftId}
+                    onFolioValidityChange={setIsFolioValid}
+                    onPeriodValidityChange={setIsPeriodValid}
+                    contactId={partnerId ?? undefined}
+                    defaultMode={defaultMode}
+                />
 
                 {/* Collapsible line quantities — only shown when creating a new invoice */}
                 {!isCompletingDraft && lineCount > 0 && (

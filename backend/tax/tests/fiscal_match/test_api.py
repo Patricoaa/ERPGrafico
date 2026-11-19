@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import timedelta
-from decimal import Decimal
 
 import pytest
 from django.core.cache import cache
@@ -151,128 +150,300 @@ def test_list_query_count_constant(api, tenv):
     assert few == many <= 4  # conteo, página, ventas TUU y registros RCV
 
 
-def test_candidates_and_link_terminal_sale(api, tenv):
-    inv = make_pos_document(tenv, 6000, _ago(300))
-    sale = make_terminal_sale(tenv, 6000, _ago(118))  # fuera de la ventana: el motor no la une
-    run_fiscal_match()
-    group = FiscalMatch.objects.get(invoice=inv)
-    movement = TreasuryMovement.objects.get(invoice=inv)
-
-    r = api.get(f"{BASE}/{group.id}/candidates/", {"part": "tuu"})
-    assert r.status_code == 200, r.content
-    assert r.json()[0]["id"] == sale.id
-    (payment,) = r.json()[0]["compatible_movements"]
-    assert payment["id"] == movement.id and Decimal(payment["amount"]) == 6000
-    assert payment["method"] == movement.payment_method_new.name and payment["created_at"]
-    assert api.get(f"{BASE}/{group.id}/candidates/", {"part": "erp"}).status_code == 400
-
-    r = api.post(f"{BASE}/{group.id}/link/", {"part": "tuu", "id": sale.id}, format="json", **_key())
-    assert r.status_code == 400  # falta el pago
-    body = {"part": "tuu", "id": sale.id, "movement": movement.id}
-    r = api.post(f"{BASE}/{group.id}/link/", body, format="json", **_key())
-    assert r.status_code == 200, r.content
-    assert r.json()["id"] == group.id
-    assert [s["id"] for s in r.json()["terminal_sales"]] == [sale.id]
-
-
-def test_candidates_query_count_constant(api, tenv):
-    """Candidatos TUU y ERP con sus cobros: consultas fijas sin importar cuántos haya."""
-
-    def count(n: int) -> tuple[int, int]:
-        FiscalMatch.objects.all().delete()
-        inv = make_pos_document(tenv, 6000, _ago(300))
-        sales = [make_terminal_sale(tenv, 6000, _ago(118)) for _ in range(n)]
-        for _ in range(n):
-            make_pos_document(tenv, 6000, _ago(300))
-        run_fiscal_match()
-        group = FiscalMatch.objects.get(invoice=inv)
-        orphan = TerminalSale.objects.get(pk=sales[0].pk).fiscal_match
-        api.get(f"{BASE}/{group.id}/candidates/", {"part": "tuu"})  # calienta permisos
-        with CaptureQueriesContext(connection) as tuu:
-            r = api.get(f"{BASE}/{group.id}/candidates/", {"part": "tuu"})
-            assert r.status_code == 200 and len(r.json()) >= n
-        with CaptureQueriesContext(connection) as erp:
-            r = api.get(f"{BASE}/{orphan.id}/candidates/", {"part": "erp"})
-            assert r.status_code == 200 and len(r.json()) >= n
-            assert all(c["compatible_movements"] for c in r.json())
-        return len(tuu.captured_queries), len(erp.captured_queries)
-
-    assert count(2) == count(6)
-
-
-def test_link_idempotent(api, tenv):
-    inv = make_pos_document(tenv, 6000, _ago(300))
-    sale = make_terminal_sale(tenv, 6000, _ago(118))
-    run_fiscal_match()
-    group = FiscalMatch.objects.get(invoice=inv)
-    body = {"part": "tuu", "id": sale.id, "movement": TreasuryMovement.objects.get(invoice=inv).id}
-    key = _key()
-
-    first = api.post(f"{BASE}/{group.id}/link/", body, format="json", **key)
-    again = api.post(f"{BASE}/{group.id}/link/", body, format="json", **key)
-
-    assert first.status_code == again.status_code == 200
-    assert again.json() == first.json()
-    assert api.post(f"{BASE}/{group.id}/link/", body, format="json").status_code == 400  # sin clave
-
-
-def test_unlink_and_release(api, tenv):
-    matched, _ = _matched_and_orphan(tenv)
-    sale = matched.terminal_sales.get()
-
-    r = api.post(f"{BASE}/{matched.id}/unlink/", {"part": "tuu", "id": sale.id}, format="json", **_key())
-
-    assert r.status_code == 200, r.content
-    assert r.json()["terminal_sales"] == []
-    sale.refresh_from_db()
-    r = api.post(f"{BASE}/{sale.fiscal_match_id}/release/", format="json", **_key())
-    assert r.status_code == 200
-    assert r.json()["terminal_sales"][0]["linked_manually"] is False
-
-
 def test_retry_issue_rejects_posted(api, tenv):
     matched, _ = _matched_and_orphan(tenv)
     assert api.post(f"{BASE}/{matched.id}/retry-issue/", format="json", **_key()).status_code == 400
 
 
-def test_permissions(tenv):
-    matched, orphan = _matched_and_orphan(tenv)
-    sale = matched.terminal_sales.get()
+def _apply(api, group, changes, **kw):
+    return api.post(f"{BASE}/{group.id}/apply/", {"changes": changes}, format="json", **kw)
+
+
+def _tuu_case(tenv):
+    inv = make_pos_document(tenv, 6000, _ago(300))
+    sale = make_terminal_sale(tenv, 6000, _ago(118))  # fuera de la ventana: el motor no la une
+    run_fiscal_match()
+    return FiscalMatch.objects.get(invoice=inv), sale, TreasuryMovement.objects.get(invoice=inv)
+
+
+def test_apply_endpoint_ok(api, tenv):
+    group, sale, movement = _tuu_case(tenv)
+
+    r = _apply(api, group, [{"op": "link", "part": "tuu", "id": sale.id, "movement": movement.id}], **_key())
+
+    assert r.status_code == 200, r.content
+    assert r.json()["id"] == group.id
+    assert [s["id"] for s in r.json()["terminal_sales"]] == [sale.id]
+
+
+def test_apply_endpoint_error_shape(api, tenv):
+    group, sale, movement = _tuu_case(tenv)
+    changes = [
+        {"op": "link", "part": "tuu", "id": sale.id, "movement": movement.id},
+        {"op": "unlink", "part": "erp", "id": group.invoice_id},
+    ]
+
+    r = _apply(api, group, changes, **_key())
+
+    assert r.status_code == 400
+    error = r.json()["error"]
+    assert error["message"] == "El documento ERP no se quita del cuadre"
+    assert error["code"] == "NOT_ALLOWED"
+    assert error["details"] == {"change_index": 1}
+    sale.refresh_from_db()
+    assert sale.fiscal_match_id != group.id  # todo o nada
+
+
+def test_apply_endpoint_validates_body(api, tenv):
+    group, sale, _ = _tuu_case(tenv)
+    ok = {"op": "link", "part": "rcv", "id": 1}
+    for changes in (
+        [],
+        [ok] * 51,
+        [{"op": "link", "part": "rcv"}],
+        [{"op": "x", "part": "rcv", "id": 1}],
+        [{"op": "link", "part": "erp", "id": 1, "payments": {"abc": 1}}],
+        [{"op": "link", "part": "erp", "id": 1, "payments": {"5": "x"}}],
+    ):
+        assert _apply(api, group, changes, **_key()).status_code == 400
+    assert api.post(f"{BASE}/{group.id}/apply/", {}, format="json", **_key()).status_code == 400
+
+
+def test_apply_accepts_payments_map(api, tenv):
+    group, sale, movement = _tuu_case(tenv)
+    orphan = TerminalSale.objects.get(pk=sale.pk).fiscal_match
+    change = {"op": "link", "part": "erp", "id": group.invoice_id, "payments": {str(sale.id): movement.id}}
+
+    r = _apply(api, orphan, [change], **_key())
+
+    assert r.status_code == 200, r.content
+    assert r.json()["id"] == group.id and [s["id"] for s in r.json()["terminal_sales"]] == [sale.id]
+
+
+def test_apply_permissions(tenv):
+    group, sale, movement = _tuu_case(tenv)
+    change = {"op": "link", "part": "tuu", "id": sale.id, "movement": movement.id}
+    assert _apply(_client("tax.view_taxperiod"), group, [change], **_key()).status_code == 403
+    assert _apply(_client(), group, [change], **_key()).status_code == 403
     viewer = _client("tax.view_taxperiod")
     assert viewer.get(f"{BASE}/").status_code == 200
     assert viewer.get(f"{BASE}/counts/").status_code == 200
-    assert viewer.get(f"{BASE}/{matched.id}/").status_code == 200
-    assert viewer.get(f"{BASE}/{matched.id}/candidates/", {"part": "tuu"}).status_code == 200
-    for path, body in (
-        ("link", {"part": "erp", "id": matched.invoice_id}),
-        ("unlink", {"part": "tuu", "id": sale.id}),
-        ("release", {}),
-        ("retry-issue", {}),
-    ):
-        assert viewer.post(f"{BASE}/{orphan.id}/{path}/", body, format="json", **_key()).status_code == 403
+    assert viewer.get(f"{BASE}/{group.id}/").status_code == 200
+    assert _client("tax.change_taxperiod").get(f"{BASE}/").status_code == 403
     changer = _client("tax.change_taxperiod")
-    assert changer.get(f"{BASE}/").status_code == 403
+    orphan = TerminalSale.objects.get(pk=sale.pk).fiscal_match
     assert changer.post(f"{BASE}/{orphan.id}/release/", format="json", **_key()).status_code == 200
-    assert _client().get(f"{BASE}/counts/").status_code == 403
+    assert _client("tax.view_taxperiod").post(f"{BASE}/{orphan.id}/release/", format="json", **_key()).status_code == 403
+    assert _client("tax.view_taxperiod").post(f"{BASE}/{orphan.id}/retry-issue/", format="json", **_key()).status_code == 403
 
 
-def test_mutation_returns_409_while_engine_runs(api, tenv):
-    matched, _ = _matched_and_orphan(tenv)
-    sale = matched.terminal_sales.get()
+def test_apply_idempotent_replay(api, tenv):
+    group, sale, movement = _tuu_case(tenv)
+    changes = [{"op": "link", "part": "tuu", "id": sale.id, "movement": movement.id}]
+    key = _key()
+
+    first = _apply(api, group, changes, **key)
+    again = _apply(api, group, changes, **key)
+
+    assert first.status_code == again.status_code == 200
+    assert again.json() == first.json()
+    assert _apply(api, group, changes).status_code == 400  # sin clave
+
+
+def test_apply_returns_409_while_engine_runs(api, tenv):
+    group, sale, movement = _tuu_case(tenv)
     cache.delete(FISCAL_MATCH_LOCK_KEY)
     cache.add(FISCAL_MATCH_LOCK_KEY, "engine", timeout=540)
     try:
-        r = api.post(f"{BASE}/{matched.id}/unlink/", {"part": "tuu", "id": sale.id}, format="json", **_key())
+        changes = [{"op": "link", "part": "tuu", "id": sale.id, "movement": movement.id}]
+        r = _apply(api, group, changes, **_key())
     finally:
         cache.delete(FISCAL_MATCH_LOCK_KEY)
 
     assert r.status_code == 409
     assert r.json()["error"]["message"] == "El cuadre automático se está ejecutando. Reintente en unos segundos."
-    sale.refresh_from_db()
-    assert sale.fiscal_match_id == matched.id
 
 
-def test_link_unknown_record_is_400(api, tenv):
+def test_rule_error_outside_apply_keeps_its_code(api, tenv):
     matched, _ = _matched_and_orphan(tenv)
-    r = api.post(f"{BASE}/{matched.id}/link/", {"part": "rcv", "id": 999999}, format="json", **_key())
+
+    r = api.post(f"{BASE}/{matched.id}/release/", format="json", **_key())
+
     assert r.status_code == 400
+    assert r.json()["error"]["code"] == "SECOND_DOCUMENT"
+    assert r.json()["error"]["details"] == {}
+
+
+def test_release_and_retry_issue(api, tenv):
+    matched, orphan = _matched_and_orphan(tenv)
+    r = api.post(f"{BASE}/{orphan.id}/release/", format="json", **_key())
+    assert r.status_code == 200
+    assert api.post(f"{BASE}/{matched.id}/retry-issue/", format="json", **_key()).status_code == 400
+
+
+def test_removed_endpoints_404(api, tenv):
+    matched, orphan = _matched_and_orphan(tenv)
+    for method, path in (
+        ("post", "link"),
+        ("post", "unlink"),
+        ("get", "candidates"),
+    ):
+        r = getattr(api, method)(f"{BASE}/{matched.id}/{path}/", {"part": "tuu", "id": 1}, format="json", **_key())
+        assert r.status_code == 404, path
+
+
+def test_invoice_candidates_empty(api, tenv):
+    r = api.get(f"{BASE}/invoice-candidates/?direction=purchase&sii_code=33")
+    assert r.status_code == 200
+    assert r.json()["results"] == []
+
+
+def test_invoice_candidates_with_groups_and_scoring(api, tenv):
+    from accounting.models import RCVDocument, RCVImport
+    from billing.models import Invoice
+
+    today = timezone.localdate()
+    imp = RCVImport.objects.create(
+        direction="PURCHASE", year=today.year, month=today.month, status=RCVImport.Status.SUCCESS
+    )
+    # Grupo huérfano 1: monto exacto 15000, mismo día -> alto score
+    doc1 = RCVDocument.objects.create(
+        direction="PURCHASE",
+        dte_type=33,
+        folio=1001,
+        issue_date=today,
+        total_amount=15000,
+        counterparty_rut="76123456-7",
+        first_import=imp,
+        last_import=imp,
+    )
+    g1 = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.PURCHASE,
+        status=FiscalMatchStatus.MISSING_ERP,
+        dte_type=33,
+        issue_date=today,
+        rcv_amount=15000,
+        counterparty_rut="76123456-7",
+    )
+    doc1.fiscal_match = g1
+    doc1.save()
+
+    # Grupo huérfano 2: monto distinto 50000, otra fecha -> menor score
+    doc2 = RCVDocument.objects.create(
+        direction="PURCHASE",
+        dte_type=33,
+        folio=1002,
+        issue_date=today - timedelta(days=10),
+        total_amount=50000,
+        counterparty_rut="76999999-9",
+        first_import=imp,
+        last_import=imp,
+    )
+    g2 = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.PURCHASE,
+        status=FiscalMatchStatus.MISSING_ERP,
+        dte_type=33,
+        issue_date=today - timedelta(days=10),
+        rcv_amount=50000,
+        counterparty_rut="76999999-9",
+    )
+    doc2.fiscal_match = g2
+    doc2.save()
+
+    # Grupo 3: MATCHED -> no debe aparecer
+    g3 = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.PURCHASE,
+        status=FiscalMatchStatus.MATCHED,
+        dte_type=33,
+        issue_date=today,
+        rcv_amount=15000,
+    )
+
+    r = api.get(f"{BASE}/invoice-candidates/?direction=purchase&sii_code=33&amount=15000&counterparty_rut=76123456-7")
+    assert r.status_code == 200
+    results = r.json()["results"]
+    assert len(results) == 2
+    assert results[0]["fiscal_match_id"] == g1.id
+    assert results[0]["score"] > results[1]["score"]
+    assert all(item["fiscal_match_id"] != g3.id for item in results)
+
+    # Probando con invoice_id en lugar de pre-contexto
+    inv = Invoice.objects.create(
+        dte_type=Invoice.DTEType.PURCHASE_INV,
+        number="",
+        date=today,
+        total=15000,
+        status=Invoice.Status.DRAFT,
+        partner_tax_id_snapshot="76.123.456-7",
+    )
+    r_inv = api.get(f"{BASE}/invoice-candidates/?invoice_id={inv.id}")
+    assert r_inv.status_code == 200
+    results_inv = r_inv.json()["results"]
+    assert len(results_inv) >= 1
+    assert results_inv[0]["fiscal_match_id"] == g1.id
+
+
+def test_invoice_candidates_constant_queries(api, tenv):
+    from accounting.models import RCVDocument, RCVImport
+
+    today = timezone.localdate()
+    imp = RCVImport.objects.create(
+        direction="PURCHASE", year=today.year, month=today.month, status=RCVImport.Status.SUCCESS
+    )
+    for i in range(5):
+        doc = RCVDocument.objects.create(
+            direction="PURCHASE",
+            dte_type=33,
+            folio=2000 + i,
+            issue_date=today,
+            total_amount=10000 * (i + 1),
+            counterparty_rut="76123456-7",
+            first_import=imp,
+            last_import=imp,
+        )
+        g = FiscalMatch.objects.create(
+            direction=FiscalMatch.Direction.PURCHASE,
+            status=FiscalMatchStatus.MISSING_ERP,
+            dte_type=33,
+            issue_date=today,
+            rcv_amount=10000 * (i + 1),
+            counterparty_rut="76123456-7",
+        )
+        doc.fiscal_match = g
+        doc.save()
+
+    with CaptureQueriesContext(connection) as ctx:
+        r = api.get(f"{BASE}/invoice-candidates/?direction=purchase&sii_code=33")
+    assert r.status_code == 200
+    assert len(r.json()["results"]) == 5
+    # Query count constante
+    assert len(ctx.captured_queries) <= 6
+
+
+def test_invoice_candidates_excludes_tuu_sales_without_rcv(api, tenv):
+    from treasury.models import TerminalSale
+
+    today = timezone.localdate()
+    sale = TerminalSale.objects.create(
+        provider=tenv.provider,
+        device=tenv.device,
+        sale_amount=5000,
+        transaction_at=timezone.now(),
+        document_type=39,
+    )
+    g_tuu = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.SALE,
+        status=FiscalMatchStatus.MISSING_ERP,
+        dte_type=39,
+        issue_date=today,
+        tuu_amount=5000,
+    )
+    sale.fiscal_match = g_tuu
+    sale.save()
+
+    r = api.get(f"{BASE}/invoice-candidates/?direction=sale&sii_code=39")
+    assert r.status_code == 200
+    results = r.json()["results"]
+    assert all(item["fiscal_match_id"] != g_tuu.id for item in results)
+
+

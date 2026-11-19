@@ -114,6 +114,7 @@ function RcvImportDetailBody({ rcvImport }: { rcvImport: RcvImportDetail }) {
                 <Stat title="Nuevos" value={rcvImport.created_count} />
                 <Stat title="Actualizados" value={rcvImport.updated_count} />
                 <Stat title="Faltantes" value={rcvImport.missing_count} />
+                <Stat title="Contactos creados" value={rcvImport.contacts_created_count} />
             </Section>
 
             <RcvImportAttempts attempts={rcvImport.attempts} />

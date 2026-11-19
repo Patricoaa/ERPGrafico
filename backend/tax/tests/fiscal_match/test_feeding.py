@@ -20,6 +20,7 @@ from purchasing.models import PurchaseOrder
 from tax.fiscal_match.feeding import (
     confirm_draft_from_rcv,
     create_draft_from_rcv,
+    create_sale_from_rcv,
     draft_suggestions,
     supplier_purchase_orders,
 )
@@ -337,3 +338,27 @@ def test_list_endpoints_constant_queries(api, imp, supplier, path):
     for _ in range(4):
         draft(supplier, 100000)
     assert count() == few
+
+
+def test_create_sale_invoice_from_rcv(api, imp):
+    group = rcv(imp, 6513, 10000, direction=S, dte_type=33, rut="76225990-7")
+    assert group.direction == FiscalMatch.Direction.SALE
+    assert group.invoice_id is None
+
+    res = api.post(f"{BASE}/{group.pk}/create-sale/", {}, format="json", **_key())
+    assert res.status_code == 201
+
+    data = res.json()
+    assert data["invoice"] is not None
+    assert data["invoice"]["dte_type"] == Invoice.DTEType.FACTURA
+    assert data["invoice"]["number"] == "6513"
+    assert data["invoice"]["status"] == Invoice.Status.POSTED
+    assert data["erp_state"] == "MATCHED"
+    assert data["rcv_state"] == "MATCHED"
+    assert data["status"] == "MATCHED"
+
+
+def test_create_sale_fails_for_purchase(api, imp):
+    group = rcv(imp, 123, 10000, direction=P, dte_type=33)
+    res = api.post(f"{BASE}/{group.pk}/create-sale/", {}, format="json", **_key())
+    assert res.status_code == 400

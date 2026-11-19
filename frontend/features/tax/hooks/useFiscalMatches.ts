@@ -1,13 +1,13 @@
 'use client'
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey'
 import { errorStatus, showApiError } from '@/lib/errors'
 import { staleTime } from '@/lib/query-config'
-import { fiscalMatchApi } from '../api/fiscalMatchApi'
-import type { FiscalMatchFilters, FiscalMatchLinkBody, FiscalMatchPart, FiscalMatchUnlinkBody } from '../types/fiscalMatch'
+import { applyErrorOf, fiscalMatchApi } from '../api/fiscalMatchApi'
+import type { FiscalMatchChange, FiscalMatchFilters, FiscalMatchPart, FiscalMatchSearchParams } from '../types/fiscalMatch'
 import { FISCAL_MATCH_KEYS, FISCAL_MATCH_KEY, RCV_DOCUMENTS_KEY, TERMINAL_SALES_KEY } from './fiscalMatchKeys'
 
 /** Página de grupos de cuadre; conserva la anterior mientras carga la siguiente. */
@@ -47,14 +47,31 @@ export function useFiscalMatch(id: number | null | undefined) {
     return { group: data, isLoading, isError, notFound: errorStatus(error) === 404, isRefetching, refetch }
 }
 
-export function useFiscalMatchCandidates<P extends FiscalMatchPart>(id: number, part: P, enabled = true) {
-    const { data, isLoading, isError, isRefetching, refetch } = useQuery({
-        queryKey: FISCAL_MATCH_KEYS.candidates(id, part),
-        queryFn: () => fiscalMatchApi.candidates(id, part),
-        enabled: enabled && id > 0,
+/**
+ * Búsqueda de candidatas de una columna, paginada en infinito (20 por página). Solo la monta la
+ * columna que ofrece candidatas; cambiar `q`/`ordering` reinicia desde la página 1.
+ */
+export function useFiscalMatchSearch(id: number, part: FiscalMatchPart, params: FiscalMatchSearchParams) {
+    const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
+        queryKey: FISCAL_MATCH_KEYS.search(id, part, params),
+        queryFn: ({ pageParam, signal }) => fiscalMatchApi.search(id, part, params, pageParam, signal),
+        initialPageParam: 1,
+        getNextPageParam: (last) => (last.hasNextPage ? last.pageIndex + 1 : undefined),
+        enabled: id > 0,
         staleTime: staleTime.standard,
+        // Al escribir en el buscador la columna no se vacía mientras llega la nueva búsqueda.
+        placeholderData: keepPreviousData,
     })
-    return { candidates: data ?? [], isLoading, isError, isRefetching, refetch }
+    return {
+        items: data?.pages.flatMap((p) => p.results) ?? [],
+        totalCount: data?.pages[0]?.count ?? 0,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+        isError,
+        refetch,
+    }
 }
 
 /** Invalida el cuadre y las listas de RCV/TUU. */
@@ -74,10 +91,13 @@ function idOf(value: unknown): number | undefined {
     return typeof value.id === 'number' ? value.id : undefined
 }
 
-/** Mutación con `Idempotency-Key` por intención; 409 (motor ocupado) muestra el mensaje del servidor. */
+/**
+ * Mutación con `Idempotency-Key` por intención; 409 (motor ocupado) muestra el mensaje del servidor.
+ * `handlesError(e)`: el error lo muestra quien llama (p. ej. el 400 de `apply` en su tarjeta), sin el aviso genérico.
+ */
 export function useGroupMutation<V, R = unknown>(
     run: (vars: V, key: string) => Promise<R>,
-    messages: { success: string; error: string },
+    messages: { success: string; error: string; handlesError?: (error: unknown) => boolean },
 ) {
     const qc = useQueryClient()
     const invalidate = useInvalidateFiscalMatch()
@@ -95,6 +115,7 @@ export function useGroupMutation<V, R = unknown>(
             const from = idOf(vars)
             if (from !== undefined && from !== idOf(result)) {
                 qc.removeQueries({ queryKey: FISCAL_MATCH_KEYS.detail(from) })
+                qc.removeQueries({ queryKey: [...FISCAL_MATCH_KEY, 'search', from] })
                 void invalidate()
                 return
             }
@@ -103,22 +124,19 @@ export function useGroupMutation<V, R = unknown>(
         },
         onError: (e) => {
             failed(e)
-            showApiError(e, messages.error)
+            if (!messages.handlesError?.(e)) showApiError(e, messages.error)
         },
     })
 }
 
-export function useLinkFiscalMatch() {
+/**
+ * Guarda los cambios en espera de la ficha; sigue al grupo resultante (ver `useGroupMutation`). Un 400
+ * con `change_index` lo muestra la ficha (en la tarjeta del cambio y un solo aviso), no el aviso genérico.
+ */
+export function useApplyFiscalMatch() {
     return useGroupMutation(
-        (v: { id: number; body: FiscalMatchLinkBody }, key) => fiscalMatchApi.link(v.id, v.body, key),
-        { success: 'Cuadre actualizado', error: 'No se pudo cuadrar' },
-    )
-}
-
-export function useUnlinkFiscalMatch() {
-    return useGroupMutation(
-        (v: { id: number; body: FiscalMatchUnlinkBody }, key) => fiscalMatchApi.unlink(v.id, v.body, key),
-        { success: 'Unión quitada', error: 'No se pudo quitar la unión' },
+        (v: { id: number; changes: FiscalMatchChange[] }, key) => fiscalMatchApi.apply(v.id, v.changes, key),
+        { success: 'Cuadre guardado', error: 'No se pudo guardar el cuadre', handlesError: (e) => applyErrorOf(e) !== null },
     )
 }
 

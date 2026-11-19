@@ -108,47 +108,52 @@ export interface FiscalMatchCounts {
 export interface CandidateMovement extends FiscalMatchMovementRef {
     /** Nombre del método de pago («Tarjeta», «Efectivo»). */
     method: string
+    /** Es del monto de la venta TUU; otro monto se puede elegir con advertencia (Ruling K). */
+    same_amount: boolean
 }
 
-export interface ErpCandidate {
+export type FiscalMatchSearchOrdering = 'score' | 'recent'
+
+export interface FiscalMatchSearchParams {
+    q?: string
+    ordering?: FiscalMatchSearchOrdering
+}
+
+export interface FiscalMatchWarning {
+    code: string
+    label: string
+    /** Un aviso bloqueante impide cuadrar la tarjeta. */
+    blocking: boolean
+}
+
+/** Tarjeta candidata de `GET fiscal-matches/{id}/search/` (opcionales solo en su parte). */
+export interface FiscalMatchSearchItem {
     id: number
-    display_id: string
-    dte_type: string
-    number: string
-    total: string | null
-    date: string | null
-    /** Cobros libres del monto de la venta TUU del huérfano; vacío si el huérfano no tiene venta. */
-    compatible_movements: CandidateMovement[]
+    kind: string
+    label: string
+    counterparty: string
+    date: string
+    datetime?: string
+    amount: string
+    score: number
+    warnings: FiscalMatchWarning[]
+    /** Venta TUU hacia un documento: cobros libres de un medio compatible, los de su monto primero. */
+    compatible_movements?: CandidateMovement[]
+    /** Venta TUU hacia un documento: registros del SII de su grupo huérfano que viajarían con ella. */
+    carried_rcv?: { id: number; folio: string }[]
+    /** Documento para un huérfano con ventas TUU: `{sale_id: cobros libres compatibles}`, los del monto primero. */
+    payments_by_sale?: Record<string, CandidateMovement[]>
 }
 
-export interface TuuCandidate extends FiscalMatchSaleRef {
-    document_type: number | null
-    payment_type: string
-    compatible_movements: CandidateMovement[]
-}
-
-export interface RcvCandidate extends FiscalMatchRcvDetail {
-    counterparty_rut: string
-}
-
-export interface FiscalMatchCandidateMap {
-    erp: ErpCandidate
-    tuu: TuuCandidate
-    rcv: RcvCandidate
-}
-
-export type FiscalMatchCandidate = FiscalMatchCandidateMap[FiscalMatchPart]
-
-export interface FiscalMatchLinkBody {
+/** Cambio en espera de la ficha (`POST fiscal-matches/{id}/apply/`). */
+export interface FiscalMatchChange {
+    op: 'link' | 'unlink'
     part: FiscalMatchPart
     id: number
-    /** Movimiento de tesorería a asociar (solo `tuu`). */
+    /** Movimiento de tesorería a asociar (link de una venta TUU / documento ERP). */
     movement?: number | null
-}
-
-export interface FiscalMatchUnlinkBody {
-    part: 'tuu' | 'rcv'
-    id: number
+    /** `{sale_id: movement_id}` */
+    payments?: Record<number, number> | null
 }
 
 /** Borrador de compra sugerido para un grupo con registro del SII sin factura. */

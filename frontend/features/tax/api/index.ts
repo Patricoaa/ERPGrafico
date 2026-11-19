@@ -1,2 +1,2 @@
 export { taxApi } from './taxApi'
-export { fiscalMatchApi } from './fiscalMatchApi'
+export { fiscalMatchApi, applyErrorOf } from './fiscalMatchApi'

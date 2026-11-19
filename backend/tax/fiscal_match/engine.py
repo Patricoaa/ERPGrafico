@@ -24,7 +24,7 @@ from tax.fiscal_match.boletas import pair_rcv_boletas
 from tax.fiscal_match.candidates import local_midnight, stamp_groups
 from tax.fiscal_match.groups import ensure_groups, rcv_orphan_group, tuu_orphan_group
 from tax.fiscal_match.issuing import issuable_q, issue_fiscal_drafts, tuu_number
-from tax.fiscal_match.rcv import link_rcv_documents
+from tax.fiscal_match.rcv import link_rcv_documents, pair_orphan_tuu_rcv_facturas
 from tax.fiscal_match.states import STATE_FIELDS, EvalContext, build_context, evaluate
 from tax.fiscal_match.terminal import link_terminal_sales
 from tax.models import FiscalMatch, FiscalMatchRun
@@ -79,20 +79,21 @@ def _run(start: date, window: timedelta, since: datetime | None) -> dict:
     terminal = link_terminal_sales(lo, hi, rematch_ids=rematch)
     boletas = pair_rcv_boletas(lo, hi)
     rcv = link_rcv_documents(start)
+    facturas_tuu = pair_orphan_tuu_rcv_facturas(lo, hi, exclude_group_ids=released)
 
-    tuu_ambiguous = terminal.ambiguous_group_ids
+    tuu_ambiguous = terminal.ambiguous_group_ids | facturas_tuu.ambiguous_group_ids
+    rcv_ambiguous = rcv.ambiguous_group_ids | facturas_tuu.ambiguous_group_ids
     touched = (
         released
         | rematch
         | terminal.touched_group_ids
         | boletas.touched_group_ids
         | rcv.touched_group_ids
+        | facturas_tuu.touched_group_ids
         | tuu_ambiguous
-        | rcv.ambiguous_group_ids
+        | rcv_ambiguous
     )
-    evaluated = _evaluate(
-        _scope(start, since) | Q(id__in=touched), tuu_ambiguous, rcv.ambiguous_group_ids
-    )
+    evaluated = _evaluate(_scope(start, since) | Q(id__in=touched), tuu_ambiguous, rcv_ambiguous)
 
     drafts = set(FiscalMatch.objects.filter(issuable_q()).values_list("id", flat=True))
     issued = issue_fiscal_drafts()
@@ -107,6 +108,7 @@ def _run(start: date, window: timedelta, since: datetime | None) -> dict:
         "terminal": terminal.linked,
         "boletas": boletas.linked,
         "rcv": rcv.linked + rcv_after.linked,
+        "facturas_tuu": facturas_tuu.linked,
         "evaluated": evaluated,
         "issued": issued,
     }

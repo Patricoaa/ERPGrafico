@@ -272,6 +272,99 @@ def test_format_error_fails():
     assert RCVDocument.objects.count() == 0
 
 
+@pytest.mark.django_db
+def test_purchases_with_split_summary_by_status_consolidates_and_balances():
+    make_rcv_settings()
+    make_api_key()
+    body = {
+        "caratula": {
+            "rutEmpresa": "11111111-1",
+            "periodo": "202610",
+        },
+        "compras": {
+            "resumenes": [
+                {
+                    "tipoDte": 33,
+                    "tipoDteString": "FACTURA ELECTRÓNICA",
+                    "totalDocumentos": 1,
+                    "montoExento": 0,
+                    "montoNeto": 1000,
+                    "ivaRecuperable": 190,
+                    "ivaUsoComun": 0,
+                    "ivaNoRecuperable": 0,
+                    "montoTotal": 1190,
+                    "estado": "Confirmada",
+                },
+                {
+                    "tipoDte": 33,
+                    "tipoDteString": "FACTURA ELECTRÓNICA",
+                    "totalDocumentos": 1,
+                    "montoExento": 0,
+                    "montoNeto": 2000,
+                    "ivaRecuperable": 380,
+                    "ivaUsoComun": 0,
+                    "ivaNoRecuperable": 0,
+                    "montoTotal": 2380,
+                    "estado": "Pendiente",
+                },
+            ],
+            "detalleCompras": [
+                {
+                    "tipoDTE": 33,
+                    "tipoDTEString": "FACTURA ELECTRÓNICA",
+                    "folio": 101,
+                    "rutProveedor": "78950040-1",
+                    "razonSocial": "PROVEEDOR 1",
+                    "fechaEmision": "2026-10-01",
+                    "fechaRecepcion": "2026-10-02T10:00:00",
+                    "estado": "Confirmada",
+                    "acuseRecibo": "Recibo otorgado",
+                    "montoExento": 0,
+                    "montoNeto": 1000,
+                    "montoIvaRecuperable": 190,
+                    "montoTotal": 1190,
+                },
+                {
+                    "tipoDTE": 33,
+                    "tipoDTEString": "FACTURA ELECTRÓNICA",
+                    "folio": 102,
+                    "rutProveedor": "78950040-1",
+                    "razonSocial": "PROVEEDOR 1",
+                    "fechaEmision": "2026-10-05",
+                    "fechaRecepcion": "2026-10-06T11:00:00",
+                    "estado": "Pendiente",
+                    "acuseRecibo": "Pendiente de acuse",
+                    "montoExento": 0,
+                    "montoNeto": 2000,
+                    "montoIvaRecuperable": 380,
+                    "montoTotal": 2380,
+                },
+            ],
+        },
+    }
+    purchases_import = _import(direction=PURCHASES, year=2026, month=10)
+    imp = rcv_service.execute_import(
+        purchases_import,
+        client_factory=FakeClient({"TEST-KEY-1": [ok(body)]}),
+        sleep=_no_sleep(),
+    )
+    assert imp.status == RCVImport.Status.SUCCESS
+    assert imp.warnings == []
+    assert imp.received_count == 2
+    assert imp.created_count == 2
+    assert imp.missing_count == 0
+
+    summaries = list(RCVImportSummary.objects.filter(rcv_import=imp))
+    assert len(summaries) == 1
+    s33 = summaries[0]
+    assert s33.dte_type == 33
+    assert s33.document_count == 2
+    assert s33.detail_count == 2
+    assert s33.total_amount == Decimal("3570")
+    assert s33.detail_total == Decimal("3570")
+    assert s33.has_detail is True
+
+
 # ── Rotación de keys y errores ───────────────────────────────────────────────
 
 

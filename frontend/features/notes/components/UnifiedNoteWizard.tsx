@@ -290,6 +290,10 @@ export function UnifiedNoteWizard({
                         data={registration}
                         setData={setRegistration}
                         onPeriodValidityChange={setIsPeriodValid}
+                        direction={mode === 'sales' ? 'sale' : 'purchase'}
+                        counterpartyRut={sourceDocument?.counterpartyRut}
+                        total={total}
+                        invoiceId={sourceDocument?.invoiceId}
                     />
                 )
 

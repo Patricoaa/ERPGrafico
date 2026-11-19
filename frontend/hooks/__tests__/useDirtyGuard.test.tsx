@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 
 import { GlobalModalProvider, useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useInitializeDrawerForm } from "../useInitializeDrawerForm"
+import { useDraftDirtyGuard } from "../useDirtyGuard"
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/x", useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("@/lib/entity-drawers", () => ({ ENTITY_DRAWERS: {}, hasEntityDrawer: () => false }))
@@ -154,5 +155,53 @@ describe("useDirtyGuard via useInitializeDrawerForm", () => {
         await waitFor(() => expect(screen.getByLabelText("nombre")).toHaveValue("Cambiado"))
         act(() => screen.getByText("salir:none").click())
         expect(await screen.findByText("Original")).toBeInTheDocument()
+    })
+})
+
+/** Borrador sin react-hook-form (como la ficha de cuadre). */
+function DraftDrawer({ onSave }: { onSave: () => Promise<boolean> }) {
+    const [count, setCount] = React.useState(0)
+    useDraftDirtyGuard({
+        open: true,
+        name: "Cuadre B-5",
+        isDirty: count > 0,
+        discard: () => setCount(0),
+        save: async () => {
+            const ok = await onSave()
+            if (ok) setCount(0)
+            return ok
+        },
+    })
+    return (
+        <>
+            <button onClick={() => setCount((n) => n + 1)}>cambiar:{count}</button>
+            <Opener />
+        </>
+    )
+}
+
+describe("useDraftDirtyGuard", () => {
+    it("sin cambios no pregunta; con cambios usa el diálogo global con su nombre", async () => {
+        render(<GlobalModalProvider><DraftDrawer onSave={vi.fn().mockResolvedValue(true)} /></GlobalModalProvider>)
+        act(() => screen.getByText("salir:none").click())
+        expect(await screen.findByText("salir:continue")).toBeInTheDocument()
+
+        act(() => screen.getByText("cambiar:0").click())
+        act(() => screen.getByText("salir:continue").click())
+        expect(await screen.findByText("Cambios sin guardar")).toBeInTheDocument()
+        expect(screen.getByText("Cuadre B-5")).toBeInTheDocument()
+        act(() => screen.getByText("Descartar y continuar").click())
+        expect(await screen.findByText("cambiar:0")).toBeInTheDocument()
+    })
+
+    it("«Guardar y continuar» llama a save; si falla, no continúa", async () => {
+        const onSave = vi.fn().mockResolvedValue(false)
+        render(<GlobalModalProvider><DraftDrawer onSave={onSave} /></GlobalModalProvider>)
+        act(() => screen.getByText("cambiar:0").click())
+        act(() => screen.getByText("salir:none").click())
+        act(() => screen.getByText("Guardar y continuar").click())
+        await waitFor(() => expect(screen.getByText("salir:cancel")).toBeInTheDocument())
+        expect(onSave).toHaveBeenCalled()
+        expect(screen.getByText("cambiar:1")).toBeInTheDocument()
     })
 })

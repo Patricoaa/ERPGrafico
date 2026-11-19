@@ -11,6 +11,7 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
 from accounting.models import RCVDocument, RCVImport
+from billing.fiscal_key import counterparty_rut
 from billing.models import Invoice
 from core.fiscal_match import FiscalMatchStatus, PartState
 from tax.fiscal_match.groups import ensure_groups
@@ -50,10 +51,13 @@ def rcv_import(direction=S, year=2026, month=11, status=RCVImport.Status.SUCCESS
 
 
 def rcv_doc(group, total, *, dte_type=39, direction=S, period="202611", issue=date(2026, 11, 13), **kw):
+    rut = kw.pop("counterparty_rut", None)
+    if rut is None:  # por defecto, el RUT del documento del grupo (si lo hay)
+        rut = counterparty_rut(group.invoice) if group.invoice_id else "66666666-6"
     imp = kw.pop("imp", None) or RCVImport.objects.filter(direction=direction).first() or rcv_import(direction)
     return RCVDocument.objects.create(
         direction=direction, company_rut="11111111-1", period=period, dte_type=dte_type,
-        folio=next(_folios), counterparty_rut="66666666-6", issue_date=issue,
+        folio=next(_folios), counterparty_rut=rut, issue_date=issue,
         total_amount=Decimal(total), first_import=imp, last_import=imp, fiscal_match=group, **kw,
     )
 
@@ -150,6 +154,33 @@ def test_purchase_with_same_amount_rcv_is_matched_and_tuu_not_applicable(env):
     g = one(group)
 
     assert parts(g) == (M, NA, M, FiscalMatchStatus.MATCHED)
+
+
+def test_invoice_rcv_with_other_rut_is_diff(env):
+    _, group = purchase_group()
+    rcv_doc(group, 119000, dte_type=33, direction=P, period="202610", issue=date(2026, 10, 12),
+            counterparty_rut="76123456-7")
+
+    g = one(group)
+
+    assert g.rcv_state == D
+    assert g.status == FiscalMatchStatus.DIFF
+
+
+def test_invoice_rcv_with_same_rut_unformatted_is_matched(env):
+    _, group = purchase_group()
+    rcv_doc(group, 119000, dte_type=33, direction=P, period="202610", issue=date(2026, 10, 12),
+            counterparty_rut="8973356-K")
+
+    assert one(group).rcv_state == M
+
+
+def test_boleta_rcv_rut_ignored(env):
+    invoice, group = pos_group(env, 5000)
+    sale_for(env, invoice, group)
+    rcv_doc(group, 5000, dte_type=39, counterparty_rut="76123456-7")
+
+    assert one(group).rcv_state == M
 
 
 def test_purchase_with_different_rcv_amount_is_diff(env):
@@ -471,8 +502,31 @@ def test_orphan_rcv_is_missing_erp(env):
 
     g = one(orphan)
 
-    assert parts(g) == (MI, NA, M, FiscalMatchStatus.MISSING_ERP)
+    # Para facturas 33/34 en venta huérfanas, tuu_state queda PENDING porque puede haber pago con tarjeta en TUU
+    assert parts(g) == (MI, PD, M, FiscalMatchStatus.MISSING_ERP)
     assert g.erp_amount is None
+
+
+def test_orphan_rcv_dte_34_tuu_state_is_pending(env):
+    orphan = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.SALE, dte_type=34, issue_date=date(2026, 11, 13), fiscal_period="202611"
+    )
+    rcv_doc(orphan, 1000, dte_type=34)
+
+    g = one(orphan)
+
+    assert parts(g) == (MI, PD, M, FiscalMatchStatus.MISSING_ERP)
+
+
+def test_orphan_rcv_boleta_39_tuu_state_is_not_applicable(env):
+    orphan = FiscalMatch.objects.create(
+        direction=FiscalMatch.Direction.SALE, dte_type=39, issue_date=date(2026, 11, 13), fiscal_period="202611"
+    )
+    rcv_doc(orphan, 1000, dte_type=39)
+
+    g = one(orphan)
+
+    assert parts(g) == (MI, NA, M, FiscalMatchStatus.MISSING_ERP)
 
 
 def test_orphan_tuu_sale_erp_pending_until_window_then_missing(env):

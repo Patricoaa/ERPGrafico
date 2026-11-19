@@ -1944,6 +1944,7 @@ class RCVImport(TimeStampedModel):
     created_count = models.PositiveIntegerField(_("Creados"), default=0)
     updated_count = models.PositiveIntegerField(_("Actualizados"), default=0)
     missing_count = models.PositiveIntegerField(_("Ausentes"), default=0)
+    contacts_created_count = models.PositiveIntegerField(_("Contactos creados"), default=0)
     api_key = models.ForeignKey(
         RCVApiKey,
         on_delete=models.SET_NULL,

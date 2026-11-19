@@ -17,7 +17,7 @@ describe("fiscal_match", () => {
 
     it("maps the group status to its Spanish label and intent", () => {
         expect(terminalSaleMatchStatus(ref("MATCHED", "Cuadrado"))).toMatchObject({ status: "matched", label: "Cuadrado", intent: "success" })
-        expect(terminalSaleMatchStatus(ref("DIFF", "Con diferencia")).intent).toBe("warning")
+        expect(terminalSaleMatchStatus(ref("DIFF", "Con advertencias")).intent).toBe("warning")
         expect(terminalSaleMatchStatus(ref("MISSING_EXTERNAL", "Falta en SII/TUU")).intent).toBe("destructive")
         expect(terminalSaleMatchStatus(ref("EXCLUDED", "Excluido")).intent).toBe("neutral")
         expect(terminalSaleMatchStatus(null).label).toBe("Sin evaluar")

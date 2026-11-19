@@ -44,6 +44,7 @@ from accounting.models import (
     RCVImportSummary,
     RCVSettings,
 )
+from accounting.rcv_contacts import ensure_contacts_for_documents
 from accounting.selectors import rcv_key_usage
 from core.crypto import CryptoError
 
@@ -473,6 +474,10 @@ def _execute(
             except RCVFormatError as exc:
                 detail = _redact(str(exc), (plain_key, password))
                 raise _Failed("FORMAT", FORMAT_MESSAGE.format(detail=detail)) from None
+            # Los contactos se derivan del reporte, fuera del upsert: así el
+            # número de queries de ``apply_report`` no crece con los documentos.
+            customers = ensure_contacts_for_documents(report.documents, company_rut)
+            rcv_import.contacts_created_count = customers.created
             return
 
 
@@ -551,7 +556,7 @@ def apply_report(rcv_import: RCVImport, report: NormalizedReport) -> None:
     company_rut = normalize_rut(RCVSettings.get_settings().company_rut)
     direction = rcv_import.direction
     period = report.period
-    warnings = list(rcv_import.warnings)
+    warnings: list[str] = []
     requested = f"{rcv_import.year}{rcv_import.month:02d}"
     if period != requested:
         _warn(warnings, PERIOD_MISMATCH_WARNING.format(received=period, requested=requested))

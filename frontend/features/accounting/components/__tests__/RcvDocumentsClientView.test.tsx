@@ -71,7 +71,7 @@ const doc: RcvDocument = {
     acknowledgement: "Recibo otorgado por el receptor", service_indicator: null, exempt_amount: "0", net_amount: "10000",
     vat_amount: "1900", vat_recoverable: "1900", vat_non_recoverable: "0", total_amount: "11900", other_taxes_total: "0",
     reference_dte_type: null, reference_folio: "", is_missing: false,
-    fiscal_match: { id: 12, status: "DIFF", status_display: "Con diferencia" },
+    fiscal_match: { id: 12, status: "DIFF", status_display: "Con advertencias" },
 }
 
 describe("RcvDocumentsClientView", () => {
@@ -152,7 +152,7 @@ describe("RcvDocumentsClientView", () => {
         m.docs = [doc]
         render(<RcvDocumentsClientView direction="PURCHASES" />)
         expect(screen.getByRole("columnheader", { name: /Cuadre/ })).toBeInTheDocument()
-        expect(screen.getByText("Con diferencia")).toBeInTheDocument()
+        expect(screen.getByText("Con advertencias")).toBeInTheDocument()
     })
 
     it("filtra por estado de cuadre desde la URL y descarta valores desconocidos", () => {

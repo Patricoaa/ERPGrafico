@@ -20,7 +20,7 @@ export const PART_STATE_LABELS: Record<PartState, string> = {
     MATCHED: "Cuadrado",
     PENDING: "Pendiente",
     MISSING: "Falta",
-    DIFF: "Diferencia",
+    DIFF: "Advertencia",
     AMBIGUOUS: "Ambiguo",
     NOT_APPLICABLE: "No aplica",
     SUMMARY_ONLY: "Solo resumen",
@@ -29,7 +29,7 @@ export const PART_STATE_LABELS: Record<PartState, string> = {
 export const FISCAL_MATCH_STATUS_LABELS: Record<FiscalMatchStatus, string> = {
     MATCHED: "Cuadrado",
     PENDING: "Pendiente",
-    DIFF: "Con diferencia",
+    DIFF: "Con advertencias",
     AMBIGUOUS: "Ambiguo",
     MISSING_ERP: "Falta en el ERP",
     MISSING_EXTERNAL: "Falta en SII/TUU",
@@ -71,6 +71,13 @@ export function fiscalMatchStatusValue(
 /** Valor de `StatusBadge` para el estado de una parte del grupo. */
 export function partStateValue(state: PartState): { status: string; label: string; intent: BadgeIntent } {
     return { status: state.toLowerCase(), label: PART_STATE_LABELS[state], intent: PART_STATE_INTENTS[state] }
+}
+
+/** Intent del chip «N % coincidencia» de una tarjeta candidata: ≥ 90 success, 60–89 warning, < 60 neutral. */
+export function matchScoreIntent(score: number): BadgeIntent {
+    if (score >= 90) return "success"
+    if (score >= 60) return "warning"
+    return "neutral"
 }
 
 /** Estados del grupo en el orden de los filtros. */

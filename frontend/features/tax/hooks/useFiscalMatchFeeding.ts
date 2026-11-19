@@ -44,3 +44,12 @@ export function useCreateFiscalMatchDraft() {
         { success: 'Borrador creado desde la OC', error: 'No se pudo crear el borrador' },
     )
 }
+
+/** Crea una factura de venta emitida en el ERP desde el documento del RCV. */
+export function useCreateFiscalMatchSale() {
+    return useGroupMutation(
+        (v: { id: number; contactId?: number }, key) =>
+            fiscalMatchApi.createSale(v.id, v.contactId, key),
+        { success: 'Factura de venta creada y vinculada en el ERP', error: 'No se pudo crear la factura de venta' },
+    )
+}
