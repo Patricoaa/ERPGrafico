@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-banner
 status: active
 owner: frontend-team
-last_review: 2026-11-13
+last_review: 2026-11-19
 stability: beta
 ---
 
@@ -79,14 +79,28 @@ Envoltorios con API propia (no reescribir sus call sites):
 - `StaleDataBanner` — datos cacheados + reintento.
 - `ApprovalRequestBanner` — máquina de estados `required | waiting | approved | rejected`.
 
-## 6. Cuándo no usarlo
+## 6. Variantes de uso
+
+- **Dentro de diálogos o descripciones** (confirmaciones, anulaciones): `live="none"`, el texto ya lo anuncia el diálogo.
+- **Error de formulario a nivel raíz** (`rootError`): `tone="destructive" live="alert"`.
+- **Error de carga de panel o sección**: `Banner` destructive; la acción de reintento va en `actions` (ver `SectionRoot`).
+- **Con título y detalle**: `title` + `children`; no repetir el título dentro del texto.
+- **Superficies táctiles (POS)**: el texto base es `text-sm`; se amplía con `className="py-4 [&_p]:text-base"` e `iconClassName="size-6"`. No se reemplaza el tono ni se agrega borde. Un monto protagonista va en `actions` (ver `CashDifferenceBanner`).
+- **Tono `primary`**: no existe; un aviso con CTA que antes usaba `bg-primary/5` pasa a `info`.
+- **Margen lateral**: `Banner` es `w-full`; para insertarlo con margen horizontal envolverlo en un contenedor con padding en vez de usar `mx-*` en el Banner.
+
+## 7. Cuándo no usarlo
 
 - Fila de campo o par etiqueta/valor → `SectionRow` / `DataCell`.
 - Estado vacío con CTA → `EmptyState`.
 - Confirmación efímera que no debe quedar en pantalla → `toast`.
 - Error de validación junto a un campo → mensaje del campo.
+- Error de carga centrado que ocupa todo el panel (`ActivitySidebar`, `CommentsPanel`) → `EmptyState` con variante de error.
+- Panel de datos o stats (tiles, saldos, "Diferencia") con fondo tintado → card o stat; no es un aviso.
+- Chip contador (`+N`) o estado de fila → `Chip` / `StatusBadge`.
+- Franja global de sistema con fondo sólido (`DebugClockBanner`) → excepción documentada, no es un Banner.
 
-## 7. Ratchet
+## 8. Ratchet
 
 `frontend/lib/__tests__/banner.contract.test.ts` falla si un archivo fuera de `components/ui/` importa `@/components/ui/alert`. El baseline está vacío (2026-11-13): no queda ningún consumidor de `Alert` en el producto.
 
