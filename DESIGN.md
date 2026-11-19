@@ -42,7 +42,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 | Colores, intents, tintas CMYK, sidebar, charts, chips | [color-system.md](docs/20-contracts/color-system.md) |
 | Switches y campos booleanos: presets semánticos, fondo transparente y ring por estado | [component-boolean-fields.md](docs/20-contracts/component-boolean-fields.md) |
 | Inputs notched: capa y fondo opaco del legend por encima de rings | [component-input.md](docs/20-contracts/component-input.md) |
-| Tipografía, escala fluid, mono | [typography-scale.md](docs/20-contracts/typography-scale.md) |
+| Tipografía, escala fluida 1024→1440px (ADR-0142), mono | [typography-scale.md](docs/20-contracts/typography-scale.md) |
 | Espaciado y densidad (compact/comfortable) | [density-system.md](docs/20-contracts/density-system.md) |
 | Animación y transiciones | [component-animation.md](docs/20-contracts/component-animation.md) |
 | Componentes compartidos (qué usar en cada caso) | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |

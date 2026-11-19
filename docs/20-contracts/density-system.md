@@ -9,27 +9,17 @@ stability: stable
 
 # Contrato de Arquitectura: Sistema de Espaciado y Densidad
 
-Este contrato define la escala de ritmo (`--spacing-r-*`), los tokens de densidad de tabla (`--table-cell-*`, `--table-header-*`) y los modos de densidad (`compact` / `comfortable`) que todo el frontend debe consumir. No inventa componentes nuevos: formaliza lo que `globals.css` ya implementa para que la densidad no dependa de valores mágicos ad-hoc.
+Este contrato define los tokens de densidad de tabla (`--table-cell-*`, `--table-header-*`) y los modos de densidad (`compact` / `comfortable`) que todo el frontend debe consumir. No inventa componentes nuevos: formaliza lo que `globals.css` ya implementa para que la densidad no dependa de valores mágicos ad-hoc.
 
 **Regla de oro:** ERPGrafico es una herramienta para operadores que la usan todo el día. **`compact` es el default** de todas las superficies de datos (ADR-0070, mantra del operador: "cada píxel debe hacer su trabajo más rápido"). `comfortable` es un opt-out explícito, nunca el default.
 
 ---
 
-## 1. Escala de ritmo (`--spacing-r-*`)
+## 1. Escala de ritmo
 
-> **Deprecado (ADR-0142, 2026-11-19):** `--spacing-r-*` no tiene consumidores en el código (el espaciado real es la escala de Tailwind). Será retirado en la Fase 1 del plan de escala unificada y reemplazado por `--spacing` dinámico (`--k`, densidad × puntero). No adoptarlo en código nuevo; la «regla invariante» de abajo queda suspendida hasta esa migración.
+> **Retirado (ADR-0142, 2026-11-19):** `--spacing-r-*` (y `--space-fluid-*`) tenían un único consumidor y fueron eliminados. El espaciado es la **escala estándar de Tailwind** (`--spacing`, base 0.25rem). La Fase 2 del plan de escala unificada la vuelve sensible a densidad y puntero mediante un multiplicador discreto `--k`; este apartado se reescribirá allí.
 
-Prefijo `r-` para evitar colisión con la escala estándar de Tailwind. Definida en `:root` de `globals.css`.
-
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--spacing-r-xs` | `0.25rem` (4px) | gaps mínimos entre elementos íntimamente ligados |
-| `--spacing-r-sm` | `0.5rem` (8px) | gaps internos compactos, chips, badges |
-| `--spacing-r-md` | `1rem` (16px) | spacing estándar entre bloques de contenido |
-| `--spacing-r-lg` | `1.5rem` (24px) | secciones mayores, separación de tarjetas |
-| `--spacing-r-xl` | `2rem` (32px) | márgenes de página / paneles amplios |
-
-**Regla invariante (PR Reject):** nunca usar un valor de spacing "en bruto" (`p-2.5`, `gap-3.5`) para un ritmo que ya cubre la escala. Si necesitas un valor fuera de la escala (p. ej. `6px`), usa `calc()` sobre el token más cercano con un comentario de contexto.
+**Regla vigente:** usar la escala de Tailwind (`p-2`, `gap-4`…) y, para valores del propio CSS global, `calc(var(--spacing) * n)` en vez de rem literales. No introducir una escala de espaciado paralela.
 
 ---
 

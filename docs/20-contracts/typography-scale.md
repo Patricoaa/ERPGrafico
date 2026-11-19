@@ -27,17 +27,38 @@ stability: contract-changes-require-ADR
 
 ---
 
+## Escala fluida (ADR-0142)
+
+Todos los tokens `--text-*` comparten **una sola ventana de interpolación: 1024 → 1440 px de viewport**. Por debajo de 1024 px cada token queda en su mínimo (tablet y móvil); por encima de 1440 px, en su máximo. Definidos en `frontend/app/globals.css` con `clamp(min, intercepto + pendiente·vw, max)`, generados al estilo Utopia con pares min/max explícitos (la escala está afinada a mano, no es geométrica).
+
+| Token | Mín → máx (px) | Fluido |
+|-------|----------------|--------|
+| `text-4xs` | 9 | no (fijo: solo glifos y contadores) |
+| `text-3xs` | 10 → 11 | sí |
+| `text-2xs` | 11 → 12 | sí |
+| `text-xs` | 12 → 14 | sí |
+| `text-sm` | 14 → 16 | sí |
+| `text-base` | 16 → 18 | sí |
+| `text-lg` | 18 → 20 | sí |
+| `text-xl` | 20 → 24 | sí |
+| `text-2xl` | 24 → 28 | sí |
+| `text-3xl` | 30 → 34 | sí |
+
+Para cambiar la escala se regeneran los `clamp` con `pendiente = (máx − mín) / (1440 − 1024)` e `intercepto = mín − pendiente · 1024`; `typography.contract.test.ts` verifica que cada token cumple su par min/max en la ventana. `--spacing-r-*` y `--space-fluid-*` fueron retirados; el espaciado es la escala de Tailwind (ver `density-system.md`).
+
+---
+
 ## Escala de headings (h1–h6)
 
 Definidos en `frontend/app/globals.css @layer base`. El estilo base es heredado por todos; los tamaños son defaults que cualquier clase Tailwind puede override.
 
 | Heading | Tamaño base | Tailwind equiv. | Estilo base | Uso típico |
 |---------|-------------|-----------------|-------------|------------|
-| `h1` | 1.875rem (30px) | `text-3xl` | `font-extrabold tracking-tighter uppercase` | Página de login, hero sections |
-| `h2` | 1.5rem (24px) | `text-2xl` | idem | Título principal de vista/sección |
+| `h1` | 30→34px (fluido) | `text-3xl` | `font-extrabold tracking-tighter uppercase` | Página de login, hero sections |
+| `h2` | 24→28px (fluido) | `text-2xl` | idem | Título principal de vista/sección |
 | `h3` | 1.25rem (20px) | `text-xl` | idem | Subtítulo, wizard steps, panel headers |
 | `h4` | 1.125rem (18px) | `text-lg` | idem | Card titles con peso visual |
-| `h5` | 0.875rem (14px) | `text-sm` | idem | Agrupaciones compactas |
+| `h5` | 14→16px (fluido) | `text-sm` | idem | Agrupaciones compactas |
 | `h6` | 0.75rem (12px) | `text-xs` | idem | Labels de sección mínima |
 
 > Los componentes que necesiten un tamaño diferente deben override explícitamente con clase Tailwind. El override es correcto y no viola ningún contrato.
@@ -48,13 +69,13 @@ Definidos en `frontend/app/globals.css @layer base`. El estilo base es heredado 
 
 Esta escala usa **tokens semánticos** (`text-2xs`, `text-3xs`, `text-4xs`), **nunca px crudos**. Los valores `text-[Npx]` están prohibidos y los bloquea la regla ESLint `typography/token-first`.
 
-Equivalencias canónicas (el rango micro es **fijo**, no fluido, y exclusivo para chrome denso):
+Equivalencias canónicas (el rango micro es exclusivo para chrome denso; desde ADR-0142 `3xs` y `2xs` son fluidos en rango corto y solo `4xs` es fijo):
 
 | px (legacy) | Token | Valor |
 |-------------|-------|-------|
-| `text-[9px]` | `text-4xs` | 9px |
-| `text-[10px]` | `text-3xs` | 10px |
-| `text-[11px]` | `text-2xs` | 11px |
+| `text-[9px]` | `text-4xs` | 9px (fijo) |
+| `text-[10px]` | `text-3xs` | 10→11px (fluido) |
+| `text-[11px]` | `text-2xs` | 11→12px (fluido) |
 | `text-[13px]` | `text-xs` | 12–14px (fluido) |
 | `text-[15px]` | `text-sm` | 14–16px (fluido) |
 

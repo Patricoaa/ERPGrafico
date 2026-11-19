@@ -8,6 +8,8 @@ author: frontend-team
 
 # 0082 — Typography scale reconciliation
 
+**Superseded in part by [ADR-0142](0142-escala-unificada-fluida-densidad-y-puntero.md)** (decisión 1: `text-3xs`/`text-2xs` ya no son fijos; solo `text-4xs`).
+
 **Related:** `docs/20-contracts/typography-scale.md`, `docs/20-contracts/module-layout-navigation.md` (§2.1), ADR-0079 (shell), ADR-0073 (heading hierarchy), ADR-0068/0069 (badge/CurrencyFlow), `frontend/eslint-rules/typography-token-first.mjs`.
 
 ---

@@ -212,7 +212,6 @@
 }
 }
 
-
 @theme inline {
   --color-background: oklch(var(--background-raw));
   --color-foreground: oklch(var(--foreground-raw));
@@ -301,21 +300,26 @@
   --font-mono: var(--font-jetbrains-mono), 'Fira Code', monospace;
 
   /*
-   * FLUID TYPOGRAPHY — Override Tailwind defaults with viewport-scaled sizes.
-   * Enforces a minimum of 12px (0.75rem) to maintain legibility for main text.
-   * N5 Micro scale is fixed (not fluid) and strictly for high-density badges/labels.
+   * FLUID TYPOGRAPHY (ADR-0142) — one interpolation window for every token:
+   * 1024px → 1440px viewport (Utopia-style, explicit min/max pairs because the
+   * ERP scale is hand-tuned, not geometric). Below 1024px a token stays at its
+   * minimum; above 1440px at its maximum.
+   * Regenerate with: slope = (max-min)/(1440-1024); intercept = min - slope*1024.
+   *   token  min→max (px)
+   *   3xs    10→11     2xs   11→12     xs   12→14     sm   14→16
+   *   base   16→18     lg    18→20     xl   20→24     2xl  24→28    3xl  30→34
+   * text-4xs (9px) stays FIXED: glyphs and counters only (typography-scale.md).
    */
-  --text-2xs: 0.6875rem; /* 11px */
-  --text-3xs: 0.625rem; /* 10px */
-  --text-4xs: 0.5625rem; /* 9px */
-  
-  --text-xs: clamp(0.75rem, 0.4vw + 0.5rem, 0.875rem);
-  --text-sm: clamp(0.875rem, 0.5vw + 0.55rem, 1rem);
-  --text-base: clamp(1rem, 0.6vw + 0.6rem, 1.125rem);
-  --text-lg: clamp(1.125rem, 0.8vw + 0.6rem, 1.25rem);
-  --text-xl: clamp(1.25rem, 1vw + 0.6rem, 1.5rem);
-  --text-2xl: clamp(1.5rem, 1.2vw + 0.6rem, 1.875rem);
-  --text-3xl: clamp(1.875rem, 1.5vw + 0.6rem, 2.25rem);
+  --text-4xs: 0.5625rem; /* 9px, fixed */
+  --text-3xs: clamp(0.625rem, 0.4712rem + 0.2404vw, 0.6875rem);
+  --text-2xs: clamp(0.6875rem, 0.5337rem + 0.2404vw, 0.75rem);
+  --text-xs: clamp(0.75rem, 0.4423rem + 0.4808vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.5673rem + 0.4808vw, 1rem);
+  --text-base: clamp(1rem, 0.6923rem + 0.4808vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 0.8173rem + 0.4808vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 0.6346rem + 0.9615vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 0.8846rem + 0.9615vw, 1.75rem);
+  --text-3xl: clamp(1.875rem, 1.2596rem + 0.9615vw, 2.125rem);
 
   /*
    * TRACKING EXTENSIONS
@@ -337,21 +341,6 @@
   --duration-normal: 250ms;
   --duration-slow: 400ms;
 
-
-  /* 
-   * RHYTHM & SPACING 
-   * Extending Tailwind scale (Prefixed with 'r-' to avoid collision with standard keywords)
-   */
-  --spacing-r-xs: 0.25rem;
-  /* 4px */
-  --spacing-r-sm: 0.5rem;
-  /* 8px */
-  --spacing-r-md: 1rem;
-  /* 16px */
-  --spacing-r-lg: 1.5rem;
-  /* 24px */
-  --spacing-r-xl: 2rem;
-  /* 32px */
 
   /* SHIMMER ANIMATION */
   --animate-shimmer: shimmer 2s infinite linear;
@@ -411,19 +400,13 @@
   --l4-tabs-height: 0px;
 
   /*
-   * FLUID TYPOGRAPHY — Single source of truth is the --text-* overrides above
-   * (text-xs … text-3xl, viewport-scaled). Raw arbitrary sizes (text-[9px],
-   * text-[13px], …) are BANNED: use text-2xs/3xs/4xs (N5 micro) or the fluid
+   * TYPOGRAPHY — Single source of truth is the --text-* tokens above
+   * (text-xs … text-3xl, fluid 1024→1440px). Raw arbitrary sizes (text-[9px],
+   * text-[13px], …) are BANNED: use text-2xs/3xs/4xs (micro) or the fluid
    * tokens. Enforced by the `typography/token-first` ESLint rule.
+   * (--spacing-r-* and --space-fluid-* were retired by ADR-0142; spacing is the
+   * Tailwind scale, made density-aware in Phase 2.)
    */
-  /*
-   * FLUID SPACING — Responsive gaps and padding.
-   */
-  --space-fluid-xs: clamp(0.25rem, 0.3vw + 0.15rem, 0.5rem);
-  --space-fluid-sm: clamp(0.5rem,  0.5vw + 0.3rem,  0.75rem);
-  --space-fluid-md: clamp(0.75rem, 0.8vw + 0.4rem,  1rem);
-  --space-fluid-lg: clamp(1rem,    1.2vw + 0.5rem,  1.5rem);
-  --space-fluid-xl: clamp(1.5rem,  2vw + 0.6rem,    2rem);
 
   @keyframes shimmer {
     0% {
@@ -1028,7 +1011,7 @@ table [data-notched-field] {
         oklch(var(--border-raw) / 0.3) 15%,
         oklch(var(--border-raw) / 0.3) 85%,
         transparent);
-    margin: var(--spacing-r-lg) 0;
+    margin: calc(var(--spacing) * 6) 0;
   }
 
 

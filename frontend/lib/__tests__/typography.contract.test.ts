@@ -6,7 +6,8 @@
  * `docs/20-contracts/typography-scale.md` (reconciliation: ADR 0082).
  *
  * Guards against the drift this test was created to prevent:
- *  - the micro N5 tokens keep their declared px values,
+ *  - text-4xs stays fixed and every other --text-* token follows the single
+ *    fluid 1024→1440px window (ADR-0142),
  *  - the mono font is JetBrains Mono,
  *  - the token-first rule keeps its forbidden raw-size map and its
  *    rem/em arbitrary-size guard,
@@ -68,10 +69,37 @@ const selectors: Record<string, string> = {
 };
 
 describe('typography contract', () => {
-  it('micro N5 tokens keep their declared px values', () => {
-    expect(/--text-4xs:\s*0\.5625rem/.test(css), 'text-4xs = 9px').toBe(true);
-    expect(/--text-3xs:\s*0\.625rem/.test(css), 'text-3xs = 10px').toBe(true);
-    expect(/--text-2xs:\s*0\.6875rem/.test(css), 'text-2xs = 11px').toBe(true);
+  it('text-4xs stays fixed at 9px (glyphs and counters only) — ADR-0142', () => {
+    expect(/--text-4xs:\s*0\.5625rem/.test(css), 'text-4xs = 9px fixed').toBe(true);
+  });
+
+  describe('fluid scale — one 1024→1440px window (ADR-0142)', () => {
+    // [token, min px, max px]
+    const SCALE: Array<[string, number, number]> = [
+      ['3xs', 10, 11], ['2xs', 11, 12], ['xs', 12, 14], ['sm', 14, 16],
+      ['base', 16, 18], ['lg', 18, 20], ['xl', 20, 24], ['2xl', 24, 28], ['3xl', 30, 34],
+    ];
+    const MIN_VW = 1024;
+    const MAX_VW = 1440;
+
+    for (const [token, min, max] of SCALE) {
+      it(`--text-${token} is clamp(${min}px → ${max}px) over ${MIN_VW}–${MAX_VW}px`, () => {
+        const m = css.match(new RegExp(`--text-${token}:\\s*clamp\\(([\\d.]+)rem,\\s*([\\d.]+)rem\\s*\\+\\s*([\\d.]+)vw,\\s*([\\d.]+)rem\\)`));
+        expect(m, `--text-${token} must be a clamp(rem, rem + vw, rem)`).not.toBeNull();
+        const [, minRem, interceptRem, slopeVw, maxRem] = (m as RegExpMatchArray).map(Number) as unknown as number[];
+        expect(minRem * 16).toBeCloseTo(min, 1);
+        expect(maxRem * 16).toBeCloseTo(max, 1);
+        // The preferred value must hit min at MIN_VW and max at MAX_VW (±0.05px).
+        const at = (vw: number) => interceptRem * 16 + (slopeVw / 100) * vw;
+        expect(at(MIN_VW)).toBeCloseTo(min, 1);
+        expect(at(MAX_VW)).toBeCloseTo(max, 1);
+      });
+    }
+  });
+
+  it('retired spacing scales are gone (ADR-0142)', () => {
+    expect(/--spacing-r-[a-z]+\s*:/.test(css), '--spacing-r-* retired').toBe(false);
+    expect(/--space-fluid-[a-z]+\s*:/.test(css), '--space-fluid-* retired').toBe(false);
   });
 
   it('mono font is JetBrains Mono', () => {
