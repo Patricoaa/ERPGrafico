@@ -76,17 +76,8 @@ export function DteRegistrationPanel({
           }
         : null
 
-    if (data.isPending) {
-        return (
-            <div className={className ?? "space-y-4"}>
-                <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-xs text-foreground flex items-center justify-between">
-                    <span>
-                        Ha seleccionado diferir la {direction === "sale" ? "emisión" : "recepción"} del documento. El registro del folio y cuadre queda pospuesto.
-                    </span>
-                </div>
-            </div>
-        )
-    }
+    // Documento diferido: el aviso lo muestra `DteDeferredBanner` arriba del paso; aquí no hay nada que registrar.
+    if (data.isPending) return null
 
     const assignedBadge = data.pickedFiscalMatchId && (
         <div className="rounded-md border border-primary/20 bg-primary/5 p-3 flex items-center justify-between text-xs">

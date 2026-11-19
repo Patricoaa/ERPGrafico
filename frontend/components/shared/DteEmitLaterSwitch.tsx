@@ -24,8 +24,8 @@ export function DteEmitLaterSwitch({
     const label = isSale ? "Emisión" : "Recepción"
     const description = isPending
         ? isSale
-            ? "Emitiré el documento luego"
-            : "Recibiré el documento luego"
+            ? "Aún no emitiré el documento / no está en el RCV"
+            : "Aún no he recibido el documento / no está disponible en el RCV"
         : isSale
             ? "Emisión inmediata"
             : "Recepción inmediata"

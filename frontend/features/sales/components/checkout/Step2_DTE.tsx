@@ -71,6 +71,12 @@ export function Step2_DTE({
 
     return (
         <div className="space-y-6">
+            {dteData.isPending && (
+                <Banner tone="warning" bleed="lg">
+                    Ha seleccionado diferir la emisión del documento. El registro del folio y cuadre queda pospuesto.
+                </Banner>
+            )}
+
             <StepHeader
                 title="Documento Tributario"
                 description="Seleccione el tipo de documento a emitir para esta venta y vincúlelo con el SII."

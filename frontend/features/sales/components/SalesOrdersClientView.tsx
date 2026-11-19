@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, lazy, Suspense } from "react"
+import { useState, lazy } from "react"
 import { useInvoices } from "@/features/billing"
 import { useVatRate } from "@/hooks/useVatRate"
 import { SalesOrdersView } from "./SalesOrdersView"
@@ -16,22 +16,6 @@ const SALES_ORDER_LIST_KEYS = [[...SALES_KEYS.all, 'orders']] as const
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
 const DeliveryModal = lazy(() => import("./DeliveryDrawer"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
-const UnifiedNoteWizard = lazy(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
-const Step2_ManufacturingDetails = lazy(() =>
-    import("./checkout/Step2_ManufacturingDetails").then(m => ({ default: m.Step2_ManufacturingDetails }))
-)
-
-/** Sales-owned manufacturing step injected into the notes wizard (notes must not import sales). */
-function SalesManufacturingStep({ lines, setLines }: { lines: unknown[]; setLines: (lines: unknown[]) => void }) {
-    return (
-        <Suspense fallback={<div />}>
-            <Step2_ManufacturingDetails
-                orderLines={lines as SaleOrderLine[]}
-                setOrderLines={setLines as (lines: SaleOrderLine[]) => void}
-            />
-        </Suspense>
-    )
-}
 
 interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
@@ -47,7 +31,6 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
     const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
     const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
-    const [addingNote, setAddingNote] = useState<SaleOrder | null>(null)
     const [checkoutData, setCheckoutData] = useState<{ lines: SaleOrderLine[] } | null>(null)
 
     return (
@@ -117,84 +100,6 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                          }}
                          onSuccess={() => setCompletingFolio(null)}
                      />
-                 </SkeletonShell>
-             )}
-
-             {addingNote && (
-                 <SkeletonShell isLoading={true} ariaLabel="Cargando wizard de orden de venta">
-                     <Suspense fallback={<div />}>
-                         <UnifiedNoteWizard
-                             open={!!addingNote}
-                             onOpenChange={(open: boolean) => !open && setAddingNote(null)}
-                             mode="sales"
-                             initialType="NOTA_CREDITO"
-                             features={{ logistics: true, manufacturing: true }}
-                             renderManufacturingStep={({ lines, setLines }) => (
-                                 <SalesManufacturingStep lines={lines as unknown[]} setLines={setLines as (l: unknown[]) => void} />
-                             )}
-                             referenceLabel={addingNote?.invoices?.[0]?.number as string | undefined}
-                             fetchSource={async () => {
-                                 const invoiceId = addingNote?.invoices?.[0]?.id ?? 0;
-                                 const { billingApi } = await import('@/features/billing/api/billingApi')
-                                 const inv = (await billingApi.getInvoice(invoiceId) as unknown) as Record<string, unknown>
-                                 const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
-                                     lineId: l.id as number,
-                                     productId: l.product as number,
-                                     productName: l.product_name as string,
-                                     productCode: l.product_code as string | undefined,
-                                     productType: l.product_type as string | undefined,
-                                     trackInventory: l.track_inventory as boolean | undefined,
-                                     hasBom: l.has_bom as boolean | undefined,
-                                     requiresAdvancedManufacturing: l.requires_advanced_manufacturing as boolean | undefined,
-                                     mfgAutoFinalize: l.mfg_auto_finalize as boolean | undefined,
-                                     createsStockMove: (l.track_inventory as boolean) && (l.product_type as string) !== 'MANUFACTURABLE',
-                                     uomName: l.uom_name as string | undefined,
-                                     originalQuantity: (l.quantity_delivered as number) || (l.quantity as number),
-                                     noteQuantity: 0,
-                                     noteUnitPrice: (l.unit_price as number) || 0,
-                                     taxAmountPerUnit: ((l.unit_price as number) || 0) * (((l.tax_rate as number) ?? 19) / 100),
-                                     reason: '',
-                                 }))
-                                 return {
-                                     label: `${inv.dte_type_display as string} ${inv.number as string}`,
-                                     isExempt: (inv.dte_type as string) === 'FACTURA_EXENTA' || (inv.dte_type as string) === 'BOLETA_EXENTA',
-                                     originalTotal: inv.total as number,
-                                     lines: invLines,
-                                     counterpartyRut: ((inv.customer_tax_id || inv.tax_id || '') as string) || undefined,
-                                     invoiceId: inv.id as number,
-                                 }
-                             }}
-                             onSubmit={async (payload) => {
-                                 const invoiceId = addingNote?.invoices?.[0]?.id ?? 0;
-                                 const { billingApi } = await import('@/features/billing/api/billingApi')
-                                 const formData = new FormData()
-                                 formData.append('original_invoice_id', invoiceId.toString())
-                                 formData.append('note_type', payload.noteType)
-                                 formData.append('selected_items', JSON.stringify(payload.lines.map(l => ({
-                                     line_id: l.lineId,
-                                     product_id: l.productId,
-                                     quantity: l.noteQuantity,
-                                     unit_price: l.noteUnitPrice,
-                                     tax_amount: l.taxAmountPerUnit ?? 0,
-                                     reason: l.reason ?? '',
-                                     manufacturing_data: l.manufacturingData ?? null,
-                                 }))))
-                                 if (payload.logistics) formData.append('logistics_data', JSON.stringify(payload.logistics))
-                                 const reg = payload.registration
-                                 formData.append('registration_data', JSON.stringify({
-                                     document_number: reg.documentNumber,
-                                     document_date: reg.documentDate,
-                                     is_pending: reg.isPending,
-                                     fiscal_match_id: reg.pickedFiscalMatchId ?? null,
-                                 }))
-                                 if (reg.attachment) formData.append('document_attachment', reg.attachment)
-                                 if (reg.pickedFiscalMatchId) formData.append('fiscal_match_id', String(reg.pickedFiscalMatchId))
-                                 if (payload.payment.method) formData.append('payment_data', JSON.stringify(payload.payment))
-                                 await billingApi.noteWorkflowCheckout(formData)
-                             }}
-                             onSuccess={() => setAddingNote(null)}
-                         />
-                     </Suspense>
                  </SkeletonShell>
              )}
         </>

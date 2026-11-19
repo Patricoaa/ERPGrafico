@@ -1,5 +1,6 @@
 "use client"
 
+import { suggestedUnitCost } from "../utils/suggestedUnitCost"
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray, useWatch, type Control } from "react-hook-form"
@@ -286,7 +287,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                                 if (val) {
                                                                                     const prod = products.find(p => p.id.toString() === val)
                                                                                     if (prod) {
-                                                                                        form.setValue(`lines.${index}.unit_cost`, parseFloat(String(prod.last_purchase_price || 0)) || 0)
+                                                                                        form.setValue(`lines.${index}.unit_cost`, suggestedUnitCost(prod))
                                                                                         form.setValue(`lines.${index}.uom`, (prod.purchase_uom || prod.uom)?.toString() || "")
                                                                                     }
                                                                                 }
@@ -445,7 +446,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                             if (val) {
                                                                                 const prod = products.find(p => p.id.toString() === val)
                                                                                 if (prod) {
-                                                                                    form.setValue(`lines.${index}.unit_cost`, parseFloat(String(prod.last_purchase_price || 0)) || 0)
+                                                                                    form.setValue(`lines.${index}.unit_cost`, suggestedUnitCost(prod))
                                                                                     form.setValue(`lines.${index}.uom`, (prod.purchase_uom || prod.uom)?.toString() || "")
                                                                                 }
                                                                             }

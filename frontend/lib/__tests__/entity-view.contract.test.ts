@@ -176,7 +176,7 @@ const LEGACY_FIELD_TYPES = 15
  * reports and trees are specific cases (feature-owned surfaces). The list only shrinks.
  */
 const ADHOC_TABLE_ALLOWLIST = [
-    "features/notes/components/steps/NoteStep_Logistics.tsx",
+    "features/notes/components/steps/NoteLogisticsStep.tsx",
     "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
     "features/finance/components/BudgetVarianceTable.tsx",
     "features/finance/components/CashFlowTable.tsx",

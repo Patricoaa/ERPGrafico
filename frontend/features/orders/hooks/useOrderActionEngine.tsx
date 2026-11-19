@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { generateUuidV4 } from "@/lib/uuid"
+import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { SkeletonShell } from "@/components/shared"
 import {
     useConfirmInvoice,
@@ -12,6 +13,7 @@ import {
     useRegisterPaymentMovement,
     useRegisterPaymentReturn,
 } from "./useOrdersMutations"
+import type { NoteType } from "@/features/notes"
 import type { Order, OrderLine } from "../types"
 
 // Modales lazy (PERF-01): solo se cargan al ejecutar su acción.
@@ -20,20 +22,6 @@ const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.Deliv
 const ReceiptModal = dynamic(() => import("@/features/purchasing/components/ReceiptModal").then(m => m.ReceiptModal))
 const PaymentHistoryModal = dynamic(() => import("../components/PaymentHistoryModal").then(m => m.PaymentHistoryModal))
 const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
-const UnifiedNoteWizard = dynamic(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
-const Step2_ManufacturingDetails = dynamic(() => import("@/features/sales").then(m => m.Step2_ManufacturingDetails), { ssr: false })
-
-/** Sales-owned manufacturing step injected into the notes wizard (notes must not import sales). */
-function SalesManufacturingStep({ lines, setLines }: { lines: unknown[]; setLines: (lines: unknown[]) => void }) {
-    return (
-        <Suspense fallback={<div />}>
-            <Step2_ManufacturingDetails
-                orderLines={lines as never}
-                setOrderLines={setLines as never}
-            />
-        </Suspense>
-    )
-}
 const NoteLogisticsModal = dynamic(() => import("../components/NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 const InvoiceRegistrationModal = dynamic(() => import("@/features/billing").then(m => m.InvoiceRegistrationModal))
@@ -46,8 +34,6 @@ export const ENGINE_MODAL_ACTIONS = [
     "confirm-service-delivery",
     "payment-history",
     "register-payment",
-    "create-credit-note",
-    "create-debit-note",
     "create-work-order",
     "register-merchandise-return",
     "register-payment-return",
@@ -55,7 +41,7 @@ export const ENGINE_MODAL_ACTIONS = [
 ] as const
 
 /** Acciones que el motor ejecuta sin modal propio. */
-export const ENGINE_DIRECT_ACTIONS = ["regenerate-document"] as const
+export const ENGINE_DIRECT_ACTIONS = ["regenerate-document", "create-credit-note", "create-debit-note"] as const
 
 export type EngineActionId = typeof ENGINE_MODAL_ACTIONS[number] | typeof ENGINE_DIRECT_ACTIONS[number]
 
@@ -87,6 +73,7 @@ export interface OrderActionEngine {
 export function useOrderActionEngine({ order, posSessionId = null, onActionSuccess }: UseOrderActionEngineOptions): OrderActionEngine {
     const [activeModal, setActiveModal] = useState<EngineActionId | null>(null)
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
+    const modals = useOptionalGlobalModalActions()
 
     const { createInvoiceFromOrder } = useCreateInvoiceFromOrder()
     const { confirmInvoice } = useConfirmInvoice()
@@ -103,6 +90,20 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
 
     const closeModal = () => setActiveModal(null)
     const done = () => { closeModal(); onActionSuccess?.() }
+
+    // El wizard de NC/ND se abre como pestaña propia del espacio de trabajo.
+    const openNoteWizardTab = (noteType: NoteType) => {
+        const invoiceId = Number(noteSourceInvoice?.id)
+        if (!invoiceId) {
+            toast.error("No hay una factura emitida desde la cual generar la nota.")
+            return
+        }
+        if (!modals) {
+            toast.error("Esta vista no admite abrir el asistente de notas.")
+            return
+        }
+        modals.openNoteWizard({ invoiceId, noteType, display: noteSourceInvoice?.number ? String(noteSourceInvoice.number) : undefined })
+    }
 
     const regenerateDocument = async () => {
         if (!order) return
@@ -128,6 +129,10 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
         }
         if (actionId === 'regenerate-document') {
             void regenerateDocument()
+            return
+        }
+        if (actionId === 'create-credit-note' || actionId === 'create-debit-note') {
+            openNoteWizardTab(actionId === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO')
             return
         }
         if (isEngineAction(actionId)) {
@@ -288,78 +293,6 @@ export function useOrderActionEngine({ order, posSessionId = null, onActionSucce
                         posSessionId={posSessionId}
                         customerCreditBalance={((order.customer as { credit_balance?: number } | undefined)?.credit_balance) || 0}
                         allowCreditBalanceAccumulation={order.dte_type === 'NOTA_CREDITO'}
-                    />
-                )}
-
-                {(activeModal === 'create-credit-note' || activeModal === 'create-debit-note') && (
-                    <UnifiedNoteWizard
-                        open
-                        onOpenChange={closeModal}
-                        mode="sales"
-                        initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
-                        features={{ logistics: true, manufacturing: true }}
-                        renderManufacturingStep={({ lines, setLines }) => (
-                            <SalesManufacturingStep lines={lines as unknown[]} setLines={setLines as (l: unknown[]) => void} />
-                        )}
-                        referenceLabel={noteSourceInvoice?.number}
-                        fetchSource={async () => {
-                            const { billingApi } = await import('@/features/billing/api/billingApi')
-                            const inv = (await billingApi.getInvoice(Number(noteSourceInvoice?.id) || 0) as unknown) as Record<string, unknown>
-                            const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l) => ({
-                                lineId: l.id as number,
-                                productId: l.product as number,
-                                productName: l.product_name as string,
-                                productCode: l.product_code as string | undefined,
-                                productType: l.product_type as string | undefined,
-                                trackInventory: l.track_inventory as boolean | undefined,
-                                hasBom: l.has_bom as boolean | undefined,
-                                requiresAdvancedManufacturing: l.requires_advanced_manufacturing as boolean | undefined,
-                                mfgAutoFinalize: l.mfg_auto_finalize as boolean | undefined,
-                                createsStockMove: (l.track_inventory as boolean) && (l.product_type as string) !== 'MANUFACTURABLE',
-                                uomName: l.uom_name as string | undefined,
-                                originalQuantity: (l.quantity_delivered as number) || (l.quantity as number),
-                                noteQuantity: 0,
-                                noteUnitPrice: (l.unit_price as number) || 0,
-                                taxAmountPerUnit: ((l.unit_price as number) || 0) * (((l.tax_rate as number) ?? 19) / 100),
-                                reason: '',
-                            }))
-                            return {
-                                label: `${inv.dte_type_display as string} ${inv.number as string}`,
-                                isExempt: (inv.dte_type as string) === 'FACTURA_EXENTA' || (inv.dte_type as string) === 'BOLETA_EXENTA',
-                                originalTotal: inv.total as number,
-                                lines: invLines,
-                                counterpartyRut: ((inv.customer_tax_id || inv.tax_id || '') as string) || undefined,
-                                invoiceId: inv.id as number,
-                            }
-                        }}
-                        onSubmit={async (payload) => {
-                            const { billingApi } = await import('@/features/billing/api/billingApi')
-                            const formData = new FormData()
-                            formData.append('original_invoice_id', String(Number(noteSourceInvoice?.id) || 0))
-                            formData.append('note_type', payload.noteType)
-                            formData.append('selected_items', JSON.stringify(payload.lines.map(l => ({
-                                line_id: l.lineId,
-                                product_id: l.productId,
-                                quantity: l.noteQuantity,
-                                unit_price: l.noteUnitPrice,
-                                tax_amount: l.taxAmountPerUnit ?? 0,
-                                reason: l.reason ?? '',
-                                manufacturing_data: l.manufacturingData ?? null,
-                            }))))
-                            if (payload.logistics) formData.append('logistics_data', JSON.stringify(payload.logistics))
-                            const reg = payload.registration
-                            formData.append('registration_data', JSON.stringify({
-                                document_number: reg.documentNumber,
-                                document_date: reg.documentDate,
-                                is_pending: reg.isPending,
-                                fiscal_match_id: reg.pickedFiscalMatchId ?? null,
-                            }))
-                            if (reg.attachment) formData.append('document_attachment', reg.attachment)
-                            if (reg.pickedFiscalMatchId) formData.append('fiscal_match_id', String(reg.pickedFiscalMatchId))
-                            if (payload.payment.method) formData.append('payment_data', JSON.stringify(payload.payment))
-                            await billingApi.noteWorkflowCheckout(formData)
-                        }}
-                        onSuccess={done}
                     />
                 )}
 

@@ -9,6 +9,7 @@ import {
     BaseModal,
     CancelButton,
     CollapsibleSection,
+    Banner,
     DteEmitLaterSwitch,
     DteRegistrationPanel,
     DteTypeSelector,
@@ -278,6 +279,11 @@ export function InvoiceRegistrationModal({
             }
         >
             <div className="space-y-6 py-4">
+                {isPending && (
+                    <Banner tone="warning">
+                        Ha seleccionado diferir la {side !== "purchase" ? "emisión" : "recepción"} del documento. El registro del folio y cuadre queda pospuesto.
+                    </Banner>
+                )}
                 {!isCompletingDraft && (
                     <DteTypeSelector
                         value={dteType as DteClass}

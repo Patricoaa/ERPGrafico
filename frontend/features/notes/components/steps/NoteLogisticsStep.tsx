@@ -5,6 +5,7 @@ import {LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDispl
 import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import { cn } from "@/lib/utils"
+import type { NoteLineItem, NoteLogisticsData, NoteLogisticsLineData } from "../../types"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
     Table,
@@ -22,16 +23,10 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: number, onUomChange: (uomId: number) => void }) {
-    const productId = l.productId ?? l.product_id;
-    const uomName = l.uomName ?? l.uom_name;
+function UoMSelector({ line, currentUom, onUomChange }: { line: NoteLineItem, currentUom?: number, onUomChange: (uomId: number) => void }) {
+    const { data: allowedUoms = [] } = useAllowedUoMs(Number(line.productId), 'sale')
 
-    const { data: allowedUoms = [] } = useAllowedUoMs(
-        (productId as number) || (l.product as number),
-        'sale',
-    )
-
-    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{uomName as string}</span>
+    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{line.uomName}</span>
 
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
@@ -49,58 +44,42 @@ function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string
     )
 }
 
-interface NoteStepLogisticsProps {
+/** Línea que requiere fabricación y no se auto-finaliza: no admite despacho inmediato en ND. */
+const isRestrictedLine = (item: NoteLineItem, isCreditNote: boolean): boolean =>
+    !isCreditNote && (item.productType === 'MANUFACTURABLE' || Boolean(item.hasBom)) && !item.mfgAutoFinalize
+
+interface NoteLogisticsStepProps {
     isCreditNote: boolean
-    data: Record<string, unknown>
-    setData: (data: Record<string, unknown>) => void
-    selectedItems: Record<string, unknown>[]
+    data: NoteLogisticsData | null
+    setData: (data: NoteLogisticsData) => void
+    selectedItems: NoteLineItem[]
 }
 
-export function NoteStep_Logistics({
+export function NoteLogisticsStep({
     isCreditNote,
     data,
     setData,
     selectedItems
-}: NoteStepLogisticsProps) {
+}: NoteLogisticsStepProps) {
     const { dateString } = useServerDate()
 
-    // Check for "Manufacturable" products (Simple or Advanced) - ONLY block for Debit Notes
-    const restrictedItems = selectedItems.filter(item => {
-        const pType = item.productType ?? item.product_type;
-        const hasBom = item.hasBom ?? item.has_bom;
-        const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
-        return (pType === 'MANUFACTURABLE' || hasBom) && !auto;
-    });
-    const hasRestrictedItems = !isCreditNote && restrictedItems.length > 0;
+    const restrictedItems = selectedItems.filter(item => isRestrictedLine(item, isCreditNote))
+    const hasRestrictedItems = restrictedItems.length > 0
 
-    // Initialize data if null or missing fields
-    useEffect(() => {
-        if (!data || !data.delivery_type) {
-            const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
-            setData({
-                warehouse_id: data?.warehouse_id || "",
-                date: data?.date || dateString || "",
-                delivery_type: initialType,
-                line_data: [],
-                notes: data?.notes || ""
-            })
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- initialize once per step mount
-    }, [])
-
-    const formData = (data || {
+    const defaultData: NoteLogisticsData = {
         warehouse_id: "",
         date: dateString || "",
         delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE',
-        line_data: [] as Record<string, unknown>[],
-        notes: ""
-    }) as unknown as {
-        warehouse_id: string
-        date: string
-        delivery_type: string
-        line_data: Record<string, unknown>[]
-        notes: string
+        line_data: [],
+        notes: "",
     }
+    const formData: NoteLogisticsData = data ?? defaultData
+
+    // Initialize data once per step mount (the wizard validates `data !== null`).
+    useEffect(() => {
+        if (!data) setData(defaultData)
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- initialize once per step mount
+    }, [])
 
     // Sync date when server date arrives if not already set
     useEffect(() => {
@@ -111,11 +90,11 @@ export function NoteStep_Logistics({
     }, [dateString])
 
     // If restricted items exist and type is IMMEDIATE, switch to SCHEDULED automatically
-    if (hasRestrictedItems && formData.delivery_type === 'IMMEDIATE') {
-        setTimeout(() => {
-            setData({ ...formData, delivery_type: 'SCHEDULED' });
-        }, 0);
-    }
+    const mustSchedule = hasRestrictedItems && formData.delivery_type === 'IMMEDIATE'
+    useEffect(() => {
+        if (mustSchedule) setData({ ...formData, delivery_type: 'SCHEDULED' })
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to the restriction flag
+    }, [mustSchedule])
 
     return (
         <div className="space-y-6">
@@ -169,22 +148,13 @@ export function NoteStep_Logistics({
                         variant="light"
                         selected={formData.delivery_type === 'PARTIAL'}
                         onSelect={() => {
-                            const initialLineData = selectedItems
-                                .filter(item => {
-                                    const pType = item.productType ?? item.product_type;
-                                    const hasBom = item.hasBom ?? item.has_bom;
-                                    const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
-                                    const createsStockMove = item.createsStockMove ?? item.creates_stock_move;
-                                    const isRestricted = !isCreditNote &&
-                                        (pType === 'MANUFACTURABLE' || hasBom) &&
-                                        !auto;
-                                    return createsStockMove && !isRestricted;
-                                })
+                            const initialLineData: NoteLogisticsLineData[] = selectedItems
+                                .filter(item => Boolean(item.createsStockMove) && !isRestrictedLine(item, isCreditNote))
                                 .map(item => ({
-                                    line_id: item.lineId ?? item.line_id,
-                                    product_id: item.productId ?? item.product_id,
-                                    quantity: item.noteQuantity ?? item.quantity,
-                                    uom_id: item.uomId ?? item.uom_id
+                                    line_id: item.lineId,
+                                    product_id: item.productId,
+                                    quantity: item.noteQuantity,
+                                    uom_id: item.uomId,
                                 }));
                             setData({ ...formData, delivery_type: 'PARTIAL', line_data: initialLineData });
                         }}
@@ -214,35 +184,23 @@ export function NoteStep_Logistics({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {selectedItems.map((i: Record<string, unknown>) => {
-                                        const item = i as unknown as { lineId?: number, line_id?: number; productId?: number, product_id?: number; productName?: string, product_name?: string; noteQuantity?: number; quantity?: number; uomId?: number, uom_id?: number; productType?: string, product_type?: string; hasBom?: boolean, has_bom?: boolean; mfgAutoFinalize?: boolean, mfg_auto_finalize?: boolean; createsStockMove?: boolean, creates_stock_move?: boolean };
-                                        
-                                        const lineId = (item.lineId ?? item.line_id) as number;
-                                        const productId = (item.productId ?? item.product_id) as number;
-                                        const productName = (item.productName ?? item.product_name) as string;
-                                        const uomId = (item.uomId ?? item.uom_id) as number;
-                                        const productType = (item.productType ?? item.product_type) as string;
-                                        const hasBom = (item.hasBom ?? item.has_bom) as boolean;
-                                        const mfgAutoFinalize = (item.mfgAutoFinalize ?? item.mfg_auto_finalize) as boolean;
-                                        const createsStockMove = (item.createsStockMove ?? item.creates_stock_move) as boolean;
-
-                                        const itemQty = (item.noteQuantity ?? item.quantity ?? 0) as number;
-                                        const isRestricted = !isCreditNote &&
-                                            (productType === 'MANUFACTURABLE' || hasBom) &&
-                                            !mfgAutoFinalize;
-
-                                        const isEligible = (createsStockMove ||
-                                            productType === 'MANUFACTURABLE' ||
-                                            hasBom) && !isRestricted;
-
-                                        const currentVal = ((formData.line_data || []) as Record<string, unknown>[])
-                                            .find((ld: Record<string, unknown>) => (ld.line_id as number) === lineId)?.quantity as number ?? 0;
+                                    {selectedItems.map((item) => {
+                                        const lineId = item.lineId
+                                        const productId = item.productId
+                                        const uomId = item.uomId
+                                        const itemQty = item.noteQuantity ?? 0
+                                        const isRestricted = isRestrictedLine(item, isCreditNote)
+                                        const isEligible = (Boolean(item.createsStockMove) ||
+                                            item.productType === 'MANUFACTURABLE' ||
+                                            Boolean(item.hasBom)) && !isRestricted
+                                        const lineEntry = formData.line_data.find((ld) => ld.line_id === lineId)
+                                        const currentVal = lineEntry?.quantity ?? 0
 
                                         return (
                                             <TableRow key={lineId} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1 py-1">
-                                                        <span className="font-medium text-xs leading-tight">{productName}</span>
+                                                        <span className="font-medium text-xs leading-tight">{item.productName}</span>
                                                         {!isEligible && (
                                                             <span className="text-3xs text-warning font-bold uppercase tracking-tighter">
                                                                 {isRestricted ? "Requiere Producción" : "Sin control de stock"}
@@ -263,9 +221,8 @@ export function NoteStep_Logistics({
                                                         disabled={!isEligible}
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
-                                                            const lineData = (formData.line_data || []) as Record<string, unknown>[];
-                                                            const lines = [...lineData];
-                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === lineId);
+                                                            const lines = [...formData.line_data];
+                                                            const idx = lines.findIndex((ld) => ld.line_id === lineId);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], quantity: val };
                                                             } else {
@@ -278,12 +235,11 @@ export function NoteStep_Logistics({
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
                                                     <UoMSelector
-                                                        line={i}
-                                                        currentUom={((formData.line_data as Record<string, unknown>[]) || []).find((ld: Record<string, unknown>) => (ld.line_id as number) === lineId)?.uom_id as number || uomId}
+                                                        line={item}
+                                                        currentUom={lineEntry?.uom_id ?? uomId}
                                                         onUomChange={(uomIdVal) => {
-                                                            const lineData = (formData.line_data || []) as Record<string, unknown>[];
-                                                            const lines = [...lineData];
-                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === lineId);
+                                                            const lines = [...formData.line_data];
+                                                            const idx = lines.findIndex((ld) => ld.line_id === lineId);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], uom_id: uomIdVal };
                                                             } else {
