@@ -111,6 +111,22 @@ def foregone_expression():
     )
 
 
+def rule_windows(product: Product, product_ids: list[int]) -> list[dict]:
+    """Vigencia de las reglas de precio que pueden aplicar al producto (propias, de categoría o de plantilla)."""
+    rule_filter = Q(product_id__in=product_ids) | Q(category_id=product.category_id)
+    if product.parent_template_id:
+        rule_filter |= Q(product_id=product.parent_template_id)
+    return [
+        {
+            "rule_id": r.pk,
+            "name": r.name,
+            "start": r.start_date.isoformat() if r.start_date else None,
+            "end": r.end_date.isoformat() if r.end_date else None,
+        }
+        for r in PricingRule.objects.filter(rule_filter).order_by("start_date", "pk")
+    ]
+
+
 def _period_expression(granularity: str):
     if granularity == "day":
         return F("delivery__delivery_date")
@@ -302,18 +318,7 @@ class SalesImpactSelector:
         # Return lines carry the undiscounted price: net them with the average discount of the period.
         discount_factor = totals_acc["net_revenue"] / totals_acc["gross_revenue"] if totals_acc["gross_revenue"] else 1.0
 
-        rule_filter = Q(product_id__in=product_ids) | Q(category_id=product.category_id)
-        if product.parent_template_id:
-            rule_filter |= Q(product_id=product.parent_template_id)
-        windows = [
-            {
-                "rule_id": r.pk,
-                "name": r.name,
-                "start": r.start_date.isoformat() if r.start_date else None,
-                "end": r.end_date.isoformat() if r.end_date else None,
-            }
-            for r in PricingRule.objects.filter(rule_filter).order_by("start_date", "pk")
-        ]
+        windows = rule_windows(product, product_ids)
 
         return {
             "series": [series[p] for p in sorted(series)],

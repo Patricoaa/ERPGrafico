@@ -11,9 +11,12 @@ from .sales_impact_selector import (
     _f,
     _period_expression,
     _period_label,
+    _segment_key_expression,
+    _segment_labels,
     foregone_expression,
     list_net_expression,
     net_revenue_expression,
+    rule_windows,
 )
 
 
@@ -84,6 +87,60 @@ def _point(period: str, acc: dict, has_cost: bool) -> dict:
     }
 
 
+def _period_start(day: date, granularity: str) -> date:
+    if granularity == "week":
+        return day - timedelta(days=day.weekday())
+    if granularity == "month":
+        return day.replace(day=1)
+    if granularity == "year":
+        return day.replace(month=1, day=1)
+    return day
+
+
+def _by_rule(lines, granularity: str) -> list[dict]:
+    rows = list(
+        lines.annotate(period=_period_expression(granularity), segment=_segment_key_expression("rule"))
+        .values("period", "segment")
+        .annotate(units=Sum("quantity"), net_revenue=Sum(net_revenue_expression()))
+        .order_by("period", "segment")
+    )
+    labels = _segment_labels("rule", {r["segment"] for r in rows})
+    result = []
+    for r in rows:
+        units = float(r["units"] or 0)
+        net = float(r["net_revenue"] or 0)
+        result.append(
+            {
+                "period": _period_label(r["period"], granularity),
+                "key": r["segment"],
+                "label": labels[r["segment"]],
+                "units": units,
+                "avg_price": net / units if units else 0.0,
+            }
+        )
+    return result
+
+
+def _list_price_changes(product: Product, date_from: date | None, date_to: date) -> dict:
+    """Cambios de ``sale_price`` del historial dentro del rango, con el precio vigente al inicio (``baseline``)."""
+    records = list(product.history.order_by("history_date", "history_id").values_list("history_date", "sale_price"))
+    if not records:
+        return {"baseline": None, "changes": []}
+    baseline = float(records[0][1])
+    previous = baseline
+    changes = []
+    for moment, price in records[1:]:
+        day, value = moment.date(), float(price)
+        if value == previous:
+            continue
+        if date_from and day < date_from:
+            baseline = value
+        elif day <= date_to:
+            changes.append({"date": day.isoformat(), "from": previous, "to": value})
+        previous = value
+    return {"baseline": baseline, "changes": changes}
+
+
 class PricingSelector:
     @staticmethod
     def get_pricing(product: Product, params: PricingParams) -> dict:
@@ -108,6 +165,12 @@ class PricingSelector:
             prev_row = _lines(product_ids, prev_from, prev_to).aggregate(**_aggregates())
             previous = _kpis(_floats(prev_row), has_cost)
 
+        list_price_changes = _list_price_changes(product, params.date_from, date_to)
+        for change in list_price_changes["changes"]:
+            change["period"] = _period_label(
+                _period_start(date.fromisoformat(change["date"]), params.granularity), params.granularity
+            )
+
         sale_price = float(product.sale_price or 0)
         cost = float(product.cost_price or 0)
         return {
@@ -119,8 +182,11 @@ class PricingSelector:
                 "list_margin_pct": (sale_price - cost) / sale_price * 100 if has_cost and sale_price else None,
             },
             "kpis": {**_kpis(total, has_cost), "previous": previous},
-            "series": {"points": [_point(label, acc, has_cost) for label, acc in cells], "by_rule": []},
-            "list_price_changes": {"baseline": None, "changes": []},
-            "rule_windows": [],
+            "series": {
+                "points": [_point(label, acc, has_cost) for label, acc in cells],
+                "by_rule": _by_rule(lines, params.granularity),
+            },
+            "list_price_changes": list_price_changes,
+            "rule_windows": rule_windows(product, product_ids),
             "effects": [],
         }

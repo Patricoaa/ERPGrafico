@@ -1,6 +1,6 @@
 # ruff: noqa: F811  (the env fixture is imported from test_sales_impact_selector)
 """PricingSelector: margen realizado, serie de precios y efectos de cambios de precio."""
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 import pytest
@@ -9,7 +9,8 @@ from django.test.utils import CaptureQueriesContext
 
 from inventory.models import Product
 from inventory.pricing_selector import PricingParams, PricingSelector
-from inventory.tests.test_sales_impact_selector import _sale, env  # noqa: F401
+from inventory.sales_impact_selector import SalesImpactParams, SalesImpactSelector
+from inventory.tests.test_sales_impact_selector import _rule, _sale, env  # noqa: F401
 
 RANGE = {"date_from": date(2026, 1, 1), "date_to": date(2026, 12, 31)}
 
@@ -104,3 +105,61 @@ def test_query_count_constant_with_more_rows(env):
     with CaptureQueriesContext(connection) as many:
         _pricing(env)
     assert len(many) == len(few)
+
+
+def _at(day: date) -> datetime:
+    return datetime(day.year, day.month, day.day, 12, tzinfo=timezone.utc)
+
+
+def _price_history(env, *changes):
+    """Fija el historial de ``sale_price``: creación el 2025-12-01 y luego ``(fecha, precio)`` por cambio."""
+    product = env["product"]
+    product.history.update(history_date=_at(date(2025, 12, 1)))
+    for day, price in changes:
+        product.sale_price = Decimal(price)
+        product.save()
+        product.history.order_by("-history_id").filter(pk=product.history.latest("history_id").pk).update(history_date=_at(day))
+    product.refresh_from_db()
+
+
+def test_list_price_changes_from_history(env):
+    _price_history(env, (date(2026, 3, 1), "1200"), (date(2026, 6, 1), "1500"))
+    changes = _pricing(env)["list_price_changes"]
+    assert changes["baseline"] == pytest.approx(1000.0)
+    assert [(c["date"], c["from"], c["to"], c["period"]) for c in changes["changes"]] == [
+        ("2026-03-01", 1000.0, 1200.0, "2026-03"),
+        ("2026-06-01", 1200.0, 1500.0, "2026-06"),
+    ]
+
+
+def test_list_price_changes_limited_to_range_with_baseline(env):
+    _price_history(env, (date(2026, 3, 1), "1200"), (date(2026, 6, 1), "1500"))
+    changes = _pricing(env, date_from=date(2026, 4, 1))["list_price_changes"]
+    assert changes["baseline"] == pytest.approx(1200.0)
+    assert [c["date"] for c in changes["changes"]] == ["2026-06-01"]
+
+
+def test_list_price_changes_ignore_cost_only_edits(env):
+    _price_history(env)
+    product = env["product"]
+    product.cost_price = Decimal("777")
+    product.save()
+    assert _pricing(env)["list_price_changes"]["changes"] == []
+
+
+def test_rule_windows_match_sales_impact(env):
+    _rule(env, name="Promo", start_date=date(2026, 2, 1), end_date=date(2026, 2, 28))
+    expected = SalesImpactSelector.get_sales_impact(env["product"], SalesImpactParams(**RANGE))["rule_windows"]
+    assert expected
+    assert _pricing(env)["rule_windows"] == expected
+
+
+def test_by_rule_splits_price_per_rule(env):
+    rule = _rule(env, name="Mayorista")
+    _sale(env, qty="10", price="800", gross="952", rule=rule, source="RULE")
+    _sale(env, qty="10", price="1000", gross="1190", source="LIST")
+    by_rule = {r["key"]: r for r in _pricing(env)["series"]["by_rule"]}
+    assert by_rule[str(rule.pk)]["avg_price"] == pytest.approx(800.0)
+    assert by_rule[str(rule.pk)]["label"] == "Mayorista"
+    assert by_rule["list"]["avg_price"] == pytest.approx(1000.0)
+    assert by_rule["list"]["period"] == "2026-03"
