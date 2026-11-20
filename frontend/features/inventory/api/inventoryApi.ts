@@ -1,3 +1,4 @@
+import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.types"
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
 import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse, ProductAnalyticsParams, ProductAnalyticsResponse } from '../analyticsTypes'
@@ -108,6 +109,12 @@ export const inventoryApi = {
      */
     getProductInsights: async <T = unknown>(id: number): Promise<T> => {
         const { data } = await api.get<T>(`inventory/products/${id}/insights/`)
+        return data
+    },
+
+    /** Margin and price-rule impact aggregation (ADR-0145); server aggregates, segmentable. */
+    getProductSalesImpact: async (id: number, params: SalesImpactParams): Promise<SalesImpact> => {
+        const { data } = await api.get<SalesImpact>(`inventory/products/${id}/sales-impact/`, { params })
         return data
     },
 

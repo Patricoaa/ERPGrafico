@@ -34,6 +34,7 @@ export { getAvailability, getPrice, getAction, getProductCardModel, pluralizeEs,
 export type { AvailabilityTone, AvailabilityIcon, CardAction, CardAvailability, CardPrice, CardPriceKind, ProductCardContext, ProductCardModel } from './utils/productCardModel'
 export { useProducts, useProduct } from './hooks/useProducts'
 export { useVariants } from './hooks/useVariants'
+export { useProductSalesImpact } from './hooks/useProductSalesImpact'
 export { useCategories, useCategory } from './hooks/useCategories'
 export { useUoMs, useAllowedUoMs, type UoM } from './hooks/useUoMs'
 export { useAttributes, type Attribute } from './hooks/useAttributes'
