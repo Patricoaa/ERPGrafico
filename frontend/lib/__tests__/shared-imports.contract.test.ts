@@ -34,6 +34,8 @@ const RESIDUAL_ALLOWLIST = [
     "components/shared/UniversalSearch.tsx",
     // ContactCardGrid consumes the contacts search hook directly.
     "components/shared/ContactSelector/ContactCardGrid.tsx",
+    // DteRegistrationPanel dinamically imports FiscalMatchPickerPanel from tax for RCV matching.
+    "components/shared/DteRegistrationPanel.tsx",
 ]
 
 function collect(dir: string, out: string[] = []): string[] {
