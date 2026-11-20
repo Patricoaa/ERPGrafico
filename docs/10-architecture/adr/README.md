@@ -206,5 +206,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0141](0141-cuadre-unificado-por-grupo.md) | El cuadre es un solo registro por grupo (documento ERP, pagos TUU, registros RCV) que el motor resuelve cada 10 minutos; sin vínculos por pares ni recálculo manual | Accepted |
 | [0142](0142-escala-unificada-fluida-densidad-y-puntero.md) | Escala unificada: tipografía fluida (Utopia), espaciado y alturas de control dirigidos por un dial (densidad × puntero) en atributos CSS | Accepted |
 | [0143](0143-wizard-de-notas-sobre-drawer-layout.md) | Wizard de notas NC/ND sobre Drawer + DrawerLayout (patrón de compra); el hook es la única fuente del paso | Accepted |
+| [0144](0144-capacidades-y-stock-flow-en-insights-de-producto.md) | El análisis de producto se adapta a las capacidades del producto; `stock_flow` reemplaza `kardex` en `insights` | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
