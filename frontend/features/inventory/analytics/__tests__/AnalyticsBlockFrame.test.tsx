@@ -46,4 +46,14 @@ describe("AnalyticsBlockFrame", () => {
         expect(container.querySelector("[data-skeleton-shell]")).not.toBeNull()
         expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     })
+
+    it("usa un skeleton estructural por defecto cuando no se pasa uno", () => {
+        const { container } = render(
+            <AnalyticsBlockFrame
+                isLoading isError={false} errorMessage="x" isEmpty={false} emptyMessage="y"
+            ><div>datos</div></AnalyticsBlockFrame>,
+        )
+        expect(container.querySelector("[data-skeleton-shell] p")).not.toBeNull()
+        expect(screen.queryByText("datos")).not.toBeInTheDocument()
+    })
 })

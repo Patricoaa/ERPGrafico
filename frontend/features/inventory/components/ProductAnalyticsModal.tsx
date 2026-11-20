@@ -43,6 +43,7 @@ import {
 import { productionUsageEntity, productionUsageViews } from "../entity-view/productionUsage.entity"
 import { topCustomerEntity, topCustomerViews } from "../entity-view/topCustomer.entity"
 import { topSupplierEntity, topSupplierViews } from "../entity-view/topSupplier.entity"
+import { DEFAULT_PERIOD } from "../analytics/period"
 import { SalesImpactBlock } from "../analytics/SalesImpactBlock"
 import { ProductionPerformanceBlock } from "../analytics/ProductionPerformanceBlock"
 import { SourcingBlock } from "../analytics/SourcingBlock"
@@ -479,28 +480,28 @@ function ProductAnalyticsPanelInner({
                             {/* PRICING & MARGIN — mounted only while active so it fetches on demand */}
                             {activeTab === "pricing" && (
                                 <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
-                                    <SalesImpactBlock productId={productId} />
+                                    <SalesImpactBlock productId={productId} period={DEFAULT_PERIOD} />
                                 </div>
                             )}
 
                             {/* MANUFACTURING PERFORMANCE — mounted only while active so it fetches on demand */}
                             {activeTab === "manufacturing" && (
                                 <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
-                                    <ProductionPerformanceBlock productId={productId} />
+                                    <ProductionPerformanceBlock productId={productId} period={DEFAULT_PERIOD} />
                                 </div>
                             )}
 
                             {/* SOURCING — mounted only while active so it fetches on demand */}
                             {activeTab === "sourcing" && (
                                 <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
-                                    <SourcingBlock productId={productId} />
+                                    <SourcingBlock productId={productId} period={DEFAULT_PERIOD} />
                                 </div>
                             )}
 
                             {/* OPERATIONS — mounted only while active so it fetches on demand */}
                             {activeTab === "operations" && (
                                 <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
-                                    <OperationsBlock productId={productId} />
+                                    <OperationsBlock productId={productId} period={DEFAULT_PERIOD} />
                                 </div>
                             )}
 

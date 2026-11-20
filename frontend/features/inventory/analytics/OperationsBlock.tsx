@@ -5,13 +5,13 @@ import { AnalyticsChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, formatDate, formatNumber, useEntityCollection } from "@/components/entity-view"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
-import { monthsAgoIso } from "./monthsAgoIso"
+import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
+import { periodToDateFrom, type PeriodKey } from "./period"
 import { useProductOperations } from "../hooks/useProductOperations"
 import { operationsSubscriptionEntity, operationsSubscriptionViews } from "../entity-view/operationsSubscription.entity"
 import { operationsPaymentEntity, operationsPaymentViews } from "../entity-view/operationsPayment.entity"
-import type { Rotation, SubscriptionsSummary } from "./operations.types"
+import type { Operations, Rotation, SubscriptionsSummary } from "./operations.types"
 
-const RANGES = [{ value: 3, label: "3 m" }, { value: 12, label: "12 m" }, { value: 24, label: "24 m" }]
 const IDLE = [{ value: 30, label: "30 d" }, { value: 90, label: "90 d" }, { value: 180, label: "180 d" }]
 const DASH = "—"
 
@@ -93,35 +93,34 @@ function SubscriptionsSection({ subs }: { subs: SubscriptionsSummary }) {
 }
 
 /** "Operación": stock rotation/coverage and subscription costs (ADR-0148). */
-export function OperationsBlock({ productId }: { productId: number }) {
-    const [rangeMonths, setRangeMonths] = useState(12)
+export function OperationsBlock({ productId, period }: { productId: number; period: PeriodKey }) {
     const [idleDays, setIdleDays] = useState(90)
-    const dateFrom = useMemo(() => monthsAgoIso(rangeMonths), [rangeMonths])
+    const dateFrom = useMemo(() => periodToDateFrom(period), [period])
     const { data, isLoading, isError } = useProductOperations(productId, { date_from: dateFrom, idle_days: idleDays })
-
-    let body: React.ReactNode
-    if (isLoading) {
-        body = <p role="status" className="text-sm text-muted-foreground">Cargando análisis de operación…</p>
-    } else if (isError || !data) {
-        body = <p role="alert" className="text-sm text-destructive">No se pudo cargar el análisis de operación.</p>
-    } else if (!data.rotation && !data.subscriptions) {
-        body = <p className="text-sm text-muted-foreground italic">Este producto no tiene datos de operación que analizar</p>
-    } else {
-        body = (
-            <>
-                {data.rotation && <RotationSection rotation={data.rotation} />}
-                {data.subscriptions && <SubscriptionsSection subs={data.subscriptions} />}
-            </>
-        )
-    }
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-                <Control label="Rango" value={rangeMonths} options={RANGES} onChange={setRangeMonths} />
                 <Control label="Stock inmóvil desde" value={idleDays} options={IDLE} onChange={setIdleDays} />
             </div>
-            {body}
+            <AnalyticsBlockFrame
+                isLoading={isLoading}
+                isError={isError || !data}
+                errorMessage="No se pudo cargar el análisis de operación."
+                isEmpty={!!data && !data.rotation && !data.subscriptions}
+                emptyMessage="Este producto no tiene datos de operación que analizar"
+            >
+                {data && <OperationsBody data={data} />}
+            </AnalyticsBlockFrame>
         </div>
+    )
+}
+
+function OperationsBody({ data }: { data: Operations }) {
+    return (
+        <>
+            {data.rotation && <RotationSection rotation={data.rotation} />}
+            {data.subscriptions && <SubscriptionsSection subs={data.subscriptions} />}
+        </>
     )
 }

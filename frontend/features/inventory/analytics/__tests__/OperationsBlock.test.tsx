@@ -51,7 +51,7 @@ beforeEach(() => {
 
 describe("OperationsBlock", () => {
     it("shows the rotation cards, the chart and the coverage in days", () => {
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.getByText("Rotación")).toBeInTheDocument()
         expect(screen.getByText("Cobertura")).toBeInTheDocument()
         expect(screen.getByText("55 días")).toBeInTheDocument()
@@ -61,19 +61,19 @@ describe("OperationsBlock", () => {
 
     it("shows dashes for null turnover and coverage", () => {
         state.data = { rotation: { ...ROTATION, turnover: null, days_of_inventory: null, coverage_days: null }, subscriptions: null }
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.queryByText("55 días")).not.toBeInTheDocument()
         expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(3)
     })
 
     it("warns about idle stock", () => {
         state.data = { rotation: { ...ROTATION, idle: true }, subscriptions: null }
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.getByText(/Stock inmóvil: hay/)).toBeInTheDocument()
     })
 
     it("shows the subscription totals, the table and the payments variation", () => {
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.getByText("Costo anualizado")).toBeInTheDocument()
         expect(screen.getByText("Próximos 90 días")).toBeInTheDocument()
         expect(screen.getAllByText("Hosting SpA").length).toBeGreaterThan(0)
@@ -82,35 +82,47 @@ describe("OperationsBlock", () => {
 
     it("hides sections that are null", () => {
         state.data = { rotation: null, subscriptions: SUBS }
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.queryByText("Rotación")).not.toBeInTheDocument()
         expect(screen.getByText("Costo anualizado")).toBeInTheDocument()
         state.data = { rotation: ROTATION, subscriptions: null }
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.getAllByText("Rotación").length).toBe(1)
     })
 
     it("explains when there is nothing to analyze", () => {
         state.data = { rotation: null, subscriptions: null }
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.getByText("Este producto no tiene datos de operación que analizar")).toBeInTheDocument()
     })
 
     it("shows loading and error states", () => {
         state.isLoading = true
         state.data = null
-        const { unmount } = render(<OperationsBlock productId={7} />)
-        expect(screen.getByRole("status")).toBeInTheDocument()
+        const { unmount } = render(<OperationsBlock productId={7} period="12m" />)
+        expect(screen.getByLabelText("Cargando análisis del producto")).toBeInTheDocument()
         unmount()
         state.isLoading = false
         state.isError = true
-        render(<OperationsBlock productId={7} />)
+        render(<OperationsBlock productId={7} period="12m" />)
         expect(screen.getByRole("alert")).toBeInTheDocument()
     })
 
-    it("refetches with the chosen range and idle threshold", () => {
-        render(<OperationsBlock productId={7} />)
-        fireEvent.click(screen.getByRole("radio", { name: "24 m" }))
+    it("derives date_from from the period and omits it for the history", () => {
+        const dateFrom = () => (state.useOps.mock.calls.at(-1) as [number, { date_from?: string }])[1].date_from
+        const { rerender } = render(<OperationsBlock productId={7} period="3m" />)
+        expect(dateFrom()).toBeDefined()
+        rerender(<OperationsBlock productId={7} period="all" />)
+        expect(dateFrom()).toBeUndefined()
+    })
+
+    it("no longer renders its own range selector", () => {
+        render(<OperationsBlock productId={7} period="12m" />)
+        expect(screen.queryByRole("radio", { name: "24 m" })).not.toBeInTheDocument()
+    })
+
+    it("refetches with the chosen idle threshold", () => {
+        render(<OperationsBlock productId={7} period="12m" />)
         fireEvent.click(screen.getByRole("radio", { name: "30 d" }))
         const last = state.useOps.mock.calls.at(-1) as [number, { date_from: string; idle_days: number }]
         expect(last[0]).toBe(7)

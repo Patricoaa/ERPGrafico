@@ -9,8 +9,8 @@ interface AnalyticsBlockFrameProps {
     errorMessage: string
     isEmpty: boolean
     emptyMessage: string
-    /** El bloque real con datos placeholder: su layout es el skeleton (sin layout shift). */
-    skeleton: ReactNode
+    /** Layout placeholder del bloque; si se omite, `SkeletonShell` usa su placeholder estándar. */
+    skeleton?: ReactNode
     children: ReactNode
 }
 

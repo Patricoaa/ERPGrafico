@@ -45,7 +45,7 @@ const lastParams = (): SourcingParams => state.useSourcing.mock.calls.at(-1)?.[1
 
 describe("SourcingBlock", () => {
     it("compares making and buying and says which is cheaper", () => {
-        render(<SourcingBlock productId={7} />)
+        render(<SourcingBlock productId={7} period="12m" />)
         expect(screen.getByText("Fabricar")).toBeInTheDocument()
         expect(screen.getByText("Comprar")).toBeInTheDocument()
         expect(screen.getByText(/Fabricar es más barato/)).toBeInTheDocument()
@@ -53,7 +53,7 @@ describe("SourcingBlock", () => {
 
     it("says buying is cheaper when the saving is negative", () => {
         state.data = { ...FULL, make_vs_buy: { ...MVB, saving_per_unit: -30, saving_total: -300, cheaper: "BUY" } }
-        render(<SourcingBlock productId={7} />)
+        render(<SourcingBlock productId={7} period="12m" />)
         expect(screen.getByText(/Comprar es más barato/)).toBeInTheDocument()
     })
 
@@ -62,54 +62,59 @@ describe("SourcingBlock", () => {
             ...FULL,
             make_vs_buy: { ...MVB, buy: { ...MVB.buy, receipts: 0, avg_unit_cost: 0, last_unit_cost: 0, last_date: null, units_bought: 0 }, saving_per_unit: null, saving_total: null, cheaper: null },
         }
-        render(<SourcingBlock productId={7} />)
+        render(<SourcingBlock productId={7} period="12m" />)
         expect(screen.getByText("Sin compras recibidas en el periodo")).toBeInTheDocument()
         expect(screen.queryByText(/es más barato/)).not.toBeInTheDocument()
     })
 
     it("lists the parent products where the input is used", () => {
-        render(<SourcingBlock productId={7} />)
+        render(<SourcingBlock productId={7} period="12m" />)
         expect(screen.getByText("Tarjeta Doble Faz")).toBeInTheDocument()
     })
 
     it("hides the sections that do not apply", () => {
         state.data = { make_vs_buy: null, used_in: FULL.used_in }
-        const { rerender } = render(<SourcingBlock productId={7} />)
+        const { rerender } = render(<SourcingBlock productId={7} period="12m" />)
         expect(screen.queryByText("Fabricar")).not.toBeInTheDocument()
         state.data = { make_vs_buy: MVB, used_in: null }
-        rerender(<SourcingBlock productId={7} />)
+        rerender(<SourcingBlock productId={7} period="12m" />)
         expect(screen.queryByText("Tarjeta Doble Faz")).not.toBeInTheDocument()
         expect(screen.getByText("Fabricar")).toBeInTheDocument()
     })
 
     it("refetches with the new increase when the sensitivity changes", () => {
-        render(<SourcingBlock productId={7} />)
+        render(<SourcingBlock productId={7} period="12m" />)
         expect(lastParams().increase_pct).toBe(10)
         fireEvent.click(screen.getByRole("radio", { name: "20 %" }))
         expect(lastParams().increase_pct).toBe(20)
     })
 
-    it("refetches with a new date_from when the range changes", () => {
-        render(<SourcingBlock productId={7} />)
-        const first = lastParams().date_from
-        fireEvent.click(screen.getByRole("radio", { name: "24 m" }))
-        expect(lastParams().date_from).not.toBe(first)
+    it("derives date_from from the period and omits it for the history", () => {
+        const { rerender } = render(<SourcingBlock productId={7} period="3m" />)
+        expect(lastParams().date_from).toBeDefined()
+        rerender(<SourcingBlock productId={7} period="all" />)
+        expect(lastParams().date_from).toBeUndefined()
+    })
+
+    it("no longer renders its own range selector", () => {
+        render(<SourcingBlock productId={7} period="12m" />)
+        expect(screen.queryByRole("radio", { name: "24 m" })).not.toBeInTheDocument()
     })
 
     it("shows an empty state when nothing applies", () => {
         state.data = { make_vs_buy: null, used_in: null }
-        render(<SourcingBlock productId={7} />)
+        render(<SourcingBlock productId={7} period="12m" />)
         expect(screen.getByText("Este producto no tiene datos de abastecimiento que analizar")).toBeInTheDocument()
     })
 
     it("shows loading and error states", () => {
         state.data = null
         state.isLoading = true
-        const { rerender } = render(<SourcingBlock productId={7} />)
-        expect(screen.getByRole("status")).toBeInTheDocument()
+        const { rerender } = render(<SourcingBlock productId={7} period="12m" />)
+        expect(screen.getByLabelText("Cargando análisis del producto")).toBeInTheDocument()
         state.isLoading = false
         state.isError = true
-        rerender(<SourcingBlock productId={7} />)
+        rerender(<SourcingBlock productId={7} period="12m" />)
         expect(screen.getByRole("alert")).toBeInTheDocument()
     })
 })

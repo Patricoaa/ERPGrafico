@@ -1,16 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { Metric, MetricStrip } from "@/components/shared"
 import { Collection, formatNumber, useEntityCollection } from "@/components/entity-view"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
-import { monthsAgoIso } from "./monthsAgoIso"
+import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
+import { periodToDateFrom, type PeriodKey } from "./period"
 import { useProductSourcing } from "../hooks/useProductSourcing"
 import { sourcingParentEntity, sourcingParentViews } from "../entity-view/sourcingParent.entity"
-import type { MakeVsBuy } from "./sourcing.types"
+import type { MakeVsBuy, Sourcing } from "./sourcing.types"
 
-const RANGES = [{ value: 3, label: "3 m" }, { value: 12, label: "12 m" }, { value: 24, label: "24 m" }]
 const INCREASES = [{ value: 5, label: "5 %" }, { value: 10, label: "10 %" }, { value: 20, label: "20 %" }]
 const formatIsoDate = (iso: string) => iso.split("-").reverse().join("-")
 
@@ -61,50 +61,53 @@ function MakeVsBuySection({ mvb }: { mvb: MakeVsBuy }) {
 }
 
 /** "Abastecimiento": make-vs-buy comparison and input-usage price sensitivity (ADR-0147). */
-export function SourcingBlock({ productId }: { productId: number }) {
-    const [rangeMonths, setRangeMonths] = useState(12)
+export function SourcingBlock({ productId, period }: { productId: number; period: PeriodKey }) {
     const [increasePct, setIncreasePct] = useState(10)
-    const dateFrom = useMemo(() => monthsAgoIso(rangeMonths), [rangeMonths])
+    const dateFrom = useMemo(() => periodToDateFrom(period), [period])
     const { data, isLoading, isError } = useProductSourcing(productId, { date_from: dateFrom, increase_pct: increasePct })
 
     const parentsCollection = useEntityCollection(
         sourcingParentEntity, { rows: data?.used_in?.parents ?? [] }, { pagination: { mode: "none" } },
     )
 
-    let body: React.ReactNode
-    if (isLoading) {
-        body = <p role="status" className="text-sm text-muted-foreground">Cargando análisis de abastecimiento…</p>
-    } else if (isError || !data) {
-        body = <p role="alert" className="text-sm text-destructive">No se pudo cargar el análisis de abastecimiento.</p>
-    } else if (!data.make_vs_buy && !data.used_in) {
-        body = <p className="text-sm text-muted-foreground italic">Este producto no tiene datos de abastecimiento que analizar</p>
-    } else {
-        body = (
-            <>
-                {data.make_vs_buy && <MakeVsBuySection mvb={data.make_vs_buy} />}
-                {data.used_in && (
-                    <section className="flex flex-col gap-3" aria-label="Uso como insumo">
-                        <h3 className="text-sm font-semibold">Uso como insumo: si su precio sube {formatNumber(data.used_in.increase_pct, 0)} %</h3>
-                        <Collection.Root collection={parentsCollection}>
-                            <Collection.View
-                                table={sourcingParentViews.table}
-                                emptyTitle="No se usa en BOM activas"
-                                emptyDescription="Ningún producto fabricable tiene este insumo en su BOM activa."
-                            />
-                        </Collection.Root>
-                    </section>
-                )}
-            </>
-        )
-    }
+    const parentsTable = (
+        <Collection.Root collection={parentsCollection}>
+            <Collection.View
+                table={sourcingParentViews.table}
+                emptyTitle="No se usa en BOM activas"
+                emptyDescription="Ningún producto fabricable tiene este insumo en su BOM activa."
+            />
+        </Collection.Root>
+    )
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-                <Control label="Rango (compras y OT)" value={rangeMonths} options={RANGES} onChange={setRangeMonths} />
                 <Control label="Subida de precio del insumo" value={increasePct} options={INCREASES} onChange={setIncreasePct} />
             </div>
-            {body}
+            <AnalyticsBlockFrame
+                isLoading={isLoading}
+                isError={isError || !data}
+                errorMessage="No se pudo cargar el análisis de abastecimiento."
+                isEmpty={!!data && !data.make_vs_buy && !data.used_in}
+                emptyMessage="Este producto no tiene datos de abastecimiento que analizar"
+            >
+                {data && <SourcingBody data={data} parentsTable={parentsTable} />}
+            </AnalyticsBlockFrame>
         </div>
+    )
+}
+
+function SourcingBody({ data, parentsTable }: { data: Sourcing; parentsTable: ReactNode }) {
+    return (
+        <>
+            {data.make_vs_buy && <MakeVsBuySection mvb={data.make_vs_buy} />}
+            {data.used_in && (
+                <section className="flex flex-col gap-3" aria-label="Uso como insumo">
+                    <h3 className="text-sm font-semibold">Uso como insumo: si su precio sube {formatNumber(data.used_in.increase_pct, 0)} %</h3>
+                    {parentsTable}
+                </section>
+            )}
+        </>
     )
 }

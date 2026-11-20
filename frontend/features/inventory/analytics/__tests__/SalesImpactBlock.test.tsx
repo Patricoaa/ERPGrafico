@@ -54,33 +54,33 @@ const lastParams = (): SalesImpactParams => state.useImpact.mock.calls.at(-1)?.[
 
 describe("SalesImpactBlock", () => {
     it("charts one stacked key per segment from the series", () => {
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         const chart = screen.getByTestId("chart")
         expect(chart.dataset.keys).toBe("Mayorista|Sin registro")
         expect(chart.dataset.rows).toBe("2")
     })
 
     it("refetches with the new group_by when the segmentation changes", () => {
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         expect(lastParams()).toMatchObject({ group_by: "rule", metric: "net_revenue", granularity: "month" })
         fireEvent.click(screen.getByRole("radio", { name: "Canal" }))
         expect(lastParams().group_by).toBe("channel")
     })
 
     it("refetches with the new metric when the metric changes", () => {
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         fireEvent.click(screen.getByRole("radio", { name: "Margen" }))
         expect(lastParams().metric).toBe("margin")
     })
 
     it("warns when only part of the revenue has a recorded rule", () => {
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         expect(screen.getByText(/El 25 % del ingreso del periodo tiene regla registrada \(desde 01-05-2026\)/)).toBeInTheDocument()
     })
 
     it("does not warn when the whole revenue has provenance", () => {
         state.data = { ...IMPACT, coverage: { revenue_with_provenance_pct: 100, since: "2026-01-01" } }
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         expect(screen.queryByText(/tiene regla registrada/)).not.toBeInTheDocument()
     })
 
@@ -90,29 +90,42 @@ describe("SalesImpactBlock", () => {
             totals: { units: 0, net_revenue: 0, margin: 0, margin_pct: 0, discount_total: 0, foregone_revenue: 0 },
             returns: { units: 0, revenue: 0 },
         }
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         expect(screen.getByText("Sin ventas en el periodo")).toBeInTheDocument()
         expect(screen.queryByTestId("chart")).not.toBeInTheDocument()
+    })
+
+    it("derives date_from from the period and omits it for the history", () => {
+        const dateFrom = () => (state.useImpact.mock.calls.at(-1)?.[1] as SalesImpactParams).date_from
+        const { rerender } = render(<SalesImpactBlock productId={7} period="3m" />)
+        expect(dateFrom()).toBeDefined()
+        rerender(<SalesImpactBlock productId={7} period="all" />)
+        expect(dateFrom()).toBeUndefined()
+    })
+
+    it("no longer renders its own range selector", () => {
+        render(<SalesImpactBlock productId={7} period="12m" />)
+        expect(screen.queryByRole("radio", { name: "24 m" })).not.toBeInTheDocument()
     })
 
     it("shows loading and error states", () => {
         state.data = null
         state.isLoading = true
-        const { rerender } = render(<SalesImpactBlock productId={7} />)
-        expect(screen.getByRole("status")).toBeInTheDocument()
+        const { rerender } = render(<SalesImpactBlock productId={7} period="12m" />)
+        expect(screen.getByLabelText("Cargando análisis del producto")).toBeInTheDocument()
         state.isLoading = false
         state.isError = true
-        rerender(<SalesImpactBlock productId={7} />)
+        rerender(<SalesImpactBlock productId={7} period="12m" />)
         expect(screen.getByRole("alert")).toBeInTheDocument()
     })
 
     it("shows the returns line separately from the series", () => {
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         expect(screen.getByText(/Devoluciones: 2 un/)).toBeInTheDocument()
     })
 
     it("lists the validity window of each price rule and labels the comparison as association", () => {
-        render(<SalesImpactBlock productId={7} />)
+        render(<SalesImpactBlock productId={7} period="12m" />)
         expect(screen.getByText(/Mayorista · 01-01-2026 → 01-02-2026/)).toBeInTheDocument()
         expect(screen.getByText(/asociación, no causalidad/i)).toBeInTheDocument()
     })

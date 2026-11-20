@@ -54,4 +54,17 @@ describe("useProductOperations", () => {
         expect(result.current.isLoading).toBe(false)
         release({ rotation: null, subscriptions: null })
     })
+
+    it("does not show data from another period while the new period loads", async () => {
+        const { result, rerender } = renderHook(
+            ({ params }: { params: OperationsParams }) => useProductOperations(7, params),
+            { wrapper: wrapper(), initialProps: { params: PARAMS } },
+        )
+        await waitFor(() => expect(result.current.data).toEqual(EMPTY))
+        getProductOperations.mockReturnValueOnce(new Promise<Operations>(() => undefined))
+        rerender({ params: { ...PARAMS, date_from: undefined } })
+        await waitFor(() => expect(getProductOperations).toHaveBeenCalledTimes(2))
+        expect(result.current.data).toBeNull()
+        expect(result.current.isLoading).toBe(true)
+    })
 })

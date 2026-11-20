@@ -46,7 +46,7 @@ beforeEach(() => {
 
 describe("ProductionPerformanceBlock", () => {
     it("shows the KPIs", () => {
-        render(<ProductionPerformanceBlock productId={7} />)
+        render(<ProductionPerformanceBlock productId={7} period="12m" />)
         for (const label of ["Costo real por unidad", "Costo BOM actual", "Desviación de insumos", "Lead time", "Rectificación"]) {
             expect(screen.getByText(label)).toBeInTheDocument()
         }
@@ -54,59 +54,64 @@ describe("ProductionPerformanceBlock", () => {
     })
 
     it("lists work orders and materials in their tables", () => {
-        render(<ProductionPerformanceBlock productId={7} />)
+        render(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.getByText("OT-0001")).toBeInTheDocument()
         expect(screen.getByText("OT-0002")).toBeInTheDocument()
         expect(screen.getByText("Papel Couché")).toBeInTheDocument()
     })
 
     it("charts stage durations only when there are stages", () => {
-        const { rerender } = render(<ProductionPerformanceBlock productId={7} />)
+        const { rerender } = render(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.getByTestId("stage-chart")).toHaveAttribute("data-rows", "1")
         state.data = { ...PERF, stages: [] }
-        rerender(<ProductionPerformanceBlock productId={7} />)
+        rerender(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.queryByTestId("stage-chart")).not.toBeInTheDocument()
     })
 
     it("warns when some work orders use estimated cost", () => {
-        render(<ProductionPerformanceBlock productId={7} />)
+        render(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.getByText(/costo estimado/i)).toBeInTheDocument()
     })
 
     it("does not warn when no cost is estimated", () => {
         state.data = { ...PERF, orders: [PERF.orders[0]] }
-        render(<ProductionPerformanceBlock productId={7} />)
+        render(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.queryByText(/costo estimado/i)).not.toBeInTheDocument()
     })
 
     it("shows the empty state when there are no finished work orders", () => {
         state.data = { ...PERF, kpis: { ...PERF.kpis, orders: 0 }, orders: [], materials: [], stages: [] }
-        render(<ProductionPerformanceBlock productId={7} />)
+        render(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.getByText("Sin OT terminadas en el periodo")).toBeInTheDocument()
     })
 
     it("shows loading and error states", () => {
         state.data = null
         state.isLoading = true
-        const { rerender } = render(<ProductionPerformanceBlock productId={7} />)
-        expect(screen.getByRole("status")).toBeInTheDocument()
+        const { rerender } = render(<ProductionPerformanceBlock productId={7} period="12m" />)
+        expect(screen.getByLabelText("Cargando análisis del producto")).toBeInTheDocument()
         state.isLoading = false
         state.isError = true
-        rerender(<ProductionPerformanceBlock productId={7} />)
+        rerender(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.getByRole("alert")).toBeInTheDocument()
     })
 
-    it("refetches with a new date_from when the range changes", () => {
-        render(<ProductionPerformanceBlock productId={7} />)
-        const first = (state.usePerf.mock.calls.at(-1)?.[1] as ProductionPerformanceParams).date_from
-        fireEvent.click(screen.getByRole("radio", { name: "24 m" }))
-        const next = (state.usePerf.mock.calls.at(-1)?.[1] as ProductionPerformanceParams).date_from
-        expect(next).not.toBe(first)
+    it("derives date_from from the period and omits it for the history", () => {
+        const dateFrom = () => (state.usePerf.mock.calls.at(-1)?.[1] as ProductionPerformanceParams).date_from
+        const { rerender } = render(<ProductionPerformanceBlock productId={7} period="3m" />)
+        expect(dateFrom()).toBeDefined()
+        rerender(<ProductionPerformanceBlock productId={7} period="all" />)
+        expect(dateFrom()).toBeUndefined()
+    })
+
+    it("no longer renders its own range selector", () => {
+        render(<ProductionPerformanceBlock productId={7} period="12m" />)
+        expect(screen.queryByRole("radio", { name: "24 m" })).not.toBeInTheDocument()
     })
 
     it("shows a dash instead of 0 days when there is no lead time (express products)", () => {
         state.data = { ...PERF, kpis: { ...PERF.kpis, lead_time_days: null } }
-        render(<ProductionPerformanceBlock productId={7} />)
+        render(<ProductionPerformanceBlock productId={7} period="12m" />)
         expect(screen.getByText("Lead time")).toBeInTheDocument()
         expect(screen.queryByText(/días/)).not.toBeInTheDocument()
     })
