@@ -31,6 +31,9 @@ vi.mock("@/features/production", () => ({ WorkOrderWizard: () => null }))
 vi.mock("../../analytics/SourcingBlock", () => ({
     SourcingBlock: ({ productId }: { productId: number }) => <div>bloque-abastecimiento-{productId}</div>,
 }))
+vi.mock("../../analytics/OperationsBlock", () => ({
+    OperationsBlock: ({ productId }: { productId: number }) => <div>bloque-operacion-{productId}</div>,
+}))
 vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
@@ -163,5 +166,19 @@ describe("ProductAnalyticsModal capabilities", () => {
     it("hides the Abastecimiento tab when the product is neither made+bought nor an input", () => {
         open(1)
         expect(screen.queryByRole("button", { name: "Abastecimiento" })).not.toBeInTheDocument()
+    })
+
+    it("shows the Operación tab for a stocked product and mounts its block only when active", () => {
+        state.capsById = { 1: { ...fullCaps, tracks_stock: true } }
+        open(1)
+        expect(screen.queryByText("bloque-operacion-1")).not.toBeInTheDocument()
+        fireEvent.click(screen.getByRole("button", { name: "Operación" }))
+        expect(screen.getByText("bloque-operacion-1")).toBeInTheDocument()
+    })
+
+    it("hides the Operación tab without stock tracking or recurrence", () => {
+        state.capsById = { 1: { ...fullCaps, tracks_stock: false, recurring: false } }
+        open(1)
+        expect(screen.queryByRole("button", { name: "Operación" })).not.toBeInTheDocument()
     })
 })

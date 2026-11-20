@@ -24,7 +24,7 @@ const caps = (overrides: Partial<ProductCapabilities>): ProductCapabilities => (
 describe("visibleTabIds", () => {
     it("hides sales tabs and shows purchasing/stock/production for an input-only product", () => {
         const tabs = visibleTabIds(caps({ segment: "INPUT", buys: true, tracks_stock: true, used_in_production: true }))
-        expect(tabs).toEqual(["overview", "purchases", "cost", "kardex", "production", "sourcing", "suppliers"])
+        expect(tabs).toEqual(["overview", "purchases", "cost", "kardex", "production", "sourcing", "operations", "suppliers"])
     })
 
     it("shows sales tabs for a sellable product and no stock tab without stock", () => {
@@ -50,12 +50,12 @@ describe("visibleTabIds", () => {
 
     it("subscription bought without selling shows purchasing tabs only", () => {
         expect(visibleTabIds(caps({ segment: "SUBSCRIPTION", buys: true, recurring: true }))).toEqual([
-            "overview", "purchases", "cost", "suppliers",
+            "overview", "purchases", "cost", "operations", "suppliers",
         ])
     })
 
     it("returns every tab when capabilities are missing", () => {
-        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "customers", "suppliers"]
+        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "operations", "customers", "suppliers"]
         expect(visibleTabIds(undefined)).toEqual(all)
         expect(visibleTabIds(null)).toEqual(all)
     })
@@ -105,5 +105,13 @@ describe("SEGMENT_LABELS", () => {
         expect(visibleTabIds(caps({ manufactures: false, buys: false, used_in_production: true }))).toContain("sourcing")
         expect(visibleTabIds(caps({ manufactures: true, buys: false, used_in_production: false }))).not.toContain("sourcing")
         expect(visibleTabIds(caps({ manufactures: false, buys: true, used_in_production: false }))).not.toContain("sourcing")
+    })
+
+    it("operations tab applies to stocked or recurring products, right after sourcing when both show", () => {
+        const stocked = visibleTabIds(caps({ tracks_stock: true, used_in_production: true }))
+        expect(stocked.indexOf("operations")).toBe(stocked.indexOf("sourcing") + 1)
+        expect(visibleTabIds(caps({ tracks_stock: true }))).toContain("operations")
+        expect(visibleTabIds(caps({ recurring: true }))).toContain("operations")
+        expect(visibleTabIds(caps({ sells: true }))).not.toContain("operations")
     })
 })
