@@ -79,25 +79,60 @@ describe('getProductCardModel · availability', () => {
         expect(model.availability).toMatchObject({ text: '12 fabricables', tone: 'ok' })
     })
 
-    it('advanced manufacturable with BOM but nothing makeable warns instead of blocking', () => {
+    it('express manufacturable with zero makeable quantity blocks (tone: none)', () => {
         const model = getProductCardModel(
-            product({ product_type: 'MANUFACTURABLE', requires_advanced_manufacturing: true, has_bom: true, manufacturable_quantity: 0 }),
+            product({ product_type: 'MANUFACTURABLE', mfg_auto_finalize: true, has_bom: true, manufacturable_quantity: 0 }),
+            ctx,
+        )
+        expect(model.availability).toMatchObject({ text: '0 fabricables', tone: 'none' })
+    })
+
+    it('advanced+stocked manufacturable shows physical stock availability', () => {
+        const model = getProductCardModel(
+            product({ product_type: 'MANUFACTURABLE', requires_advanced_manufacturing: true, track_inventory: true, qty_available: 25 }),
+            ctx,
+        )
+        expect(model.availability).toMatchObject({ text: '25 pliegos disponibles', tone: 'ok', icon: 'stock' })
+    })
+
+    it('advanced+stocked without stock shows "Sin existencias"', () => {
+        const model = getProductCardModel(
+            product({ product_type: 'MANUFACTURABLE', requires_advanced_manufacturing: true, track_inventory: true, qty_available: 0 }),
+            ctx,
+        )
+        expect(model.availability).toMatchObject({ text: 'Sin existencias', tone: 'none', icon: 'blocked' })
+    })
+
+    it('advanced+on-demand with BOM but nothing makeable warns instead of blocking', () => {
+        const model = getProductCardModel(
+            product({ product_type: 'MANUFACTURABLE', requires_advanced_manufacturing: true, track_inventory: false, has_bom: true, manufacturable_quantity: 0 }),
             ctx,
         )
         expect(model.availability).toMatchObject({ text: '0 fabricables', tone: 'warning' })
     })
 
-    it('advanced manufacturable without BOM is described as fabricable', () => {
+    it('advanced+on-demand without BOM is described as fabricable', () => {
         const model = getProductCardModel(
-            product({ product_type: 'MANUFACTURABLE', requires_advanced_manufacturing: true, has_bom: false }),
+            product({ product_type: 'MANUFACTURABLE', requires_advanced_manufacturing: true, track_inventory: false, has_bom: false }),
             ctx,
         )
         expect(model.availability).toMatchObject({ text: 'Fabricable', tone: 'ok' })
     })
 
-    it('simple manufacturable behaves like stock', () => {
-        const model = getProductCardModel(product({ product_type: 'MANUFACTURABLE', qty_available: 5 }), ctx)
-        expect(model.availability?.tone).toBe('ok')
+    it('manufacturable on-demand with default flags (Talonario de Facturas, Calendario) shows Fabricable not Sin existencias', () => {
+        const model = getProductCardModel(
+            product({
+                name: 'Talonario de Facturas',
+                product_type: 'MANUFACTURABLE',
+                requires_advanced_manufacturing: false,
+                mfg_auto_finalize: false,
+                track_inventory: false,
+                has_bom: false,
+                qty_available: 0,
+            }),
+            ctx,
+        )
+        expect(model.availability).toMatchObject({ text: 'Fabricable', tone: 'ok', icon: 'manufacture' })
     })
 
     it('services say Servicio', () => {

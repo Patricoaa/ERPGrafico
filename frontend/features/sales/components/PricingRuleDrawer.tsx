@@ -28,7 +28,7 @@ import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     product: z.number().nullable().optional(),
-    uom: z.number().nullable().optional(),
+    uom: z.number().nullable().refine((v): boolean => v !== null, "La unidad es obligatoria"),
     operator: z.enum(["GT", "LT", "EQ", "GE", "LE", "BT"]),
     min_quantity: z.string().or(z.number()),
     max_quantity: z.string().or(z.number()).nullable().optional(),
@@ -151,7 +151,6 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
         try {
             const payload = { ...values }
             if (payload.product === null) delete (payload as unknown as Record<string, unknown>).product
-            if (payload.uom === null) delete (payload as unknown as Record<string, unknown>).uom
             if (payload.operator !== "BT") delete (payload as unknown as Record<string, unknown>).max_quantity
 
             // savePricingRule invalida PRICING_RULES + PRODUCTS_KEYS (los precios
@@ -209,7 +208,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     name="uom"
                     render={({ field }) => (
                         <UoMSelector
-                            label="Unidad (Filtro)"
+                            label="Unidad"
+                            required
                             variant="standalone"
                             product={effectiveProduct as unknown as React.ComponentProps<typeof UoMSelector>['product']}
                             context="purchase"

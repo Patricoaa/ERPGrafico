@@ -54,6 +54,12 @@ export interface BaseProduct {
     has_active_bom?: boolean
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean
+    /**
+     * Whether finished-good stock is tracked in the warehouse.
+     * Always false for Express; toggleable for Advanced.
+     * Drives the MANUFACTURABLE_STOCKED vs MANUFACTURABLE_ON_DEMAND distinction.
+     */
+    track_inventory?: boolean
     is_dynamic_pricing?: boolean
     variant_display_name?: string
     attribute_values_data?: ProductAttributeValueDisplay[]

@@ -370,7 +370,13 @@ export interface PricingRule {
     start_date?: string | null
     end_date?: string | null
     min_quantity: number | string
+    max_quantity?: number | string | null
+    operator?: 'GT' | 'LT' | 'EQ' | 'GE' | 'LE' | 'BT'
+    operator_display?: string
+    uom?: number | null
+    uom_name?: string | null
     rule_type: string
+    rule_type_display?: string
     fixed_price?: number | string
     discount_percentage?: number | string
     active: boolean

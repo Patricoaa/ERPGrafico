@@ -88,18 +88,39 @@ function stockAvailability(product: BaseProduct, ctx: ProductCardContext): CardA
 }
 
 function manufacturableAvailability(product: BaseProduct, ctx: ProductCardContext): CardAvailability {
-    const isExpress = !product.requires_advanced_manufacturing && product.mfg_auto_finalize
-    const isAdvanced = Boolean(product.requires_advanced_manufacturing)
-    if (!isExpress && !isAdvanced) return stockAvailability(product, ctx)
+    const isExpress = Boolean(!product.requires_advanced_manufacturing && product.mfg_auto_finalize)
 
-    const makeable = product.manufacturable_quantity ?? 0
-    const makeableText = `${formatQuantity(makeable, 0)} fabricables`
+    // ── MANUFACTURABLE_EXPRESS ───────────────────────────────────────────────
+    // Auto-finalizes OT immediately on sale; product is never stocked, so only
+    // the component-based capacity matters.
     if (isExpress) {
         if (!product.has_bom) return { text: 'Sin lista de materiales', tone: 'neutral', icon: 'manufacture' }
-        return { text: makeableText, tone: makeable > 0 ? 'ok' : 'none', icon: 'manufacture' }
+        const makeable = product.manufacturable_quantity ?? 0
+        return {
+            text: `${formatQuantity(makeable, 0)} fabricables`,
+            tone: makeable > 0 ? 'ok' : 'none',
+            icon: 'manufacture',
+        }
     }
+
+    // ── MANUFACTURABLE_ADVANCED / WORKSHOP FLOW ──────────────────────────────
+    // By definition, any manufacturable product that is not Express belongs to
+    // the order/workshop manufacturing flow.
+    // 1. STOCKED: finished goods accumulate in the warehouse.
+    if (product.track_inventory) {
+        return stockAvailability(product, ctx)
+    }
+
+    // 2. ON_DEMAND: produced per order (no finished-good stock stored).
+    // Without BOM -> fully custom made-to-spec ("Fabricable").
+    // With BOM -> calculate capacity from component stock.
     if (!product.has_bom) return { text: 'Fabricable', tone: 'ok', icon: 'manufacture' }
-    return { text: makeableText, tone: makeable > 0 ? 'ok' : 'warning', icon: 'manufacture' }
+    const makeable = product.manufacturable_quantity ?? 0
+    return {
+        text: `${formatQuantity(makeable, 0)} fabricables`,
+        tone: makeable > 0 ? 'ok' : 'warning',
+        icon: 'manufacture',
+    }
 }
 
 export function getAvailability(product: BaseProduct, ctx: ProductCardContext): CardAvailability | null {

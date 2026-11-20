@@ -100,6 +100,9 @@ class PricingRuleSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate(self, data):
+        uom = data["uom"] if "uom" in data else getattr(self.instance, "uom", None)
+        if uom is None and (self.instance is None or "uom" in data):
+            raise serializers.ValidationError({"uom": "La unidad es obligatoria."})
         product = data.get("product") or getattr(self.instance, "product", None)
         if product and product.is_dynamic_pricing:
             raise serializers.ValidationError(

@@ -13,7 +13,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { type Product, type PricingRule } from "@/types/entities"
 import { type ProductInitialData } from "@/types/forms"
 import { usePricingRules } from "../../hooks/usePricingRules"
-import { parseDateOnly } from "@/lib/utils"
+import { parseDateOnly, formatPlainDate } from "@/lib/utils"
 
 function getRuleStatus(rule: PricingRule): 'RULE_ACTIVE' | 'RULE_EXPIRED' | 'RULE_INACTIVE' {
     if (!rule.active) return 'RULE_INACTIVE'
@@ -31,13 +31,37 @@ interface ProductPricingTabProps {
 }
 
 const COLUMNS = [
-    { header: "Nivel",                  width: "w-[10%]",  align: "left"   as const },
-    { header: "Descripción / Vigencia", width: "w-[35%]",  align: "left"   as const },
-    { header: "Cant. Mín.",             width: "w-[15%]",  align: "center" as const },
-    { header: "Precio / Dcto.",         width: "w-[20%]",  align: "right"  as const },
-    { header: "Estado",                 width: "w-[12%]",  align: "center" as const },
-    { header: "",                       width: "w-[8%]" },
+    { header: "Nivel",               align: "left"   as const },
+    { header: "Descripción",         align: "left"   as const },
+    { header: "Unidad",              align: "left"   as const },
+    { header: "Condición",           align: "center" as const },
+    { header: "Cantidad",            align: "center" as const },
+    { header: "Tipo de ajuste",      align: "left"   as const },
+    { header: "Precio / Dcto.",      align: "right"  as const },
+    { header: "Caducidad",           align: "center" as const },
+    { header: "Estado",              align: "center" as const },
+    { header: "" },
 ]
+
+const OPERATOR_SYMBOL: Record<string, string> = { GT: ">", LT: "<", EQ: "=", GE: "≥", LE: "≤", BT: "Entre" }
+const ADJUSTMENT_LABEL: Record<string, string> = {
+    FIXED: "Precio fijo (unitario)",
+    PACKAGE_FIXED: "Precio paquete (total)",
+    DISCOUNT_PERCENTAGE: "Descuento %",
+}
+
+function formatQuantity(rule: PricingRule): string {
+    const min = Number(rule.min_quantity)
+    return rule.operator === 'BT' && rule.max_quantity != null
+        ? `${min} – ${Number(rule.max_quantity)}`
+        : String(min)
+}
+
+function formatAdjustment(rule: PricingRule): string {
+    return rule.rule_type === 'DISCOUNT_PERCENTAGE'
+        ? `-${Number(rule.discount_percentage)}%`
+        : formatCurrency(rule.fixed_price)
+}
 
 export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules, onOpenRuleDialog, isDynamicPricing, isVariant }: ProductPricingTabProps) {
     const { deletePricingRule } = usePricingRules()
@@ -94,7 +118,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                     <TableBody>
                         {pricingRules.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6}>
+                                <TableCell colSpan={COLUMNS.length}>
                                     <EmptyState
                                         context="finance"
                                         variant="compact"
@@ -116,24 +140,23 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                             )}
                                         </TableCell>
                                         <TableCell className="p-3">
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-sm">{rule.name}</span>
-                                                {(rule.start_date || rule.end_date) && (
-                                                    <span className="text-3xs text-muted-foreground font-medium flex gap-2">
-                                                        <span>📅 {rule.start_date || '∞'}</span>
-                                                        <span>➜</span>
-                                                        <span>{rule.end_date || '∞'}</span>
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <span className="font-bold text-sm">{rule.name}</span>
+                                        </TableCell>
+                                        <TableCell className="p-3 text-sm">{rule.uom_name || "—"}</TableCell>
+                                        <TableCell className="p-3 text-center text-sm font-semibold">
+                                            {OPERATOR_SYMBOL[rule.operator ?? 'GE']}
                                         </TableCell>
                                         <TableCell className="p-3 text-center text-sm font-semibold tabular-nums">
-                                            {Number(rule.min_quantity)} uds.
+                                            {formatQuantity(rule)}
+                                        </TableCell>
+                                        <TableCell className="p-3 text-sm">
+                                            {ADJUSTMENT_LABEL[rule.rule_type] ?? rule.rule_type}
                                         </TableCell>
                                         <TableCell className="p-3 text-right font-black text-primary">
-                                            {rule.rule_type === 'FIXED'
-                                                ? formatCurrency(rule.fixed_price)
-                                                : `-${Number(rule.discount_percentage)}%`}
+                                            {formatAdjustment(rule)}
+                                        </TableCell>
+                                        <TableCell className="p-3 text-center text-xs text-muted-foreground">
+                                            {rule.end_date ? `Hasta ${formatPlainDate(rule.end_date)}` : "Sin caducidad"}
                                         </TableCell>
                                         <TableCell className="p-3 text-center">
                                             <StatusBadge status={getRuleStatus(rule)} />
