@@ -9,6 +9,8 @@ stability: contract-changes-require-ADR
 
 # StatCard Component Contract
 
+> **Deprecado (ADR-0149).** `StatCard` se reemplaza por `Metric`, `MetricStrip` y `ChartCard`: ver [component-metric.md](./component-metric.md). Este contrato describe lo que existe mientras se migran los consumidores (ver el plan de oleadas del ADR). **No uses `StatCard` en código nuevo.**
+
 `StatCard` is the single authorized component for all **summary / KPI / metric cards** across the application — dashboard numbers, insight stats, ratio displays, and any card whose primary purpose is to surface a value + label.
 
 - **StatCard** → summary KPIs, dashboard metrics, insight cards, stat boxes

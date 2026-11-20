@@ -156,7 +156,7 @@ Reutiliza `CardLead`, el título y el bloque de variación de `Metric`. Slots: `
 
 ## Migration plan
 
-1. **Cimientos.** Crear `Metric`, `MetricStrip` y `ChartCard` sobre `CardSurface`/`cardAnatomy`; redefinir `kpi-value*` en `globals.css`; tests de contrato y de componente (estados, ARIA, container query); stories. `StatCard` queda como adaptador delgado que mapea variantes viejas, marcado `@deprecated`.
+1. **Cimientos (hecho en la rama `feat/metric-card-system`).** `Metric`, `MetricStrip` y `ChartCard` en `components/shared`; `kpi-value*` en mono y tokens `success-text`/`warning-text` en `globals.css`; tests de componente y ratchet de importadores; stories; contrato `component-metric.md`. `StatCard` queda marcado `@deprecated` **sin** adaptador: remapearlo en este paso cambiaría ~138 tarjetas sin revisión visual por módulo, así que cada oleada migra sus consumidores directamente a `Metric`.
 2. **Oleada A — analytics.** `AnalyticsLayout`, `ProductAnalyticsModal` (36 usos) y bloques de inventario (`SalesImpactBlock`, `ProductionPerformanceBlock`, `SourcingBlock`, `OperationsBlock`).
 3. **Oleada B — finanzas.** `BIAnalyticsDashboard`, `RatiosDashboard`, `BalanceSheetKPIs`, `BudgetVarianceView`, `BudgetDetailView`.
 4. **Oleada C — tesorería e inventario.** Estados de tarjeta, préstamos, pestañas de sesión POS, `MovementClientView`, `treasuryMovementAnalyticsScreen`.
@@ -165,12 +165,9 @@ Reutiliza `CardLead`, el título y el bloque de variación de `Metric`. Slots: `
 
 ## Ratchet
 
-Se amplía `card-family.contract.test.ts` (o un test hermano) para que falle un archivo que:
-- escribe a mano un valor KPI (`text-(2xl|3xl)` junto con `font-black`/`tracking-tighter` o `tabular-nums`) fuera de `Metric` y de los tokens `kpi-value*`;
-- usa `CardDescription` o `CardTitle` como valor de un KPI;
-- importa `KPIWrapper` o `SectionCard` una vez retirados.
+`lib/__tests__/metric-family.contract.test.ts` + `metric-family.baseline.json` (fase 1): ningún archivo nuevo puede referenciar `StatCard`; el baseline (28 archivos al 2026-11-20) solo puede encoger, y cuando queda vacío se borran `StatCard`, `KPIWrapper` y `SectionCard`.
 
-El baseline inicial se genera al terminar la fase 1 y solo puede encoger.
+Se descartó el detector de "valor KPI escrito a mano" (`text-(2xl|3xl)` con `font-black`/`tracking-tighter`): el 2026-11-20 devolvía 19 archivos, la mayoría titulares y totales que no son KPI (login, buscador, error boundary), así que el ratchet de importadores es el que mide la migración sin falsos positivos. Los KPI hechos a mano (`StatementDetailPanel`, `TaxDeclarationsClientView`, `BankPositionSection`…) se migran en la oleada D y se vigilan en revisión.
 
 ## Contract and documentation changes (con esta ADR)
 

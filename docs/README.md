@@ -74,6 +74,7 @@ last_review: 2026-06-19
 | “entity identity”, “entity prefix”, “registry”, “display id”, “centralized icons” | [entity-identity.md](20-contracts/entity-identity.md) | 20 |
 | “searchable entity”, “global search”, “index”, “rebuild search” | [add-searchable-entity.md](30-playbooks/add-searchable-entity.md) | 30 |
 | "UI audit", "sobreingeniería", "ad-hoc que compartido ya resuelve", "centralizar componente", "simplificar shared", "deuda design system", "DataTable bloated", "refactor componentes shared", "barrel compartido" | [design-system-ui-audit.md](50-audit/design-system-ui-audit.md) | 50 |
+| “KPI”, “métrica”, “stat”, “StatCard”, “Metric”, “MetricStrip”, “ChartCard”, “tarjeta de gráfico”, “valor mono”, “kpi-value” | [component-metric.md](20-contracts/component-metric.md) | 20 |
 | “card”, “tarjeta”, “ChoiceCard”, “CardSurface”, “CardRail”, “CardLead”, “cardAnatomy”, “surface-item”, “card-flat”, “card-base”, “qué card uso”, “rol de card” | [component-card-family.md](20-contracts/component-card-family.md) | 20 |
 | “banner”, “aviso”, “alerta”, “warning”, “notificación inline”, “InfoBlock”, “Alert”, “banda de estado”, “bleed” | [component-banner.md](20-contracts/component-banner.md) | 20 |
 | “DataTable”, “view mode”, “card view”, “kanban view”, “view switching”, “cardMode”, “isLoading skeleton”, “EntityCard”, “variant embedded” | [component-datatable-views.md](20-contracts/component-datatable-views.md) | 20 |

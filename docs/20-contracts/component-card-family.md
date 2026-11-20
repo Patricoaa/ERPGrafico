@@ -9,7 +9,7 @@ stability: beta
 
 # Familia de cards — roles, superficies y tokens
 
-Contrato único de las cards del sistema (ADR-0097). Sustituye el criterio disperso de ADR-0092…0096. El detalle de cada componente vive en su contrato: [component-choice-card.md](./component-choice-card.md), [component-card.md](./component-card.md) (`Card` de panel), [component-entity-view.md](./component-entity-view.md), [component-statcard.md](./component-statcard.md).
+Contrato único de las cards del sistema (ADR-0097). Sustituye el criterio disperso de ADR-0092…0096. El detalle de cada componente vive en su contrato: [component-choice-card.md](./component-choice-card.md), [component-card.md](./component-card.md) (`Card` de panel), [component-entity-view.md](./component-entity-view.md), [component-metric.md](./component-metric.md) (y [component-statcard.md](./component-statcard.md), deprecado).
 
 Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/components/shared'`
 
@@ -20,8 +20,8 @@ Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/compone
 | `choice` | elegir uno (radiogroup) | `selectableCardClass()` · `kind="choice"` | `ChoiceCard`, `ProductCard`, `ContactCard` |
 | `item` | abrir / navegar; selección masiva opcional | `CardSurface kind="item"`; en entity-view la card se abre por enlace extendido del título | `EntityCard` (entity-view), `TaskInbox`, tarjeta del Kanban de órdenes de trabajo |
 | `nav` | enlace | `card-flat` + `CardLead` + chevron | `ModuleGrid` (fila) |
-| `metric` | informativa o enlace | `surface-panel` + tipografía `kpi-value` | `StatCard` |
-| `panel` | ninguna | `Card` shadcn / `surface-panel` | secciones de Settings, filas de configuración, paneles de edición, Cart, errores |
+| `metric` | informativa, enlace o filtro | `surface-panel` + tipografía `kpi-value` (mono) | `Metric`, `MetricStrip` (`StatCard` deprecado, ADR-0149) |
+| `panel` | ninguna | `Card` shadcn / `surface-panel` | secciones de Settings, filas de configuración, paneles de edición, Cart, errores, `ChartCard` |
 
 **Regla del ribbon CMYK:** se previsualiza al hover y queda fijo cuando la card está elegida (`choice`, y las cards de entity-view, que comparten el lenguaje del product grid: ribbon + anillo + marca CMYK en el checkbox). En `item` de otras superficies (bandeja, kanban) y en `nav` solo aparece seleccionada. Nunca en `panel`/`metric`.
 

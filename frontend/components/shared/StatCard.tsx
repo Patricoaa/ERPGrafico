@@ -86,6 +86,11 @@ const valueSizeMap: Record<ValueSize, string> = {
   xl: "text-3xl",
 }
 
+/**
+ * @deprecated ADR-0149 — use `Metric` / `MetricStrip` (one figure, or a row of 2–4) and `ChartCard`
+ * (chart with header). See docs/20-contracts/component-metric.md for the prop-by-prop migration.
+ * No new consumers: `lib/__tests__/metric-family.contract.test.ts` blocks them.
+ */
 export function StatCard({
   label,
   value,

@@ -63,7 +63,8 @@ graph TD
     A -->|Estado de una entidad| C(StatusBadge)
     A -->|Tag o etiqueta genérica| D[Chip]
     A -->|Contenedor/Tarjeta simple| E[Card de shadcn]
-    A -->|KPI / métrica / stat| H(StatCard)
+    A -->|KPI / métrica / stat| H(Metric)
+    A -->|Gráfico con cabecera| H2(ChartCard)
     A -->|Título de sección dentro de card o listado| I(SectionHeader)
     A -->|Sin resultados/Vacio| F(EmptyState)
     A -->|Reporte jerárquico contable| G(ReportTable)
@@ -97,7 +98,7 @@ directamente.
 
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
 - **`SectionHeader`**: **Obligatorio** para títulos de sección dentro de cards y listados. 2 variantes (`card` y `list`). [Ver contrato completo](./component-section-header.md).
-- **`StatCard`**: **Obligatorio** para tarjetas de métrica/resumen con label + valor. 3 variantes (default, compact, minimal), 7 acentos, trend, href, onClick. [Ver contrato completo](./component-statcard.md).
+- **`Metric` / `MetricStrip` / `ChartCard`**: **Obligatorios** para cualquier dato, KPI, estadística o gráfico con cabecera (ADR-0149). Una sola anatomía: etiqueta, valor mono, variación, contexto y un visual. Una fila de 2–4 datos va en `MetricStrip`. [Ver contrato completo](./component-metric.md). `StatCard` está deprecado ([component-statcard.md](./component-statcard.md)).
 - **`Card` de shadcn**: Contenedor estándar para contenido arbitrario (formularios, charts, tablas). [Ver documentación oficial (component-card.md)](./component-card.md).
 
 ## 3. Inputs y Formularios

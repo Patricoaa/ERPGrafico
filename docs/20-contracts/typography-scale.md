@@ -82,7 +82,7 @@ Equivalencias canónicas (el rango micro es exclusivo para chrome denso; desde A
 | Contexto | Dónde | Tipografía | Tracking | Transform | Ejemplos |
 |----------|-------|------------|----------|-----------|----------|
 | **N0 — Brand/Hero** | Login, 404, landing | `text-3xl font-black` | `tracking-tighter` | `uppercase` | "ERPGrafico" |
-| **N0 — KPI/Metric** | StatCard value, PieChart center | `text-2xl/3xl font-black` | `tracking-tighter` | normal | "1.234" |
+| **N0 — KPI/Metric** | `Metric` value (`kpi-value`), PieChart center | `text-2xl` / `text-xl` en celdas angostas, **JetBrains Mono `font-bold`** | `tracking-[-0.045em]` | normal | "1.234" |
 | **N0 — Empty state** | EmptyState title | `text-lg font-black` | `tracking-tighter` | `uppercase` | "Sin resultados" |
 | **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-black` | `tracking-tighter` | `uppercase` | "Algo salió mal" |
 | **N1 — Sección** | FormSection, SectionHeader, ActivitySidebar | `text-2xs font-bold` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
@@ -198,25 +198,18 @@ Todos los badges son **borderless + `rounded-sm`** (CurrencyFlow aesthetic, ADR-
 
 ## Escala de KPIs y métricas
 
-Para números grandes con alto impacto visual:
+Desde ADR-0149 el valor de un KPI usa **JetBrains Mono** (principio 4 de DESIGN.md) mediante dos utilidades de `globals.css`, que son la única fuente de su tamaño:
 
 ```
-text-3xl  font-black  tracking-tighter
+kpi-value          font-mono text-2xl font-bold tracking-[-0.045em] tabular-nums
+kpi-value-compact  font-mono text-xl  font-bold tracking-[-0.045em] tabular-nums
 ```
 
-Variante compacta (espacio limitado):
+`Metric` aplica `kpi-value` y baja a `kpi-value-compact` cuando su celda mide menos de 230 px (container query). No se escriben tamaños a mano.
 
-```
-text-2xl  font-black  tracking-tighter
-```
+> Etiquetas, contexto y unidades siguen en Onest. `font-black` y `tracking-tighter` quedan **prohibidos** para valores KPI.
 
-> Siempre `font-black` + `tracking-tighter`. Nunca `font-bold` ni `tracking-tight` en KPIs.
-
-**StatCard labels** — todas las variantes (`minimal`, `compact`, `chart`) usan `tracking-widest`:
-
-```
-text-3xs font-bold uppercase tracking-widest text-muted-foreground
-```
+**Etiqueta de `Metric`** — `cardAnatomy.eyebrow` (`text-3xs font-semibold uppercase tracking-wider text-muted-foreground`). *(Las etiquetas de `StatCard`, deprecado, usan `tracking-widest`.)*
 
 ---
 
