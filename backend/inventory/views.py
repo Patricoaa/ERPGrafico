@@ -253,6 +253,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(SalesOverviewSelector.get_overview(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="costs")
+    def costs(self, request, pk=None):
+        """Costo del producto según su modo: comprado, fabricado con o sin stock, sin BOM o solo stock."""
+        from .costs_params import CostsParamsSerializer
+        from .costs_selector import CostsSelector
+
+        instance = self.get_object()
+        params = CostsParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(CostsSelector.get_costs(instance, params.to_params()))
+
     @action(detail=True, methods=["get"], url_path="production-performance")
     def production_performance(self, request, pk=None):
         """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
