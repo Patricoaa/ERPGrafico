@@ -286,6 +286,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(StockAnalysisSelector.get_analysis(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="production-analysis")
+    def production_analysis(self, request, pk=None):
+        """Producción del producto como fabricado (OT, rectificación, insumos) y como insumo (consumo, uso en BOM)."""
+        from .production_analysis_params import ProductionAnalysisParamsSerializer
+        from .production_analysis_selector import ProductionAnalysisSelector
+
+        instance = self.get_object()
+        params = ProductionAnalysisParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(ProductionAnalysisSelector.get_analysis(instance, params.to_params()))
+
     @action(detail=True, methods=["get"], url_path="production-performance")
     def production_performance(self, request, pk=None):
         """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""

@@ -145,7 +145,7 @@ class ProductionPerformanceSelector:
             planned = planned_by_order.get(o["id"], 0.0)
             revenue = float(o["revenue_net"]) if o["sale_line_id"] and o["revenue_net"] is not None else None
             rows.append({
-                "id": o["id"], "number": o["number"],
+                "id": o["id"], "number": o["number"], "rectified": bool(o["is_rectified"]),
                 "date": timezone.localtime(o["finished_at"]).date().isoformat() if o["finished_at"] else None,
                 "qty": qty, "planned_cost": planned, "real_cost": real,
                 "deviation": real - planned if real is not None else None,
