@@ -876,6 +876,10 @@ class Product(models.Model):
             # Express manufacturables never track finished-good inventory.
             if self.is_express:
                 self.track_inventory = False
+
+        # Manufacturables are made, never bought: purchasing them would bypass the BOM cost.
+        if self.product_type == self.Type.MANUFACTURABLE:
+            self.can_be_purchased = False
         # Fallback for base UoM if missing but others are present
         if not self.uom:
             if self.sale_uom:

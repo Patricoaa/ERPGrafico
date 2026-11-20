@@ -18,9 +18,11 @@ RANGE = {"date_from": date(2026, 1, 1), "date_to": date(2026, 12, 31)}
 
 
 def _manufactured_and_bought(env):
+    """Fabricable marcado como comprable: datos previos a la regla de Product.save (migración 0038)."""
     env["product"].product_type = "MANUFACTURABLE"
-    env["product"].can_be_purchased = True
     env["product"].save()
+    Product.objects.filter(pk=env["product"].pk).update(can_be_purchased=True)
+    env["product"].refresh_from_db()
 
 
 def _receipt(env, qty, unit_cost, on=date(2026, 3, 1), status="CONFIRMED", uom=None, product=None):
@@ -74,8 +76,7 @@ def test_make_vs_buy_only_when_manufactures_and_buys(env):
     assert _sourcing(env)["make_vs_buy"] is None  # STORABLE: neither
     _manufactured_and_bought(env)
     assert _sourcing(env)["make_vs_buy"] is not None
-    env["product"].can_be_purchased = False
-    env["product"].save()
+    env["product"].save()  # Product.save applies the rule: no longer purchasable
     assert _sourcing(env)["make_vs_buy"] is None
 
 
