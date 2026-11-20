@@ -43,10 +43,10 @@ const badgeVariants = cva(
              */
             intent: {
                 neutral:     'bg-muted/60 text-muted-foreground',
-                info:        'bg-info/10 text-info',
-                success:     'bg-success/10 text-success',
-                warning:     'bg-warning/10 text-warning',
-                destructive: 'bg-destructive/10 text-destructive',
+                info:        'bg-info/10 text-info-text',
+                success:     'bg-success/10 text-success-text',
+                warning:     'bg-warning/10 text-warning-text',
+                destructive: 'bg-destructive/10 text-destructive-text',
                 primary:     'bg-primary/10 text-primary',
                 /* Layer 1 categorical intents (ADR-0064) — fixed process inks,
                    only for categorical chips (e.g. payment_method), never for state. */
@@ -234,10 +234,10 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
 Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 'sm', progress, className }: BadgeHubProps) {
     const colorMap: Record<string, string> = {
         neutral:     'text-muted-foreground bg-muted border-muted-foreground/20',
-        info:        'text-info bg-info/10 border-info/20',
-        success:     'text-success bg-success/10 border-success/20',
-        warning:     'text-warning bg-warning/10 border-warning/20',
-        destructive: 'text-destructive bg-destructive/10 border-destructive/20',
+        info:        'text-info-text bg-info/10 border-info/20',
+        success:     'text-success-text bg-success/10 border-success/20',
+        warning:     'text-warning-text bg-warning/10 border-warning/20',
+        destructive: 'text-destructive-text bg-destructive/10 border-destructive/20',
         primary:     'text-primary bg-primary/10 border-primary/20',
         cyan:        'text-cyan bg-cyan/10 border-cyan/20',
         magenta:     'text-magenta bg-magenta/10 border-magenta/20',
@@ -247,10 +247,10 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
 
     const ringColor: Record<string, string> = {
         neutral:     'text-muted-foreground',
-        info:        'text-info',
-        success:     'text-success',
-        warning:     'text-warning',
-        destructive: 'text-destructive',
+        info:        'text-info-text',
+        success:     'text-success-text',
+        warning:     'text-warning-text',
+        destructive: 'text-destructive-text',
         primary:     'text-primary',
         cyan:        'text-cyan',
         magenta:     'text-magenta',
