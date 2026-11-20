@@ -1,4 +1,5 @@
 import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.types"
+import type { ProductionPerformance, ProductionPerformanceParams } from "../analytics/productionPerformance.types"
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
 import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse, ProductAnalyticsParams, ProductAnalyticsResponse } from '../analyticsTypes'
@@ -115,6 +116,12 @@ export const inventoryApi = {
     /** Margin and price-rule impact aggregation (ADR-0145); server aggregates, segmentable. */
     getProductSalesImpact: async (id: number, params: SalesImpactParams): Promise<SalesImpact> => {
         const { data } = await api.get<SalesImpact>(`inventory/products/${id}/sales-impact/`, { params })
+        return data
+    },
+
+    /** Production cost/time performance of a manufacturable product (ADR-0146). */
+    getProductProductionPerformance: async (id: number, params: ProductionPerformanceParams): Promise<ProductionPerformance> => {
+        const { data } = await api.get<ProductionPerformance>(`inventory/products/${id}/production-performance/`, { params })
         return data
     },
 

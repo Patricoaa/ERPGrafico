@@ -35,6 +35,7 @@ export type { AvailabilityTone, AvailabilityIcon, CardAction, CardAvailability, 
 export { useProducts, useProduct } from './hooks/useProducts'
 export { useVariants } from './hooks/useVariants'
 export { useProductSalesImpact } from './hooks/useProductSalesImpact'
+export { useProductProductionPerformance } from './hooks/useProductProductionPerformance'
 export { useCategories, useCategory } from './hooks/useCategories'
 export { useUoMs, useAllowedUoMs, type UoM } from './hooks/useUoMs'
 export { useAttributes, type Attribute } from './hooks/useAttributes'
