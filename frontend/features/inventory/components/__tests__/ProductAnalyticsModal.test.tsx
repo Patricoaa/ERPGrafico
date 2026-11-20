@@ -45,7 +45,9 @@ vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
 vi.mock("../../analytics/SalesImpactBlock", () => ({
-    SalesImpactBlock: ({ productId }: { productId: number }) => <div>bloque-precio-margen-{productId}</div>,
+    SalesImpactBlock: ({ productId, period }: { productId: number; period: string }) => (
+        <div data-period={period}>bloque-precio-margen-{productId}</div>
+    ),
 }))
 
 import { ProductAnalyticsModal } from "../ProductAnalyticsModal"
@@ -106,9 +108,43 @@ describe("ProductAnalyticsModal capabilities", () => {
         expect(screen.queryByRole("button", { name: "Mov. Stock" })).not.toBeInTheDocument()
     })
 
-    it("shows the segment label in the rail", () => {
+    it("does not show the product segment anywhere", () => {
         open(2)
-        expect(screen.getAllByText("Insumo").length).toBeGreaterThan(0)
+        for (const label of ["Insumo", "Almacenable", "Servicio", "Suscripción", "Consumible", "Fabricable con stock"]) {
+            expect(screen.queryByText(label)).not.toBeInTheDocument()
+        }
+    })
+
+    it("puts the period control at the bottom of the rail with Histórico as the last option", () => {
+        open(1)
+        // rail slot (sm+) and compact copy above the content (< sm)
+        const groups = screen.getAllByRole("group", { name: "Período" })
+        expect(groups).toHaveLength(2)
+        const group = groups[0]
+        const labels = within(group).getAllByRole("radio").map(r => r.textContent)
+        expect(labels).toEqual(["1 m", "3 m", "6 m", "12 m", "24 m", "Histórico"])
+        expect(within(group).getByRole("radio", { name: "12 m" })).toHaveAttribute("data-state", "on")
+    })
+
+    it("passes the chosen period to the active block", () => {
+        open(1)
+        fireEvent.click(screen.getByRole("button", { name: "Precio y margen" }))
+        expect(screen.getByText("bloque-precio-margen-1")).toHaveAttribute("data-period", "12m")
+        fireEvent.click(screen.getAllByRole("radio", { name: "Histórico" })[0])
+        expect(screen.getByText("bloque-precio-margen-1")).toHaveAttribute("data-period", "all")
+    })
+
+    it("warns that legacy tabs ignore the period until the period is the history", () => {
+        open(1)
+        expect(screen.getByText("Este tab muestra todo el histórico")).toBeInTheDocument()
+        fireEvent.click(screen.getAllByRole("radio", { name: "Histórico" })[0])
+        expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
+    })
+
+    it("does not show the legacy warning on tabs that use the period", () => {
+        open(1)
+        fireEvent.click(screen.getByRole("button", { name: "Precio y margen" }))
+        expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
     })
 
     it("falls back to overview when the active tab is no longer visible", () => {

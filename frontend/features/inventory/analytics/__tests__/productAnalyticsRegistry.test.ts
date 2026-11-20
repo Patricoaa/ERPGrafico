@@ -1,11 +1,9 @@
 import { describe, it, expect } from "vitest"
 
 import {
-    SEGMENT_LABELS,
     overviewKpiIds,
     visibleTabIds,
     type ProductCapabilities,
-    type ProductSegment,
 } from "../productAnalyticsRegistry"
 
 const base: ProductCapabilities = {
@@ -77,15 +75,7 @@ describe("overviewKpiIds", () => {
     })
 })
 
-describe("SEGMENT_LABELS", () => {
-    it("covers every segment with a non-empty label", () => {
-        const segments: ProductSegment[] = [
-            "MANUFACTURABLE_EXPRESS", "MANUFACTURABLE_STOCKED", "MANUFACTURABLE_ON_DEMAND",
-            "SERVICE", "SUBSCRIPTION", "INPUT", "STORABLE", "CONSUMABLE",
-        ]
-        for (const segment of segments) expect(SEGMENT_LABELS[segment]).toBeTruthy()
-    })
-
+describe("pricing tab", () => {
     it("pricing tab (price and margin) only applies to products that sell, right after sales", () => {
         expect(visibleTabIds(caps({ sells: true }))).toContain("pricing")
         const tabs = visibleTabIds(caps({ sells: true, buys: true, tracks_stock: true }))

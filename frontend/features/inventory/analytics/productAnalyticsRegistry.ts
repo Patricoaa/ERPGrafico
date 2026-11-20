@@ -42,17 +42,6 @@ export type ProductAnalyticsTabId =
 
 export type OverviewKpiId = "units_sold" | "valuation" | "stock" | "units_purchased" | "production_usage"
 
-export const SEGMENT_LABELS: Record<ProductSegment, string> = {
-    MANUFACTURABLE_EXPRESS: "Fabricable express",
-    MANUFACTURABLE_STOCKED: "Fabricable con stock",
-    MANUFACTURABLE_ON_DEMAND: "Fabricable bajo pedido",
-    SERVICE: "Servicio",
-    SUBSCRIPTION: "Suscripción",
-    INPUT: "Insumo",
-    STORABLE: "Almacenable",
-    CONSUMABLE: "Consumible",
-}
-
 const TAB_ORDER: ProductAnalyticsTabId[] = [
     "overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "operations", "customers", "suppliers",
 ]

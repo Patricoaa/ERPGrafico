@@ -22,14 +22,15 @@ import { useProductCapabilities } from "../hooks/useProducts"
 import { ProductSelector } from "@/components/selectors"
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { WorkOrderWizard } from "@/features/production"
-import { DEFAULT_PERIOD } from "../analytics/period"
+import { DEFAULT_PERIOD, type PeriodKey } from "../analytics/period"
+import { PeriodControl } from "../analytics/PeriodControl"
 import { SalesImpactBlock } from "../analytics/SalesImpactBlock"
 import { ProductionPerformanceBlock } from "../analytics/ProductionPerformanceBlock"
 import { SourcingBlock } from "../analytics/SourcingBlock"
 import { OperationsBlock } from "../analytics/OperationsBlock"
 import { LegacyInsightsPanel } from "../analytics/LegacyInsightsPanel"
 import { isLegacyTab } from "../analytics/legacyTabs"
-import { SEGMENT_LABELS, visibleTabIds } from "../analytics/productAnalyticsRegistry"
+import { visibleTabIds } from "../analytics/productAnalyticsRegistry"
 
 interface ProductAnalyticsModalProps {
     productId: number | null
@@ -71,8 +72,7 @@ function ProductAnalyticsPanelInner({
     onProductChange?: (productId: number, productName: string) => void
 }) {
     const { capabilities, isLoading, isError } = useProductCapabilities(productId)
-    const period = DEFAULT_PERIOD
-
+    const [period, setPeriod] = useState<PeriodKey>(DEFAULT_PERIOD)
     const [requestedTab, setActiveTab] = useState<TabValue>("overview")
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
@@ -89,8 +89,7 @@ function ProductAnalyticsPanelInner({
     const openWorkOrder = (id: number) => setActiveWorkOrderId(id)
     const closeWorkOrder = () => setActiveWorkOrderId(null)
 
-    const segmentLabel = capabilities ? SEGMENT_LABELS[capabilities.segment] : null
-    const productIdentity = onProductChange ? (
+    const productSelectorSlot = onProductChange ? (
         <ProductSelector
             value={productId}
             onChange={() => {}}
@@ -101,12 +100,7 @@ function ProductAnalyticsPanelInner({
     ) : productName ? (
         <span className="block text-sm font-semibold leading-tight break-words">{productName}</span>
     ) : null
-    const productSelectorSlot = productIdentity || segmentLabel ? (
-        <div className="flex flex-col gap-1.5">
-            {productIdentity}
-            {segmentLabel && <span className="text-xs text-muted-foreground">{segmentLabel}</span>}
-        </div>
-    ) : null
+    const periodControl = <PeriodControl value={period} onChange={setPeriod} />
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full">
@@ -144,6 +138,7 @@ function ProductAnalyticsPanelInner({
                                 value={activeTab}
                                 onValueChange={(v) => setActiveTab(v as TabValue)}
                                 top={productSelectorSlot}
+                                bottom={periodControl}
                             />
                         }
                         leftRailWidth="w-14 sm:w-56"
@@ -152,16 +147,22 @@ function ProductAnalyticsPanelInner({
                     >
                         {/* Compact copy of the rail's top slot (hidden there below sm) */}
                         {productSelectorSlot && <div className="mb-3 shrink-0 sm:hidden">{productSelectorSlot}</div>}
+                        <div className="mb-2 shrink-0 sm:hidden">{periodControl}</div>
                         {/* ── Tab content ── */}
                         <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-4 min-h-0">
                             {isLegacyTab(activeTab) && (
-                                <LegacyInsightsPanel
-                                    productId={productId}
-                                    tab={activeTab}
-                                    capabilities={capabilities}
-                                    onOpenTransaction={openTransaction}
-                                    onOpenWorkOrder={openWorkOrder}
-                                />
+                                <>
+                                    {period !== "all" && (
+                                        <p className="shrink-0 text-xs text-muted-foreground">Este tab muestra todo el histórico</p>
+                                    )}
+                                    <LegacyInsightsPanel
+                                        productId={productId}
+                                        tab={activeTab}
+                                        capabilities={capabilities}
+                                        onOpenTransaction={openTransaction}
+                                        onOpenWorkOrder={openWorkOrder}
+                                    />
+                                </>
                             )}
                             {activeTab === "pricing" && <SalesImpactBlock productId={productId} period={period} />}
                             {activeTab === "manufacturing" && <ProductionPerformanceBlock productId={productId} period={period} />}
