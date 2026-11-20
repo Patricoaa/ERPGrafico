@@ -198,9 +198,9 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
             }
         })
 
-        // UoM tab fields
-        const uomFields = ['uom', 'purchase_uom', 'allowed_sale_uoms']
-        uomFields.forEach(field => {
+        // Logistics tab fields
+        const logisticsFields = ['uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse', 'preferred_supplier']
+        logisticsFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
                 tabErrors['logistics'] = (tabErrors['logistics'] || 0) + 1
             }
