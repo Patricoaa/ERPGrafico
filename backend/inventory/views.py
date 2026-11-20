@@ -297,6 +297,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(ProductionAnalysisSelector.get_analysis(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="subscription-analysis")
+    def subscription_analysis(self, request, pk=None):
+        """Costo recurrente, pagos del período, subidas de precio y vencimientos de una suscripción."""
+        from .subscription_analysis_params import SubscriptionAnalysisParamsSerializer
+        from .subscription_analysis_selector import SubscriptionAnalysisSelector
+
+        instance = self.get_object()
+        params = SubscriptionAnalysisParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(SubscriptionAnalysisSelector.get_analysis(instance, params.to_params()))
+
     @action(detail=True, methods=["get"], url_path="production-performance")
     def production_performance(self, request, pk=None):
         """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
