@@ -1,5 +1,6 @@
 import type { PricingParams, ProductPricing } from "../analytics/pricing.types"
 import type { CostsParams, ProductCosts } from "../analytics/costs.types"
+import type { ProductStockAnalysis, StockAnalysisParams } from "../analytics/stockAnalysis.types"
 import type { ProcurementParams, ProductProcurement } from "../analytics/procurement.types"
 import type { ProductSales, SalesParams } from "../analytics/sales.types"
 import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.types"
@@ -153,6 +154,12 @@ export const inventoryApi = {
     /** Coverage, purchases with previous period, suppliers and pending receipts. */
     getProductProcurement: async (id: number, params: ProcurementParams): Promise<ProductProcurement> => {
         const { data } = await api.get<ProductProcurement>(`inventory/products/${id}/procurement/`, { params })
+        return data
+    },
+
+    /** On hand, reserved, rotation, flows, adjustments, warehouses and variants. */
+    getProductStockAnalysis: async (id: number, params: StockAnalysisParams): Promise<ProductStockAnalysis> => {
+        const { data } = await api.get<ProductStockAnalysis>(`inventory/products/${id}/stock-analysis/`, { params })
         return data
     },
 
