@@ -280,7 +280,7 @@ export function CommentComposerForm({
                                     </span>
                                 </span>
                                 {option.noAccess && (
-                                    <ShieldAlert aria-label="Sin acceso a este registro" className="size-3.5 shrink-0 text-warning" />
+                                    <ShieldAlert aria-label="Sin acceso a este registro" className="size-3.5 shrink-0 text-warning-text" />
                                 )}
                             </li>
                         ))}

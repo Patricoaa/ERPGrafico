@@ -202,8 +202,8 @@ export function statusToneBg(tone: DraftStatus["tone"]): string {
 export function statusToneText(tone: DraftStatus["tone"]): string {
     switch (tone) {
         case "destructive": return "text-destructive"
-        case "warning": return "text-warning"
-        case "success": return "text-success"
+        case "warning": return "text-warning-text"
+        case "success": return "text-success-text"
         case "primary": return "text-primary"
         case "muted":
         default: return "text-muted-foreground"

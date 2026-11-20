@@ -435,7 +435,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                         Bruto: <span className="font-mono">{formatCurrency(parseFloat(line.gross_amount))}</span>
                                                     </span>
                                                     {parseFloat(line.provisional_withdrawals_offset) > 0 && (
-                                                        <span className="text-warning font-semibold flex items-center gap-1 text-3xs">
+                                                        <span className="text-warning-text font-semibold flex items-center gap-1 text-3xs">
                                                             Absorbe retiros provisorios: <span className="font-mono">-{formatCurrency(parseFloat(line.provisional_withdrawals_offset))}</span>
                                                         </span>
                                                     )}
@@ -517,7 +517,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                                                         <div className="flex flex-col items-end gap-1">
                                                             <div className={cn(
                                                                 "font-mono text-xs font-bold flex items-center justify-end gap-0.5",
-                                                                Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-warning"
+                                                                Math.abs(remaining) <= 0.01 ? "text-success-text" : remaining < 0 ? "text-destructive" : "text-warning-text"
                                                             )}>
                                                                 {remaining > 0 ? '+' : ''}
                                                                 {formatCurrency(remaining)}

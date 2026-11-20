@@ -103,7 +103,7 @@ const STATIC_NOTICE: Record<Exclude<ManualTerminalReason, "TERMINAL_BYPASS">, No
         confirmLabel: "Ya cobré — Registrar Venta",
     },
     BOLETA_MANUAL: {
-        icon: <Banknote className="h-8 w-8 text-warning" />,
+        icon: <Banknote className="h-8 w-8 text-warning-text" />,
         title: "Confirma el pago recibido",
         lines: ["Procesa el pago de {amount} en caja."],
         confirmLabel: "Confirmar Pago",
@@ -115,7 +115,7 @@ function resolveConfig(reason: ManualTerminalReason, failureReason?: string): No
         const variant = classifyBypass(failureReason)
         const copy = BYPASS_COPY[variant]
         return {
-            icon: <CreditCard className="h-8 w-8 text-warning" />,
+            icon: <CreditCard className="h-8 w-8 text-warning-text" />,
             title: copy.title,
             lines: copy.lines,
             confirmLabel: copy.confirmLabel,

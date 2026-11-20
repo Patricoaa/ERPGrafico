@@ -94,7 +94,7 @@ function ProfitDistResultCell({ value }: ValueRenderProps<"profitDistResult">) {
     return (
         <span className={cn(
             "font-mono font-black text-sm tracking-tighter tabular-nums",
-            amount < 0 ? "text-destructive" : "text-success"
+            amount < 0 ? "text-destructive" : "text-success-text"
         )}>
             {formatCurrency(Math.abs(amount))}
         </span>

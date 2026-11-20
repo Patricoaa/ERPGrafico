@@ -66,7 +66,7 @@ function buildImpactDescription(impact: CancelImpact): React.ReactNode {
                     : 'Se cancelarán los documentos en Borrador sin reversos.'}
             </p>
             {impact.has_folio_invoices && (
-                <p className="text-xs font-medium text-warning">
+                <p className="text-xs font-medium text-warning-text">
                     ⚠ Existe una factura con folio asignado: si es un documento emitido,
                     la operación será bloqueada y deberá emitir una Nota de Crédito.
                 </p>

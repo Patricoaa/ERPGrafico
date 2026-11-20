@@ -59,7 +59,7 @@ export function LabeledSwitch({
             },
             switch: "data-[state=checked]:bg-warning/60 data-[state=unchecked]:bg-warning/15 border-warning/20",
             thumb: "bg-warning shadow-[0_0_8px_oklch(var(--warning-raw)/0.5)]",
-            icon: "text-warning"
+            icon: "text-warning-text"
         },
         success: {
             container: {
@@ -68,7 +68,7 @@ export function LabeledSwitch({
             },
             switch: "data-[state=checked]:bg-success/60 data-[state=unchecked]:bg-success/15 border-success/20",
             thumb: "bg-success shadow-[0_0_8px_oklch(var(--success-raw)/0.5)]",
-            icon: "text-success"
+            icon: "text-success-text"
         },
         destructive: {
             container: {

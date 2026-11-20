@@ -126,7 +126,7 @@ export function OrderSummaryCard({
                         <Separator className="my-2 opacity-30" />
                         <div className="flex justify-between items-center pt-1">
                             <span className="text-xs font-bold text-muted-foreground">Crédito Disponible</span>
-                            <span className={`font-bold ${Number(customer?.credit_available) < total ? 'text-destructive' : 'text-success'}`}>
+                            <span className={`font-bold ${Number(customer?.credit_available) < total ? 'text-destructive' : 'text-success-text'}`}>
                                 {formatCurrency(Number(customer?.credit_available || 0))}
                             </span>
                         </div>
@@ -148,7 +148,7 @@ export function OrderSummaryCard({
                             {(paymentAmount || 0) !== total && (
                                 <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                                     <span>{(paymentAmount || 0) > total ? 'Vuelto' : 'Crédito Asignado'}</span>
-                                    <span className={cn((paymentAmount || 0) > total ? "text-success" : "text-warning")}>
+                                    <span className={cn((paymentAmount || 0) > total ? "text-success-text" : "text-warning-text")}>
                                         {formatCurrency(Math.abs((paymentAmount || 0) - total))}
                                     </span>
                                 </div>

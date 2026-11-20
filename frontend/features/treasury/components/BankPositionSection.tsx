@@ -74,7 +74,7 @@ export function LoanCard({ loan, bankName, onClick }: { loan: BankOverviewLoanIt
             className="group text-left w-full h-auto flex flex-col items-stretch justify-start gap-3 p-4 rounded-sm surface-panel hover:bg-muted/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 whitespace-normal"
         >
             <div className="flex items-start gap-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-warning/10 text-warning">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-warning/10 text-warning-text">
                     <HandCoins className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -83,7 +83,7 @@ export function LoanCard({ loan, bankName, onClick }: { loan: BankOverviewLoanIt
                     </p>
                     <p className="text-2xs text-muted-foreground mt-0.5">{bankName ?? "Préstamo bancario"}</p>
                 </div>
-                <span className="shrink-0 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-3xs font-medium text-success">
+                <span className="shrink-0 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-3xs font-medium text-success-text">
                     Vigente
                 </span>
             </div>

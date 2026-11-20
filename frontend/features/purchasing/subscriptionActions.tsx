@@ -15,8 +15,8 @@ export const subscriptionActions = createEntityActions<
     SubscriptionActionsCtx
 >((item, ctx) => [
     { action: "edit", label: "Editar Producto", onClick: () => ctx.onEdit(item.product) },
-    { action: "lock", icon: Pause, label: "Pausar Suscripción", iconColor: "text-warning", onClick: () => ctx.onPause(item.id), visible: item.status === "ACTIVE" },
-    { action: "disburse", icon: Play, label: "Reanudar Suscripción", iconColor: "text-success", onClick: () => ctx.onResume(item.id), visible: item.status === "PAUSED" },
+    { action: "lock", icon: Pause, label: "Pausar Suscripción", iconColor: "text-warning-text", onClick: () => ctx.onPause(item.id), visible: item.status === "ACTIVE" },
+    { action: "disburse", icon: Play, label: "Reanudar Suscripción", iconColor: "text-success-text", onClick: () => ctx.onResume(item.id), visible: item.status === "PAUSED" },
     { action: "history", label: "Ver Historial", iconColor: "text-primary", onClick: () => ctx.onViewHistory(item.id) },
     { action: "archive", label: "Archivar Producto", className: "text-destructive/70 hover:text-destructive", onClick: () => ctx.onArchive({ id: item.product, name: item.product_name }) },
 ])

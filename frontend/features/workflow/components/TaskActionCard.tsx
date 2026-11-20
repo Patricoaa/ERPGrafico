@@ -36,7 +36,7 @@ export function TaskActionCard({
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "flex items-center justify-center rounded-full shrink-0",
-                        isPending ? "text-warning" : "text-success bg-success/20 p-0.5"
+                        isPending ? "text-warning-text" : "text-success-text bg-success/20 p-0.5"
                     )}>
                         {isPending ? <Circle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                     </div>
@@ -96,7 +96,7 @@ export function TaskActionCard({
                                     href={att.file}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 px-2 py-1 bg-background border border-success/20 rounded text-3xs text-success hover:bg-success/10 transition-colors"
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-background border border-success/20 rounded text-3xs text-success-text hover:bg-success/10 transition-colors"
                                 >
                                     <Paperclip className="h-3 w-3 text-success" />
                                     <span className="max-w-[150px] truncate font-medium">{att.original_filename}</span>
@@ -130,7 +130,7 @@ export function TaskActionCard({
                                             onChange={(e) => onFileChange?.(e.target.files ? e.target.files[0] : null)}
                                         />
                                     </LabeledContainer>
-                                    <p className="text-3xs text-warning/80 italic leading-tight">
+                                    <p className="text-3xs text-warning-text/80 italic leading-tight">
                                         * Al avanzar a la siguiente etapa, esta validación se marcará como completada automáticamente.
                                     </p>
                                 </div>

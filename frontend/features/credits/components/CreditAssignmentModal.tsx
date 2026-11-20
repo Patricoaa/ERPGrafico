@@ -131,7 +131,7 @@ export default function CreditAssignmentModal({
                                     <div className="p-4 rounded-md border bg-muted/30 flex flex-col gap-1 items-center justify-center">
                                         <TrendingUp className="h-4 w-4 text-success mb-1" />
                                         <span className="text-3xs uppercase font-bold text-muted-foreground tracking-wider">Disponible</span>
-                                        <span className="text-lg font-mono font-black text-success">
+                                        <span className="text-lg font-mono font-black text-success-text">
                                             <MoneyDisplay amount={(activeContact as unknown as Record<string, unknown>).credit_available as number || 0} inline />
                                         </span>
                                     </div>

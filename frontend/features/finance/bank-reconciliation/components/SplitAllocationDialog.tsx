@@ -144,7 +144,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                     </div>
                     <div className="text-right">
                         <p className="text-xs font-black uppercase text-muted-foreground">Diferencia</p>
-                        <p className={`text-xl font-bold font-mono ${isZeroTolerance(remaining) ? 'text-success' : (remaining < 0 ? 'text-destructive' : 'text-warning')}`}>
+                        <p className={`text-xl font-bold font-mono ${isZeroTolerance(remaining) ? 'text-success-text' : (remaining < 0 ? 'text-destructive' : 'text-warning-text')}`}>
                             {formatCurrency(remaining)}
                         </p>
                     </div>

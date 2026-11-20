@@ -143,7 +143,7 @@ export function UnifiedSearchBar({
                           chip.variant === 'search' && "bg-muted text-muted-foreground",
                           chip.variant === 'filter' && "bg-primary/10 text-primary",
                           chip.variant === 'date' && "bg-info/10 text-info",
-                          chip.variant === 'range' && "bg-warning/10 text-warning",
+                          chip.variant === 'range' && "bg-warning/10 text-warning-text",
                           chip.variant === 'group' && "bg-pantone-violet/10 text-pantone-violet",
                         )}
                       >

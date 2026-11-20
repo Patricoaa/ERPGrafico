@@ -323,7 +323,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                         <p>
                             ¿Está seguro de que desea archivar el producto <strong>{currentArchivingProduct?.name}</strong>?
                         </p>
-                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-md flex gap-3 text-warning">
+                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-md flex gap-3 text-warning-text">
                             <AlertCircle className="h-5 w-5 shrink-0" />
                             <div className="text-xs">
                                 <p className="font-bold mb-1">Impacto en Suscripciones</p>

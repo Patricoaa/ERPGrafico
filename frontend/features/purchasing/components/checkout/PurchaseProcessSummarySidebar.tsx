@@ -88,7 +88,7 @@ export function PurchaseProcessSummarySidebar({
                         </p>
                         <MoneyDisplay amount={paymentData.amount} className="text-3xs font-bold" />
                         {paymentData.pendingDebt !== undefined && paymentData.pendingDebt > 0 && (
-                            <div className="text-3xs text-warning font-semibold flex items-center gap-1">
+                            <div className="text-3xs text-warning-text font-semibold flex items-center gap-1">
                                 Deuda: <MoneyDisplay amount={paymentData.pendingDebt} inline />
                             </div>
                         )}
@@ -123,7 +123,7 @@ export function PurchaseProcessSummarySidebar({
                         </p>
                         <MoneyDisplay amount={paymentData.amount} className="text-3xs font-bold" />
                         {paymentData.pendingDebt !== undefined && paymentData.pendingDebt > 0 && (
-                            <div className="text-3xs text-warning font-semibold flex items-center gap-1">
+                            <div className="text-3xs text-warning-text font-semibold flex items-center gap-1">
                                 Deuda: <MoneyDisplay amount={paymentData.pendingDebt} inline />
                             </div>
                         )}

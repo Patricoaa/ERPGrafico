@@ -32,10 +32,10 @@ const TotalsFooter = ({ control, name, disabled }: { control: Control<FieldValue
             <tr>
                 <td className="px-3 py-2 text-3xs font-bold uppercase tracking-widest text-muted-foreground">Total</td>
                 <td />
-                <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success" : "text-destructive")}>
+                <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success-text" : "text-destructive")}>
                     <MoneyDisplay amount={totalDebit} inline />
                 </td>
-                <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success" : "text-destructive")}>
+                <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success-text" : "text-destructive")}>
                     <MoneyDisplay amount={totalCredit} inline />
                 </td>
                 {!disabled && <td />}

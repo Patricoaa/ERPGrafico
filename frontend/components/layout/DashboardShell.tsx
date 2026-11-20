@@ -80,7 +80,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 ) : (
                     <div className={cn(
                         "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider border shrink-0",
-                        config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
+                        config.status.type === 'synced' && "bg-success/10 text-success-text border-success/20",
                         config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
                         !config.status.type && "bg-muted text-muted-foreground border-border"
                     )}>

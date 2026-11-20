@@ -55,9 +55,9 @@ const TYPE_ICON: Record<string, LucideIcon> = {
 }
 
 const TONE_TEXT: Record<AvailabilityTone, string> = {
-    ok: 'text-success',
+    ok: 'text-success-text',
     neutral: 'text-muted-foreground',
-    warning: 'text-warning',
+    warning: 'text-warning-text',
     none: 'text-destructive',
 }
 

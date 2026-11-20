@@ -168,7 +168,7 @@ export function PartnerContributionWizard({
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">
                                     <p className="text-4xs text-muted-foreground font-medium uppercase">Capital Pendiente</p>
-                                    <p className="text-sm font-black text-warning font-mono">{formatCurrency(selectedPartner.partner_pending_capital)}</p>
+                                    <p className="text-sm font-black text-warning-text font-mono">{formatCurrency(selectedPartner.partner_pending_capital)}</p>
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-4xs text-muted-foreground font-medium uppercase">Participación</p>

@@ -82,7 +82,7 @@ export function ArchivingRestrictionsModal({
                                     {restriction.description}
                                 </p>
                                 {restriction.action_hint && (
-                                    <p className="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded inline-block">
+                                    <p className="text-xs font-medium text-warning-text bg-warning/10 px-2 py-1 rounded inline-block">
                                         💡 {restriction.action_hint}
                                     </p>
                                 )}

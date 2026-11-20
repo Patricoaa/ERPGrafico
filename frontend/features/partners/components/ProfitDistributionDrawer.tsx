@@ -112,7 +112,7 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
                   variant="stat"
                   title={isProfit ? "Utilidad neta" : "Pérdida neta"}
                   value={formatCurrency(Number(distribution.net_result))}
-                  valueClassName={isProfit ? "text-success" : "text-destructive"}
+                  valueClassName={isProfit ? "text-success-text" : "text-destructive"}
                   strong
                 />
                 <Section.Row variant="stat" plain title="Año fiscal" value={distribution.fiscal_year ? String(distribution.fiscal_year) : "—"} />
@@ -139,7 +139,7 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
                     variant="stat"
                     title="Retiros provisorios absorbidos"
                     value={`${formatCurrency(offsetTotal)} · ${offsetPartners === 1 ? "1 socio" : `${offsetPartners} socios`}`}
-                    valueClassName="text-warning"
+                    valueClassName="text-warning-text"
                   />
                 )}
                 <Section.Row variant="stat" title="Dividendos" value={formatCurrency(destTotals.dividends)} />

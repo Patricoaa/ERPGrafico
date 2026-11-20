@@ -85,9 +85,9 @@ export function ActionConfirmModal({
             case "warning":
                 return {
                     icon: CustomIcon || AlertTriangle,
-                    iconClassName: "text-warning bg-warning/10",
+                    iconClassName: "text-warning-text bg-warning/10",
                     buttonVariant: "default" as const,
-                    titleClassName: "text-warning"
+                    titleClassName: "text-warning-text"
                 }
             case "info":
                 return {
@@ -99,9 +99,9 @@ export function ActionConfirmModal({
             case "success":
                 return {
                     icon: CustomIcon || CheckCircle2,
-                    iconClassName: "text-success bg-success/10",
+                    iconClassName: "text-success-text bg-success/10",
                     buttonVariant: "default" as const,
-                    titleClassName: "text-success"
+                    titleClassName: "text-success-text"
                 }
             default:
                 return {

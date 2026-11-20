@@ -630,8 +630,8 @@ function RolesTab({ form, availableRoles, bundleMeta, isLoading, disabled, isSup
             {/* Superuser notice */}
             {isSuperuser && (
                 <div className="shrink-0 flex items-center gap-2 mx-8 mb-2 rounded-md border border-warning/30 bg-warning/8 px-3 py-2.5">
-                    <Crown className="h-3.5 w-3.5 shrink-0 text-warning" />
-                    <p className="text-xs text-warning/90">Este usuario tiene acceso total. Los roles no aplican y no pueden modificarse.</p>
+                    <Crown className="h-3.5 w-3.5 shrink-0 text-warning-text" />
+                    <p className="text-xs text-warning-text/90">Este usuario tiene acceso total. Los roles no aplican y no pueden modificarse.</p>
                 </div>
             )}
 

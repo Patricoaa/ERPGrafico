@@ -28,7 +28,7 @@ type StackedProps = {
     meta?: string
     /** Icon centred in the media strip (any lucide icon). Ignored when `media` is given. */
     icon?: React.ComponentType<{ className?: string }>
-    /** Overrides the icon colour (semantic text token, e.g. `text-success`). Muted when disabled. */
+    /** Overrides the icon colour (semantic text token, e.g. `text-success-text`). Muted when disabled. */
     iconClassName?: string
     /** Replaces the icon: an avatar, an image… (fills the strip, centre-aligned). */
     media?: React.ReactNode
@@ -61,7 +61,7 @@ type LightProps = {
     description?: string
     /** Icon rendered in the leading slot. Required for light variant. */
     icon: React.ComponentType<{ className?: string }>
-    /** Overrides the icon colour (semantic text token, e.g. `text-success`). Muted when disabled. */
+    /** Overrides the icon colour (semantic text token, e.g. `text-success-text`). Muted when disabled. */
     iconClassName?: string
     className?: string
     // Props explicitly NOT allowed on light variant:

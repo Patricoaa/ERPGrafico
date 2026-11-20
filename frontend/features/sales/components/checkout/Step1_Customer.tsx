@@ -75,7 +75,7 @@ export function Step1_Customer({
                                 </Button>
                             ))}
                             {pendingDebts.length > 4 && (
-                                <div className="text-3xs text-warning/70 py-1 px-1.5 bg-warning/5 rounded border border-warning/10">
+                                <div className="text-3xs text-warning-text/70 py-1 px-1.5 bg-warning/5 rounded border border-warning/10">
                                     +{pendingDebts.length - 4}
                                 </div>
                             )}

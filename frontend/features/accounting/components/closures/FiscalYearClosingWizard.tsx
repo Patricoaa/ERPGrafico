@@ -116,7 +116,7 @@ export function FiscalYearClosingWizard({
                                 title={isProfit ? "Utilidad del ejercicio" : "Pérdida del ejercicio"}
                                 value={formatCurrency(netResult)}
                                 strong
-                                valueClassName={isProfit ? "text-success" : "text-destructive"}
+                                valueClassName={isProfit ? "text-success-text" : "text-destructive"}
                             />
                         </Section>
 

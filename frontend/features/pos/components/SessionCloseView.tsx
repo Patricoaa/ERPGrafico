@@ -309,7 +309,7 @@ export function SessionCloseView({ session, onSuccess, onCancel }: SessionCloseV
                     <ChoiceCard
                         size="touch"
                         icon={Lock}
-                        iconClassName="text-success"
+                        iconClassName="text-success-text"
                         title="Dejar en la caja"
                         description="Queda como fondo para la próxima apertura."
                         selected={cashOut === "keep"}

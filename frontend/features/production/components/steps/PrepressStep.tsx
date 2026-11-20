@@ -251,7 +251,7 @@ export function PrepressStep({ order, stageData, actionable, onRefresh, headerAc
         <dl className="grid grid-cols-1 gap-3 rounded-sm border bg-card px-4 py-3 text-sm sm:grid-cols-3">
           <div>
             <dt className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Sparkles className="h-3.5 w-3.5" /> Diseño</dt>
-            <dd className={cn('mt-0.5', stageData?.design_needed && 'font-medium text-warning')}>
+            <dd className={cn('mt-0.5', stageData?.design_needed && 'font-medium text-warning-text')}>
               {stageData?.design_needed ? 'Requerido · el cliente debe aprobarlo' : 'No requerido'}
             </dd>
           </div>

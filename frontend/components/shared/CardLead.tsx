@@ -12,7 +12,7 @@ export interface CardLeadProps {
      * text block beside it (entity item headers).
      */
     stretch?: boolean
-    /** Tone classes for the container (e.g. `bg-success/10 text-success`). Defaults to muted. */
+    /** Tone classes for the container (e.g. `bg-success/10 text-success-text`). Defaults to muted. */
     className?: string
     /** Icon, image (`fill`) or avatar. */
     children?: React.ReactNode

@@ -293,7 +293,7 @@ export function DocumentRelationsTab({
             })}
 
             {(data?.unresolved.length ?? 0) > 0 && (
-                <p className="text-xs text-warning">
+                <p className="text-xs text-warning-text">
                     {data?.unresolved.length} referencia(s) a documentos que ya no existen.
                 </p>
             )}

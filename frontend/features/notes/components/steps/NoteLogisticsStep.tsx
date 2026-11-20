@@ -198,7 +198,7 @@ export function NoteLogisticsStep({
                                                     <div className="flex flex-col gap-1 py-1">
                                                         <span className="font-medium text-xs leading-tight">{item.productName}</span>
                                                         {!isEligible && (
-                                                            <span className="text-3xs text-warning font-bold uppercase tracking-tighter">
+                                                            <span className="text-3xs text-warning-text font-bold uppercase tracking-tighter">
                                                                 {isRestricted ? "Requiere Producción" : "Sin control de stock"}
                                                             </span>
                                                         )}

@@ -40,8 +40,8 @@ export interface BannerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
 
 const TONE: Record<BannerTone, { surface: string; icon: string; defaultIcon: LucideIcon }> = {
     info: { surface: "bg-info/5", icon: "text-info", defaultIcon: Info },
-    warning: { surface: "bg-warning/5", icon: "text-warning", defaultIcon: AlertTriangle },
-    success: { surface: "bg-success/5", icon: "text-success", defaultIcon: CheckCircle2 },
+    warning: { surface: "bg-warning/5", icon: "text-warning-text", defaultIcon: AlertTriangle },
+    success: { surface: "bg-success/5", icon: "text-success-text", defaultIcon: CheckCircle2 },
     destructive: { surface: "bg-destructive/5", icon: "text-destructive", defaultIcon: AlertTriangle },
     neutral: { surface: "bg-muted/40", icon: "text-muted-foreground", defaultIcon: Info },
 }

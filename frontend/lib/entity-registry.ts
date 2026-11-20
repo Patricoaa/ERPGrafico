@@ -324,7 +324,7 @@ const REGISTRY = {
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'workflow' },
     cardConfig: {
       iconClassName: (data) => ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(data.dte_type ?? ''))
-        ? 'text-warning bg-warning/10'
+        ? 'text-warning-text bg-warning/10'
         : undefined,
       dateLabel: 'Entrega',
       workflow: {

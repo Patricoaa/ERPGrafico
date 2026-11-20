@@ -41,7 +41,7 @@ export function AccountingEquationCard({ totalAssets, totalLiabilities, totalEqu
                     <div className="min-w-0">
                         <p className={cn(
                             "text-xs font-bold uppercase tracking-widest",
-                            isBalanced ? "text-success" : "text-destructive"
+                            isBalanced ? "text-success-text" : "text-destructive"
                         )}>
                             {isBalanced ? "Ecuación Contable Verificada" : "Diferencia Contable Detectada"}
                         </p>

@@ -91,7 +91,7 @@ export function ProcessSummarySidebar({
                 <p className="text-3xs font-semibold">{methodLabels[paymentData.method]}</p>
                 <MoneyDisplay amount={paymentData.amount} className="text-3xs font-bold" />
                 {paymentData.creditAssigned !== undefined && paymentData.creditAssigned > 0 && (
-                    <div className="text-3xs text-warning font-semibold flex items-center gap-1">
+                    <div className="text-3xs text-warning-text font-semibold flex items-center gap-1">
                         Crédito: <MoneyDisplay amount={paymentData.creditAssigned} inline />
                     </div>
                 )}

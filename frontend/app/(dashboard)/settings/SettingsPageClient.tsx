@@ -116,7 +116,7 @@ export default function SettingsPageClient() {
                                 <span className="text-muted-foreground">Estado</span>
                                 <div className="flex items-center gap-1.5">
                                     <span className={`w-1.5 h-1.5 rounded-full ${status?.database_connected ? 'bg-success animate-pulse' : 'bg-destructive'}`} />
-                                    <span className={`font-bold uppercase ${status?.database_connected ? 'text-success' : 'text-destructive'}`}>
+                                    <span className={`font-bold uppercase ${status?.database_connected ? 'text-success-text' : 'text-destructive'}`}>
                                         {status?.database_connected ? 'Conectado' : 'Error DB'}
                                     </span>
                                 </div>

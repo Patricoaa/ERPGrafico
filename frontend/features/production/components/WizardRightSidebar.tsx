@@ -282,7 +282,7 @@ function HistoryContent({ history, currentStageId, stageFilter, onStageFilter }:
                                             </p>
                                         )}
                                         {Object.entries(e.confirmations ?? {}).filter(([, v]) => v).map(([key]) => (
-                                            <p key={key} className="flex items-center gap-1.5 text-xs text-success">
+                                            <p key={key} className="flex items-center gap-1.5 text-xs text-success-text">
                                                 <CheckCircle2 className="h-3 w-3 shrink-0" />
                                                 {key === "design_approved" ? "Cliente aprobó el diseño" : (CONFIRMATION_LABELS[key]?.label ?? key)}
                                             </p>

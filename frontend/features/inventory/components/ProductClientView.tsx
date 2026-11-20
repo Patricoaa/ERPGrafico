@@ -334,7 +334,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         </p>
 
                         {currentArchivingProduct?.is_active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
-                            <div className="bg-warning/10 border border-warning/10 p-3 rounded-md flex gap-3 text-warning">
+                            <div className="bg-warning/10 border border-warning/10 p-3 rounded-md flex gap-3 text-warning-text">
                                 <AlertTriangle className="h-5 w-5 shrink-0" />
                                 <div className="text-xs">
                                     <p className="font-bold mb-1">Impacto en Suscripciones</p>

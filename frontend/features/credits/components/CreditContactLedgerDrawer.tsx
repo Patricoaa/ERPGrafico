@@ -139,7 +139,7 @@ export function CreditContactLedgerDrawer({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-control-sm gap-2 border-success/20 text-success hover:bg-success/5"
+                            className="h-control-sm gap-2 border-success/20 text-success-text hover:bg-success/5"
                             disabled={unblocking}
                             onClick={handleUnblock}
                         >

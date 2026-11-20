@@ -114,7 +114,7 @@ interface EntityCardMediaProps {
     imageSrc?: string
     /** Custom node (e.g. avatar) — takes precedence over everything. */
     avatar?: React.ReactNode
-    /** Tone of the strip and its icon (e.g. "text-success bg-success/10"). */
+    /** Tone of the strip and its icon (e.g. "text-success-text bg-success/10"). */
     iconClassName?: string
     /** Chip(s) over the top-left corner, always above the centred icon/photo. Arrays render separate stacked badges. */
     badge?: string | readonly string[]
@@ -194,7 +194,7 @@ interface EntityCardHeaderProps {
     imageSrc?: string
     /** Optional React node rendered in the icon slot — takes precedence over `imageSrc` and `icon` */
     avatar?: React.ReactNode
-    /** Styling for the icon container (e.g. "text-success bg-success/10") */
+    /** Styling for the icon container (e.g. "text-success-text bg-success/10") */
     iconClassName?: string
     className?: string
 }
@@ -681,8 +681,8 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
                 ) : null}
                 {pending != null && pending > 0 && (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className={cn(cardAnatomy.eyebrow, "mb-0.5 text-warning")}>Pendiente</span>
-                        <MoneyDisplay amount={pending} showColor={false} className="text-xs font-medium tracking-tight text-warning" />
+                        <span className={cn(cardAnatomy.eyebrow, "mb-0.5 text-warning-text")}>Pendiente</span>
+                        <MoneyDisplay amount={pending} showColor={false} className="text-xs font-medium tracking-tight text-warning-text" />
                     </div>
                 )}
                 <div className="flex flex-col items-end min-w-[80px]">
@@ -699,7 +699,7 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
 interface EntityCardListItemProps {
     /** Icon rendered without background (left side) */
     icon?: LucideIcon
-    /** Styling for the icon (e.g. "text-success") */
+    /** Styling for the icon (e.g. "text-success-text") */
     iconClassName?: string
     /** Primary label text */
     label: React.ReactNode
@@ -796,8 +796,8 @@ interface EntityCardMetricsProps {
 const METRIC_VARIANT_CLASSES: Record<MetricVariant, string> = {
     default: 'text-foreground',
     primary: 'text-primary',
-    success: 'text-success',
-    warning: 'text-warning',
+    success: 'text-success-text',
+    warning: 'text-warning-text',
 }
 
 function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: EntityCardMetricsProps) {

@@ -72,12 +72,12 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
                     weight="bold"
                     className={cn(
                         "justify-end font-mono text-xs w-auto p-0 inline-flex",
-                        value === 0 ? "text-muted-foreground" : (isGood ? "text-success" : "text-destructive")
+                        value === 0 ? "text-muted-foreground" : (isGood ? "text-success-text" : "text-destructive")
                     )}
                 />
                 <span className={cn(
                     "text-3xs opacity-70",
-                    value === 0 ? "" : (isGood ? "text-success font-bold" : "text-destructive font-bold")
+                    value === 0 ? "" : (isGood ? "text-success-text font-bold" : "text-destructive font-bold")
                 )}>
                     {percentage.toFixed(1)}%
                 </span>
@@ -124,7 +124,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-warning shrink-0" />
+                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-warning-text shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent>Cuenta no presupuestada con movimientos reales</TooltipContent>
                                 </Tooltip>

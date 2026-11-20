@@ -266,7 +266,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                             <form onSubmit={form.handleSubmit(onSubmit)}>
                                 <fieldset disabled={isView} className="contents">
                                     {isSystemManaged && (
-                                        <div className="flex items-start gap-3 p-3 rounded-md border border-warning/20 bg-warning/5 text-xs text-warning">
+                                        <div className="flex items-start gap-3 p-3 rounded-md border border-warning/20 bg-warning/5 text-xs text-warning-text">
                                             <Lock className="h-4 w-4 mt-0.5 shrink-0" />
                                             <p>Esta cuenta es gestionada automáticamente por el sistema. Para modificarla, actualice el proveedor de terminal de cobro correspondiente.</p>
                                         </div>
@@ -417,7 +417,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Disponible</span>
-                                                            <p className="font-medium text-success"><MoneyDisplay amount={parseFloat(creditLineData.available_amount)} weight="medium" /></p>
+                                                            <p className="font-medium text-success-text"><MoneyDisplay amount={parseFloat(creditLineData.available_amount)} weight="medium" /></p>
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Estado</span>

@@ -65,7 +65,7 @@ export function DocumentAttachmentDropzone({
             ) : (
                 <div className="flex items-center justify-between w-full px-2 py-1.5 animate-in zoom-in duration-200">
                     <div className="flex items-center gap-2 min-w-0">
-                        <div className="p-1 bg-success/10 rounded text-success shrink-0">
+                        <div className="p-1 bg-success/10 rounded text-success-text shrink-0">
                             <FileText className="h-3.5 w-3.5" />
                         </div>
                         <div className="flex flex-col min-w-0">

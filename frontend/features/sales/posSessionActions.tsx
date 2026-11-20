@@ -35,7 +35,7 @@ export const posSessionActions = createEntityActions<
             action: "report",
             icon: Download,
             label: "Descargar reporte Z",
-            className: "text-success",
+            className: "text-success-text",
             onClick: () => ctx.onDownloadReport(item, 'Z'),
             visible: !isOpen,
         },

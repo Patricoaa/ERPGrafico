@@ -37,7 +37,7 @@ export interface SectionChecklistItem {
 function StateIcon({ passed, critical }: { passed: boolean; critical: boolean }) {
     if (passed) return <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
     if (critical) return <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />
-    return <CircleAlert className="h-4 w-4 text-warning" aria-hidden />
+    return <CircleAlert className="h-4 w-4 text-warning-text" aria-hidden />
 }
 
 export interface SectionChecklistProps {

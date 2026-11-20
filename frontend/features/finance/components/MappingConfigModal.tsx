@@ -245,7 +245,7 @@ export function MappingConfigModal({
                             return (
                                 <div className="flex items-center gap-2">
                                     {(!fieldValue || fieldValue === "none") && (
-                                        <AlertCircle className="h-3.5 w-3.5 text-warning shrink-0" />
+                                        <AlertCircle className="h-3.5 w-3.5 text-warning-text shrink-0" />
                                     )}
                                     <LabeledSelect
                                         variant="inline"
@@ -254,7 +254,7 @@ export function MappingConfigModal({
                                         className={cn(
                                             "h-8 text-2xs font-medium w-[200px]",
                                             isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
-                                            (!fieldValue || fieldValue === "none") && !isModified && "text-warning border-warning/30 bg-warning/5"
+                                            (!fieldValue || fieldValue === "none") && !isModified && "text-warning-text border-warning/30 bg-warning/5"
                                         )}
                                         options={[
                                             { value: "none", label: <span className="text-muted-foreground italic">Sin mapeo</span> },

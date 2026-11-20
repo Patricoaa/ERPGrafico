@@ -71,7 +71,7 @@ export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount
             onOpenChange={onOpenChange}
             title={
                 <span className="flex items-center gap-2">
-                    <Ban className="h-5 w-5 text-warning" />
+                    <Ban className="h-5 w-5 text-warning-text" />
                     {isReturn ? "Registrar Devolución de Pago" : "Anular Pago"}
                 </span>
             }
@@ -114,7 +114,7 @@ export function AnnulPaymentModal({ open, onOpenChange, paymentId, paymentAmount
                     }
                 />
                 {isPartialRefund && (
-                    <p className="text-xs text-warning">
+                    <p className="text-xs text-warning-text">
                         La anulación devuelve el pago completo. Para una devolución parcial use
                         &quot;Registrar devolución&quot; o una Nota de Crédito.
                     </p>

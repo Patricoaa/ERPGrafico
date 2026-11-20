@@ -21,7 +21,7 @@ function PartnerNameCell({ value: partner }: ValueRenderProps<"partnerName">) {
             <DataCell.ContactLink contactId={partner.id}>{partner.name}</DataCell.ContactLink>
             {excess > 0 && (
                 <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center gap-2 overflow-hidden ring-1 ring-warning/10">
-                    <div className="flex items-center gap-1.5 text-4xs text-warning font-bold uppercase tracking-tighter">
+                    <div className="flex items-center gap-1.5 text-4xs text-warning-text font-bold uppercase tracking-tighter">
                         <AlertCircle className="h-2.5 w-2.5 shrink-0" />
                         Exceso: +{formatMoneyValue(excess)}
                     </div>
@@ -33,9 +33,9 @@ function PartnerNameCell({ value: partner }: ValueRenderProps<"partnerName">) {
 
 // Tailwind needs the full class name literally — no `text-${tone}` interpolation.
 const TONE_CLASS = {
-    warning: "text-warning",
+    warning: "text-warning-text",
     destructive: "text-destructive",
-    success: "text-success",
+    success: "text-success-text",
 } as const satisfies Record<ValueRenderProps<"partnerBalance">["options"]["tone"], string>
 
 function PartnerBalanceCell({ value, options }: ValueRenderProps<"partnerBalance">) {

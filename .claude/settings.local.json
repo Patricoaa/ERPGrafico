@@ -125,5 +125,8 @@
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"
     ]
+  },
+  "skillOverrides": {
+    "impeccable": "name-only"
   }
 }

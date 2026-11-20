@@ -16,9 +16,9 @@ export interface HistoryItem {
 }
 
 export const HISTORY_KIND: Record<HistoryItem["kind"], { icon: LucideIcon; label: string; toneClasses: string; tone: string }> = {
-    approved: { icon: CheckCircle2, label: "Aprobada", toneClasses: "border-success/40 bg-success/10 text-success", tone: "text-success" },
+    approved: { icon: CheckCircle2, label: "Aprobada", toneClasses: "border-success/40 bg-success/10 text-success-text", tone: "text-success-text" },
     rejected: { icon: XCircle, label: "Rechazada", toneClasses: "border-destructive/40 bg-destructive/10 text-destructive", tone: "text-destructive" },
-    reopened: { icon: RotateCcw, label: "Etapa reabierta", toneClasses: "border-warning/40 bg-warning/10 text-warning", tone: "text-warning" },
+    reopened: { icon: RotateCcw, label: "Etapa reabierta", toneClasses: "border-warning/40 bg-warning/10 text-warning-text", tone: "text-warning-text" },
     entered: { icon: ArrowRightCircle, label: "Etapa iniciada", toneClasses: "border-border bg-muted text-muted-foreground", tone: "text-muted-foreground" },
     edited: { icon: Pencil, label: "Editada con la etapa cerrada", toneClasses: "border-info/40 bg-info/10 text-info", tone: "text-info" },
     note: { icon: StickyNote, label: "Registro", toneClasses: "border-border bg-muted text-muted-foreground", tone: "text-muted-foreground" },

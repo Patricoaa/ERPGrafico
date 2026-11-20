@@ -158,7 +158,7 @@ export function RelatedDocumentsTable({
                 )
             })}
             {unresolvedCount > 0 && (
-                <p className="text-xs text-warning">
+                <p className="text-xs text-warning-text">
                     {unresolvedCount} referencia(s) a documentos que ya no existen.
                 </p>
             )}

@@ -375,7 +375,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                                             eyebrow: "Cuenta de tesorería",
                                                             description: (
                                                                 <div className="flex gap-1.5">
-                                                                    {acc.allows_cash && <span className="text-3xs font-bold text-success uppercase tracking-widest">Efectivo</span>}
+                                                                    {acc.allows_cash && <span className="text-3xs font-bold text-success-text uppercase tracking-widest">Efectivo</span>}
                                                                     {acc.allows_card && <span className="text-3xs font-bold text-primary uppercase tracking-tighter">Tarjeta</span>}
                                                                     {acc.allows_transfer && <span className="text-3xs font-bold text-primary/60 uppercase tracking-tighter">Transf</span>}
                                                                 </div>

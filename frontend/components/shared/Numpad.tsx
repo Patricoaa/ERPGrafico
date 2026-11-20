@@ -214,7 +214,7 @@ export function Numpad({
                 ) : (
                     <Button
                         variant="outline"
-                        className={cn(keyClass, "text-warning")}
+                        className={cn(keyClass, "text-warning-text")}
                         aria-label="Borrar último dígito"
                         onClick={handleDelete}
                     >
@@ -226,7 +226,7 @@ export function Numpad({
             {onExactAmount && (
                 <Button
                     variant="outline"
-                    className={cn(actionClass, "bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20")}
+                    className={cn(actionClass, "bg-success/10 text-success-text hover:bg-success/20 hover:text-success-text border-success/20")}
                     onClick={onExactAmount}
                 >
                     {exactAmountLabel || "MONTO EXACTO"}

@@ -153,7 +153,7 @@ export function InventoryCountDetailDrawer({ countId, open, onOpenChange, onAppl
         <span className="text-sm text-muted-foreground">
             {count.total_products} productos · {count.counted_products} contados
             {linesWithChanges > 0 && (
-                <span className="ml-1 text-warning">({linesWithChanges} sin guardar)</span>
+                <span className="ml-1 text-warning-text">({linesWithChanges} sin guardar)</span>
             )}
         </span>
     ) : undefined

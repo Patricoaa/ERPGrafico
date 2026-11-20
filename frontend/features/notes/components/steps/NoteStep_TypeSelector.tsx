@@ -45,10 +45,10 @@ export function NoteStep_TypeSelector({ noteType, onNoteTypeChange }: NoteStep_T
                     <div className="flex items-center gap-3 mb-3">
                         <div className={cn('p-2 rounded-full', noteType === 'NOTA_CREDITO' ? 'bg-warning/10' : 'bg-muted')}>
                             <FileText
-                                className={cn('h-5 w-5', noteType === 'NOTA_CREDITO' ? 'text-warning' : 'text-muted-foreground')}
+                                className={cn('h-5 w-5', noteType === 'NOTA_CREDITO' ? 'text-warning-text' : 'text-muted-foreground')}
                             />
                         </div>
-                        <span className={cn('font-black text-lg', noteType === 'NOTA_CREDITO' ? 'text-warning' : 'text-muted-foreground')}>
+                        <span className={cn('font-black text-lg', noteType === 'NOTA_CREDITO' ? 'text-warning-text' : 'text-muted-foreground')}>
                             Nota de Crédito
                         </span>
                     </div>

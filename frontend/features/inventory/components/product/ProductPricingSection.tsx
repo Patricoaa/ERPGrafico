@@ -71,7 +71,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
 
                 <div className={cn("p-6 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center", !isDynamicPricing && "hidden")}>
                     <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center mb-3">
-                        <Zap className="h-5 w-5 text-warning" />
+                        <Zap className="h-5 w-5 text-warning-text" />
                     </div>
                     <h4 className="text-sm font-bold text-foreground">Modo de Precio Abierto</h4>
                     <p className="text-xs text-muted-foreground mt-1 max-w-[350px]">

@@ -54,7 +54,7 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 </div>
             </TableCell>
             <TableCell className="text-right py-3 tabular-nums">
-                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-success" />}
+                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-success-text" />}
             </TableCell>
             <TableCell className="text-right py-3 pr-8 tabular-nums">
                 {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-expense" />}
@@ -250,7 +250,7 @@ export function PayrollCard({
                             <TableRow className="bg-muted/30 hover:bg-muted/30 border-y">
                                 <TableCell className="py-2 pl-6 text-2xs font-bold text-muted-foreground uppercase tracking-wider">Subtotal Haberes</TableCell>
                                 <TableCell className="py-2 text-right">
-                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-bold text-success" />
+                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-bold text-success-text" />
                                 </TableCell>
                                 <TableCell colSpan={isReadOnly ? 1 : 2}></TableCell>
                             </TableRow>
@@ -338,7 +338,7 @@ export function PayrollCard({
                                                 <div className="flex items-center gap-2">
                                                     <span className={cn(
                                                         "text-3xs font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter",
-                                                        p.isAdvance ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+                                                        p.isAdvance ? "bg-warning/10 text-warning-text" : "bg-success/10 text-success-text"
                                                     )}>
                                                         {p.type}
                                                     </span>
@@ -356,8 +356,8 @@ export function PayrollCard({
                                 </div>
                                 {pendingToPay > 0 && isPosted && (
                                     <div className="pt-3 border-t border/60 flex justify-between items-center">
-                                        <span className="text-3xs font-bold uppercase text-warning tracking-wider">Saldo Pendiente de Pago</span>
-                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-bold text-warning" />
+                                        <span className="text-3xs font-bold uppercase text-warning-text tracking-wider">Saldo Pendiente de Pago</span>
+                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-bold text-warning-text" />
                                     </div>
                                 )}
                             </div>
@@ -369,7 +369,7 @@ export function PayrollCard({
                                 <div className="flex items-center gap-3">
                                     <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                                     <div className="flex flex-col">
-                                        <span className="text-3xs font-bold uppercase tracking-widest text-success">Remuneración Pagada</span>
+                                        <span className="text-3xs font-bold uppercase tracking-widest text-success-text">Remuneración Pagada</span>
                                     </div>
                                 </div>
                             </div>

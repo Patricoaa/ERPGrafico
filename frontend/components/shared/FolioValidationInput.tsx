@@ -90,7 +90,7 @@ export function FolioValidationInput({
                 error={validationResult && !validationResult.is_unique ? validationResult.message : undefined}
                 className={cn(
                     "pr-10",
-                    validationResult && !validationResult.is_unique && "border-warning text-warning"
+                    validationResult && !validationResult.is_unique && "border-warning text-warning-text"
                 )}
                 suffix={
                     <div className="flex items-center">
@@ -101,7 +101,7 @@ export function FolioValidationInput({
                             validationResult.is_unique ? (
                                 <CheckCircle className="h-4 w-4 text-success" />
                             ) : (
-                                <AlertCircle className="h-4 w-4 text-warning" />
+                                <AlertCircle className="h-4 w-4 text-warning-text" />
                             )
                         )}
                     </div>

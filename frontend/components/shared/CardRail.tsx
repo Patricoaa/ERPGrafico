@@ -26,8 +26,8 @@ export interface CardRailProps {
 }
 
 const TONE_CLASS: Record<CardRailTone, string> = {
-    warning: "border-warning/20 bg-warning/10 text-warning",
-    success: "border-success/20 bg-success/10 text-success",
+    warning: "border-warning/20 bg-warning/10 text-warning-text",
+    success: "border-success/20 bg-success/10 text-success-text",
     info: "border-info/20 bg-info/10 text-info",
     destructive: "border-destructive/20 bg-destructive/10 text-destructive",
     neutral: "border-border/60 bg-muted/20 text-muted-foreground",

@@ -89,8 +89,8 @@ function EmptyCell({ align, defaultAlign = "center", ...props }: Omit<InlineCell
 const INTENT_MAP: Record<DataCellIntent, string> = {
     default: 'text-foreground',
     primary: 'text-primary',
-    success: 'text-success',
-    warning: 'text-warning',
+    success: 'text-success-text',
+    warning: 'text-warning-text',
     destructive: 'text-destructive',
     info: 'text-info',
     muted: 'text-muted-foreground',
@@ -275,9 +275,9 @@ export const DataCell = {
      */
     CurrencyFlow: ({ value, direction, currency = "CLP", digits = 0, showIcon = true, showSign = true, className, size, intent, weight, color, align, ...props }: ValueCellProps<number | string> & { direction: 'inflow' | 'outflow' | 'neutral', currency?: string, digits?: number, showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, align?: DataCellAlign }) => {
         const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
-        const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
+        const iconColor = direction === 'inflow' ? 'text-success-text' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
         const badgeColor = direction === 'inflow'
-            ? 'bg-success/10 text-success'
+            ? 'bg-success/10 text-success-text'
             : direction === 'outflow'
                 ? 'bg-destructive/10 text-destructive'
                 : 'bg-muted/60 text-muted-foreground'
@@ -315,9 +315,9 @@ export const DataCell = {
         const direction = dirProp ?? (numValue > 0 ? 'inflow' : numValue < 0 ? 'outflow' : 'neutral')
 
         const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
-        const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
+        const iconColor = direction === 'inflow' ? 'text-success-text' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
         const badgeColor = direction === 'inflow'
-            ? 'bg-success/10 text-success'
+            ? 'bg-success/10 text-success-text'
             : direction === 'outflow'
                 ? 'bg-destructive/10 text-destructive'
                 : 'bg-muted/60 text-muted-foreground'
@@ -734,7 +734,7 @@ export const DataCell = {
                     <span className="text-xs font-medium tracking-tight">{formatCurrency(total)}</span>
                 </div>
                 {(pending != null && pending > 0) && (
-                    <span className="text-4xs text-warning font-medium uppercase tracking-widest leading-none">Pend.: {formatCurrency(pending)}</span>
+                    <span className="text-4xs text-warning-text font-medium uppercase tracking-widest leading-none">Pend.: {formatCurrency(pending)}</span>
                 )}
                 {deliveryDate && (
                     <span className="text-4xs font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis max-w-full leading-none">

@@ -115,7 +115,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
 
                 {estimatedPenalty > 0 && penaltyEdit === 0 && (
                     <div className="rounded-md border border-warning/30 bg-warning/5 p-4 space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-warning">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-warning-text">
                             <AlertTriangle className="h-4 w-4" />
                             Mora por atraso ({daysLate} {daysLate === 1 ? 'día' : 'días'})
                         </div>

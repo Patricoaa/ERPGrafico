@@ -55,7 +55,7 @@ function PaymentRefCell({ value }: ValueRenderProps<"paymentRef">) {
                 </span>
             )}
             {value.transactionNumber && (
-                <span className="text-xs font-bold text-success flex items-center gap-1">
+                <span className="text-xs font-bold text-success-text flex items-center gap-1">
                     <Hash className="h-3 w-3" /> {value.transactionNumber}
                 </span>
             )}

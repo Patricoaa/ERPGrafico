@@ -53,7 +53,7 @@ export function BankCheckSection({ data, bankId }: Props) {
                                         Emitido: {formatDateWith(chk.issue_date, { day: "numeric", month: "short" })}
                                     </span>
                                     <span className="text-border/60">·</span>
-                                    <span className={cn(isOverdue && "text-warning font-semibold")}>
+                                    <span className={cn(isOverdue && "text-warning-text font-semibold")}>
                                         Vence: {formatDateWith(chk.due_date, { day: "numeric", month: "short" })}
                                     </span>
                                 </div>

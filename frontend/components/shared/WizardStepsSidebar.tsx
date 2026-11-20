@@ -345,7 +345,7 @@ export function WizardStepsSidebar({
                                                     </span>
                                                     {step.warning && (
                                                         <span
-                                                            className="shrink-0 text-warning"
+                                                            className="shrink-0 text-warning-text"
                                                             title={step.warning}
                                                         >
                                                             <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />

@@ -33,7 +33,7 @@ export function UnsavedChangesDialog({ open, names, saving, onSave, onDiscard, o
             onInteractOutside={(e) => e.preventDefault()}
             title={
                 <div className="flex items-center gap-4 py-1">
-                    <div className="p-2 rounded-full text-warning bg-warning/10">
+                    <div className="p-2 rounded-full text-warning-text bg-warning/10">
                         <AlertTriangle className="h-5 w-5" />
                     </div>
                     <span className="text-lg font-bold">Cambios sin guardar</span>

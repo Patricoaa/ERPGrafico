@@ -239,7 +239,7 @@ export function SessionOpenView({ onSuccess, exitHref = "/" }: SessionOpenViewPr
                     <ChoiceCard
                         size="touch"
                         icon={Unlock}
-                        iconClassName="text-success"
+                        iconClassName="text-success-text"
                         title="Abrir Punto de Venta"
                         description={freeTerminals.length === 0
                             ? "Todos los puntos de venta tienen una sesión abierta."

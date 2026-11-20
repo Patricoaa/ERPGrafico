@@ -48,7 +48,7 @@ export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
                 >
                     <div className="absolute left-0 top-0 w-1 h-full bg-warning opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="bg-warning/10 p-2.5 rounded-md group-hover:bg-warning/20 transition-colors">
-                        <Plus className="h-5 w-5 text-warning" />
+                        <Plus className="h-5 w-5 text-warning-text" />
                     </div>
                     <div className="flex flex-col items-start">
                         <span className="font-black text-xs uppercase tracking-widest text-foreground/80">Producción para Stock</span>

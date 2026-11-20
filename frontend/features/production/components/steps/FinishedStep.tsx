@@ -86,7 +86,7 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating, headerActions 
             <p>
               Se produjeron <span className="font-bold text-foreground">{discrepancy.produced}</span> unidades
               pero la {getDomainConceptTitle('ov').toLowerCase()} registra <span className="font-bold text-foreground">{discrepancy.sold}</span>.
-              {' '}Delta: <span className={`font-bold ${discrepancy.delta > 0 ? 'text-success' : 'text-destructive'}`}>
+              {' '}Delta: <span className={`font-bold ${discrepancy.delta > 0 ? 'text-success-text' : 'text-destructive'}`}>
                 {discrepancy.delta > 0 ? '+' : ''}{discrepancy.delta}
               </span>.
             </p>

@@ -41,7 +41,7 @@ export function DteEmitLaterSwitch({
                 <FileText
                     className={cn(
                         "h-4 w-4 transition-colors",
-                        isPending ? "text-warning" : "text-muted-foreground/30"
+                        isPending ? "text-warning-text" : "text-muted-foreground/30"
                     )}
                 />
             }

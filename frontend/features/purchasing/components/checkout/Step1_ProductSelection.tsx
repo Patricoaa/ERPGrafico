@@ -83,7 +83,7 @@ function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: 
                             <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-xs">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Neto (sin IVA)</span>
-                                    <span className="font-bold text-success">
+                                    <span className="font-bold text-success-text">
                                         {formatCurrency(netResult)}
                                     </span>
                                 </div>
@@ -248,7 +248,7 @@ export function Step1_ProductSelection({
                                     )
                                     if (product && prefSupplierId && selectedSupplierId && prefSupplierId.toString() !== selectedSupplierId) {
                                         return (
-                                            <div className="flex items-center gap-1 mt-1 text-3xs text-warning font-medium">
+                                            <div className="flex items-center gap-1 mt-1 text-3xs text-warning-text font-medium">
                                                 <AlertTriangle className="h-3 w-3" />
                                                 Sugerido: {product.preferred_supplier_name}
                                             </div>

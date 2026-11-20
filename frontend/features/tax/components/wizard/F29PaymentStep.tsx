@@ -70,15 +70,15 @@ export function F29PaymentStep({ declaration, onChanged }: F29PaymentStepProps) 
                     <div className="text-xl font-bold font-mono">{formatCurrency(declaration.vat_to_pay)}</div>
                 </div>
                 <div className="p-4 rounded-md bg-success/5 border border-success/10">
-                    <div className="text-3xs uppercase font-bold text-success tracking-wider mb-1">Total Pagado</div>
-                    <div className="text-xl font-bold text-success font-mono">{formatCurrency(declaration.total_paid)}</div>
+                    <div className="text-3xs uppercase font-bold text-success-text tracking-wider mb-1">Total Pagado</div>
+                    <div className="text-xl font-bold text-success-text font-mono">{formatCurrency(declaration.total_paid)}</div>
                 </div>
                 <div className={cn(
                     "p-4 rounded-md border",
                     isFullyPaid ? "bg-success/10 border-success/20" : "bg-primary/5 border-primary/10",
                 )}>
                     <div className="text-3xs uppercase font-bold text-muted-foreground tracking-wider mb-1">Saldo Pendiente</div>
-                    <div className={cn("text-xl font-bold font-mono", isFullyPaid ? "text-success" : "text-primary")}>
+                    <div className={cn("text-xl font-bold font-mono", isFullyPaid ? "text-success-text" : "text-primary")}>
                         {formatCurrency(Math.max(0, pendingAmount))}
                     </div>
                 </div>

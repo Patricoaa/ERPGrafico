@@ -192,7 +192,7 @@ export function MovementWizard({
                                     setStepIndex(1)
                                 }}
                             >
-                                <div className={cn("p-3 rounded-md bg-warning/10 text-warning", impact === "OUT" && "bg-warning text-warning-foreground")}>
+                                <div className={cn("p-3 rounded-md bg-warning/10 text-warning-text", impact === "OUT" && "bg-warning text-warning-foreground")}>
                                     <LogOut className="h-6 w-6" />
                                 </div>
                                 <div className="flex flex-col">
@@ -388,7 +388,7 @@ export function MovementWizard({
                             <div className={cn(
                                 "uppercase font-bold border rounded-sm px-4 py-1 text-3xs tracking-loose text-center min-w-[120px]",
                                 impact === "IN" ? "border-income/40 text-income bg-income/5" :
-                                    impact === "OUT" ? "border-warning/40 text-warning bg-warning/5" :
+                                    impact === "OUT" ? "border-warning/40 text-warning-text bg-warning/5" :
                                         "border-info/40 text-info bg-info/5"
                             )}>
                                 {impact === 'TRANSFER' ? 'Traspaso' : MOVEMENT_TYPES[impact as 'IN' | 'OUT'].find(t => t.value === moveType)?.label}
@@ -414,7 +414,7 @@ export function MovementWizard({
                                     if (amountNum <= 0) return null
                                     if (amountNum > partnerCapitalInfo.subscribed && partnerCapitalInfo.subscribed > 0) {
                                         return (
-                                            <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-md text-xs text-warning">
+                                            <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-md text-xs text-warning-text">
                                                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                                                 <div>
                                                     <span className="font-bold block">Aporte supera el capital suscrito</span>
@@ -431,7 +431,7 @@ export function MovementWizard({
                                         )
                                     }
                                     return (
-                                        <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-md text-xs text-success">
+                                        <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-md text-xs text-success-text">
                                             <Info className="h-3.5 w-3.5" />
                                             <span>Pendiente de entero: <strong><MoneyDisplay amount={partnerCapitalInfo.pending} weight="bold" /></strong></span>
                                         </div>
@@ -487,7 +487,7 @@ export function MovementWizard({
                                     <span className={cn(
                                         "font-bold uppercase tracking-loose px-3 py-1 rounded-sm border text-3xs",
                                         impact === "IN" ? "bg-income/10 text-income border-income/30" :
-                                            impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" :
+                                            impact === "OUT" ? "bg-warning/10 text-warning-text border-warning/30" :
                                                 "bg-info/10 text-info border-info/30"
                                     )}>
                                         {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}

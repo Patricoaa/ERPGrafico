@@ -22,8 +22,8 @@ interface ProductTypeSelectorProps {
 
 const PRODUCT_TYPES = [
     { id: 'STORABLE',       label: 'Almacenable',             icon: Package, color: 'text-info'        },
-    { id: 'CONSUMABLE',     label: 'Consumible',              icon: Zap,     color: 'text-warning'     },
-    { id: 'MANUFACTURABLE', label: 'Fabricable',              icon: Factory, color: 'text-success'     },
+    { id: 'CONSUMABLE',     label: 'Consumible',              icon: Zap,     color: 'text-warning-text'     },
+    { id: 'MANUFACTURABLE', label: 'Fabricable',              icon: Factory, color: 'text-success-text'     },
     { id: 'SERVICE',        label: 'Servicio (Único)',         icon: Wrench,  color: 'text-primary'     },
     { id: 'SUBSCRIPTION',   label: 'Suscripción (Recurrente)', icon: Repeat,  color: 'text-destructive' },
 ]

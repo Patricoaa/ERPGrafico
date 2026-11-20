@@ -102,7 +102,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                         <div className="flex justify-between items-end">
                             <div>
                                 <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Suma a Pagar</p>
-                                <DataCell.Currency value={totalToPay} weight="bold" className="justify-start text-2xl text-success mt-1" />
+                                <DataCell.Currency value={totalToPay} weight="bold" className="justify-start text-2xl text-success-text mt-1" />
                             </div>
                             <div className="flex gap-4">
                                 <Button

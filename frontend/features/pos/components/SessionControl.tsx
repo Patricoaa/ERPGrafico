@@ -231,7 +231,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 <div className="flex items-center gap-2">
                     <span className={cn(
                         "gap-1 px-3 py-1.5 flex items-center text-3xs font-bold uppercase rounded-full border",
-                        isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
+                        isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success-text bg-success/5'
                     )}>
                         <div className={cn("h-2 w-2 rounded-full animate-pulse motion-reduce:animate-none", isSharedSession ? 'bg-primary' : 'bg-success')} />
                         {isSharedSession ? "Sesión de POS compartida" : "Sesión de POS abierta"}

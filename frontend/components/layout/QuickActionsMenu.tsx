@@ -30,14 +30,14 @@ const actions = [
         title: "POS",
         icon: ShoppingCart,
         url: "/pos",
-        color: "text-success",
+        color: "text-success-text",
         permission: "sales.view_dashboard_sales",
     },
     {
         title: "Órdenes de Compra",
         icon: ShoppingBag,
         url: "/purchasing/dtes/orders",
-        color: "text-warning",
+        color: "text-warning-text",
         permission: "purchasing.view_dashboard_purchasing",
     },
     {

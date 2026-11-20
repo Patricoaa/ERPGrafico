@@ -298,7 +298,7 @@ export function StageActivityPanel({
                                                                             <span className="ml-1.5 tabular-nums text-muted-foreground">{time(e.createdAt)}</span>
                                                                         </p>
                                                                         {Object.entries(e.confirmations ?? {}).filter(([, v]) => v).map(([key]) => (
-                                                                            <p key={key} className="flex items-center gap-1.5 text-success">
+                                                                            <p key={key} className="flex items-center gap-1.5 text-success-text">
                                                                                 <CheckCircle2 className="h-3 w-3 shrink-0" />
                                                                                 {CONFIRMATION_LABELS[key]?.label ?? key}
                                                                             </p>

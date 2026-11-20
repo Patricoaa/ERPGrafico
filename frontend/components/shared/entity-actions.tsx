@@ -26,7 +26,7 @@ export type StructuredAction =
         label?: string
         /** Override icon from registry (for module-specific icons not in ROW_ACTIONS). */
         icon?: LucideIcon
-        /** Semantic color token for the icon (e.g. "text-success", "text-destructive"). */
+        /** Semantic color token for the icon (e.g. "text-success-text", "text-destructive"). */
         iconColor?: string
         /** Extra CSS class applied to the action button. */
         className?: string

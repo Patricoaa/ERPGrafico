@@ -221,8 +221,8 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                             amount={variance} 
                                             className={cn(
                                                 "font-mono text-xs font-bold",
-                                                variance > 0 ? (isPositiveGood ? "text-success" : "text-destructive") 
-                                                    : variance < 0 ? (isPositiveGood ? "text-destructive" : "text-success") : "text-muted-foreground"
+                                                variance > 0 ? (isPositiveGood ? "text-success-text" : "text-destructive") 
+                                                    : variance < 0 ? (isPositiveGood ? "text-destructive" : "text-success-text") : "text-muted-foreground"
                                             )} 
                                         />
                                     </div>

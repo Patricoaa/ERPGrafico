@@ -213,8 +213,8 @@ describe("status tone colors", () => {
 
     it("text colors map correctly", () => {
         expect(statusToneText("destructive")).toBe("text-destructive")
-        expect(statusToneText("warning")).toBe("text-warning")
-        expect(statusToneText("success")).toBe("text-success")
+        expect(statusToneText("warning")).toBe("text-warning-text")
+        expect(statusToneText("success")).toBe("text-success-text")
         expect(statusToneText("primary")).toBe("text-primary")
         expect(statusToneText("muted")).toBe("text-muted-foreground")
     })

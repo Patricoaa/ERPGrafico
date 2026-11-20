@@ -14,7 +14,7 @@ export function statementLineActionItems(item: BankStatementLine, ctx: Statement
             action: "reverse",
             icon: RotateCcw,
             label: "Restaurar",
-            iconColor: "text-success",
+            iconColor: "text-success-text",
             onClick: (e) => { e.stopPropagation(); ctx.onRestore(item.id) },
             visible: item.reconciliation_status === 'EXCLUDED',
         },

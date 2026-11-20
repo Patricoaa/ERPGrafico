@@ -55,7 +55,7 @@ export function BankRecentActivity({ movements, bankId, maxItems = 3 }: BankRece
                     const isOutbound = mov.movement_type === "OUTBOUND"
 
                     const Icon = isInbound ? ArrowDownLeft : isOutbound ? ArrowUpRight : ArrowLeftRight
-                    const iconColor = isInbound ? "text-success" : isOutbound ? "text-destructive" : "text-muted-foreground"
+                    const iconColor = isInbound ? "text-success-text" : isOutbound ? "text-destructive" : "text-muted-foreground"
                     const iconBg = isInbound ? "bg-success/10" : isOutbound ? "bg-destructive/10" : "bg-muted"
 
                     const concept = isInbound

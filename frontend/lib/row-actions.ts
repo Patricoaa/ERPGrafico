@@ -80,7 +80,7 @@ export interface RowActionDef {
     /**
      * Optional semantic color token applied to the icon. Only used for actions
      * whose intent should hint at a semantic color (e.g. destructive → on hover).
-     * MUST be a semantic token (text-destructive, text-warning, etc).
+     * MUST be a semantic token (text-destructive, text-warning-text, etc).
      */
     iconColorClass?: string
 }
@@ -111,7 +111,7 @@ export const ROW_ACTIONS: Record<RowActionKey, RowActionDef> = {
     split:        { icon: SplitSquareHorizontal, label: "Distribuir",   intent: "write" },
     annul:     { icon: Ban,              label: "Anular",               intent: "destructive", iconColorClass: "text-destructive" },
     delete:    { icon: Trash2,           label: "Eliminar",             intent: "destructive", iconColorClass: "text-destructive" },
-    reverse:   { icon: RotateCcw,        label: "Reversar",             intent: "destructive", iconColorClass: "text-warning" },
+    reverse:   { icon: RotateCcw,        label: "Reversar",             intent: "destructive", iconColorClass: "text-warning-text" },
 }
 
 /**

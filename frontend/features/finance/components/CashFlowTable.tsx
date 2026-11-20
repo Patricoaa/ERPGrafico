@@ -162,7 +162,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                                     <TableRow key={idx}>
                                         <TableCell>
                                             <span className={`text-3xs font-bold uppercase ${
-                                                item.direction === 'INBOUND' ? 'text-success' : 'text-destructive'
+                                                item.direction === 'INBOUND' ? 'text-success-text' : 'text-destructive'
                                             }`}>
                                                 {item.type === 'LOAN_INSTALLMENT' ? 'Cuota' :
                                                  item.type === 'CHECK_RECEIVED' ? 'Cheque Recibido' :

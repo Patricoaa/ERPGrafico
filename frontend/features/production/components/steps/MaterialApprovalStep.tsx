@@ -46,7 +46,7 @@ export function MaterialApprovalStep({
                   <p className="text-xs text-muted-foreground">En bodega</p>
                   <p className={cn(
                     'text-sm font-medium tabular-nums',
-                    (m.stock_available ?? 0) >= m.quantity_planned ? 'text-success' : 'text-destructive',
+                    (m.stock_available ?? 0) >= m.quantity_planned ? 'text-success-text' : 'text-destructive',
                   )}>
                     {(m.stock_available ?? 0) >= 999999 ? '∞' : (m.stock_available ?? 0)} {m.uom_name}
                   </p>

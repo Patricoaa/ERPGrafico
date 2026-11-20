@@ -108,7 +108,7 @@ export function MobileStageDrawer({
                                 "mb-2 rounded-md border px-2 py-1.5 text-2xs font-medium",
                                 isCancelled
                                     ? "border-destructive/30 bg-destructive/5 text-destructive"
-                                    : "border-success/30 bg-success/5 text-success",
+                                    : "border-success/30 bg-success/5 text-success-text",
                             )}
                         >
                             {isCancelled ? "Orden cancelada · solo lectura" : "Producción finalizada"}
@@ -186,7 +186,7 @@ export function MobileStageDrawer({
                                             ))}
                                             {step.warning && (
                                                 <AlertTriangle
-                                                    className="h-3.5 w-3.5 shrink-0 text-warning"
+                                                    className="h-3.5 w-3.5 shrink-0 text-warning-text"
                                                     aria-hidden="true"
                                                 />
                                             )}
@@ -199,7 +199,7 @@ export function MobileStageDrawer({
                                         )}
 
                                         {step.warning && (
-                                            <span className="mt-0.5 flex items-start gap-1 text-2xs text-warning">
+                                            <span className="mt-0.5 flex items-start gap-1 text-2xs text-warning-text">
                                                 <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                                                 <span>{step.warning}</span>
                                             </span>

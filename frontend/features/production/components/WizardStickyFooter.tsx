@@ -244,7 +244,7 @@ export function WizardStickyFooter({
             return (
                 <div className="flex items-center gap-2">
                     {blockedReason && (
-                        <span className="text-xs text-warning flex items-center gap-1.5 font-medium">
+                        <span className="text-xs text-warning-text flex items-center gap-1.5 font-medium">
                             <AlertTriangle className="h-3.5 w-3.5" />
                             {blockedReason}
                         </span>

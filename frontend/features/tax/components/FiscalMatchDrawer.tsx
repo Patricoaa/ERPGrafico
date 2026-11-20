@@ -269,7 +269,7 @@ function DraftSummary({ draft }: { draft: FiscalMatchDraft }) {
                 </TooltipContent>
             </Tooltip>
             {draft.consequences.map((line) => <span key={line} className="text-muted-foreground">{line}</span>)}
-            {draft.needsPayment && <span className="text-warning">Falta elegir el pago de una venta TUU</span>}
+            {draft.needsPayment && <span className="text-warning-text">Falta elegir el pago de una venta TUU</span>}
         </div>
     )
 }

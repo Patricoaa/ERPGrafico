@@ -77,7 +77,7 @@ export function OriginSelectionStep({
           interactive={!locked}
         >
           <div className="relative flex h-20 w-full shrink-0 items-center justify-center overflow-hidden bg-muted">
-            <Plus className={cn("h-8 w-8", isNoneSelected ? "text-warning" : "text-warning/80")} aria-hidden />
+            <Plus className={cn("h-8 w-8", isNoneSelected ? "text-warning-text" : "text-warning-text/80")} aria-hidden />
             {isNoneSelected && <SelectionCheck className="absolute top-3 right-3 h-5 w-5" />}
           </div>
           <div className="flex w-full flex-1 flex-col gap-1 px-3 pb-3 pt-2.5 text-center">

@@ -39,9 +39,9 @@ interface StatusMeta {
 function statusMeta(status: RuntimeStatus): StatusMeta {
     switch (status.kind) {
         case "connected":
-            return { label: "Conectado", className: "text-success bg-success/10" }
+            return { label: "Conectado", className: "text-success-text bg-success/10" }
         case "pending":
-            return { label: "Pendiente", className: "text-warning bg-warning/10" }
+            return { label: "Pendiente", className: "text-warning-text bg-warning/10" }
         case "offline":
             return { label: "Offline", className: "text-destructive bg-destructive/10" }
         case "info":

@@ -209,8 +209,8 @@ export function PayrollDetailView({
                                     className={cn(
                                         "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         salaroPaid
-                                            ? "bg-success/10 text-success border-success/20"
-                                            : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
+                                            ? "bg-success/10 text-success-text border-success/20"
+                                            : "bg-warning/10 text-warning-text border-warning/20 hover:bg-warning/10"
                                     )}
                                     onClick={() => !salaroPaid && setSalaryDialog(true)}
                                     disabled={salaroPaid}
@@ -224,7 +224,7 @@ export function PayrollDetailView({
                                     className={cn(
                                         "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         previredPaid
-                                            ? "bg-success/10 text-success border-success/20"
+                                            ? "bg-success/10 text-success-text border-success/20"
                                             : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                                     )}
                                     onClick={() => !previredPaid && setPreviredDialog(true)}
@@ -322,8 +322,8 @@ export function PayrollDetailView({
                                     className={cn(
                                         "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         salaroPaid
-                                            ? "bg-success/10 text-success border-success/20"
-                                            : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
+                                            ? "bg-success/10 text-success-text border-success/20"
+                                            : "bg-warning/10 text-warning-text border-warning/20 hover:bg-warning/10"
                                     )}
                                     onClick={() => !salaroPaid && setSalaryDialog(true)}
                                     disabled={salaroPaid}
@@ -337,7 +337,7 @@ export function PayrollDetailView({
                                     className={cn(
                                         "rounded-sm text-3xs sm:text-xs font-medium gap-1.5 px-2 sm:px-4 h-control-sm sm:h-control-md transition-all",
                                         previredPaid
-                                            ? "bg-success/10 text-success border-success/20"
+                                            ? "bg-success/10 text-success-text border-success/20"
                                             : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                                     )}
                                     onClick={() => !previredPaid && setPreviredDialog(true)}

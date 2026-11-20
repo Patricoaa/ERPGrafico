@@ -100,7 +100,7 @@ function DiffCell({ value: row }: ValueRenderProps<"inventoryCountDiff">) {
         <div
             className={cn(
                 "text-center font-medium text-sm",
-                diff > 0 && "text-success",
+                diff > 0 && "text-success-text",
                 diff < 0 && "text-destructive",
                 diff === 0 && "text-muted-foreground",
             )}

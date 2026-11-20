@@ -29,7 +29,7 @@ function CreditContactNameCell({ value: contact }: ValueRenderProps<"creditConta
     return (
         <DataCell.ContactLink contactId={contact.id}>
             {contact.name}
-            {contact.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-warning ml-2 shrink-0" />}
+            {contact.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-warning-text ml-2 shrink-0" />}
         </DataCell.ContactLink>
     )
 }

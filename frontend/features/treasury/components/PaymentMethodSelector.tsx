@@ -58,7 +58,7 @@ interface PaymentMethodCardSelectorProps {
 }
 
 const METHOD_META: Record<string, { label: string; description: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
-    CASH: { label: 'Efectivo', description: 'Pago en efectivo', icon: Banknote, color: 'text-success' },
+    CASH: { label: 'Efectivo', description: 'Pago en efectivo', icon: Banknote, color: 'text-success-text' },
     CARD: { label: 'Tarjeta', description: 'Débito / Crédito', icon: CreditCard, color: 'text-primary' },
     CREDIT_CARD: { label: 'T. Crédito', description: 'Tarjeta de crédito', icon: CreditCard, color: 'text-primary' },
     DEBIT_CARD: { label: 'T. Débito', description: 'Tarjeta de débito', icon: CreditCard, color: 'text-primary' },
@@ -651,7 +651,7 @@ export function PaymentMethodSelector({
 
                 {isFullyPaid && (
                     <div className="text-center py-2">
-                        <span className="text-xs font-semibold text-success uppercase tracking-wider">Total cubierto</span>
+                        <span className="text-xs font-semibold text-success-text uppercase tracking-wider">Total cubierto</span>
                     </div>
                 )}
 

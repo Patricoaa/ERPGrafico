@@ -484,7 +484,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
 
                                 {!initialData?.id && (
                                     <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-md">
-                                        <p className="text-3xs text-warning text-center font-bold uppercase tracking-tighter italic">
+                                        <p className="text-3xs text-warning-text text-center font-bold uppercase tracking-tighter italic">
                                             * Las variantes se crearán automáticamente al guardar la ficha principal del producto.
                                         </p>
                                     </div>

@@ -63,10 +63,10 @@ export function resolveTreasuryMovementIcon(m: TreasuryMovementLike): MovementIc
     const iconClassName = isWriteOff
         ? "text-muted-foreground/50 bg-muted/50"
         : type === "INBOUND"
-            ? "text-success bg-success/10"
+            ? "text-success-text bg-success/10"
             : type === "OUTBOUND"
                 ? "text-destructive bg-destructive/10"
-                : "text-warning bg-warning/10"
+                : "text-warning-text bg-warning/10"
 
     return { icon, iconClassName }
 }
@@ -87,8 +87,8 @@ export function resolveJournalEntryIcon(e: JournalEntryLike): MovementIconResult
     const iconClassName = e.is_manual
         ? "text-info bg-info/10"
         : e.reversal_of
-            ? "text-warning bg-warning/10"
-            : "text-success bg-success/10"
+            ? "text-warning-text bg-warning/10"
+            : "text-success-text bg-success/10"
     return { icon, iconClassName }
 }
 
@@ -121,13 +121,13 @@ export function resolveStockMoveIcon(m: StockMoveLike): MovementIconResult {
 
     const iconClassName =
         type === "IN"
-            ? "text-success bg-success/10"
+            ? "text-success-text bg-success/10"
             : type === "OUT"
                 ? "text-destructive bg-destructive/10"
                 : type === "TRANSFER"
                     ? "text-info bg-info/10"
                     : type === "ADJUSTMENT"
-                        ? "text-warning bg-warning/10"
+                        ? "text-warning-text bg-warning/10"
                         : "text-muted-foreground bg-muted/10"
 
     return { icon, iconClassName }

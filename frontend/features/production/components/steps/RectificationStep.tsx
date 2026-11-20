@@ -96,13 +96,13 @@ function CostImpactPanel({
                 </div>
                 <div className="space-y-0.5">
                     <p className="text-3xs text-muted-foreground uppercase font-bold">Costo real</p>
-                    <p className={`text-sm font-bold ${isIncrease ? "text-destructive" : "text-success"}`}>
+                    <p className={`text-sm font-bold ${isIncrease ? "text-destructive" : "text-success-text"}`}>
                         ${actualTotal.toFixed(0)}
                     </p>
                 </div>
                 <div className="space-y-0.5">
                     <p className="text-3xs text-muted-foreground uppercase font-bold">Δ Total</p>
-                    <p className={`text-sm font-bold flex items-center justify-center gap-1 ${isIncrease ? "text-destructive" : "text-success"}`}>
+                    <p className={`text-sm font-bold flex items-center justify-center gap-1 ${isIncrease ? "text-destructive" : "text-success-text"}`}>
                         {isIncrease ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                         {isIncrease ? '+' : ''}{delta.toFixed(0)}
                     </p>
@@ -116,7 +116,7 @@ function CostImpactPanel({
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-3xs text-muted-foreground uppercase font-bold">Costo unit. real</p>
-                        <p className={`text-sm font-bold ${unitDelta > 0 ? "text-destructive" : "text-success"}`}>
+                        <p className={`text-sm font-bold ${unitDelta > 0 ? "text-destructive" : "text-success-text"}`}>
                             ${actualUnitCost.toFixed(2)}
                             <span className="text-3xs ml-1">({unitDelta > 0 ? '+' : ''}{unitDelta.toFixed(2)})</span>
                         </p>
@@ -293,7 +293,7 @@ export function RectificationStep({ order, headerActions, onChange }: Rectificat
                                 placeholder="Ej: 95"
                                 containerClassName={
                                     parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty)
-                                        ? "[&_fieldset]:border-warning [&_legend]:text-warning"
+                                        ? "[&_fieldset]:border-warning [&_legend]:text-warning-text"
                                         : undefined
                                 }
                             />
@@ -309,7 +309,7 @@ export function RectificationStep({ order, headerActions, onChange }: Rectificat
             )}
 
             {!hasMeaningfulChanges && stockMaterials.length > 0 && (
-                <div className="flex items-center justify-center gap-2 py-3 text-sm text-success font-medium">
+                <div className="flex items-center justify-center gap-2 py-3 text-sm text-success-text font-medium">
                     <CheckCircle2 className="h-4 w-4" />
                     <span>Todo producido según lo planificado. Puede finalizar sin cambios.</span>
                 </div>

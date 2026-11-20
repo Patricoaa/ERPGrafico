@@ -188,7 +188,7 @@ export function PaymentModal({
                                 ]}
                             />
                             {existingInvoice && (
-                                <p className="text-3xs text-warning font-medium px-1">
+                                <p className="text-3xs text-warning-text font-medium px-1">
                                     * Documento ya registrado anteriormente
                                 </p>
                             )}

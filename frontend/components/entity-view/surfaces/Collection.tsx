@@ -720,8 +720,8 @@ const TONE_CLASS: Record<CardTone, string> = {
     default: "text-muted-foreground bg-muted/40",
     primary: "text-primary bg-primary/10",
     info: "text-info bg-info/10",
-    success: "text-success bg-success/10",
-    warning: "text-warning bg-warning/10",
+    success: "text-success-text bg-success/10",
+    warning: "text-warning-text bg-warning/10",
     destructive: "text-destructive bg-destructive/10",
     muted: "text-muted-foreground/60 bg-muted/30",
 }

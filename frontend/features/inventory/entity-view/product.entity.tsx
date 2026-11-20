@@ -22,8 +22,8 @@ declare module "@/components/entity-view/core/value-kinds" {
 
 const AVAILABILITY_ICON: Record<AvailabilityIcon, LucideIcon> = { stock: Package, service: Wrench, manufacture: Factory, blocked: Ban }
 const AVAILABILITY_TONE: Record<AvailabilityTone, string> = {
-    ok: "text-success",
-    warning: "text-warning",
+    ok: "text-success-text",
+    warning: "text-warning-text",
     none: "text-destructive",
     neutral: "text-muted-foreground",
 }

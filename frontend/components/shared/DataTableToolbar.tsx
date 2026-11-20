@@ -142,7 +142,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                                     onClick={action.onClick}
                                                     className={cn(
                                                         SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
-                                                        action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
+                                                        action.intent === 'success' && "text-success-text focus:bg-success/10 focus:text-success-text",
                                                         action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
                                                         (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
                                                     )}
@@ -275,7 +275,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                                     onClick={action.onClick}
                                                     className={cn(
                                                         SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
-                                                        action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
+                                                        action.intent === 'success' && "text-success-text focus:bg-success/10 focus:text-success-text",
                                                         action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
                                                         (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
                                                     )}

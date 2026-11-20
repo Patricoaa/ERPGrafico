@@ -43,7 +43,7 @@ function OrderLineWorkOrderCell({ value }: ValueRenderProps<"orderLineWorkOrder"
                 <Button
                     size="sm"
                     variant="outline"
-                    className="h-6 text-xs px-2 gap-1 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
+                    className="h-6 text-xs px-2 gap-1 border-warning/40 text-warning-text hover:bg-warning/10 hover:text-warning-text"
                     onClick={(e) => {
                         e.stopPropagation()
                         onCreateWorkOrder(value.line)
@@ -54,7 +54,7 @@ function OrderLineWorkOrderCell({ value }: ValueRenderProps<"orderLineWorkOrder"
                 </Button>
             )
         }
-        return <span className="text-xs text-warning font-medium">Sin OT</span>
+        return <span className="text-xs text-warning-text font-medium">Sin OT</span>
     }
 
     return <span className="text-xs text-muted-foreground">—</span>

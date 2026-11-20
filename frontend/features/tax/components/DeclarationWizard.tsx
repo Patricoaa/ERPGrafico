@@ -496,8 +496,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                         </div>
                         {vatRemanent > 0 && (
                             <div className="flex justify-between items-center">
-                                <span className="text-xs font-black uppercase text-success">Nuevo Remanente a Favor</span>
-                                <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
+                                <span className="text-xs font-black uppercase text-success-text">Nuevo Remanente a Favor</span>
+                                <MoneyDisplay amount={vatRemanent} className="font-black text-success-text" />
                             </div>
                         )}
                         <div className="pt-4 space-y-2 border-t border-border/30">

@@ -127,7 +127,7 @@ function RowSaveIndicator({ status }: { status: AutoSaveStatus }) {
             {status === "saving"  && <Loader2     className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             {status === "synced"  && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
             {status === "error"   && <AlertCircle  className="h-3.5 w-3.5 text-destructive" />}
-            {status === "invalid" && <AlertCircle  className="h-3.5 w-3.5 text-warning" />}
+            {status === "invalid" && <AlertCircle  className="h-3.5 w-3.5 text-warning-text" />}
         </div>
     )
 }

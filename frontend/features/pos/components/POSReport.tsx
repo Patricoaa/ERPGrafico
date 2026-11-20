@@ -252,7 +252,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
             {outOfSession.length > 0 && (
                 <div className="space-y-3 mb-6">
                     <div className="flex items-center gap-2 pb-1.5 border-b border-border">
-                        <AlertTriangle className="h-3 w-3 text-warning" />
+                        <AlertTriangle className="h-3 w-3 text-warning-text" />
                         <h4 className=" font-black text-xs uppercase tracking-widest text-foreground">Fuera de la Sesión</h4>
                     </div>
                     <ul className="space-y-2 text-2xs leading-tight">

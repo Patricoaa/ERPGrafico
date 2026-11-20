@@ -180,12 +180,12 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                                 <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
                                             </div>
                                             <div className="flex flex-col items-center bg-warning/5 py-3 rounded-md border border-warning/20">
-                                                <span className="text-4xs font-bold uppercase tracking-tight text-warning/80 mb-1">Reservado</span>
-                                                <span className="text-lg font-mono font-black text-warning">{initialData.qty_reserved || 0}</span>
+                                                <span className="text-4xs font-bold uppercase tracking-tight text-warning-text/80 mb-1">Reservado</span>
+                                                <span className="text-lg font-mono font-black text-warning-text">{initialData.qty_reserved || 0}</span>
                                             </div>
                                             <div className="flex flex-col items-center bg-success/5 py-3 rounded-md border border-success/20">
-                                                <span className="text-4xs font-bold uppercase tracking-tight text-success mb-1">Disponible</span>
-                                                <span className="text-lg font-mono font-black text-success">{initialData.qty_available || 0}</span>
+                                                <span className="text-4xs font-bold uppercase tracking-tight text-success-text mb-1">Disponible</span>
+                                                <span className="text-lg font-mono font-black text-success-text">{initialData.qty_available || 0}</span>
                                             </div>
                                         </div>
                                     )}

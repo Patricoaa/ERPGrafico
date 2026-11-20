@@ -454,7 +454,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         const assigneeName = task.assigned_group_name ?? task.assigned_to_data?.username ?? null
         const createdAt = task.created_at ? relativeTime(task.created_at) : null
 
-        const iconColor = isActive ? "text-warning" : isCompleted ? "text-success" : "text-muted-foreground/40"
+        const iconColor = isActive ? "text-warning-text" : isCompleted ? "text-success-text" : "text-muted-foreground/40"
 
         return (
             <div

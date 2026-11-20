@@ -19,7 +19,7 @@ export const profitDistributionActions = createEntityActions<
         action: "detail",
         icon: Wand2,
         label: "Retomar Proceso",
-        className: "text-success",
+        className: "text-success-text",
         onClick: () => ctx.onRetake(item),
         visible: item.status === 'DRAFT',
     },
