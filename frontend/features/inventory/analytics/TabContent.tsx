@@ -3,7 +3,6 @@
 import { CostsBlock } from "./CostsBlock"
 import { LegacyInsightsPanel } from "./LegacyInsightsPanel"
 import type { LegacyTabId } from "./legacyTabs"
-import { OperationsBlock } from "./OperationsBlock"
 import type { PeriodKey } from "./period"
 import { ProductionBlock } from "./ProductionBlock"
 import type { ProductAnalyticsTabId, ProductCapabilities } from "./productAnalyticsRegistry"
@@ -11,6 +10,7 @@ import { PricingBlock } from "./PricingBlock"
 import { ProcurementBlock } from "./ProcurementBlock"
 import { SalesBlock } from "./SalesBlock"
 import { StockBlock } from "./StockBlock"
+import { SubscriptionBlock } from "./SubscriptionBlock"
 
 interface TabContentProps {
     tab: ProductAnalyticsTabId
@@ -62,6 +62,6 @@ export function TabContent({
         case "production":
             return <ProductionBlock productId={productId} period={period} />
         case "subscription":
-            return <OperationsBlock productId={productId} period={period} />
+            return <SubscriptionBlock productId={productId} period={period} />
     }
 }

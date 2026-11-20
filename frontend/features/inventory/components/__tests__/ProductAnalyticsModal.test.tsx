@@ -35,8 +35,8 @@ vi.mock("../../analytics/SourcingBlock", () => ({
         <div>bloque-abastecimiento-{section ?? "todo"}-{productId}</div>
     ),
 }))
-vi.mock("../../analytics/OperationsBlock", () => ({
-    OperationsBlock: ({ productId }: { productId: number }) => <div>bloque-operacion-{productId}</div>,
+vi.mock("../../analytics/SubscriptionBlock", () => ({
+    SubscriptionBlock: ({ productId }: { productId: number }) => <div>bloque-suscripcion-{productId}</div>,
 }))
 vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
@@ -140,7 +140,7 @@ describe("ProductAnalyticsModal", () => {
         state.capsById = { 1: caps({ recurring: true, segment: "SUBSCRIPTION" }) }
         open(1)
         fireEvent.click(rail().getByRole("button", { name: "Suscripción" }))
-        expect(screen.getByText("bloque-operacion-1")).toBeInTheDocument()
+        expect(screen.getByText("bloque-suscripcion-1")).toBeInTheDocument()
     })
 
     it("falls back to overview when the active tab is no longer visible", () => {
