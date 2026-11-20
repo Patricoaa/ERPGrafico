@@ -398,7 +398,7 @@ function ProductAnalyticsPanelInner({
                         leftRail={
                             <RailNav
                                 ariaLabel="Secciones de análisis de producto"
-                                sections={[{ items: TABS.map(t => ({ ...t })) }]}
+                                sections={[{ items: [...TABS] }]}
                                 value={activeTab}
                                 onValueChange={(v) => setActiveTab(v as TabValue)}
                                 top={productSelectorSlot}
@@ -408,6 +408,8 @@ function ProductAnalyticsPanelInner({
                         noPadding
                         contentClassName="p-4"
                     >
+                        {/* Compact copy of the rail's top slot (hidden there below sm) */}
+                        {productSelectorSlot && <div className="mb-3 shrink-0 sm:hidden">{productSelectorSlot}</div>}
                         {/* ── Tab content ── */}
                         <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-4 min-h-0">
 

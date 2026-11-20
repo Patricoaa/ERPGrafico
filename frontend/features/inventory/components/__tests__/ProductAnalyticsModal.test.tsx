@@ -38,13 +38,14 @@ describe("ProductAnalyticsModal", () => {
 
     it("shows the ProductSelector in the rail when onProductChange is provided", () => {
         render(<ProductAnalyticsModal productId={1} productName="Tarjeta Doble Faz" open onOpenChange={() => {}} onProductChange={() => {}} />)
-        expect(screen.getByText("selector-producto")).toBeInTheDocument()
+        // rail slot (sm+) and compact row above the content (< sm)
+        expect(screen.getAllByText("selector-producto")).toHaveLength(2)
         expect(screen.getByRole("navigation", { name: "Secciones de análisis de producto" })).toBeInTheDocument()
     })
 
     it("shows the product name in the rail when onProductChange is absent", () => {
         render(<ProductAnalyticsModal productId={1} productName="Tarjeta Doble Faz" open onOpenChange={() => {}} />)
-        expect(screen.getByText("Tarjeta Doble Faz")).toBeInTheDocument()
+        expect(screen.getAllByText("Tarjeta Doble Faz")).toHaveLength(2)
         expect(screen.queryByText("selector-producto")).not.toBeInTheDocument()
     })
 })

@@ -358,6 +358,23 @@ Props: `items: FormTabItem[]` (✅), `value` (✅), `onValueChange` (✅), `orie
 
 **Horizontal group ("Pills"):** selectores de vista (2-3 tabs, componentes inline).
 
+### RailNav 🟢
+
+Riel izquierdo de navegación por selección (estado local, no rutas), extraído del modal de perfil. Colapsa a solo íconos bajo `sm`.
+
+```tsx
+<RailNav ariaLabel="Secciones del perfil" value={section} onValueChange={setSection}
+  sections={[{ label: 'Cuenta', items: [{ value: 'prefs', label: 'Preferencias', icon: SlidersHorizontal }] }]}
+  top={<ProductSelector … />} bottom={<GranularityControl … />} />
+```
+
+Props: `sections: RailNavSection[]` (✅), `value` (✅), `onValueChange` (✅), `ariaLabel` (✅), `top?`, `bottom?`, `className?`.
+
+- Úsalo dentro de `DrawerLayout` (`leftRail`, `leftRailWidth="w-14 sm:w-56"`) o inline junto al contenido (analytics, sin borde).
+- Los slots `top`/`bottom` se ocultan bajo `sm`: el consumidor DEBE renderizar una copia `sm:hidden` junto al contenido si el control es funcional (selector, granularidad).
+- Navegación por rutas (`ModuleRail`) no usa `RailNav`; comparte solo la superficie activa vía `railItemSurfaceClass(isActive)` (y `railItemClass` para ítems con etiqueta).
+- Consumidores: `ProfileSettingsSidebar`, `AnalyticsPanelContent`, `ProductAnalyticsModal`.
+
 ---
 
 ## Buttons

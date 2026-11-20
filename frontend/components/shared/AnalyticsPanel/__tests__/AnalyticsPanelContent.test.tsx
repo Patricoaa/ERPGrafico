@@ -27,7 +27,8 @@ describe("AnalyticsPanelContent", () => {
         const { rerender } = render(
             <AnalyticsPanelContent entityName="Ventas" tabs={tabs} granularity="month" onGranularityChange={vi.fn()} />,
         )
-        expect(screen.getByText("Agrupación")).toBeInTheDocument()
+        // rail slot (sm+) and compact copy above the content (< sm)
+        expect(screen.getAllByText("Agrupación")).toHaveLength(2)
         rerender(<AnalyticsPanelContent entityName="Ventas" tabs={tabs} granularity="month" />)
         expect(screen.queryByText("Agrupación")).not.toBeInTheDocument()
     })

@@ -63,13 +63,18 @@ export function AnalyticsPanelContent({
                     sections={[{ items: tabs }]}
                     value={currentTab}
                     onValueChange={handleTabChange}
-                    className="bg-transparent px-1.5 py-0 sm:px-0 sm:pr-4"
+                    className="bg-transparent px-1.5 py-0 sm:px-0"
                     bottom={granularity && onGranularityChange
                         ? <GranularityControl value={granularity} onChange={onGranularityChange} />
                         : undefined}
                 />
             </div>
             <div className="flex-1 flex flex-col min-w-0 h-full p-0">
+                {granularity && onGranularityChange && (
+                    <div className="mb-2 shrink-0 sm:hidden">
+                        <GranularityControl value={granularity} onChange={onGranularityChange} />
+                    </div>
+                )}
                 {tabs.map((tab) => (
                     <AnalyticsTabContent
                         key={tab.value}
