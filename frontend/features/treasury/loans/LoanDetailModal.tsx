@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye } from 'lucide-react'
-import { BaseModal, FormFooter, DangerButton, StatCard, Skeleton, EmptyState, StaleDataBanner, Chip, Section } from "@/components/shared"
+import { BaseModal, FormFooter, DangerButton, Metric, MetricStrip, Skeleton, EmptyState, StaleDataBanner, Chip, Section } from "@/components/shared"
 import { Button } from '@/components/ui/button'
 import { useLoan } from '../hooks/useLoans'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
@@ -122,18 +122,17 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                 {isError && <StaleDataBanner className="mx-4 mt-2" />}
                 <div className="space-y-6">
                     {/* KPIs */}
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <StatCard label="Capital" value={fmt(loan.principal)} icon={Banknote} accent="info" />
-                        <StatCard label="Saldo Insoluto" value={fmt(loan.outstanding_balance)} icon={TrendingDown} accent="warning" />
-                        <StatCard label="Cuotas Pagadas" value={`${loan.paid_installments_count} / ${loan.installments_count}`} icon={Calendar} accent="success" />
-                        <StatCard
-                            label="Próx. Vencimiento"
-                            value={formatDate(loan.next_due_date) || '—'}
-                            icon={Calendar}
-                            accent="info"
-                        />
-                        <StatCard label="Total Desembolsado" value={fmt(loan.total_disbursed || '0')} icon={DollarSign} accent="info" />
-                    </div>
+                    <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
+<MetricStrip label="Saldos del préstamo">
+                        <Metric label="Capital" value={fmt(loan.principal)} lead={Banknote} />
+                        <Metric label="Saldo Insoluto" value={fmt(loan.outstanding_balance)} lead={TrendingDown} tone="warning" />
+                        <Metric label="Cuotas Pagadas" value={`${loan.paid_installments_count} / ${loan.installments_count}`} lead={Calendar} tone="success" />
+                        </MetricStrip>
+<MetricStrip label="Vencimientos y desembolso">
+<Metric label="Próx. Vencimiento" value={formatDate(loan.next_due_date) || '—'} lead={Calendar} />
+                        <Metric label="Total Desembolsado" value={fmt(loan.total_disbursed || '0')} lead={DollarSign} />
+                    </MetricStrip>
+</div>
 
                     {/* Amortization table */}
                     <div className="overflow-hidden">

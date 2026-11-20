@@ -1,6 +1,6 @@
 "use client"
 
-import { Skeleton, StatCard } from "@/components/shared"
+import { Skeleton, Metric, MetricStrip } from "@/components/shared"
 import {useProductionMetrics} from "../hooks/useProductionQueries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Printer } from "lucide-react"
@@ -46,37 +46,12 @@ export function ProductionMetricsCard() {
                 </Link>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                    <StatCard
-                        label="Activas"
-                        value={Object.values(data.ots_by_stage).reduce((a, b) => a + b, 0)}
-                        subtext="En piso de planta"
-                        variant="minimal"
-                        accent="muted"
-                    />
-                    <StatCard
-                        label="Atrasadas"
-                        value={data.overdue_ots}
-                        subtext="Requieren atención"
-                        variant="minimal"
-                        accent="destructive"
-                        href="/production/orders?view=list"
-                    />
-                    <StatCard
-                        label="Finalizadas (30d)"
-                        value={data.throughput_last_30d}
-                        subtext="Órdenes completadas"
-                        variant="minimal"
-                        accent="success"
-                    />
-                    <StatCard
-                        label="Tiempos"
-                        value={<>{data.avg_time_by_stage['PRESS'] || 0} <span className="text-sm font-medium">días</span></>}
-                        subtext="Promedio en Prensa"
-                        variant="minimal"
-                        accent="info"
-                    />
-                </div>
+                <MetricStrip label="Indicadores de producción" className="mt-2">
+                    <Metric label="Activas" value={Object.values(data.ots_by_stage).reduce((a, b) => a + b, 0)} context="En piso de planta" />
+                    <Metric label="Atrasadas" value={data.overdue_ots} context="Requieren atención" tone="destructive" href="/production/orders?view=list" />
+                    <Metric label="Finalizadas (30d)" value={data.throughput_last_30d} context="Órdenes completadas" tone="success" />
+                    <Metric label="Tiempos" value={<>{data.avg_time_by_stage['PRESS'] || 0} <span className="text-sm font-medium">días</span></>} context="Promedio en Prensa" />
+                </MetricStrip>
             </CardContent>
         </Card>
     )

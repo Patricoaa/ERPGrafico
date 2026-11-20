@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Banknote, Calendar, Building2, FileText, CreditCard, Eye, DollarSign } from 'lucide-react'
 import {
-    DataCell, StatCard, StatusBadge, BaseModal,
+    DataCell, Metric, MetricStrip, StatusBadge, BaseModal,
     type DocumentField, type LifecycleStep, type DocumentActionItem,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
@@ -101,13 +101,17 @@ function AmortizationTab({ loan, onPayInst, onViewInst, onShowFeeDetail }: {
 
     return (
         <div className="h-full flex flex-col overflow-hidden">
-            <div className="shrink-0 grid grid-cols-6 gap-3 sm:grid-cols-5 pb-4">
-                <StatCard label="Capital" value={fmtKpi(loan.principal)} icon={Banknote} accent="info" />
-                <StatCard label="Saldo Insoluto" value={fmtKpi(loan.outstanding_balance)} icon={FileText} accent="warning" />
-                <StatCard label="Cuotas Pagadas" value={`${loan.paid_installments_count} / ${loan.installments_count}`} icon={Calendar} accent="success" />
-                <StatCard label="Próx. Vencimiento" value={formatDate(loan.next_due_date) || '—'} icon={Calendar} accent="info" />
-                <StatCard label="Total Desembolsado" value={fmtKpi(loan.total_disbursed || '0')} icon={DollarSign} accent="info" />
-            </div>
+            <div className="shrink-0 grid gap-3 pb-4 lg:grid-cols-[3fr_2fr]">
+<MetricStrip label="Saldos del préstamo">
+                <Metric label="Capital" value={fmtKpi(loan.principal)} lead={Banknote} />
+                <Metric label="Saldo Insoluto" value={fmtKpi(loan.outstanding_balance)} lead={FileText} tone="warning" />
+                <Metric label="Cuotas Pagadas" value={`${loan.paid_installments_count} / ${loan.installments_count}`} lead={Calendar} tone="success" />
+                </MetricStrip>
+<MetricStrip label="Vencimientos y desembolso">
+<Metric label="Próx. Vencimiento" value={formatDate(loan.next_due_date) || '—'} lead={Calendar} />
+                <Metric label="Total Desembolsado" value={fmtKpi(loan.total_disbursed || '0')} lead={DollarSign} />
+            </MetricStrip>
+</div>
 
             <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root

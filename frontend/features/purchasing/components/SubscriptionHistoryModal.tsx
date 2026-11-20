@@ -2,11 +2,11 @@
 import { formatCurrency } from "@/lib/money"
 import { parseDateOnly } from "@/lib/utils"
 
-import { BaseModal, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
+import { BaseModal, DateRangeFilter, EmptyState, SkeletonShell } from '@/components/shared'
 
 import { useState, useMemo } from "react"
 
-import { StatCard } from "@/components/shared"
+import { Metric, MetricStrip } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { subscriptionOrderEntity, subscriptionOrderViews, type SubscriptionOrderEntry } from "../entity-view/subscriptionOrder.entity"
 import { subscriptionNoteEntity, subscriptionNoteViews, type SubscriptionNoteEntry } from "../entity-view/subscriptionNote.entity"
@@ -19,7 +19,6 @@ import { useSubscriptionHistory } from "../hooks/useSubscriptions"
 
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
-import { DataCell } from '@/components/shared'
 
 import { TabBar, TabBarContent } from "@/components/shared"
 import { BarChart } from "@/components/shared"
@@ -140,26 +139,11 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                         {/* HISTORIAL TAB */}
                                         <TabBarContent value="historial" className="mt-0 space-y-6">
                                             <div className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <StatCard
-                                                        label="Último Precio"
-                                                        value={<DataCell.Currency value={data.price_history[0]?.unit_cost || 0} weight="black" className="text-2xl text-left" />}
-                                                        variant="compact"
-                                                        accent="primary"
-                                                    />
-                                                    <StatCard
-                                                        label="OCS Totales"
-                                                        value={<>{data.orders.length} <span className="text-xs">documentos</span></>}
-                                                        variant="compact"
-                                                        accent="warning"
-                                                    />
-                                                    <StatCard
-                                                        label="Estado Actual"
-                                                        value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" variant="badge" />}
-                                                        variant="compact"
-                                                        accent="success"
-                                                    />
-                                                </div>
+                                                <MetricStrip label="Resumen de la suscripción">
+                                                    <Metric label="Último Precio" value={formatCurrency(data.price_history[0]?.unit_cost || 0)} />
+                                                    <Metric label="OCS Totales" value={data.orders.length} unit="documentos" />
+                                                    <Metric label="Estado Actual" health={{ status: "SUCCESS", label: "ACTIVA" }} />
+                                                </MetricStrip>
 
                                                 <div className="flex justify-end">
                                                     <DateRangeFilter onDateChange={setDateRange} label="Periodo para el gráfico" />

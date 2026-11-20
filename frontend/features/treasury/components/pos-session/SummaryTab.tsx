@@ -2,7 +2,7 @@
 
 import { Banknote, Info, Receipt, Timer, TrendingUp, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Banner, DocumentFieldGrid, EntityBadge, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
+import { Banner, DocumentFieldGrid, EntityBadge, SkeletonShell, Metric, MetricStrip, type DocumentField, Section } from "@/components/shared"
 import type { POSSession, POSSessionOverview } from "../../types"
 import { formatCurrency } from "@/lib/money"
 import { AmountCell, GRID_LEFT, dateTime, formatDuration, type SessionTab } from "./shared"
@@ -66,40 +66,12 @@ export function SummaryTab({ session, overview, isLoading, onGoTab }: SummaryTab
 function IndicatorCards({ session, overview }: { session: POSSession; overview: POSSessionOverview }) {
     const { sales } = overview
     return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard
-                label="Ventas"
-                value={formatCurrency(Number(sales.net))}
-                icon={TrendingUp}
-                accent="success"
-                valueSize="md"
-                subtext={`Brutas ${formatCurrency(Number(sales.gross))} − devoluciones ${formatCurrency(Number(sales.returns_total))}`}
-            />
-            <StatCard
-                label="N°Órdenes de venta"
-                value={sales.sale_count}
-                icon={Receipt}
-                accent="primary"
-                valueSize="md"
-                subtext={`${sales.return_count} devolución(es)`}
-            />
-            <StatCard
-                label="Media de Orden de Venta"
-                value={formatCurrency(Number(sales.average_ticket))}
-                icon={Banknote}
-                accent="info"
-                valueSize="md"
-                subtext="Ventas ÷ órdenes de venta, IVA incluido"
-            />
-            <StatCard
-                label="Duración"
-                value={formatDuration(session.opened_at, session.closed_at)}
-                icon={Timer}
-                accent="muted"
-                valueSize="md"
-                subtext={`${session.closed_at ? "Sesión cerrada" : "En curso"} `}
-            />
-        </div>
+        <MetricStrip label="Resumen de la sesión">
+            <Metric label="Ventas" value={formatCurrency(Number(sales.net))} context={`Brutas ${formatCurrency(Number(sales.gross))} − devoluciones ${formatCurrency(Number(sales.returns_total))}`} lead={TrendingUp} tone="success" />
+            <Metric label="N°Órdenes de venta" value={sales.sale_count} context={`${sales.return_count} devolución(es)`} lead={Receipt} />
+            <Metric label="Media de Orden de Venta" value={formatCurrency(Number(sales.average_ticket))} context="Ventas ÷ órdenes de venta, IVA incluido" lead={Banknote} />
+            <Metric label="Duración" value={formatDuration(session.opened_at, session.closed_at)} context={`${session.closed_at ? "Sesión cerrada" : "En curso"} `} lead={Timer} />
+        </MetricStrip>
     )
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Banner, BaseModal, CancelButton, Chip, FormFooter, StatCard } from '@/components/shared'
+import { Banner, BaseModal, CancelButton, Chip, FormFooter, Metric, MetricStrip } from '@/components/shared'
 import { CheckCircle2, Loader2, XCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { financeApi } from "../../api/financeApi"
@@ -215,29 +215,11 @@ export function AutoMatchProgressModal({
 
                 {/* Stats Grid */}
                 {isProgressOrSuccess && (
-                    <div className="grid grid-cols-3 gap-3">
-                        <StatCard
-                            label="Procesadas"
-                            value={isSuccess ? (progress.total_unreconciled ?? progress.total) : progress.processed}
-                            subtext={`de ${progress.total_unreconciled ?? progress.total}`}
-                            variant="minimal"
-                            accent="muted"
-                        />
-                        <StatCard
-                            label="Conciliadas"
-                            value={progress.matched_count ?? progress.matched}
-                            subtext="matches"
-                            variant="minimal"
-                            accent="success"
-                        />
-                        <StatCard
-                            label="Sin Conciliar"
-                            value={(progress.total_unreconciled ?? progress.total) - (progress.matched_count ?? progress.matched)}
-                            subtext="sin match"
-                            variant="minimal"
-                            accent="warning"
-                        />
-                    </div>
+                    <MetricStrip label="Progreso de la conciliación automática">
+                        <Metric label="Procesadas" value={isSuccess ? (progress.total_unreconciled ?? progress.total) : progress.processed} context={`de ${progress.total_unreconciled ?? progress.total}`} />
+                        <Metric label="Conciliadas" value={progress.matched_count ?? progress.matched} context="matches" tone="success" />
+                        <Metric label="Sin Conciliar" value={(progress.total_unreconciled ?? progress.total) - (progress.matched_count ?? progress.matched)} context="sin match" tone="warning" />
+                    </MetricStrip>
                 )}
 
                 {/* Error message */}

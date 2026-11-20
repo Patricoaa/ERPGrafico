@@ -12,13 +12,13 @@ import {
 } from 'lucide-react'
 import {
     AnalyticsPanelContent,
-    MoneyDisplay,
     UnifiedSearchBar, useUnifiedSearch,
-    StatCard,
+    Metric, MetricStrip,
     EmptyState,
     ToolbarCreateButton,
     bindUnifiedSearch,
 } from '@/components/shared'
+import { formatMoney } from '@/lib/money'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { Collection, useEntityCollection } from '@/components/entity-view'
 import { unbilledChargeEntity, unbilledChargeViews } from '../entity-view/unbilledCharge.entity'
@@ -327,12 +327,12 @@ export function UnbilledChargesClientView({
                                                 content: forecast?.credit_limit ? {
                                                     type: 'custom',
                                                     render: (
-                                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                                            <StatCard label="Límite de Crédito" value={<MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline />} variant="default" accent="primary" />
-                                                            <StatCard label="Total Usado" value={<MoneyDisplay amount={parseFloat(forecast.total_used)} inline />} variant="default" accent="warning" />
-                                                            <StatCard label="Disponible" value={<MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline />} variant="default" accent="success" />
-                                                            <StatCard label="% Usado" value={`${usedPercent.toFixed(1)}%`} variant="default" accent="destructive" />
-                                                        </div>
+                                                        <MetricStrip label="Cupo de la tarjeta">
+                                                            <Metric label="Límite de Crédito" value={formatMoney(parseFloat(forecast.credit_limit))} />
+                                                            <Metric label="Total Usado" value={formatMoney(parseFloat(forecast.total_used))} tone="warning" />
+                                                            <Metric label="Disponible" value={formatMoney(parseFloat(forecast.available_credit ?? '0'))} tone="success" />
+                                                            <Metric label="% Usado" value={`${usedPercent.toFixed(1)}%`} tone="destructive" />
+                                                        </MetricStrip>
                                                     ),
                                                 } : {
                                                     type: 'custom',

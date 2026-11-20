@@ -4,10 +4,11 @@ import { useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CreditCard, Receipt, Gauge, TrendingUp, ShoppingCart } from 'lucide-react'
 import type { Granularity } from '@/components/shared'
+import { formatMoney } from '@/lib/money'
 import {
     AnalyticsPanelContent,
     UnifiedSearchBar, useUnifiedSearch,
-    MoneyDisplay, StatCard, bindUnifiedSearch,
+    Metric, MetricStrip, bindUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { Collection, useEntityCollection, type FieldId } from '@/components/entity-view'
@@ -215,14 +216,14 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                                 content: hubData.summary ? {
                                                     type: 'custom',
                                                     render: (
-                                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                                                            <StatCard label="Deuda Total" value={<MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline />} variant="fill" accent="primary" icon={CreditCard} />
-                                                            <StatCard label="No Facturado" value={<MoneyDisplay amount={parseFloat(hubData.summary.total_unbilled)} inline />} variant="fill" accent="info" icon={Receipt} />
+                                                        <MetricStrip label="Resumen de deuda de tarjetas" className="mt-4">
+                                                            <Metric label="Deuda Total" value={formatMoney(parseFloat(hubData.summary.total_debt))} lead={CreditCard} />
+                                                            <Metric label="No Facturado" value={formatMoney(parseFloat(hubData.summary.total_unbilled))} lead={Receipt} />
                                                             {hubData.summary.total_past_due ? (
-                                                                <StatCard label="Vencido" value={<MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline />} variant="fill" accent="destructive" icon={TrendingUp} />
+                                                                <Metric label="Vencido" value={formatMoney(parseFloat(hubData.summary.total_past_due))} lead={TrendingUp} tone="destructive" />
                                                             ) : null}
-                                                            <StatCard label="Estados Abiertos" value={String(hubData.summary.open_statements)} subtext={`${hubData.summary.overdue_statements} vencidos`} variant="fill" accent="warning" icon={Gauge} />
-                                                        </div>
+                                                            <Metric label="Estados Abiertos" value={String(hubData.summary.open_statements)} context={`${hubData.summary.overdue_statements} vencidos`} lead={Gauge} tone="warning" />
+                                                        </MetricStrip>
                                                     ),
                                                 } : {
                                                     type: 'custom',
@@ -382,12 +383,12 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                                             {hubData.creditUtilization.map(cu => (
                                                                 <div key={cu.card_account_id} className="space-y-3">
                                                                     <h4 className="text-xs text-muted-foreground font-semibold">{cu.card_name}</h4>
-                                                                    <div className="grid grid-cols-2 gap-3">
-                                                                        <StatCard label="Límite" value={<MoneyDisplay amount={parseFloat(cu.credit_limit ?? '0')} inline />} variant="fill" accent="primary" />
-                                                                        <StatCard label="Deuda Actual" value={<MoneyDisplay amount={parseFloat(cu.current_debt)} inline />} variant="fill" accent="warning" />
-                                                                        <StatCard label="No Facturado" value={<MoneyDisplay amount={parseFloat(cu.total_unbilled)} inline />} variant="fill" accent="info" />
-                                                                        <StatCard label="Disponible" value={<MoneyDisplay amount={parseFloat(cu.available_credit ?? '0')} inline />} variant="fill" accent="success" />
-                                                                    </div>
+                                                                    <MetricStrip label="Uso de la tarjeta">
+                                                                        <Metric label="Límite" value={formatMoney(parseFloat(cu.credit_limit ?? '0'))} />
+                                                                        <Metric label="Deuda Actual" value={formatMoney(parseFloat(cu.current_debt))} tone="warning" />
+                                                                        <Metric label="No Facturado" value={formatMoney(parseFloat(cu.total_unbilled))} />
+                                                                        <Metric label="Disponible" value={formatMoney(parseFloat(cu.available_credit ?? '0'))} tone="success" />
+                                                                    </MetricStrip>
                                                                     <div className="flex items-center gap-2">
                                                                         <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                                                                             <div className="h-full rounded-full bg-warning transition-all" style={{ width: `${Math.min(cu.utilization_pct, 100)}%` }} />
@@ -416,9 +417,9 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                                     render: (
                                                         <div className="space-y-3">
                                                             <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Deuda Consolidada</h4>
-                                                            <StatCard label="Deuda Total" value={<MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline />} variant="fill" accent="primary" />
-                                                            <StatCard label="Total Facturado" value={<MoneyDisplay amount={parseFloat(hubData.summary.total_billed ?? '0')} inline />} variant="fill" accent="info" />
-                                                            <StatCard label="Total Vencido" value={<MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline />} variant="fill" accent="destructive" />
+                                                            <Metric label="Deuda Total" value={formatMoney(parseFloat(hubData.summary.total_debt))} />
+                                                            <Metric label="Total Facturado" value={formatMoney(parseFloat(hubData.summary.total_billed ?? '0'))} />
+                                                            <Metric label="Total Vencido" value={formatMoney(parseFloat(hubData.summary.total_past_due))} tone="destructive" />
                                                         </div>
                                                     ),
                                                 } : {

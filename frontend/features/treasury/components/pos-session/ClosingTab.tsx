@@ -1,7 +1,7 @@
 "use client"
 
 import { AlertTriangle, Banknote, CheckCircle2, ClipboardCheck, ListChecks, MessageSquareText, Scale, UserCheck } from "lucide-react"
-import { DocumentFieldGrid, EmptyState, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
+import { DocumentFieldGrid, EmptyState, SkeletonShell, Metric, MetricStrip, type DocumentField, Section } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { formatCurrency } from "@/lib/money"
@@ -32,32 +32,11 @@ export function ClosingTab({ session, overview, isLoading }: ClosingTabProps) {
         <SkeletonShell isLoading={isLoading || !overview} ariaLabel="Cargando cierre de la sesión">
             {overview && closing && (
                 <div className="space-y-8">
-                    <div aria-label="Contexto del cierre" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <StatCard
-                            label="Cerrada por"
-                            value={closing.closed_by_name ?? "—"}
-                            icon={UserCheck}
-                            accent="primary"
-                            valueSize="md"
-                            subtext={`${dateTime(closing.closed_at)} · ${overview.timezone}`}
-                        />
-                        <StatCard
-                            label="Resultado"
-                            value={closing.result === null ? "Sin arqueo" : closing.result === "MATCH" ? "Coincide" : "Con diferencia"}
-                            icon={closing.result === "DIFFERENCE" ? AlertTriangle : CheckCircle2}
-                            accent={closing.result === "DIFFERENCE" ? "destructive" : closing.result === "MATCH" ? "success" : "muted"}
-                            valueSize="md"
-                            subtext={closing.difference != null ? `Diferencia ${formatCurrency(Number(closing.difference))}` : undefined}
-                        />
-                        <StatCard
-                            label="Incidencias"
-                            value={otherAlerts.length}
-                            icon={ListChecks}
-                            accent={otherAlerts.length > 0 ? "warning" : "success"}
-                            valueSize="md"
-                            subtext={otherAlerts.length > 0 ? otherAlerts.map((a) => a.message).join(" ") : "Sin otras incidencias"}
-                        />
-                    </div>
+                    <MetricStrip label="Contexto del cierre">
+                        <Metric label="Cerrada por" value={closing.closed_by_name ?? "—"} context={`${dateTime(closing.closed_at)} · ${overview.timezone}`} lead={UserCheck} />
+                        <Metric label="Resultado" value={closing.result === null ? "Sin arqueo" : closing.result === "MATCH" ? "Coincide" : "Con diferencia"} context={closing.difference != null ? `Diferencia ${formatCurrency(Number(closing.difference))}` : undefined} lead={closing.result === "DIFFERENCE" ? AlertTriangle : CheckCircle2} tone={closing.result === "DIFFERENCE" ? "destructive" : closing.result === "MATCH" ? "success" : "neutral"} />
+                        <Metric label="Incidencias" value={otherAlerts.length} context={otherAlerts.length > 0 ? otherAlerts.map((a) => a.message).join(" ") : "Sin otras incidencias"} lead={ListChecks} tone={otherAlerts.length > 0 ? "warning" : "success"} />
+                    </MetricStrip>
 
                     <section aria-label="Arqueo de efectivo" className="space-y-4">
                         <Section.Header spaced title="Arqueo de efectivo" icon={Banknote} />

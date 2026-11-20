@@ -3,13 +3,13 @@
 import { AlertTriangle, Banknote, Calculator, CheckCheck, Coins, Scale } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { DocumentFieldGrid, SkeletonShell, StatCard, type DocumentField, Section } from "@/components/shared"
+import { DocumentFieldGrid, SkeletonShell, Metric, MetricStrip, type DocumentField, Section } from "@/components/shared"
 import { usePOSSessionSummary, type POSReportData } from "@/features/pos"
 import { posSessionMovementViews } from "../../entity-view/posSessionSheet.views"
 import { treasuryMovementEntity } from "../../entity-view/treasuryMovement.entity"
 import type { POSSession, POSSessionOverview } from "../../types"
 import { formatCurrency } from "@/lib/money"
-import { AmountCell, GRID_LEFT, dateTime } from "./shared"
+import { AmountCell, GRID_LEFT } from "./shared"
 
 const num = (value: number | string | undefined | null) => Number(value ?? 0)
 
@@ -35,25 +35,11 @@ export function CashTab({ session, overview }: CashTabProps) {
             {data && (
                 <div className="flex flex-1 min-h-0 flex-col gap-8">
                     <section aria-label="Comparativa de efectivo" className="shrink-0">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <StatCard label="Esperado" value={formatCurrency(Number(data.expected_cash))} icon={Coins} accent="primary" valueSize="md" subtext="Calculado a partir de las operaciones" />
-                            <StatCard
-                                label="Contado"
-                                value={closing?.counted_cash != null ? formatCurrency(Number(closing.counted_cash)) : "—"}
-                                icon={CheckCheck}
-                                accent="info"
-                                valueSize="md"
-                                subtext={closing?.counted_cash != null ? "Registrado en el arqueo" : session.closed_at ? "Sin arqueo" : "Pendiente de arqueo"}
-                            />
-                            <StatCard
-                                label="Diferencia"
-                                value={closing?.difference != null ? formatCurrency(Number(closing.difference)) : "—"}
-                                icon={Scale}
-                                accent={closing?.difference == null || Number(closing.difference) === 0 ? "success" : "destructive"}
-                                valueSize="md"
-                                subtext="Contado − esperado"
-                            />
-                        </div>
+                        <MetricStrip label="Comparativa de efectivo">
+                            <Metric label="Esperado" value={formatCurrency(Number(data.expected_cash))} context="Calculado a partir de las operaciones" lead={Coins} />
+                            <Metric label="Contado" value={closing?.counted_cash != null ? formatCurrency(Number(closing.counted_cash)) : "—"} context={closing?.counted_cash != null ? "Registrado en el arqueo" : session.closed_at ? "Sin arqueo" : "Pendiente de arqueo"} lead={CheckCheck} />
+                            <Metric label="Diferencia" value={closing?.difference != null ? formatCurrency(Number(closing.difference)) : "—"} context="Contado − esperado" lead={Scale} tone={closing?.difference == null || Number(closing.difference) === 0 ? "success" : "destructive"} />
+                        </MetricStrip>
                     </section>
 
                     <section aria-label="Cálculo del saldo" className="shrink-0 space-y-4">

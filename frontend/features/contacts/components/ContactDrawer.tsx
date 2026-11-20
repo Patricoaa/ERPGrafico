@@ -4,7 +4,7 @@ import {useEffect, useState, useMemo} from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import * as z from "zod"
-import {ActionConfirmModal, Drawer, StatCard} from '@/components/shared'
+import {ActionConfirmModal, Drawer, Metric, MetricStrip} from '@/components/shared'
 import { DocumentActionsMenu } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import {
@@ -622,56 +622,19 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     return (
         <div className="flex flex-col h-full">
             {/* Summary Cards Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <StatCard
-                    label="Total"
-                    value={metrics.total}
-                    icon={Icon}
-                    onClick={() => setActiveFilter('all')}
-                    active={activeFilter === 'all'}
-                    accent="primary"
-                />
+            <MetricStrip label="Filtros por estado de documentos" className="mb-4">
+                <Metric label="Total" value={metrics.total} lead={Icon} onPress={() => setActiveFilter('all')} pressed={activeFilter === 'all'} />
                 {type !== 'work_order' && (
                     <>
-                        <StatCard
-                            label={type === 'sale' ? 'Por Cobrar' : 'Por Pagar'}
-                            value={formatCurrency(metrics.totalPendingMoney)}
-                            icon={Banknote}
-                            subtext={`${metrics.pendingPaymentCount} documentos`}
-                            onClick={() => setActiveFilter('financial')}
-                            active={activeFilter === 'financial'}
-                            accent="destructive"
-                            valueSize="md"
-                        />
-                        <StatCard
-                            label={type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'}
-                            value={metrics.pendingLogisticsCount}
-                            icon={Truck}
-                            onClick={() => setActiveFilter('logistics')}
-                            active={activeFilter === 'logistics'}
-                            accent="warning"
-                        />
-                        <StatCard
-                            label="Facturación Pdte."
-                            value={metrics.pendingBillingCount}
-                            icon={Receipt}
-                            onClick={() => setActiveFilter('billing')}
-                            active={activeFilter === 'billing'}
-                            accent="primary"
-                        />
+                        <Metric label={type === 'sale' ? 'Por Cobrar' : 'Por Pagar'} value={formatCurrency(metrics.totalPendingMoney)} context={`${metrics.pendingPaymentCount} documentos`} lead={Banknote} tone="destructive" onPress={() => setActiveFilter('financial')} pressed={activeFilter === 'financial'} />
+                        <Metric label={type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'} value={metrics.pendingLogisticsCount} lead={Truck} tone="warning" onPress={() => setActiveFilter('logistics')} pressed={activeFilter === 'logistics'} />
+                        <Metric label="Facturación Pdte." value={metrics.pendingBillingCount} lead={Receipt} onPress={() => setActiveFilter('billing')} pressed={activeFilter === 'billing'} />
                     </>
                 )}
                 {type === 'work_order' && (
-                    <StatCard
-                        label="En Proceso / Pdte"
-                        value={metrics.pendingWOCount}
-                        icon={ClipboardList}
-                        onClick={() => setActiveFilter('pending')}
-                        active={activeFilter === 'pending'}
-                        accent="primary"
-                    />
+                    <Metric label="En Proceso / Pdte" value={metrics.pendingWOCount} lead={ClipboardList} onPress={() => setActiveFilter('pending')} pressed={activeFilter === 'pending'} />
                 )}
-            </div>
+            </MetricStrip>
 
             <Section.Header spaced title={title} icon={Icon} className="pb-6" />
             <div className="flex-1 overflow-hidden p-0">

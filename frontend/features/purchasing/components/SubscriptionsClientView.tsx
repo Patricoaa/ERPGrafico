@@ -10,16 +10,16 @@ import { Pause, Play, AlertCircle, Archive } from "lucide-react"
 import { toast } from "sonner"
 import {
     ActionConfirmModal,
-    DataCell,
     PageHeader,
     PageHeaderButton,
-    StatCard,
+    Metric,
+    MetricStrip,
     UnifiedSearchBar,
     bindUnifiedSearch,
     useUnifiedSearch,
     type BulkAction,
-    type KpiCardDef,
 } from "@/components/shared"
+import { formatMoney } from '@/lib/money'
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { ProductDrawer, ArchivingRestrictionsModal, useProducts, type Restriction } from "@/features/inventory"
 import type { ProductInitialData } from "@/types/forms"
@@ -61,39 +61,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
     )
     const { data: stats } = useSubscriptionStats<Stats>()
-    const kpiCards = useMemo<KpiCardDef[] | undefined>(() => {
-        if (!stats) return undefined
-        return [
-            {
-                label: "Suscripciones Activas",
-                value: stats.active_subscriptions,
-                variant: "minimal",
-                accent: "muted",
-                className: "gap-1 items-center md:items-start p-4",
-            },
-            {
-                label: "Costo Mensual Total",
-                value: <DataCell.Currency value={stats.total_monthly_cost} />,
-                variant: "minimal",
-                accent: "muted",
-                className: "gap-1 items-center md:items-start p-4",
-            },
-            {
-                label: "Próximas Renovaciones",
-                value: stats.upcoming_renewals_30_days,
-                variant: "minimal",
-                accent: "warning",
-                className: "gap-1 items-center md:items-start p-4",
-            },
-            {
-                label: "Estado Pausadas",
-                value: stats.paused_subscriptions,
-                variant: "minimal",
-                accent: "muted",
-                className: "gap-1 items-center md:items-start p-4",
-            },
-        ]
-    }, [stats])
     const { updateProduct, fetchProductById } = useProducts()
 
     // Archive confirmation state (local — not URL-driven, it's a transient flow)
@@ -294,10 +261,13 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 </PageHeader>
             )}
 
-            {kpiCards && (
-                <div className="grid shrink-0 gap-4 md:grid-cols-4">
-                    {kpiCards.map((card) => <StatCard key={card.label} {...card} loading={loading} />)}
-                </div>
+            {stats && (
+                <MetricStrip label="Resumen de suscripciones" className="shrink-0">
+                    <Metric label="Suscripciones Activas" value={stats.active_subscriptions} loading={loading} />
+                    <Metric label="Costo Mensual Total" value={formatMoney(stats.total_monthly_cost)} loading={loading} />
+                    <Metric label="Próximas Renovaciones" value={stats.upcoming_renewals_30_days} tone="warning" loading={loading} />
+                    <Metric label="Estado Pausadas" value={stats.paused_subscriptions} loading={loading} />
+                </MetricStrip>
             )}
 
             <Collection.Root
