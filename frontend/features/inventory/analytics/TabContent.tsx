@@ -5,12 +5,11 @@ import { LegacyInsightsPanel } from "./LegacyInsightsPanel"
 import type { LegacyTabId } from "./legacyTabs"
 import { OperationsBlock } from "./OperationsBlock"
 import type { PeriodKey } from "./period"
-import { ProductionPerformanceBlock } from "./ProductionPerformanceBlock"
+import { ProductionBlock } from "./ProductionBlock"
 import type { ProductAnalyticsTabId, ProductCapabilities } from "./productAnalyticsRegistry"
 import { PricingBlock } from "./PricingBlock"
 import { ProcurementBlock } from "./ProcurementBlock"
 import { SalesBlock } from "./SalesBlock"
-import { SourcingBlock } from "./SourcingBlock"
 import { StockBlock } from "./StockBlock"
 
 interface TabContentProps {
@@ -22,7 +21,7 @@ interface TabContentProps {
     onOpenWorkOrder: (id: number) => void
 }
 
-const MIGRATED_TABS: readonly ProductAnalyticsTabId[] = ["sales", "pricing", "costs", "procurement", "inventory", "subscription"]
+const MIGRATED_TABS: readonly ProductAnalyticsTabId[] = ["sales", "pricing", "costs", "procurement", "inventory", "production", "subscription"]
 
 /** Tabs que ya no usan contenido del endpoint `insights` (ni el período lo ignora). */
 export function tabHasLegacyContent(tab: ProductAnalyticsTabId): boolean {
@@ -61,15 +60,7 @@ export function TabContent({
         case "inventory":
             return <StockBlock productId={productId} period={period} />
         case "production":
-            return (
-                <>
-                    {legacy("production")}
-                    {capabilities.manufactures && <ProductionPerformanceBlock productId={productId} period={period} />}
-                    {capabilities.used_in_production && (
-                        <SourcingBlock productId={productId} period={period} section="used_in" />
-                    )}
-                </>
-            )
+            return <ProductionBlock productId={productId} period={period} />
         case "subscription":
             return <OperationsBlock productId={productId} period={period} />
     }

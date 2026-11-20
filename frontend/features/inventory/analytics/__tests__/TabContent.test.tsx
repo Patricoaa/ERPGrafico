@@ -10,6 +10,7 @@ vi.mock("../ProcurementBlock", () => ({ ProcurementBlock: () => <div data-marker
 vi.mock("../SalesBlock", () => ({ SalesBlock: () => <div data-marker="block-sales" /> }))
 vi.mock("../PricingBlock", () => ({ PricingBlock: () => <div data-marker="block-pricing" /> }))
 vi.mock("../ProductionPerformanceBlock", () => ({ ProductionPerformanceBlock: () => <div data-marker="block-performance" /> }))
+vi.mock("../ProductionBlock", () => ({ ProductionBlock: () => <div data-marker="block-production" /> }))
 vi.mock("../StockBlock", () => ({ StockBlock: () => <div data-marker="block-stock" /> }))
 vi.mock("../OperationsBlock", () => ({ OperationsBlock: () => <div data-marker="block-operations" /> }))
 vi.mock("../SourcingBlock", () => ({
@@ -60,17 +61,17 @@ describe("TabContent", () => {
         expect(markers("inventory", { tracks_stock: true })).toEqual(["block-stock"])
     })
 
-    it("production shows consumption, plus performance if manufactured and input usage if used in production", () => {
-        expect(markers("production", { used_in_production: true })).toEqual(["legacy-production", "block-sourcing-used_in"])
-        expect(markers("production", { manufactures: true })).toEqual(["legacy-production", "block-performance"])
+    it("production renders only its own block, with no legacy content", () => {
+        expect(markers("production", { used_in_production: true })).toEqual(["block-production"])
+        expect(markers("production", { manufactures: true })).toEqual(["block-production"])
     })
 
-    it("a manufactured component used in production shows input usage only in production", () => {
+    it("a manufactured component used in production shows its analysis only in production", () => {
         const caps = { manufactures: true, used_in_production: true }
         expect(markers("costs", caps)).toEqual(["block-costs"])
-        expect(markers("production", caps)).toContain("block-sourcing-used_in")
-        expect(markers("production", caps)).not.toContain("block-sourcing-make_vs_buy")
+        expect(markers("production", caps)).toEqual(["block-production"])
     })
+
     it("subscription shows only the operations block", () => {
         expect(markers("subscription", { recurring: true })).toEqual(["block-operations"])
     })
@@ -78,13 +79,14 @@ describe("TabContent", () => {
 
 describe("tabHasLegacyContent", () => {
     it("is true for every tab except the migrated ones", () => {
-        const tabs: ProductAnalyticsTabId[] = ["overview", "production"]
+        const tabs: ProductAnalyticsTabId[] = ["overview"]
         for (const tab of tabs) expect(tabHasLegacyContent(tab)).toBe(true)
         expect(tabHasLegacyContent("pricing")).toBe(false)
         expect(tabHasLegacyContent("sales")).toBe(false)
         expect(tabHasLegacyContent("costs")).toBe(false)
         expect(tabHasLegacyContent("procurement")).toBe(false)
         expect(tabHasLegacyContent("inventory")).toBe(false)
+        expect(tabHasLegacyContent("production")).toBe(false)
         expect(tabHasLegacyContent("subscription")).toBe(false)
     })
 })

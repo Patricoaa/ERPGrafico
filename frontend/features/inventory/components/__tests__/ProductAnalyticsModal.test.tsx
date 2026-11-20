@@ -41,6 +41,9 @@ vi.mock("../../analytics/OperationsBlock", () => ({
 vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
+vi.mock("../../analytics/ProductionBlock", () => ({
+    ProductionBlock: ({ productId }: { productId: number }) => <div>bloque-produccion-{productId}</div>,
+}))
 vi.mock("../../analytics/StockBlock", () => ({ StockBlock: () => <div>bloque-inventario</div> }))
 vi.mock("../../analytics/ProcurementBlock", () => ({ ProcurementBlock: () => <div>bloque-abastecimiento</div> }))
 vi.mock("../../analytics/CostsBlock", () => ({ CostsBlock: () => <div>bloque-costos</div> }))
@@ -214,13 +217,11 @@ describe("ProductAnalyticsModal", () => {
         expect(screen.queryByText("control-precio")).not.toBeInTheDocument()
     })
 
-    it("mounts the manufacturing and input-usage blocks only in the production tab", () => {
-        state.capsById = { 1: caps({ manufactures: true, buys: true, used_in_production: true, sells: true, segment: "MANUFACTURABLE_ON_DEMAND" }) }
+    it("mounts the production block only in the production tab", () => {
+        state.capsById = { 1: caps({ manufactures: true, used_in_production: true, sells: true, segment: "MANUFACTURABLE_ON_DEMAND" }) }
         open(1)
-        expect(screen.queryByText("bloque-fabricacion-1")).not.toBeInTheDocument()
+        expect(screen.queryByText("bloque-produccion-1")).not.toBeInTheDocument()
         fireEvent.click(rail().getByRole("button", { name: "Producción" }))
-        expect(screen.getByText("bloque-fabricacion-1")).toBeInTheDocument()
-        expect(screen.getByText("bloque-abastecimiento-used_in-1")).toBeInTheDocument()
-        expect(screen.queryByText("bloque-abastecimiento-make_vs_buy-1")).not.toBeInTheDocument()
+        expect(screen.getByText("bloque-produccion-1")).toBeInTheDocument()
     })
 })
