@@ -139,3 +139,7 @@ El ingreso por línea de despacho confirmada es `quantity × unit_price × (1 �
 ### Costo real de fabricación (ADR-0146)
 
 El costo real de una OT terminada es Σ `ProductionConsumption.quantity × stock_move.unit_cost` (sin movimiento: costo actual del insumo, marcado «estimado»). El planificado es Σ `WorkOrderMaterial.quantity_planned × unit_cost_snapshot` en unidad base del componente. La desviación es real − planificado y el costo real por unidad se compara con `Product.get_bom_cost()`. Expuesto en `GET /inventory/products/{id}/production-performance/`.
+
+### Fabricar vs comprar y sensibilidad de insumos (ADR-0147)
+
+El ahorro por unidad es `costo de compra promedio − costo real fabricado` (ambos por unidad base, misma ventana); es `null` si falta un lado. Para un insumo, el aumento de costo de cada producto padre con subida `p %` es `costo del insumo en la BOM × p / 100`, con el margen recalculado sobre el precio neto del padre. Expuesto en `GET /inventory/products/{id}/sourcing/`.
