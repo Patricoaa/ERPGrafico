@@ -407,7 +407,7 @@ function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
 /**
  * Analytics view of the collection (Gate D lote 2). As a direct child of `Root` it adds an "Analítica" view to the
  * toolbar's view switch; while that view is active its children replace the table/cards. The content
- * (tabs, StatCards, feature hooks) belongs to the feature, e.g. `<AnalyticsPanelContent … />`.
+ * (tabs, Metrics, feature hooks) belongs to the feature, e.g. `<AnalyticsPanelContent … />`.
  */
 function Analytics({ children }: { children: React.ReactNode }) {
     const ctx = useCollectionContext<unknown>()

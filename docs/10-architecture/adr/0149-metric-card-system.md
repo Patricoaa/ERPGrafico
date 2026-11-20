@@ -1,7 +1,7 @@
 ---
 id: 0149
 title: Sistema de cards de métrica — Metric, MetricStrip y ChartCard reemplazan a StatCard
-status: Proposed
+status: Accepted
 date: 2026-11-20
 author: frontend-team
 ---
@@ -161,7 +161,7 @@ Reutiliza `CardLead`, el título y el bloque de variación de `Metric`. Slots: `
 3. **Oleada B — finanzas.** `BIAnalyticsDashboard`, `RatiosDashboard`, `BalanceSheetKPIs`, `BudgetVarianceView`, `BudgetDetailView`. **Hecha:** los cinco archivos migrados; `getRatioHealth` ahora devuelve `MetricHealth` (StatusBadge) y la comparación de período usa `delta` en vez de «Actual/Anterior».
 4. **Oleada C — tesorería e inventario.** Estados de tarjeta, préstamos, pestañas de sesión POS, `MovementClientView`, `treasuryMovementAnalyticsScreen`. **Hecha:** también se migraron `ContactDrawer` (modo filtro con `onPress`/`pressed`), `AutoMatchProgressModal`, `SubscriptionHistoryModal`, `SubscriptionsClientView` y `ProductionMetricsCard`, que figuraban en D. Las tiras de 5 celdas (ventas de sesión POS, préstamos) se parten en dos `MetricStrip` 3+2 porque la tira admite hasta 4.
 5. **Oleada D — a mano.** `StatementDetailPanel`, `TaxDeclarationsClientView`, `BankPositionSection`, `ProductionMetricsCard`, `ContactDrawer`, `DocumentTotalsBox` (hacia `Section.Row`) y `SessionCashSummary`.
-6. **Cierre.** Retirar el adaptador, `KPIWrapper`, `SectionCard` y las variantes de `StatCardConfig`; actualizar contratos.
+6. **Cierre.** Retirar el adaptador, `KPIWrapper`, `SectionCard` y las variantes de `StatCardConfig`; actualizar contratos. **Hecho (2026-11-20):** se eliminaron `StatCard`, `KPIComponents` (`KPIWrapper`, `KPIValue`, `DeltaBadge`, `SectionCard`), `KpiCardDef`/`kpiCards` de `DataTable` y el baseline; el test de contrato pasó a prohibir su regreso. `SkeletonPresets.StatCard` se renombró `Metric`. Oleada D: `BankPositionSection`, `SessionCashSummary` y `DocumentTotalsBox` solo adoptan los tokens `kpi-value`/`surface-panel` (son tarjetas de cuenta, recibo y totales, no `Metric`).
 
 ## Ratchet
 

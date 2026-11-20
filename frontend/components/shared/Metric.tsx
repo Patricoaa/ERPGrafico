@@ -13,7 +13,7 @@ import { cardAnatomy } from "./card-anatomy"
 
 /**
  * Metric — the card of the `metric` role (ADR-0097, ADR-0149): one figure with its label, change,
- * context and, at most, one visual. Replaces `StatCard`. See docs/20-contracts/component-metric.md.
+ * context and, at most, one visual. Replaced the former `StatCard`. See docs/20-contracts/component-metric.md.
  */
 
 // ── Types ───────────────────────────────────────────────────────────────────────────────────

@@ -40,12 +40,10 @@ export * from './CollapsibleSection';
 export * from './ActionDock';
 
 // Cards & Containers
-export * from './StatCard';
 export * from './Metric';
 export * from './MetricStrip';
 export * from './ChartCard';
 export * from './ChartLegend';
-export * from './KPIComponents';
 export * from './AnalyticsPanel';
 export * from './CardSkeleton';
 export * from './SkeletonShell';

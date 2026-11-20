@@ -615,7 +615,7 @@ El `DataTable` soporta una vista de análisis que reemplaza la tabla al activar 
 - `onClick?`: callback cuando se presiona el botón (útil para tracking)
 - `screen`: cuando está presente, habilita `view=analytics` como opción en el toolbar y renderiza `AnalyticsPanelContent` inline (reemplazando la tabla) cuando se selecciona
 - `granularity` / `onGranularityChange`: control de agrupación temporal (día/mes/año), renderizado como `GranularityControl` en la parte inferior del sidebar de tabs
-- Cada tab tiene `columns` con `sections` que pueden ser `StatCard`, `Custom`, o chart directo (bar/line/pie)
+- Cada tab tiene `columns` con `sections` que pueden ser `metric`, `chart-card`, `custom`, o chart directo (bar/line/pie)
 - El tipo `Granularity` se exporta desde `@/components/shared`
 
 ### 12.2 Data flow
@@ -625,7 +625,7 @@ Consumer → AnalyticsPanelConfig (useMemo) → DataTableView
   → view=analytics → AnalyticsPanelContent inline (full-screen, reemplaza tabla)
   → Sidebar tabs (left, w-56) + Content area (right, flex-1)
   → GranularityControl (bottom of sidebar, separador border-t)
-  → Tab → AnalyticsLayout → Column → SectionRenderer → StatCard/Chart
+  → Tab → AnalyticsLayout → Column → SectionRenderer → Metric/ChartCard/Chart
 ```
 
 ### 12.3 Reglas

@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { EmptyState, PieChart, BarChart, RadarChart, SkeletonShell, Metric, MetricStrip, StaleDataBanner, SectionCard, ChartLegend } from '@/components/shared'
+import { EmptyState, PieChart, BarChart, RadarChart, SkeletonShell, Metric, MetricStrip, StaleDataBanner, ChartCard } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
 import { type DateRange } from "react-day-picker";
@@ -210,11 +210,11 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
             {/* ── Row 2: Radar + Capital de Trabajo ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">
                 {/* Radar: Salud Financiera General */}
-                <SectionCard
+                <ChartCard
+                    bodyClassName="h-80"
                     title="Salud Financiera General"
-                    description="Índice normalizado 0–100 por indicador"
-                    className="rounded-md"
-                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "var(--chart-1)" }, { label: "Anterior", color: "var(--chart-4)" }]} /> : undefined}
+                    subtitle="Índice normalizado 0–100 por indicador"
+                    legend={showComparison && cd ? [{ label: "Actual", color: "var(--chart-1)" }, { label: "Anterior", color: "var(--chart-4)" }] : undefined}
                 >
                     <div className="h-full">
                         <RadarChart
@@ -226,14 +226,14 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             legends={[]}
                         />
                     </div>
-                </SectionCard>
+                </ChartCard>
 
                 {/* Bar: Capital de Trabajo */}
-                <SectionCard
+                <ChartCard
+                    bodyClassName="h-80"
                     title="Capital de Trabajo"
-                    description={`Activos y Pasivos Corrientes — Saldo: ${formatMoney(d.liquidity.current_assets - d.liquidity.current_liabilities)}`}
-                    className="rounded-md"
-                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "var(--chart-1)" }, { label: "Anterior", color: "var(--chart-4)" }]} /> : undefined}
+                    subtitle={`Activos y Pasivos Corrientes — Saldo: ${formatMoney(d.liquidity.current_assets - d.liquidity.current_liabilities)}`}
+                    legend={showComparison && cd ? [{ label: "Actual", color: "var(--chart-1)" }, { label: "Anterior", color: "var(--chart-4)" }] : undefined}
                 >
                     <div className="h-full">
                         <BarChart
@@ -258,17 +258,17 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             legends={[]}
                         />
                     </div>
-                </SectionCard>
+                </ChartCard>
             </div>
 
             {/* ── Row 3: Pie Charts ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">
                 {/* Pie: Estructura de Financiamiento */}
-                <SectionCard
+                <ChartCard
+                    bodyClassName="h-80"
                     title="Estructura de Financiamiento"
-                    description="Distribución entre Deuda y Patrimonio"
-                    headerRight={<ChartLegend items={[{ label: "Pasivos", color: "var(--chart-1)" }, { label: "Patrimonio", color: "var(--chart-4)" }]} />}
-                    className="rounded-md"
+                    subtitle="Distribución entre Deuda y Patrimonio"
+                    legend={[{ label: "Pasivos", color: "var(--chart-1)" }, { label: "Patrimonio", color: "var(--chart-4)" }]}
                 >
                     {showComparison && cd ? (
                         <div className="flex h-full gap-2">
@@ -326,14 +326,14 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             />
                         </div>
                     )}
-                </SectionCard>
+                </ChartCard>
 
                 {/* Pie: Composición de Activos */}
-                <SectionCard
+                <ChartCard
+                    bodyClassName="h-80"
                     title="Composición de Activos"
-                    description="Corrientes vs No Corrientes"
-                    headerRight={<ChartLegend items={[{ label: "Corrientes", color: "var(--chart-1)" }, { label: "No Corrientes", color: "var(--chart-4)" }]} />}
-                    className="rounded-md"
+                    subtitle="Corrientes vs No Corrientes"
+                    legend={[{ label: "Corrientes", color: "var(--chart-1)" }, { label: "No Corrientes", color: "var(--chart-4)" }]}
                 >
                     {showComparison && cd ? (
                         <div className="flex h-full gap-2">
@@ -391,7 +391,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             />
                         </div>
                     )}
-                </SectionCard>
+                </ChartCard>
             </div>
 
         </SkeletonShell>

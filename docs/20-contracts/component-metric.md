@@ -9,7 +9,7 @@ stability: contract-changes-require-ADR
 
 # Metric, MetricStrip y ChartCard — contrato
 
-Cards del rol `metric` y del panel de gráfico (ADR-0149, sobre ADR-0097). Sustituyen a `StatCard` ([component-statcard.md](./component-statcard.md), deprecado). Toda tarjeta que muestre un dato, un KPI, una estadística o un gráfico con cabecera usa estos componentes; ninguna se arma a mano.
+Cards del rol `metric` y del panel de gráfico (ADR-0149, sobre ADR-0097). Sustituyen a `StatCard`, ya eliminado ([component-statcard.md](./component-statcard.md)). Toda tarjeta que muestre un dato, un KPI, una estadística o un gráfico con cabecera usa estos componentes; ninguna se arma a mano.
 
 ```tsx
 import { Metric, MetricStrip, ChartCard } from "@/components/shared"

@@ -20,7 +20,7 @@ Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/compone
 | `choice` | elegir uno (radiogroup) | `selectableCardClass()` · `kind="choice"` | `ChoiceCard`, `ProductCard`, `ContactCard` |
 | `item` | abrir / navegar; selección masiva opcional | `CardSurface kind="item"`; en entity-view la card se abre por enlace extendido del título | `EntityCard` (entity-view), `TaskInbox`, tarjeta del Kanban de órdenes de trabajo |
 | `nav` | enlace | `card-flat` + `CardLead` + chevron | `ModuleGrid` (fila) |
-| `metric` | informativa, enlace o filtro | `surface-panel` + tipografía `kpi-value` (mono) | `Metric`, `MetricStrip` (`StatCard` deprecado, ADR-0149) |
+| `metric` | informativa, enlace o filtro | `surface-panel` + tipografía `kpi-value` (mono) | `Metric`, `MetricStrip` |
 | `panel` | ninguna | `Card` shadcn / `surface-panel` | secciones de Settings, filas de configuración, paneles de edición, Cart, errores, `ChartCard` |
 
 **Regla del ribbon CMYK:** se previsualiza al hover y queda fijo cuando la card está elegida (`choice`, y las cards de entity-view, que comparten el lenguaje del product grid: ribbon + anillo + marca CMYK en el checkbox). En `item` de otras superficies (bandeja, kanban) y en `nav` solo aparece seleccionada. Nunca en `panel`/`metric`.

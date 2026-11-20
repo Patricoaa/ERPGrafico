@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, SelectionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
+import { BulkActionButtons, SelectionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 const NON_MODAL_TABLE_MAX_HEIGHT = "max-h-[calc(100vh-260px)]"
@@ -135,20 +135,9 @@ export interface DataTableProps<TData, TValue> {
     onPaginationChange?: React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>
     rowSelection?: RowSelectionState
     renderLoadingView?: () => React.ReactNode
-    kpiCards?: KpiCardDef[]
     /** Custom className for the Table's scroll container. Overrides the default max-height constraint. */
     tableContainerClassName?: string
     /** Custom className for the DataTable's outer wrapper div. */
-    className?: string
-}
-
-export interface KpiCardDef {
-    label: string
-    value: React.ReactNode
-    icon?: LucideIcon
-    accent?: "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
-    subtext?: string
-    variant?: "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart"
     className?: string
 }
 
@@ -219,7 +208,6 @@ export function DataTable<TData, TValue>({
     onPaginationChange,
     rowSelection,
     renderLoadingView,
-    kpiCards,
     tableContainerClassName,
     className,
     gridTemplate,
@@ -360,14 +348,6 @@ export function DataTable<TData, TValue>({
             ? <SelectionDock count={selectedRows.length} onClear={clearSelection}><BulkActionButtons actions={bulkActions} items={selectedItems} /></SelectionDock>
             : null
 
-    const kpiCardsNode = kpiCards && (
-        <div className="grid gap-4 md:grid-cols-4">
-            {kpiCards.map((card, i) => (
-                <StatCard key={i} {...card} loading={isLoading} />
-            ))}
-        </div>
-    )
-
     // ─── Loading state (unified) ────────────────────────────────────────
     if (isLoading) {
         return (
@@ -377,7 +357,6 @@ export function DataTable<TData, TValue>({
                 isMinimal && "space-y-0",
                 className
             )}>
-                {kpiCardsNode}
 
                 {showToolbar && !isMinimal && (
                     <DataTableToolbar
@@ -690,7 +669,6 @@ export function DataTable<TData, TValue>({
 
         return (
             <div ref={containerRef} className={cn("relative flex flex-col h-full w-full gap-2 min-h-0", className)}>
-                {kpiCardsNode}
 
                 {showToolbar && (
                     <div className={cn(
@@ -782,7 +760,6 @@ export function DataTable<TData, TValue>({
 
     return (
         <div ref={containerRef} className={cn("w-full space-y-4", density === 'comfortable' && 'table-comfortable', className)}>
-            {kpiCardsNode}
             {showToolbar && (
                 <div className={cn(
                     "w-full",

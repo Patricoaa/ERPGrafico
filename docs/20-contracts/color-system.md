@@ -145,7 +145,7 @@ shadow-[0_0_8px_var(--{intent})]
 | Context | Pattern | Example |
 |---------|---------|---------|
 | Badge / Chip / StatusBadge | `bg-{intent}/10 text-{intent}` (borderless) | `bg-info/10 text-info` |
-| StatCard *(deprecado, ADR-0149)* | tinte de fondo por acento | — |
+| StatCard *(eliminado, ADR-0149)* | tinte de fondo por acento | — |
 | `Metric` / `ChartCard` | **sin tinte de fondo**; el tono solo colorea el icono del lead, el texto de variación y el relleno de progreso | `text-success-text`, `text-destructive`, `bg-success` |
 | Texto de intent sobre `bg-card` | `text-success-text` / `text-warning-text` (≥ 4,5:1; se aclaran en `.dark`). `text-success`/`text-warning` solo como relleno | `text-success-text` |
 | Active ring | `ring-2 ring-{intent} ring-offset-2` | `ring-2 ring-primary ring-offset-2` |

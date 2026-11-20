@@ -371,7 +371,7 @@ La migración de `EntityCard` a `CardSurface` (ADR-0095, Fase 2d) trajo la anato
 | `TaxDeclarationsClientView` | 15 | Impuestos |
 | `SalesSettingsView` | 14 | Ajustes |
 | `WorkflowSettings` | 13 | Workflow |
-| `StatCard` | 10 | Métricas |
+| `Metric` | 10 | Métricas |
 | `TaskInbox` | — | `Card variant="flat"` (excepción declarada ADR-0095) |
 
 **Conclusión**: la **totalidad de las vistas Collection de entity-view** (102 pantallas) adoptan el kit actual. Los 3 usos directos de tesorería y los 53 archivos con `Card` directo quedan fuera por diseño (legacy o excepciones declaradas).

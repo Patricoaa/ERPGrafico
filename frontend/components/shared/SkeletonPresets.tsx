@@ -70,8 +70,8 @@ export function FormFieldsSkeleton({ fields = 4, columns = 2, gap = 6, className
     )
 }
 
-// ─── Stat Card ───────────────────────────────────────────────────────────────
-export function StatCardSkeleton({ variant = "default", className }: { variant?: "default" | "compact"; className?: string }) {
+// ─── Metric ──────────────────────────────────────────────────────────────────
+export function MetricSkeleton({ variant = "default", className }: { variant?: "default" | "compact"; className?: string }) {
     const isCompact = variant === "compact"
     return (
         <div className={cn("surface-panel animate-pulse p-4 space-y-3", className)}>
@@ -217,7 +217,7 @@ export const SkeletonPresets = {
     EntityCard: EntityCardSkeleton,
     DataRow: DataRowSkeleton,
     FormFields: FormFieldsSkeleton,
-    StatCard: StatCardSkeleton,
+    Metric: MetricSkeleton,
     CardContent: CardContentSkeleton,
     PageHeader: PageHeaderPreset,
     TableWithToolbar: TableWithToolbarSkeleton,

@@ -3,7 +3,7 @@
 import React from 'react';
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import { Factory, Package, ShoppingCart, TrendingUp, Users, Truck } from 'lucide-react';
-import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, Metric, MetricStrip, StaleDataBanner, SectionCard, ChartLegend } from '@/components/shared';
+import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, Metric, MetricStrip, StaleDataBanner, ChartCard } from '@/components/shared';
 import { useMemo } from "react";
 import { getChartPalette } from "@/lib/chart-colors";
 import { formatCurrency, formatMoney, formatQuantity } from "@/lib/money";
@@ -168,11 +168,11 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
 
             {/* ── Row 2: Cash Flow and Sales Trend ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">
-                <SectionCard 
+                <ChartCard 
+                    bodyClassName="h-80"
                     title="Tendencia de Ventas" 
-                    description="Evolución mensual de ventas (sin impuestos)"
-                    headerRight={hasValidTrend ? <ChartLegend items={[{ label: "Ventas", color: palette[0] }]} /> : undefined}
-                    className="rounded-md"
+                    subtitle="Evolución mensual de ventas (sin impuestos)"
+                    legend={hasValidTrend ? [{ label: "Ventas", color: palette[0] }] : undefined}
                 >
                     <div className="h-full">
                         {hasValidTrend ? (
@@ -196,12 +196,12 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         )}
                     </div>
-                </SectionCard>
+                </ChartCard>
 
-                <SectionCard
+                <ChartCard
+                    bodyClassName="h-80"
                     title="Top Clientes"
-                    description="Por volumen de compras facturadas"
-                    className="rounded-md"
+                    subtitle="Por volumen de compras facturadas"
                 >
                     <div className="h-full">
                         {sales.top_customers && sales.top_customers.length > 0 ? (
@@ -231,17 +231,17 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         )}
                     </div>
-                </SectionCard>
+                </ChartCard>
             </div>
 
             {/* ── Row 3: Insights by Module ── */}
             <div className="grid gap-6 md:grid-cols-3 mt-6">
                 {/* 1. Compras y CxP */}
-                <SectionCard
+                <ChartCard
                     title="Proveedores y CxP"
-                    description="Análisis de pasivos y principales proveedores"
-                    chartHeight="auto"
-                    className="h-full rounded-md"
+                    subtitle="Análisis de pasivos y principales proveedores"
+                    bodyClassName="h-auto"
+                    className="h-full"
                 >
                     <div className="space-y-4 flex-1">
                         <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
@@ -266,14 +266,14 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         </div>
                     </div>
-                </SectionCard>
+                </ChartCard>
 
                 {/* 2. Inventario */}
-                <SectionCard
+                <ChartCard
                     title="Inventario"
-                    description="Composición del valor en almacén por categoría"
-                    chartHeight="auto"
-                    className="h-full flex flex-col rounded-md"
+                    subtitle="Composición del valor en almacén por categoría"
+                    bodyClassName="h-auto"
+                    className="h-full flex flex-col"
                 >
                     <div className="h-[220px] -mx-2">
                         {inventory.stock_distribution && inventory.stock_distribution.length > 0 ? (
@@ -307,14 +307,14 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         ))}
                     </div>
-                </SectionCard>
+                </ChartCard>
 
                 {/* 3. Ventas y CxC */}
-                <SectionCard
+                <ChartCard
                     title="Cuentas por Cobrar"
-                    description="Facturas emitidas y pendientes de cobro"
-                    chartHeight="auto"
-                    className="h-full rounded-md"
+                    subtitle="Facturas emitidas y pendientes de cobro"
+                    bodyClassName="h-auto"
+                    className="h-full"
                 >
                     <div className="space-y-4 flex-1">
                         <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
@@ -331,7 +331,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </span>
                         </div>
                     </div>
-                </SectionCard>
+                </ChartCard>
             </div>
 
         </SkeletonShell>
