@@ -448,16 +448,9 @@ class ProductSelector:
         }
 
     @staticmethod
-    def _stock_flow(product_ids: list[int]) -> tuple[dict, list[dict]]:
-        """Entradas/salidas y evolución de stock, agregadas en la BD sobre todos los movimientos.
-
-        Reproduce ``StockMove.direction`` con anotaciones: TRANSFER (ambas internas) y
-        ADJUSTMENT (ubicación virtual de ajuste) no cuentan como entrada/salida; el stock
-        sí varía con cualquier movimiento que cruce el borde de las ubicaciones internas.
-        """
-        from django.db.models.functions import TruncMonth
-
-        from .models import ADJUSTMENT_VIRTUAL_NAMES, StockMove
+    def _flow_case():
+        """(src_internal, dst_internal, flow): classification of a StockMove as IN/OUT/TRANSFER/ADJUSTMENT/OTHER."""
+        from .models import ADJUSTMENT_VIRTUAL_NAMES
 
         src_internal = Q(source_location__location_type="INTERNAL")
         dst_internal = Q(destination_location__location_type="INTERNAL")
@@ -471,6 +464,21 @@ class ProductSelector:
             When(src_internal, then=Value("OUT")),
             default=Value("OTHER"),
         )
+        return src_internal, dst_internal, flow
+
+    @staticmethod
+    def _stock_flow(product_ids: list[int]) -> tuple[dict, list[dict]]:
+        """Entradas/salidas y evolución de stock, agregadas en la BD sobre todos los movimientos.
+
+        Reproduce ``StockMove.direction`` con anotaciones: TRANSFER (ambas internas) y
+        ADJUSTMENT (ubicación virtual de ajuste) no cuentan como entrada/salida; el stock
+        sí varía con cualquier movimiento que cruce el borde de las ubicaciones internas.
+        """
+        from django.db.models.functions import TruncMonth
+
+        from .models import StockMove
+
+        src_internal, dst_internal, flow = ProductSelector._flow_case()
         decimal = DecimalField(max_digits=20, decimal_places=4)
         moves = StockMove.objects.filter(product_id__in=product_ids)
 
