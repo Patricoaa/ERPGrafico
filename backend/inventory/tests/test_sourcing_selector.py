@@ -217,3 +217,37 @@ def test_query_count_constant(env):
     with CaptureQueriesContext(connection) as many:
         _sourcing(env)
     assert len(many) == len(few)
+
+
+def test_bom_yield_divides_cost_and_quantity_per_unit(env):
+    component = env["product"]
+    _set_cost(component, "2")
+    parent = _parent(env, price="10")
+    bom = _bom(parent, [(component, "500", env["uom"])])  # 500 × 2 = 1000 per batch
+    BillOfMaterials.objects.filter(pk=bom.pk).update(yield_quantity=Decimal("1000"))
+    (row,) = _sourcing(env, increase_pct=10)["used_in"]["parents"]
+    assert row["qty_per_unit"] == pytest.approx(0.5)
+    assert row["component_cost"] == pytest.approx(1.0)
+    assert row["bom_cost"] == pytest.approx(1.0)
+    assert row["margin_pct"] == pytest.approx(90.0)
+
+
+def test_outsourced_lines_cost_unit_price_in_bom_cost(env):
+    component, finishing = env["product"], _component(env, name="Laminado", cost="0")
+    _set_cost(component, "100")
+    parent = _parent(env, price="1000")
+    bom = _bom(parent, [(component, "1", env["uom"]), (finishing, "1", env["uom"])])
+    BillOfMaterialsLine.objects.filter(bom=bom, component=finishing).update(is_outsourced=True, unit_price=Decimal("300"))
+    (row,) = _sourcing(env)["used_in"]["parents"]
+    assert row["bom_cost"] == pytest.approx(400.0)
+    assert row["share_pct"] == pytest.approx(25.0)
+
+
+def test_input_that_is_itself_outsourced_uses_its_unit_price(env):
+    component = env["product"]
+    _set_cost(component, "0")
+    parent = _parent(env, price="1000")
+    bom = _bom(parent, [(component, "2", env["uom"])])
+    BillOfMaterialsLine.objects.filter(bom=bom).update(is_outsourced=True, unit_price=Decimal("50"))
+    (row,) = _sourcing(env)["used_in"]["parents"]
+    assert row["component_cost"] == pytest.approx(100.0)

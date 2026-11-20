@@ -108,18 +108,38 @@ class SourcingSelector:
         mine = list(
             BillOfMaterialsLine.objects.filter(component_id__in=product_ids, bom__active=True).values(
                 "bom_id", "bom__product_id", "bom__product__name", "bom__product__sale_price",
-                "component__cost_price", "component__uom_id", "quantity", "uom_id",
+                "bom__yield_quantity", "component__cost_price", "component__uom_id", "quantity", "uom_id",
+                "is_outsourced", "unit_price",
             )
         )
         bom_ids = {m["bom_id"] for m in mine}
-        bom_cost: dict[int, float] = defaultdict(float)
-        for line in BillOfMaterialsLine.objects.filter(bom_id__in=bom_ids).values(
-            "bom_id", "component__cost_price", "component__uom_id", "quantity", "uom_id"
-        ):
-            qty = to_base(Decimal(line["quantity"]), line["uom_id"], line["component__uom_id"])
-            bom_cost[line["bom_id"]] += float(qty * Decimal(line["component__cost_price"]))
 
-        # One row per parent product: its first active BOM (the one Product.get_bom_cost uses).
+        def line_cost(line: dict) -> tuple[Decimal, Decimal]:
+            """(quantity in the component's base unit, cost) of one BOM line, per batch.
+
+            Same rule as the BOM screen (`BillOfMaterialsSerializer.get_total_cost`): outsourced lines cost
+            `quantity × unit_price`; the rest cost the converted quantity × the component's weighted cost.
+            """
+            qty = Decimal(line["quantity"])
+            if line["is_outsourced"]:
+                return qty, qty * Decimal(line["unit_price"])
+            qty = to_base(qty, line["uom_id"], line["component__uom_id"])
+            return qty, qty * Decimal(line["component__cost_price"])
+
+        bom_cost: dict[int, Decimal] = defaultdict(Decimal)
+        yields: dict[int, Decimal] = {}
+        for line in BillOfMaterialsLine.objects.filter(bom_id__in=bom_ids).values(
+            "bom_id", "bom__yield_quantity", "component__cost_price", "component__uom_id", "quantity", "uom_id",
+            "is_outsourced", "unit_price",
+        ):
+            bom_cost[line["bom_id"]] += line_cost(line)[1]
+            yields[line["bom_id"]] = Decimal(line["bom__yield_quantity"] or 1)
+
+        def per_unit(bom_id: int, value: Decimal) -> float:
+            batch = yields.get(bom_id) or Decimal(1)
+            return float(value / batch) if batch > 0 else float(value)
+
+        # One row per parent product: its active BOM (the model keeps a single active BOM per product).
         chosen: dict[int, int] = {}
         for m in sorted(mine, key=lambda row: row["bom_id"]):
             chosen.setdefault(m["bom__product_id"], m["bom_id"])
@@ -128,18 +148,18 @@ class SourcingSelector:
         for m in mine:
             if chosen[m["bom__product_id"]] != m["bom_id"]:
                 continue
-            qty = to_base(Decimal(m["quantity"]), m["uom_id"], m["component__uom_id"])
+            qty, cost = line_cost(m)
             row = parents.setdefault(m["bom__product_id"], {
                 "product_id": m["bom__product_id"], "name": m["bom__product__name"],
                 "price_net": float(m["bom__product__sale_price"] or 0), "bom_id": m["bom_id"],
                 "qty_per_unit": 0.0, "component_cost": 0.0,
             })
-            row["qty_per_unit"] += float(qty)
-            row["component_cost"] += float(qty * Decimal(m["component__cost_price"]))
+            row["qty_per_unit"] += per_unit(m["bom_id"], qty)
+            row["component_cost"] += per_unit(m["bom_id"], cost)
 
         result = []
         for row in parents.values():
-            bom = bom_cost[row.pop("bom_id")]
+            bom = per_unit(row["bom_id"], bom_cost[row.pop("bom_id")])
             delta = row["component_cost"] * factor
             price = row["price_net"]
             row.update({

@@ -32,7 +32,7 @@ def test_defaults_applied(env, client):
 
 @pytest.mark.parametrize(
     "query",
-    [{"increase_pct": "0"}, {"increase_pct": "101"}, {"increase_pct": "abc"},
+    [{"increase_pct": "0"}, {"increase_pct": "101"}, {"increase_pct": "abc"}, {"increase_pct": "nan"}, {"increase_pct": "inf"},
      {"date_from": "2026-12-31", "date_to": "2026-01-01"}, {"date_from": "not-a-date"}],
 )
 def test_invalid_params_return_400(env, client, query):
