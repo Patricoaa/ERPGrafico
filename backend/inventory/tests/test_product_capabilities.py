@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from inventory.models import Product, ProductCategory, UoM, UoMCategory
+from inventory.models import Product, ProductCategory, UoM, UoMCategory, Warehouse
 from inventory.selectors import ProductSelector
 from production.models import BillOfMaterials, BillOfMaterialsLine
 
@@ -97,3 +97,30 @@ def test_insights_payload_includes_capabilities(base):
     product = _product(base, "Resma")
     insights = ProductSelector.get_insights(product)
     assert insights["capabilities"]["segment"] == "STORABLE"
+
+
+def test_used_in_production_true_when_consumed_in_a_work_order_without_active_bom(base):
+    from production.models import ProductionConsumption, WorkOrder
+
+    component = _product(base, "Tinta", can_be_sold=False)
+    finished = _product(base, "Tarjeta", product_type="MANUFACTURABLE")
+    work_order = WorkOrder.objects.create(description="OT manual", product=finished, is_manual=True)
+    ProductionConsumption.objects.create(
+        work_order=work_order, product=component, quantity=Decimal("2"),
+        warehouse=Warehouse.objects.create(name="B", code="B1"),
+    )
+    assert _caps(component)["used_in_production"] is True
+
+
+def test_used_in_production_considers_variant_consumption(base):
+    from production.models import ProductionConsumption, WorkOrder
+
+    template = _product(base, "Tinta base", can_be_sold=False, has_variants=True)
+    variant = _product(base, "Tinta cian", can_be_sold=False, parent_template=template)
+    finished = _product(base, "Tarjeta", product_type="MANUFACTURABLE")
+    work_order = WorkOrder.objects.create(description="OT manual", product=finished, is_manual=True)
+    ProductionConsumption.objects.create(
+        work_order=work_order, product=variant, quantity=Decimal("1"),
+        warehouse=Warehouse.objects.create(name="B", code="B1"),
+    )
+    assert _caps(template)["used_in_production"] is True

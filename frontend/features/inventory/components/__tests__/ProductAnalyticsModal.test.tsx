@@ -1,7 +1,10 @@
 import { fireEvent, render, screen, within } from "@testing-library/react"
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
 
-const state = vi.hoisted(() => ({ capsById: {} as Record<number, unknown> }))
+const state = vi.hoisted(() => ({
+    capsById: {} as Record<number, unknown>,
+    production: { usage: [] as unknown[], history: [] as unknown[] },
+}))
 
 vi.mock("../../hooks/useProducts", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../hooks/useProducts")>()),
@@ -9,7 +12,7 @@ vi.mock("../../hooks/useProducts", async (importOriginal) => ({
         isLoading: false,
         insights: {
             capabilities: state.capsById[id],
-            price_history: [], stock_history: [], production_usage: [], production_history: [],
+            price_history: [], stock_history: [], production_usage: state.production.usage, production_history: state.production.history,
             top_customers: [], top_suppliers: [],
             stock_flow: { totals: { in_qty: 0, in_cost: 0, out_qty: 0, out_cost: 0 }, monthly: [] },
             sales_analysis: { history: [], total_sold: 0, total_revenue: 0, total_cost_basis: 0 },
@@ -64,6 +67,7 @@ const inputCaps = { ...fullCaps, sells: false, used_in_production: true, segment
 describe("ProductAnalyticsModal capabilities", () => {
     beforeEach(() => {
         state.capsById = { 1: fullCaps, 2: inputCaps }
+        state.production = { usage: [], history: [] }
     })
 
     const open = (productId = 1) =>
@@ -103,5 +107,15 @@ describe("ProductAnalyticsModal capabilities", () => {
         for (const name of ["Resumen", "Ventas", "Compras", "Precio", "Costos", "Mov. Stock", "Producción", "Clientes", "Proveedores"]) {
             expect(rail.getByRole("button", { name })).toBeInTheDocument()
         }
+    })
+
+    it("sums the monthly production history, not the truncated recent-usage list, for Consumo en OT", () => {
+        state.production = {
+            usage: [{ date: "2026-01-01", ot_id: 1, ot_number: "OT-1", quantity: 1, description: "x" }],
+            history: [{ month: "2026-01", qty: 20 }, { month: "2026-02", qty: 15 }],
+        }
+        open(2)
+        expect(screen.getByText("Consumo en OT")).toBeInTheDocument()
+        expect(screen.getByText(/^35\s*un$/)).toBeInTheDocument()
     })
 })

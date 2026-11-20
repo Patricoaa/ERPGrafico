@@ -405,7 +405,7 @@ class ProductSelector:
     @staticmethod
     def get_capabilities(product: Product) -> dict:
         """What a product can report on (drives the tabs/KPIs of its analytics hub)."""
-        from production.models import BillOfMaterialsLine
+        from production.models import BillOfMaterialsLine, ProductionConsumption
 
         Type = Product.Type
         manufactures = product.product_type == Type.MANUFACTURABLE
@@ -425,6 +425,16 @@ class ProductSelector:
         else:
             segment = product.product_type
 
+        # Component of an active BOM, or actually consumed in a work order (the product's
+        # own or its variants'): the Production tab shows that consumption.
+        product_ids = [product.id]
+        if product.has_variants:
+            product_ids += list(product.variants.values_list("id", flat=True))
+        used_in_production = (
+            BillOfMaterialsLine.objects.filter(component_id__in=product_ids, bom__active=True).exists()
+            or ProductionConsumption.objects.filter(product_id__in=product_ids).exists()
+        )
+
         return {
             "sells": sells,
             "buys": bool(product.can_be_purchased),
@@ -432,9 +442,7 @@ class ProductSelector:
             "manufactures": manufactures,
             "express": bool(product.is_express),
             "recurring": product.product_type == Type.SUBSCRIPTION,
-            "used_in_production": BillOfMaterialsLine.objects.filter(
-                component=product, bom__active=True
-            ).exists(),
+            "used_in_production": used_in_production,
             "has_variants": bool(product.has_variants),
             "segment": str(segment),
         }

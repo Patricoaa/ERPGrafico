@@ -102,7 +102,7 @@ export const inventoryApi = {
     },
 
     /**
-     * Fetch the insights bundle for a product (price history, kardex,
+     * Fetch the insights bundle for a product (capabilities, price history, stock flow,
      * sales analysis, production usage). Shape is consumed locally by
      * ProductInsightsModal — typed generically so the caller can refine it.
      */

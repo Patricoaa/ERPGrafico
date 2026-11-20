@@ -201,8 +201,9 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
     def insights(self, request, pk=None):
         """
         Returns a unified view of product performance:
+        0. Capabilities (which blocks apply to this product)
         1. Price/Cost History
-        2. Stock Movements (Kardex)
+        2. Stock flow (in/out totals and monthly flow) and stock history
         3. Sales Performance (Avg Price, Cost, Margin)
         4. Production Usage (OTs)
         """

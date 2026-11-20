@@ -154,7 +154,9 @@ const TABS = [
 
 type TabValue = typeof TABS[number]["value"]
 
-const KPI_GRID: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }
+const KPI_GRID: Record<number, string> = {
+    1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-2 lg:grid-cols-3", 4: "grid-cols-2 lg:grid-cols-4",
+}
 
 // ─── Inner panel (runs inside the open modal) ──────────────────────────────────
 
@@ -371,7 +373,8 @@ function ProductAnalyticsPanelInner({
     ) : null
 
     const kpiIds = overviewKpiIds(capabilities)
-    const productionUsageQty = (data?.production_usage ?? []).reduce((sum, u) => sum + u.quantity, 0)
+    // production_usage is only the 20 most recent consumptions; the monthly history is the full aggregate.
+    const productionUsageQty = (data?.production_history ?? []).reduce((sum, h) => sum + h.qty, 0)
     const overviewKpiCards: Record<OverviewKpiId, ReactNode> = data && product ? {
         units_sold: <StatCard key="units_sold" label="Ventas Totales" valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />,
         units_purchased: <StatCard key="units_purchased" label="Unidades Compradas" valueSize="xl" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} icon={Truck} accent="info" />,
