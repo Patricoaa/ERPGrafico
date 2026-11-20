@@ -7,6 +7,7 @@ import type { PeriodKey } from "./period"
 import { ProductionPerformanceBlock } from "./ProductionPerformanceBlock"
 import type { ProductAnalyticsTabId, ProductCapabilities } from "./productAnalyticsRegistry"
 import { PricingBlock } from "./PricingBlock"
+import { SalesBlock } from "./SalesBlock"
 import { SourcingBlock } from "./SourcingBlock"
 
 interface TabContentProps {
@@ -20,7 +21,7 @@ interface TabContentProps {
 
 /** Tabs que ya no usan contenido del endpoint `insights` (ni el período lo ignora). */
 export function tabHasLegacyContent(tab: ProductAnalyticsTabId): boolean {
-    return tab !== "subscription" && tab !== "pricing"
+    return tab !== "subscription" && tab !== "pricing" && tab !== "sales"
 }
 
 /**
@@ -45,7 +46,7 @@ export function TabContent({
         case "overview":
             return legacy("overview")
         case "sales":
-            return <>{legacy("sales")}{legacy("customers")}</>
+            return <SalesBlock productId={productId} period={period} />
         case "pricing":
             return <PricingBlock productId={productId} period={period} capabilities={capabilities} />
         case "costs":

@@ -41,6 +41,7 @@ vi.mock("../../analytics/OperationsBlock", () => ({
 vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
+vi.mock("../../analytics/SalesBlock", () => ({ SalesBlock: () => <div>bloque-ventas</div> }))
 vi.mock("../../analytics/PricingBlock", async () => {
     const { RailControls } = await import("../../analytics/RailControls")
     return {
@@ -180,10 +181,18 @@ describe("ProductAnalyticsModal", () => {
 
     it("warns that tabs with legacy content show the whole history, until the period is Histórico", () => {
         open(1)
-        fireEvent.click(rail().getByRole("button", { name: "Ventas" }))
+        fireEvent.click(rail().getByRole("button", { name: "Costos" }))
         expect(screen.getByText("Este tab muestra todo el histórico")).toBeInTheDocument()
         fireEvent.click(screen.getAllByRole("radio", { name: "Histórico" })[0])
         expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
+    })
+
+    it("does not show the legacy warning on tabs already migrated to their own block", () => {
+        open(1)
+        for (const name of ["Ventas", "Precio y margen"]) {
+            fireEvent.click(rail().getByRole("button", { name }))
+            expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
+        }
     })
 
     it("does not show the legacy warning on the subscription tab", () => {
