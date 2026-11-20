@@ -1,9 +1,12 @@
+from decimal import Decimal
+
 from django.db.models import (
     BooleanField,
     Case,
     Count,
     DecimalField,
     Exists,
+    ExpressionWrapper,
     F,
     IntegerField,
     OuterRef,
@@ -437,6 +440,68 @@ class ProductSelector:
         }
 
     @staticmethod
+    def _stock_flow(product_ids: list[int]) -> tuple[dict, list[dict]]:
+        """Entradas/salidas y evolución de stock, agregadas en la BD sobre todos los movimientos.
+
+        Reproduce ``StockMove.direction`` con anotaciones: TRANSFER (ambas internas) y
+        ADJUSTMENT (ubicación virtual de ajuste) no cuentan como entrada/salida; el stock
+        sí varía con cualquier movimiento que cruce el borde de las ubicaciones internas.
+        """
+        from django.db.models.functions import TruncMonth
+
+        from .models import ADJUSTMENT_VIRTUAL_NAMES, StockMove
+
+        src_internal = Q(source_location__location_type="INTERNAL")
+        dst_internal = Q(destination_location__location_type="INTERNAL")
+        adjustment = Q(source_location__name__in=ADJUSTMENT_VIRTUAL_NAMES) | Q(
+            destination_location__name__in=ADJUSTMENT_VIRTUAL_NAMES
+        )
+        flow = Case(
+            When(src_internal & dst_internal, then=Value("TRANSFER")),
+            When(adjustment, then=Value("ADJUSTMENT")),
+            When(dst_internal, then=Value("IN")),
+            When(src_internal, then=Value("OUT")),
+            default=Value("OTHER"),
+        )
+        decimal = DecimalField(max_digits=20, decimal_places=4)
+        moves = StockMove.objects.filter(product_id__in=product_ids)
+
+        totals = {"in_qty": 0.0, "in_cost": 0.0, "out_qty": 0.0, "out_cost": 0.0}
+        directional = moves.annotate(flow=flow).filter(flow__in=("IN", "OUT"))
+        for row in directional.values("flow").annotate(
+            qty=Sum("quantity"),
+            cost=Sum(ExpressionWrapper(F("quantity") * F("unit_cost"), output_field=decimal)),
+        ):
+            key = "in" if row["flow"] == "IN" else "out"
+            totals[f"{key}_qty"] = float(row["qty"] or 0)
+            totals[f"{key}_cost"] = float(row["cost"] or 0)
+
+        monthly: dict[str, dict] = {}
+        for row in (
+            directional.annotate(month=TruncMonth("date"))
+            .values("month", "flow")
+            .annotate(qty=Sum("quantity"))
+            .order_by("month")
+        ):
+            label = row["month"].strftime("%Y-%m")
+            entry = monthly.setdefault(label, {"month": label, "in": 0.0, "out": 0.0})
+            entry["in" if row["flow"] == "IN" else "out"] += float(row["qty"] or 0)
+
+        delta = Case(
+            When(dst_internal & ~src_internal, then=F("quantity")),
+            When(src_internal & ~dst_internal, then=-F("quantity")),
+            default=Value(0),
+            output_field=decimal,
+        )
+        history = []
+        cumulative = Decimal("0")
+        for row in moves.values("date").annotate(delta=Sum(delta)).order_by("date"):
+            cumulative += row["delta"] or Decimal("0")
+            history.append({"date": row["date"].isoformat(), "stock": round(float(cumulative), 4)})
+
+        return {"totals": totals, "monthly": list(monthly.values())}, history
+
+    @staticmethod
     def get_insights(instance: Product) -> dict:
         product_ids = [instance.id]
         if instance.has_variants:
@@ -460,91 +525,7 @@ class ProductSelector:
                 last_cost = h.cost_price
         price_history.reverse()
 
-        from inventory.models import StockMove
-
-        moves = (
-            StockMove.objects.filter(product_id__in=product_ids)
-            .select_related("source_location", "destination_location", "uom", "product")
-            .prefetch_related(
-                "sale_delivery_line",
-                "purchase_receipt_line",
-                "sale_return_line",
-                "purchase_return_line",
-            )
-            .all()
-            .order_by("-date", "-id")[:100]
-        )
-
-        kardex = []
-        for m in moves:
-            unit_price = float(m.unit_cost or 0)
-
-            # Determine direction: OUT if source is INTERNAL and destination is not
-            src_type = m.source_location.location_type if m.source_location else "VIRTUAL"
-            dst_type = m.destination_location.location_type if m.destination_location else "VIRTUAL"
-            is_out = src_type == "INTERNAL" and dst_type != "INTERNAL"
-
-            if unit_price == 0 or is_out:
-                if hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
-                    unit_price = float(m.purchase_receipt_line.unit_cost)
-                elif hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
-                    unit_price = float(m.sale_delivery_line.unit_price)
-                elif hasattr(m, "sale_return_line") and m.sale_return_line:
-                    unit_price = float(m.sale_return_line.unit_price)
-                elif hasattr(m, "purchase_return_line") and m.purchase_return_line:
-                    unit_price = float(m.purchase_return_line.unit_cost)
-
-            if unit_price == 0 and m.unit_cost:
-                unit_price = float(m.unit_cost)
-
-            if unit_price == 0:
-                unit_price = float(m.product.cost_price)
-
-            description = m.description
-            if instance.has_variants and m.product_id != instance.id:
-                variant_name = m.product.variant_display_name or m.product.name
-                description = f"[{variant_name}] {description}"
-
-            display_id = m.display_id
-            related_id = m.id
-            related_type = "inventory"
-
-            if hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
-                display_id = m.sale_delivery_line.delivery.display_id
-                related_id = m.sale_delivery_line.delivery.id
-                related_type = "sale_delivery"
-            elif hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
-                display_id = m.purchase_receipt_line.receipt.display_id
-                related_id = m.purchase_receipt_line.receipt.id
-                related_type = "purchase_receipt"
-            elif hasattr(m, "sale_return_line") and m.sale_return_line:
-                from core.prefix_registry import EntityPrefix
-                display_id = f"{EntityPrefix.SALE_RETURN}-{m.sale_return_line.return_doc.number}"
-                related_id = m.sale_return_line.return_doc.id
-                related_type = "sale_return"
-            elif hasattr(m, "purchase_return_line") and m.purchase_return_line:
-                from core.prefix_registry import EntityPrefix
-                display_id = f"{EntityPrefix.PURCHASE_RETURN}-{m.purchase_return_line.return_doc.number}"
-                related_id = m.purchase_return_line.return_doc.id
-                related_type = "purchase_return"
-
-            kardex.append(
-                {
-                    "id": m.id,
-                    "display_id": display_id,
-                    "related_id": related_id,
-                    "related_type": related_type,
-                    "date": m.date,
-                    "type": f"{m.source_location.name if m.source_location else '?'} → {m.destination_location.name if m.destination_location else '?'}",
-                    "direction": m.direction,
-                    "quantity": float(m.quantity),
-                    "unit_price": unit_price,
-                    "total_price": abs(float(m.quantity) * unit_price),
-                    "warehouse": m.source_location.warehouse.name if (m.source_location and m.source_location.location_type == 'INTERNAL' and m.source_location.warehouse) else (m.destination_location.warehouse.name if (m.destination_location and m.destination_location.location_type == 'INTERNAL' and m.destination_location.warehouse) else "-"),
-                    "description": description,
-                    "uom": m.uom.name if m.uom else "",
-                }
-            )
+        stock_flow, stock_history = ProductSelector._stock_flow(product_ids)
 
         from django.db import models
         from django.db.models import Avg, F, Sum
@@ -711,26 +692,10 @@ class ProductSelector:
             for r in top_suppliers_qs
         ]
 
-        # Stock history: aggregate daily deltas from the kardex, then anchor
-        # backward from the current on-hand stock so the last point equals today.
-        stock_history = []
-        if kardex:
-            sorted_moves = sorted(kardex, key=lambda x: str(x["date"]))
-            balance_map: dict[str, float] = {}
-            for m in sorted_moves:
-                date_str = str(m["date"])[:10]
-                delta = m["quantity"] if m.get("direction") in ("IN", "ADJUSTMENT") else -m["quantity"]
-                balance_map[date_str] = balance_map.get(date_str, 0) + delta
-            # cumulative sum from oldest date
-            cumulative = 0.0
-            for date_str in sorted(balance_map.keys()):
-                cumulative += balance_map[date_str]
-                stock_history.append({"date": date_str, "stock": round(cumulative, 4)})
-
         return {
             "capabilities": ProductSelector.get_capabilities(instance),
             "price_history": price_history,
-            "kardex": kardex,
+            "stock_flow": stock_flow,
             "stock_history": stock_history,
             "sales_analysis": {
                 "avg_price": avg_price,
