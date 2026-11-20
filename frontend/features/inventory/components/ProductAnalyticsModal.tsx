@@ -3,20 +3,15 @@
 import { useState, useMemo } from "react"
 import { BaseModal, DrawerLayout, RailNav, SkeletonShell } from '@/components/shared'
 import {
-    TrendingUp,
     BarChart3,
-    ArrowRightLeft,
     Factory,
     LayoutDashboard,
     Banknote,
-    CircleDollarSign,
+    Package,
     Truck,
-    Users,
-    Building2,
     Percent,
-    Hammer,
-    Scale,
-    Gauge,
+    Repeat,
+    ShoppingCart,
 } from "lucide-react"
 import { useProductCapabilities } from "../hooks/useProducts"
 import { ProductSelector } from "@/components/selectors"
@@ -24,13 +19,9 @@ import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { WorkOrderWizard } from "@/features/production"
 import { DEFAULT_PERIOD, type PeriodKey } from "../analytics/period"
 import { PeriodControl } from "../analytics/PeriodControl"
-import { SalesImpactBlock } from "../analytics/SalesImpactBlock"
-import { ProductionPerformanceBlock } from "../analytics/ProductionPerformanceBlock"
-import { SourcingBlock } from "../analytics/SourcingBlock"
-import { OperationsBlock } from "../analytics/OperationsBlock"
-import { LegacyInsightsPanel } from "../analytics/LegacyInsightsPanel"
-import { isLegacyTab } from "../analytics/legacyTabs"
-import { visibleTabIds } from "../analytics/productAnalyticsRegistry"
+import { TabContent, tabHasLegacyContent } from "../analytics/TabContent"
+import { RailControlsProvider, ViewControlsSlot } from "../analytics/RailControls"
+import { visibleTabIds, type ProductAnalyticsTabId } from "../analytics/productAnalyticsRegistry"
 
 interface ProductAnalyticsModalProps {
     productId: number | null
@@ -42,23 +33,18 @@ interface ProductAnalyticsModalProps {
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
-const TABS = [
-    { value: "overview",    label: "Resumen",    icon: LayoutDashboard },
-    { value: "sales",       label: "Ventas",     icon: TrendingUp },
-    { value: "pricing",     label: "Precio y margen", icon: Percent },
-    { value: "purchases",   label: "Compras",    icon: Truck },
-    { value: "price",       label: "Precio",     icon: CircleDollarSign },
-    { value: "cost",        label: "Costos",     icon: Banknote },
-    { value: "kardex",      label: "Mov. Stock", icon: ArrowRightLeft },
-    { value: "production",  label: "Producción", icon: Factory },
-    { value: "manufacturing", label: "Fabricación", icon: Hammer },
-    { value: "sourcing", label: "Abastecimiento", icon: Scale },
-    { value: "operations", label: "Operación", icon: Gauge },
-    { value: "customers",   label: "Clientes",   icon: Users },
-    { value: "suppliers",   label: "Proveedores", icon: Building2 },
-] as const
+const TABS: ReadonlyArray<{ value: ProductAnalyticsTabId; label: string; icon: typeof BarChart3 }> = [
+    { value: "overview",     label: "Resumen",         icon: LayoutDashboard },
+    { value: "sales",        label: "Ventas",          icon: ShoppingCart },
+    { value: "pricing",      label: "Precio y margen", icon: Percent },
+    { value: "costs",        label: "Costos",          icon: Banknote },
+    { value: "procurement",  label: "Abastecimiento",  icon: Truck },
+    { value: "inventory",    label: "Inventario",      icon: Package },
+    { value: "production",   label: "Producción",      icon: Factory },
+    { value: "subscription", label: "Suscripción",     icon: Repeat },
+]
 
-type TabValue = typeof TABS[number]["value"]
+type TabValue = ProductAnalyticsTabId
 
 // ─── Inner panel (runs inside the open modal) ──────────────────────────────────
 
@@ -100,7 +86,12 @@ function ProductAnalyticsPanelInner({
     ) : productName ? (
         <span className="block text-sm font-semibold leading-tight break-words">{productName}</span>
     ) : null
-    const periodControl = <PeriodControl value={period} onChange={setPeriod} />
+    const periodControl = (
+        <>
+            <PeriodControl value={period} onChange={setPeriod} />
+            <ViewControlsSlot />
+        </>
+    )
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full">
@@ -150,24 +141,17 @@ function ProductAnalyticsPanelInner({
                         <div className="mb-2 shrink-0 sm:hidden">{periodControl}</div>
                         {/* ── Tab content ── */}
                         <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-4 min-h-0">
-                            {isLegacyTab(activeTab) && (
-                                <>
-                                    {period !== "all" && (
-                                        <p className="shrink-0 text-xs text-muted-foreground">Este tab muestra todo el histórico</p>
-                                    )}
-                                    <LegacyInsightsPanel
-                                        productId={productId}
-                                        tab={activeTab}
-                                        capabilities={capabilities}
-                                        onOpenTransaction={openTransaction}
-                                        onOpenWorkOrder={openWorkOrder}
-                                    />
-                                </>
+                            {tabHasLegacyContent(activeTab) && period !== "all" && (
+                                <p className="shrink-0 text-xs text-muted-foreground">Este tab muestra todo el histórico</p>
                             )}
-                            {activeTab === "pricing" && <SalesImpactBlock productId={productId} period={period} />}
-                            {activeTab === "manufacturing" && <ProductionPerformanceBlock productId={productId} period={period} />}
-                            {activeTab === "sourcing" && <SourcingBlock productId={productId} period={period} />}
-                            {activeTab === "operations" && <OperationsBlock productId={productId} period={period} />}
+                            <TabContent
+                                tab={activeTab}
+                                productId={productId}
+                                period={period}
+                                capabilities={capabilities}
+                                onOpenTransaction={openTransaction}
+                                onOpenWorkOrder={openWorkOrder}
+                            />
                         </div>
                     </DrawerLayout>
                 )}
@@ -197,11 +181,13 @@ export function ProductAnalyticsModal({
         >
             <div className="h-[80vh] overflow-hidden flex flex-col">
                 {productId && (
-                    <ProductAnalyticsPanelInner
-                        productId={productId}
-                        productName={productName}
-                        onProductChange={onProductChange}
-                    />
+                    <RailControlsProvider>
+                        <ProductAnalyticsPanelInner
+                            productId={productId}
+                            productName={productName}
+                            onProductChange={onProductChange}
+                        />
+                    </RailControlsProvider>
                 )}
             </div>
         </BaseModal>
