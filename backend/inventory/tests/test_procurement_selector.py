@@ -187,3 +187,91 @@ def test_query_count_constant_with_more_rows(env):
     with CaptureQueriesContext(connection) as many:
         _proc(env)
     assert len(many) == len(few)
+
+
+# ── Proveedores ──────────────────────────────────────────────────────────────
+
+def test_suppliers_share_avg_and_receipts(env):
+    a, b = _supplier("Papelera A"), _supplier("Papelera B")
+    order_a = _order(env, a)
+    _receive(env, order_a, "10", "100", on=date(2026, 3, 1))
+    _receive(env, order_a, "10", "140", on=date(2026, 4, 1))
+    _receive(env, _order(env, b), "6", "100", on=date(2026, 5, 1))
+    suppliers = _proc(env)["suppliers"]
+    assert [s["name"] for s in suppliers] == ["Papelera A", "Papelera B"]
+    first = suppliers[0]
+    assert first["id"] == a.id
+    assert first["units"] == pytest.approx(20.0)
+    assert first["spend"] == pytest.approx(2400.0)
+    assert first["share_pct"] == pytest.approx(2400 / 3000 * 100)
+    assert first["avg_unit_cost"] == pytest.approx(120.0)
+    assert first["receipts"] == 2
+    assert first["last_date"] == "2026-04-01"
+    assert first["preferred"] is False
+
+
+def test_preferred_supplier_flagged(env):
+    a = _supplier("Papelera A")
+    Product.objects.filter(pk=env["product"].pk).update(preferred_supplier=a)
+    env["product"].refresh_from_db()
+    _receive(env, _order(env, a), "5")
+    result = _proc(env)
+    assert result["preferred_supplier"] == {"id": a.id, "name": "Papelera A"}
+    assert result["suppliers"][0]["preferred"] is True
+
+
+def test_preferred_supplier_without_purchases_listed_only_in_preferred_supplier(env):
+    preferred = _supplier("Preferido")
+    Product.objects.filter(pk=env["product"].pk).update(preferred_supplier=preferred)
+    env["product"].refresh_from_db()
+    _receive(env, _order(env, _supplier("Otro")), "5")
+    result = _proc(env)
+    assert result["preferred_supplier"]["name"] == "Preferido"
+    assert [s["name"] for s in result["suppliers"]] == ["Otro"]
+
+
+def test_supplier_returned_units(env):
+    a = _supplier("A")
+    order = _order(env, a)
+    _receive(env, order, "10")
+    _return(env, order, "2")
+    assert _proc(env)["suppliers"][0]["returned_units"] == pytest.approx(2.0)
+
+
+# ── Pendiente de recibir ─────────────────────────────────────────────────────
+
+def test_pending_partial_order(env):
+    order = _order(env, _supplier("A"), on=date(2026, 6, 1))
+    _line(env, order, "10", received="4")
+    pending = _proc(env)["pending"]
+    assert pending == [{
+        "order_id": order.id, "number": order.number, "supplier": "A", "date": "2026-06-01",
+        "ordered": 10.0, "received": 4.0, "pending": 6.0,
+    }]
+
+
+def test_pending_in_base_uom(env):
+    box = UoM.objects.create(name="Caja", category=env["uom"].category, uom_type="BIGGER", ratio=Decimal("10"))
+    _line(env, _order(env), "2", uom=box, received="1")
+    assert _proc(env)["pending"][0]["pending"] == pytest.approx(10.0)
+
+
+def test_pending_ignores_draft_and_fully_received(env):
+    _line(env, _order(env, status="DRAFT"), "10")
+    _line(env, _order(env), "5", received="5")
+    assert _proc(env)["pending"] == []
+
+
+def test_query_count_constant_with_more_suppliers(env):
+    _receive(env, _order(env, _supplier("S0")), "1")
+    _line(env, _order(env), "3")
+    with CaptureQueriesContext(connection) as few:
+        _proc(env)
+    for i in range(1, 10):
+        order = _order(env, _supplier(f"S{i}"))
+        _receive(env, order, "1", on=date(2026, 1 + i, 3))
+        _return(env, order, "1")
+        _line(env, _order(env, _supplier(f"P{i}")), "3")
+    with CaptureQueriesContext(connection) as many:
+        _proc(env)
+    assert len(many) == len(few)
