@@ -153,3 +153,114 @@ def test_query_count_constant_with_more_rows(env):
     with CaptureQueriesContext(connection) as many:
         _costs(env)
     assert len(many) == len(few)
+
+
+# ── BOM ──────────────────────────────────────────────────────────────────────
+
+def _bom_with(env, rows, yield_quantity="1", track_inventory=False):
+    """BOM activa del producto (fabricable). ``rows``: ``(component, qty, uom, outsourced_price | None)``."""
+    from production.models import BillOfMaterials, BillOfMaterialsLine
+
+    product = _as(env, "MANUFACTURABLE", track_inventory=track_inventory)
+    bom = BillOfMaterials.objects.create(product=product, name="BOM", active=True, yield_quantity=Decimal(yield_quantity))
+    for component, qty, uom, outsourced in rows:
+        BillOfMaterialsLine.objects.create(
+            bom=bom, component=component, quantity=Decimal(qty), uom=uom,
+            is_outsourced=outsourced is not None, unit_price=Decimal(outsourced or "0"),
+        )
+    return bom
+
+
+def test_bom_today_matches_bom_screen(env):
+    from inventory.models import UoM
+    from production.selectors import ProductionSelectorExt
+
+    box = UoM.objects.create(name="Caja", category=env["uom"].category, uom_type="BIGGER", ratio=Decimal("10"))
+    bom = _bom_with(env, [
+        (_component(env, "Papel", "50"), "4", env["uom"], None),
+        (_component(env, "Tinta", "5"), "1", box, None),
+        (_component(env, "Corte", "0"), "1", env["uom"], "100"),
+    ], yield_quantity="2")
+    result = _costs(env)
+    assert result["today"]["bom_cost"] == pytest.approx(ProductionSelectorExt.get_total_cost(bom))
+    assert result["today"]["bom_cost"] == pytest.approx(175.0)
+
+
+def test_bom_lines_share_and_change(env):
+    paper = _component(env, "Papel", "50")
+    _cost_history(paper, (date(2026, 6, 1), "60"))
+    ink = _component(env, "Tinta", "30")
+    _cost_history(ink)
+    _bom_with(env, [(paper, "1", env["uom"], None), (ink, "1", env["uom"], None)])
+    lines = {line["name"]: line for line in _costs(env)["bom"]["lines"]}
+    assert lines["Papel"]["cost"] == pytest.approx(60.0)
+    assert lines["Papel"]["share_pct"] == pytest.approx(60 / 90 * 100)
+    assert lines["Papel"]["change_pct"] == pytest.approx(20.0)
+    assert lines["Tinta"]["change_pct"] == pytest.approx(0.0)
+    assert lines["Papel"]["is_outsourced"] is False
+
+
+def test_bom_series_uses_component_history(env):
+    paper = _component(env, "Papel", "50")
+    _cost_history(paper, (date(2025, 12, 15), "50"), (date(2026, 6, 10), "80"))
+    _bom_with(env, [(paper, "2", env["uom"], None)])
+    series = {p["period"]: p for p in _costs(env)["series"]}
+    assert series["2026-01"]["bom_cost"] == pytest.approx(100.0)
+    assert series["2026-06"]["bom_cost"] == pytest.approx(160.0)
+
+
+def test_component_without_earlier_history_uses_first_value(env):
+    paper = _component(env, "Papel", "70")
+    _cost_history(paper, created=date(2026, 5, 1))
+    _bom_with(env, [(paper, "1", env["uom"], None)])
+    series = {p["period"]: p for p in _costs(env)["series"]}
+    assert series["2026-01"]["bom_cost"] == pytest.approx(70.0)
+
+
+def test_drivers_rank_component_increase(env):
+    paper = _component(env, "Papel", "50")
+    _cost_history(paper, (date(2026, 6, 1), "60"))
+    ink = _component(env, "Tinta", "10")
+    _cost_history(ink, (date(2026, 7, 1), "11"))
+    flat = _component(env, "Barniz", "5")
+    _cost_history(flat)
+    _bom_with(env, [(paper, "2", env["uom"], None), (ink, "1", env["uom"], None), (flat, "1", env["uom"], None)])
+    drivers = _costs(env)["bom"]["drivers"]
+    assert [(d["name"], d["delta"]) for d in drivers] == [("Papel", pytest.approx(20.0)), ("Tinta", pytest.approx(1.0))]
+
+
+def test_on_demand_cost_change_uses_bom(env):
+    paper = _component(env, "Papel", "50")
+    _cost_history(paper, (date(2026, 6, 1), "75"))
+    _bom_with(env, [(paper, "1", env["uom"], None)])
+    assert _costs(env)["kpis"]["cost_change_pct"] == pytest.approx(50.0)
+
+
+def test_replacement_gap_manufactured_stock(env):
+    _bom_with(env, [(_component(env, "Papel", "110"), "1", env["uom"], None)], track_inventory=True)
+    Product.objects.filter(pk=env["product"].pk).update(cost_price=Decimal("100"))
+    env["product"].refresh_from_db()
+    result = _costs(env)
+    assert result["mode"] == "manufactured_stock"
+    assert result["kpis"]["replacement_gap_pct"] == pytest.approx(10.0)
+
+
+def test_no_bom_section_for_purchased(env):
+    assert _costs(env)["bom"] is None
+
+
+def test_bom_query_count_constant_with_more_components(env):
+    _bom_with(env, [(_component(env, "C0", "10"), "1", env["uom"], None)])
+    with CaptureQueriesContext(connection) as few:
+        _costs(env)
+    from production.models import BillOfMaterialsLine
+
+    bom = env["product"].boms.get(active=True)
+    for i in range(1, 8):
+        component = _component(env, f"C{i}", str(10 + i))
+        component.cost_price = Decimal(20 + i)
+        component.save()
+        BillOfMaterialsLine.objects.create(bom=bom, component=component, quantity=Decimal("1"), uom=env["uom"])
+    with CaptureQueriesContext(connection) as many:
+        _costs(env)
+    assert len(many) == len(few)

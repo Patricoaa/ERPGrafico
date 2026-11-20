@@ -91,6 +91,79 @@ def _receipts(product_ids: list[int], to_base) -> list[dict]:
     return rows
 
 
+def _bom(product: Product, to_base) -> dict | None:
+    """Receta activa por unidad producida, con el historial de costo de cada componente (una consulta)."""
+    from production.models import BillOfMaterialsLine
+
+    rows = list(
+        BillOfMaterialsLine.objects.filter(bom__product=product, bom__active=True).values(
+            "component_id", "component__name", "component__cost_price", "component__uom_id", "quantity", "uom_id",
+            "is_outsourced", "unit_price", "bom__yield_quantity",
+        ).order_by("sequence", "id")
+    )
+    if not rows:
+        return None
+    component_ids = [r["component_id"] for r in rows if not r["is_outsourced"]]
+    histories: dict[int, list[tuple[date, float]]] = {cid: [] for cid in component_ids}
+    for cid, moment, cost in (
+        Product.history.model.objects.filter(id__in=component_ids)
+        .order_by("history_date", "history_id")
+        .values_list("id", "history_date", "cost_price")
+    ):
+        histories[cid].append((moment.date(), float(cost)))
+
+    lines = []
+    for r in rows:
+        batch = Decimal(r["bom__yield_quantity"] or 1) or Decimal(1)
+        qty = Decimal(r["quantity"])
+        if not r["is_outsourced"]:
+            qty = to_base(qty, r["uom_id"], r["component__uom_id"])
+        lines.append({
+            "component_id": r["component_id"],
+            "name": r["component__name"],
+            "qty_per_unit": float(qty / batch),
+            "fixed_price": float(r["unit_price"]) if r["is_outsourced"] else None,
+            "current": float(r["unit_price"]) if r["is_outsourced"] else float(r["component__cost_price"] or 0),
+            "history": histories.get(r["component_id"], []),
+        })
+    return {"lines": lines}
+
+
+def _unit_cost_at(line: dict, day: date | None) -> float:
+    if line["fixed_price"] is not None or day is None:
+        return line["current"]
+    value = _value_at(line["history"], day)
+    return line["current"] if value is None else value
+
+
+def _bom_cost_at(bom: dict, day: date | None) -> float:
+    return sum(line["qty_per_unit"] * _unit_cost_at(line, day) for line in bom["lines"])
+
+
+def _bom_payload(bom: dict, start: date | None) -> dict:
+    total = _bom_cost_at(bom, None)
+    lines, drivers = [], []
+    for line in bom["lines"]:
+        cost = line["qty_per_unit"] * line["current"]
+        first = line["history"][0][1] if line["history"] else line["current"]
+        before = _unit_cost_at(line, start) if start else first
+        lines.append({
+            "component_id": line["component_id"],
+            "name": line["name"],
+            "qty_per_unit": line["qty_per_unit"],
+            "unit_cost": line["current"],
+            "cost": cost,
+            "share_pct": cost / total * 100 if total else 0.0,
+            "change_pct": _pct_change(line["current"], before) if before else None,
+            "is_outsourced": line["fixed_price"] is not None,
+        })
+        delta = line["qty_per_unit"] * (line["current"] - before)
+        if delta > 0:
+            drivers.append({"component_id": line["component_id"], "name": line["name"], "delta": delta})
+    drivers.sort(key=lambda d: -d["delta"])
+    return {"lines": lines, "drivers": drivers}
+
+
 class CostsSelector:
     @staticmethod
     def get_costs(product: Product, params: CostsParams) -> dict:
@@ -105,13 +178,20 @@ class CostsSelector:
             (moment.date(), float(cost))
             for moment, cost in product.history.order_by("history_date", "history_id").values_list("history_date", "cost_price")
         ]
-        receipts = _receipts(product_ids, _to_base_factory())
+        to_base = _to_base_factory()
+        receipts = _receipts(product_ids, to_base)
+        bom = _bom(product, to_base) if mode.startswith("manufactured") else None
         in_range = [r for r in receipts if (not params.date_from or r["date"] >= params.date_from) and r["date"] <= date_to]
 
         range_from = params.date_from or (history[0][0] if history else date_to)
         starts = {_period_start(date_to, granularity), _period_start(range_from, granularity)}
         starts |= {_period_start(day, granularity) for day, _ in history if range_from <= day <= date_to}
         starts |= {_period_start(r["date"], granularity) for r in in_range}
+        if bom:
+            starts |= {
+                _period_start(day, granularity)
+                for line in bom["lines"] for day, _ in line["history"] if range_from <= day <= date_to
+            }
 
         series = []
         for start in sorted(starts):
@@ -121,7 +201,7 @@ class CostsSelector:
             series.append({
                 "period": _period_label(start, granularity),
                 "weighted_cost": _value_at(history, close),
-                "bom_cost": None,
+                "bom_cost": _bom_cost_at(bom, close) if bom else None,
                 "purchase_avg": sum(r["cost"] for r in bucket) / qty if qty else None,
                 "real_avg": None,
             })
@@ -131,12 +211,21 @@ class CostsSelector:
         total_qty = sum(r["qty"] for r in in_range)
         tracks = bool(product.track_inventory)
         stock_qty = float(product.qty_on_hand) if tracks else None
+        bom_today = _bom_cost_at(bom, None) if bom else None
         replacement = last["unit_cost"] if mode == "purchased" and last else None
+        if mode == "manufactured_stock":
+            replacement = bom_today
+        if params.date_from is None:
+            cost_change = None
+        elif mode == "manufactured_on_demand" and bom:
+            cost_change = _pct_change(bom_today, _bom_cost_at(bom, params.date_from))
+        else:
+            cost_change = _pct_change(weighted, _value_at(history, params.date_from))
         return {
             "mode": mode,
             "today": {
                 "weighted_cost": weighted,
-                "bom_cost": None,
+                "bom_cost": bom_today,
                 "last_purchase": (
                     {"date": last["date"].isoformat(), "unit_cost": last["unit_cost"], "supplier": last["supplier"]}
                     if last else None
@@ -145,9 +234,7 @@ class CostsSelector:
                 "stock_value": stock_qty * weighted if stock_qty is not None else None,
             },
             "kpis": {
-                "cost_change_pct": (
-                    _pct_change(weighted, _value_at(history, params.date_from)) if params.date_from else None
-                ),
+                "cost_change_pct": cost_change,
                 "replacement_gap_pct": _pct_change(replacement, weighted),
             },
             "series": series,
@@ -157,6 +244,6 @@ class CostsSelector:
                 "avg": sum(r["cost"] for r in in_range) / total_qty if total_qty else None,
                 "count": len(in_range),
             },
-            "bom": None,
+            "bom": _bom_payload(bom, params.date_from) if bom else None,
             "work_orders": [],
         }
