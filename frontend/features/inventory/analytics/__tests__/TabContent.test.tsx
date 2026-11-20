@@ -5,6 +5,7 @@ import type { ProductCapabilities } from "../productAnalyticsRegistry"
 vi.mock("../LegacyInsightsPanel", () => ({
     LegacyInsightsPanel: ({ tab }: { tab: string }) => <div data-marker={`legacy-${tab}`} />,
 }))
+vi.mock("../CostsBlock", () => ({ CostsBlock: () => <div data-marker="block-costs" /> }))
 vi.mock("../SalesBlock", () => ({ SalesBlock: () => <div data-marker="block-sales" /> }))
 vi.mock("../PricingBlock", () => ({ PricingBlock: () => <div data-marker="block-pricing" /> }))
 vi.mock("../ProductionPerformanceBlock", () => ({ ProductionPerformanceBlock: () => <div data-marker="block-performance" /> }))
@@ -44,13 +45,9 @@ describe("TabContent", () => {
         expect(markers("pricing", { sells: true })).toEqual(["block-pricing"])
     })
 
-    it("costs shows the cost history", () => {
-        expect(markers("costs", { buys: true })).toEqual(["legacy-cost"])
-    })
-
-    it("costs adds make-vs-buy only when the product is manufactured and bought", () => {
-        expect(markers("costs", { manufactures: true, buys: true })).toEqual(["legacy-cost", "block-sourcing-make_vs_buy"])
-        expect(markers("costs", { manufactures: true })).toEqual(["legacy-cost"])
+    it("costs renders only its own block, with no legacy content nor make-vs-buy", () => {
+        expect(markers("costs", { buys: true })).toEqual(["block-costs"])
+        expect(markers("costs", { manufactures: true })).toEqual(["block-costs"])
     })
 
     it("procurement stacks purchases and suppliers", () => {
@@ -66,27 +63,24 @@ describe("TabContent", () => {
         expect(markers("production", { manufactures: true })).toEqual(["legacy-production", "block-performance"])
     })
 
-    it("a manufactured, bought component shows make-vs-buy only in costs and input usage only in production", () => {
-        const caps = { manufactures: true, buys: true, used_in_production: true }
-        const costs = markers("costs", caps)
-        const production = markers("production", caps)
-        expect(costs).toContain("block-sourcing-make_vs_buy")
-        expect(costs).not.toContain("block-sourcing-used_in")
-        expect(production).toContain("block-sourcing-used_in")
-        expect(production).not.toContain("block-sourcing-make_vs_buy")
+    it("a manufactured component used in production shows input usage only in production", () => {
+        const caps = { manufactures: true, used_in_production: true }
+        expect(markers("costs", caps)).toEqual(["block-costs"])
+        expect(markers("production", caps)).toContain("block-sourcing-used_in")
+        expect(markers("production", caps)).not.toContain("block-sourcing-make_vs_buy")
     })
-
     it("subscription shows only the operations block", () => {
         expect(markers("subscription", { recurring: true })).toEqual(["block-operations"])
     })
 })
 
 describe("tabHasLegacyContent", () => {
-    it("is true for every tab except sales, pricing and subscription", () => {
-        const tabs: ProductAnalyticsTabId[] = ["overview", "costs", "procurement", "inventory", "production"]
+    it("is true for every tab except the migrated ones", () => {
+        const tabs: ProductAnalyticsTabId[] = ["overview", "procurement", "inventory", "production"]
         for (const tab of tabs) expect(tabHasLegacyContent(tab)).toBe(true)
         expect(tabHasLegacyContent("pricing")).toBe(false)
         expect(tabHasLegacyContent("sales")).toBe(false)
+        expect(tabHasLegacyContent("costs")).toBe(false)
         expect(tabHasLegacyContent("subscription")).toBe(false)
     })
 })

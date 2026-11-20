@@ -1,5 +1,6 @@
 "use client"
 
+import { CostsBlock } from "./CostsBlock"
 import { LegacyInsightsPanel } from "./LegacyInsightsPanel"
 import type { LegacyTabId } from "./legacyTabs"
 import { OperationsBlock } from "./OperationsBlock"
@@ -19,9 +20,11 @@ interface TabContentProps {
     onOpenWorkOrder: (id: number) => void
 }
 
+const MIGRATED_TABS: readonly ProductAnalyticsTabId[] = ["sales", "pricing", "costs", "subscription"]
+
 /** Tabs que ya no usan contenido del endpoint `insights` (ni el período lo ignora). */
 export function tabHasLegacyContent(tab: ProductAnalyticsTabId): boolean {
-    return tab !== "subscription" && tab !== "pricing" && tab !== "sales"
+    return !MIGRATED_TABS.includes(tab)
 }
 
 /**
@@ -50,14 +53,7 @@ export function TabContent({
         case "pricing":
             return <PricingBlock productId={productId} period={period} capabilities={capabilities} />
         case "costs":
-            return (
-                <>
-                    {legacy("cost")}
-                    {capabilities.manufactures && capabilities.buys && (
-                        <SourcingBlock productId={productId} period={period} section="make_vs_buy" />
-                    )}
-                </>
-            )
+            return <CostsBlock productId={productId} period={period} />
         case "procurement":
             return <>{legacy("purchases")}{legacy("suppliers")}</>
         case "inventory":
