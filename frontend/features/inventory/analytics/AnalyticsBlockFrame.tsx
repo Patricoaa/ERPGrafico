@@ -7,8 +7,8 @@ interface AnalyticsBlockFrameProps {
     isLoading: boolean
     isError: boolean
     errorMessage: string
-    isEmpty: boolean
-    emptyMessage: string
+    isEmpty?: boolean
+    emptyMessage?: string
     /** Layout placeholder del bloque; si se omite, `SkeletonShell` usa su placeholder estándar. */
     skeleton?: ReactNode
     children: ReactNode
@@ -16,7 +16,7 @@ interface AnalyticsBlockFrameProps {
 
 /** Estados de carga, error y vacío de un bloque de análisis de producto. */
 export function AnalyticsBlockFrame({
-    isLoading, isError, errorMessage, isEmpty, emptyMessage, skeleton, children,
+    isLoading, isError, errorMessage, isEmpty = false, emptyMessage = "", skeleton, children,
 }: AnalyticsBlockFrameProps) {
     if (isLoading) {
         return <SkeletonShell isLoading ariaLabel="Cargando análisis del producto">{skeleton}</SkeletonShell>

@@ -2,16 +2,23 @@ import { fireEvent, render, screen, within } from "@testing-library/react"
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
 
 const state = vi.hoisted(() => ({
-    capsById: {} as Record<number, unknown>,
+    capsById: {
+        1: {
+            sells: true, buys: true, tracks_stock: true, manufactures: false, express: false,
+            recurring: false, used_in_production: false, has_variants: false, segment: "STORABLE",
+        },
+    } as Record<number, unknown>,
     production: { usage: [] as unknown[], history: [] as unknown[] },
 }))
 
 vi.mock("../../hooks/useProducts", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../hooks/useProducts")>()),
-    useProductInsights: (id: number) => ({
+    useProductCapabilities: (id: number) => ({
+        isLoading: false, isError: false, capabilities: state.capsById[id] ?? null,
+    }),
+    useProductInsights: () => ({
         isLoading: false,
         insights: {
-            capabilities: state.capsById[id],
             price_history: [], stock_history: [], production_usage: state.production.usage, production_history: state.production.history,
             top_customers: [], top_suppliers: [],
             stock_flow: { totals: { in_qty: 0, in_cost: 0, out_qty: 0, out_cost: 0 }, monthly: [] },
@@ -112,11 +119,18 @@ describe("ProductAnalyticsModal capabilities", () => {
         expect(screen.getByRole("button", { name: "Resumen" })).toHaveAttribute("aria-current", "page")
     })
 
-    it("renders every tab when capabilities are missing", () => {
+    it("renders no tabs and loads no block until the capabilities are known", () => {
         state.capsById = {}
         open(1)
+        expect(screen.queryByRole("navigation", { name: "Secciones de análisis de producto" })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: "Resumen" })).not.toBeInTheDocument()
+        expect(screen.getByLabelText("Cargando insights del producto")).toBeInTheDocument()
+    })
+
+    it("renders every applicable tab once the capabilities are known", () => {
+        open(1)
         const rail = within(screen.getByRole("navigation", { name: "Secciones de análisis de producto" }))
-        for (const name of ["Resumen", "Ventas", "Compras", "Precio", "Costos", "Mov. Stock", "Producción", "Clientes", "Proveedores"]) {
+        for (const name of ["Resumen", "Ventas", "Compras", "Precio", "Costos", "Mov. Stock", "Clientes", "Proveedores"]) {
             expect(rail.getByRole("button", { name })).toBeInTheDocument()
         }
     })
