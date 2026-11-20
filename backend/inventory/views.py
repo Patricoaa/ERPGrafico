@@ -264,6 +264,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(CostsSelector.get_costs(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="procurement")
+    def procurement(self, request, pk=None):
+        """Cobertura, compras, proveedores y pendiente de recibir del producto."""
+        from .procurement_params import ProcurementParamsSerializer
+        from .procurement_selector import ProcurementSelector
+
+        instance = self.get_object()
+        params = ProcurementParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(ProcurementSelector.get_procurement(instance, params.to_params()))
+
     @action(detail=True, methods=["get"], url_path="production-performance")
     def production_performance(self, request, pk=None):
         """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""

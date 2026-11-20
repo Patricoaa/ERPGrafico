@@ -49,6 +49,27 @@ class _StockCurve:
         return acc / total_days if total_days > 0 else 0.0
 
 
+def _coverage_days(stock_now: float, recent_out: float) -> float | None:
+    return stock_now / (recent_out / _COVERAGE_DAYS) if recent_out > 0 and stock_now > 0 else None
+
+
+def coverage(product_ids: list[int], date_to: date) -> dict:
+    """Stock al cierre, consumo diario de los últimos 90 días y días de cobertura (mismo cálculo que la rotación)."""
+    _, history = ProductSelector._stock_flow(product_ids)
+    stock_now = _StockCurve(history).at(date_to)
+    _, _, flow = ProductSelector._flow_case()
+    recent_out = float(
+        StockMove.objects.filter(
+            product_id__in=product_ids, date__lte=date_to, date__gte=date_to - timedelta(days=_COVERAGE_DAYS - 1)
+        ).annotate(flow=flow).filter(flow="OUT").aggregate(q=Sum("quantity"))["q"] or 0
+    )
+    return {
+        "stock_now": stock_now,
+        "daily_out": recent_out / _COVERAGE_DAYS,
+        "coverage_days": _coverage_days(stock_now, recent_out),
+    }
+
+
 class OperationsSelector:
     @staticmethod
     def get_operations(
@@ -122,7 +143,7 @@ class OperationsSelector:
             "avg_stock": avg_stock,
             "turnover": turnover,
             "days_of_inventory": window_days / turnover if turnover else None,
-            "coverage_days": stock_now / (recent_out / _COVERAGE_DAYS) if recent_out > 0 and stock_now > 0 else None,
+            "coverage_days": _coverage_days(stock_now, recent_out),
             "last_out_date": last_out.isoformat() if last_out else None,
             "last_in_date": last["IN"].isoformat() if last.get("IN") else None,
             "idle": idle,

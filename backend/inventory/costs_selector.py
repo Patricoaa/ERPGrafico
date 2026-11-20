@@ -78,7 +78,7 @@ def _receipts(product_ids: list[int], to_base) -> list[dict]:
     rows = []
     for line in PurchaseReceiptLine.objects.filter(product_id__in=product_ids, receipt__status="CONFIRMED").values(
         "id", "quantity_received", "uom_id", "unit_cost", "product__uom_id", "receipt__receipt_date",
-        "receipt__purchase_order__supplier__name",
+        "receipt__purchase_order__supplier__name", "receipt__purchase_order_id", "receipt__purchase_order__supplier_id",
     ).order_by("receipt__receipt_date", "id"):
         base_qty = float(to_base(Decimal(line["quantity_received"]), line["uom_id"], line["product__uom_id"]))
         if base_qty <= 0:
@@ -87,6 +87,8 @@ def _receipts(product_ids: list[int], to_base) -> list[dict]:
         rows.append({
             "date": line["receipt__receipt_date"], "qty": base_qty, "cost": cost, "unit_cost": cost / base_qty,
             "supplier": line["receipt__purchase_order__supplier__name"],
+            "supplier_id": line["receipt__purchase_order__supplier_id"],
+            "order_id": line["receipt__purchase_order_id"],
         })
     return rows
 
