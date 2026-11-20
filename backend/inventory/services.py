@@ -1,4 +1,5 @@
 import itertools
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Tuple
 
@@ -750,6 +751,16 @@ class StockService:
         return converted_qty
 
 
+@dataclass(frozen=True)
+class PriceResolution:
+    """Outcome of resolving a sale price: final price, price before rules, and the rule applied."""
+
+    price_gross: Decimal
+    list_price_gross: Decimal
+    rule: "PricingRule | None"
+    source: str  # "LIST" | "UOM_PRICE" | "RULE"
+
+
 class PricingService:
     @staticmethod
     def get_product_price(
@@ -757,6 +768,15 @@ class PricingService:
     ) -> Decimal:
         """
         Calculates the best price for a product given a quantity, date and specific UoM.
+        """
+        return PricingService.resolve_product_price(product, quantity, date=date, uom=uom).price_gross
+
+    @staticmethod
+    def resolve_product_price(
+        product: Product, quantity: Decimal, date=None, uom: UoM = None
+    ) -> PriceResolution:
+        """
+        Like get_product_price, but also reports the list price and the rule that set the price.
         """
         if date is None:
             date = timezone.localdate()
@@ -768,16 +788,19 @@ class PricingService:
             # If still no UoM, we can't do advanced pricing rules that depend on it
             from accounting.utils import get_vat_multiplier
 
-            return product.sale_price_gross or (product.sale_price * get_vat_multiplier()).quantize(
+            list_price = product.sale_price_gross or (product.sale_price * get_vat_multiplier()).quantize(
                 Decimal("1")
             )
+            return PriceResolution(list_price, list_price, None, "LIST")
 
         # Check for an explicit per-UoM price before falling back to proportional conversion
         uom_price_obj = ProductUoMPrice.objects.filter(product=product, uom=uom).first()
         if uom_price_obj:
             base_price = uom_price_obj.price_gross
+            base_source = "UOM_PRICE"
         else:
             _, base_price = PricingService.resolve_variant_price(product)
+            base_source = "LIST"
 
         # Build product filters including parent template if it's a variant
         product_filters = Q(product=product) | Q(category=product.category)
@@ -795,6 +818,7 @@ class PricingService:
         )
 
         best_price = base_price
+        applied_rule = None
 
         for rule in rules:
             # Convert objective quantity to rule's UoM if specified
@@ -897,9 +921,12 @@ class PricingService:
                         )
 
                 # Rule applied, stop (rules are ordered by priority)
+                applied_rule = rule
                 break
 
-        return best_price
+        return PriceResolution(
+            best_price, base_price, applied_rule, "RULE" if applied_rule else base_source
+        )
 
     @staticmethod
     def resolve_variant_price(variant: "Product") -> tuple:
