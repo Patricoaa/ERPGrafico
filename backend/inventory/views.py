@@ -242,6 +242,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(PricingSelector.get_pricing(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="sales")
+    def sales_overview(self, request, pk=None):
+        """Volumen de ventas, clientes y mezcla por canal, variante y unidad."""
+        from .sales_overview_params import SalesOverviewParamsSerializer
+        from .sales_overview_selector import SalesOverviewSelector
+
+        instance = self.get_object()
+        params = SalesOverviewParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(SalesOverviewSelector.get_overview(instance, params.to_params()))
+
     @action(detail=True, methods=["get"], url_path="production-performance")
     def production_performance(self, request, pk=None):
         """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
