@@ -39,6 +39,7 @@ export { useProductProductionPerformance } from './hooks/useProductProductionPer
 export { useProductSourcing } from './hooks/useProductSourcing'
 export { useProductOperations } from './hooks/useProductOperations'
 export { useProductPricing } from './hooks/useProductPricing'
+export { useProductSales } from './hooks/useProductSales'
 export { useCategories, useCategory } from './hooks/useCategories'
 export { useUoMs, useAllowedUoMs, type UoM } from './hooks/useUoMs'
 export { useAttributes, type Attribute } from './hooks/useAttributes'
