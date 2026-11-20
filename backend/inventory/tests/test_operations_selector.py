@@ -1,11 +1,12 @@
 # ruff: noqa: F811  (the env fixture is imported from test_product_stock_flow)
 """OperationsSelector: rotación, cobertura, stock inmóvil y suscripciones de un producto."""
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 
 from contacts.models import Contact
 from inventory.models import Product, Subscription
@@ -54,7 +55,7 @@ def test_no_outflow_gives_null_turnover_and_coverage(env):
     _move(env, "vendor", "internal", "10", on=date(2026, 1, 1))
     rot = _rot(env)
     assert rot["out_qty"] == 0.0
-    assert rot["turnover"] == 0.0
+    assert rot["turnover"] is None
     assert rot["days_of_inventory"] is None
     assert rot["coverage_days"] is None
 
@@ -191,14 +192,39 @@ def test_totals_only_count_active(env):
 
 
 def test_due_90d_total_and_overdue_days(env):
+    today = timezone.localdate()
     product = _sub_product(env)
-    _subscription(product, "100", next_payment=date(2027, 2, 1))   # 32 days after date_to → due
-    _subscription(product, "200", next_payment=date(2027, 6, 1))   # far
-    _subscription(product, "50", next_payment=date(2026, 12, 21))  # 10 days overdue
+    _subscription(product, "100", next_payment=today + timedelta(days=32))
+    _subscription(product, "200", next_payment=today + timedelta(days=200))
+    _subscription(product, "50", next_payment=today - timedelta(days=10))
     subs = _ops(env, product=product)["subscriptions"]
     assert subs["due_90d_total"] == pytest.approx(150.0)
     days = sorted(i["days_to_payment"] for i in subs["items"])
     assert days[0] == -10 and days[1] == 32
+
+
+def test_subscription_dates_are_measured_from_today_not_date_to(env):
+    today = timezone.localdate()
+    product = _sub_product(env)
+    _subscription(product, "100", next_payment=today + timedelta(days=30))
+    subs = _ops(env, product=product, date_to=date(2025, 6, 30))["subscriptions"]
+    assert subs["items"][0]["days_to_payment"] == 30
+    assert subs["due_90d_total"] == pytest.approx(100.0)
+
+
+def test_payment_variation_is_computed_per_supplier(env):
+    product = _sub_product(env)
+    a, b = _supplier("Licencia A"), _supplier("Licencia B")
+    _payment(env, product, "100", date(2026, 1, 5), supplier=a)
+    _payment(env, product, "50", date(2026, 1, 6), supplier=b)
+    _payment(env, product, "110", date(2026, 2, 5), supplier=a)
+    _payment(env, product, "50", date(2026, 2, 6), supplier=b)
+    subs = _ops(env, product=product)["subscriptions"]
+    by = {(p["supplier"], p["date"]): p["change_pct"] for p in subs["payments"]}
+    assert by[("Licencia A", "2026-02-05")] == pytest.approx(10.0)
+    assert by[("Licencia B", "2026-02-06")] == pytest.approx(0.0)
+    assert by[("Licencia B", "2026-01-06")] is None
+    assert subs["first_to_last_pct"] is None  # mixed suppliers: no single first-to-last figure
 
 
 def test_payments_exclude_draft_and_cancelled(env):

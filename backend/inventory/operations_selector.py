@@ -11,6 +11,7 @@ from datetime import date, timedelta
 
 from django.db.models import Max, Sum
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
 
 from .models import Product, StockMove, Subscription
 from .selectors import ProductSelector
@@ -65,7 +66,7 @@ class OperationsSelector:
                 if caps["tracks_stock"] else None
             ),
             "subscriptions": (
-                OperationsSelector._subscriptions(product_ids, date_to) if caps["recurring"] else None
+                OperationsSelector._subscriptions(product_ids) if caps["recurring"] else None
             ),
         }
 
@@ -100,7 +101,7 @@ class OperationsSelector:
 
         stock_now = curve.at(date_to)
         avg_stock = curve.average(date_from, date_to)
-        turnover = out_qty / avg_stock if avg_stock > 0 else None
+        turnover = out_qty / avg_stock if avg_stock > 0 and out_qty > 0 else None
         window_days = (date_to - date_from).days + 1
         last_out = last.get("OUT")
         idle = stock_now > 0 and (last_out is None or (date_to - last_out).days >= idle_days)
@@ -130,8 +131,11 @@ class OperationsSelector:
         }
 
     @staticmethod
-    def _subscriptions(product_ids, as_of: date) -> dict:
+    def _subscriptions(product_ids) -> dict:
         from purchasing.models import PurchaseLine
+
+        # next_payment_date is current state, so it is always measured from today (not from date_to).
+        as_of = timezone.localdate()
 
         items = []
         for sub in Subscription.objects.filter(product_id__in=product_ids).select_related("supplier"):
@@ -154,7 +158,7 @@ class OperationsSelector:
         )
 
         payments = []
-        previous: float | None = None
+        previous_by_supplier: dict[str | None, float] = {}
         lines = (
             PurchaseLine.objects.filter(product_id__in=product_ids)
             .exclude(order__status__in=("DRAFT", "CANCELLED"))
@@ -162,16 +166,18 @@ class OperationsSelector:
         )
         for line in lines:
             cost = float(line.unit_cost)
+            supplier = line.order.supplier.name if line.order.supplier else None
+            previous = previous_by_supplier.get(supplier)
             payments.append({
                 "date": line.order.date.isoformat(),
-                "supplier": line.order.supplier.name if line.order.supplier else None,
+                "supplier": supplier,
                 "unit_cost": cost,
                 "quantity": float(line.quantity),
                 "change_pct": _pct_change(cost, previous) if previous is not None else None,
             })
-            previous = cost
+            previous_by_supplier[supplier] = cost
         first_to_last = (
-            _pct_change(payments[-1]["unit_cost"], payments[0]["unit_cost"]) if len(payments) > 1 else None
+            _pct_change(payments[-1]["unit_cost"], payments[0]["unit_cost"]) if len(payments) > 1 and len({p["supplier"] for p in payments}) == 1 else None
         )
         annualized_total = sum(i["annualized"] for i in active)
         return {
