@@ -1,4 +1,5 @@
 import type { PricingParams, ProductPricing } from "../analytics/pricing.types"
+import type { CostsParams, ProductCosts } from "../analytics/costs.types"
 import type { ProductSales, SalesParams } from "../analytics/sales.types"
 import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.types"
 import type { ProductionPerformance, ProductionPerformanceParams } from "../analytics/productionPerformance.types"
@@ -139,6 +140,12 @@ export const inventoryApi = {
     /** Sales volume, customers and mix by channel, variant and unit. */
     getProductSales: async (id: number, params: SalesParams): Promise<ProductSales> => {
         const { data } = await api.get<ProductSales>(`inventory/products/${id}/sales/`, { params })
+        return data
+    },
+
+    /** Cost by cost mode: weighted, purchases, theoretical BOM and real cost per work order. */
+    getProductCosts: async (id: number, params: CostsParams): Promise<ProductCosts> => {
+        const { data } = await api.get<ProductCosts>(`inventory/products/${id}/costs/`, { params })
         return data
     },
 
