@@ -27,6 +27,10 @@ class PricingParams:
     granularity: str = "month"
 
 
+EFFECT_WINDOW_DAYS = 28
+EFFECT_MIN_DAYS = 7
+EFFECT_MIN_UNITS = 5
+
 _ZERO = {"units": 0.0, "net_revenue": 0.0, "gross_revenue": 0.0, "cost": 0.0, "list_revenue": 0.0, "foregone_revenue": 0.0}
 
 
@@ -141,6 +145,70 @@ def _list_price_changes(product: Product, date_from: date | None, date_to: date)
     return {"baseline": baseline, "changes": changes}
 
 
+def _side(daily: list[dict], start: date, end: date, has_cost: bool) -> dict:
+    days = max(0, (end - start).days + 1)
+    inside = [d for d in daily if start <= d["day"] <= end]
+    units = sum(d["units"] for d in inside)
+    net = sum(d["net_revenue"] for d in inside)
+    cost = sum(d["cost"] for d in inside)
+    return {
+        "days": days,
+        "units": units,
+        "units_per_day": units / days if days else 0.0,
+        "revenue_per_day": net / days if days else 0.0,
+        "margin_per_unit": (net - cost) / units if has_cost and units else None,
+    }
+
+
+def _events(changes: list[dict], windows: list[dict], range_from: date, date_to: date) -> list[dict]:
+    """Cambios de lista e inicio/fin de reglas dentro del rango, ordenados por fecha (el fin es el primer día sin la regla)."""
+    events = [
+        {"kind": "list_price", "label": f"Precio de lista {c['from']:g} → {c['to']:g}", "date": date.fromisoformat(c["date"])}
+        for c in changes
+    ]
+    for rule in windows:
+        if rule["start"]:
+            events.append({"kind": "rule", "label": f"Regla {rule['name']} (inicio)", "date": date.fromisoformat(rule["start"])})
+        if rule["end"]:
+            events.append(
+                {"kind": "rule", "label": f"Regla {rule['name']} (fin)", "date": date.fromisoformat(rule["end"]) + timedelta(days=1)}
+            )
+    return sorted((e for e in events if range_from <= e["date"] <= date_to), key=lambda e: e["date"])
+
+
+def _effects(lines, params: PricingParams, date_to: date, has_cost: bool, changes: list[dict], windows: list[dict]) -> list[dict]:
+    daily = [
+        {"day": r["day"], **{k: float(r[k] or 0) for k in ("units", "net_revenue", "cost")}}
+        for r in lines.annotate(day=F("delivery__delivery_date"))
+        .values("day")
+        .annotate(units=Sum("quantity"), net_revenue=Sum(net_revenue_expression()),
+                  cost=Sum(ExpressionWrapper(F("quantity") * F("unit_cost"), output_field=_DECIMAL)))
+    ]
+    range_from = params.date_from or (min((d["day"] for d in daily), default=None)) or date.min
+    events = _events(changes, windows, range_from, date_to)
+    window = timedelta(days=EFFECT_WINDOW_DAYS)
+    effects = []
+    for event in events:
+        day = event["date"]
+        earlier = [e["date"] for e in events if e["date"] < day]
+        later = [e["date"] for e in events if e["date"] > day]
+        before = _side(daily, max(range_from, day - window, max(earlier, default=date.min)), day - timedelta(days=1), has_cost)
+        after_end = min(date_to, day + window - timedelta(days=1), min(later, default=date.max) - timedelta(days=1))
+        after = _side(daily, day, after_end, has_cost)
+        effects.append(
+            {
+                "kind": event["kind"],
+                "label": event["label"],
+                "date": day.isoformat(),
+                "period": _period_label(_period_start(day, params.granularity), params.granularity),
+                "before": before,
+                "after": after,
+                "reliable": all(s["days"] >= EFFECT_MIN_DAYS and s["units"] >= EFFECT_MIN_UNITS for s in (before, after)),
+            }
+        )
+    return effects
+
+
 class PricingSelector:
     @staticmethod
     def get_pricing(product: Product, params: PricingParams) -> dict:
@@ -171,6 +239,8 @@ class PricingSelector:
                 _period_start(date.fromisoformat(change["date"]), params.granularity), params.granularity
             )
 
+        windows = rule_windows(product, product_ids)
+
         sale_price = float(product.sale_price or 0)
         cost = float(product.cost_price or 0)
         return {
@@ -187,6 +257,6 @@ class PricingSelector:
                 "by_rule": _by_rule(lines, params.granularity),
             },
             "list_price_changes": list_price_changes,
-            "rule_windows": rule_windows(product, product_ids),
-            "effects": [],
+            "rule_windows": windows,
+            "effects": _effects(lines, params, date_to, has_cost, list_price_changes["changes"], windows),
         }

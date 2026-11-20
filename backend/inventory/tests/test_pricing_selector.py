@@ -163,3 +163,82 @@ def test_by_rule_splits_price_per_rule(env):
     assert by_rule[str(rule.pk)]["label"] == "Mayorista"
     assert by_rule["list"]["avg_price"] == pytest.approx(1000.0)
     assert by_rule["list"]["period"] == "2026-03"
+
+
+def _effects(env, **overrides):
+    return _pricing(env, **overrides)["effects"]
+
+
+def test_effect_compares_28_day_windows(env):
+    _price_history(env, (date(2026, 6, 1), "1200"))
+    _sale(env, qty="5", on=date(2026, 5, 10))
+    _sale(env, qty="5", on=date(2026, 5, 20))
+    _sale(env, qty="20", on=date(2026, 6, 10))
+    effect = _effects(env)[0]
+    assert (effect["kind"], effect["date"], effect["period"]) == ("list_price", "2026-06-01", "2026-06")
+    assert effect["before"]["days"] == 28
+    assert effect["before"]["units_per_day"] == pytest.approx(10 / 28)
+    assert effect["before"]["revenue_per_day"] == pytest.approx(10000 / 28)
+    assert effect["after"]["units_per_day"] == pytest.approx(20 / 28)
+    assert effect["after"]["margin_per_unit"] == pytest.approx(600.0)
+    assert effect["reliable"] is True
+
+
+def test_effect_windows_truncated_by_neighbor_event(env):
+    _price_history(env, (date(2026, 6, 1), "1200"), (date(2026, 6, 11), "1300"))
+    first, second = _effects(env)
+    assert first["after"]["days"] == 10
+    assert second["before"]["days"] == 10
+
+
+def test_effect_truncated_by_range(env):
+    _price_history(env, (date(2026, 6, 1), "1200"))
+    effect = _effects(env, date_from=date(2026, 5, 20), date_to=date(2026, 6, 10))[0]
+    assert effect["before"]["days"] == 12
+    assert effect["after"]["days"] == 10
+
+
+def test_effect_unreliable_with_few_units_or_days(env):
+    _price_history(env, (date(2026, 6, 1), "1200"))
+    _sale(env, qty="3", on=date(2026, 5, 15))
+    _sale(env, qty="30", on=date(2026, 6, 10))
+    assert _effects(env)[0]["reliable"] is False
+    _sale(env, qty="10", on=date(2026, 5, 30))
+    assert _effects(env)[0]["reliable"] is True
+    assert _effects(env, date_from=date(2026, 5, 29))[0]["reliable"] is False
+
+
+def test_effect_margin_per_unit_none_without_cost(env):
+    _price_history(env, (date(2026, 6, 1), "1200"))
+    _sale(env, qty="10", cost="0", on=date(2026, 5, 20))
+    effect = _effects(env)[0]
+    assert effect["before"]["margin_per_unit"] is None
+
+
+def test_rule_events_use_start_and_end(env):
+    _rule(env, name="Promo", start_date=date(2026, 2, 1), end_date=date(2026, 2, 28))
+    effects = _effects(env)
+    assert [(e["kind"], e["label"], e["date"]) for e in effects] == [
+        ("rule", "Regla Promo (inicio)", "2026-02-01"),
+        ("rule", "Regla Promo (fin)", "2026-03-01"),
+    ]
+
+
+def test_effects_without_sales_are_unreliable(env):
+    _price_history(env, (date(2026, 6, 1), "1200"))
+    effect = _effects(env)[0]
+    assert effect["before"]["units"] == 0.0
+    assert effect["reliable"] is False
+
+
+def test_effects_query_count_constant_with_more_rows(env):
+    _price_history(env, (date(2026, 6, 1), "1200"), (date(2026, 9, 1), "1300"))
+    _rule(env, name="Promo", start_date=date(2026, 2, 1), end_date=date(2026, 2, 28))
+    _sale(env)
+    with CaptureQueriesContext(connection) as few:
+        _pricing(env)
+    for i in range(15):
+        _sale(env, on=date(2026, 1 + i % 11, 5))
+    with CaptureQueriesContext(connection) as many:
+        _pricing(env)
+    assert len(many) == len(few)
