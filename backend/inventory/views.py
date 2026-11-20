@@ -236,6 +236,18 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         date_from, date_to = params.to_range()
         return Response(ProductionPerformanceSelector.get_performance(instance, date_from, date_to))
 
+    @action(detail=True, methods=["get"], url_path="sourcing")
+    def sourcing(self, request, pk=None):
+        """Fabricar vs comprar y uso como insumo con sensibilidad de costo (ADR-0147)."""
+        from .sourcing_params import SourcingParamsSerializer
+        from .sourcing_selector import SourcingSelector
+
+        instance = self.get_object()
+        params = SourcingParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        date_from, date_to, increase_pct = params.to_args()
+        return Response(SourcingSelector.get_sourcing(instance, date_from, date_to, increase_pct))
+
     @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):
         from django.core.exceptions import ValidationError
