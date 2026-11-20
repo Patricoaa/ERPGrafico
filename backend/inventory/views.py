@@ -236,6 +236,18 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         date_from, date_to = params.to_range()
         return Response(ProductionPerformanceSelector.get_performance(instance, date_from, date_to))
 
+    @action(detail=True, methods=["get"], url_path="operations")
+    def operations(self, request, pk=None):
+        """Rotación, cobertura, stock inmóvil y suscripciones del producto (ADR-0148)."""
+        from .operations_params import OperationsParamsSerializer
+        from .operations_selector import OperationsSelector
+
+        instance = self.get_object()
+        params = OperationsParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        date_from, date_to, idle_days = params.to_args()
+        return Response(OperationsSelector.get_operations(instance, date_from, date_to, idle_days))
+
     @action(detail=True, methods=["get"], url_path="sourcing")
     def sourcing(self, request, pk=None):
         """Fabricar vs comprar y uso como insumo con sensibilidad de costo (ADR-0147)."""
