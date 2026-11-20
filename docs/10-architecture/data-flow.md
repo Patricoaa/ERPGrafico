@@ -143,3 +143,7 @@ El costo real de una OT terminada es Σ `ProductionConsumption.quantity × stock
 ### Fabricar vs comprar y sensibilidad de insumos (ADR-0147)
 
 El ahorro por unidad es `costo de compra promedio − costo real fabricado` (ambos por unidad base, misma ventana); es `null` si falta un lado. Para un insumo, el aumento de costo de cada producto padre con subida `p %` es `costo del insumo en la BOM × p / 100`, con el margen recalculado sobre el precio neto del padre. Expuesto en `GET /inventory/products/{id}/sourcing/`.
+
+### Rotación, cobertura y suscripciones (ADR-0148)
+
+La rotación es `salidas de la ventana / stock promedio ponderado por días` y la cobertura `stock actual / consumo diario de los últimos 90 días`; ambas son `null` sin datos. El costo anualizado de una suscripción es `monto × períodos por año`. Expuesto en `GET /inventory/products/{id}/operations/`.
