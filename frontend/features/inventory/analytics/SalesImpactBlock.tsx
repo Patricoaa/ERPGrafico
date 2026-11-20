@@ -32,9 +32,11 @@ const GROUPS: Array<{ value: SalesImpactGroupBy; label: string }> = [
 const formatIsoDate = (iso: string) => iso.split("-").reverse().join("-")
 
 /** "Precio y margen": segmentable sales/margin chart, price-rule windows and segment table (ADR-0145). */
-export function SalesImpactBlock({ productId, period }: { productId: number; period: PeriodKey }) {
+export function SalesImpactBlock({
+    productId, period, defaultGroupBy = "rule",
+}: { productId: number; period: PeriodKey; defaultGroupBy?: SalesImpactGroupBy }) {
     const [metric, setMetric] = useState<SalesImpactMetric>("net_revenue")
-    const [groupBy, setGroupBy] = useState<SalesImpactGroupBy>("rule")
+    const [groupBy, setGroupBy] = useState<SalesImpactGroupBy>(defaultGroupBy)
 
     const dateFrom = useMemo(() => periodToDateFrom(period), [period])
     const granularity = periodToGranularity(period)

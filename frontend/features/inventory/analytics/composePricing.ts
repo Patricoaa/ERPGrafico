@@ -52,7 +52,7 @@ export function composePricing(data: ProductPricing, capabilities: { has_variant
     const sections: PricingComposition["sections"] = []
     if (hasSales) sections.push("charts")
     if (hasSales && data.effects.length > 0) sections.push("effects")
-    sections.push("breakdown")
+    if (hasSales) sections.push("breakdown")
 
     return {
         hero: data.has_cost ? "margin" : "price",

@@ -5,7 +5,7 @@ import type { ProductCapabilities } from "../productAnalyticsRegistry"
 vi.mock("../LegacyInsightsPanel", () => ({
     LegacyInsightsPanel: ({ tab }: { tab: string }) => <div data-marker={`legacy-${tab}`} />,
 }))
-vi.mock("../SalesImpactBlock", () => ({ SalesImpactBlock: () => <div data-marker="block-pricing" /> }))
+vi.mock("../PricingBlock", () => ({ PricingBlock: () => <div data-marker="block-pricing" /> }))
 vi.mock("../ProductionPerformanceBlock", () => ({ ProductionPerformanceBlock: () => <div data-marker="block-performance" /> }))
 vi.mock("../OperationsBlock", () => ({ OperationsBlock: () => <div data-marker="block-operations" /> }))
 vi.mock("../SourcingBlock", () => ({
@@ -39,8 +39,8 @@ describe("TabContent", () => {
         expect(markers("sales", { sells: true })).toEqual(["legacy-sales", "legacy-customers"])
     })
 
-    it("pricing stacks the price-and-margin block and the price history", () => {
-        expect(markers("pricing", { sells: true })).toEqual(["block-pricing", "legacy-price"])
+    it("pricing renders only its own block, with no legacy content", () => {
+        expect(markers("pricing", { sells: true })).toEqual(["block-pricing"])
     })
 
     it("costs shows the cost history", () => {
@@ -81,9 +81,10 @@ describe("TabContent", () => {
 })
 
 describe("tabHasLegacyContent", () => {
-    it("is true for every tab except subscription", () => {
-        const tabs: ProductAnalyticsTabId[] = ["overview", "sales", "pricing", "costs", "procurement", "inventory", "production"]
+    it("is true for every tab except pricing and subscription", () => {
+        const tabs: ProductAnalyticsTabId[] = ["overview", "sales", "costs", "procurement", "inventory", "production"]
         for (const tab of tabs) expect(tabHasLegacyContent(tab)).toBe(true)
+        expect(tabHasLegacyContent("pricing")).toBe(false)
         expect(tabHasLegacyContent("subscription")).toBe(false)
     })
 })

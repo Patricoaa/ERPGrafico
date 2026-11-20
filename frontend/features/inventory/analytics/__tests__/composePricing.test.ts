@@ -69,9 +69,9 @@ describe("composePricing", () => {
         expect(composePricing(data({ has_cost: false }), caps).hero).toBe("price")
     })
 
-    it("omits charts and effects without sales, keeps the breakdown", () => {
+    it("has no sections without sales", () => {
         const empty = data({ series: { points: [], by_rule: [] } })
-        expect(composePricing(empty, caps).sections).toEqual(["breakdown"])
+        expect(composePricing(empty, caps).sections).toEqual([])
     })
 
     it("omits effects when there are no events", () => {

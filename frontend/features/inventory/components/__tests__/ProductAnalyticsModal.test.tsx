@@ -41,10 +41,10 @@ vi.mock("../../analytics/OperationsBlock", () => ({
 vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
-vi.mock("../../analytics/SalesImpactBlock", async () => {
+vi.mock("../../analytics/PricingBlock", async () => {
     const { RailControls } = await import("../../analytics/RailControls")
     return {
-        SalesImpactBlock: ({ productId, period }: { productId: number; period: string }) => (
+        PricingBlock: ({ productId, period }: { productId: number; period: string }) => (
             <div data-period={period}>
                 bloque-precio-margen-{productId}
                 <RailControls><span>control-precio</span></RailControls>
