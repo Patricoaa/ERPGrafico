@@ -400,6 +400,40 @@ class SaleLine(models.Model):
 
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False)
 
+    # Price provenance, stamped by SalesService.create_sale_order (never client-writable).
+    # Null on lines created before it existed and on debit-note / supplemental lines.
+    class PriceSource(models.TextChoices):
+        LIST = "LIST", _("Precio de lista")
+        UOM_PRICE = "UOM_PRICE", _("Precio por unidad de medida")
+        RULE = "RULE", _("Regla de precio")
+        MANUAL = "MANUAL", _("Precio manual")
+
+    pricing_rule = models.ForeignKey(
+        "inventory.PricingRule",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="sale_lines",
+        verbose_name=_("Regla de precio aplicada"),
+    )
+    list_unit_price_gross = models.DecimalField(
+        _("Precio de lista bruto (antes de reglas)"),
+        max_digits=12,
+        decimal_places=0,
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    price_source = models.CharField(
+        _("Origen del precio"),
+        max_length=12,
+        choices=PriceSource.choices,
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
     # Track delivered quantity
     quantity_delivered = models.DecimalField(
         _("Cantidad Despachada"),
