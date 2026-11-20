@@ -38,7 +38,7 @@ export type ProductAnalyticsTabId =
 
 export type OverviewKpiId = "units_sold" | "valuation" | "stock" | "units_purchased" | "production_usage"
 
-const TAB_ORDER: ProductAnalyticsTabId[] = [
+export const TAB_ORDER: ProductAnalyticsTabId[] = [
     "overview", "sales", "pricing", "costs", "procurement", "inventory", "production", "subscription",
 ]
 
