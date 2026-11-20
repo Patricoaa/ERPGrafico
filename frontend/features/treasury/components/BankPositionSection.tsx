@@ -50,7 +50,7 @@ export function CheckingAccountCard({ account, bankName, onClick }: { account: B
             </div>
             <div>
                 <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Saldo de la cuenta</p>
-                <MoneyDisplay amount={account.current_balance} className="text-2xl font-black tracking-tighter tabular-nums" />
+                <MoneyDisplay amount={account.current_balance} className="kpi-value" />
             </div>
             {disponible != null && (
                 <div className="rounded-sm bg-info/8 px-3 py-2 space-y-0.5">
@@ -89,7 +89,7 @@ export function LoanCard({ loan, bankName, onClick }: { loan: BankOverviewLoanIt
             </div>
             <div>
                 <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Saldo insoluto</p>
-                <MoneyDisplay amount={loan.outstanding_balance} className="text-2xl font-black tracking-tighter tabular-nums" />
+                <MoneyDisplay amount={loan.outstanding_balance} className="kpi-value" />
             </div>
             <div className="grid grid-cols-2 gap-x-3">
                 <div>
@@ -133,7 +133,7 @@ export function CreditCardCard({ account, bankName, onClick }: { account: BankAc
             </div>
             <div>
                 <p className="text-3xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Disponible de la tarjeta</p>
-                <MoneyDisplay amount={available ?? 0} className="text-2xl font-black tracking-tighter tabular-nums" />
+                <MoneyDisplay amount={available ?? 0} className="kpi-value" />
             </div>
             <div className="flex items-end justify-between gap-2">
                 <div>

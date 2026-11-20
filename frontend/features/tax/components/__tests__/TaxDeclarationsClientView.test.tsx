@@ -31,6 +31,8 @@ vi.mock("@/components/entity-view", () => ({
     useEntityCollection: () => ({}),
 }))
 vi.mock("@/components/shared", () => ({
+    Metric: ({ label }: { label: string }) => <div>{label}</div>,
+    MetricStrip: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     SkeletonShell: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     UnifiedSearchBar: () => null,
     bindUnifiedSearch: () => ({}),

@@ -2,7 +2,6 @@
 import { formatCurrency } from "@/lib/money"
 
 import React, { useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
     CheckCircle2,
     AlertCircle,
@@ -20,7 +19,7 @@ import { taxPeriodEntity, taxPeriodViews } from '../entity-view/taxPeriod.entity
 import { type TaxPeriod } from "../types"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import { EntityPanelTab } from "@/components/providers"
-import { SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Metric, MetricStrip, SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useTaxPeriods } from "../hooks/useTaxQueries"
 
@@ -86,57 +85,23 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+            <div className="mb-6 shrink-0">
                 <SkeletonShell isLoading={isLoading} ariaLabel="Cargando períodos tributarios">
-                    <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">Período Actual</CardTitle>
-                            <CardDescription className="text-2xl font-bold text-foreground">
-                                {currentPeriodDisplay}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {isLatestClosed ? (
-                                <div className="flex items-center gap-2 text-sm text-success font-medium">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    Período Cerrado
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2 text-sm text-warning font-medium">
-                                    <AlertCircle className="h-4 w-4" />
-                                    Pendiente de declaración
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
-                            <CardDescription className="text-2xl font-bold text-foreground">
-                                {formatCurrency(currentVatToPay)}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-xs text-muted-foreground italic">
-                                Basado en {latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">Último Remanente</CardTitle>
-                            <CardDescription className="text-2xl font-bold text-foreground">
-                                -
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-sm text-muted-foreground font-medium">
-                                Información no disponible
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <MetricStrip label="Resumen tributario">
+                        <Metric
+                            label="Período Actual"
+                            value={currentPeriodDisplay}
+                            lead={isLatestClosed ? CheckCircle2 : AlertCircle}
+                            tone={isLatestClosed ? "success" : "warning"}
+                            context={isLatestClosed ? "Período cerrado" : "Pendiente de declaración"}
+                        />
+                        <Metric
+                            label="IVA por Pagar (Estimado)"
+                            value={formatCurrency(currentVatToPay)}
+                            context={`Basado en ${latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}`}
+                        />
+                        <Metric label="Último Remanente" value={null} context="Información no disponible" />
+                    </MetricStrip>
                 </SkeletonShell>
             </div>
 

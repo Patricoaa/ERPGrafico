@@ -62,7 +62,7 @@ export function SessionCashSummary({ data, expected, sessionId, className }: Ses
     ].filter(m => m.amount > 0) : []
 
     return (
-        <section aria-label="Resumen de la sesión" className={cn("surface-panel flex flex-col shadow-card", className)}>
+        <section aria-label="Resumen de la sesión" className={cn("surface-panel flex flex-col", className)}>
             <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
                 <div className="min-w-0">
                     <h2 className="text-lg font-semibold">Resumen de la sesión</h2>
@@ -100,7 +100,7 @@ export function SessionCashSummary({ data, expected, sessionId, className }: Ses
                     </dl>
                     <div className="flex items-baseline justify-between gap-4 py-4">
                         <span className="text-xl font-bold">Efectivo esperado</span>
-                        <span className="font-mono text-3xl font-black tabular-nums">{formatCurrency(expected)}</span>
+                        <span className="kpi-value">{formatCurrency(expected)}</span>
                     </div>
                     {salesByMethod.length > 0 && (
                         <div className="py-4">

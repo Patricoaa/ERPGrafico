@@ -7,10 +7,10 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-    Calendar, Banknote, TrendingUp, TrendingDown,
+    Banknote, TrendingUp, TrendingDown,
     Info, AlertCircle, Activity
 } from "lucide-react"
-import { ActionConfirmModal, DataCell, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { ActionConfirmModal, Metric, MetricStrip, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from "@/features/treasury"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -138,59 +138,38 @@ export function StatementDetailPanel({
             <div className={detailOnly ? "" : "space-y-4"}>
                 {!detailOnly && (
                     <>
-                        {/* Summary Grid */}
-                        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                            <Card className="shadow-card bg-card border">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                                    <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
-                                    <Banknote className="h-3.5 w-3.5 text-primary" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-xl font-bold font-mono">{formatCurrency(statement.opening_balance)}</div>
-                                    <p className="text-3xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                                        <Calendar className="h-2.5 w-2.5" />
-                                        {format(parseDateOnly(statement.statement_date.slice(0, 10)), "dd MMMM yyyy", { locale: es })}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="shadow-card bg-card border">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                                    <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
-                                    <TrendingUp className="h-3.5 w-3.5 text-success" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-xl font-bold font-mono">{formatCurrency(statement.closing_balance)}</div>
-                                    <p className={`text-3xs font-bold mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? "text-income" : "text-expense"}`}>
-                                        {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
-                                        {netMovement >= 0 ? "Excedente" : "Déficit"}: {formatCurrency(Math.abs(netMovement))}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="shadow-card bg-card border">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                                    <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
-                                    <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-xl font-bold font-mono"><DataCell.CurrencyFlow value={totalDebits} direction="outflow" showIcon={false} /></div>
-                                    <p className="text-3xs text-muted-foreground mt-0.5">
-                                        {statementLines.filter((l) => parseFloat(l.debit) > 0).length} cargos detectados
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="shadow-card bg-card border">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                                    <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
-                                    <TrendingUp className="h-3.5 w-3.5 text-success/50" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-xl font-bold font-mono"><DataCell.CurrencyFlow value={totalCredits} direction="inflow" showIcon={false} /></div>
-                                    <p className="text-3xs text-muted-foreground mt-0.5">
-                                        {statementLines.filter((l) => parseFloat(l.credit) > 0).length} abonos detectados
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </div>
+                        {/* Summary */}
+                        <MetricStrip label="Resumen de la cartola">
+                            <Metric
+                                label="Apertura"
+                                lead={Banknote}
+                                value={formatCurrency(statement.opening_balance)}
+                                context={format(parseDateOnly(statement.statement_date.slice(0, 10)), "dd MMMM yyyy", { locale: es })}
+                            />
+                            <Metric
+                                label="Cierre"
+                                lead={TrendingUp}
+                                value={formatCurrency(statement.closing_balance)}
+                                delta={{
+                                    text: formatCurrency(Math.abs(netMovement)),
+                                    direction: netMovement >= 0 ? "up" : "down",
+                                    tone: netMovement >= 0 ? "success" : "destructive",
+                                }}
+                                context={netMovement >= 0 ? "Excedente del período" : "Déficit del período"}
+                            />
+                            <Metric
+                                label="Cargos (Sale)"
+                                lead={TrendingDown}
+                                value={formatCurrency(totalDebits)}
+                                context={`${statementLines.filter((l) => parseFloat(l.debit) > 0).length} cargos detectados`}
+                            />
+                            <Metric
+                                label="Abonos (Entra)"
+                                lead={TrendingUp}
+                                value={formatCurrency(totalCredits)}
+                                context={`${statementLines.filter((l) => parseFloat(l.credit) > 0).length} abonos detectados`}
+                            />
+                        </MetricStrip>
 
                         {/* Progress */}
                         <div className="surface-panel p-4 shadow-card">
