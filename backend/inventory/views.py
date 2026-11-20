@@ -213,6 +213,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         data = ProductSelector.get_insights(instance)
         return Response(data)
 
+    @action(detail=True, methods=["get"], url_path="sales-impact")
+    def sales_impact(self, request, pk=None):
+        """Margen real y analítica de reglas de precio, segmentable (ADR-0145)."""
+        from .sales_impact_params import SalesImpactParamsSerializer
+        from .sales_impact_selector import SalesImpactSelector
+
+        instance = self.get_object()
+        params = SalesImpactParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(SalesImpactSelector.get_sales_impact(instance, params.to_params()))
+
     @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):
         from django.core.exceptions import ValidationError
