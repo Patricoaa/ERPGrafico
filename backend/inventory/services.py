@@ -778,6 +778,8 @@ class PricingService:
         """
         Like get_product_price, but also reports the list price and the rule that set the price.
         """
+        from accounting.utils import get_vat_multiplier
+
         if date is None:
             date = timezone.localdate()
 
@@ -786,8 +788,6 @@ class PricingService:
 
         if uom is None:
             # If still no UoM, we can't do advanced pricing rules that depend on it
-            from accounting.utils import get_vat_multiplier
-
             list_price = product.sale_price_gross or (product.sale_price * get_vat_multiplier()).quantize(
                 Decimal("1")
             )
@@ -868,8 +868,6 @@ class PricingService:
                     if rule.fixed_price_gross is not None:
                         rule_base = rule.fixed_price_gross
                     elif rule.fixed_price is not None:
-                        from accounting.utils import get_vat_multiplier
-
                         rule_base = (rule.fixed_price * get_vat_multiplier()).quantize(
                             Decimal("1"), rounding="ROUND_HALF_UP"
                         )

@@ -50,8 +50,20 @@ class SalesService:
     def _price_provenance(line_data: dict) -> dict:
         """Provenance fields (rule, list price, source) for a line about to be created.
 
-        The price the client sent is compared with the one the backend resolves from the
-        same pricing logic: a match records the rule/source, a mismatch is a MANUAL price.
+        Analytics metadata must never block a sale: any failure resolving it is logged and the
+        line is created with null provenance.
+        """
+        try:
+            return SalesService._resolve_price_provenance(line_data)
+        except Exception:
+            logger.exception("No se pudo resolver la procedencia del precio de la línea")
+            return {}
+
+    @staticmethod
+    def _resolve_price_provenance(line_data: dict) -> dict:
+        """The price the client sent is compared with the one the backend resolves from the
+        same pricing logic: a match records the rule/source, a mismatch is a MANUAL price
+        ("different from what the backend resolves at creation", not necessarily user-edited).
         Discounts live in their own fields and do not affect the comparison.
         """
         from accounting.utils import get_vat_multiplier

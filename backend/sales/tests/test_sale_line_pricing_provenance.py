@@ -166,3 +166,30 @@ def test_serializer_path_stamps_provenance(customer, product):
     line = serializer.save().lines.get()
     assert line.price_source == "RULE"
     assert line.pricing_rule == rule
+
+
+def test_surcharge_variant_with_parent_rule_creates_sale(customer, product):
+    """Regresión: la resolución de una variante SURCHARGE con regla del padre no debe romper la venta."""
+    variant = Product.objects.create(
+        name="Tarjeta Roja", category=product.category, uom=product.uom, sale_uom=product.uom,
+        purchase_uom=product.uom, product_type="STORABLE", sale_price=Decimal("1000"),
+        parent_template=product, price_inheritance_mode="SURCHARGE", price_surcharge=Decimal("100"),
+    )
+    variant.refresh_from_db()
+    rule = _rule(product)
+    line = _create_line(customer, variant, unit_price=Decimal("1000"), unit_price_gross=Decimal("1119"))
+    assert line.pricing_rule == rule
+    assert line.price_source == "RULE"
+
+
+def test_provenance_failure_does_not_block_the_sale(customer, product, monkeypatch):
+    from inventory.services import PricingService
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("pricing exploded")
+
+    monkeypatch.setattr(PricingService, "resolve_product_price", boom)
+    line = _create_line(customer, product, unit_price=product.sale_price, unit_price_gross=product.sale_price_gross)
+    assert line.price_source is None
+    assert line.pricing_rule is None
+    assert line.list_unit_price_gross is None

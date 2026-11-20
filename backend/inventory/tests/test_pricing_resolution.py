@@ -105,3 +105,18 @@ def test_get_product_price_matches_resolution(product, kind):
     assert PricingService.get_product_price(product, qty, uom=product.uom) == PricingService.resolve_product_price(
         product, qty, uom=product.uom
     ).price_gross
+
+
+def test_surcharge_variant_with_parent_fixed_rule(product):
+    """Regresión: variante SURCHARGE + regla FIXED del template padre no debe lanzar UnboundLocalError."""
+    variant = Product.objects.create(
+        name="Tarjeta Roja", category=product.category, uom=product.uom, sale_uom=product.uom,
+        purchase_uom=product.uom, product_type="STORABLE", sale_price=Decimal("1000"),
+        parent_template=product, price_inheritance_mode="SURCHARGE", price_surcharge=Decimal("100"),
+    )
+    variant.refresh_from_db()
+    rule = _rule(product, rule_type="FIXED", fixed_price_gross=Decimal("1000"))
+    res = PricingService.resolve_product_price(variant, Decimal("10"), uom=variant.uom)
+    assert res.rule == rule
+    assert res.source == "RULE"
+    assert res.price_gross == Decimal("1000") + (Decimal("100") * Decimal("1.19")).quantize(Decimal("1"))
