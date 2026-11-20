@@ -3,9 +3,8 @@
 import { useState, useMemo } from "react"
 import {
     Chip, SkeletonShell, StatCard, ChartLegend, AnalyticsChart, getCssChartColors,
-    BaseModal, DataCell,
+    BaseModal, DataCell, DrawerLayout, RailNav,
 } from '@/components/shared'
-import { Button } from "@/components/ui/button"
 import type { LineChartConfig, BarChartConfig } from '@/components/shared'
 import {
     TrendingUp,
@@ -359,6 +358,18 @@ function ProductAnalyticsPanelInner({
         return { inQty, inCost, outQty, outCost }
     }, [data])
 
+    const productSelectorSlot = onProductChange ? (
+        <ProductSelector
+            value={productId}
+            onChange={() => {}}
+            onSelect={(p) => onProductChange(p.id as number, p.name)}
+            placeholder="Buscar producto..."
+            variant="inline"
+        />
+    ) : productName ? (
+        <span className="block text-sm font-semibold leading-tight break-words">{productName}</span>
+    ) : null
+
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full">
             {selectedTransaction && (
@@ -383,52 +394,20 @@ function ProductAnalyticsPanelInner({
                         <div className="p-6" />
                     </SkeletonShell>
                 ) : (
-                    <div className="flex-1 flex flex-row gap-4 w-full h-full min-h-0 overflow-hidden bg-transparent">
-                        {/* ── Sidebar nav ── */}
-                        <div className="w-52 shrink-0 flex flex-col gap-2 overflow-y-auto bg-transparent pb-4">
-                            {onProductChange ? (
-                                <div className="flex flex-col gap-2 mb-2 pb-4 border-b border-border/60">
-                                    <div className="mt-1 w-full">
-                                        <ProductSelector
-                                            value={productId}
-                                            onChange={() => {}}
-                                            onSelect={(p) => onProductChange(p.id as number, p.name)}
-                                            placeholder="Buscar producto..."
-                                            variant="inline"
-                                        />
-                                    </div>
-                                </div>
-                            ) : productName ? (
-                                <div className="flex flex-col gap-2 mb-2 pb-4 border-b border-border/60">
-                                    <div className="flex items-start gap-2">
-                                        <BarChart3 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                                        <span className="text-sm font-semibold leading-tight break-words">{productName}</span>
-                                    </div>
-                                </div>
-                            ) : null}
-                            {TABS.map((t) => {
-                                const Icon = t.icon
-                                const isActive = t.value === activeTab
-                                return (
-                                    <Button
-                                        key={t.value}
-                                        type="button"
-                                        variant="ghost"
-                                        onClick={() => setActiveTab(t.value)}
-                                        className={cn(
-                                            "flex w-full items-center justify-start gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all duration-200 h-auto",
-                                            isActive
-                                                ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground"
-                                                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                                        )}
-                                    >
-                                        <Icon className={cn("h-4 w-4", isActive ? "opacity-100" : "opacity-70")} />
-                                        {t.label}
-                                    </Button>
-                                )
-                            })}
-                        </div>
-
+                    <DrawerLayout
+                        leftRail={
+                            <RailNav
+                                ariaLabel="Secciones de análisis de producto"
+                                sections={[{ items: TABS.map(t => ({ ...t })) }]}
+                                value={activeTab}
+                                onValueChange={(v) => setActiveTab(v as TabValue)}
+                                top={productSelectorSlot}
+                            />
+                        }
+                        leftRailWidth="w-14 sm:w-56"
+                        noPadding
+                        contentClassName="p-4"
+                    >
                         {/* ── Tab content ── */}
                         <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-4 min-h-0">
 
@@ -664,7 +643,7 @@ function ProductAnalyticsPanelInner({
                             </div>
 
                         </div>
-                    </div>
+                    </DrawerLayout>
                 )}
             </div>
         </div>
@@ -686,12 +665,11 @@ export function ProductAnalyticsModal({
             onOpenChange={onOpenChange}
             icon={BarChart3}
             title="Análisis de producto"
-            description={productName ?? undefined}
             size="xl"
             hideScrollArea
             contentClassName="overflow-hidden"
         >
-            <div className="h-[80vh] p-4 overflow-hidden flex flex-col">
+            <div className="h-[80vh] overflow-hidden flex flex-col">
                 {productId && (
                     <ProductAnalyticsPanelInner
                         productId={productId}
