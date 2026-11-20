@@ -2,6 +2,81 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.133](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.132...v0.3.133) (2026-11-20)
+
+
+### ⚙️ Refactors
+
+* **analytics:** AnalyticsPanelContent reusa RailNav ([efa9911](https://github.com/Patricoaa/ERPGrafico/commit/efa99111f6b03257bff6649b547311ce56aa7d74))
+* **inventory:** resolve_product_price expone la regla aplicada ([2e1059a](https://github.com/Patricoaa/ERPGrafico/commit/2e1059a6aee3ed0fb22e6dcc52f3a1f6a802c1c9))
+* **shared:** extrae RailNav del sidebar de perfil ([383ea00](https://github.com/Patricoaa/ERPGrafico/commit/383ea00bbd26f9b9b10b8667fcc4eee89cbe7ed8))
+
+
+### 🐛 Bug Fixes
+
+* **analytics:** copia compacta de slots del riel bajo sm y contrato de RailNav ([720c45b](https://github.com/Patricoaa/ERPGrafico/commit/720c45b9b9ae66e6bac1c10a18c35605a626c8da))
+* **inventory:** abastecimiento con rendimiento de BOM, tercerizados y rechazo de valores no finitos ([113f983](https://github.com/Patricoaa/ERPGrafico/commit/113f9833d579c49bd6dc7c79704c6b930e68e072))
+* **inventory:** devoluciones netas con el descuento medio y cobertura redondeada ([ee6b4a7](https://github.com/Patricoaa/ERPGrafico/commit/ee6b4a7f35b13d66a7271994d4e3a46d8ee28e9f))
+* **inventory:** ícono chart-column para abrir el análisis de producto ([725127e](https://github.com/Patricoaa/ERPGrafico/commit/725127ee303f7c5903df870eb4c27b10e0966180))
+* **inventory:** ingresos de insights netos de descuentos ([9dcf585](https://github.com/Patricoaa/ERPGrafico/commit/9dcf585769865dd7a1c53a079e7b3ed34534a339))
+* **inventory:** KPI de consumo en OT desde el agregado y used_in_production por consumo real ([ccf12f1](https://github.com/Patricoaa/ERPGrafico/commit/ccf12f18c5e72f153444857f823b4b2c77497ffe))
+* **inventory:** oculta el análisis de producto en el drawer de creación ([12eebdc](https://github.com/Patricoaa/ERPGrafico/commit/12eebdc26edad3a800f119469f78fde8343713cf))
+* **inventory:** operación con rotación nula sin salidas, variación por proveedor y fechas desde hoy ([87a6a15](https://github.com/Patricoaa/ERPGrafico/commit/87a6a15e21672d35fa43f98b9d5cb8f3e1e2e8c1))
+* **inventory:** rendimiento de fabricación con ingreso neto, servicios y unidades base ([7cee514](https://github.com/Patricoaa/ERPGrafico/commit/7cee5142d1a8bdd6776ceeb250997e181dcd0f5b))
+* **sales:** variantes SURCHARGE con regla del padre y procedencia que no bloquea ventas ([06f6cc9](https://github.com/Patricoaa/ERPGrafico/commit/06f6cc9efd019b99b6edf1d308448dc3350ff19e))
+
+
+### ✨ Features
+
+* **inventory:** análisis de producto adaptado a las capacidades ([fd66bb8](https://github.com/Patricoaa/ERPGrafico/commit/fd66bb80fb05fa835e5ac66e91b08cdf7e983a46))
+* **inventory:** análisis de producto reusa riel del perfil ([c8929c3](https://github.com/Patricoaa/ERPGrafico/commit/c8929c31a79c8c8caede5218df555993a3963d68))
+* **inventory:** capacidades del producto en insights ([3f00570](https://github.com/Patricoaa/ERPGrafico/commit/3f005703d5124c70d668091524ce3a1bee286ee6))
+* **inventory:** endpoint operations ([00bd5a2](https://github.com/Patricoaa/ERPGrafico/commit/00bd5a23a95eb5b9ef0d62a09c664c1c0f2ea14d))
+* **inventory:** endpoint production-performance ([40237c4](https://github.com/Patricoaa/ERPGrafico/commit/40237c48df0681124c03c9613875342d6a5f358c))
+* **inventory:** endpoint sales-impact del producto ([ca6a2d7](https://github.com/Patricoaa/ERPGrafico/commit/ca6a2d7bfd0dddfdc5a2dd6af08c07fd4d335e90))
+* **inventory:** endpoint sourcing ([78ac24b](https://github.com/Patricoaa/ERPGrafico/commit/78ac24b53fabff3e8474824bc5d228b80d499e85))
+* **inventory:** hook de abastecimiento ([56b2a98](https://github.com/Patricoaa/ERPGrafico/commit/56b2a986ddcfee26c37a2dcff001459a475a430c))
+* **inventory:** hook de impacto de ventas ([6b8728e](https://github.com/Patricoaa/ERPGrafico/commit/6b8728e167a30943175d1c73c9c8c7d7b31ab867))
+* **inventory:** hook de operación ([ae5cb2f](https://github.com/Patricoaa/ERPGrafico/commit/ae5cb2f1a98744cc4cc776bde3077c74669f2048))
+* **inventory:** hook de rendimiento de fabricación ([e7244de](https://github.com/Patricoaa/ERPGrafico/commit/e7244de867c8bca3c37b12c1d32e691b9247bf5a))
+* **inventory:** registro de tabs y KPIs por capacidades ([c806ed0](https://github.com/Patricoaa/ERPGrafico/commit/c806ed037a91caef05349e253ee165ff25a43543))
+* **inventory:** selector de abastecimiento ([fb78937](https://github.com/Patricoaa/ERPGrafico/commit/fb7893703ac3b09ebf24925cf0c0160bbddc30ac))
+* **inventory:** selector de impacto de ventas por producto ([de9f2eb](https://github.com/Patricoaa/ERPGrafico/commit/de9f2eb10ff3e61c774980a96969f0a3933ddedc))
+* **inventory:** selector de operación (rotación y suscripciones) ([7c0db50](https://github.com/Patricoaa/ERPGrafico/commit/7c0db50aa4405730c06e49c011fe33756c3b28b4))
+* **inventory:** selector de rendimiento de fabricación ([dd2dd49](https://github.com/Patricoaa/ERPGrafico/commit/dd2dd49a668355d9d4434820614938b255324c36))
+* **inventory:** stock_flow agregado en insights (reemplaza kardex) ([2164654](https://github.com/Patricoaa/ERPGrafico/commit/21646543eba249f86e8d5cd5dc74fb4950375d50))
+* **inventory:** tab Abastecimiento en el análisis de producto ([3bc8b5d](https://github.com/Patricoaa/ERPGrafico/commit/3bc8b5dc33e4ce566e0622fcffb5370d15072878))
+* **inventory:** tab Fabricación en el análisis de producto ([ada7f45](https://github.com/Patricoaa/ERPGrafico/commit/ada7f45842b7d326783d21d398914558712133f5))
+* **inventory:** tab Operación en el análisis de producto ([de01171](https://github.com/Patricoaa/ERPGrafico/commit/de01171b3ca7bc62b0364acf766d1d29ab5572cb))
+* **inventory:** tab Precio y margen en el análisis de producto ([8c4852e](https://github.com/Patricoaa/ERPGrafico/commit/8c4852e0f8c60baf3aedd3b79e4a233308e48d11))
+* **inventory:** unidad obligatoria, disponibilidad POS por segmento de fabricación y ajustes de precios ([84ac8d5](https://github.com/Patricoaa/ERPGrafico/commit/84ac8d5074b4ff90b311e592bdd47eeaf5a85fb0))
+* **sales:** campos de procedencia de precio en SaleLine ([819f7b9](https://github.com/Patricoaa/ERPGrafico/commit/819f7b9f49340fd865bd13eb312e46a1ea05bfd3))
+* **sales:** registra regla, precio de lista y origen al crear líneas de venta ([3b8f7e6](https://github.com/Patricoaa/ERPGrafico/commit/3b8f7e6e7e7d155d788a23a39e72ca66ce5defe1))
+
+
+### 🚀 Maintenance
+
+* **core:** simplifica setup_demo_data ([ea91cd7](https://github.com/Patricoaa/ERPGrafico/commit/ea91cd7edd16accc2d1aa93af595a533b3a6835e))
+
+
+### 📚 Documentation
+
+* **adr:** ADR-0144 capacidades y stock_flow en insights de producto ([3e13424](https://github.com/Patricoaa/ERPGrafico/commit/3e134242615426686b23f66850f22445efbb4887))
+* **adr:** ADR-0145 precio y margen por producto ([b03ad53](https://github.com/Patricoaa/ERPGrafico/commit/b03ad537abf24fc6d65403658df1263ec5af3096))
+* **adr:** ADR-0146 rendimiento de fabricación por producto ([d655724](https://github.com/Patricoaa/ERPGrafico/commit/d6557248421d37594729967786aad9c3cb3010b7))
+* **adr:** ADR-0147 decisiones de abastecimiento por producto ([3a3c431](https://github.com/Patricoaa/ERPGrafico/commit/3a3c431f7416322c3db4b8ae171c9f9cc1583392))
+* **adr:** ADR-0148 rotación, cobertura y suscripciones por producto ([527ccad](https://github.com/Patricoaa/ERPGrafico/commit/527ccadcb3e377ef1342782a921fe0fa63cc104f))
+* capturas base de escala por módulo y resolución ([488c53f](https://github.com/Patricoaa/ERPGrafico/commit/488c53f155f1f8dba3ec5bf8e325a2a1dcfb6f4f))
+* diseño de la Fase 3c-2 (rotación, cobertura y suscripciones) ([5aa0eaa](https://github.com/Patricoaa/ERPGrafico/commit/5aa0eaa278298b8797d5e2829581fee23fce3cc7))
+* diseño y plan de la Fase 2 del hub de analítica (capacidades) ([39a63cc](https://github.com/Patricoaa/ERPGrafico/commit/39a63cc877d78fb83b15db1b954aa2aeff4daef6))
+* diseño y plan de la Fase 3a (precio y margen por producto) ([c00d97a](https://github.com/Patricoaa/ERPGrafico/commit/c00d97a4c672d03aca85d6571dc17991feb967c0))
+* diseño y plan de la Fase 3b (rendimiento de fabricación) ([4fc77dc](https://github.com/Patricoaa/ERPGrafico/commit/4fc77dc2beb3517cb7330eb4c93195649fd51707))
+* diseño y plan de la Fase 3c-1 (decisiones de abastecimiento) ([1e05de3](https://github.com/Patricoaa/ERPGrafico/commit/1e05de3137f28020dbb9f48b28f7ae8d0149e2dd))
+* plan de la Fase 3c-2 ([7c566fb](https://github.com/Patricoaa/ERPGrafico/commit/7c566fb15296837c7532ac04b1c6f1dd68301ab3))
+* **plan:** captura de regla de precio en SaleLine (Fase 1) ([a047ea4](https://github.com/Patricoaa/ERPGrafico/commit/a047ea4654e66fe8b2de72ff18c9bc4134d93dcf))
+* **sales:** procedencia de precio en SaleLine ([7fab12e](https://github.com/Patricoaa/ERPGrafico/commit/7fab12eebb6818f6fbf4c20e10dd9181082b2089))
+* **spec:** diseño del hub de analítica por producto ([f3a1672](https://github.com/Patricoaa/ERPGrafico/commit/f3a1672bf89cbf7f6c5c8b391bc67a78e11c3bd2))
+
 ### [0.3.132](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.131...v0.3.132) (2026-11-19)
 
 
