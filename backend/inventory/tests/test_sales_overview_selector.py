@@ -131,3 +131,99 @@ def test_query_count_constant_with_more_rows(env):
     with CaptureQueriesContext(connection) as many:
         _overview(env)
     assert len(many) == len(few)
+
+
+def _variant(env, name="Tarjeta v2"):
+    return Product.objects.create(
+        name=name, category=env["category"], uom=env["uom"], sale_uom=env["uom"], purchase_uom=env["uom"],
+        product_type="STORABLE", sale_price=Decimal("1000"), parent_template=env["product"],
+        variant_display_name=name,
+    )
+
+
+def test_customers_top_with_share_and_concentration(env):
+    for name, qty in (("A", "50"), ("B", "30"), ("C", "10"), ("D", "10")):
+        _sale(env, qty=qty, customer=_customer(name))
+    customers = _overview(env)["customers"]
+    assert customers["total"] == 4
+    assert customers["top3_share_pct"] == pytest.approx(90.0)
+    assert [(c["name"], c["share_pct"]) for c in customers["top"][:2]] == [("A", pytest.approx(50.0)), ("B", pytest.approx(30.0))]
+    assert customers["top"][0]["units"] == pytest.approx(50.0)
+
+
+def test_customers_top_limited_to_ten(env):
+    for i in range(12):
+        _sale(env, qty="1", customer=_customer(f"C{i}"))
+    customers = _overview(env)["customers"]
+    assert len(customers["top"]) == 10
+    assert customers["total"] == 12
+
+
+def test_default_customer_is_counter_not_a_customer(env):
+    counter = Contact.objects.create(name="Cliente genérico", tax_id="66666666-6", is_default_customer=True)
+    _sale(env, qty="10", customer=counter)
+    _sale(env, qty="6", customer=_customer("A"))
+    _sale(env, qty="4", customer=_customer("B"))
+    result = _overview(env)
+    assert result["kpis"]["customers"] == 2
+    assert result["customers"]["total"] == 2
+    assert result["customers"]["top3_share_pct"] == pytest.approx(100.0)
+    rows = {c["name"]: c for c in result["customers"]["top"]}
+    assert rows["Mostrador (POS)"]["share_pct"] == pytest.approx(50.0)
+    assert rows["A"]["share_pct"] == pytest.approx(30.0)
+
+
+def test_channels_split_system_and_pos(env):
+    _sale(env, qty="6", channel="SYSTEM")
+    _sale(env, qty="4", channel="POS")
+    channels = {c["key"]: c for c in _overview(env)["channels"]}
+    assert channels["SYSTEM"]["label"] == "Sistema"
+    assert channels["POS"]["label"] == "Punto de Venta (POS)"
+    assert channels["SYSTEM"]["share_pct"] == pytest.approx(60.0)
+
+
+def test_variants_only_when_product_has_variants(env):
+    _sale(env, qty="5")
+    assert _overview(env)["variants"] == []
+    v1, v2 = _variant(env, "Tarjeta A4"), _variant(env, "Tarjeta A5")
+    Product.objects.filter(pk=env["product"].pk).update(has_variants=True)
+    env["product"].refresh_from_db()
+    _sale(env, qty="6", product=v1)
+    _sale(env, qty="4", product=v2)
+    variants = _overview(env)["variants"]
+    by_label = {v["label"]: v["units"] for v in variants}
+    assert by_label["Tarjeta A4"] == 6.0
+    assert by_label["Tarjeta A5"] == 4.0
+
+
+def test_uoms_only_when_more_than_one(env):
+    from inventory.models import UoM
+
+    _sale(env, qty="5")
+    assert _overview(env)["uoms"] == []
+    box = UoM.objects.create(name="Caja", category=env["uom"].category, uom_type="BIGGER", ratio=Decimal("10"))
+    _sale(env, qty="2", uom=box)
+    uoms = _overview(env)["uoms"]
+    assert {u["label"] for u in uoms} == {"Unidad", "Caja"}
+
+
+def test_shares_sum_to_100(env):
+    for qty, channel in (("3", "SYSTEM"), ("5", "POS"), ("2", "SYSTEM")):
+        _sale(env, qty=qty, channel=channel, customer=_customer(f"S{qty}"))
+    result = _overview(env)
+    assert sum(c["share_pct"] for c in result["channels"]) == pytest.approx(100.0)
+    assert sum(c["share_pct"] for c in result["customers"]["top"]) == pytest.approx(100.0)
+
+
+def test_breakdowns_query_count_constant_with_more_rows(env):
+    Product.objects.filter(pk=env["product"].pk).update(has_variants=True)
+    env["product"].refresh_from_db()
+    variant = _variant(env)
+    _sale(env, product=variant)
+    with CaptureQueriesContext(connection) as few:
+        _overview(env)
+    for i in range(15):
+        _sale(env, on=date(2026, 1 + i % 11, 5), customer=_customer(f"B{i}"), channel="POS" if i % 2 else "SYSTEM")
+    with CaptureQueriesContext(connection) as many:
+        _overview(env)
+    assert len(many) == len(few)

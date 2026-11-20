@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from django.db.models import Count, F, Max, Sum
+from django.db.models import Count, F, Max, Q, Sum
 
 from .models import Product
 from .pricing_selector import _lines, _period_start
@@ -27,7 +27,11 @@ def _totals(lines) -> dict:
     row = lines.aggregate(
         units=Sum("quantity"),
         net_revenue=Sum(net_revenue_expression()),
-        customers=Count("delivery__sale_order__customer_id", distinct=True),
+        customers=Count(
+            "delivery__sale_order__customer_id",
+            filter=Q(delivery__sale_order__customer__is_default_customer=False),
+            distinct=True,
+        ),
     )
     return {"units": float(row["units"] or 0), "net_revenue": float(row["net_revenue"] or 0), "customers": row["customers"] or 0}
 
@@ -59,6 +63,82 @@ def _previous_points(lines, granularity: str, shift: timedelta) -> list[dict]:
         acc["units"] += float(r["units"] or 0)
         acc["net_revenue"] += float(r["net_revenue"] or 0)
     return [{"period": _period_label(start, granularity), **buckets[start]} for start in sorted(buckets)]
+
+
+COUNTER_LABEL = "Mostrador (POS)"
+TOP_CUSTOMERS = 10
+
+
+def _grouped(lines, *fields: str) -> list[dict]:
+    return list(
+        lines.values(*fields)
+        .annotate(units=Sum("quantity"), net_revenue=Sum(net_revenue_expression()))
+        .order_by("-net_revenue")
+    )
+
+
+def _share(value: float, total: float) -> float:
+    return value / total * 100 if total else 0.0
+
+
+def _share_rows(rows: list[dict], key_field: str, labels: dict, total: float) -> list[dict]:
+    return [
+        {
+            "key": str(r[key_field]),
+            "label": labels.get(r[key_field], str(r[key_field])),
+            "units": float(r["units"] or 0),
+            "net_revenue": float(r["net_revenue"] or 0),
+            "share_pct": _share(float(r["net_revenue"] or 0), total),
+        }
+        for r in rows
+    ]
+
+
+def _customers(lines, total: float) -> dict:
+    prefix = "delivery__sale_order__customer"
+    rows = _grouped(lines, f"{prefix}_id", f"{prefix}__name", f"{prefix}__is_default_customer")
+    parsed = [
+        {
+            "id": r[f"{prefix}_id"],
+            "name": COUNTER_LABEL if r[f"{prefix}__is_default_customer"] else r[f"{prefix}__name"],
+            "units": float(r["units"] or 0),
+            "net_revenue": float(r["net_revenue"] or 0),
+            "share_pct": _share(float(r["net_revenue"] or 0), total),
+            "identified": not r[f"{prefix}__is_default_customer"],
+        }
+        for r in rows
+    ]
+    identified = [c for c in parsed if c["identified"]]
+    identified_total = sum(c["net_revenue"] for c in identified)
+    top3 = sum(c["net_revenue"] for c in identified[:3])
+    return {
+        "total": len(identified),
+        "top3_share_pct": _share(top3, identified_total),
+        "top": [{k: v for k, v in c.items() if k != "identified"} for c in parsed[:TOP_CUSTOMERS]],
+    }
+
+
+def _channels(lines, total: float) -> list[dict]:
+    from sales.models import SaleOrder
+
+    return _share_rows(_grouped(lines, "sale_line__order__channel"), "sale_line__order__channel",
+                       {k: str(v) for k, v in SaleOrder.Channel.choices}, total)
+
+
+def _variants(lines, total: float) -> list[dict]:
+    rows = _grouped(lines, "product_id")
+    labels = {p.pk: p.variant_display_name or p.name for p in Product.objects.filter(pk__in=[r["product_id"] for r in rows])}
+    return _share_rows(rows, "product_id", labels, total)
+
+
+def _uoms(lines, total: float) -> list[dict]:
+    from .models import UoM
+
+    rows = _grouped(lines, "uom_id")
+    if len(rows) < 2:
+        return []
+    labels = dict(UoM.objects.filter(pk__in=[r["uom_id"] for r in rows]).values_list("pk", "name"))
+    return _share_rows(rows, "uom_id", labels, total)
 
 
 class SalesOverviewSelector:
@@ -99,8 +179,8 @@ class SalesOverviewSelector:
                 "previous": previous,
             },
             "series": {"points": _points(lines, params.granularity), "previous_points": previous_points},
-            "customers": {"total": 0, "top3_share_pct": 0.0, "top": []},
-            "channels": [],
-            "variants": [],
-            "uoms": [],
+            "customers": _customers(lines, totals["net_revenue"]),
+            "channels": _channels(lines, totals["net_revenue"]),
+            "variants": _variants(lines, totals["net_revenue"]) if product.has_variants else [],
+            "uoms": _uoms(lines, totals["net_revenue"]),
         }
