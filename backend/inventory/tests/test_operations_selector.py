@@ -1,12 +1,9 @@
 # ruff: noqa: F811  (the env fixture is imported from test_product_stock_flow)
 """OperationsSelector: rotación, cobertura, stock inmóvil y suscripciones de un producto."""
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.db import connection
-from django.test.utils import CaptureQueriesContext
-from django.utils import timezone
 
 from contacts.models import Contact
 from inventory.models import Product, Subscription
@@ -17,8 +14,16 @@ from purchasing.models import PurchaseLine, PurchaseOrder
 RANGE = {"date_from": date(2026, 1, 1), "date_to": date(2026, 12, 31)}
 
 
-def _ops(env, product=None, **kw):
-    return OperationsSelector.get_operations(product or env["product"], **{**RANGE, **kw})
+def _ops(env, product=None, idle_days=90, **kw):
+    """Rotación del producto (o ``None`` si no controla stock), como la usan Inventario y Abastecimiento."""
+    product = product or env["product"]
+    window = {**RANGE, **kw}
+    ids = [product.id] + (list(product.variants.values_list("id", flat=True)) if product.has_variants else [])
+    rotation = (
+        OperationsSelector._rotation(product, ids, window["date_from"], window["date_to"], idle_days)
+        if product.track_inventory else None
+    )
+    return {"rotation": rotation}
 
 
 def _rot(env, **kw):
@@ -138,7 +143,7 @@ def test_stock_value(env):
     assert _rot(env)["stock_value"] == pytest.approx(300.0)
 
 
-# ── Suscripciones ────────────────────────────────────────────────────────────
+# ── Helpers de suscripción (los usa test_subscription_analysis_selector) ──────
 
 def _sub_product(env):
     return Product.objects.create(
@@ -164,109 +169,3 @@ def _payment(env, product, cost, on, status="CONFIRMED", supplier=None):
         number=f"PO-S{PurchaseOrder.objects.count() + 1}", supplier=supplier or _supplier("Pagos"), status=status, date=on,
     )
     return PurchaseLine.objects.create(order=order, product=product, quantity=Decimal("1"), uom=env["uom"], unit_cost=Decimal(cost))
-
-
-def test_subscriptions_only_for_recurring_products(env):
-    assert _ops(env)["subscriptions"] is None
-    assert _ops(env, product=_sub_product(env))["subscriptions"] is not None
-
-
-def test_annualized_by_frequency(env):
-    product = _sub_product(env)
-    for period, factor in (("WEEKLY", 52), ("MONTHLY", 12), ("QUARTERLY", 4), ("SEMIANNUAL", 2), ("ANNUAL", 1)):
-        _subscription(product, "100", period=period)
-        items = _ops(env, product=product)["subscriptions"]["items"]
-        assert next(i for i in items if i["frequency"] == period)["annualized"] == pytest.approx(100.0 * factor)
-
-
-def test_totals_only_count_active(env):
-    product = _sub_product(env)
-    _subscription(product, "100", period="MONTHLY")
-    _subscription(product, "500", period="ANNUAL", status="PAUSED")
-    _subscription(product, "900", period="ANNUAL", status="CANCELLED")
-    subs = _ops(env, product=product)["subscriptions"]
-    assert subs["count"] == 1
-    assert subs["annualized_total"] == pytest.approx(1200.0)
-    assert subs["monthly_equivalent_total"] == pytest.approx(100.0)
-    assert len(subs["items"]) == 3
-
-
-def test_due_90d_total_and_overdue_days(env):
-    today = timezone.localdate()
-    product = _sub_product(env)
-    _subscription(product, "100", next_payment=today + timedelta(days=32))
-    _subscription(product, "200", next_payment=today + timedelta(days=200))
-    _subscription(product, "50", next_payment=today - timedelta(days=10))
-    subs = _ops(env, product=product)["subscriptions"]
-    assert subs["due_90d_total"] == pytest.approx(150.0)
-    days = sorted(i["days_to_payment"] for i in subs["items"])
-    assert days[0] == -10 and days[1] == 32
-
-
-def test_subscription_dates_are_measured_from_today_not_date_to(env):
-    today = timezone.localdate()
-    product = _sub_product(env)
-    _subscription(product, "100", next_payment=today + timedelta(days=30))
-    subs = _ops(env, product=product, date_to=date(2025, 6, 30))["subscriptions"]
-    assert subs["items"][0]["days_to_payment"] == 30
-    assert subs["due_90d_total"] == pytest.approx(100.0)
-
-
-def test_payment_variation_is_computed_per_supplier(env):
-    product = _sub_product(env)
-    a, b = _supplier("Licencia A"), _supplier("Licencia B")
-    _payment(env, product, "100", date(2026, 1, 5), supplier=a)
-    _payment(env, product, "50", date(2026, 1, 6), supplier=b)
-    _payment(env, product, "110", date(2026, 2, 5), supplier=a)
-    _payment(env, product, "50", date(2026, 2, 6), supplier=b)
-    subs = _ops(env, product=product)["subscriptions"]
-    by = {(p["supplier"], p["date"]): p["change_pct"] for p in subs["payments"]}
-    assert by[("Licencia A", "2026-02-05")] == pytest.approx(10.0)
-    assert by[("Licencia B", "2026-02-06")] == pytest.approx(0.0)
-    assert by[("Licencia B", "2026-01-06")] is None
-    assert subs["first_to_last_pct"] is None  # mixed suppliers: no single first-to-last figure
-
-
-def test_payments_exclude_draft_and_cancelled(env):
-    product = _sub_product(env)
-    _payment(env, product, "100", date(2026, 1, 5))
-    _payment(env, product, "100", date(2026, 2, 5), status="DRAFT")
-    _payment(env, product, "100", date(2026, 3, 5), status="CANCELLED")
-    assert len(_ops(env, product=product)["subscriptions"]["payments"]) == 1
-
-
-def test_payment_change_pct_and_first_to_last(env):
-    product = _sub_product(env)
-    _payment(env, product, "100", date(2026, 1, 5))
-    _payment(env, product, "110", date(2026, 2, 5))
-    _payment(env, product, "132", date(2026, 3, 5))
-    subs = _ops(env, product=product)["subscriptions"]
-    changes = [p["change_pct"] for p in subs["payments"]]
-    assert changes[0] is None and changes[1] == pytest.approx(10.0) and changes[2] == pytest.approx(20.0)
-    assert subs["first_to_last_pct"] == pytest.approx(32.0)
-
-
-def test_single_payment_has_no_variation(env):
-    product = _sub_product(env)
-    _payment(env, product, "100", date(2026, 1, 5))
-    subs = _ops(env, product=product)["subscriptions"]
-    assert subs["payments"][0]["change_pct"] is None and subs["first_to_last_pct"] is None
-
-
-def test_query_count_constant(env):
-    product = _sub_product(env)
-    supplier = _supplier("Fijo")
-    _subscription(product, "100", supplier=supplier)
-    _payment(env, product, "100", date(2026, 1, 5), supplier=supplier)
-    _move(env, "vendor", "internal", "10", on=date(2026, 1, 1))
-    with CaptureQueriesContext(connection) as few:
-        _ops(env, product=product)
-        _ops(env)
-    for i in range(6):
-        _subscription(product, "100", supplier=supplier)
-        _payment(env, product, str(100 + i), date(2026, 2, 5 + i), supplier=supplier)
-        _move(env, "internal", "customer", "1", on=date(2026, 3, 1 + i))
-    with CaptureQueriesContext(connection) as many:
-        _ops(env, product=product)
-        _ops(env)
-    assert len(many) == len(few)

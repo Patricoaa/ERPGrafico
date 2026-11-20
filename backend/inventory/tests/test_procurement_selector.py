@@ -84,7 +84,7 @@ def _out(env, qty, on):
 def test_coverage_matches_operations(env):
     _out(env, "30", date(2026, 12, 1))
     coverage = _proc(env)["coverage"]
-    rotation = OperationsSelector.get_operations(env["product"], **RANGE)["rotation"]
+    rotation = OperationsSelector._rotation(env["product"], [env["product"].id], RANGE["date_from"], RANGE["date_to"], 90)
     assert coverage["coverage_days"] == pytest.approx(rotation["coverage_days"])
     assert coverage["stock_now"] == pytest.approx(rotation["stock_now"])
     assert coverage["daily_out"] == pytest.approx(30 / 90)

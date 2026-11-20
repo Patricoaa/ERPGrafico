@@ -7,7 +7,6 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
-from inventory.operations_selector import OperationsSelector
 from inventory.subscription_analysis_selector import (
     SubscriptionAnalysisParams,
     SubscriptionAnalysisSelector,
@@ -27,17 +26,16 @@ def _analysis(product, **overrides):
     return SubscriptionAnalysisSelector.get_analysis(product, SubscriptionAnalysisParams(**{**RANGE, **overrides}))
 
 
-def test_today_matches_operations(env):
+def test_today_annualized_active_and_next_90_days(env):
     product = _sub_product(env)
-    _subscription(product, "100", period="MONTHLY")
-    _subscription(product, "1200", period="ANNUAL", next_payment=date(2028, 1, 1))
+    _subscription(product, "100", period="MONTHLY", next_payment=timezone.localdate() + timedelta(days=30))
+    _subscription(product, "1200", period="ANNUAL", next_payment=timezone.localdate() + timedelta(days=200))
     _subscription(product, "50", status="PAUSED")
     today = _analysis(product)["today"]
-    expected = OperationsSelector._subscriptions([product.id])
-    assert today["annualized_total"] == pytest.approx(expected["annualized_total"])
-    assert today["monthly_equivalent"] == pytest.approx(expected["monthly_equivalent_total"])
-    assert today["active_count"] == expected["count"] == 2
-    assert today["due_90d_total"] == pytest.approx(expected["due_90d_total"])
+    assert today["annualized_total"] == pytest.approx(100 * 12 + 1200)
+    assert today["monthly_equivalent"] == pytest.approx((100 * 12 + 1200) / 12)
+    assert today["active_count"] == 2
+    assert today["due_90d_total"] == pytest.approx(100.0)
 
 
 def test_kpis_paid_and_payments_in_range(env):

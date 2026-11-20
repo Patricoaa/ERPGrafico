@@ -198,22 +198,6 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         )
 
     @action(detail=True, methods=["get"])
-    def insights(self, request, pk=None):
-        """
-        Returns a unified view of product performance:
-        0. Capabilities (which blocks apply to this product)
-        1. Price/Cost History
-        2. Stock flow (in/out totals and monthly flow) and stock history
-        3. Sales Performance (Avg Price, Cost, Margin)
-        4. Production Usage (OTs)
-        """
-        from .selectors import ProductSelector
-
-        instance = self.get_object()
-        data = ProductSelector.get_insights(instance)
-        return Response(data)
-
-    @action(detail=True, methods=["get"])
     def capabilities(self, request, pk=None):
         """Capacidades del producto (qué tabs de análisis aplican), sin cargar los insights."""
         from .selectors import ProductSelector
@@ -307,42 +291,6 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params = SubscriptionAnalysisParamsSerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
         return Response(SubscriptionAnalysisSelector.get_analysis(instance, params.to_params()))
-
-    @action(detail=True, methods=["get"], url_path="production-performance")
-    def production_performance(self, request, pk=None):
-        """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
-        from .production_performance_params import ProductionPerformanceParamsSerializer
-        from .production_performance_selector import ProductionPerformanceSelector
-
-        instance = self.get_object()
-        params = ProductionPerformanceParamsSerializer(data=request.query_params)
-        params.is_valid(raise_exception=True)
-        date_from, date_to = params.to_range()
-        return Response(ProductionPerformanceSelector.get_performance(instance, date_from, date_to))
-
-    @action(detail=True, methods=["get"], url_path="operations")
-    def operations(self, request, pk=None):
-        """Rotación, cobertura, stock inmóvil y suscripciones del producto (ADR-0148)."""
-        from .operations_params import OperationsParamsSerializer
-        from .operations_selector import OperationsSelector
-
-        instance = self.get_object()
-        params = OperationsParamsSerializer(data=request.query_params)
-        params.is_valid(raise_exception=True)
-        date_from, date_to, idle_days = params.to_args()
-        return Response(OperationsSelector.get_operations(instance, date_from, date_to, idle_days))
-
-    @action(detail=True, methods=["get"], url_path="sourcing")
-    def sourcing(self, request, pk=None):
-        """Fabricar vs comprar y uso como insumo con sensibilidad de costo (ADR-0147)."""
-        from .sourcing_params import SourcingParamsSerializer
-        from .sourcing_selector import SourcingSelector
-
-        instance = self.get_object()
-        params = SourcingParamsSerializer(data=request.query_params)
-        params.is_valid(raise_exception=True)
-        date_from, date_to, increase_pct = params.to_args()
-        return Response(SourcingSelector.get_sourcing(instance, date_from, date_to, increase_pct))
 
     @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):

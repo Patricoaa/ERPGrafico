@@ -136,7 +136,7 @@ def test_rotation_matches_operations(env):
     _move(env, "vendor", "internal", "30", on=date(2026, 1, 10))
     _move(env, "internal", "customer", "10", on=date(2026, 6, 1))
     rotation = _analysis(env)["rotation"]
-    expected = OperationsSelector.get_operations(env["product"], **RANGE)["rotation"]
+    expected = OperationsSelector._rotation(env["product"], [env["product"].id], RANGE["date_from"], RANGE["date_to"], 90)
     for key in ("in_qty", "out_qty", "avg_stock", "turnover", "days_of_inventory", "last_in_date", "last_out_date", "idle"):
         assert rotation[key] == pytest.approx(expected[key]) if isinstance(expected[key], float) else rotation[key] == expected[key]
     assert rotation["idle_days"] == 90

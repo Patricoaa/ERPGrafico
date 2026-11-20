@@ -208,7 +208,9 @@ def test_used_in_matches_sourcing(env):
     from inventory.sourcing_selector import SourcingSelector
 
     _in_bom(env, _parent(env))
-    expected = SourcingSelector.get_sourcing(env["product"], increase_pct=20)["used_in"]
+    from inventory.costs_selector import _to_base_factory
+
+    expected = SourcingSelector._used_in([env["product"].id], 20, _to_base_factory())
     assert _analysis(env, increase_pct=20)["input"]["used_in"] == expected
 
 

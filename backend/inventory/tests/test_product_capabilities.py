@@ -93,12 +93,6 @@ def test_used_in_production_false_with_inactive_bom(base):
     assert _caps(component)["used_in_production"] is False
 
 
-def test_insights_payload_includes_capabilities(base):
-    product = _product(base, "Resma")
-    insights = ProductSelector.get_insights(product)
-    assert insights["capabilities"]["segment"] == "STORABLE"
-
-
 def test_used_in_production_true_when_consumed_in_a_work_order_without_active_bom(base):
     from production.models import ProductionConsumption, WorkOrder
 
