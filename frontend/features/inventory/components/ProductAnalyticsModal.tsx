@@ -20,6 +20,7 @@ import {
     Users,
     Building2,
     Percent,
+    Hammer,
 } from "lucide-react"
 import { useProductInsights, useProduct } from "../hooks/useProducts"
 import { format } from "date-fns"
@@ -41,6 +42,7 @@ import { productionUsageEntity, productionUsageViews } from "../entity-view/prod
 import { topCustomerEntity, topCustomerViews } from "../entity-view/topCustomer.entity"
 import { topSupplierEntity, topSupplierViews } from "../entity-view/topSupplier.entity"
 import { SalesImpactBlock } from "../analytics/SalesImpactBlock"
+import { ProductionPerformanceBlock } from "../analytics/ProductionPerformanceBlock"
 import {
     SEGMENT_LABELS, overviewKpiIds, visibleTabIds,
     type OverviewKpiId, type ProductCapabilities,
@@ -151,6 +153,7 @@ const TABS = [
     { value: "cost",        label: "Costos",     icon: Banknote },
     { value: "kardex",      label: "Mov. Stock", icon: ArrowRightLeft },
     { value: "production",  label: "Producción", icon: Factory },
+    { value: "manufacturing", label: "Fabricación", icon: Hammer },
     { value: "customers",   label: "Clientes",   icon: Users },
     { value: "suppliers",   label: "Proveedores", icon: Building2 },
 ] as const
@@ -479,6 +482,13 @@ function ProductAnalyticsPanelInner({
                             {activeTab === "pricing" && (
                                 <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
                                     <SalesImpactBlock productId={productId} />
+                                </div>
+                            )}
+
+                            {/* MANUFACTURING PERFORMANCE — mounted only while active so it fetches on demand */}
+                            {activeTab === "manufacturing" && (
+                                <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
+                                    <ProductionPerformanceBlock productId={productId} />
                                 </div>
                             )}
 

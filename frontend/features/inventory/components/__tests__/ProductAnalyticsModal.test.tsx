@@ -28,6 +28,9 @@ vi.mock("@/features/inventory/hooks/useStockMoves", () => ({ useStockMoves: () =
 vi.mock("@/components/selectors", () => ({ ProductSelector: () => <div>selector-producto</div> }))
 vi.mock("@/features/_shared", () => ({ LazyDrawer: () => null }))
 vi.mock("@/features/production", () => ({ WorkOrderWizard: () => null }))
+vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
+    ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
+}))
 vi.mock("../../analytics/SalesImpactBlock", () => ({
     SalesImpactBlock: ({ productId }: { productId: number }) => <div>bloque-precio-margen-{productId}</div>,
 }))
@@ -132,5 +135,18 @@ describe("ProductAnalyticsModal capabilities", () => {
     it("hides the Precio y margen tab for a product that is not sold", () => {
         open(2)
         expect(screen.queryByRole("button", { name: "Precio y margen" })).not.toBeInTheDocument()
+    })
+
+    it("shows the Fabricación tab for a manufacturing product and mounts its block only when active", () => {
+        state.capsById = { 1: { ...fullCaps, manufactures: true, segment: "MANUFACTURABLE_STOCKED" } }
+        open(1)
+        expect(screen.queryByText("bloque-fabricacion-1")).not.toBeInTheDocument()
+        fireEvent.click(screen.getByRole("button", { name: "Fabricación" }))
+        expect(screen.getByText("bloque-fabricacion-1")).toBeInTheDocument()
+    })
+
+    it("hides the Fabricación tab for a product that is not manufactured", () => {
+        open(1)
+        expect(screen.queryByRole("button", { name: "Fabricación" })).not.toBeInTheDocument()
     })
 })

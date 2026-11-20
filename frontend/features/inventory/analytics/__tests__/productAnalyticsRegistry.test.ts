@@ -55,7 +55,7 @@ describe("visibleTabIds", () => {
     })
 
     it("returns every tab when capabilities are missing", () => {
-        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "customers", "suppliers"]
+        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "customers", "suppliers"]
         expect(visibleTabIds(undefined)).toEqual(all)
         expect(visibleTabIds(null)).toEqual(all)
     })
@@ -91,5 +91,11 @@ describe("SEGMENT_LABELS", () => {
         const tabs = visibleTabIds(caps({ sells: true, buys: true, tracks_stock: true }))
         expect(tabs.indexOf("pricing")).toBe(tabs.indexOf("sales") + 1)
         expect(visibleTabIds(caps({ sells: false, buys: true }))).not.toContain("pricing")
+    })
+
+    it("manufacturing tab only applies to products that manufacture, right after production", () => {
+        const tabs = visibleTabIds(caps({ manufactures: true, used_in_production: true }))
+        expect(tabs.indexOf("manufacturing")).toBe(tabs.indexOf("production") + 1)
+        expect(visibleTabIds(caps({ manufactures: false, used_in_production: true }))).not.toContain("manufacturing")
     })
 })
