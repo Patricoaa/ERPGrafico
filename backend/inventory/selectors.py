@@ -549,6 +549,7 @@ class ProductSelector:
             avg_cost=Avg("unit_cost", filter=models.Q(unit_cost__gt=0)),
             total_qty=Sum("quantity"),
             total_revenue=Sum(net_revenue_expression()),
+            total_gross_revenue=Sum(F("quantity") * F("unit_price")),
             total_cost_basis=Sum(F("quantity") * F("unit_cost")),
         )
 
@@ -562,7 +563,12 @@ class ProductSelector:
 
         net_qty = (delivery_stats["total_qty"] or 0) - (return_stats["total_qty"] or 0)
         # Delivered revenue is net of line discounts (float); returns are still gross Decimal.
-        net_revenue = float(delivery_stats["total_revenue"] or 0) - float(return_stats["total_revenue"] or 0)
+        delivered_net = float(delivery_stats["total_revenue"] or 0)
+        delivered_gross = float(delivery_stats["total_gross_revenue"] or 0)
+        # Return lines carry the undiscounted price and are not linked to the sale line, so they are
+        # netted with the product's average discount (delivered net / delivered gross).
+        discount_factor = delivered_net / delivered_gross if delivered_gross else 1.0
+        net_revenue = delivered_net - float(return_stats["total_revenue"] or 0) * discount_factor
         net_cost_basis = (delivery_stats["total_cost_basis"] or 0) - (
             return_stats["total_cost_basis"] or 0
         )

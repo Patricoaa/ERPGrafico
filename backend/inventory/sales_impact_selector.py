@@ -269,13 +269,16 @@ class SalesImpactSelector:
         )
         with_prov = float(provenance["with_provenance"] or 0)
         coverage = {
-            "revenue_with_provenance_pct": (with_prov / totals_acc["net_revenue"] * 100) if totals_acc["net_revenue"] else 0.0,
+            "revenue_with_provenance_pct": round(min(100.0, with_prov / totals_acc["net_revenue"] * 100), 1) if totals_acc["net_revenue"] else 0.0,
             "since": provenance["since"].isoformat() if provenance["since"] else None,
         }
 
         returned = SaleReturnLine.objects.filter(
             product_id__in=product_ids, return_doc__status="CONFIRMED", return_doc__date__range=(date_from, date_to)
         ).aggregate(units=Sum("quantity"), revenue=Sum(F("quantity") * F("unit_price")))
+
+        # Return lines carry the undiscounted price: net them with the average discount of the period.
+        discount_factor = totals_acc["net_revenue"] / totals_acc["gross_revenue"] if totals_acc["gross_revenue"] else 1.0
 
         rule_filter = Q(product_id__in=product_ids) | Q(category_id=product.category_id)
         if product.parent_template_id:
@@ -295,7 +298,7 @@ class SalesImpactSelector:
             "segments": [{"key": k, "label": labels[k]} for k in ordered],
             "table": [_table_row(k, labels[k], by_segment[k]) for k in ordered],
             "totals": totals,
-            "returns": {"units": float(returned["units"] or 0), "revenue": float(returned["revenue"] or 0)},
+            "returns": {"units": float(returned["units"] or 0), "revenue": float(returned["revenue"] or 0) * discount_factor},
             "coverage": coverage,
             "rule_windows": windows,
         }

@@ -129,7 +129,7 @@ export function SalesImpactBlock({ productId }: { productId: number }) {
                 <div className="h-72 min-h-0">
                     <AnalyticsChart type="bar-chart" preset="card" data={chart.rows} keys={chart.keys} indexBy="period" showLegend />
                 </div>
-                {coverage.revenue_with_provenance_pct < 100 && (
+                {Math.round(coverage.revenue_with_provenance_pct) < 100 && (
                     <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
                         El {Math.round(coverage.revenue_with_provenance_pct)} % del ingreso del periodo tiene regla registrada
                         {coverage.since ? ` (desde ${formatIsoDate(coverage.since)})` : ""}. El resto se agrupa como «Sin registro».
