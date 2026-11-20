@@ -15,6 +15,7 @@ from inventory.models import (
     Product,
     Stock,
     StockMove,
+    Warehouse,
 )
 from inventory.operations_selector import OperationsSelector
 from inventory.stock_analysis_selector import StockAnalysisParams, StockAnalysisSelector
@@ -157,6 +158,94 @@ def test_query_count_constant_with_more_rows(env):
         _move(env, "internal", "customer", "1", on=date(2026, 1 + i, 5))
         _confirmed_sale(env, "1", "0")
         _ot_material(env, "1")
+    with CaptureQueriesContext(connection) as many:
+        _analysis(env)
+    assert len(many) == len(few)
+
+
+# ── Serie, flujos y ajustes ──────────────────────────────────────────────────
+
+def test_series_continuous_by_month(env):
+    _move(env, "vendor", "internal", "30", on=date(2026, 1, 10))
+    _move(env, "internal", "customer", "10", on=date(2026, 3, 5))
+    series = {p["period"]: p for p in _analysis(env, date_to=date(2026, 4, 30))["series"]}
+    assert list(series) == ["2026-01", "2026-02", "2026-03", "2026-04"]
+    assert series["2026-01"]["stock_end"] == pytest.approx(30.0)
+    assert series["2026-02"]["stock_end"] == pytest.approx(30.0)
+    assert series["2026-02"]["in_qty"] == 0.0
+    assert series["2026-03"]["out_qty"] == pytest.approx(10.0)
+    assert series["2026-04"]["stock_end"] == pytest.approx(20.0)
+
+
+def test_transfers_do_not_count_as_flow(env):
+    other = Warehouse.objects.create(name="Bodega 2", code="B2")
+    _move(env, "vendor", "internal", "10", on=date(2026, 1, 10))
+    _move(env, "internal", "internal", "4", on=date(2026, 2, 10), dst_wh=other)
+    result = _analysis(env)
+    assert sum(f["qty"] for f in result["flows"]["outflows"]) == 0.0
+    assert sum(f["qty"] for f in result["flows"]["inflows"]) == pytest.approx(10.0)
+
+
+def test_outflows_by_destination(env):
+    _move(env, "vendor", "internal", "50", on=date(2026, 1, 1))
+    _move(env, "internal", "customer", "10")
+    _move(env, "internal", "production", "6")
+    _move(env, "internal", "vendor", "2")
+    outflows = {f["key"]: f for f in _analysis(env)["flows"]["outflows"]}
+    assert (outflows["sale"]["qty"], outflows["production"]["qty"], outflows["supplier_return"]["qty"]) == (10.0, 6.0, 2.0)
+    assert outflows["sale"]["label"] == "Ventas"
+
+
+def test_inflows_by_origin(env):
+    _move(env, "vendor", "internal", "20")
+    _move(env, "production", "internal", "5")
+    _move(env, "customer", "internal", "1")
+    inflows = {f["key"]: f["qty"] for f in _analysis(env)["flows"]["inflows"]}
+    assert inflows == {"purchase": 20.0, "production": 5.0, "customer_return": 1.0}
+
+
+def test_adjustments_loss_gain_and_value(env):
+    _move(env, "vendor", "internal", "100", on=date(2026, 1, 1))
+    _move(env, "internal", "loss", "3", cost="20")
+    _move(env, "gain", "internal", "1", cost="20")
+    result = _analysis(env)
+    adjustments = {a["key"]: a for a in result["adjustments"]}
+    assert (adjustments["loss"]["qty"], adjustments["loss"]["value"]) == (3.0, 60.0)
+    assert adjustments["gain"]["qty"] == pytest.approx(1.0)
+    assert adjustments["loss"]["label"] == "Merma"
+    assert sum(f["qty"] for f in result["flows"]["outflows"]) == 0.0
+
+
+def test_loss_pct(env):
+    _move(env, "vendor", "internal", "100", on=date(2026, 1, 1))
+    _move(env, "internal", "customer", "50")
+    _move(env, "internal", "loss", "2")
+    assert _analysis(env)["loss_pct"] == pytest.approx(4.0)
+
+
+def test_loss_pct_none_without_outflows(env):
+    _move(env, "vendor", "internal", "100", on=date(2026, 1, 1))
+    _move(env, "internal", "loss", "2")
+    assert _analysis(env)["loss_pct"] is None
+
+
+def test_revaluation_is_an_adjustment_not_a_flow(env):
+    _move(env, "vendor", "internal", "10", on=date(2026, 1, 1))
+    _move(env, "revaluation", "internal", "5", cost="20")
+    result = _analysis(env)
+    adjustments = {a["key"]: a for a in result["adjustments"]}
+    assert adjustments["revaluation"]["value"] == pytest.approx(100.0)
+    assert sum(f["qty"] for f in result["flows"]["inflows"]) == pytest.approx(10.0)
+
+
+def test_query_count_constant_with_more_moves(env):
+    _move(env, "vendor", "internal", "100", on=date(2026, 1, 1))
+    _move(env, "internal", "loss", "1")
+    with CaptureQueriesContext(connection) as few:
+        _analysis(env)
+    for i in range(12):
+        _move(env, "internal", "customer", "1", on=date(2026, 1 + i % 11, 8))
+        _move(env, "internal", "loss" if i % 2 else "production", "1", on=date(2026, 1 + i % 11, 9))
     with CaptureQueriesContext(connection) as many:
         _analysis(env)
     assert len(many) == len(few)

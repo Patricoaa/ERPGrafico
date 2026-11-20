@@ -1,12 +1,16 @@
 """StockAnalysisSelector: existencia, comprometido, rotación, flujos, ajustes, bodegas y variantes de un producto."""
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from django.db.models import F, Min, Sum
 
-from .models import Product, Stock, StockMove
-from .operations_selector import OperationsSelector
+from .costs_selector import _next_start
+from .models import ADJUSTMENT_VIRTUAL_NAMES, Product, Stock, StockMove
+from .operations_selector import OperationsSelector, _StockCurve
+from .pricing_selector import _period_start
+from .sales_impact_selector import _period_label
+from .selectors import ProductSelector
 
 IDLE_DAYS_CHOICES = (30, 90, 180)
 _ROTATION_KEYS = (
@@ -62,10 +66,89 @@ def _reserved(product_ids: list[int]) -> dict[int, float]:
     return reserved
 
 
-def _rotation(product: Product, product_ids: list[int], date_from: date | None, date_to: date, idle_days: int) -> dict:
-    start = date_from or StockMove.objects.filter(product_id__in=product_ids).aggregate(first=Min("date"))["first"] or date_to
+def _range_start(product_ids: list[int], date_from: date | None, date_to: date) -> date:
+    if date_from:
+        return date_from
+    return StockMove.objects.filter(product_id__in=product_ids).aggregate(first=Min("date"))["first"] or date_to
+
+
+def _rotation(product: Product, product_ids: list[int], start: date, date_to: date, idle_days: int) -> dict:
     full = OperationsSelector._rotation(product, product_ids, start, date_to, idle_days)
     return {key: full[key] for key in _ROTATION_KEYS}
+
+
+_OUT_KEYS = {"CUSTOMER": "sale", "VIRTUAL": "production", "VENDOR": "supplier_return"}
+_IN_KEYS = {"VENDOR": "purchase", "VIRTUAL": "production", "CUSTOMER": "customer_return"}
+_FLOW_LABELS = {
+    "sale": "Ventas", "production": "Producción", "supplier_return": "Devolución a proveedor",
+    "purchase": "Compras", "customer_return": "Devolución de cliente", "other": "Otros",
+}
+_ADJUSTMENT_KEYS = dict(zip(ADJUSTMENT_VIRTUAL_NAMES, ("loss", "gain", "revaluation"), strict=True))
+_ADJUSTMENT_LABELS = {"loss": "Merma", "gain": "Sobrante", "revaluation": "Revalorización"}
+
+
+def _classified_moves(product_ids: list[int], start: date, end: date):
+    _, _, flow = ProductSelector._flow_case()
+    return StockMove.objects.filter(product_id__in=product_ids, date__range=(start, end)).annotate(flow=flow)
+
+
+def _series(product_ids: list[int], start: date, end: date, granularity: str) -> list[dict]:
+    _, history = ProductSelector._stock_flow(product_ids)
+    curve = _StockCurve(history)
+    daily = defaultdict(lambda: {"IN": 0.0, "OUT": 0.0})
+    for row in (
+        _classified_moves(product_ids, start, end).filter(flow__in=("IN", "OUT"))
+        .values("date", "flow").annotate(qty=Sum("quantity"))
+    ):
+        daily[_period_start(row["date"], granularity)][row["flow"]] += float(row["qty"] or 0)
+    points, current = [], _period_start(start, granularity)
+    while current <= end:
+        close = min(_next_start(current, granularity), end + timedelta(days=1)) - timedelta(days=1)
+        points.append({
+            "period": _period_label(current, granularity),
+            "stock_end": curve.at(close),
+            "in_qty": daily[current]["IN"],
+            "out_qty": daily[current]["OUT"],
+        })
+        current = _next_start(current, granularity)
+    return points
+
+
+def _flows(product_ids: list[int], start: date, end: date) -> dict:
+    out: dict[str, float] = defaultdict(float)
+    inn: dict[str, float] = defaultdict(float)
+    for row in (
+        _classified_moves(product_ids, start, end).filter(flow__in=("IN", "OUT"))
+        .values("flow", "source_location__location_type", "destination_location__location_type")
+        .annotate(qty=Sum("quantity"))
+    ):
+        qty = float(row["qty"] or 0)
+        if row["flow"] == "OUT":
+            out[_OUT_KEYS.get(row["destination_location__location_type"], "other")] += qty
+        else:
+            inn[_IN_KEYS.get(row["source_location__location_type"], "other")] += qty
+
+    def rows(acc: dict[str, float]) -> list[dict]:
+        return [{"key": k, "label": _FLOW_LABELS[k], "qty": v} for k, v in sorted(acc.items(), key=lambda kv: -kv[1])]
+
+    return {"outflows": rows(out), "inflows": rows(inn)}
+
+
+def _adjustments(product_ids: list[int], start: date, end: date) -> list[dict]:
+    acc: dict[str, dict] = {}
+    for row in (
+        _classified_moves(product_ids, start, end).filter(flow="ADJUSTMENT")
+        .values("source_location__name", "destination_location__name")
+        .annotate(qty=Sum("quantity"), value=Sum(F("quantity") * F("unit_cost")))
+    ):
+        name = row["source_location__name"] if row["source_location__name"] in _ADJUSTMENT_KEYS else row["destination_location__name"]
+        key = _ADJUSTMENT_KEYS.get(name)
+        if not key:
+            continue
+        entry = acc.setdefault(key, {"key": key, "label": _ADJUSTMENT_LABELS[key], "qty": 0.0, "value": 0.0})
+        entry["qty"] += float(row["qty"] or 0)
+        entry["value"] += float(row["value"] or 0)
+    return [acc[k] for k in ("loss", "gain", "revaluation") if k in acc]
 
 
 class StockAnalysisSelector:
@@ -76,7 +159,11 @@ class StockAnalysisSelector:
             product_ids += list(product.variants.values_list("id", flat=True))
         date_to = params.date_to or date.today()
 
+        start = _range_start(product_ids, params.date_from, date_to)
         on_hand = sum(_on_hand(product_ids).values())
+        rotation = _rotation(product, product_ids, start, date_to, params.idle_days)
+        adjustments = _adjustments(product_ids, start, date_to)
+        loss = next((a["qty"] for a in adjustments if a["key"] == "loss"), 0.0)
         reserved = sum(_reserved(product_ids).values())
         return {
             "today": {
@@ -85,11 +172,11 @@ class StockAnalysisSelector:
                 "reserved": reserved,
                 "available": on_hand - reserved,
             },
-            "rotation": _rotation(product, product_ids, params.date_from, date_to, params.idle_days),
-            "series": [],
-            "flows": {"outflows": [], "inflows": []},
-            "adjustments": [],
-            "loss_pct": None,
+            "rotation": rotation,
+            "series": _series(product_ids, start, date_to, params.granularity),
+            "flows": _flows(product_ids, start, date_to),
+            "adjustments": adjustments,
+            "loss_pct": loss / rotation["out_qty"] * 100 if rotation["out_qty"] else None,
             "warehouses": [],
             "variants": [],
         }
