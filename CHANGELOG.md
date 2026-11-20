@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.136](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.135...v0.3.136) (2026-11-20)
+
+
+### ⚙️ Refactors
+
+* **ui:** migra text-warning y text-success a tokens de alto contraste (ADR-0149) ([bc982f0](https://github.com/Patricoaa/ERPGrafico/commit/bc982f066b69cee892b904b7d67f294dc836d859))
+
 ### [0.3.135](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.134...v0.3.135) (2026-11-20)
 
 
