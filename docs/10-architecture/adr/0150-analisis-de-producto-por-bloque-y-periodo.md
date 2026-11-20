@@ -35,6 +35,8 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 
 - **Cuarto tab migrado: Abastecimiento** (`procurement`). Bloque propio `ProcurementBlock` con endpoint `GET /inventory/products/{id}/procurement/`: cobertura (cálculo compartido con `operations`), compras con período anterior, proveedores con el preferido marcado y pendiente de recibir. No muestra tiempo de entrega, puntualidad ni punto de pedido: las recepciones suelen registrarse el mismo día que la orden y la fecha planificada no se usa, así que serían inferencia.
 
+- **Quinto tab migrado: Inventario** (`inventory`). Bloque propio `StockBlock` con endpoint `GET /inventory/products/{id}/stock-analysis/`: existencia, valor, comprometido (mismas fuentes que `get_qty_reserved`, en consultas agregadas) y disponible; rotación; stock al cierre con entradas y salidas; flujos por origen y destino; ajustes (merma, sobrante, revalorización); bodegas y variantes. Sin tabla de movimientos (vive en su pantalla). `OperationsBlock` queda solo en Suscripción.
+
 ## Consecuencias
 
 - Mientras existan tabs legados, el período no los afecta; el modal avisa «Este tab muestra todo el histórico» cuando el período no es Histórico. El aviso se retira tab por tab.

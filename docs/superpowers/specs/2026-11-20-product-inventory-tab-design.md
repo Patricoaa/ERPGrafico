@@ -72,3 +72,8 @@ Servidor: `inventory/stock_analysis_selector.py`, serializer de parámetros, vis
 
 - Etiquetas exactas de los flujos y orden fino de las secciones.
 - Si la rotación se extrae de `OperationsSelector` a una función o se llama al selector.
+
+## Desvíos de la implementación
+
+- La revalorización se registra como un ajuste normal (cantidad × costo hacia o desde su ubicación), no como un movimiento sin cantidad: se muestra con su cantidad y su valor.
+- La existencia de hoy y por bodega sale de la tabla `Stock` (igual que `qty_on_hand`), que los movimientos mantienen sincronizada; la curva de stock sale de los movimientos.
