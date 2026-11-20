@@ -10,6 +10,7 @@ vi.mock("../ProcurementBlock", () => ({ ProcurementBlock: () => <div data-marker
 vi.mock("../SalesBlock", () => ({ SalesBlock: () => <div data-marker="block-sales" /> }))
 vi.mock("../PricingBlock", () => ({ PricingBlock: () => <div data-marker="block-pricing" /> }))
 vi.mock("../ProductionPerformanceBlock", () => ({ ProductionPerformanceBlock: () => <div data-marker="block-performance" /> }))
+vi.mock("../StockBlock", () => ({ StockBlock: () => <div data-marker="block-stock" /> }))
 vi.mock("../OperationsBlock", () => ({ OperationsBlock: () => <div data-marker="block-operations" /> }))
 vi.mock("../SourcingBlock", () => ({
     SourcingBlock: ({ section }: { section?: string }) => <div data-marker={`block-sourcing-${section ?? "all"}`} />,
@@ -55,8 +56,8 @@ describe("TabContent", () => {
         expect(markers("procurement", { buys: true })).toEqual(["block-procurement"])
     })
 
-    it("inventory stacks movements and rotation", () => {
-        expect(markers("inventory", { tracks_stock: true })).toEqual(["legacy-kardex", "block-operations"])
+    it("inventory renders only its own block, with no legacy content", () => {
+        expect(markers("inventory", { tracks_stock: true })).toEqual(["block-stock"])
     })
 
     it("production shows consumption, plus performance if manufactured and input usage if used in production", () => {
@@ -77,12 +78,13 @@ describe("TabContent", () => {
 
 describe("tabHasLegacyContent", () => {
     it("is true for every tab except the migrated ones", () => {
-        const tabs: ProductAnalyticsTabId[] = ["overview", "inventory", "production"]
+        const tabs: ProductAnalyticsTabId[] = ["overview", "production"]
         for (const tab of tabs) expect(tabHasLegacyContent(tab)).toBe(true)
         expect(tabHasLegacyContent("pricing")).toBe(false)
         expect(tabHasLegacyContent("sales")).toBe(false)
         expect(tabHasLegacyContent("costs")).toBe(false)
         expect(tabHasLegacyContent("procurement")).toBe(false)
+        expect(tabHasLegacyContent("inventory")).toBe(false)
         expect(tabHasLegacyContent("subscription")).toBe(false)
     })
 })
