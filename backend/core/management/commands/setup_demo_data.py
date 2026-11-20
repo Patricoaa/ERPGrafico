@@ -15,65 +15,35 @@ from accounting.models import (
     BSCategory,
     Budget,
     BudgetItem,
-    ClosingChecklistTemplate,
-    FiscalYear,
     JournalEntry,
     JournalItem,
-    RCVApiKey,
-    RCVDocument,
-    RCVImport,
-    RCVImportAttempt,
-    RCVImportSummary,
 )
 from accounting.services import AccountingService
-from billing.models import Invoice, InvoiceLine
-from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
 from contacts.partner_models import (
     PartnerEquityStake,
     PartnerTransaction,
-    ProfitDistributionLine,
-    ProfitDistributionLineDestination,
-    ProfitDistributionPayment,
-    ProfitDistributionResolution,
 )
 from core.models import (
-    ActionLog,
-    Attachment,
-    BackgroundJob,
     CompanySettings,
-    GlobalSearchIndex,
-    IdempotencyRecord,
-    PeriodReopenLog,
     User,
-    UserPreference,
 )
 from hr.models import (
     AFP,
-    Absence,
     Employee,
     EmployeeConceptAmount,
     GlobalHRSettings,
     Payroll,
     PayrollConcept,
-    PayrollItem,
-    PayrollPayment,
-    SalaryAdvance,
 )
 from inventory.models import (
-    InventoryCount,
-    InventoryCountLine,
     InventoryDocument,
     InventoryDocumentDetail,
     Location,
-    PricingRule,
     Product,
     ProductAttribute,
     ProductAttributeValue,
     ProductCategory,
-    ProductUoMPrice,
-    Stock,
-    StockMove,
     Subscription,
     UoM,
     UoMCategory,
@@ -83,66 +53,19 @@ from inventory.services import InventoryService
 from production.models import (
     BillOfMaterials,
     BillOfMaterialsLine,
-    ProductionConsumption,
-    WorkOrder,
-    WorkOrderHistory,
-    WorkOrderMaterial,
 )
-from purchasing.models import (
-    PurchaseLine,
-    PurchaseOrder,
-    PurchaseReceipt,
-    PurchaseReceiptLine,
-    PurchaseReturn,
-    PurchaseReturnLine,
-)
-from sales.models import (
-    DraftCart,
-    SaleDelivery,
-    SaleDeliveryLine,
-    SaleLine,
-    SaleOrder,
-    SaleReturn,
-    SaleReturnLine,
-)
-from tax.models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
+from tax.models import AccountingPeriod, TaxPeriod
 from treasury.models import (
     Bank,
     BankLoan,
-    BankStatement,
-    BankStatementLine,
-    CardPendingCharge,
-    CardPurchaseGroup,
-    CardPurchaseInstallment,
-    Check,
-    Checkbook,
-    CreditCardStatement,
     CreditLine,
-    LoanInstallment,
-    PaymentAllocation,
     PaymentMethod,
     PaymentTerminalDevice,
     PaymentTerminalProvider,
-    POSSession,
-    POSSessionAudit,
     POSTerminal,
-    ReconciliationMatch,
     ReconciliationSettings,
-    TerminalBatch,
-    TerminalSale,
-    TerminalSyncPayload,
-    TerminalSyncRun,
     TreasuryAccount,
     TreasuryMovement,
-)
-from workflow.models import (
-    Comment,
-    Notification,
-    NotificationRule,
-    Task,
-    TaskAssignmentRule,
-    Transition,
-    WorkflowSettings,
 )
 
 
@@ -452,259 +375,70 @@ class Command(BaseCommand):
             gl = f"{ta.account.code} - {ta.account.name}" if ta.account_id else "—"
             self.stdout.write(f"     • {ta.code} ({ta.get_account_type_display()}): GL {gl}")
 
+    # Tablas que la purga NUNCA vacía: metadatos que Django regenera en post_migrate
+    # (content types y permisos). `django_migrations` no es un modelo, así que no entra.
+    PURGE_KEEP_MODELS = frozenset({"contenttypes.contenttype", "auth.permission"})
+
     def _purge_data(self):
+        """Vacía TODAS las tablas de la BD, sin listas hardcodeadas.
+
+        Descubre las tablas desde el registro de modelos de Django (incluye tablas M2M
+        automáticas y modelos `Historical*` de simple_history), de modo que un modelo
+        nuevo queda cubierto sin tocar este comando. Un único TRUNCATE ... CASCADE
+        resuelve el orden de FKs y es atómico: o se vacía todo o no se toca nada.
+        """
         import time
 
+        from django.apps import apps
         from django.db import connection
 
         purge_start = time.time()
-        total_records = 0
-        section_records = 0
+        existing_tables = set(connection.introspection.table_names())
 
-        def _section_header(title):
-            nonlocal section_records
-            section_records = 0
-            self.stdout.write(f"\n  {'─' * 3} {title} {'─' * max(1, 40 - len(title))}")
+        tables: dict[str, str] = {}
+        for model in apps.get_models(include_auto_created=True):
+            meta = model._meta
+            if meta.proxy or not meta.managed or meta.swapped:
+                continue
+            if meta.label_lower in self.PURGE_KEEP_MODELS:
+                continue
+            if meta.db_table in existing_tables:
+                tables[meta.db_table] = meta.label
 
-        def _safe_delete(model_class, name):
-            nonlocal total_records, section_records
-            try:
-                table_name = model_class._meta.db_table
-                with connection.cursor() as cursor:
-                    cursor.execute(f'SELECT COUNT(*) FROM "{table_name}"')
-                    count = cursor.fetchone()[0]
-                    if count:
-                        cursor.execute(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
-                        total_records += count
-                        section_records += count
-                        self.stdout.write(f"  {name:<45} {count:>6} registros")
-            except Exception as e:
-                error_str = str(e).lower()
-                if "does not exist" in error_str:
-                    self.stdout.write(f"  {name:<45}    — (no existe)")
-                    return
-                self.stdout.write(f"  {name:<45}    — fallback delete")
-                try:
-                    with transaction.atomic():
-                        deleted, _ = model_class.objects.all().delete()
-                        total_records += deleted
-                        section_records += deleted
-                        if deleted:
-                            self.stdout.write(f"  {name:<45} {deleted:>6} registros (fallback)")
-                except Exception as e2:
-                    self.stdout.write(self.style.WARNING(f"  {name:<45}    ✗ {str(e2)[:60]}"))
+        qn = connection.ops.quote_name
+        counts: dict[str, int] = {}
+        with connection.cursor() as cursor:
+            for table in sorted(tables):
+                cursor.execute(f"SELECT COUNT(*) FROM {qn(table)}")
+                counts[table] = cursor.fetchone()[0]
 
-        # ── 0. System & Logs ─────────────────────────────────
-        _section_header("0. System & Logs")
-        _safe_delete(ActionLog, "ActionLog")
-        _safe_delete(Attachment, "Attachment")
-        _safe_delete(BackgroundJob, "BackgroundJob")
-        _safe_delete(GlobalSearchIndex, "GlobalSearchIndex")
-        _safe_delete(IdempotencyRecord, "IdempotencyRecord")
-        _safe_delete(PeriodReopenLog, "PeriodReopenLog")
-        _safe_delete(UserPreference, "UserPreference")
-        _safe_delete(Transition, "Transition")
-        _safe_delete(Comment, "Comment")
-        _safe_delete(WorkflowSettings, "WorkflowSettings")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+        self.stdout.write(f"\n  {'─' * 3} Purge total ({len(tables)} tablas) {'─' * 20}")
+        for table, n in sorted(counts.items(), key=lambda kv: -kv[1]):
+            if n:
+                self.stdout.write(f"  {tables[table]:<45} {n:>6} registros")
 
-        # ── 1. Workflows & Transients ────────────────────────
-        _section_header("1. Workflows & Transients")
-        _safe_delete(NoteWorkflow, "NoteWorkflow")
-        _safe_delete(Subscription, "Subscription")
-        _safe_delete(DraftCart, "DraftCart")
-        _safe_delete(Task, "Task")
-        _safe_delete(Notification, "Notification")
-        _safe_delete(TaskAssignmentRule, "TaskAssignmentRule")
-        _safe_delete(NotificationRule, "NotificationRule")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+        with transaction.atomic(), connection.cursor() as cursor:
+            cursor.execute(
+                "TRUNCATE TABLE "
+                + ", ".join(qn(t) for t in sorted(tables))
+                + " RESTART IDENTITY CASCADE"
+            )
 
-        # ── 2. Production ────────────────────────────────────
-        _section_header("2. Production")
-        _safe_delete(ProductionConsumption, "ProductionConsumption")
-        _safe_delete(WorkOrderMaterial, "WorkOrderMaterial")
-        _safe_delete(BillOfMaterialsLine, "BillOfMaterialsLine")
-        _safe_delete(BillOfMaterials, "BillOfMaterials")
-        _safe_delete(WorkOrderHistory, "WorkOrderHistory")
-        _safe_delete(WorkOrder, "WorkOrder")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+        # Verificación: ninguna tabla purgable puede quedar con filas.
+        leftovers = []
+        with connection.cursor() as cursor:
+            for table in sorted(tables):
+                cursor.execute(f"SELECT COUNT(*) FROM {qn(table)}")
+                if cursor.fetchone()[0]:
+                    leftovers.append(tables[table])
+        if leftovers:
+            raise CommandError(f"La purga dejó registros en: {', '.join(leftovers)}")
 
-        # ── 3. Tax ───────────────────────────────────────────
-        _section_header("3. Tax")
-        _safe_delete(F29Payment, "F29Payment")
-        _safe_delete(F29Declaration, "F29Declaration")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 3.5. RCV & TUU Imports ───────────────────────────
-        _section_header("3.5. RCV & TUU Imports")
-        _safe_delete(RCVDocument, "RCVDocument")
-        _safe_delete(RCVImportAttempt, "RCVImportAttempt")
-        _safe_delete(RCVImportSummary, "RCVImportSummary")
-        _safe_delete(RCVImport, "RCVImport")
-        _safe_delete(RCVApiKey, "RCVApiKey")
-        _safe_delete(TerminalSale, "TerminalSale")
-        _safe_delete(TerminalSyncPayload, "TerminalSyncPayload")
-        _safe_delete(TerminalSyncRun, "TerminalSyncRun")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 4. Logistics Detail ──────────────────────────────
-        _section_header("4. Logistics Detail")
-        _safe_delete(InvoiceLine, "InvoiceLine")  # protege líneas de OV/OC/despacho/recepción
-        _safe_delete(SaleReturnLine, "SaleReturnLine")
-        _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
-        _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
-        _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 5. Transactional Documents ───────────────────────
-        _section_header("5. Transactional Documents")
-        _safe_delete(SaleReturn, "SaleReturn")
-        _safe_delete(SaleDelivery, "SaleDelivery")
-        _safe_delete(PurchaseReturn, "PurchaseReturn")
-        _safe_delete(PurchaseReceipt, "PurchaseReceipt")
-        _safe_delete(Invoice, "Invoice")
-        _safe_delete(TreasuryMovement, "TreasuryMovement")
-        _safe_delete(InventoryDocumentDetail, "InventoryDocumentDetail")
-        _safe_delete(InventoryDocument, "InventoryDocument")
-        _safe_delete(StockMove, "StockMove")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 5.5. Credit Card / Payment Allocations ───────────
-        _section_header("5.5. Credit Card / Payment Allocations")
-        _safe_delete(PaymentAllocation, "PaymentAllocation")
-        _safe_delete(CardPendingCharge, "CardPendingCharge")
-        _safe_delete(CardPurchaseInstallment, "CardPurchaseInstallment")
-        _safe_delete(CreditCardStatement, "CreditCardStatement")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 6. Orders ────────────────────────────────────────
-        _section_header("6. Orders")
-        _safe_delete(SaleLine, "SaleLine")
-        _safe_delete(SaleOrder, "SaleOrder")
-        _safe_delete(PurchaseLine, "PurchaseLine")
-        _safe_delete(PurchaseOrder, "PurchaseOrder")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 7. POS & Infrastructure ──────────────────────────
-        _section_header("7. POS & Infrastructure")
-        _safe_delete(POSSessionAudit, "POSSessionAudit")
-        _safe_delete(POSSession, "POSSession")
-        _safe_delete(POSTerminal, "POSTerminal")
-        _safe_delete(TerminalBatch, "TerminalBatch")
-        _safe_delete(PaymentMethod, "PaymentMethod")
-        _safe_delete(PaymentTerminalDevice, "PaymentTerminalDevice")
-        _safe_delete(PaymentTerminalProvider, "PaymentTerminalProvider")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 7.5. Checks & Loans ─────────────────────────────
-        _section_header("7.5. Checks & Loans")
-        _safe_delete(Check, "Check")
-        _safe_delete(Checkbook, "Checkbook")
-        _safe_delete(CreditLine, "CreditLine")
-        _safe_delete(LoanInstallment, "LoanInstallment")
-        _safe_delete(BankLoan, "BankLoan")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 8. Banking ───────────────────────────────────────
-        _section_header("8. Banking")
-        _safe_delete(BankStatementLine, "BankStatementLine")
-        _safe_delete(BankStatement, "BankStatement")
-        _safe_delete(ReconciliationMatch, "ReconciliationMatch")
-        _safe_delete(ReconciliationSettings, "ReconciliationSettings")
-        _safe_delete(TreasuryAccount, "TreasuryAccount")
-        _safe_delete(Bank, "Bank")
-        _safe_delete(CardPurchaseGroup, "CardPurchaseGroup")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 9. Partner Distributions (must purge BEFORE FiscalYear — PROTECT FK) ──
-        _section_header("9. Partner Distributions")
-        _safe_delete(ProfitDistributionPayment, "ProfitDistributionPayment")
-        _safe_delete(ProfitDistributionLineDestination, "ProfitDistributionLineDestination")
-        _safe_delete(ProfitDistributionLine, "ProfitDistributionLine")
-        _safe_delete(ProfitDistributionResolution, "ProfitDistributionResolution")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 9.5. Financial Core ────────────────────────────────
-        _section_header("9.5. Financial Core")
-        _safe_delete(JournalEntry, "JournalEntry")
-        _safe_delete(BudgetItem, "BudgetItem")
-        _safe_delete(Budget, "Budget")
-        _safe_delete(FiscalYear, "FiscalYear")
-        _safe_delete(PartnerTransaction, "PartnerTransaction")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 9.6. HR Module ──────────────────────────────────
-        _section_header("9.6. HR Module")
-        _safe_delete(PayrollItem, "PayrollItem")
-        _safe_delete(PayrollPayment, "PayrollPayment")
-        _safe_delete(Payroll, "Payroll")
-        _safe_delete(Absence, "Absence")
-        _safe_delete(SalaryAdvance, "SalaryAdvance")
-        _safe_delete(EmployeeConceptAmount, "EmployeeConceptAmount")
-        _safe_delete(Employee, "Employee")
-        _safe_delete(PayrollConcept, "PayrollConcept")
-        _safe_delete(AFP, "AFP")
-        _safe_delete(GlobalHRSettings, "GlobalHRSettings")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 10. Master Data & Basics ─────────────────────────
-        _section_header("10. Master Data & Basics")
-        _safe_delete(ClosingChecklistTemplate, "ClosingChecklistTemplate")
-        _safe_delete(PricingRule, "PricingRule")
-        _safe_delete(ProductAttributeValue, "ProductAttributeValue")
-        _safe_delete(ProductAttribute, "ProductAttribute")
-        _safe_delete(ProductUoMPrice, "ProductUoMPrice")
-        _safe_delete(Product, "Product")
-        _safe_delete(ProductCategory, "ProductCategory")
-        _safe_delete(InventoryCountLine, "InventoryCountLine")
-        _safe_delete(InventoryCount, "InventoryCount")
-        _safe_delete(Stock, "Stock")
-        _safe_delete(Warehouse, "Warehouse")
-        _safe_delete(PartnerEquityStake, "PartnerEquityStake")
-        _safe_delete(Contact, "Contact")
-        _safe_delete(UoM, "UoM")
-        _safe_delete(UoMCategory, "UoMCategory")
-        _safe_delete(Account, "Account")
-        _safe_delete(AccountingPeriod, "AccountingPeriod")
-        _safe_delete(TaxPeriod, "TaxPeriod")
-        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
-
-        # ── 11. Historical Records ───────────────────────────
-        hist_count = 0
-        self.stdout.write(f"\n  {'─' * 3} 11. Historical Records {'─' * max(1, 40 - 23)}")
-        for model in [
-            Employee,
-            Payroll,
-            Product,
-            StockMove,
-            SaleOrder,
-            PurchaseOrder,
-            Invoice,
-            JournalEntry,
-            Contact,
-            Warehouse,
-            ProductCategory,
-            UoM,
-            POSSession,
-            TreasuryMovement,
-            PartnerTransaction,
-        ]:
-            if hasattr(model, "history"):
-                try:
-                    n, _ = model.history.model.objects.all().delete()
-                    hist_count += n
-                    if n:
-                        self.stdout.write(f"  {model.__name__ + ' History':<45} {n:>6} registros")
-                except Exception as e:
-                    self.stdout.write(f"  {model.__name__ + ' History':<45}    ✗ {str(e)[:60]}")
-        self.stdout.write(f"  {' ':<45} {hist_count:>6} total")
-
-        purge_elapsed = time.time() - purge_start
         self.stdout.write(f"\n  {'─' * 50}")
         self.stdout.write(
             self.style.SUCCESS(
-                f"  Purge completado: {total_records + hist_count:,} registros "
-                f"en {purge_elapsed:.1f}s"
+                f"  Purge completado: {sum(counts.values()):,} registros "
+                f"en {time.time() - purge_start:.1f}s"
             )
         )
 
@@ -1289,6 +1023,7 @@ class Command(BaseCommand):
                     "uom": uom,
                     "sale_price": price,
                     "track_inventory": (type == Product.Type.STORABLE),
+                    "requires_advanced_manufacturing": (type == Product.Type.MANUFACTURABLE),
                     "receiving_warehouse": wh if type != Product.Type.SERVICE else None,
                 },
             )
