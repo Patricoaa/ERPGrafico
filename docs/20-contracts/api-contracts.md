@@ -420,6 +420,7 @@ DELETE /api/inventory/products/{id}/     soft-delete (sets active=false)
 POST   /api/inventory/products/{id}/generate_variants/   generate variants for an existing template
 GET    /api/inventory/products/analytics/    agregación servidor (ProductAnalyticsService)
 GET    /api/inventory/products/{id}/capabilities/   capacidades del producto (qué tabs de análisis aplican, ADR-0150)
+GET    /api/inventory/products/{id}/pricing/        precio y margen: `today`, `kpis` (+`previous`), `series.points|by_rule`, `list_price_changes`, `rule_windows`, `effects` (antes/después, ventana 28 d, `reliable` ≥7 d y ≥5 un por lado); params `date_from`, `date_to`, `granularity`=day|week|month|year (ADR-0150)
 ```
 
 `generate_variants/` request: `{ "selection": [{ "attribute": 12, "values": [31, 32] }] }`. Successful response: `{ "success": true, "created": 2, "skipped": 0 }`; invalid selection returns `400` with an `error` message.

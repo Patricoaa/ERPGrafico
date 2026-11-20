@@ -83,3 +83,9 @@ Reglas del cálculo:
 - Nombres de tipos y hooks, orden fino de las secciones y diseño visual de tarjetas y marcadores.
 - Cómo resolver el precio de lista aplicado cuando la línea no lo registra (usar el precio neto menos descuento).
 - Detalle de la consulta para evitar N+1 en `by_rule` y `effects`.
+
+## Desvíos de la implementación
+
+- Las «bandas» de reglas se dibujan como marcadores de inicio y de fin (Nivo no soporta rangos), más los chips de vigencia del desglose. El «fin» de una regla se fecha el primer día sin la regla.
+- Los dos gráficos comparten márgenes pero Nivo usa escalas distintas (puntos vs bandas): el alineamiento es aproximado.
+- Con cero ventas no se muestra el desglose (evita un segundo mensaje vacío).

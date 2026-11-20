@@ -26,6 +26,8 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 - **Granularidad automática** según el período: 1 m día; 3 y 6 m semana ISO; 12 y 24 m mes; Histórico año. `sales-impact` acepta `granularity=week` (etiqueta `AAAA-Www`, año ISO).
 - **Layout dinámico por composición:** cada bloque compone piezas compartidas según capacidades y datos; la definición de cada tab por segmento se hace en un plan por tab.
 
+- **Primer tab migrado: Precio y margen** (`pricing`). Bloque propio `PricingBlock` con endpoint `GET /inventory/products/{id}/pricing/` (margen realizado vs período anterior, precio de lista contra precio realizado y unidades, y «Antes vs después» de cada cambio de precio o regla con ventanas de 28 días). Ya no usa `insights`, por lo que no muestra el aviso de histórico.
+
 ## Consecuencias
 
 - Mientras existan tabs legados, el período no los afecta; el modal avisa «Este tab muestra todo el histórico» cuando el período no es Histórico. El aviso se retira tab por tab.
