@@ -1,11 +1,13 @@
 # ruff: noqa: F811  (the env fixture is imported from test_sales_impact_selector)
 """ProductionAnalysisSelector: rol fabricado (OT, unidades, rectificación, insumos) y rol insumo (consumo, uso en BOM)."""
 from datetime import date, datetime, timezone
+from decimal import Decimal
 
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
+from inventory.models import Product
 from inventory.production_analysis_selector import (
     ProductionAnalysisParams,
     ProductionAnalysisSelector,
@@ -126,6 +128,109 @@ def test_made_query_count_constant(env):
         _analysis(env)
     for i in range(1, 9):
         _finished_with_material(env, i, _at(2026, 1 + i, 3))
+    with CaptureQueriesContext(connection) as many:
+        _analysis(env)
+    assert len(many) == len(few)
+
+
+# ── Rol insumo ───────────────────────────────────────────────────────────────
+
+def _parent(env, name="Tarjeta", price="1000"):
+    return Product.objects.create(
+        name=name, category=env["category"], uom=env["uom"], sale_uom=env["uom"], purchase_uom=env["uom"],
+        product_type="MANUFACTURABLE", sale_price=Decimal(price),
+    )
+
+
+def _used_in_ot(env, qty, parent, on=_at(2026, 3, 10), consumed_on=date(2026, 3, 5), component=None):
+    from production.models import ProductionConsumption
+
+    wo = _ot(env, qty="1", finished_on=on, product=parent)
+    consumption = _consume(env, wo, component or env["product"], qty, cost="10")
+    ProductionConsumption.objects.filter(pk=consumption.pk).update(date=consumed_on)
+    return wo
+
+
+def _in_bom(env, parent, qty="2"):
+    from production.models import BillOfMaterials, BillOfMaterialsLine
+
+    bom = BillOfMaterials.objects.create(product=parent, name="BOM", active=True)
+    BillOfMaterialsLine.objects.create(bom=bom, component=env["product"], quantity=Decimal(qty), uom=env["uom"])
+
+
+def test_input_only_when_used_in_production(env):
+    assert _analysis(env)["input"] is None
+    _in_bom(env, _parent(env))
+    assert _analysis(env)["input"] is not None
+
+
+def test_input_consumption_and_orders(env):
+    card = _parent(env)
+    _used_in_ot(env, "4", card)
+    _used_in_ot(env, "6", card, consumed_on=date(2026, 5, 2))
+    kpis = _analysis(env)["input"]["kpis"]
+    assert (kpis["consumed"], kpis["orders"]) == (10.0, 2)
+
+
+def test_input_previous_and_aligned_points(env):
+    card = _parent(env)
+    _used_in_ot(env, "7", card, consumed_on=date(2026, 1, 15))
+    _used_in_ot(env, "3", card, consumed_on=date(2026, 4, 20))
+    data = _analysis(env, date_from=date(2026, 4, 1), date_to=date(2026, 6, 30))["input"]
+    assert data["kpis"]["previous"] == {"consumed": 7.0, "orders": 1}
+    assert [(p["period"], p["consumed"]) for p in data["series"]["points"]] == [("2026-04", 3.0)]
+    assert [(p["period"], p["consumed"]) for p in data["series"]["previous_points"]] == [("2026-04", 7.0)]
+
+
+def test_input_by_product_share(env):
+    card, flyer = _parent(env, "Tarjeta"), _parent(env, "Volante")
+    _used_in_ot(env, "6", card)
+    _used_in_ot(env, "2", flyer)
+    rows = {r["name"]: r for r in _analysis(env)["input"]["by_product"]}
+    assert rows["Tarjeta"]["qty"] == pytest.approx(6.0)
+    assert rows["Tarjeta"]["share_pct"] == pytest.approx(75.0)
+    assert rows["Volante"]["product_id"] == flyer.id
+
+
+def test_input_includes_variant_consumption(env):
+    parent = env["product"]
+    variant = Product.objects.create(
+        name="Tarjeta v2", category=env["category"], uom=env["uom"], sale_uom=env["uom"], purchase_uom=env["uom"],
+        product_type="STORABLE", sale_price=Decimal("1000"), parent_template=parent,
+    )
+    Product.objects.filter(pk=parent.pk).update(has_variants=True)
+    parent.refresh_from_db()
+    _used_in_ot(env, "5", _parent(env), component=variant)
+    assert _analysis(env, product=parent)["input"]["kpis"]["consumed"] == pytest.approx(5.0)
+
+
+def test_used_in_matches_sourcing(env):
+    from inventory.sourcing_selector import SourcingSelector
+
+    _in_bom(env, _parent(env))
+    expected = SourcingSelector.get_sourcing(env["product"], increase_pct=20)["used_in"]
+    assert _analysis(env, increase_pct=20)["input"]["used_in"] == expected
+
+
+def test_increase_pct_changes_margin_after(env):
+    Product.objects.filter(pk=env["product"].pk).update(cost_price=Decimal("100"))
+    env["product"].refresh_from_db()
+    _in_bom(env, _parent(env, price="1000"))
+    low = _analysis(env, increase_pct=5)["input"]["used_in"]["parents"][0]
+    high = _analysis(env, increase_pct=20)["input"]["used_in"]["parents"][0]
+    assert high["margin_pct_after"] < low["margin_pct_after"]
+    assert high["margin_pct"] == low["margin_pct"]
+
+
+def test_input_query_count_constant(env):
+    _used_in_ot(env, "1", _parent(env, "P0"))
+    _analysis(env)
+    with CaptureQueriesContext(connection) as few:
+        _analysis(env)
+    for i in range(1, 8):
+        parent = _parent(env, f"P{i}")
+        _in_bom(env, parent)
+        _used_in_ot(env, "1", parent, consumed_on=date(2026, 1 + i, 3))
     with CaptureQueriesContext(connection) as many:
         _analysis(env)
     assert len(many) == len(few)

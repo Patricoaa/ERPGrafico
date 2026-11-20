@@ -92,12 +92,70 @@ def _made(product: Product, params: ProductionAnalysisParams, date_to: date) -> 
     }
 
 
+def _consumption_rows(product_ids: list[int], start: date | None, end: date) -> list[dict]:
+    """Consumo del insumo por día, OT y producto fabricado (producto de la OT o de su línea de venta)."""
+    from django.db.models import Sum
+    from django.db.models.functions import Coalesce
+
+    from production.models import ProductionConsumption
+
+    lines = ProductionConsumption.objects.filter(product_id__in=product_ids, date__lte=end)
+    if start:
+        lines = lines.filter(date__gte=start)
+    rows = (
+        lines.annotate(
+            made_id=Coalesce("work_order__product_id", "work_order__sale_line__product_id"),
+            made_name=Coalesce("work_order__product__name", "work_order__sale_line__product__name"),
+        )
+        .values("date", "work_order_id", "made_id", "made_name")
+        .annotate(qty=Sum("quantity"))
+    )
+    return [
+        {"day": r["date"], "order": r["work_order_id"], "made_id": r["made_id"], "made_name": r["made_name"],
+         "consumed": float(r["qty"] or 0)}
+        for r in rows
+    ]
+
+
+def _input(product: Product, product_ids: list[int], params: ProductionAnalysisParams, date_to: date) -> dict:
+    from .costs_selector import _to_base_factory
+    from .sourcing_selector import SourcingSelector
+
+    rows = _consumption_rows(product_ids, params.date_from, date_to)
+    previous, previous_points = None, []
+    window = _previous_window(params.date_from, date_to)
+    if window:
+        prev_rows = _consumption_rows(product_ids, window[0], window[1])
+        previous = {"consumed": sum(r["consumed"] for r in prev_rows), "orders": len({r["order"] for r in prev_rows})}
+        previous_points = _buckets(prev_rows, params.granularity, ("consumed",), window[2])
+
+    total = sum(r["consumed"] for r in rows)
+    by_product: dict[int | None, dict] = {}
+    for r in rows:
+        entry = by_product.setdefault(r["made_id"], {
+            "product_id": r["made_id"], "name": r["made_name"] or "Sin producto", "qty": 0.0,
+        })
+        entry["qty"] += r["consumed"]
+    return {
+        "kpis": {"consumed": total, "orders": len({r["order"] for r in rows}), "previous": previous},
+        "series": {"points": _buckets(rows, params.granularity, ("consumed",)), "previous_points": previous_points},
+        "by_product": sorted(
+            ({**e, "share_pct": e["qty"] / total * 100 if total else 0.0} for e in by_product.values()),
+            key=lambda e: -e["qty"],
+        ),
+        "used_in": SourcingSelector._used_in(product_ids, params.increase_pct, _to_base_factory()),
+    }
+
+
 class ProductionAnalysisSelector:
     @staticmethod
     def get_analysis(product: Product, params: ProductionAnalysisParams) -> dict:
         caps = ProductSelector.get_capabilities(product)
         date_to = params.date_to or date.today()
+        product_ids = [product.id]
+        if product.has_variants:
+            product_ids += list(product.variants.values_list("id", flat=True))
         return {
             "made": _made(product, params, date_to) if caps["manufactures"] else None,
-            "input": None,
+            "input": _input(product, product_ids, params, date_to) if caps["used_in_production"] else None,
         }
