@@ -3,39 +3,17 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { Metric, MetricStrip } from "@/components/shared"
 import { Collection, formatNumber, useEntityCollection } from "@/components/entity-view"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
 import { periodToDateFrom, type PeriodKey } from "./period"
+import { RailControls } from "./RailControls"
+import { ViewControl } from "./ViewControl"
 import { useProductSourcing } from "../hooks/useProductSourcing"
 import { sourcingParentEntity, sourcingParentViews } from "../entity-view/sourcingParent.entity"
 import type { MakeVsBuy, Sourcing } from "./sourcing.types"
 
 const INCREASES = [{ value: 5, label: "5 %" }, { value: 10, label: "10 %" }, { value: 20, label: "20 %" }]
 const formatIsoDate = (iso: string) => iso.split("-").reverse().join("-")
-
-function Control({
-    label, value, options, onChange,
-}: { label: string; value: number; options: Array<{ value: number; label: string }>; onChange: (v: number) => void }) {
-    return (
-        <div className="flex flex-col gap-1">
-            <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-            <ToggleGroup
-                type="single" value={String(value)} aria-label={label} className="justify-start gap-1"
-                onValueChange={(v) => v && onChange(Number(v))}
-            >
-                {options.map((o) => (
-                    <ToggleGroupItem
-                        key={o.value} value={String(o.value)} size="sm"
-                        className="text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                    >
-                        {o.label}
-                    </ToggleGroupItem>
-                ))}
-            </ToggleGroup>
-        </div>
-    )
-}
 
 function MakeVsBuySection({ mvb }: { mvb: MakeVsBuy }) {
     const { make, buy } = mvb
@@ -61,9 +39,15 @@ function MakeVsBuySection({ mvb }: { mvb: MakeVsBuy }) {
 }
 
 /** "Abastecimiento": make-vs-buy comparison and input-usage price sensitivity (ADR-0147). */
-export function SourcingBlock({ productId, period }: { productId: number; period: PeriodKey }) {
+export type SourcingSection = "make_vs_buy" | "used_in"
+
+export function SourcingBlock({
+    productId, period, section,
+}: { productId: number; period: PeriodKey; section?: SourcingSection }) {
     const [increasePct, setIncreasePct] = useState(10)
     const dateFrom = useMemo(() => periodToDateFrom(period), [period])
+    const showMakeVsBuy = section === undefined || section === "make_vs_buy"
+    const showUsedIn = section === undefined || section === "used_in"
     const { data, isLoading, isError } = useProductSourcing(productId, { date_from: dateFrom, increase_pct: increasePct })
 
     const parentsCollection = useEntityCollection(
@@ -82,27 +66,31 @@ export function SourcingBlock({ productId, period }: { productId: number; period
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-                <Control label="Subida de precio del insumo" value={increasePct} options={INCREASES} onChange={setIncreasePct} />
-            </div>
+            {showUsedIn && (
+                <RailControls>
+                    <ViewControl label="Subida de precio del insumo" value={increasePct} options={INCREASES} onChange={setIncreasePct} />
+                </RailControls>
+            )}
             <AnalyticsBlockFrame
                 isLoading={isLoading}
                 isError={isError || !data}
                 errorMessage="No se pudo cargar el análisis de abastecimiento."
-                isEmpty={!!data && !data.make_vs_buy && !data.used_in}
+                isEmpty={!!data && !(showMakeVsBuy && data.make_vs_buy) && !(showUsedIn && data.used_in)}
                 emptyMessage="Este producto no tiene datos de abastecimiento que analizar"
             >
-                {data && <SourcingBody data={data} parentsTable={parentsTable} />}
+                {data && <SourcingBody data={data} parentsTable={parentsTable} showMakeVsBuy={showMakeVsBuy} showUsedIn={showUsedIn} />}
             </AnalyticsBlockFrame>
         </div>
     )
 }
 
-function SourcingBody({ data, parentsTable }: { data: Sourcing; parentsTable: ReactNode }) {
+function SourcingBody({
+    data, parentsTable, showMakeVsBuy, showUsedIn,
+}: { data: Sourcing; parentsTable: ReactNode; showMakeVsBuy: boolean; showUsedIn: boolean }) {
     return (
         <>
-            {data.make_vs_buy && <MakeVsBuySection mvb={data.make_vs_buy} />}
-            {data.used_in && (
+            {showMakeVsBuy && data.make_vs_buy && <MakeVsBuySection mvb={data.make_vs_buy} />}
+            {showUsedIn && data.used_in && (
                 <section className="flex flex-col gap-3" aria-label="Uso como insumo">
                     <h3 className="text-sm font-semibold">Uso como insumo: si su precio sube {formatNumber(data.used_in.increase_pct, 0)} %</h3>
                     {parentsTable}

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { Operations, Rotation, SubscriptionsSummary } from "../operations.types"
 
@@ -23,6 +23,7 @@ vi.mock("@/components/shared", async (importOriginal) => ({
 }))
 
 import { OperationsBlock } from "../OperationsBlock"
+import { RailControlsProvider, ViewControlsSlot } from "../RailControls"
 
 const ROTATION: Rotation = {
     stock_now: 40, stock_value: 4000, in_qty: 100, out_qty: 60, avg_stock: 50, turnover: 1.2, days_of_inventory: 304,
@@ -128,5 +129,17 @@ describe("OperationsBlock", () => {
         expect(last[0]).toBe(7)
         expect(last[1].idle_days).toBe(30)
         expect(state.useOps.mock.calls[0][1]).not.toEqual(last[1])
+    })
+
+    it("delivers the idle threshold control to the rail view zone", () => {
+        render(
+            <RailControlsProvider>
+                <ViewControlsSlot />
+                <div data-testid="block"><OperationsBlock productId={7} period="12m" /></div>
+            </RailControlsProvider>,
+        )
+        const slot = within(screen.getByRole("group", { name: "Controles de vista" }))
+        expect(slot.getByRole("group", { name: "Stock inmóvil desde" })).toBeInTheDocument()
+        expect(within(screen.getByTestId("block")).queryByRole("group", { name: "Stock inmóvil desde" })).not.toBeInTheDocument()
     })
 })

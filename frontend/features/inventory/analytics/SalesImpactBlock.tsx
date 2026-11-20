@@ -3,14 +3,15 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { AnalyticsChart } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
-import { periodToDateFrom, type PeriodKey } from "./period"
+import { periodToDateFrom, periodToGranularity, type PeriodKey } from "./period"
+import { RailControls } from "./RailControls"
+import { ViewControl } from "./ViewControl"
 import { useProductSalesImpact } from "../hooks/useProductSalesImpact"
 import { salesImpactEntity, salesImpactViews } from "../entity-view/salesImpact.entity"
 import type {
-    SalesImpact, SalesImpactGranularity, SalesImpactGroupBy, SalesImpactMetric, SalesImpactParams,
+    SalesImpact, SalesImpactGroupBy, SalesImpactMetric, SalesImpactParams,
 } from "./salesImpact.types"
 
 const METRICS: Array<{ value: SalesImpactMetric; label: string }> = [
@@ -28,51 +29,15 @@ const GROUPS: Array<{ value: SalesImpactGroupBy; label: string }> = [
     { value: "variant", label: "Variante" },
     { value: "uom", label: "Unidad" },
 ]
-const GRANULARITIES: Array<{ value: SalesImpactGranularity; label: string }> = [
-    { value: "day", label: "Día" },
-    { value: "month", label: "Mes" },
-    { value: "year", label: "Año" },
-]
 const formatIsoDate = (iso: string) => iso.split("-").reverse().join("-")
-
-function ControlGroup<T extends string | number>({
-    label, value, options, onChange,
-}: { label: string; value: T; options: Array<{ value: T; label: string }>; onChange: (v: T) => void }) {
-    return (
-        <div className="flex flex-col gap-1">
-            <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-            <ToggleGroup
-                type="single"
-                value={String(value)}
-                onValueChange={(v) => {
-                    const next = options.find((o) => String(o.value) === v)
-                    if (next) onChange(next.value)
-                }}
-                aria-label={label}
-                className="flex-wrap justify-start gap-1"
-            >
-                {options.map((o) => (
-                    <ToggleGroupItem
-                        key={String(o.value)}
-                        value={String(o.value)}
-                        size="sm"
-                        className="text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                    >
-                        {o.label}
-                    </ToggleGroupItem>
-                ))}
-            </ToggleGroup>
-        </div>
-    )
-}
 
 /** "Precio y margen": segmentable sales/margin chart, price-rule windows and segment table (ADR-0145). */
 export function SalesImpactBlock({ productId, period }: { productId: number; period: PeriodKey }) {
     const [metric, setMetric] = useState<SalesImpactMetric>("net_revenue")
     const [groupBy, setGroupBy] = useState<SalesImpactGroupBy>("rule")
-    const [granularity, setGranularity] = useState<SalesImpactGranularity>("month")
 
     const dateFrom = useMemo(() => periodToDateFrom(period), [period])
+    const granularity = periodToGranularity(period)
     const params: SalesImpactParams = { metric, group_by: groupBy, granularity, date_from: dateFrom }
     const { data, isLoading, isError } = useProductSalesImpact(productId, params)
 
@@ -94,11 +59,10 @@ export function SalesImpactBlock({ productId, period }: { productId: number; per
     }, [data])
 
     const controls = (
-        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-            <ControlGroup label="Métrica" value={metric} options={METRICS} onChange={setMetric} />
-            <ControlGroup label="Agrupar por" value={groupBy} options={GROUPS} onChange={setGroupBy} />
-            <ControlGroup label="Por" value={granularity} options={GRANULARITIES} onChange={setGranularity} />
-        </div>
+        <>
+            <ViewControl label="Métrica" value={metric} options={METRICS} onChange={setMetric} />
+            <ViewControl label="Agrupar por" value={groupBy} options={GROUPS} onChange={setGroupBy} />
+        </>
     )
 
     const table = (
@@ -109,7 +73,7 @@ export function SalesImpactBlock({ productId, period }: { productId: number; per
 
     return (
         <div className="flex flex-col gap-4">
-            {controls}
+            <RailControls>{controls}</RailControls>
             <AnalyticsBlockFrame
                 isLoading={isLoading}
                 isError={isError || !data}

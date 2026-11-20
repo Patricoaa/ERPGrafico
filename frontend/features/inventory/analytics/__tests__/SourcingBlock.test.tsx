@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { MakeVsBuy, Sourcing, SourcingParams } from "../sourcing.types"
 
@@ -17,6 +17,7 @@ vi.mock("../../hooks/useProductSourcing", () => ({
 }))
 
 import { SourcingBlock } from "../SourcingBlock"
+import { RailControlsProvider, ViewControlsSlot } from "../RailControls"
 
 const MVB: MakeVsBuy = {
     make: { unit_cost: 20, bom_cost: 24, units_made: 10, orders: 2 },
@@ -116,5 +117,37 @@ describe("SourcingBlock", () => {
         state.isError = true
         rerender(<SourcingBlock productId={7} period="12m" />)
         expect(screen.getByRole("alert")).toBeInTheDocument()
+    })
+
+    it("with section make_vs_buy shows only the comparison and no sensitivity control", () => {
+        render(<SourcingBlock productId={7} period="12m" section="make_vs_buy" />)
+        expect(screen.getByText("Fabricar")).toBeInTheDocument()
+        expect(screen.queryByText("Tarjeta Doble Faz")).not.toBeInTheDocument()
+        expect(screen.queryByRole("group", { name: "Subida de precio del insumo" })).not.toBeInTheDocument()
+    })
+
+    it("with section used_in shows only the input usage and its sensitivity control", () => {
+        render(<SourcingBlock productId={7} period="12m" section="used_in" />)
+        expect(screen.getByText("Tarjeta Doble Faz")).toBeInTheDocument()
+        expect(screen.queryByText("Fabricar")).not.toBeInTheDocument()
+        expect(screen.getByRole("group", { name: "Subida de precio del insumo" })).toBeInTheDocument()
+    })
+
+    it("with a section, shows the empty state when only the other part has data", () => {
+        state.data = { make_vs_buy: null, used_in: FULL.used_in }
+        render(<SourcingBlock productId={7} period="12m" section="make_vs_buy" />)
+        expect(screen.getByText("Este producto no tiene datos de abastecimiento que analizar")).toBeInTheDocument()
+    })
+
+    it("delivers the sensitivity control to the rail view zone", () => {
+        render(
+            <RailControlsProvider>
+                <ViewControlsSlot />
+                <div data-testid="block"><SourcingBlock productId={7} period="12m" section="used_in" /></div>
+            </RailControlsProvider>,
+        )
+        const slot = within(screen.getByRole("group", { name: "Controles de vista" }))
+        expect(slot.getByRole("group", { name: "Subida de precio del insumo" })).toBeInTheDocument()
+        expect(within(screen.getByTestId("block")).queryByRole("group", { name: "Subida de precio del insumo" })).not.toBeInTheDocument()
     })
 })

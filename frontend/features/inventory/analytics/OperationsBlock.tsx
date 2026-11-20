@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react"
 import { AnalyticsChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, formatDate, formatNumber, useEntityCollection } from "@/components/entity-view"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
 import { periodToDateFrom, type PeriodKey } from "./period"
+import { RailControls } from "./RailControls"
+import { ViewControl } from "./ViewControl"
 import { useProductOperations } from "../hooks/useProductOperations"
 import { operationsSubscriptionEntity, operationsSubscriptionViews } from "../entity-view/operationsSubscription.entity"
 import { operationsPaymentEntity, operationsPaymentViews } from "../entity-view/operationsPayment.entity"
@@ -14,29 +15,6 @@ import type { Operations, Rotation, SubscriptionsSummary } from "./operations.ty
 
 const IDLE = [{ value: 30, label: "30 d" }, { value: 90, label: "90 d" }, { value: 180, label: "180 d" }]
 const DASH = "—"
-
-function Control({
-    label, value, options, onChange,
-}: { label: string; value: number; options: Array<{ value: number; label: string }>; onChange: (v: number) => void }) {
-    return (
-        <div className="flex flex-col gap-1">
-            <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-            <ToggleGroup
-                type="single" value={String(value)} aria-label={label} className="justify-start gap-1"
-                onValueChange={(v) => v && onChange(Number(v))}
-            >
-                {options.map((o) => (
-                    <ToggleGroupItem
-                        key={o.value} value={String(o.value)} size="sm"
-                        className="text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                    >
-                        {o.label}
-                    </ToggleGroupItem>
-                ))}
-            </ToggleGroup>
-        </div>
-    )
-}
 
 const orDash = (value: number | null, decimals: number, suffix = "") =>
     value === null ? DASH : `${formatNumber(value, decimals)}${suffix}`
@@ -100,9 +78,9 @@ export function OperationsBlock({ productId, period }: { productId: number; peri
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-                <Control label="Stock inmóvil desde" value={idleDays} options={IDLE} onChange={setIdleDays} />
-            </div>
+            <RailControls>
+                <ViewControl label="Stock inmóvil desde" value={idleDays} options={IDLE} onChange={setIdleDays} />
+            </RailControls>
             <AnalyticsBlockFrame
                 isLoading={isLoading}
                 isError={isError || !data}

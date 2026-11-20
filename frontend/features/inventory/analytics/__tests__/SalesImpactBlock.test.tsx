@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import type { SalesImpact, SalesImpactParams } from "../salesImpact.types"
 
@@ -23,6 +23,7 @@ vi.mock("@/components/shared", async (importOriginal) => ({
 }))
 
 import { SalesImpactBlock } from "../SalesImpactBlock"
+import { RailControlsProvider, ViewControlsSlot } from "../RailControls"
 
 const IMPACT: SalesImpact = {
     series: [
@@ -128,5 +129,31 @@ describe("SalesImpactBlock", () => {
         render(<SalesImpactBlock productId={7} period="12m" />)
         expect(screen.getByText(/Mayorista · 01-01-2026 → 01-02-2026/)).toBeInTheDocument()
         expect(screen.getByText(/asociación, no causalidad/i)).toBeInTheDocument()
+    })
+
+    it("derives the granularity from the period and has no manual granularity control", () => {
+        const granularity = () => lastParams().granularity
+        const { rerender } = render(<SalesImpactBlock productId={7} period="1m" />)
+        expect(granularity()).toBe("day")
+        rerender(<SalesImpactBlock productId={7} period="3m" />)
+        expect(granularity()).toBe("week")
+        rerender(<SalesImpactBlock productId={7} period="12m" />)
+        expect(granularity()).toBe("month")
+        rerender(<SalesImpactBlock productId={7} period="all" />)
+        expect(granularity()).toBe("year")
+        expect(screen.queryByRole("group", { name: "Por" })).not.toBeInTheDocument()
+    })
+
+    it("delivers the metric and grouping controls to the rail view zone", () => {
+        render(
+            <RailControlsProvider>
+                <ViewControlsSlot />
+                <div data-testid="block"><SalesImpactBlock productId={7} period="12m" /></div>
+            </RailControlsProvider>,
+        )
+        const slot = within(screen.getByRole("group", { name: "Controles de vista" }))
+        expect(slot.getByRole("group", { name: "Métrica" })).toBeInTheDocument()
+        expect(slot.getByRole("group", { name: "Agrupar por" })).toBeInTheDocument()
+        expect(within(screen.getByTestId("block")).queryByRole("group", { name: "Métrica" })).not.toBeInTheDocument()
     })
 })
