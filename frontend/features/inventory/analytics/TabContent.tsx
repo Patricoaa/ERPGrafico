@@ -1,8 +1,7 @@
 "use client"
 
 import { CostsBlock } from "./CostsBlock"
-import { LegacyInsightsPanel } from "./LegacyInsightsPanel"
-import type { LegacyTabId } from "./legacyTabs"
+import { OverviewBlock } from "./OverviewBlock"
 import type { PeriodKey } from "./period"
 import { ProductionBlock } from "./ProductionBlock"
 import type { ProductAnalyticsTabId, ProductCapabilities } from "./productAnalyticsRegistry"
@@ -17,38 +16,14 @@ interface TabContentProps {
     productId: number
     period: PeriodKey
     capabilities: ProductCapabilities
-    onOpenTransaction: (id: number | string, type: string) => void
-    onOpenWorkOrder: (id: number) => void
+    onSelectTab: (tab: ProductAnalyticsTabId) => void
 }
 
-const MIGRATED_TABS: readonly ProductAnalyticsTabId[] = ["sales", "pricing", "costs", "procurement", "inventory", "production", "subscription"]
-
-/** Tabs que ya no usan contenido del endpoint `insights` (ni el período lo ignora). */
-export function tabHasLegacyContent(tab: ProductAnalyticsTabId): boolean {
-    return !MIGRATED_TABS.includes(tab)
-}
-
-/**
- * Contenido transitorio de cada tab: apila lo que absorbe de los tabs anteriores. Cada plan por tab
- * reemplaza su entrada por el bloque rediseñado y retira el contenido legado correspondiente.
- */
-export function TabContent({
-    tab, productId, period, capabilities, onOpenTransaction, onOpenWorkOrder,
-}: TabContentProps) {
-    const legacy = (legacyTab: LegacyTabId) => (
-        <LegacyInsightsPanel
-            key={legacyTab}
-            productId={productId}
-            tab={legacyTab}
-            capabilities={capabilities}
-            onOpenTransaction={onOpenTransaction}
-            onOpenWorkOrder={onOpenWorkOrder}
-        />
-    )
-
+/** Contenido de cada tab del análisis de producto: un bloque con su propio endpoint (ADR-0150). */
+export function TabContent({ tab, productId, period, capabilities, onSelectTab }: TabContentProps) {
     switch (tab) {
         case "overview":
-            return legacy("overview")
+            return <OverviewBlock productId={productId} period={period} capabilities={capabilities} onSelectTab={onSelectTab} />
         case "sales":
             return <SalesBlock productId={productId} period={period} />
         case "pricing":

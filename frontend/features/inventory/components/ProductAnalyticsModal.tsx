@@ -15,13 +15,11 @@ import {
 } from "lucide-react"
 import { useProductCapabilities } from "../hooks/useProducts"
 import { ProductSelector } from "@/components/selectors"
-import { LazyDrawer, type TransactionType } from "@/features/_shared"
-import { WorkOrderWizard } from "@/features/production"
 import { DEFAULT_PERIOD, type PeriodKey } from "../analytics/period"
 import { PeriodControl } from "../analytics/PeriodControl"
-import { TabContent, tabHasLegacyContent } from "../analytics/TabContent"
+import { TabContent } from "../analytics/TabContent"
 import { RailControlsProvider, ViewControlsSlot } from "../analytics/RailControls"
-import { visibleTabIds, type ProductAnalyticsTabId } from "../analytics/productAnalyticsRegistry"
+import { TAB_LABELS, visibleTabIds, type ProductAnalyticsTabId } from "../analytics/productAnalyticsRegistry"
 
 interface ProductAnalyticsModalProps {
     productId: number | null
@@ -33,16 +31,20 @@ interface ProductAnalyticsModalProps {
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
-const TABS: ReadonlyArray<{ value: ProductAnalyticsTabId; label: string; icon: typeof BarChart3 }> = [
-    { value: "overview",     label: "Resumen",         icon: LayoutDashboard },
-    { value: "sales",        label: "Ventas",          icon: ShoppingCart },
-    { value: "pricing",      label: "Precio y margen", icon: Percent },
-    { value: "costs",        label: "Costos",          icon: Banknote },
-    { value: "procurement",  label: "Abastecimiento",  icon: Truck },
-    { value: "inventory",    label: "Inventario",      icon: Package },
-    { value: "production",   label: "Producción",      icon: Factory },
-    { value: "subscription", label: "Suscripción",     icon: Repeat },
-]
+const TAB_ICONS: Record<ProductAnalyticsTabId, typeof BarChart3> = {
+    overview: LayoutDashboard,
+    sales: ShoppingCart,
+    pricing: Percent,
+    costs: Banknote,
+    procurement: Truck,
+    inventory: Package,
+    production: Factory,
+    subscription: Repeat,
+}
+
+const TABS = (Object.keys(TAB_ICONS) as ProductAnalyticsTabId[]).map((value) => ({
+    value, label: TAB_LABELS[value], icon: TAB_ICONS[value],
+}))
 
 type TabValue = ProductAnalyticsTabId
 
@@ -60,8 +62,6 @@ function ProductAnalyticsPanelInner({
     const { capabilities, isLoading, isError } = useProductCapabilities(productId)
     const [period, setPeriod] = useState<PeriodKey>(DEFAULT_PERIOD)
     const [requestedTab, setActiveTab] = useState<TabValue>("overview")
-    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)
-    const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
 
     const visibleTabs = useMemo(() => {
         const ids = new Set<string>(capabilities ? visibleTabIds(capabilities) : [])
@@ -69,11 +69,6 @@ function ProductAnalyticsPanelInner({
     }, [capabilities])
     // A tab that stops applying (e.g. after switching product) falls back to the overview.
     const activeTab: TabValue = visibleTabs.some(t => t.value === requestedTab) ? requestedTab : "overview"
-
-    const openTransaction = (id: number | string, type: string) => setSelectedTransaction({ id, type: type as TransactionType })
-    const closeTransaction = () => setSelectedTransaction(null)
-    const openWorkOrder = (id: number) => setActiveWorkOrderId(id)
-    const closeWorkOrder = () => setActiveWorkOrderId(null)
 
     const productSelectorSlot = onProductChange ? (
         <ProductSelector
@@ -95,22 +90,6 @@ function ProductAnalyticsPanelInner({
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full">
-            {selectedTransaction && (
-                <LazyDrawer
-                    type={selectedTransaction.type}
-                    id={Number(selectedTransaction.id)}
-                    open={!!selectedTransaction}
-                    onOpenChange={(open) => { if (!open) closeTransaction() }}
-                />
-            )}
-            {activeWorkOrderId !== null && (
-                <WorkOrderWizard
-                    mode={{ kind: 'manage', orderId: activeWorkOrderId }}
-                    open={!!activeWorkOrderId}
-                    onOpenChange={(open) => !open && closeWorkOrder()}
-                />
-            )}
-
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 {isLoading || !capabilities ? (
                     isError ? (
@@ -141,16 +120,12 @@ function ProductAnalyticsPanelInner({
                         <div className="mb-2 shrink-0 sm:hidden">{periodControl}</div>
                         {/* ── Tab content ── */}
                         <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-4 min-h-0">
-                            {tabHasLegacyContent(activeTab) && period !== "all" && (
-                                <p className="shrink-0 text-xs text-muted-foreground">Este tab muestra todo el histórico</p>
-                            )}
                             <TabContent
                                 tab={activeTab}
                                 productId={productId}
                                 period={period}
                                 capabilities={capabilities}
-                                onOpenTransaction={openTransaction}
-                                onOpenWorkOrder={openWorkOrder}
+                                onSelectTab={setActiveTab}
                             />
                         </div>
                     </DrawerLayout>

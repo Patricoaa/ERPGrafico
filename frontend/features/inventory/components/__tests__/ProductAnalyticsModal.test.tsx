@@ -41,6 +41,11 @@ vi.mock("../../analytics/SubscriptionBlock", () => ({
 vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
+vi.mock("../../analytics/OverviewBlock", () => ({
+    OverviewBlock: ({ onSelectTab }: { onSelectTab: (tab: string) => void }) => (
+        <button type="button" onClick={() => onSelectTab("costs")}>ir-a-costos</button>
+    ),
+}))
 vi.mock("../../analytics/ProductionBlock", () => ({
     ProductionBlock: ({ productId }: { productId: number }) => <div>bloque-produccion-{productId}</div>,
 }))
@@ -151,16 +156,6 @@ describe("ProductAnalyticsModal", () => {
         expect(rail().getByRole("button", { name: "Resumen" })).toHaveAttribute("aria-current", "page")
     })
 
-    it("sums the monthly production history, not the truncated recent-usage list, for Consumo en OT", () => {
-        state.production = {
-            usage: [{ date: "2026-01-01", ot_id: 1, ot_number: "OT-1", quantity: 1, description: "x" }],
-            history: [{ month: "2026-01", qty: 20 }, { month: "2026-02", qty: 15 }],
-        }
-        open(2)
-        expect(screen.getByText("Consumo en OT")).toBeInTheDocument()
-        expect(screen.getByText(/^35\s*un$/)).toBeInTheDocument()
-    })
-
     it("does not show the product segment anywhere", () => {
         open(2)
         for (const label of ["Insumo", "Almacenable", "Servicio", "Suscripción", "Consumible", "Fabricable con stock"]) {
@@ -185,27 +180,19 @@ describe("ProductAnalyticsModal", () => {
         expect(screen.getByText(/bloque-precio-margen-1/)).toHaveAttribute("data-period", "all")
     })
 
-    it("warns that tabs with legacy content show the whole history, until the period is Histórico", () => {
+    it("never shows the legacy history warning", () => {
+        state.capsById = { 1: caps({ sells: true, buys: true, tracks_stock: true, recurring: true }) }
         open(1)
-        fireEvent.click(rail().getByRole("button", { name: "Resumen" }))
-        expect(screen.getByText("Este tab muestra todo el histórico")).toBeInTheDocument()
-        fireEvent.click(screen.getAllByRole("radio", { name: "Histórico" })[0])
-        expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
-    })
-
-    it("does not show the legacy warning on tabs already migrated to their own block", () => {
-        open(1)
-        for (const name of ["Ventas", "Precio y margen", "Costos", "Abastecimiento", "Inventario"]) {
+        for (const name of ["Resumen", "Ventas", "Precio y margen", "Costos", "Abastecimiento", "Inventario", "Suscripción"]) {
             fireEvent.click(rail().getByRole("button", { name }))
             expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
         }
     })
 
-    it("does not show the legacy warning on the subscription tab", () => {
-        state.capsById = { 1: caps({ recurring: true, segment: "SUBSCRIPTION" }) }
+    it("opens a tab from the overview shortcut", () => {
         open(1)
-        fireEvent.click(rail().getByRole("button", { name: "Suscripción" }))
-        expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
+        fireEvent.click(screen.getByRole("button", { name: "ir-a-costos" }))
+        expect(rail().getByRole("button", { name: "Costos" })).toHaveAttribute("aria-current", "page")
     })
 
     it("shows the active tab's controls in the rail view zone and removes them when the tab changes", () => {

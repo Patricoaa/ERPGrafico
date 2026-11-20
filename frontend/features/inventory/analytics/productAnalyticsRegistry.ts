@@ -38,6 +38,17 @@ export type ProductAnalyticsTabId =
 
 export type OverviewKpiId = "units_sold" | "valuation" | "stock" | "units_purchased" | "production_usage"
 
+export const TAB_LABELS: Record<ProductAnalyticsTabId, string> = {
+    overview: "Resumen",
+    sales: "Ventas",
+    pricing: "Precio y margen",
+    costs: "Costos",
+    procurement: "Abastecimiento",
+    inventory: "Inventario",
+    production: "Producción",
+    subscription: "Suscripción",
+}
+
 export const TAB_ORDER: ProductAnalyticsTabId[] = [
     "overview", "sales", "pricing", "costs", "procurement", "inventory", "production", "subscription",
 ]

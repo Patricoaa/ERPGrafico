@@ -2,9 +2,7 @@ import { render } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import type { ProductCapabilities } from "../productAnalyticsRegistry"
 
-vi.mock("../LegacyInsightsPanel", () => ({
-    LegacyInsightsPanel: ({ tab }: { tab: string }) => <div data-marker={`legacy-${tab}`} />,
-}))
+vi.mock("../OverviewBlock", () => ({ OverviewBlock: () => <div data-marker="block-overview" /> }))
 vi.mock("../CostsBlock", () => ({ CostsBlock: () => <div data-marker="block-costs" /> }))
 vi.mock("../ProcurementBlock", () => ({ ProcurementBlock: () => <div data-marker="block-procurement" /> }))
 vi.mock("../SalesBlock", () => ({ SalesBlock: () => <div data-marker="block-sales" /> }))
@@ -17,7 +15,7 @@ vi.mock("../SourcingBlock", () => ({
     SourcingBlock: ({ section }: { section?: string }) => <div data-marker={`block-sourcing-${section ?? "all"}`} />,
 }))
 
-import { TabContent, tabHasLegacyContent } from "../TabContent"
+import { TabContent } from "../TabContent"
 import type { ProductAnalyticsTabId } from "../productAnalyticsRegistry"
 
 const BASE: ProductCapabilities = {
@@ -29,15 +27,15 @@ function markers(tab: ProductAnalyticsTabId, overrides: Partial<ProductCapabilit
     const { container } = render(
         <TabContent
             tab={tab} productId={7} period="12m" capabilities={{ ...BASE, ...overrides }}
-            onOpenTransaction={() => {}} onOpenWorkOrder={() => {}}
+            onSelectTab={() => {}}
         />,
     )
     return Array.from(container.querySelectorAll("[data-marker]")).map((e) => e.getAttribute("data-marker"))
 }
 
 describe("TabContent", () => {
-    it("overview shows the legacy overview", () => {
-        expect(markers("overview")).toEqual(["legacy-overview"])
+    it("overview renders the overview block", () => {
+        expect(markers("overview")).toEqual(["block-overview"])
     })
 
     it("sales renders only its own block, with no legacy content", () => {
@@ -77,16 +75,10 @@ describe("TabContent", () => {
     })
 })
 
-describe("tabHasLegacyContent", () => {
-    it("is true for every tab except the migrated ones", () => {
-        const tabs: ProductAnalyticsTabId[] = ["overview"]
-        for (const tab of tabs) expect(tabHasLegacyContent(tab)).toBe(true)
-        expect(tabHasLegacyContent("pricing")).toBe(false)
-        expect(tabHasLegacyContent("sales")).toBe(false)
-        expect(tabHasLegacyContent("costs")).toBe(false)
-        expect(tabHasLegacyContent("procurement")).toBe(false)
-        expect(tabHasLegacyContent("inventory")).toBe(false)
-        expect(tabHasLegacyContent("production")).toBe(false)
-        expect(tabHasLegacyContent("subscription")).toBe(false)
+describe("TabContent without legacy content", () => {
+    it("never mounts the legacy insights panel", () => {
+        const tabs: ProductAnalyticsTabId[] = ["overview", "sales", "pricing", "costs", "procurement", "inventory", "production", "subscription"]
+        const all = { sells: true, buys: true, tracks_stock: true, manufactures: true, recurring: true, used_in_production: true }
+        for (const tab of tabs) expect(markers(tab, all).some((m) => m?.startsWith("legacy-"))).toBe(false)
     })
 })
