@@ -28,6 +28,7 @@ export interface ProductCapabilities {
 export type ProductAnalyticsTabId =
     | "overview"
     | "sales"
+    | "pricing"
     | "purchases"
     | "price"
     | "cost"
@@ -50,12 +51,13 @@ export const SEGMENT_LABELS: Record<ProductSegment, string> = {
 }
 
 const TAB_ORDER: ProductAnalyticsTabId[] = [
-    "overview", "sales", "purchases", "price", "cost", "kardex", "production", "customers", "suppliers",
+    "overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "customers", "suppliers",
 ]
 
 const TAB_RULES: Record<ProductAnalyticsTabId, (c: ProductCapabilities) => boolean> = {
     overview: () => true,
     sales: (c) => c.sells,
+    pricing: (c) => c.sells,
     price: (c) => c.sells,
     customers: (c) => c.sells,
     purchases: (c) => c.buys,

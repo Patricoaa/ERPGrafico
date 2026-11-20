@@ -28,6 +28,9 @@ vi.mock("@/features/inventory/hooks/useStockMoves", () => ({ useStockMoves: () =
 vi.mock("@/components/selectors", () => ({ ProductSelector: () => <div>selector-producto</div> }))
 vi.mock("@/features/_shared", () => ({ LazyDrawer: () => null }))
 vi.mock("@/features/production", () => ({ WorkOrderWizard: () => null }))
+vi.mock("../../analytics/SalesImpactBlock", () => ({
+    SalesImpactBlock: ({ productId }: { productId: number }) => <div>bloque-precio-margen-{productId}</div>,
+}))
 
 import { ProductAnalyticsModal } from "../ProductAnalyticsModal"
 
@@ -117,5 +120,17 @@ describe("ProductAnalyticsModal capabilities", () => {
         open(2)
         expect(screen.getByText("Consumo en OT")).toBeInTheDocument()
         expect(screen.getByText(/^35\s*un$/)).toBeInTheDocument()
+    })
+
+    it("shows the Precio y margen tab for a sellable product and mounts its block only when active", () => {
+        open(1)
+        expect(screen.queryByText("bloque-precio-margen-1")).not.toBeInTheDocument()
+        fireEvent.click(screen.getByRole("button", { name: "Precio y margen" }))
+        expect(screen.getByText("bloque-precio-margen-1")).toBeInTheDocument()
+    })
+
+    it("hides the Precio y margen tab for a product that is not sold", () => {
+        open(2)
+        expect(screen.queryByRole("button", { name: "Precio y margen" })).not.toBeInTheDocument()
     })
 })

@@ -29,7 +29,7 @@ describe("visibleTabIds", () => {
 
     it("shows sales tabs for a sellable product and no stock tab without stock", () => {
         const tabs = visibleTabIds(caps({ sells: true }))
-        expect(tabs).toEqual(["overview", "sales", "price", "customers"])
+        expect(tabs).toEqual(["overview", "sales", "pricing", "price", "customers"])
     })
 
     it("express manufacturable has production and cost but no stock tab", () => {
@@ -45,7 +45,7 @@ describe("visibleTabIds", () => {
     })
 
     it("service sold without purchasing only shows overview, sales, price and customers", () => {
-        expect(visibleTabIds(caps({ segment: "SERVICE", sells: true }))).toEqual(["overview", "sales", "price", "customers"])
+        expect(visibleTabIds(caps({ segment: "SERVICE", sells: true }))).toEqual(["overview", "sales", "pricing", "price", "customers"])
     })
 
     it("subscription bought without selling shows purchasing tabs only", () => {
@@ -55,7 +55,7 @@ describe("visibleTabIds", () => {
     })
 
     it("returns every tab when capabilities are missing", () => {
-        const all = ["overview", "sales", "purchases", "price", "cost", "kardex", "production", "customers", "suppliers"]
+        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "customers", "suppliers"]
         expect(visibleTabIds(undefined)).toEqual(all)
         expect(visibleTabIds(null)).toEqual(all)
     })
@@ -84,5 +84,12 @@ describe("SEGMENT_LABELS", () => {
             "SERVICE", "SUBSCRIPTION", "INPUT", "STORABLE", "CONSUMABLE",
         ]
         for (const segment of segments) expect(SEGMENT_LABELS[segment]).toBeTruthy()
+    })
+
+    it("pricing tab (price and margin) only applies to products that sell, right after sales", () => {
+        expect(visibleTabIds(caps({ sells: true }))).toContain("pricing")
+        const tabs = visibleTabIds(caps({ sells: true, buys: true, tracks_stock: true }))
+        expect(tabs.indexOf("pricing")).toBe(tabs.indexOf("sales") + 1)
+        expect(visibleTabIds(caps({ sells: false, buys: true }))).not.toContain("pricing")
     })
 })

@@ -19,6 +19,7 @@ import {
     Truck,
     Users,
     Building2,
+    Percent,
 } from "lucide-react"
 import { useProductInsights, useProduct } from "../hooks/useProducts"
 import { format } from "date-fns"
@@ -39,6 +40,7 @@ import {
 import { productionUsageEntity, productionUsageViews } from "../entity-view/productionUsage.entity"
 import { topCustomerEntity, topCustomerViews } from "../entity-view/topCustomer.entity"
 import { topSupplierEntity, topSupplierViews } from "../entity-view/topSupplier.entity"
+import { SalesImpactBlock } from "../analytics/SalesImpactBlock"
 import {
     SEGMENT_LABELS, overviewKpiIds, visibleTabIds,
     type OverviewKpiId, type ProductCapabilities,
@@ -143,6 +145,7 @@ function SplitTabLayout({
 const TABS = [
     { value: "overview",    label: "Resumen",    icon: LayoutDashboard },
     { value: "sales",       label: "Ventas",     icon: TrendingUp },
+    { value: "pricing",     label: "Precio y margen", icon: Percent },
     { value: "purchases",   label: "Compras",    icon: Truck },
     { value: "price",       label: "Precio",     icon: CircleDollarSign },
     { value: "cost",        label: "Costos",     icon: Banknote },
@@ -471,6 +474,13 @@ function ProductAnalyticsPanelInner({
                                     }
                                 />
                             </div>
+
+                            {/* PRICING & MARGIN — mounted only while active so it fetches on demand */}
+                            {activeTab === "pricing" && (
+                                <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
+                                    <SalesImpactBlock productId={productId} />
+                                </div>
+                            )}
 
                             {/* PURCHASES */}
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "purchases" && "hidden")}>
