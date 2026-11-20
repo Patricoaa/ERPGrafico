@@ -195,10 +195,9 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                             {
                                                 id: 'payment-evolution',
                                                 content: hubData.paymentEvolutionChart[0]?.data.some(d => d.y > 0) ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Evolución de Pagos',
-                                                        variant: 'chart',
+                                                        title: 'Evolución de Pagos',
                                                         chart: {
                                                             type: 'line-chart',
                                                             preset: 'card',
@@ -246,10 +245,9 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                             {
                                                 id: 'costs-bar',
                                                 content: hubData.financialCosts.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Costos Financieros por Período',
-                                                        variant: 'chart',
+                                                        title: 'Costos Financieros por Período',
                                                         chart: {
                                                             type: 'bar-chart',
                                                             preset: 'card',
@@ -277,10 +275,9 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                             {
                                                 id: 'effective-cost-bar',
                                                 content: hubData.purchaseGroupData.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Costo Efectivo por Compra',
-                                                        variant: 'chart',
+                                                        title: 'Costo Efectivo por Compra',
                                                         chart: {
                                                             type: 'bar-chart',
                                                             preset: 'card',
@@ -314,10 +311,9 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                             {
                                                 id: 'purchase-pie',
                                                 content: hubData.costBreakdownDonut.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Capital vs Intereses',
-                                                        variant: 'chart',
+                                                        title: 'Capital vs Intereses',
                                                         chart: {
                                                             type: 'pie-chart',
                                                             preset: 'card',
@@ -344,10 +340,9 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                                             {
                                                 id: 'top-purchases-bar',
                                                 content: hubData.purchaseGroupData.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Top Compras por Monto',
-                                                        variant: 'chart',
+                                                        title: 'Top Compras por Monto',
                                                         chart: {
                                                             type: 'bar-chart',
                                                             preset: 'card',

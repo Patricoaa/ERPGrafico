@@ -1,40 +1,23 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
+import type { MetricProps } from "../Metric"
+import type { ChartCardProps } from "../ChartCard"
 
 // ── Granularity ──
 export type Granularity = "day" | "month" | "year"
 
-// ── Accent ──
-export type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
+// ── Section content (ADR-0149) ──
+//
+// A section is a `Metric` (one figure), a `ChartCard` (a chart with header) or a bare chart.
+// Props mirror the components so a section reads like the JSX it renders.
 
-// ── StatCardConfig ──
-export interface StatCardConfig {
-    label: string
-    value?: React.ReactNode
-    icon?: LucideIcon
-    accent?: Accent
-    subtext?: string
-    variant?: "default" | "compact" | "minimal" | "fill" | "hero" | "tile" | "progress" | "chart" | "metric-chart"
-    valueSize?: "sm" | "md" | "lg" | "xl"
-    trend?: { direction: "up" | "down"; value: string; label?: string }
-    progress?: { current: number; max: number }
-    href?: string
-    onClick?: () => void
-    active?: boolean
-    loading?: boolean
-    chart?: ChartConfig
-    tooltip?: string
-    comparison?: {
-        current: number
-        previous?: number
-        showComparison?: boolean
-        isPercentage?: boolean
-        alreadyPercent?: boolean
-        isCurrency?: boolean
-        decimals?: number
-        inverse?: boolean
-    }
+/** Config of a `metric` section: the props of `Metric`. */
+export type MetricSectionConfig = MetricProps
+
+/** Config of a `chart-card` section: the props of `ChartCard`, with the chart as data. */
+export interface ChartCardSectionConfig extends Omit<ChartCardProps, "children" | "legend" | "fill"> {
+    chart: ChartConfig
 }
 
 // ── Chart configs (discriminated by type, no `any`) ──
@@ -113,7 +96,8 @@ export interface AnalyticsSection {
     /** If false, section takes natural height instead of filling remaining space. Defaults to true. */
     fillRemaining?: boolean
     content:
-        | { type: "stat-card"; config: StatCardConfig }
+        | { type: "metric"; config: MetricSectionConfig }
+        | { type: "chart-card"; config: ChartCardSectionConfig }
         | { type: "custom"; render: React.ReactNode }
         | ChartConfig
 }

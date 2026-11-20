@@ -2,7 +2,7 @@
 
 import { useState, useMemo, type ReactNode } from "react"
 import {
-    Chip, SkeletonShell, StatCard, ChartLegend, AnalyticsChart, getCssChartColors,
+    Chip, SkeletonShell, Metric, MetricStrip, ChartCard, AnalyticsChart, getCssChartColors,
     BaseModal, DataCell, DrawerLayout, RailNav,
 } from '@/components/shared'
 import type { LineChartConfig, BarChartConfig } from '@/components/shared'
@@ -165,10 +165,6 @@ const TABS = [
 ] as const
 
 type TabValue = typeof TABS[number]["value"]
-
-const KPI_GRID: Record<number, string> = {
-    1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-2 lg:grid-cols-3", 4: "grid-cols-2 lg:grid-cols-4",
-}
 
 // ─── Inner panel (runs inside the open modal) ──────────────────────────────────
 
@@ -388,11 +384,11 @@ function ProductAnalyticsPanelInner({
     // production_usage is only the 20 most recent consumptions; the monthly history is the full aggregate.
     const productionUsageQty = (data?.production_history ?? []).reduce((sum, h) => sum + h.qty, 0)
     const overviewKpiCards: Record<OverviewKpiId, ReactNode> = data && product ? {
-        units_sold: <StatCard key="units_sold" label="Ventas Totales" valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />,
-        units_purchased: <StatCard key="units_purchased" label="Unidades Compradas" valueSize="xl" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} icon={Truck} accent="info" />,
-        valuation: <StatCard key="valuation" label="Valoración Actual" valueSize="xl" value={formatCurrency(currentValuation)} icon={Banknote} accent="success" />,
-        stock: <StatCard key="stock" label="Stock Actual" valueSize="xl" value={`${formatQuantity(Number(product.current_stock ?? 0))} ${product.uom_name}`} icon={Package} accent="primary" />,
-        production_usage: <StatCard key="production_usage" label="Consumo en OT" valueSize="xl" value={`${formatQuantity(productionUsageQty)} ${product.uom_name}`} icon={Factory} accent="warning" />,
+        units_sold: <Metric key="units_sold" label="Ventas Totales" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} lead={ShoppingCart} />,
+        units_purchased: <Metric key="units_purchased" label="Unidades Compradas" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} lead={Truck} />,
+        valuation: <Metric key="valuation" label="Valoración Actual" value={formatCurrency(currentValuation)} lead={Banknote} />,
+        stock: <Metric key="stock" label="Stock Actual" value={`${formatQuantity(Number(product.current_stock ?? 0))} ${product.uom_name}`} lead={Package} />,
+        production_usage: <Metric key="production_usage" label="Consumo en OT" value={`${formatQuantity(productionUsageQty)} ${product.uom_name}`} lead={Factory} />,
     } : { units_sold: null, units_purchased: null, valuation: null, stock: null, production_usage: null }
 
     return (
@@ -441,17 +437,14 @@ function ProductAnalyticsPanelInner({
                             {/* OVERVIEW */}
                             <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "overview" && "hidden")}>
                                 {kpiIds.length > 0 && (
-                                    <div className={cn("grid gap-4 shrink-0", KPI_GRID[Math.min(kpiIds.length, 4)])}>
+                                    <MetricStrip label="Indicadores del producto" className="shrink-0">
                                         {kpiIds.map(id => overviewKpiCards[id])}
-                                    </div>
+                                    </MetricStrip>
                                 )}
                                 {(!capabilities || capabilities.tracks_stock) && (
-                                    <StatCard
-                                        label="Evolución del Stock"
-                                        variant="chart"
-                                        className="flex-1 min-h-[350px]"
-                                        chart={stockHistoryData.length ? <AnalyticsChart type="line-chart" preset="card" data={stockHistoryData} enableArea /> : <EmptyChart />}
-                                    />
+                                    <ChartCard title="Evolución del Stock" fill className="flex-1 min-h-[350px]">
+                                        {stockHistoryData.length ? <AnalyticsChart type="line-chart" preset="card" data={stockHistoryData} enableArea /> : <EmptyChart />}
+                                    </ChartCard>
                                 )}
                             </div>
 
@@ -459,21 +452,20 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "sales" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <StatCard label="Total Ingresos"   valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)}    icon={Banknote}         accent="success" />
-                                            <StatCard label="Total Costos"     valueSize="xl" value={formatCurrency(data.sales_analysis.total_cost_basis)} icon={CircleDollarSign} accent="warning" />
-                                            <StatCard label="Margen Neto (u.)" valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={data.sales_analysis.total_sold ? formatCurrency(margin / data.sales_analysis.total_sold) : '$0'} icon={TrendingUp} accent={marginPercent >= 0 ? "success" : "destructive"} />
-                                        </div>
+                                        <MetricStrip label="Indicadores de ventas">
+                                            <Metric label="Total Ingresos" value={formatCurrency(data.sales_analysis.total_revenue)} lead={Banknote} tone="success" />
+                                            <Metric label="Total Costos" value={formatCurrency(data.sales_analysis.total_cost_basis)} lead={CircleDollarSign} tone="warning" />
+                                            <Metric label="Margen Neto (u.)" value={`${marginPercent.toFixed(1)}%`} context={data.sales_analysis.total_sold ? formatCurrency(margin / data.sales_analysis.total_sold) : '$0'} lead={TrendingUp} tone={marginPercent >= 0 ? "success" : "destructive"} />
+                                                                                </MetricStrip>
                                     }
                                     chart={
                                         <div className="flex flex-col gap-4 h-full min-h-0">
-                                            <StatCard label="Evolución Ingresos vs Costos" variant="chart" className="flex-1 min-h-[220px]"
-                                                chart={salesUnitData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesUnitData} showLegend valueFormat="currency" /> : <EmptyChart />}
-                                                chartLegend={salesUnitData.length ? <ChartLegend items={['Ingreso Unitario','Costo Unitario'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
-                                            />
-                                            <StatCard label="Demanda (unidades)" variant="chart" className="flex-1 min-h-[160px]"
-                                                chart={salesQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={salesQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
-                                            />
+                                            <ChartCard title="Evolución Ingresos vs Costos" fill className="flex-1 min-h-[220px]" legend={salesUnitData.length ? ['Ingreso Unitario','Costo Unitario'].map((id,i) => ({label:id, color:palette[i%palette.length]})) : undefined}>
+                                                {salesUnitData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesUnitData} showLegend valueFormat="currency" /> : <EmptyChart />}
+                                            </ChartCard>
+                                            <ChartCard title="Demanda (unidades)" fill className="flex-1 min-h-[160px]">
+                                                {salesQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={salesQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
+                                            </ChartCard>
                                         </div>
                                     }
                                     table={
@@ -516,20 +508,20 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "purchases" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <StatCard label="Unidades Compradas"     valueSize="xl" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} icon={Truck} accent="info" />
-                                            <StatCard label="Costo Total Compras"    valueSize="xl" value={formatCurrency(data.purchase_analysis.total_cost)} icon={Banknote} accent="warning" />
-                                            <StatCard label="Costo Ponderado Actual" valueSize="xl" value={formatCurrency(costCurrent)} icon={CircleDollarSign} accent="primary" />
-                                        </div>
+                                        <MetricStrip label="Indicadores de compras">
+                                            <Metric label="Unidades Compradas" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} lead={Truck} />
+                                            <Metric label="Costo Total Compras" value={formatCurrency(data.purchase_analysis.total_cost)} lead={Banknote} />
+                                            <Metric label="Costo Ponderado Actual" value={formatCurrency(costCurrent)} lead={CircleDollarSign} />
+                                                                                </MetricStrip>
                                     }
                                     chart={
                                         <div className="flex flex-col gap-4 h-full min-h-0">
-                                            <StatCard label="Evolución del Costo de Compra" variant="chart" className="flex-1 min-h-[220px]"
-                                                chart={purchaseCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={purchaseCostData} valueFormat="currency" /> : <EmptyChart />}
-                                            />
-                                            <StatCard label="Unidades Recepcionadas por Mes" variant="chart" className="flex-1 min-h-[160px]"
-                                                chart={purchaseQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={purchaseQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
-                                            />
+                                            <ChartCard title="Evolución del Costo de Compra" fill className="flex-1 min-h-[220px]">
+                                                {purchaseCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={purchaseCostData} valueFormat="currency" /> : <EmptyChart />}
+                                            </ChartCard>
+                                            <ChartCard title="Unidades Recepcionadas por Mes" fill className="flex-1 min-h-[160px]">
+                                                {purchaseQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={purchaseQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
+                                            </ChartCard>
                                         </div>
                                     }
                                     table={
@@ -544,16 +536,16 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "price" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <StatCard label="Precio Actual"       valueSize="xl" value={formatCurrency(priceGross)}    subtext={`Neto: ${formatCurrency(priceNet)}`}                        icon={CircleDollarSign} accent="primary" />
-                                            <StatCard label="Precio Mínimo Hist." valueSize="xl" value={formatCurrency(priceMinGross)} subtext={`Neto: ${formatCurrency(priceMinGross / ivaRatio)}`} icon={TrendingUp}       accent="info" />
-                                            <StatCard label="Precio Máximo Hist." valueSize="xl" value={formatCurrency(priceMaxGross)} subtext={`Neto: ${formatCurrency(priceMaxGross / ivaRatio)}`} icon={TrendingUp}       accent="accent" />
-                                        </div>
+                                        <MetricStrip label="Indicadores de precio">
+                                            <Metric label="Precio Actual" value={formatCurrency(priceGross)} context={`Neto: ${formatCurrency(priceNet)}`} lead={CircleDollarSign} />
+                                            <Metric label="Precio Mínimo Hist." value={formatCurrency(priceMinGross)} context={`Neto: ${formatCurrency(priceMinGross / ivaRatio)}`} lead={TrendingUp} />
+                                            <Metric label="Precio Máximo Hist." value={formatCurrency(priceMaxGross)} context={`Neto: ${formatCurrency(priceMaxGross / ivaRatio)}`} lead={TrendingUp} />
+                                                                                </MetricStrip>
                                     }
                                     chart={
-                                        <StatCard label="Evolución del Precio de Venta" variant="chart" className="h-full min-h-[300px]"
-                                            chart={priceLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={priceLineData} valueFormat="currency" /> : <EmptyChart />}
-                                        />
+                                        <ChartCard title="Evolución del Precio de Venta" fill className="h-full min-h-[300px]">
+                                            {priceLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={priceLineData} valueFormat="currency" /> : <EmptyChart />}
+                                        </ChartCard>
                                     }
                                     table={
                                         <Collection.Root collection={priceHistoryCollection}>
@@ -567,16 +559,16 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "cost" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <StatCard label="Costo Actual"       valueSize="xl" value={formatCurrency(costCurrent)} icon={Banknote}    accent="warning" />
-                                            <StatCard label="Costo Mínimo Hist." valueSize="xl" value={formatCurrency(costMin)}     icon={TrendingUp}  accent="info" />
-                                            <StatCard label="Costo Máximo Hist." valueSize="xl" value={formatCurrency(costMax)}     icon={TrendingUp}  accent="destructive" />
-                                        </div>
+                                        <MetricStrip label="Indicadores de costo">
+                                            <Metric label="Costo Actual" value={formatCurrency(costCurrent)} lead={Banknote} />
+                                            <Metric label="Costo Mínimo Hist." value={formatCurrency(costMin)} lead={TrendingUp} />
+                                            <Metric label="Costo Máximo Hist." value={formatCurrency(costMax)} lead={TrendingUp} />
+                                                                                </MetricStrip>
                                     }
                                     chart={
-                                        <StatCard label="Evolución del Costo Ponderado" variant="chart" className="h-full min-h-[300px]"
-                                            chart={costLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={costLineData} valueFormat="currency" /> : <EmptyChart />}
-                                        />
+                                        <ChartCard title="Evolución del Costo Ponderado" fill className="h-full min-h-[300px]">
+                                            {costLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={costLineData} valueFormat="currency" /> : <EmptyChart />}
+                                        </ChartCard>
                                     }
                                     table={
                                         <Collection.Root collection={costHistoryCollection}>
@@ -590,16 +582,15 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "kardex" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <StatCard label="Total Entradas" valueSize="xl" value={`${formatQuantity(kardexStats.inQty)} ${product.uom_name}`} subtext={`Valorado en ${formatCurrency(kardexStats.inCost)}`} icon={ArrowRightLeft} accent="success" />
-                                            <StatCard label="Total Salidas"  valueSize="xl" value={`${formatQuantity(kardexStats.outQty)} ${product.uom_name}`} subtext={`Valorado en ${formatCurrency(kardexStats.outCost)}`} icon={ArrowRightLeft} accent="destructive" />
-                                        </div>
+                                        <MetricStrip label="Indicadores de movimientos">
+                                            <Metric label="Total Entradas" value={`${formatQuantity(kardexStats.inQty)} ${product.uom_name}`} context={`Valorado en ${formatCurrency(kardexStats.inCost)}`} lead={ArrowRightLeft} tone="success" />
+                                            <Metric label="Total Salidas" value={`${formatQuantity(kardexStats.outQty)} ${product.uom_name}`} context={`Valorado en ${formatCurrency(kardexStats.outCost)}`} lead={ArrowRightLeft} tone="destructive" />
+                                                                                </MetricStrip>
                                     }
                                     chart={
-                                        <StatCard label="Flujo de Movimientos Recientes" variant="chart" className="h-full min-h-[300px]"
-                                            chart={kardexFlowData.length ? <AnalyticsChart type="line-chart" preset="card" data={kardexFlowData} enableArea showLegend /> : <EmptyChart />}
-                                            chartLegend={kardexFlowData.length ? <ChartLegend items={['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
-                                        />
+                                        <ChartCard title="Flujo de Movimientos Recientes" fill className="h-full min-h-[300px]" legend={kardexFlowData.length ? ['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]})) : undefined}>
+                                            {kardexFlowData.length ? <AnalyticsChart type="line-chart" preset="card" data={kardexFlowData} enableArea showLegend /> : <EmptyChart />}
+                                        </ChartCard>
                                     }
                                     table={
                                         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -622,19 +613,15 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "production" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <StatCard label="Total Consumido en OT" valueSize="xl"
-                                                value={`${formatQuantity(data.production_usage.reduce((a, u) => a + u.quantity, 0))} ${product.uom_name}`}
-                                                icon={Factory} accent="primary" />
-                                            <StatCard label={`N° de ${getDomainConceptTitle('ot', true)}`} valueSize="xl"
-                                                value={String(new Set(data.production_usage.map(u => u.ot_id)).size)}
-                                                icon={BarChart3} accent="info" />
-                                        </div>
+                                        <MetricStrip label="Indicadores de producción">
+                                            <Metric label="Total Consumido en OT" value={`${formatQuantity(data.production_usage.reduce((a, u) => a + u.quantity, 0))} ${product.uom_name}`} lead={Factory} />
+                                            <Metric label={`N° de ${getDomainConceptTitle('ot', true)}`} value={String(new Set(data.production_usage.map(u => u.ot_id)).size)} lead={BarChart3} />
+                                                                                </MetricStrip>
                                     }
                                     chart={
-                                        <StatCard label="Consumo Mensual en OT" variant="chart" className="h-full min-h-[300px]"
-                                            chart={productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
-                                        />
+                                        <ChartCard title="Consumo Mensual en OT" fill className="h-full min-h-[300px]">
+                                            {productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
+                                        </ChartCard>
                                     }
                                     table={
                                         <Collection.Root
@@ -659,15 +646,15 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "customers" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <StatCard label="Clientes Únicos"  valueSize="xl" value={String(data.top_customers.length)} icon={Users} accent="info" />
-                                            <StatCard label="Ingresos Totales" valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)} icon={Banknote} accent="success" />
-                                        </div>
+                                        <MetricStrip label="Indicadores del producto">
+                                            <Metric label="Clientes Únicos" value={String(data.top_customers.length)} lead={Users} />
+                                            <Metric label="Ingresos Totales" value={formatCurrency(data.sales_analysis.total_revenue)} lead={Banknote} />
+                                                                                </MetricStrip>
                                     }
                                     chart={
-                                        <StatCard label="Top Clientes por Ingresos" variant="chart" className="h-full min-h-[300px]"
-                                            chart={customerBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={customerBarData} keys={['Ingresos']} indexBy="name" valueFormat="$,.0f" /> : <EmptyChart />}
-                                        />
+                                        <ChartCard title="Top Clientes por Ingresos" fill className="h-full min-h-[300px]">
+                                            {customerBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={customerBarData} keys={['Ingresos']} indexBy="name" valueFormat="$,.0f" /> : <EmptyChart />}
+                                        </ChartCard>
                                     }
                                     table={
                                         <Collection.Root collection={topCustomerCollection}>
@@ -681,15 +668,15 @@ function ProductAnalyticsPanelInner({
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "suppliers" && "hidden")}>
                                 <SplitTabLayout
                                     kpis={
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <StatCard label="Proveedores Únicos"   valueSize="xl" value={String(data.top_suppliers.length)} icon={Building2} accent="info" />
-                                            <StatCard label="Costo Total Comprado" valueSize="xl" value={formatCurrency(data.purchase_analysis.total_cost)} icon={Banknote} accent="warning" />
-                                        </div>
+                                        <MetricStrip label="Indicadores del producto">
+                                            <Metric label="Proveedores Únicos" value={String(data.top_suppliers.length)} lead={Building2} />
+                                            <Metric label="Costo Total Comprado" value={formatCurrency(data.purchase_analysis.total_cost)} lead={Banknote} />
+                                                                                </MetricStrip>
                                     }
                                     chart={
-                                        <StatCard label="Top Proveedores por Costo" variant="chart" className="h-full min-h-[300px]"
-                                            chart={supplierBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={supplierBarData} keys={['Costo']} indexBy="name" valueFormat="$,.0f" /> : <EmptyChart />}
-                                        />
+                                        <ChartCard title="Top Proveedores por Costo" fill className="h-full min-h-[300px]">
+                                            {supplierBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={supplierBarData} keys={['Costo']} indexBy="name" valueFormat="$,.0f" /> : <EmptyChart />}
+                                        </ChartCard>
                                     }
                                     table={
                                         <Collection.Root collection={topSupplierCollection}>

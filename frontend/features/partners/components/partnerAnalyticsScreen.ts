@@ -44,28 +44,24 @@ export function buildPartnerAnalyticsScreen(analyticsData: PartnerAnalyticsData,
                             {
                                 id: "neto-kpi",
                                 content: {
-                                    type: "stat-card",
+                                    type: "metric",
                                     config: {
                                         label: "Patrimonio Neto",
                                         value: formatCurrency(analyticsData.totalNetEquity),
-                                        icon: TrendingUp,
-                                        accent: "primary",
-                                        valueSize: "xl",
-                                        subtext: "Valor Libro de la Compañía",
+                                        lead: TrendingUp,
+                                        context: "Valor Libro de la Compañía",
                                     },
                                 },
                             },
                             {
                                 id: "socios-kpi",
                                 content: {
-                                    type: "stat-card",
+                                    type: "metric",
                                     config: {
                                         label: "Socios",
                                         value: analyticsData.partnerCount.toString(),
-                                        icon: PieChartIcon,
-                                        accent: "info",
-                                        valueSize: "xl",
-                                        subtext: "Total activos",
+                                        lead: PieChartIcon,
+                                        context: "Total activos",
                                     },
                                 },
                             },
@@ -78,12 +74,11 @@ export function buildPartnerAnalyticsScreen(analyticsData: PartnerAnalyticsData,
                             {
                                 id: "evolution-chart",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Evolución del Patrimonio Neto",
-                                        variant: "chart",
+                                        title: "Evolución del Patrimonio Neto",
                                         loading: evolutionData.isLoading,
-                                        subtext: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
+                                        subtitle: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
                                         chart: {
                                             type: "line-chart",
                                             preset: "card",
@@ -110,11 +105,10 @@ export function buildPartnerAnalyticsScreen(analyticsData: PartnerAnalyticsData,
                             {
                                 id: "dist-pie",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Distribución Patrimonial",
-                                        variant: "chart",
-                                        subtext: analyticsData.equityDistribution.length === 0 ? "Sin datos de distribución" : undefined,
+                                        title: "Distribución Patrimonial",
+                                        subtitle: analyticsData.equityDistribution.length === 0 ? "Sin datos de distribución" : undefined,
                                         chart: {
                                             type: "pie-chart",
                                             preset: "card",
@@ -139,10 +133,9 @@ export function buildPartnerAnalyticsScreen(analyticsData: PartnerAnalyticsData,
                             {
                                 id: "capital-bar",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Capital Enterado vs Pendiente",
-                                        variant: "chart",
+                                        title: "Capital Enterado vs Pendiente",
                                         chart: {
                                             type: "bar-chart",
                                             preset: "card",
@@ -163,12 +156,11 @@ export function buildPartnerAnalyticsScreen(analyticsData: PartnerAnalyticsData,
                             {
                                 id: "composition-line",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Composición Patrimonial",
-                                        variant: "chart",
+                                        title: "Composición Patrimonial",
                                         loading: evolutionData.isLoading,
-                                        subtext: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
+                                        subtitle: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
                                         chart: {
                                             type: "line-chart",
                                             preset: "card",
@@ -194,42 +186,39 @@ export function buildPartnerAnalyticsScreen(analyticsData: PartnerAnalyticsData,
                             {
                                 id: "retiros-kpi",
                                 content: {
-                                    type: "stat-card",
+                                    type: "metric",
                                     config: {
                                         label: "Retiros Provisorios Totales",
                                         value: formatCurrency(analyticsData.totalWithdrawals),
-                                        icon: Wallet,
-                                        accent: "destructive",
-                                        valueSize: "xl",
-                                        subtext: "Saldos provisorios",
+                                        lead: Wallet,
+                                        tone: "destructive",
+                                        context: "Saldos provisorios",
                                     },
                                 },
                             },
                             {
                                 id: "utilidades-kpi",
                                 content: {
-                                    type: "stat-card",
+                                    type: "metric",
                                     config: {
                                         label: "Utilidades Acumuladas",
                                         value: formatCurrency(analyticsData.totalEarnings),
-                                        icon: TrendingUp,
-                                        accent: "success",
-                                        valueSize: "xl",
-                                        subtext: "Resultados retenidos",
+                                        lead: TrendingUp,
+                                        tone: "success",
+                                        context: "Resultados retenidos",
                                     },
                                 },
                             },
                             {
                                 id: "dividendos-kpi",
                                 content: {
-                                    type: "stat-card",
+                                    type: "metric",
                                     config: {
                                         label: "Dividendos por Pagar",
                                         value: formatCurrency(analyticsData.totalDividendsPayable),
-                                        icon: Wallet,
-                                        accent: "warning",
-                                        valueSize: "xl",
-                                        subtext: "Obligaciones pendientes",
+                                        lead: Wallet,
+                                        tone: "warning",
+                                        context: "Obligaciones pendientes",
                                     },
                                 },
                             },
@@ -242,10 +231,9 @@ export function buildPartnerAnalyticsScreen(analyticsData: PartnerAnalyticsData,
                             {
                                 id: "balance-bar",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Composición de Saldos por Socio",
-                                        variant: "chart",
+                                        title: "Composición de Saldos por Socio",
                                         chart: {
                                             type: "bar-chart",
                                             preset: "card",

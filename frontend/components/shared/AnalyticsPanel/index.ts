@@ -15,11 +15,11 @@ export type {
     AnalyticsTab,
     AnalyticsColumn,
     AnalyticsSection,
-    StatCardConfig,
+    MetricSectionConfig,
+    ChartCardSectionConfig,
     ChartConfig,
     BarChartConfig,
     LineChartConfig,
     PieChartConfig,
-    Accent,
     Granularity,
 } from "./types"

@@ -1,7 +1,7 @@
 import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
-import { KPIWrapper, KPIValue, StatCard } from "@/components/shared"
+import { Metric, MetricStrip } from "@/components/shared"
+import { formatMoney, formatQuantity } from "@/lib/money"
 import { ArrowDownToLine, ArrowUpFromLine, TrendingUp, Landmark, CreditCard, ListFilter } from "lucide-react"
-import { chartColor } from "@/lib/chart-colors"
 import type { TreasuryMovementAnalyticsData } from "../hooks/useTreasuryMovementAnalytics"
 
 export interface TreasuryMovementAnalyticsUi {
@@ -22,8 +22,6 @@ export function buildTreasuryMovementAnalyticsScreen(analyticsData: TreasuryMove
     const outCount = outRow?.count ?? 0
     const inValue = inRow ? parseFloat(inRow.amount) : 0
     const outValue = outRow ? parseFloat(outRow.amount) : 0
-    const ingresoColor = chartColor(0)
-    const egresoColor = chartColor(1)
     const hasAccounts = analyticsData.accountBar.length > 0
     const hasMethods = analyticsData.paymentMethodPie.length > 0
     const hasTypes = analyticsData.typePie.length > 0
@@ -50,58 +48,21 @@ export function buildTreasuryMovementAnalyticsScreen(analyticsData: TreasuryMove
                                 content: {
                                     type: 'custom',
                                     render: (
-                                        <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
-                                            <KPIWrapper tooltip="Número de transacciones de ingreso en el período: cobros, ventas y abonos de línea de crédito.">
-                                                <StatCard label="Cantidad de Ingresos" className="h-full rounded-sm">
-                                                    <div className="flex items-center gap-2" style={{ color: ingresoColor }}>
-                                                        <ArrowDownToLine className="h-5 w-5" />
-                                                        <span className="text-3xl font-black tracking-tighter">
-                                                            <KPIValue current={inCount} />
-                                                        </span>
-                                                    </div>
-                                                </StatCard>
-                                            </KPIWrapper>
-                                            <KPIWrapper tooltip="Valor total de los fondos que ingresaron en el período.">
-                                                <StatCard label="Valor Total de Ingresos" className="h-full rounded-sm">
-                                                    <div className="flex items-center gap-2" style={{ color: ingresoColor }}>
-                                                        <ArrowDownToLine className="h-5 w-5" />
-                                                        <span className="text-3xl font-black tracking-tighter">
-                                                            <KPIValue current={inValue} isCurrency />
-                                                        </span>
-                                                    </div>
-                                                </StatCard>
-                                            </KPIWrapper>
-                                            <KPIWrapper tooltip="Número de transacciones de egreso en el período: pagos, gastos y disposiciones de línea de crédito.">
-                                                <StatCard label="Cantidad de Egresos" className="h-full rounded-sm">
-                                                    <div className="flex items-center gap-2" style={{ color: egresoColor }}>
-                                                        <ArrowUpFromLine className="h-5 w-5" />
-                                                        <span className="text-3xl font-black tracking-tighter">
-                                                            <KPIValue current={outCount} />
-                                                        </span>
-                                                    </div>
-                                                </StatCard>
-                                            </KPIWrapper>
-                                            <KPIWrapper tooltip="Valor total de los fondos que salieron en el período.">
-                                                <StatCard label="Valor Total de Egresos" className="h-full rounded-sm">
-                                                    <div className="flex items-center gap-2" style={{ color: egresoColor }}>
-                                                        <ArrowUpFromLine className="h-5 w-5" />
-                                                        <span className="text-3xl font-black tracking-tighter">
-                                                            <KPIValue current={outValue} isCurrency />
-                                                        </span>
-                                                    </div>
-                                                </StatCard>
-                                            </KPIWrapper>
-                                        </div>
+                                        <MetricStrip label="Indicadores de flujo">
+                                            <Metric label="Cantidad de Ingresos" info="Número de transacciones de ingreso en el período: cobros, ventas y abonos de línea de crédito." lead={ArrowDownToLine} tone="success" value={formatQuantity(inCount)} />
+                                            <Metric label="Valor Total de Ingresos" info="Valor total de los fondos que ingresaron en el período." lead={ArrowDownToLine} tone="success" value={formatMoney(inValue)} />
+                                            <Metric label="Cantidad de Egresos" info="Número de transacciones de egreso en el período: pagos, gastos y disposiciones de línea de crédito." lead={ArrowUpFromLine} tone="destructive" value={formatQuantity(outCount)} />
+                                            <Metric label="Valor Total de Egresos" info="Valor total de los fondos que salieron en el período." lead={ArrowUpFromLine} tone="destructive" value={formatMoney(outValue)} />
+                                        </MetricStrip>
                                     ),
                                 },
                             },
                             {
                                 id: "flow-evolution",
                                 content: hasFlowData ? {
-                                    type: 'stat-card',
+                                    type: 'chart-card',
                                     config: {
-                                        label: 'Evolución del Flujo',
-                                        variant: 'chart',
+                                        title: 'Evolución del Flujo',
                                         chart: {
                                             type: 'line-chart',
                                             preset: 'card',
@@ -134,10 +95,9 @@ export function buildTreasuryMovementAnalyticsScreen(analyticsData: TreasuryMove
                             {
                                 id: 'accounts-bar',
                                 content: hasAccounts ? {
-                                    type: 'stat-card',
+                                    type: 'chart-card',
                                     config: {
-                                        label: 'Movimientos por Cuenta',
-                                        variant: 'chart',
+                                        title: 'Movimientos por Cuenta',
                                         chart: {
                                             type: 'bar-chart',
                                             preset: 'card',
@@ -171,10 +131,9 @@ export function buildTreasuryMovementAnalyticsScreen(analyticsData: TreasuryMove
                             {
                                 id: 'methods-pie',
                                 content: hasMethods ? {
-                                    type: 'stat-card',
+                                    type: 'chart-card',
                                     config: {
-                                        label: 'Transacciones por Método de Pago',
-                                        variant: 'chart',
+                                        title: 'Transacciones por Método de Pago',
                                         chart: {
                                             type: 'pie-chart',
                                             preset: 'card',
@@ -206,10 +165,9 @@ export function buildTreasuryMovementAnalyticsScreen(analyticsData: TreasuryMove
                             {
                                 id: 'types-pie',
                                 content: hasTypes ? {
-                                    type: 'stat-card',
+                                    type: 'chart-card',
                                     config: {
-                                        label: 'Transacciones por Tipo',
-                                        variant: 'chart',
+                                        title: 'Transacciones por Tipo',
                                         chart: {
                                             type: 'pie-chart',
                                             preset: 'card',

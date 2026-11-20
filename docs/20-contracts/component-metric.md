@@ -127,3 +127,24 @@ El valor no es el protagonista: si el dato principal es una cifra, ponla en un `
 | `active` / `onClick` | `pressed` / `onPress` |
 | `href` | `href` |
 | `loading` | `loading` |
+
+## AnalyticsPanel (oleada A)
+
+`AnalyticsSection.content` ya no acepta `type: "stat-card"`. Las uniones son:
+
+| `type` | Config | Renderiza |
+|---|---|---|
+| `"metric"` | `MetricSectionConfig` (= `MetricProps`) | `Metric` con `h-full` |
+| `"chart-card"` | `ChartCardSectionConfig` (`ChartCardProps` sin `children`/`legend`/`fill`, más `chart: ChartConfig`) | `ChartCard fill` con `AnalyticsChart` dentro; la leyenda sale del preset `card` |
+| `"custom"` | `render` | JSX libre |
+
+Reglas de migración desde `StatCardConfig`:
+
+- `accent` → `tone` solo si es `success | warning | destructive`; `info | primary | accent | muted` se descartan (el tono debe tener significado).
+- `trend {direction, value}` → `delta {text, direction}`; `tooltip` → `info`; `onClick`/`active` → `onPress`/`pressed`; `icon` → `lead`; `subtext` → `context` (en `chart-card`: `subtitle`).
+- `valueSize` y `variant` (`hero`, `tile`, `progress`) se eliminan: nunca existieron en `StatCard`.
+
+`ChartCard` añade dos props:
+
+- `figure?: ReactNode` — cifra destacada (`kpi-value-compact`) sobre el título; reemplaza al antiguo `metric-chart`.
+- `fill?: boolean` — la tarjeta ocupa el alto del contenedor y el cuerpo crece (`min-h-32 flex-1`) en vez de usar `bodyClassName`.

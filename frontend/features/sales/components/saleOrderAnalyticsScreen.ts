@@ -1,9 +1,12 @@
-import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
+import type { AnalyticsPanelContentProps, Granularity, MetricDelta } from "@/components/shared"
 import { assignChartColors } from "@/lib/chart-colors"
 import { formatMoney, formatQuantity } from "@/lib/money"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 import { BarChart3, Package, Smartphone, Truck, Users } from "lucide-react"
-import type { SalesAnalyticsData } from "../hooks/useSalesAnalyticsData"
+import type { SalesAnalyticsData, TrendData } from "../hooks/useSalesAnalyticsData"
+
+/** Server trend (already a formatted %) → the change shown on a `Metric`: up is good, down is bad. */
+const trendToDelta = (t: TrendData): MetricDelta => ({ text: t.value, direction: t.direction, tone: t.direction === "up" ? "success" : "destructive" })
 
 export interface SalesAnalyticsUi {
     activeTab: string
@@ -48,7 +51,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                     {
                                         id: "kpi-volume",
                                         colSpan: 1,
-                                        content: { type: "stat-card", config: { label: "Volumen Total", value: formatMoney(analyticsData.totalVolume), variant: "hero", trend: analyticsData.volumeTrend } },
+                                        content: { type: "metric", config: { label: "Volumen Total", value: formatMoney(analyticsData.totalVolume), delta: trendToDelta(analyticsData.volumeTrend) } },
                                     },
                                 ],
                             },
@@ -59,7 +62,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                     {
                                         id: "kpi-paid",
                                         colSpan: 1,
-                                        content: { type: "stat-card", config: { label: "Cobrado", value: formatMoney(analyticsData.totalPaid), variant: "hero", trend: analyticsData.paidTrend, accent: "success" } },
+                                        content: { type: "metric", config: { label: "Cobrado", value: formatMoney(analyticsData.totalPaid), delta: trendToDelta(analyticsData.paidTrend), tone: "success" } },
                                     },
                                 ],
                             },
@@ -70,7 +73,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                     {
                                         id: "kpi-pending",
                                         colSpan: 1,
-                                        content: { type: "stat-card", config: { label: "Pendiente", value: formatMoney(analyticsData.totalPending), variant: "hero", accent: "warning" } },
+                                        content: { type: "metric", config: { label: "Pendiente", value: formatMoney(analyticsData.totalPending), tone: "warning" } },
                                     },
                                 ],
                             },
@@ -81,7 +84,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                     {
                                         id: "kpi-orders",
                                         colSpan: 1,
-                                        content: { type: "stat-card", config: { label: "Órdenes", value: formatQuantity(analyticsData.orderCount), variant: "tile", trend: analyticsData.orderCountTrend } },
+                                        content: { type: "metric", config: { label: "Órdenes", value: formatQuantity(analyticsData.orderCount), delta: trendToDelta(analyticsData.orderCountTrend) } },
                                     },
                                 ],
                             },
@@ -92,7 +95,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                     {
                                         id: "kpi-avg",
                                         colSpan: 1,
-                                        content: { type: "stat-card", config: { label: "Orden Promedio", value: formatMoney(analyticsData.avgOrderValue), variant: "tile", trend: analyticsData.avgOrderValueTrend } },
+                                        content: { type: "metric", config: { label: "Orden Promedio", value: formatMoney(analyticsData.avgOrderValue), delta: trendToDelta(analyticsData.avgOrderValueTrend) } },
                                     },
                                 ],
                             },
@@ -103,22 +106,22 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                     {
                                         id: "kpi-customers",
                                         colSpan: 1,
-                                        content: { type: "stat-card", config: { label: "Clientes", value: formatQuantity(analyticsData.customerCount), variant: "tile" } },
+                                        content: { type: "metric", config: { label: "Clientes", value: formatQuantity(analyticsData.customerCount), } },
                                     },
                                     {
                                         id: "volume-trend",
                                         colSpan: 3,
-                                        content: { type: "stat-card", config: { label: "Evolución del Volumen", variant: "chart", subtext: "Monto total de órdenes por período", chart: { type: "line-chart", preset: "card", data: lineVolume, valueFormat: "$,.0f" } } },
+                                        content: { type: "chart-card", config: { title: "Evolución del Volumen", subtitle: "Monto total de órdenes por período", chart: { type: "line-chart", preset: "card", data: lineVolume, valueFormat: "$,.0f" } } },
                                     },
                                     {
                                         id: "price-range",
                                         colSpan: 2,
-                                        content: { type: "stat-card", config: { label: "Órdenes por Rango de Precio", variant: "chart", subtext: "Distribución del valor total de las órdenes", chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeDistribution, keys: ["value"], indexBy: "id", axisBottomLegend: "Rango", axisLeftLegend: "Órdenes" } } },
+                                        content: { type: "chart-card", config: { title: "Órdenes por Rango de Precio", subtitle: "Distribución del valor total de las órdenes", chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeDistribution, keys: ["value"], indexBy: "id", axisBottomLegend: "Rango", axisLeftLegend: "Órdenes" } } },
                                     },
                                     {
                                         id: "channel-dist",
                                         colSpan: 1,
-                                        content: { type: "stat-card", config: { label: "Canal de Venta", variant: "chart", subtext: "Sistema vs Punto de Venta", chart: { type: "pie-chart", preset: "card", data: systemPosColors, valueFormat: "number", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Canal de Venta", subtitle: "Sistema vs Punto de Venta", chart: { type: "pie-chart", preset: "card", data: systemPosColors, valueFormat: "number", compact: true } } },
                                     },
                                 ],
                             },
@@ -135,11 +138,11 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "channel-trend",
-                                        content: { type: "stat-card", config: { label: "Tendencia por Canal", variant: "chart", subtext: "Volumen mensual desglosado por canal de venta", chart: { type: "line-chart", preset: "card", data: [{ id: "Sistema", data: analyticsData.channelTrend.map(m => ({ x: m.month, y: m.system })) }, { id: "POS", data: analyticsData.channelTrend.map(m => ({ x: m.month, y: m.pos })) }], valueFormat: "$,.0f", showLegend: true } } },
+                                        content: { type: "chart-card", config: { title: "Tendencia por Canal", subtitle: "Volumen mensual desglosado por canal de venta", chart: { type: "line-chart", preset: "card", data: [{ id: "Sistema", data: analyticsData.channelTrend.map(m => ({ x: m.month, y: m.system })) }, { id: "POS", data: analyticsData.channelTrend.map(m => ({ x: m.month, y: m.pos })) }], valueFormat: "$,.0f", showLegend: true } } },
                                     },
                                     {
                                         id: "payment-dist",
-                                        content: { type: "stat-card", config: { label: "Método de Pago", variant: "chart", subtext: "Formas de pago más utilizadas", chart: { type: "pie-chart", preset: "card", data: analyticsData.paymentMethodDistribution, valueFormat: "number", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Método de Pago", subtitle: "Formas de pago más utilizadas", chart: { type: "pie-chart", preset: "card", data: analyticsData.paymentMethodDistribution, valueFormat: "number", compact: true } } },
                                     },
                                 ],
                             },
@@ -149,11 +152,11 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "channel-pie",
-                                        content: { type: "stat-card", config: { label: "Distribución por Canal", variant: "chart", subtext: "Proporción Sistema vs POS", chart: { type: "pie-chart", preset: "card", data: analyticsData.channelDistribution, valueFormat: "number", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Distribución por Canal", subtitle: "Proporción Sistema vs POS", chart: { type: "pie-chart", preset: "card", data: analyticsData.channelDistribution, valueFormat: "number", compact: true } } },
                                     },
                                     {
                                         id: "delivery-status-channel",
-                                        content: { type: "stat-card", config: { label: "Estado de Despachos", variant: "chart", subtext: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: deliveryDist, valueFormat: "number", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Estado de Despachos", subtitle: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: deliveryDist, valueFormat: "number", compact: true } } },
                                     },
                                 ],
                             },
@@ -170,7 +173,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "top-customers",
-                                        content: { type: "stat-card", config: { label: "Top Clientes por Volumen", variant: "chart", subtext: "Clientes con mayor facturación acumulada", chart: { type: "bar-chart", preset: "card", data: analyticsData.topCustomers, keys: ["total"], indexBy: "customer", valueFormat: "$,.0f" } } },
+                                        content: { type: "chart-card", config: { title: "Top Clientes por Volumen", subtitle: "Clientes con mayor facturación acumulada", chart: { type: "bar-chart", preset: "card", data: analyticsData.topCustomers, keys: ["total"], indexBy: "customer", valueFormat: "$,.0f" } } },
                                     },
                                 ],
                             },
@@ -180,7 +183,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "customer-dist",
-                                        content: { type: "stat-card", config: { label: "Concentración por Cliente", variant: "chart", subtext: "Distribución del volumen entre clientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.customerDistribution, valueFormat: "currency", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Concentración por Cliente", subtitle: "Distribución del volumen entre clientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.customerDistribution, valueFormat: "currency", compact: true } } },
                                     },
                                 ],
                             },
@@ -197,7 +200,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "top-products",
-                                        content: { type: "stat-card", config: { label: "Top Productos por Volumen", variant: "chart", subtext: "Productos con mayor facturación", chart: { type: "bar-chart", preset: "card", data: analyticsData.topProducts, keys: ["total"], indexBy: "product", valueFormat: "$,.0f" } } },
+                                        content: { type: "chart-card", config: { title: "Top Productos por Volumen", subtitle: "Productos con mayor facturación", chart: { type: "bar-chart", preset: "card", data: analyticsData.topProducts, keys: ["total"], indexBy: "product", valueFormat: "$,.0f" } } },
                                     },
                                 ],
                             },
@@ -207,7 +210,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "product-type-dist",
-                                        content: { type: "stat-card", config: { label: "Tipo de Producto", variant: "chart", subtext: "Distribución por tipo (Almacenable, Servicio, etc.)", chart: { type: "pie-chart", preset: "card", data: analyticsData.productTypeBreakdown, valueFormat: "currency", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Tipo de Producto", subtitle: "Distribución por tipo (Almacenable, Servicio, etc.)", chart: { type: "pie-chart", preset: "card", data: analyticsData.productTypeBreakdown, valueFormat: "currency", compact: true } } },
                                     },
                                 ],
                             },
@@ -224,7 +227,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "monthly-deliveries",
-                                        content: { type: "stat-card", config: { label: "Despachos por Período", variant: "chart", subtext: "Órdenes entregadas en cada período", chart: { type: "line-chart", preset: "card", data: [{ id: "Entregadas", data: analyticsData.monthlyDeliveries.map(m => ({ x: m.month, y: m.count })) }], enableArea: true } } },
+                                        content: { type: "chart-card", config: { title: "Despachos por Período", subtitle: "Órdenes entregadas en cada período", chart: { type: "line-chart", preset: "card", data: [{ id: "Entregadas", data: analyticsData.monthlyDeliveries.map(m => ({ x: m.month, y: m.count })) }], enableArea: true } } },
                                     },
                                 ],
                             },
@@ -234,7 +237,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "dispatch-status",
-                                        content: { type: "stat-card", config: { label: "Estado de Despachos", variant: "chart", subtext: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.deliveryStatusDistribution, valueFormat: "number", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Estado de Despachos", subtitle: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.deliveryStatusDistribution, valueFormat: "number", compact: true } } },
                                     },
                                 ],
                             },

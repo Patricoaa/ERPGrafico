@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { AnalyticsChart, StatCard } from "@/components/shared"
+import { AnalyticsChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, formatDate, formatNumber, useEntityCollection } from "@/components/entity-view"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
@@ -48,16 +48,12 @@ function RotationSection({ rotation }: { rotation: Rotation }) {
     )
     return (
         <section className="flex flex-col gap-3" aria-label="Rotación de stock">
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <StatCard label="Rotación" valueSize="xl" accent="primary" value={orDash(rotation.turnover, 2, " ×")} subtext={`${formatNumber(rotation.out_qty, 0)} un salidas`} />
-                <StatCard label="Días de inventario" valueSize="xl" accent="info" value={orDash(rotation.days_of_inventory, 0)} />
-                <StatCard
-                    label="Cobertura" valueSize="xl" accent={rotation.idle ? "warning" : "success"}
-                    value={rotation.coverage_days === null ? DASH : `${formatNumber(rotation.coverage_days, 0)} días`}
-                    subtext="al ritmo de los últimos 90 días"
-                />
-                <StatCard label="Valor del stock" valueSize="xl" accent="muted" value={formatMoney(rotation.stock_value)} subtext={`${formatNumber(rotation.stock_now, 0)} un`} />
-            </div>
+            <MetricStrip label="Rotación y cobertura del inventario">
+                <Metric label="Rotación" value={orDash(rotation.turnover, 2, " ×")} context={`${formatNumber(rotation.out_qty, 0)} un salidas`} />
+                <Metric label="Días de inventario" value={orDash(rotation.days_of_inventory, 0)} />
+                <Metric label="Cobertura" value={rotation.coverage_days === null ? DASH : `${formatNumber(rotation.coverage_days, 0)} días`} context="al ritmo de los últimos 90 días" tone={rotation.idle ? "warning" : "success"} />
+                <Metric label="Valor del stock" value={formatMoney(rotation.stock_value)} context={`${formatNumber(rotation.stock_now, 0)} un`} />
+            </MetricStrip>
             {rotation.idle && (
                 <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
                     Stock inmóvil: hay {formatNumber(rotation.stock_now, 0)} un y
@@ -79,14 +75,11 @@ function SubscriptionsSection({ subs }: { subs: SubscriptionsSummary }) {
     const payments = useEntityCollection(operationsPaymentEntity, { rows: subs.payments }, { pagination: { mode: "none" } })
     return (
         <section className="flex flex-col gap-3" aria-label="Suscripciones">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <StatCard label="Costo anualizado" valueSize="xl" accent="primary" value={formatMoney(subs.annualized_total)} subtext={`${formatMoney(subs.monthly_equivalent_total)} / mes · ${subs.count} activas`} />
-                <StatCard label="Próximos 90 días" valueSize="xl" accent="warning" value={formatMoney(subs.due_90d_total)} />
-                <StatCard
-                    label="Variación primer a último pago" valueSize="xl" accent="info"
-                    value={subs.first_to_last_pct === null ? DASH : `${formatNumber(subs.first_to_last_pct, 1)} %`}
-                />
-            </div>
+            <MetricStrip label="Suscripciones del producto">
+                <Metric label="Costo anualizado" value={formatMoney(subs.annualized_total)} context={`${formatMoney(subs.monthly_equivalent_total)} / mes · ${subs.count} activas`} />
+                <Metric label="Próximos 90 días" value={formatMoney(subs.due_90d_total)} />
+                <Metric label="Variación primer a último pago" value={subs.first_to_last_pct === null ? DASH : `${formatNumber(subs.first_to_last_pct, 1)} %`} />
+            </MetricStrip>
             <Collection.Root collection={items}>
                 <Collection.View table={operationsSubscriptionViews.table} emptyTitle="Sin suscripciones" emptyDescription="Este producto no tiene suscripciones registradas." />
             </Collection.Root>

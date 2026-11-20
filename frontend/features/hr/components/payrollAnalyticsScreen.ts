@@ -34,7 +34,7 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                                 id: "kpi-masa-total",
                                 fillRemaining: false,
                                 colSpan: 1,
-                                content: { type: "stat-card", config: { label: "Masa Salarial", value: formatCurrency(analyticsData.totalMasa), variant: "hero", accent: "primary" } },
+                                content: { type: "metric", config: { label: "Masa Salarial", value: formatCurrency(analyticsData.totalMasa), } },
                             },
                         ],
                     },
@@ -46,7 +46,7 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                                 id: "kpi-liquido-total",
                                 fillRemaining: false,
                                 colSpan: 1,
-                                content: { type: "stat-card", config: { label: "Total Líquido", value: formatCurrency(analyticsData.totalLiquido), variant: "hero", accent: "success" } },
+                                content: { type: "metric", config: { label: "Total Líquido", value: formatCurrency(analyticsData.totalLiquido), tone: "success" } },
                             },
                         ],
                     },
@@ -58,7 +58,7 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                                 id: "kpi-descuentos-total",
                                 fillRemaining: false,
                                 colSpan: 1,
-                                content: { type: "stat-card", config: { label: "Total Descuentos", value: formatCurrency(analyticsData.totalDescuentos), variant: "hero", accent: "warning" } },
+                                content: { type: "metric", config: { label: "Total Descuentos", value: formatCurrency(analyticsData.totalDescuentos), tone: "warning" } },
                             },
                         ],
                     },
@@ -70,7 +70,7 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                                 id: "kpi-nominas",
                                 fillRemaining: false,
                                 colSpan: 1,
-                                content: { type: "stat-card", config: { label: "Liquidaciones", value: String(analyticsData.count), variant: "tile" } },
+                                content: { type: "metric", config: { label: "Liquidaciones", value: String(analyticsData.count), } },
                             },
                         ],
                     },
@@ -82,7 +82,7 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                                 id: "kpi-costo-empresa",
                                 fillRemaining: false,
                                 colSpan: 1,
-                                content: { type: "stat-card", config: { label: "Costo Empresa", value: formatCurrency(analyticsData.costoEmpresa), variant: "tile", accent: "info" } },
+                                content: { type: "metric", config: { label: "Costo Empresa", value: formatCurrency(analyticsData.costoEmpresa), } },
                             },
                         ],
                     },
@@ -94,11 +94,10 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                                 id: "masa-trend-chart",
                                 colSpan: 2,
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Evolución de Masa Salarial",
-                                        variant: "chart",
-                                        subtext: "Haberes brutos vs líquido a percibir por período",
+                                        title: "Evolución de Masa Salarial",
+                                        subtitle: "Haberes brutos vs líquido a percibir por período",
                                         chart: {
                                             type: "line-chart",
                                             preset: "card",
@@ -116,11 +115,10 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                                 id: "payment-status-chart",
                                 colSpan: 1,
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Estado de Pago",
-                                        variant: "chart",
-                                        subtext: "Remuneraciones pagadas, parciales y pendientes",
+                                        title: "Estado de Pago",
+                                        subtitle: "Remuneraciones pagadas, parciales y pendientes",
                                         chart: {
                                             type: "pie-chart",
                                             preset: "card",
@@ -149,11 +147,10 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                             {
                                 id: "top-empleados-bar",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Top Empleados por Líquido",
-                                        variant: "chart",
-                                        subtext: "Empleados con mayor sueldo líquido en el período",
+                                        title: "Top Empleados por Líquido",
+                                        subtitle: "Empleados con mayor sueldo líquido en el período",
                                         chart: {
                                             type: "bar-chart",
                                             preset: "card",
@@ -168,11 +165,10 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                             {
                                 id: "haberes-vs-liquido",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Haberes vs Líquido por Empleado",
-                                        variant: "chart",
-                                        subtext: "Diferencia entre bruto y líquido a percibir",
+                                        title: "Haberes vs Líquido por Empleado",
+                                        subtitle: "Diferencia entre bruto y líquido a percibir",
                                         chart: {
                                             type: "bar-chart",
                                             preset: "card",
@@ -193,20 +189,19 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                         sections: [
                             {
                                 id: "kpi-avg-liquido",
-                                content: { type: "stat-card", config: { label: "Líquido Promedio", value: formatCurrency(analyticsData.avgLiquido), accent: "primary" } },
+                                content: { type: "metric", config: { label: "Líquido Promedio", value: formatCurrency(analyticsData.avgLiquido), } },
                             },
                             {
                                 id: "kpi-avg-base",
-                                content: { type: "stat-card", config: { label: "Sueldo Base Promedio", value: formatCurrency(analyticsData.avgBase), accent: "info" } },
+                                content: { type: "metric", config: { label: "Sueldo Base Promedio", value: formatCurrency(analyticsData.avgBase), } },
                             },
                             {
                                 id: "salary-ranges-pie",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Distribución por Rango Salarial",
-                                        variant: "chart",
-                                        subtext: "Concentración de sueldos líquidos por tramo",
+                                        title: "Distribución por Rango Salarial",
+                                        subtitle: "Concentración de sueldos líquidos por tramo",
                                         chart: {
                                             type: "pie-chart",
                                             preset: "card",
@@ -234,28 +229,27 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                         sections: [
                             {
                                 id: "kpi-desc-legales",
-                                content: { type: "stat-card", config: { label: "Desc. Legales Trabajador", value: formatCurrency(analyticsData.totalDescLegales), accent: "warning" } },
+                                content: { type: "metric", config: { label: "Desc. Legales Trabajador", value: formatCurrency(analyticsData.totalDescLegales), tone: "warning" } },
                             },
                             {
                                 id: "kpi-aporte-patr",
-                                content: { type: "stat-card", config: { label: "Aporte Patronal (Previred)", value: formatCurrency(analyticsData.totalAportePatr), accent: "destructive" } },
+                                content: { type: "metric", config: { label: "Aporte Patronal (Previred)", value: formatCurrency(analyticsData.totalAportePatr), tone: "destructive" } },
                             },
                             {
                                 id: "kpi-otros-desc",
-                                content: { type: "stat-card", config: { label: "Otros Descuentos", value: formatCurrency(analyticsData.totalOtrosDesc), accent: "muted" } },
+                                content: { type: "metric", config: { label: "Otros Descuentos", value: formatCurrency(analyticsData.totalOtrosDesc), } },
                             },
                             {
                                 id: "kpi-anticipos",
-                                content: { type: "stat-card", config: { label: "Anticipos Descontados", value: formatCurrency(analyticsData.totalAnticipos), accent: "warning" } },
+                                content: { type: "metric", config: { label: "Anticipos Descontados", value: formatCurrency(analyticsData.totalAnticipos), tone: "warning" } },
                             },
                             {
                                 id: "previred-status-pie",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Estado Pago Previred",
-                                        variant: "chart",
-                                        subtext: "Previred pagado, parcial y pendiente",
+                                        title: "Estado Pago Previred",
+                                        subtitle: "Previred pagado, parcial y pendiente",
                                         chart: {
                                             type: "pie-chart",
                                             preset: "card",
@@ -275,11 +269,10 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                             {
                                 id: "costo-total-emp",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Composición del Costo por Empleado",
-                                        variant: "chart",
-                                        subtext: "Líquido + aportes patronales + descuentos",
+                                        title: "Composición del Costo por Empleado",
+                                        subtitle: "Líquido + aportes patronales + descuentos",
                                         chart: {
                                             type: "bar-chart",
                                             preset: "card",
@@ -310,11 +303,10 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                             {
                                 id: "dias-by-emp",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Días Trabajados vs Ausentes",
-                                        variant: "chart",
-                                        subtext: "Comparativo por empleado en el período",
+                                        title: "Días Trabajados vs Ausentes",
+                                        subtitle: "Comparativo por empleado en el período",
                                         chart: {
                                             type: "bar-chart",
                                             preset: "card",
@@ -329,11 +321,10 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                             {
                                 id: "ausencia-trend",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Evolución de Ausencias",
-                                        variant: "chart",
-                                        subtext: "Total de días ausentes acumulados por período",
+                                        title: "Evolución de Ausencias",
+                                        subtitle: "Total de días ausentes acumulados por período",
                                         chart: {
                                             type: "line-chart",
                                             preset: "card",
@@ -351,20 +342,19 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                         sections: [
                             {
                                 id: "kpi-avg-absent",
-                                content: { type: "stat-card", config: { label: "Prom. Días Ausentes", value: analyticsData.avgAbsent.toFixed(1), accent: "destructive" } },
+                                content: { type: "metric", config: { label: "Prom. Días Ausentes", value: analyticsData.avgAbsent.toFixed(1), tone: "destructive" } },
                             },
                             {
                                 id: "kpi-avg-worked",
-                                content: { type: "stat-card", config: { label: "Prom. Días Trabajados", value: analyticsData.avgWorked.toFixed(1), accent: "success" } },
+                                content: { type: "metric", config: { label: "Prom. Días Trabajados", value: analyticsData.avgWorked.toFixed(1), tone: "success" } },
                             },
                             {
                                 id: "status-liquidaciones-pie",
                                 content: {
-                                    type: "stat-card",
+                                    type: "chart-card",
                                     config: {
-                                        label: "Estado Liquidaciones",
-                                        variant: "chart",
-                                        subtext: "Borradores vs contabilizadas",
+                                        title: "Estado Liquidaciones",
+                                        subtitle: "Borradores vs contabilizadas",
                                         chart: {
                                             type: "pie-chart",
                                             preset: "card",
@@ -377,7 +367,7 @@ export function buildPayrollAnalyticsScreen(analyticsData: PayrollAnalyticsData,
                             },
                             {
                                 id: "kpi-draft-count",
-                                content: { type: "stat-card", config: { label: "Borradores Pendientes", value: String(analyticsData.draftCount), accent: analyticsData.draftCount > 0 ? "warning" : "muted" } },
+                                content: { type: "metric", config: { label: "Borradores Pendientes", value: String(analyticsData.draftCount), tone: analyticsData.draftCount > 0 ? "warning" : "neutral" } },
                             },
                         ],
                     },

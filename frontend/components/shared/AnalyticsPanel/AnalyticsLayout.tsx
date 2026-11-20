@@ -2,7 +2,8 @@
 
 import React from "react"
 import type { AnalyticsColumn, AnalyticsSection as AnalyticsSectionType, ChartConfig } from "./types"
-import { StatCard, ChartLegend, KPIWrapper, KPIValue } from "@/components/shared"
+import { Metric, ChartCard } from "@/components/shared"
+import { cn } from "@/lib/utils"
 import { AnalyticsChart } from "./AnalyticsChart"
 import { getCssChartColors } from "./nivo-theme"
 
@@ -51,59 +52,25 @@ function extractLegendItems(chart: ChartConfig): Array<{ label: string; color?: 
 function SectionRenderer({ section }: { section: AnalyticsSectionType }) {
     const content = section.content
 
-    if (content.type === "stat-card") {
-        const card = content.config
-        const effectiveVariant = card.variant === "fill" ? "fill"
-            : card.variant === "chart" ? "chart"
-            : card.variant === "metric-chart" ? "metric-chart"
-            : card.variant === "compact" || card.variant === "minimal" ? card.variant
-            : undefined
-
-        const renderedCard = (
-            <StatCard
-                label={card.label}
-                value={
-                    card.comparison ? (
-                        <KPIValue
-                            current={card.comparison.current}
-                            previous={card.comparison.previous}
-                            showComparison={card.comparison.showComparison}
-                            isPercentage={card.comparison.isPercentage}
-                            alreadyPercent={card.comparison.alreadyPercent}
-                            isCurrency={card.comparison.isCurrency}
-                            decimals={card.comparison.decimals}
-                        />
-                    ) : (
-                        card.value
-                    )
-                }
-                icon={card.icon}
-                accent={card.accent}
-                subtext={card.subtext}
-                variant={effectiveVariant}
-                valueSize={card.valueSize}
-                trend={card.trend}
-                href={card.href}
-                onClick={card.onClick}
-                active={card.active}
-                loading={card.loading}
-                chart={card.chart ? <AnalyticsChart {...card.chart} /> : undefined}
-                chartLegend={card.chart?.preset === "card"
-                    ? <ChartLegend items={extractLegendItems(card.chart)} />
-                    : undefined
-                }
-            />
-        )
-
+    if (content.type === "metric") {
         return (
             <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
-                {card.tooltip ? (
-                    <KPIWrapper tooltip={card.tooltip}>
-                        {renderedCard}
-                    </KPIWrapper>
-                ) : (
-                    renderedCard
-                )}
+                <Metric {...content.config} className={cn("h-full", content.config.className)} />
+            </div>
+        )
+    }
+
+    if (content.type === "chart-card") {
+        const { chart, ...card } = content.config
+        return (
+            <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+                <ChartCard
+                    {...card}
+                    fill
+                    legend={chart.preset === "card" ? extractLegendItems(chart) : undefined}
+                >
+                    <AnalyticsChart {...chart} />
+                </ChartCard>
             </div>
         )
     }

@@ -10,10 +10,10 @@ import { Collection, useEntityCollection } from "@/components/entity-view"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { useStockMoveAnalytics } from "@/features/inventory/hooks/useStockMoveAnalytics"
-import { UnifiedSearchBar, useUnifiedSearch, StatCard, KPIWrapper, KPIValue, AnalyticsPanelContent } from "@/components/shared"
+import { UnifiedSearchBar, useUnifiedSearch, Metric, MetricStrip, AnalyticsPanelContent } from "@/components/shared"
 import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
 import { TrendingUp, Package, Warehouse, ArrowDownLeft, ArrowUpRight } from "lucide-react"
-import { chartColor } from "@/lib/chart-colors"
+import { formatMoney, formatQuantity } from "@/lib/money"
 import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { toast } from "sonner"
 import React from "react"
@@ -67,8 +67,6 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         const outCount = outRow?.count ?? 0
         const inValue = inRow ? parseFloat(inRow.amount) : 0
         const outValue = outRow ? parseFloat(outRow.amount) : 0
-        const entradaColor = chartColor(0)
-        const salidaColor = chartColor(1)
         const hasProducts = analyticsData.topProductsBar.length > 0
         const hasLocations = analyticsData.locationBar.length > 0
 
@@ -94,58 +92,21 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                         content: {
                                             type: 'custom',
                                             render: (
-                                                <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
-                                                    <KPIWrapper tooltip="Número de movimientos que ingresaron al inventario en el período: compras, devoluciones de clientes, transferencias entrantes y ajustes positivos.">
-                                                        <StatCard label="Cantidad de Entradas" className="h-full rounded-sm">
-                                                            <div className="flex items-center gap-2" style={{ color: entradaColor }}>
-                                                                <ArrowDownLeft className="h-5 w-5" />
-                                                                <span className="text-3xl font-black tracking-tighter">
-                                                                    <KPIValue current={inCount} />
-                                                                </span>
-                                                            </div>
-                                                        </StatCard>
-                                                    </KPIWrapper>
-                                                    <KPIWrapper tooltip="Valor total de las unidades que ingresaron al inventario en el período (cantidad × costo unitario).">
-                                                        <StatCard label="Valor Total de Entradas" className="h-full rounded-sm">
-                                                            <div className="flex items-center gap-2" style={{ color: entradaColor }}>
-                                                                <ArrowDownLeft className="h-5 w-5" />
-                                                                <span className="text-3xl font-black tracking-tighter">
-                                                                    <KPIValue current={inValue} isCurrency />
-                                                                </span>
-                                                            </div>
-                                                        </StatCard>
-                                                    </KPIWrapper>
-                                                    <KPIWrapper tooltip="Número de movimientos que salieron del inventario en el período: ventas, consumos de producción, transferencias salientes y ajustes negativos.">
-                                                        <StatCard label="Cantidad de Salidas" className="h-full rounded-sm">
-                                                            <div className="flex items-center gap-2" style={{ color: salidaColor }}>
-                                                                <ArrowUpRight className="h-5 w-5" />
-                                                                <span className="text-3xl font-black tracking-tighter">
-                                                                    <KPIValue current={outCount} />
-                                                                </span>
-                                                            </div>
-                                                        </StatCard>
-                                                    </KPIWrapper>
-                                                    <KPIWrapper tooltip="Valor total de las unidades que salieron del inventario en el período (cantidad × costo unitario).">
-                                                        <StatCard label="Valor Total de Salidas" className="h-full rounded-sm">
-                                                            <div className="flex items-center gap-2" style={{ color: salidaColor }}>
-                                                                <ArrowUpRight className="h-5 w-5" />
-                                                                <span className="text-3xl font-black tracking-tighter">
-                                                                    <KPIValue current={outValue} isCurrency />
-                                                                </span>
-                                                            </div>
-                                                        </StatCard>
-                                                    </KPIWrapper>
-                                                </div>
+                                                <MetricStrip label="Indicadores de movimientos">
+                                                    <Metric label="Cantidad de Entradas" info="Número de movimientos que ingresaron al inventario en el período: compras, devoluciones de clientes, transferencias entrantes y ajustes positivos." lead={ArrowDownLeft} tone="success" value={formatQuantity(inCount)} />
+                                                    <Metric label="Valor Total de Entradas" info="Valor total de las unidades que ingresaron al inventario en el período (cantidad × costo unitario)." lead={ArrowDownLeft} tone="success" value={formatMoney(inValue)} />
+                                                    <Metric label="Cantidad de Salidas" info="Número de movimientos que salieron del inventario en el período: ventas, consumos de producción, transferencias salientes y ajustes negativos." lead={ArrowUpRight} tone="destructive" value={formatQuantity(outCount)} />
+                                                    <Metric label="Valor Total de Salidas" info="Valor total de las unidades que salieron del inventario en el período (cantidad × costo unitario)." lead={ArrowUpRight} tone="destructive" value={formatMoney(outValue)} />
+                                                </MetricStrip>
                                             ),
                                         },
                                     },
                                     {
                                         id: "flow-evolution",
                                         content: hasFlowData ? {
-                                            type: 'stat-card',
+                                            type: 'chart-card',
                                             config: {
-                                                label: 'Evolución de Movimientos',
-                                                variant: 'chart',
+                                                title: 'Evolución de Movimientos',
                                                 chart: {
                                                     type: 'line-chart',
                                                     preset: 'card',
@@ -178,10 +139,9 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                     {
                                         id: 'top-products-bar',
                                         content: hasProducts ? {
-                                            type: 'stat-card',
+                                            type: 'chart-card',
                                             config: {
-                                                label: 'Top Productos por Valor',
-                                                variant: 'chart',
+                                                title: 'Top Productos por Valor',
                                                 chart: {
                                                     type: 'bar-chart',
                                                     preset: 'card',
@@ -207,10 +167,9 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                     {
                                         id: 'category-pie',
                                         content: analyticsData.categoryPie.length > 0 ? {
-                                            type: 'stat-card',
+                                            type: 'chart-card',
                                             config: {
-                                                label: 'Valor por Categoría',
-                                                variant: 'chart',
+                                                title: 'Valor por Categoría',
                                                 chart: {
                                                     type: 'pie-chart',
                                                     preset: 'card',
@@ -242,10 +201,9 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                     {
                                         id: 'locations-bar',
                                         content: hasLocations ? {
-                                            type: 'stat-card',
+                                            type: 'chart-card',
                                             config: {
-                                                label: 'Movimientos por Ubicación',
-                                                variant: 'chart',
+                                                title: 'Movimientos por Ubicación',
                                                 chart: {
                                                     type: 'bar-chart',
                                                     preset: 'card',

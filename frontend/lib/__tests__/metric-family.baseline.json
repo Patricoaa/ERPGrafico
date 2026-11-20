@@ -1,5 +1,4 @@
 [
-  "components/shared/AnalyticsPanel/AnalyticsLayout.tsx",
   "components/shared/DataTable.tsx",
   "components/shared/SkeletonPresets.tsx",
   "components/shared/index.ts",
@@ -10,11 +9,6 @@
   "features/finance/components/BudgetDetailView.tsx",
   "features/finance/components/BudgetVarianceView.tsx",
   "features/finance/components/RatiosDashboard.tsx",
-  "features/inventory/analytics/OperationsBlock.tsx",
-  "features/inventory/analytics/ProductionPerformanceBlock.tsx",
-  "features/inventory/analytics/SourcingBlock.tsx",
-  "features/inventory/components/MovementClientView.tsx",
-  "features/inventory/components/ProductAnalyticsModal.tsx",
   "features/production/components/ProductionMetricsCard.tsx",
   "features/purchasing/components/SubscriptionHistoryModal.tsx",
   "features/purchasing/components/SubscriptionsClientView.tsx",
@@ -24,7 +18,6 @@
   "features/treasury/components/pos-session/ClosingTab.tsx",
   "features/treasury/components/pos-session/SalesTab.tsx",
   "features/treasury/components/pos-session/SummaryTab.tsx",
-  "features/treasury/components/treasuryMovementAnalyticsScreen.tsx",
   "features/treasury/loans/LoanDetailModal.tsx",
   "features/treasury/loans/LoanViewDrawer.tsx"
 ]

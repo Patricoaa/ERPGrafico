@@ -62,11 +62,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "combo-chart",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Volumen de Órdenes",
-                                                variant: "chart",
-                                                subtext: "Evolución histórica del monto total y cantidad de órdenes por mes",
+                                                title: "Volumen de Órdenes",
+                                                subtitle: "Evolución histórica del monto total y cantidad de órdenes por mes",
                                                 chart: {
                                                         type: "line-chart",
                                                         preset: "card",
@@ -85,11 +84,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "payment-chart",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Forma de Pago",
-                                                variant: "chart",
-                                                subtext: "Distribución de los medios de pago utilizados",
+                                                title: "Forma de Pago",
+                                                subtitle: "Distribución de los medios de pago utilizados",
                                                 chart: {
                                                         type: "pie-chart",
                                                         preset: "card",
@@ -117,11 +115,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "funnel-workflow",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Flujo de Vida (Órdenes)",
-                                                variant: "chart",
-                                                subtext: "Volumen de órdenes por estado del proceso",
+                                                title: "Flujo de Vida (Órdenes)",
+                                                subtitle: "Volumen de órdenes por estado del proceso",
                                                 chart: {
                                                     type: "funnel-chart",
                                                     preset: "card",
@@ -141,12 +138,11 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "receiving-status",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Entregas a Tiempo",
-                                                variant: "metric-chart",
-                                                value: `${analyticsData.onTimeCount}`,
-                                                subtext: `${analyticsData.lateCount} con retraso · ${analyticsData.pendingReceiptCount} pendientes · ${analyticsData.overdueCount} vencidas`,
+                                                title: "Entregas a Tiempo",
+                                                figure: `${analyticsData.onTimeCount}`,
+                                                subtitle: `${analyticsData.lateCount} con retraso · ${analyticsData.pendingReceiptCount} pendientes · ${analyticsData.overdueCount} vencidas`,
                                                 chart: {
                                                         type: "pie-chart",
                                                         preset: "card",
@@ -171,11 +167,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "warehouse-bar",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Órdenes por Almacén",
-                                                variant: "chart",
-                                                subtext: "Destino de recepción logística de las órdenes",
+                                                title: "Órdenes por Almacén",
+                                                subtitle: "Destino de recepción logística de las órdenes",
                                                 chart: {
                                                         type: "bar-chart",
                                                         preset: "card",
@@ -204,11 +199,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "top-suppliers-prod",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Top Proveedores",
-                                                variant: "chart",
-                                                subtext: "Proveedores con mayor volumen de compras y recurrencia",
+                                                title: "Top Proveedores",
+                                                subtitle: "Proveedores con mayor volumen de compras y recurrencia",
                                                 chart: {
                                                     type: "bar-chart",
                                                     preset: "card",
@@ -228,11 +222,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "top-products-bar",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Top Productos por Gasto",
-                                                variant: "chart",
-                                                subtext: "Principales productos del presupuesto de compras",
+                                                title: "Top Productos por Gasto",
+                                                subtitle: "Principales productos del presupuesto de compras",
                                                 chart: {
                                                     type: "bar-chart",
                                                     preset: "card",
@@ -253,11 +246,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "category-pie",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Gasto por Tipo de Producto",
-                                                variant: "chart",
-                                                subtext: "Distribución del gasto entre las categorías de producto",
+                                                title: "Gasto por Tipo de Producto",
+                                                subtitle: "Distribución del gasto entre las categorías de producto",
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
@@ -285,11 +277,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "storable-top",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Top Productos Físicos por Gasto",
-                                                variant: "chart",
-                                                subtext: "Almacenables, Consumibles y Fabricables más comprados",
+                                                title: "Top Productos Físicos por Gasto",
+                                                subtitle: "Almacenables, Consumibles y Fabricables más comprados",
                                                 chart: {
                                                     type: "bar-chart",
                                                     preset: "card",
@@ -304,11 +295,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "storable-trend",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Tendencia de Compras Físicas",
-                                                variant: "chart",
-                                                subtext: "Evolución mensual del gasto en productos físicos",
+                                                title: "Tendencia de Compras Físicas",
+                                                subtitle: "Evolución mensual del gasto en productos físicos",
                                                 chart: {
                                                     type: "line-chart",
                                                     preset: "card",
@@ -327,14 +317,13 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "storable-vs-total",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Almacenables vs Total",
-                                                variant: "metric-chart",
-                                                value: analyticsData.storableData.totalVolume > 0
+                                                title: "Almacenables vs Total",
+                                                figure: analyticsData.storableData.totalVolume > 0
                                                     ? `${Math.round((analyticsData.storableData.totalVolume / (analyticsData.totalLineVolume || 1)) * 100)}%`
                                                     : "0%",
-                                                subtext: `del total de compras · ${analyticsData.storableData.orderCount} órdenes con físicos`,
+                                                subtitle: `del total de compras · ${analyticsData.storableData.orderCount} órdenes con físicos`,
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
@@ -349,11 +338,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                      {
                                          id: "storable-category",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Gasto por Categoría",
-                                                variant: "chart",
-                                                subtext: "Categorías de productos almacenables",
+                                                title: "Gasto por Categoría",
+                                                subtitle: "Categorías de productos almacenables",
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
@@ -381,11 +369,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "service-top",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Top Servicios por Gasto",
-                                                variant: "chart",
-                                                subtext: "Servicios únicos con mayor gasto acumulado",
+                                                title: "Top Servicios por Gasto",
+                                                subtitle: "Servicios únicos con mayor gasto acumulado",
                                                 chart: {
                                                     type: "bar-chart",
                                                     preset: "card",
@@ -400,11 +387,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "service-trend",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Tendencia Gasto en Servicios",
-                                                variant: "chart",
-                                                subtext: "Evolución mensual del gasto en servicios externos",
+                                                title: "Tendencia Gasto en Servicios",
+                                                subtitle: "Evolución mensual del gasto en servicios externos",
                                                 chart: {
                                                     type: "line-chart",
                                                     preset: "card",
@@ -423,14 +409,13 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "service-vs-total",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Servicios vs Total",
-                                                variant: "metric-chart",
-                                                value: analyticsData.serviceData.totalVolume > 0
+                                                title: "Servicios vs Total",
+                                                figure: analyticsData.serviceData.totalVolume > 0
                                                     ? `${Math.round((analyticsData.serviceData.totalVolume / (analyticsData.totalLineVolume || 1)) * 100)}%`
                                                     : "0%",
-                                                subtext: `del total de compras · ${analyticsData.serviceData.orderCount} órdenes con servicios`,
+                                                subtitle: `del total de compras · ${analyticsData.serviceData.orderCount} órdenes con servicios`,
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
@@ -445,11 +430,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                      {
                                          id: "service-category",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Gasto por Categoría",
-                                                variant: "chart",
-                                                subtext: "Categorías de servicios externos",
+                                                title: "Gasto por Categoría",
+                                                subtitle: "Categorías de servicios externos",
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
@@ -477,11 +461,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "sub-top",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Top Suscripciones por Gasto Anual",
-                                                variant: "chart",
-                                                subtext: "Servicios recurrentes con mayor impacto en el presupuesto",
+                                                title: "Top Suscripciones por Gasto Anual",
+                                                subtitle: "Servicios recurrentes con mayor impacto en el presupuesto",
                                                 chart: {
                                                     type: "bar-chart",
                                                     preset: "card",
@@ -496,11 +479,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "sub-trend",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Recurrencia Mensual de Suscripciones",
-                                                variant: "chart",
-                                                subtext: "Gasto recurrente mensual en suscripciones activas",
+                                                title: "Recurrencia Mensual de Suscripciones",
+                                                subtitle: "Gasto recurrente mensual en suscripciones activas",
                                                 chart: {
                                                     type: "line-chart",
                                                     preset: "card",
@@ -519,14 +501,13 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "sub-vs-total",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Suscripciones vs Total",
-                                                variant: "metric-chart",
-                                                value: analyticsData.subscriptionData.totalVolume > 0
+                                                title: "Suscripciones vs Total",
+                                                figure: analyticsData.subscriptionData.totalVolume > 0
                                                     ? `${Math.round((analyticsData.subscriptionData.totalVolume / (analyticsData.totalLineVolume || 1)) * 100)}%`
                                                     : "0%",
-                                                subtext: `del total de compras · ${analyticsData.subscriptionData.orderCount} órdenes con suscripciones`,
+                                                subtitle: `del total de compras · ${analyticsData.subscriptionData.orderCount} órdenes con suscripciones`,
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
@@ -541,11 +522,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                      {
                                          id: "sub-category",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Gasto por Categoría",
-                                                variant: "chart",
-                                                subtext: "Categorías de suscripciones",
+                                                title: "Gasto por Categoría",
+                                                subtitle: "Categorías de suscripciones",
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
@@ -573,11 +553,10 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "dte-type-distribution",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Tipos de Documentos Recibidos",
-                                                variant: "chart",
-                                                subtext: "Distribución de los DTEs registrados en compras",
+                                                title: "Tipos de Documentos Recibidos",
+                                                subtitle: "Distribución de los DTEs registrados en compras",
                                                 chart: {
                                                     type: "bar-chart",
                                                     preset: "card",
@@ -597,14 +576,13 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                     {
                                         id: "dte-vs-total",
                                         content: {
-                                            type: "stat-card",
+                                            type: "chart-card",
                                             config: {
-                                                label: "Facturado vs Pendiente",
-                                                variant: "metric-chart",
-                                                value: analyticsData.invoicedStatusSummary.invoicedVolume > 0
+                                                title: "Facturado vs Pendiente",
+                                                figure: analyticsData.invoicedStatusSummary.invoicedVolume > 0
                                                     ? `${Math.round((analyticsData.invoicedStatusSummary.invoicedVolume / (analyticsData.totalVolume || 1)) * 100)}%`
                                                     : "0%",
-                                                subtext: `${analyticsData.invoicedStatusSummary.invoicedCount} órdenes con DTE de ${analyticsData.orderCount}`,
+                                                subtitle: `${analyticsData.invoicedStatusSummary.invoicedCount} órdenes con DTE de ${analyticsData.orderCount}`,
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",

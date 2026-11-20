@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { StatCard } from "@/components/shared"
+import { Metric, MetricStrip } from "@/components/shared"
 import { Collection, formatNumber, useEntityCollection } from "@/components/entity-view"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
@@ -43,16 +43,10 @@ function MakeVsBuySection({ mvb }: { mvb: MakeVsBuy }) {
     const noBuy = buy.receipts === 0
     return (
         <section className="flex flex-col gap-3" aria-label="Fabricar vs comprar">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <StatCard
-                    label="Fabricar" valueSize="xl" accent="primary" value={noMake ? "—" : formatMoney(make.unit_cost)}
-                    subtext={noMake ? undefined : `${make.orders} OT · ${formatNumber(make.units_made, 0)} un · BOM ${formatMoney(make.bom_cost)}`}
-                />
-                <StatCard
-                    label="Comprar" valueSize="xl" accent="info" value={noBuy ? "—" : formatMoney(buy.avg_unit_cost)}
-                    subtext={noBuy ? undefined : `${buy.receipts} recepciones · último ${formatMoney(buy.last_unit_cost)}${buy.last_date ? ` (${formatIsoDate(buy.last_date)})` : ""}`}
-                />
-            </div>
+            <MetricStrip label="Costo unitario de fabricar y de comprar">
+                <Metric label="Fabricar" value={noMake ? "—" : formatMoney(make.unit_cost)} context={noMake ? undefined : `${make.orders} OT · ${formatNumber(make.units_made, 0)} un · BOM ${formatMoney(make.bom_cost)}`} />
+                <Metric label="Comprar" value={noBuy ? "—" : formatMoney(buy.avg_unit_cost)} context={noBuy ? undefined : `${buy.receipts} recepciones · último ${formatMoney(buy.last_unit_cost)}${buy.last_date ? ` (${formatIsoDate(buy.last_date)})` : ""}`} />
+            </MetricStrip>
             {noMake && <p className="text-xs text-muted-foreground">Sin OT con costo en el periodo</p>}
             {noBuy && <p className="text-xs text-muted-foreground">Sin compras recibidas en el periodo</p>}
             {mvb.saving_per_unit !== null && mvb.saving_total !== null && mvb.cheaper && (

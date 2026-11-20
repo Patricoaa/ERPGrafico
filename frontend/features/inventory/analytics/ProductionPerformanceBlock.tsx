@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { AnalyticsChart, StatCard } from "@/components/shared"
+import { AnalyticsChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, formatNumber, useEntityCollection } from "@/components/entity-view"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
@@ -68,16 +68,16 @@ export function ProductionPerformanceBlock({ productId }: { productId: number })
         const hasEstimated = data.orders.some((o) => o.estimated)
         body = (
             <>
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-                    <StatCard
-                        label="Costo real por unidad" valueSize="xl" accent="primary"
-                        value={formatMoney(k.unit_real_cost)}
-                        subtext={k.bom_cost > 0 ? `${signedPct(k.bom_gap_pct)} vs BOM` : "Sin BOM activa"}
-                    />
-                    <StatCard label="Costo BOM actual" valueSize="xl" accent="info" value={formatMoney(k.bom_cost)} />
-                    <StatCard label="Desviación de insumos" valueSize="xl" accent={k.deviation_pct > 0 ? "warning" : "success"} value={signedPct(k.deviation_pct)} />
-                    <StatCard label="Lead time" valueSize="xl" accent="info" value={k.lead_time_days === null ? "—" : `${formatNumber(k.lead_time_days, 1)} días`} />
-                    <StatCard label="Rectificación" valueSize="xl" accent="info" value={pct(k.rectification_rate)} />
+                <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
+                    <MetricStrip label="Costos de fabricación">
+                        <Metric label="Costo real por unidad" value={formatMoney(k.unit_real_cost)} context={k.bom_cost > 0 ? `${signedPct(k.bom_gap_pct)} vs BOM` : "Sin BOM activa"} />
+                        <Metric label="Costo BOM actual" value={formatMoney(k.bom_cost)} />
+                        <Metric label="Desviación de insumos" value={signedPct(k.deviation_pct)} tone={k.deviation_pct > 0 ? "warning" : "success"} />
+                    </MetricStrip>
+                    <MetricStrip label="Tiempos y calidad de fabricación">
+                        <Metric label="Lead time" value={k.lead_time_days === null ? "—" : `${formatNumber(k.lead_time_days, 1)} días`} />
+                        <Metric label="Rectificación" value={pct(k.rectification_rate)} />
+                    </MetricStrip>
                 </div>
                 {hasEstimated && (
                     <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">

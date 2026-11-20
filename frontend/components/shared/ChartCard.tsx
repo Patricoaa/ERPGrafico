@@ -24,7 +24,14 @@ export interface ChartCardProps {
     /** No data for the period: shows this text instead of the chart. */
     empty?: string
     error?: { message?: string; onRetry?: () => void }
-    /** Body height. Default `h-56`. Pass a Tailwind height class. */
+    /**
+     * A headline figure in the header (e.g. "85" before "Entregas a tiempo"), for a chart that breaks
+     * down one number. Rendered with `kpi-value-compact`. If the figure is the point, use a `Metric`.
+     */
+    figure?: React.ReactNode
+    /** Fill the parent's height (analytics grids): the body takes the remaining space instead of `h-56`. */
+    fill?: boolean
+    /** Body height when not `fill`. Default `h-56`. Pass a Tailwind height class. */
     bodyClassName?: string
     className?: string
 }
@@ -43,7 +50,7 @@ const toneIcon: Record<MetricTone, string> = {
  */
 export function ChartCard({
     title, subtitle, lead: Lead, tone = "neutral", legend, delta, actions, children,
-    loading = false, empty, error, bodyClassName = "h-56", className,
+    loading = false, empty, error, figure, fill = false, bodyClassName = "h-56", className,
 }: ChartCardProps) {
     let body: React.ReactNode
     if (loading) {
@@ -65,7 +72,7 @@ export function ChartCard({
     }
 
     return (
-        <section className={cn("surface-panel flex min-w-0 flex-col gap-3 px-3 py-2.5 text-card-foreground [[data-density=comfortable]_&]:px-4 [[data-density=comfortable]_&]:py-3", className)} aria-busy={loading || undefined}>
+        <section className={cn("surface-panel flex min-w-0 flex-col gap-3 px-3 py-2.5 text-card-foreground [[data-density=comfortable]_&]:px-4 [[data-density=comfortable]_&]:py-3", fill && "h-full min-h-0", className)} aria-busy={loading || undefined}>
             <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                 <div className="flex min-w-0 items-center gap-2.5">
                     {Lead && (
@@ -73,6 +80,7 @@ export function ChartCard({
                             <Lead className="h-4 w-4" aria-hidden="true" />
                         </CardLead>
                     )}
+                    {figure !== undefined && figure !== null && <span className="kpi-value-compact shrink-0 whitespace-nowrap">{figure}</span>}
                     <div className="min-w-0">
                         <h3 className="truncate text-sm font-semibold leading-tight tracking-tight">{title}</h3>
                         {subtitle && <p className="text-2xs leading-snug text-muted-foreground">{subtitle}</p>}
@@ -84,7 +92,7 @@ export function ChartCard({
                     {actions}
                 </div>
             </header>
-            <div className={cn("min-h-0", bodyClassName)}>{body}</div>
+            <div className={cn("flex min-h-0 flex-col", fill ? "min-h-32 flex-1" : bodyClassName)}>{body}</div>
         </section>
     )
 }

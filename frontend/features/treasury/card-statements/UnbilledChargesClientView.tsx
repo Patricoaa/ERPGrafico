@@ -342,10 +342,9 @@ export function UnbilledChargesClientView({
                                             {
                                                 id: 'cupo-chart',
                                                 content: chargeTypeSummary.length > 0 || totalInstCount > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Distribución de Cargos',
-                                                        variant: 'chart',
+                                                        title: 'Distribución de Cargos',
                                                         chart: {
                                                             type: 'pie-chart',
                                                             preset: 'card',
@@ -378,10 +377,9 @@ export function UnbilledChargesClientView({
                                             {
                                                 id: 'monthly-new',
                                                 content: analyticsData.monthlyNewCharges.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Cargos vs Cuotas',
-                                                        variant: 'chart',
+                                                        title: 'Cargos vs Cuotas',
                                                         chart: {
                                                             type: 'bar-chart',
                                                             preset: 'card',
@@ -405,10 +403,9 @@ export function UnbilledChargesClientView({
                                             {
                                                 id: 'monthly-proj',
                                                 content: analyticsData.monthlyProjection.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Proyección Mensual',
-                                                        variant: 'chart',
+                                                        title: 'Proyección Mensual',
                                                         chart: {
                                                             type: 'line-chart',
                                                             preset: 'card',
@@ -437,10 +434,9 @@ export function UnbilledChargesClientView({
                                             {
                                                 id: 'partner-bar',
                                                 content: analyticsData.topPartners.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Top Proveedores por Monto',
-                                                        variant: 'chart',
+                                                        title: 'Top Proveedores por Monto',
                                                         chart: {
                                                             type: 'bar-chart',
                                                             preset: 'card',
@@ -464,10 +460,9 @@ export function UnbilledChargesClientView({
                                             {
                                                 id: 'partner-dist',
                                                 content: analyticsData.partnerDistribution.length > 0 ? {
-                                                    type: 'stat-card',
+                                                    type: 'chart-card',
                                                     config: {
-                                                        label: 'Distribución por Proveedor',
-                                                        variant: 'chart',
+                                                        title: 'Distribución por Proveedor',
                                                         chart: {
                                                             type: 'pie-chart',
                                                             preset: 'card',

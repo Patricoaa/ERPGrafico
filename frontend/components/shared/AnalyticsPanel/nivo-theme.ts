@@ -74,7 +74,7 @@ export function getPieChartColors(): string[] {
     return getChartPalette().map((v) => v.startsWith("oklch(") ? desaturateOklch(v) : v)
 }
 
-// ── Card presets (centralized aesthetics for StatCard context) ──
+// ── Card presets (centralized aesthetics for ChartCard context) ──
 
 export const cardBarDefaults = {
     margin: { top: 8, right: 8, bottom: 24, left: 40 },
