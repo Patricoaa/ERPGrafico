@@ -28,6 +28,9 @@ Para un producto fabricable el análisis solo mostraba el consumo de insumos: no
 
 - OT sin consumos aparecen en la tabla pero no entran en promedios; OT terminadas sin evento `FINISHED` en el historial se incluyen siempre (no hay fecha para filtrarlas).
 - El costo estimado es una aproximación declarada en la UI.
+- Los servicios (tercerizados o propios) no generan consumo de stock: su costo real es `quantity × unit_price` (tercerizado) o `quantity × cost_price` del componente, igual que `finalize_production`, y entran al costo real y a la tabla de insumos. Una OT sin ningún costo registrado informa costo real, desviación y margen como `null`.
+- Los ingresos son netos de IVA y de descuento de línea (misma base que el bloque de precio y margen). La cantidad se convierte a la unidad base del producto.
+- Límite conocido: `rectify_production` sobrescribe `quantity_planned` con las cantidades reales (el original queda en `stage_data["rectification_snapshot"]`), por lo que en OT rectificadas la desviación por insumo refleja solo la variación de precio, no la de cantidad.
 - Fuera de alcance (3c): fabricar vs comprar, sensibilidad al costo de insumos, rotación.
 
 ## Alternativas descartadas

@@ -11,7 +11,7 @@ export interface ProductionPerformanceKpis {
     bom_cost: number
     bom_gap_pct: number
     deviation_pct: number
-    lead_time_days: number
+    lead_time_days: number | null
     rectification_rate: number
 }
 
@@ -21,9 +21,9 @@ export interface ProductionOrderPerformance {
     date: string | null
     qty: number
     planned_cost: number
-    real_cost: number
-    deviation: number
-    deviation_pct: number
+    real_cost: number | null
+    deviation: number | null
+    deviation_pct: number | null
     revenue: number | null
     margin: number | null
     estimated: boolean

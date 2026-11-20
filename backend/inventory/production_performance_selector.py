@@ -9,10 +9,13 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, FloatField, Min, Q, Sum
+from django.core.exceptions import ValidationError
+from django.db.models import Count, ExpressionWrapper, FloatField, Min, Q, Sum, Value
 from django.db.models.functions import Cast, Coalesce
+from django.utils import timezone
 
 from .models import Product, UoM
+from .sales_impact_selector import discount_ratio_expression
 from .services import UoMService
 
 _SECONDS_PER_DAY = 86400.0
@@ -52,16 +55,23 @@ class ProductionPerformanceSelector:
             .annotate(
                 finished_at=Min("stage_history__created_at", filter=Q(stage_history__stage="FINISHED")),
                 first_event_at=Min("stage_history__created_at"),
+                # Net of IVA and line discount (same basis as the sales-impact block).
+                revenue_net=ExpressionWrapper(
+                    _f("sale_line__quantity") * _f("sale_line__unit_price")
+                    * (Value(1.0, output_field=FloatField()) - discount_ratio_expression()),
+                    output_field=FloatField(),
+                ),
             )
             .values(
                 "id", "number", "is_rectified", "actual_quantity_produced", "stage_data",
-                "sale_line__quantity", "sale_line__subtotal", "sale_line_id", "finished_at", "first_event_at",
+                "sale_line__quantity", "sale_line__uom_id", "sale_line__product__uom_id", "product__uom_id",
+                "sale_line_id", "revenue_net", "finished_at", "first_event_at",
             )
             .order_by("-finished_at", "-id")
         )
         orders = [
             o for o in orders_qs
-            if o["finished_at"] is None or date_from <= o["finished_at"].date() <= date_to
+            if o["finished_at"] is None or date_from <= timezone.localtime(o["finished_at"]).date() <= date_to
         ]
         ids = [o["id"] for o in orders]
 
@@ -85,38 +95,65 @@ class ProductionPerformanceSelector:
         }
 
         uoms = {u.id: u for u in UoM.objects.all()}
-        planned_by_order: dict[int, float] = defaultdict(float)
-        planned_by_component: dict[int, dict] = defaultdict(lambda: {"qty": 0.0, "cost": 0.0})
-        for m in WorkOrderMaterial.objects.filter(work_order_id__in=ids).values(
-            "work_order_id", "component_id", "component__uom_id", "uom_id", "quantity_planned", "unit_cost_snapshot"
-        ):
-            qty = Decimal(m["quantity_planned"])
-            base_uom, from_uom = uoms.get(m["component__uom_id"]), uoms.get(m["uom_id"])
-            if base_uom and from_uom and base_uom.id != from_uom.id:
+        failed_conversion: set[int] = set()
+
+        def convert(qty: Decimal, from_id, to_id, order_id: int) -> Decimal:
+            from_uom, to_uom = uoms.get(from_id), uoms.get(to_id)
+            if from_uom and to_uom and from_uom.id != to_uom.id:
                 try:
-                    qty = UoMService.convert_quantity(qty, from_uom, base_uom)
-                except Exception:
-                    pass
-            cost = float(qty * Decimal(m["unit_cost_snapshot"]))
+                    return UoMService.convert_quantity(qty, from_uom, to_uom)
+                except ValidationError:
+                    failed_conversion.add(order_id)
+            return qty
+
+        planned_by_order: dict[int, float] = defaultdict(float)
+        service_real_by_order: dict[int, float] = defaultdict(float)
+        planned_by_component: dict[int, dict] = defaultdict(lambda: {"qty": 0.0, "cost": 0.0, "name": ""})
+        service_real_by_component: dict[int, dict] = defaultdict(lambda: {"qty": 0.0, "cost": 0.0})
+        for m in WorkOrderMaterial.objects.filter(work_order_id__in=ids).values(
+            "work_order_id", "component_id", "component__name", "component__uom_id", "component__product_type",
+            "component__cost_price", "uom_id", "quantity_planned", "unit_cost_snapshot", "is_outsourced", "unit_price",
+        ):
+            qty = convert(Decimal(m["quantity_planned"]), m["uom_id"], m["component__uom_id"], m["work_order_id"])
+            is_service = m["component__product_type"] == Product.Type.SERVICE
+            # Services have no stock move: finalize books them at the PO price (outsourced) or the component cost.
+            unit = Decimal(m["unit_price"]) if is_service and m["is_outsourced"] else Decimal(m["unit_cost_snapshot"])
+            cost = float(qty * unit)
             planned_by_order[m["work_order_id"]] += cost
-            planned_by_component[m["component_id"]]["qty"] += float(qty)
-            planned_by_component[m["component_id"]]["cost"] += cost
+            entry = planned_by_component[m["component_id"]]
+            entry["qty"] += float(qty)
+            entry["cost"] += cost
+            entry["name"] = m["component__name"]
+            if is_service:
+                real_unit = Decimal(m["unit_price"]) if m["is_outsourced"] else Decimal(m["component__cost_price"])
+                real = float(qty * real_unit)
+                service_real_by_order[m["work_order_id"]] += real
+                service_real_by_component[m["component_id"]]["qty"] += float(qty)
+                service_real_by_component[m["component_id"]]["cost"] += real
 
         rows = []
         for o in orders:
-            qty = float(o["actual_quantity_produced"] or o["sale_line__quantity"] or (o["stage_data"] or {}).get("quantity") or 0)
-            has_consumption = o["id"] in consumption
-            real = float(consumption[o["id"]]["real"] or 0) if has_consumption else 0.0
+            raw = o["actual_quantity_produced"] or o["sale_line__quantity"] or (o["stage_data"] or {}).get("quantity") or 0
+            if o["actual_quantity_produced"]:
+                qty = float(raw)  # declared in the product's base unit
+            else:
+                from_uom = o["sale_line__uom_id"] or (o["stage_data"] or {}).get("uom_id")
+                base_uom = o["sale_line__product__uom_id"] or o["product__uom_id"]
+                qty = float(convert(Decimal(str(raw)), from_uom, base_uom, o["id"]))
+            has_cost = o["id"] in consumption or o["id"] in service_real_by_order
+            real = float((consumption.get(o["id"]) or {}).get("real") or 0) + service_real_by_order.get(o["id"], 0.0) if has_cost else None
             planned = planned_by_order.get(o["id"], 0.0)
-            revenue = float(o["sale_line__subtotal"]) if o["sale_line_id"] else None
+            revenue = float(o["revenue_net"]) if o["sale_line_id"] and o["revenue_net"] is not None else None
             rows.append({
                 "id": o["id"], "number": o["number"],
-                "date": o["finished_at"].date().isoformat() if o["finished_at"] else None,
+                "date": timezone.localtime(o["finished_at"]).date().isoformat() if o["finished_at"] else None,
                 "qty": qty, "planned_cost": planned, "real_cost": real,
-                "deviation": real - planned, "deviation_pct": _pct(real - planned, planned),
-                "revenue": revenue, "margin": (revenue - real) if revenue is not None else None,
-                "estimated": has_consumption and consumption[o["id"]]["estimated"] > 0,
-                "_costed": has_consumption and qty > 0,
+                "deviation": real - planned if real is not None else None,
+                "deviation_pct": _pct(real - planned, planned) if real is not None else None,
+                "revenue": revenue, "margin": (revenue - real) if revenue is not None and real is not None else None,
+                "estimated": ((consumption.get(o["id"]) or {}).get("estimated") or 0) > 0
+                or o["id"] in failed_conversion,
+                "_costed": has_cost and qty > 0,
             })
 
         costed = [r for r in rows if r["_costed"]]
@@ -129,15 +166,17 @@ class ProductionPerformanceSelector:
         ]
 
         stages = [] if express else ProductionPerformanceSelector._stages(WorkOrderHistory, ids)
-        materials = [
-            {
-                "component_id": cid, "name": row["product__name"],
-                "planned_qty": planned_by_component[cid]["qty"], "consumed_qty": float(row["qty"] or 0),
-                "planned_cost": planned_by_component[cid]["cost"], "real_cost": float(row["real"] or 0),
-                "deviation": float(row["real"] or 0) - planned_by_component[cid]["cost"],
-            }
-            for cid, row in consumed_by_component.items()
-        ]
+        materials = []
+        for cid in set(consumed_by_component) | set(planned_by_component):
+            cons = consumed_by_component.get(cid)
+            svc = service_real_by_component.get(cid, {"qty": 0.0, "cost": 0.0})
+            planned = planned_by_component.get(cid, {"qty": 0.0, "cost": 0.0, "name": ""})
+            real = float((cons or {}).get("real") or 0) + svc["cost"]
+            materials.append({
+                "component_id": cid, "name": (cons or {}).get("product__name") or planned["name"],
+                "planned_qty": planned["qty"], "consumed_qty": float((cons or {}).get("qty") or 0) + svc["qty"],
+                "planned_cost": planned["cost"], "real_cost": real, "deviation": real - planned["cost"],
+            })
         materials.sort(key=lambda m: -abs(m["deviation"]))
 
         for r in rows:
@@ -149,7 +188,7 @@ class ProductionPerformanceSelector:
                 "bom_cost": bom_cost,
                 "bom_gap_pct": _pct(unit_real - bom_cost, bom_cost) if bom_cost and unit_real else 0.0,
                 "deviation_pct": _pct(sum(r["deviation"] for r in with_plan), sum(r["planned_cost"] for r in with_plan)),
-                "lead_time_days": 0.0 if express or not lead_times else sum(lead_times) / len(lead_times),
+                "lead_time_days": None if express or not lead_times else sum(lead_times) / len(lead_times),
                 "rectification_rate": _pct(sum(1 for o in orders if o["is_rectified"]), len(orders)),
             },
             "orders": rows,
@@ -167,17 +206,14 @@ class ProductionPerformanceSelector:
         for e in events:
             by_order[e["work_order_id"]].append((e["stage"], e["created_at"]))
 
-        totals: dict[str, float] = defaultdict(float)
-        counts: dict[str, int] = defaultdict(int)
-        orders_seen: dict[str, set[int]] = defaultdict(set)
+        # Days per stage per order, summing every segment (notes logged in the same stage add up to the stage total).
+        per_order: dict[str, dict[int, float]] = defaultdict(lambda: defaultdict(float))
         for order_id, seq in by_order.items():
             for (stage, started), (_, ended) in zip(seq, seq[1:], strict=False):
-                totals[stage] += (ended - started).total_seconds() / _SECONDS_PER_DAY
-                counts[stage] += 1
-                orders_seen[stage].add(order_id)
+                per_order[stage][order_id] += (ended - started).total_seconds() / _SECONDS_PER_DAY
 
         labels = dict(history_model._meta.get_field("work_order").related_model.Stage.choices)
         return [
-            {"stage": s, "label": str(labels.get(s, s)), "avg_days": totals[s] / counts[s], "orders": len(orders_seen[s])}
-            for s in totals
+            {"stage": s, "label": str(labels.get(s, s)), "avg_days": sum(days.values()) / len(days), "orders": len(days)}
+            for s, days in per_order.items()
         ]

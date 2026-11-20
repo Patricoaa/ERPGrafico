@@ -159,8 +159,9 @@ def test_margin_from_sale_line(env):
     wo = _ot(env, sale_line=delivery_line.sale_line, qty="10")
     _consume(env, wo, paper, "4", cost="50")
     row = _row(env, wo)
-    assert row["revenue"] == pytest.approx(float(delivery_line.sale_line.subtotal))
-    assert row["margin"] == pytest.approx(float(delivery_line.sale_line.subtotal) - 200.0)
+    # net of IVA and the 1190 line discount: 10 × 1000 × (1 − 1190 / 11900)
+    assert row["revenue"] == pytest.approx(9000.0)
+    assert row["margin"] == pytest.approx(9000.0 - 200.0)
 
 
 def test_manual_order_has_no_revenue(env):
@@ -223,7 +224,7 @@ def test_express_has_no_stages(env):
     _ot(env, stages=[("PRESS", datetime(2026, 3, 1, tzinfo=timezone.utc))])
     result = _perf(env)
     assert result["stages"] == []
-    assert result["kpis"]["lead_time_days"] == 0.0
+    assert result["kpis"]["lead_time_days"] is None
 
 
 def test_rectification_rate(env):
@@ -273,3 +274,57 @@ def test_query_count_constant(env):
     assert len(many) == len(few)
     assert UoM.objects.exists()
 
+
+
+def test_revenue_is_net_of_iva_and_discount(env):
+    delivery_line = _sale(env, qty="10", price="1000", gross="1190", discount="1190")  # net 10000 − 10 %
+    wo = _ot(env, sale_line=delivery_line.sale_line, qty="10")
+    _consume(env, wo, _component(env), "4", cost="50")
+    row = _row(env, wo)
+    assert row["revenue"] == pytest.approx(9000.0)
+    assert row["margin"] == pytest.approx(9000.0 - 200.0)
+
+
+def test_sale_line_quantity_is_converted_to_product_base_unit(env):
+    dozen = UoM.objects.create(name="Docena", category=env["uom"].category, uom_type="BIGGER", ratio=Decimal("12"))
+    delivery_line = _sale(env, qty="2", uom=dozen)
+    wo = _ot(env, sale_line=delivery_line.sale_line, qty="2")
+    _consume(env, wo, _component(env), "4", cost="60")  # real 240 for 24 base units
+    assert _row(env, wo)["qty"] == pytest.approx(24.0)
+    assert _perf(env)["kpis"]["unit_real_cost"] == pytest.approx(10.0)
+
+
+def test_service_and_outsourced_cost_counts_in_real_cost_and_materials(env):
+    service = Product.objects.create(
+        name="Laminado", category=env["category"], uom=env["uom"], sale_uom=env["uom"], purchase_uom=env["uom"],
+        product_type="SERVICE", sale_price=Decimal("10"),
+    )
+    wo = _ot(env)
+    mat = _material(wo, service, "1", "0", env["uom"])
+    mat.is_outsourced = True
+    mat.unit_price = Decimal("30000")
+    mat.save()
+    result = _perf(env)
+    assert _row(env, wo)["real_cost"] == pytest.approx(30000.0)
+    assert _row(env, wo)["planned_cost"] == pytest.approx(30000.0)
+    assert [m["name"] for m in result["materials"]] == ["Laminado"]
+
+
+def test_order_without_any_cost_reports_null_cost_fields(env):
+    wo = _ot(env)
+    row = _row(env, wo)
+    assert row["real_cost"] is None and row["deviation"] is None
+    assert row["deviation_pct"] is None and row["margin"] is None
+
+
+def test_stage_average_ignores_same_stage_notes_and_is_per_order(env):
+    _ot(
+        env, finished_on=datetime(2026, 3, 10, tzinfo=timezone.utc),
+        stages=[
+            ("PREPRESS", datetime(2026, 3, 1, tzinfo=timezone.utc)),
+            ("PREPRESS", datetime(2026, 3, 3, tzinfo=timezone.utc)),  # note logged while still in PREPRESS
+            ("PRESS", datetime(2026, 3, 5, tzinfo=timezone.utc)),
+        ],
+    )
+    stages = {s["stage"]: s for s in _perf(env)["stages"]}
+    assert stages["PREPRESS"]["avg_days"] == pytest.approx(4.0)

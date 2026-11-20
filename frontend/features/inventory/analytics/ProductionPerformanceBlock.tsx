@@ -24,8 +24,8 @@ function monthsAgoIso(months: number, today = new Date()): string {
     return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`
 }
 
-const decimal1 = (n: number) => formatNumber(n, 1)
-const signedPct = (n: number) => `${n > 0 ? "+" : ""}${decimal1(n)} %`
+const pct = (n: number) => formatNumber(n, 1, "%")
+const signedPct = (n: number) => `${n > 0 ? "+" : ""}${pct(n)}`
 
 /** "Fabricación": real cost vs BOM, input deviation, stage times and margin per work order (ADR-0146). */
 export function ProductionPerformanceBlock({ productId }: { productId: number }) {
@@ -84,8 +84,8 @@ export function ProductionPerformanceBlock({ productId }: { productId: number })
                     />
                     <StatCard label="Costo BOM actual" valueSize="xl" accent="info" value={formatMoney(k.bom_cost)} />
                     <StatCard label="Desviación de insumos" valueSize="xl" accent={k.deviation_pct > 0 ? "warning" : "success"} value={signedPct(k.deviation_pct)} />
-                    <StatCard label="Lead time" valueSize="xl" accent="info" value={`${decimal1(k.lead_time_days)} días`} />
-                    <StatCard label="Rectificación" valueSize="xl" accent="info" value={`${decimal1(k.rectification_rate)} %`} />
+                    <StatCard label="Lead time" valueSize="xl" accent="info" value={k.lead_time_days === null ? "—" : `${formatNumber(k.lead_time_days, 1)} días`} />
+                    <StatCard label="Rectificación" valueSize="xl" accent="info" value={pct(k.rectification_rate)} />
                 </div>
                 {hasEstimated && (
                     <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">

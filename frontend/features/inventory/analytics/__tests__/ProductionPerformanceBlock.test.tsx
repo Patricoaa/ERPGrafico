@@ -103,4 +103,11 @@ describe("ProductionPerformanceBlock", () => {
         const next = (state.usePerf.mock.calls.at(-1)?.[1] as ProductionPerformanceParams).date_from
         expect(next).not.toBe(first)
     })
+
+    it("shows a dash instead of 0 days when there is no lead time (express products)", () => {
+        state.data = { ...PERF, kpis: { ...PERF.kpis, lead_time_days: null } }
+        render(<ProductionPerformanceBlock productId={7} />)
+        expect(screen.getByText("Lead time")).toBeInTheDocument()
+        expect(screen.queryByText(/días/)).not.toBeInTheDocument()
+    })
 })
