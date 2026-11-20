@@ -249,3 +249,81 @@ def test_query_count_constant_with_more_moves(env):
     with CaptureQueriesContext(connection) as many:
         _analysis(env)
     assert len(many) == len(few)
+
+
+# ── Bodegas y variantes ──────────────────────────────────────────────────────
+
+def test_warehouses_on_hand_and_last_move(env):
+    other = Warehouse.objects.create(name="Bodega 2", code="B2")
+    _move(env, "vendor", "internal", "8", on=date(2026, 12, 1))  # moves keep the Stock table in sync
+    _move(env, "vendor", "internal", "3", on=date(2026, 6, 1), dst_wh=other)
+    warehouses = {w["name"]: w for w in _analysis(env)["warehouses"]}
+    assert warehouses["Bodega"]["on_hand"] == pytest.approx(8.0)
+    assert warehouses["Bodega"]["last_move_date"] == "2026-12-01"
+    assert warehouses["Bodega 2"]["on_hand"] == pytest.approx(3.0)
+    assert warehouses["Bodega"]["idle"] is False
+
+
+def test_warehouse_idle(env):
+    other = Warehouse.objects.create(name="Bodega 2", code="B2")
+    _move(env, "vendor", "internal", "3", on=date(2026, 6, 1), dst_wh=other)
+    warehouses = {w["name"]: w for w in _analysis(env)["warehouses"]}
+    assert warehouses["Bodega 2"]["idle"] is True
+    assert {w["name"]: w for w in _analysis(env, idle_days=180)["warehouses"]}["Bodega 2"]["idle"] is True
+    assert {w["name"]: w for w in _analysis(env, date_to=date(2026, 7, 1))["warehouses"]}["Bodega 2"]["idle"] is False
+
+
+def test_transfer_updates_both_warehouses_last_move(env):
+    other = Warehouse.objects.create(name="Bodega 2", code="B2")
+    _move(env, "internal", "internal", "4", on=date(2026, 9, 10), dst_wh=other)
+    warehouses = {w["name"]: w for w in _analysis(env)["warehouses"]}
+    assert warehouses["Bodega"]["last_move_date"] == "2026-09-10"
+    assert warehouses["Bodega 2"]["last_move_date"] == "2026-09-10"
+
+
+def test_variants_sum_to_total(env):
+    parent = env["product"]
+    variants = [
+        Product.objects.create(
+            name=name, category=env["category"], uom=env["uom"], sale_uom=env["uom"], purchase_uom=env["uom"],
+            product_type="STORABLE", sale_price=Decimal("1000"), parent_template=parent, variant_display_name=name,
+        )
+        for name in ("Tarjeta A4", "Tarjeta A5")
+    ]
+    Product.objects.filter(pk=parent.pk).update(has_variants=True)
+    parent.refresh_from_db()
+    _stock(env, "6", product=variants[0])
+    _stock(env, "4", product=variants[1])
+    result = _analysis(env, product=parent)
+    rows = {v["name"]: v for v in result["variants"]}
+    assert rows["Tarjeta A4"]["on_hand"] == pytest.approx(6.0)
+    assert rows["Tarjeta A5"]["available"] == pytest.approx(4.0)
+    assert sum(v["on_hand"] for v in result["variants"]) == pytest.approx(result["today"]["on_hand"])
+
+
+def test_no_variants_for_simple_product(env):
+    _stock(env, "5")
+    assert _analysis(env)["variants"] == []
+
+
+def test_query_count_constant_with_more_warehouses_and_variants(env):
+    parent = env["product"]
+    Product.objects.filter(pk=parent.pk).update(has_variants=True)
+    parent.refresh_from_db()
+
+    def add(i):
+        variant = Product.objects.create(
+            name=f"V{i}", category=env["category"], uom=env["uom"], sale_uom=env["uom"], purchase_uom=env["uom"],
+            product_type="STORABLE", sale_price=Decimal("1000"), parent_template=parent,
+        )
+        warehouse = Warehouse.objects.create(name=f"B{i}", code=f"W{i}")
+        _move(env, "vendor", "internal", "2", product=variant, dst_wh=warehouse)
+
+    add(0)
+    with CaptureQueriesContext(connection) as few:
+        _analysis(env, product=parent)
+    for i in range(1, 8):
+        add(i)
+    with CaptureQueriesContext(connection) as many:
+        _analysis(env, product=parent)
+    assert len(many) == len(few)

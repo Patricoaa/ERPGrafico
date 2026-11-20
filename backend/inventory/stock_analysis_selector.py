@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from django.db.models import F, Min, Sum
+from django.db.models import F, Max, Min, Sum
 
 from .costs_selector import _next_start
 from .models import ADJUSTMENT_VIRTUAL_NAMES, Product, Stock, StockMove
@@ -151,6 +151,42 @@ def _adjustments(product_ids: list[int], start: date, end: date) -> list[dict]:
     return [acc[k] for k in ("loss", "gain", "revaluation") if k in acc]
 
 
+def _warehouses(product_ids: list[int], date_to: date, idle_days: int) -> list[dict]:
+    rows: dict[int, dict] = {}
+    for r in Stock.objects.filter(product_id__in=product_ids).values("warehouse_id", "warehouse__name").annotate(qty=Sum("quantity")):
+        rows[r["warehouse_id"]] = {"id": r["warehouse_id"], "name": r["warehouse__name"], "on_hand": float(r["qty"] or 0), "last": None}
+    moves = StockMove.objects.filter(product_id__in=product_ids, date__lte=date_to)
+    for side in ("source_location", "destination_location"):
+        for r in (
+            moves.filter(**{f"{side}__warehouse__isnull": False})
+            .values(f"{side}__warehouse_id", f"{side}__warehouse__name").annotate(last=Max("date"))
+        ):
+            entry = rows.setdefault(r[f"{side}__warehouse_id"], {
+                "id": r[f"{side}__warehouse_id"], "name": r[f"{side}__warehouse__name"], "on_hand": 0.0, "last": None,
+            })
+            entry["last"] = max(filter(None, (entry["last"], r["last"])))
+    result = []
+    for entry in sorted(rows.values(), key=lambda w: (-w["on_hand"], w["name"])):
+        last = entry.pop("last")
+        result.append({
+            **entry,
+            "last_move_date": last.isoformat() if last else None,
+            "idle": entry["on_hand"] > 0 and (last is None or (date_to - last).days >= idle_days),
+        })
+    return result
+
+
+def _variants(product: Product, on_hand: dict[int, float], reserved: dict[int, float]) -> list[dict]:
+    rows = []
+    for variant in product.variants.values("id", "name", "variant_display_name").order_by("id"):
+        qty, held = on_hand.get(variant["id"], 0.0), reserved.get(variant["id"], 0.0)
+        rows.append({
+            "id": variant["id"], "name": variant["variant_display_name"] or variant["name"],
+            "on_hand": qty, "reserved": held, "available": qty - held,
+        })
+    return rows
+
+
 class StockAnalysisSelector:
     @staticmethod
     def get_analysis(product: Product, params: StockAnalysisParams) -> dict:
@@ -160,11 +196,13 @@ class StockAnalysisSelector:
         date_to = params.date_to or date.today()
 
         start = _range_start(product_ids, params.date_from, date_to)
-        on_hand = sum(_on_hand(product_ids).values())
+        on_hand_by_product = _on_hand(product_ids)
+        reserved_by_product = _reserved(product_ids)
+        on_hand = sum(on_hand_by_product.values())
         rotation = _rotation(product, product_ids, start, date_to, params.idle_days)
         adjustments = _adjustments(product_ids, start, date_to)
         loss = next((a["qty"] for a in adjustments if a["key"] == "loss"), 0.0)
-        reserved = sum(_reserved(product_ids).values())
+        reserved = sum(reserved_by_product.values())
         return {
             "today": {
                 "on_hand": on_hand,
@@ -177,6 +215,6 @@ class StockAnalysisSelector:
             "flows": _flows(product_ids, start, date_to),
             "adjustments": adjustments,
             "loss_pct": loss / rotation["out_qty"] * 100 if rotation["out_qty"] else None,
-            "warehouses": [],
-            "variants": [],
+            "warehouses": _warehouses(product_ids, date_to, params.idle_days),
+            "variants": _variants(product, on_hand_by_product, reserved_by_product) if product.has_variants else [],
         }
