@@ -400,6 +400,43 @@ class ProductSelector:
         return list(names)
 
     @staticmethod
+    def get_capabilities(product: Product) -> dict:
+        """What a product can report on (drives the tabs/KPIs of its analytics hub)."""
+        from production.models import BillOfMaterialsLine
+
+        Type = Product.Type
+        manufactures = product.product_type == Type.MANUFACTURABLE
+        sells = bool(product.can_be_sold)
+
+        if manufactures:
+            if product.is_express:
+                segment = "MANUFACTURABLE_EXPRESS"
+            elif product.track_inventory:
+                segment = "MANUFACTURABLE_STOCKED"
+            else:
+                segment = "MANUFACTURABLE_ON_DEMAND"
+        elif product.product_type in (Type.SERVICE, Type.SUBSCRIPTION):
+            segment = product.product_type
+        elif not sells:
+            segment = "INPUT"
+        else:
+            segment = product.product_type
+
+        return {
+            "sells": sells,
+            "buys": bool(product.can_be_purchased),
+            "tracks_stock": bool(product.track_inventory),
+            "manufactures": manufactures,
+            "express": bool(product.is_express),
+            "recurring": product.product_type == Type.SUBSCRIPTION,
+            "used_in_production": BillOfMaterialsLine.objects.filter(
+                component=product, bom__active=True
+            ).exists(),
+            "has_variants": bool(product.has_variants),
+            "segment": str(segment),
+        }
+
+    @staticmethod
     def get_insights(instance: Product) -> dict:
         product_ids = [instance.id]
         if instance.has_variants:
@@ -691,6 +728,7 @@ class ProductSelector:
                 stock_history.append({"date": date_str, "stock": round(cumulative, 4)})
 
         return {
+            "capabilities": ProductSelector.get_capabilities(instance),
             "price_history": price_history,
             "kardex": kardex,
             "stock_history": stock_history,
