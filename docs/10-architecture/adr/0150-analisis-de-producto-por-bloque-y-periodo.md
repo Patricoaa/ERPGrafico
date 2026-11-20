@@ -33,6 +33,8 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 - **Tercer tab migrado: Costos** (`costs`). Bloque propio `CostsBlock` con endpoint `GET /inventory/products/{id}/costs/`, compuesto por **modo de costo** que decide el servidor: `purchased`, `manufactured_stock`, `manufactured_on_demand`, `manufactured_no_bom` y `stock_only`. La evolución de la BOM es teórica (receta actual valorada con el costo histórico de cada componente) porque la BOM no tiene historial; el costo real por orden la acompaña. Ya no usa `insights` ni muestra el aviso de histórico.
 - **Regla de dominio: un fabricable no se compra.** `Product.save()` fuerza `can_be_purchased = False` en fabricables (antes solo lo hacía el formulario) y la migración `inventory.0038` corrige los existentes (reverso `noop`). Efecto: un fabricable no ve Abastecimiento y la sección «Fabricar vs comprar» desaparece; el cálculo `make_vs_buy` de `sourcing` queda sin consumidor hasta retirarse con el legado.
 
+- **Cuarto tab migrado: Abastecimiento** (`procurement`). Bloque propio `ProcurementBlock` con endpoint `GET /inventory/products/{id}/procurement/`: cobertura (cálculo compartido con `operations`), compras con período anterior, proveedores con el preferido marcado y pendiente de recibir. No muestra tiempo de entrega, puntualidad ni punto de pedido: las recepciones suelen registrarse el mismo día que la orden y la fecha planificada no se usa, así que serían inferencia.
+
 ## Consecuencias
 
 - Mientras existan tabs legados, el período no los afecta; el modal avisa «Este tab muestra todo el histórico» cuando el período no es Histórico. El aviso se retira tab por tab.

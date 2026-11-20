@@ -60,3 +60,8 @@ Servidor: `inventory/procurement_selector.py`, serializer de parámetros, vista 
 ## Queda al implementador
 
 - Nombres de tipos, hooks y entidades, y orden fino de las secciones.
+
+## Desvíos de la implementación
+
+- La cobertura se extrajo a `operations_selector.coverage()`; `_rotation` comparte la misma fórmula (`_coverage_days`).
+- La columna del proveedor preferido se llama «Preferencia» (la celda dice «Preferido»).
