@@ -7,8 +7,7 @@ import {
     ShieldCheck,
     SlidersHorizontal,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { RailNav, type RailNavSection } from "@/components/shared"
 import type { MyProfile } from "@/types/profile"
 
 interface ProfileSettingsSidebarProps {
@@ -17,7 +16,7 @@ interface ProfileSettingsSidebarProps {
     onSectionChange: (section: string) => void
 }
 
-const navigationSections = [
+const navigationSections: RailNavSection[] = [
     {
         label: "Cuenta",
         items: [
@@ -34,50 +33,21 @@ const navigationSections = [
     },
 ]
 
+const partnerSection: RailNavSection = {
+    label: "Sociedad",
+    items: [{ label: "Participación", value: "partner", icon: BriefcaseBusiness }],
+}
+
 export function ProfileSettingsSidebar({ profile, activeSection, onSectionChange }: ProfileSettingsSidebarProps) {
     const contact = profile?.contact_detail || profile?.employee?.contact_detail
-    const sections = contact?.is_partner
-        ? [...navigationSections, {
-            label: "Sociedad",
-            items: [{ label: "Participación", value: "partner", icon: BriefcaseBusiness }],
-        }]
-        : navigationSections
+    const sections = contact?.is_partner ? [...navigationSections, partnerSection] : navigationSections
 
     return (
-        <div className="flex h-full min-h-0 flex-col bg-background px-1.5 py-5 sm:px-4">
-            <nav aria-label="Secciones del perfil" className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto custom-scrollbar">
-                {sections.map((section) => (
-                    <section key={section.label} className="flex flex-col gap-0.5">
-                        <h2 className="hidden px-2 pb-1.5 text-xs font-semibold text-foreground sm:block">
-                            {section.label}
-                        </h2>
-                        {section.items.map(({ label, value, icon: Icon }) => {
-                            const isActive = activeSection === value
-                            return (
-                                <Button
-                                    type="button"
-                                    key={value}
-                                    variant="ghost"
-                                    aria-label={label}
-                                    aria-current={isActive ? "page" : undefined}
-                                    title={label}
-                                    onClick={() => onSectionChange(value)}
-                                    className={cn(
-                                        "h-control-sm w-full justify-start gap-2 rounded-sm px-2 text-left text-xs font-normal transition-colors",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
-                                        isActive
-                                            ? "bg-card font-medium text-foreground shadow-card"
-                                            : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground",
-                                    )}
-                                >
-                                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                                    <span className="hidden truncate sm:inline">{label}</span>
-                                </Button>
-                            )
-                        })}
-                    </section>
-                ))}
-            </nav>
-        </div>
+        <RailNav
+            sections={sections}
+            value={activeSection}
+            onValueChange={onSectionChange}
+            ariaLabel="Secciones del perfil"
+        />
     )
 }

@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CMYK_ACCENT } from "@/components/shared"
+import { CMYK_ACCENT, railItemSurfaceClass } from "@/components/shared"
 import { Can } from "@/components/auth"
 import { MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-registry"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -58,9 +58,8 @@ export function ModuleRail({ currentModuleId, onNavigate, onProfileOpen }: Modul
                                         aria-current={isActive ? "page" : undefined}
                                         className={cn(
                                             "w-10 h-10 shrink-0 rounded-sm flex items-center justify-center transition-colors duration-200",
-                                            isActive
-                                                ? cn("bg-card shadow-card", accent.text)
-                                                : cn("text-muted-foreground hover:bg-foreground/5", accent.hoverText)
+                                            railItemSurfaceClass(isActive),
+                                            isActive ? accent.text : cn("text-muted-foreground", accent.hoverText)
                                         )}
                                     >
                                         <Icon className="w-5 h-5" />
@@ -84,9 +83,8 @@ export function ModuleRail({ currentModuleId, onNavigate, onProfileOpen }: Modul
                                 aria-current={currentModuleId === "settings" ? "page" : undefined}
                                 className={cn(
                                     "w-10 h-10 shrink-0 rounded-sm flex items-center justify-center transition-colors duration-200",
-                                    currentModuleId === "settings"
-                                        ? "bg-card shadow-card text-primary"
-                                        : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+                                    railItemSurfaceClass(currentModuleId === "settings"),
+                                    currentModuleId === "settings" ? "text-primary" : "text-muted-foreground hover:text-foreground"
                                 )}
                             >
                                 <Settings className="w-5 h-5" />

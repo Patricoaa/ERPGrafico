@@ -83,6 +83,7 @@ export * from './TabBar';
 export * from './FormFooter';
 export * from './FormSplitLayout';
 export * from './DrawerLayout';
+export * from './RailNav';
 export * from './DrawerResizableRail';
 export * from './EmptyState';
 export * from './SectionHeader';
