@@ -4,6 +4,7 @@ import { inventoryApi } from '../api/inventoryApi'
 import { useRealtime } from '@/features/realtime'
 import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
 import type { Page } from '@/lib/pagination'
+import type { ProductCapabilities } from '../analytics/productAnalyticsRegistry'
 import { BOMS_QUERY_KEY, PRODUCTS_KEYS, PRODUCTS_QUERY_KEY } from './queryKeys'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { staleTime } from '@/lib/query-config'
@@ -171,4 +172,18 @@ export function useProductInsights<T = unknown>(id: number | null | undefined) {
         enabled: !!id,
     })
     return { insights: insights ?? null, isLoading, isError, refetch }
+}
+
+/**
+ * Capabilities of a product (which analytics tabs/blocks apply). Lightweight: does not load the
+ * insights bundle, so the analytics modal can decide its tabs before any block fetches data.
+ */
+export function useProductCapabilities(id: number | null | undefined) {
+    const { data, isLoading, isError } = useQuery<ProductCapabilities | null>({
+        queryKey: id ? [...PRODUCTS_KEYS.detail(id), 'capabilities'] : ['products', 'capabilities', 'noop'],
+        queryFn: async () => (id ? inventoryApi.getProductCapabilities(id) : null),
+        staleTime: staleTime.stable,
+        enabled: !!id,
+    })
+    return { capabilities: data ?? null, isLoading, isError }
 }

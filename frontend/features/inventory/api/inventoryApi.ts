@@ -2,6 +2,7 @@ import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.ty
 import type { ProductionPerformance, ProductionPerformanceParams } from "../analytics/productionPerformance.types"
 import type { Operations, OperationsParams } from "../analytics/operations.types"
 import type { Sourcing, SourcingParams } from "../analytics/sourcing.types"
+import type { ProductCapabilities } from "../analytics/productAnalyticsRegistry"
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
 import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse, ProductAnalyticsParams, ProductAnalyticsResponse } from '../analyticsTypes'
@@ -112,6 +113,12 @@ export const inventoryApi = {
      */
     getProductInsights: async <T = unknown>(id: number): Promise<T> => {
         const { data } = await api.get<T>(`inventory/products/${id}/insights/`)
+        return data
+    },
+
+    /** Capabilities of a product (which analytics tabs apply), without loading the insights bundle. */
+    getProductCapabilities: async (id: number): Promise<ProductCapabilities> => {
+        const { data } = await api.get<ProductCapabilities>(`inventory/products/${id}/capabilities/`)
         return data
     },
 

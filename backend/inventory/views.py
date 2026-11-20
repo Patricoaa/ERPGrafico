@@ -213,6 +213,13 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         data = ProductSelector.get_insights(instance)
         return Response(data)
 
+    @action(detail=True, methods=["get"])
+    def capabilities(self, request, pk=None):
+        """Capacidades del producto (qué tabs de análisis aplican), sin cargar los insights."""
+        from .selectors import ProductSelector
+
+        return Response(ProductSelector.get_capabilities(self.get_object()))
+
     @action(detail=True, methods=["get"], url_path="sales-impact")
     def sales_impact(self, request, pk=None):
         """Margen real y analítica de reglas de precio, segmentable (ADR-0145)."""
