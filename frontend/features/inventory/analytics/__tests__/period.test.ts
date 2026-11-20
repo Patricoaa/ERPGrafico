@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { DEFAULT_PERIOD, PERIOD_OPTIONS, periodToDateFrom } from "../period"
+import { DEFAULT_PERIOD, PERIOD_OPTIONS, periodToDateFrom, periodToGranularity } from "../period"
 
 describe("periodToDateFrom", () => {
     it("omite la fecha para el histórico", () => {
@@ -24,5 +24,25 @@ describe("PERIOD_OPTIONS", () => {
 
     it("usa 12 meses por defecto", () => {
         expect(DEFAULT_PERIOD).toBe("12m")
+    })
+})
+
+describe("periodToGranularity", () => {
+    it("usa día para 1 mes", () => {
+        expect(periodToGranularity("1m")).toBe("day")
+    })
+
+    it("usa semana para 3 y 6 meses", () => {
+        expect(periodToGranularity("3m")).toBe("week")
+        expect(periodToGranularity("6m")).toBe("week")
+    })
+
+    it("usa mes para 12 y 24 meses", () => {
+        expect(periodToGranularity("12m")).toBe("month")
+        expect(periodToGranularity("24m")).toBe("month")
+    })
+
+    it("usa año para el histórico", () => {
+        expect(periodToGranularity("all")).toBe("year")
     })
 })
