@@ -32,7 +32,7 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { PrintableLayout } from "@/features/_shared"
 import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, drawerFooter, type DrawerMode } from "@/features/_shared"
 import { DataCell } from "@/components/shared"
-import { BarChart3 } from "lucide-react"
+import { ChartColumn } from "lucide-react"
 import { ProductAnalyticsModal } from "./ProductAnalyticsModal"
 
 // Product subcomponents and schema
@@ -753,13 +753,11 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
             {drawerIdentity.headerActions}
             {effectiveInitialData?.id && (
                 <DataCell.Action
-                    action="detail"
+                    icon={ChartColumn}
                     onClick={() => setInsightsOpen(true)}
                     title="Ver análisis del producto"
                     aria-label="Ver análisis del producto"
-                >
-                    <BarChart3 className="h-4 w-4" />
-                </DataCell.Action>
+                />
             )}
         </>
     )
