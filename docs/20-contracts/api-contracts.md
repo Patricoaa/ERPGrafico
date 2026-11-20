@@ -419,6 +419,7 @@ PATCH  /api/inventory/products/{id}/     update
 DELETE /api/inventory/products/{id}/     soft-delete (sets active=false)
 POST   /api/inventory/products/{id}/generate_variants/   generate variants for an existing template
 GET    /api/inventory/products/analytics/    agregación servidor (ProductAnalyticsService)
+GET    /api/inventory/products/{id}/capabilities/   capacidades del producto (qué tabs de análisis aplican, ADR-0150)
 ```
 
 `generate_variants/` request: `{ "selection": [{ "attribute": 12, "values": [31, 32] }] }`. Successful response: `{ "success": true, "created": 2, "skipped": 0 }`; invalid selection returns `400` with an `error` message.
