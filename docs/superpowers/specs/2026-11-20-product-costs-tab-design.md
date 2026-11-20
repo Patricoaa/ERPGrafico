@@ -94,3 +94,9 @@ Servidor: `inventory/costs_selector.py`, serializer de parámetros, vista ≤ 20
 - Conversión de unidades de las líneas de BOM (reutilizar la de `get_bom_cost`).
 - Cómo tratar componentes sin historial antes de cierta fecha (usar el primer valor conocido).
 - Nombres de tipos, hooks y entidades, y orden fino de las secciones.
+
+## Desvíos de la implementación
+
+- El costo de BOM sigue la regla de la pantalla de BOM (`ProductionSelectorExt.get_total_cost`: líneas tercerizadas a su precio, el resto con cantidad convertida por costo ponderado, todo dividido por el rendimiento). `Product.get_bom_cost()`, que usan las entregas, ignora el rendimiento y el precio de las tercerizadas: es un hallazgo previo, no corregido aquí.
+- El costo real por orden reutiliza `ProductionPerformanceSelector`; `costs` le pasa el producto con la BOM precargada porque su `get_bom_cost()` consulta cada componente.
+- «Componente dominante» exige una BOM con más de una línea.
