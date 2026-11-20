@@ -1,6 +1,25 @@
 /** Contract of `GET /inventory/products/{id}/production-analysis/`. */
 import type { SalesImpactGranularity } from "./salesImpact.types"
-import type { UsedIn } from "./sourcing.types"
+
+/** A product whose active BOM uses this input, with its margin before and after the price increase. */
+export interface SourcingParent {
+    product_id: number
+    name: string
+    qty_per_unit: number
+    component_cost: number
+    bom_cost: number
+    share_pct: number | null
+    delta_cost: number
+    delta_pct: number | null
+    price_net: number
+    margin_pct: number | null
+    margin_pct_after: number | null
+}
+
+export interface UsedIn {
+    increase_pct: number
+    parents: SourcingParent[]
+}
 
 export type IncreasePct = 5 | 10 | 20
 

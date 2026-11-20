@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest"
 
 import {
-    overviewKpiIds,
     visibleTabIds,
     type ProductCapabilities,
 } from "../productAnalyticsRegistry"
@@ -94,22 +93,6 @@ describe("visibleTabIds", () => {
         const all = ["overview", "sales", "pricing", "costs", "procurement", "inventory", "production", "subscription"]
         expect(visibleTabIds(undefined)).toEqual(all)
         expect(visibleTabIds(null)).toEqual(all)
-    })
-})
-
-describe("overviewKpiIds", () => {
-    it("sellable stocked product shows units sold, valuation and stock", () => {
-        expect(overviewKpiIds(caps({ sells: true, tracks_stock: true }))).toEqual(["units_sold", "valuation", "stock"])
-    })
-
-    it("input used in production adds production usage and purchases", () => {
-        expect(overviewKpiIds(caps({ buys: true, tracks_stock: true, used_in_production: true }))).toEqual([
-            "units_purchased", "valuation", "stock", "production_usage",
-        ])
-    })
-
-    it("falls back to the original three KPIs when capabilities are missing", () => {
-        expect(overviewKpiIds(undefined)).toEqual(["units_sold", "valuation", "stock"])
     })
 })
 

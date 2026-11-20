@@ -6,9 +6,6 @@ import type { ProductStockAnalysis, StockAnalysisParams } from "../analytics/sto
 import type { ProcurementParams, ProductProcurement } from "../analytics/procurement.types"
 import type { ProductSales, SalesParams } from "../analytics/sales.types"
 import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.types"
-import type { ProductionPerformance, ProductionPerformanceParams } from "../analytics/productionPerformance.types"
-import type { Operations, OperationsParams } from "../analytics/operations.types"
-import type { Sourcing, SourcingParams } from "../analytics/sourcing.types"
 import type { ProductCapabilities } from "../analytics/productAnalyticsRegistry"
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
@@ -112,17 +109,6 @@ export const inventoryApi = {
     deleteProduct: async (id: number): Promise<void> => {
         await api.delete(`inventory/products/${id}/`)
     },
-
-    /**
-     * Fetch the insights bundle for a product (capabilities, price history, stock flow,
-     * sales analysis, production usage). Shape is consumed locally by
-     * ProductInsightsModal — typed generically so the caller can refine it.
-     */
-    getProductInsights: async <T = unknown>(id: number): Promise<T> => {
-        const { data } = await api.get<T>(`inventory/products/${id}/insights/`)
-        return data
-    },
-
     /** Capabilities of a product (which analytics tabs apply), without loading the insights bundle. */
     getProductCapabilities: async (id: number): Promise<ProductCapabilities> => {
         const { data } = await api.get<ProductCapabilities>(`inventory/products/${id}/capabilities/`)
@@ -159,12 +145,6 @@ export const inventoryApi = {
         return data
     },
 
-    /** On hand, reserved, rotation, flows, adjustments, warehouses and variants. */
-    getProductStockAnalysis: async (id: number, params: StockAnalysisParams): Promise<ProductStockAnalysis> => {
-        const { data } = await api.get<ProductStockAnalysis>(`inventory/products/${id}/stock-analysis/`, { params })
-        return data
-    },
-
     /** Production as manufactured (orders, rework, input consumption) and as input (consumption, BOM usage). */
     getProductProductionAnalysis: async (id: number, params: ProductionAnalysisParams): Promise<ProductProductionAnalysis> => {
         const { data } = await api.get<ProductProductionAnalysis>(`inventory/products/${id}/production-analysis/`, { params })
@@ -177,24 +157,11 @@ export const inventoryApi = {
         return data
     },
 
-    /** Production cost/time performance of a manufacturable product (ADR-0146). */
-    getProductProductionPerformance: async (id: number, params: ProductionPerformanceParams): Promise<ProductionPerformance> => {
-        const { data } = await api.get<ProductionPerformance>(`inventory/products/${id}/production-performance/`, { params })
+    /** On hand, reserved, rotation, flows, adjustments, warehouses and variants. */
+    getProductStockAnalysis: async (id: number, params: StockAnalysisParams): Promise<ProductStockAnalysis> => {
+        const { data } = await api.get<ProductStockAnalysis>(`inventory/products/${id}/stock-analysis/`, { params })
         return data
     },
-
-    /** Stock rotation/coverage and subscription costs (ADR-0148). */
-    getProductOperations: async (id: number, params: OperationsParams): Promise<Operations> => {
-        const { data } = await api.get<Operations>(`inventory/products/${id}/operations/`, { params })
-        return data
-    },
-
-    /** Make-vs-buy and input-usage sensitivity (ADR-0147). */
-    getProductSourcing: async (id: number, params: SourcingParams): Promise<Sourcing> => {
-        const { data } = await api.get<Sourcing>(`inventory/products/${id}/sourcing/`, { params })
-        return data
-    },
-
     /**
      * Custom action: generate technical variants of a product template
      * from a cartesian product of attribute → values selections.

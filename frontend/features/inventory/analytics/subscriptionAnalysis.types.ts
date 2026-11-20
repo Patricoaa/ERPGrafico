@@ -1,6 +1,8 @@
 /** Contract of `GET /inventory/products/{id}/subscription-analysis/`. */
 import type { SalesImpactGranularity } from "./salesImpact.types"
-import type { SubscriptionFrequency, SubscriptionStatus } from "./operations.types"
+
+export type SubscriptionFrequency = "WEEKLY" | "MONTHLY" | "QUARTERLY" | "SEMIANNUAL" | "ANNUAL"
+export type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELLED" | "EXPIRED"
 
 export interface SubscriptionAnalysisParams {
     granularity: SalesImpactGranularity

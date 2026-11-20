@@ -153,28 +153,6 @@ export function useProduct(id: number | null | undefined) {
 }
 
 /**
- * Fetch the insights bundle (price history, kardex, sales analysis,
- * production usage) for a product. The shape is consumer-defined via the
- * generic — pass your local `ProductInsights` interface as <T>.
- *
- * queryKey extiende PRODUCTS_KEYS.detail(id) → cualquier mutación del
- * producto invalida también este insights bundle (vía prefix match en
- * PRODUCTS_KEYS.all).
- */
-export function useProductInsights<T = unknown>(id: number | null | undefined) {
-    const { data: insights, isLoading, isError, refetch } = useQuery<T | null>({
-        queryKey: id ? [...PRODUCTS_KEYS.detail(id), 'insights'] : ['products', 'insights', 'noop'],
-        queryFn: async () => {
-            if (!id) return null
-            return inventoryApi.getProductInsights<T>(id)
-        },
-        staleTime: staleTime.stable,
-        enabled: !!id,
-    })
-    return { insights: insights ?? null, isLoading, isError, refetch }
-}
-
-/**
  * Capabilities of a product (which analytics tabs/blocks apply). Lightweight: does not load the
  * insights bundle, so the analytics modal can decide its tabs before any block fetches data.
  */

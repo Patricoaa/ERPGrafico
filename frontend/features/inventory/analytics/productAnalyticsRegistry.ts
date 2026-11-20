@@ -36,8 +36,6 @@ export type ProductAnalyticsTabId =
     | "production"
     | "subscription"
 
-export type OverviewKpiId = "units_sold" | "valuation" | "stock" | "units_purchased" | "production_usage"
-
 export const TAB_LABELS: Record<ProductAnalyticsTabId, string> = {
     overview: "Resumen",
     sales: "Ventas",
@@ -68,15 +66,4 @@ const TAB_RULES: Record<ProductAnalyticsTabId, (c: ProductCapabilities) => boole
 export function visibleTabIds(capabilities: ProductCapabilities | null | undefined): ProductAnalyticsTabId[] {
     if (!capabilities) return [...TAB_ORDER]
     return TAB_ORDER.filter((id) => TAB_RULES[id](capabilities))
-}
-
-/** KPIs del Resumen que aplican al producto. Sin capacidades → los tres originales. */
-export function overviewKpiIds(capabilities: ProductCapabilities | null | undefined): OverviewKpiId[] {
-    if (!capabilities) return ["units_sold", "valuation", "stock"]
-    const ids: OverviewKpiId[] = []
-    if (capabilities.sells) ids.push("units_sold")
-    if (capabilities.buys && !capabilities.sells) ids.push("units_purchased")
-    if (capabilities.tracks_stock) ids.push("valuation", "stock")
-    if (capabilities.used_in_production) ids.push("production_usage")
-    return ids
 }

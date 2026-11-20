@@ -1,6 +1,5 @@
 import { defineEntity } from "@/components/entity-view"
-import type { InputByProduct, MadeMaterial } from "../analytics/productionAnalysis.types"
-import type { SourcingParent } from "../analytics/sourcing.types"
+import type { InputByProduct, MadeMaterial, SourcingParent } from "../analytics/productionAnalysis.types"
 
 export const madeMaterialsEntity = defineEntity<MadeMaterial>()((f) => ({
     title: "Insumos",

@@ -6,9 +6,10 @@ import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
 import { composeSubscription } from "./composeSubscription"
-import type { SubscriptionFrequency, SubscriptionStatus } from "./operations.types"
 import { periodToDateFrom, periodToGranularity, type PeriodKey } from "./period"
-import type { ProductSubscriptionAnalysis, SubscriptionAnalysisParams } from "./subscriptionAnalysis.types"
+import type {
+    ProductSubscriptionAnalysis, SubscriptionAnalysisParams, SubscriptionFrequency, SubscriptionStatus,
+} from "./subscriptionAnalysis.types"
 import { useProductSubscriptionAnalysis } from "../hooks/useProductSubscriptionAnalysis"
 import {
     subscriptionPaymentsEntity, subscriptionPaymentsViews, subscriptionRowsEntity, subscriptionRowsViews,

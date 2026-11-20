@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
 
 const state = vi.hoisted(() => ({
     capsById: {} as Record<number, unknown>,
-    production: { usage: [] as unknown[], history: [] as unknown[] },
 }))
 
 vi.mock("../../hooks/useProducts", async (importOriginal) => ({
@@ -11,35 +10,10 @@ vi.mock("../../hooks/useProducts", async (importOriginal) => ({
     useProductCapabilities: (id: number) => ({
         isLoading: false, isError: false, capabilities: state.capsById[id] ?? null,
     }),
-    useProductInsights: () => ({
-        isLoading: false,
-        insights: {
-            price_history: [], stock_history: [], production_usage: state.production.usage, production_history: state.production.history,
-            top_customers: [], top_suppliers: [],
-            stock_flow: { totals: { in_qty: 0, in_cost: 0, out_qty: 0, out_cost: 0 }, monthly: [] },
-            sales_analysis: { history: [], total_sold: 0, total_revenue: 0, total_cost_basis: 0 },
-            purchase_analysis: { history: [], total_purchased: 0, total_cost: 0 },
-        },
-    }),
-    useProduct: (id: number) => ({
-        isLoading: false,
-        product: { id, uom_name: "un", current_stock: 0, cost_price: 0, sale_price: 0, sale_price_gross: 0 },
-    }),
 }))
-vi.mock("@/features/inventory/hooks/useStockMoves", () => ({ useStockMoves: () => ({ data: [], isLoading: false }) }))
 vi.mock("@/components/selectors", () => ({ ProductSelector: () => <div>selector-producto</div> }))
-vi.mock("@/features/_shared", () => ({ LazyDrawer: () => null }))
-vi.mock("@/features/production", () => ({ WorkOrderWizard: () => null }))
-vi.mock("../../analytics/SourcingBlock", () => ({
-    SourcingBlock: ({ productId, section }: { productId: number; section?: string }) => (
-        <div>bloque-abastecimiento-{section ?? "todo"}-{productId}</div>
-    ),
-}))
 vi.mock("../../analytics/SubscriptionBlock", () => ({
     SubscriptionBlock: ({ productId }: { productId: number }) => <div>bloque-suscripcion-{productId}</div>,
-}))
-vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
-    ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
 vi.mock("../../analytics/OverviewBlock", () => ({
     OverviewBlock: ({ onSelectTab }: { onSelectTab: (tab: string) => void }) => (
@@ -86,7 +60,6 @@ const open = (productId = 1) =>
 describe("ProductAnalyticsModal", () => {
     beforeEach(() => {
         state.capsById = { 1: fullCaps, 2: inputCaps }
-        state.production = { usage: [], history: [] }
     })
 
     it("does not render the product name as modal description", () => {

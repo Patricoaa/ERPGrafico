@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { composeProduction } from "../composeProduction"
-import type { ProductionInput, ProductionMade, ProductProductionAnalysis } from "../productionAnalysis.types"
-import type { SourcingParent } from "../sourcing.types"
+import type { ProductionInput, ProductionMade, ProductProductionAnalysis, SourcingParent } from "../productionAnalysis.types"
 
 function made(over: Partial<ProductionMade> = {}, kpis: Partial<ProductionMade["kpis"]> = {}): ProductionMade {
     return {

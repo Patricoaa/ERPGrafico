@@ -7,13 +7,9 @@ vi.mock("../CostsBlock", () => ({ CostsBlock: () => <div data-marker="block-cost
 vi.mock("../ProcurementBlock", () => ({ ProcurementBlock: () => <div data-marker="block-procurement" /> }))
 vi.mock("../SalesBlock", () => ({ SalesBlock: () => <div data-marker="block-sales" /> }))
 vi.mock("../PricingBlock", () => ({ PricingBlock: () => <div data-marker="block-pricing" /> }))
-vi.mock("../ProductionPerformanceBlock", () => ({ ProductionPerformanceBlock: () => <div data-marker="block-performance" /> }))
 vi.mock("../ProductionBlock", () => ({ ProductionBlock: () => <div data-marker="block-production" /> }))
 vi.mock("../StockBlock", () => ({ StockBlock: () => <div data-marker="block-stock" /> }))
 vi.mock("../SubscriptionBlock", () => ({ SubscriptionBlock: () => <div data-marker="block-subscription" /> }))
-vi.mock("../SourcingBlock", () => ({
-    SourcingBlock: ({ section }: { section?: string }) => <div data-marker={`block-sourcing-${section ?? "all"}`} />,
-}))
 
 import { TabContent } from "../TabContent"
 import type { ProductAnalyticsTabId } from "../productAnalyticsRegistry"
