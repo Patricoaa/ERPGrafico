@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.134](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.133...v0.3.134) (2026-11-20)
+
+
+### 📚 Documentation
+
+* **adr:** ADR-0149 sistema de cards de métrica (Metric, MetricStrip, ChartCard) ([3cd3e67](https://github.com/Patricoaa/ERPGrafico/commit/3cd3e67d2e65ec1f773659186d2825343a3f75b6))
+
+
+### ✨ Features
+
+* **shared:** Metric, MetricStrip y ChartCard (ADR-0149, fase 1) ([058c628](https://github.com/Patricoaa/ERPGrafico/commit/058c6287161fc4f4da876adb9ea69f10c910da45))
+
+
+### ⚙️ Refactors
+
+* **analytics:** migra analytics a Metric/MetricStrip/ChartCard (ADR-0149, oleada A) ([72995d2](https://github.com/Patricoaa/ERPGrafico/commit/72995d2a029406960b886d8f3484765fd3e5bafa))
+* **finance:** migra dashboards de finanzas a Metric/MetricStrip (ADR-0149, oleada B) ([990e175](https://github.com/Patricoaa/ERPGrafico/commit/990e175a802efaf6dfe4770d517a2f036100bde0))
+* migra cards de KPI hechas a mano a Metric (ADR-0149, oleada D) ([0b110ed](https://github.com/Patricoaa/ERPGrafico/commit/0b110ed91c4eb490f0cff10f0389cda46dc0a44b))
+* **shared:** elimina StatCard y KPIComponents; cierra ADR-0149 ([28b3b34](https://github.com/Patricoaa/ERPGrafico/commit/28b3b34bf6f87de2cf5b2142f8987a93beda3725))
+* **treasury:** migra tesorería, POS, préstamos, contactos y producción a Metric (ADR-0149, oleada C) ([a3bcfdf](https://github.com/Patricoaa/ERPGrafico/commit/a3bcfdfa1527f147db7da1f6bc996b4b879f7387))
+
+
+### 🐛 Bug Fixes
+
+* **shared:** Badge usa tokens *-text para cumplir contraste 4,5:1 ([4868d63](https://github.com/Patricoaa/ERPGrafico/commit/4868d6347275e32506ff43f1690ac26c99270f7d))
+
 ### [0.3.133](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.132...v0.3.133) (2026-11-20)
 
 
