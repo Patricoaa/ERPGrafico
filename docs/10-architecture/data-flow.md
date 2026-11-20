@@ -135,3 +135,7 @@ Los campos no son editables por el cliente. Quedan nulos en líneas anteriores a
 ### Ingreso neto de descuentos (ADR-0145)
 
 El ingreso por línea de despacho confirmada es `quantity × unit_price × (1 − ratio)`, con `ratio = clamp(sale_line.discount_amount / (sale_line.quantity × sale_line.unit_price_gross), 0, 1)`, o 0 si la línea no tiene precio bruto (igual que `SaleLine.calculate_subtotal`); el descuento se prorratea por unidad despachada. El margen resta el `unit_cost` congelado en el despacho. `insights` y `GET /inventory/products/{id}/sales-impact/` comparten la expresión (`net_revenue_expression`), por lo que las cifras coinciden.
+
+### Costo real de fabricación (ADR-0146)
+
+El costo real de una OT terminada es Σ `ProductionConsumption.quantity × stock_move.unit_cost` (sin movimiento: costo actual del insumo, marcado «estimado»). El planificado es Σ `WorkOrderMaterial.quantity_planned × unit_cost_snapshot` en unidad base del componente. La desviación es real − planificado y el costo real por unidad se compara con `Product.get_bom_cost()`. Expuesto en `GET /inventory/products/{id}/production-performance/`.

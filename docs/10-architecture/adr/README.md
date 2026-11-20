@@ -208,5 +208,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0143](0143-wizard-de-notas-sobre-drawer-layout.md) | Wizard de notas NC/ND sobre Drawer + DrawerLayout (patrón de compra); el hook es la única fuente del paso | Accepted |
 | [0144](0144-capacidades-y-stock-flow-en-insights-de-producto.md) | El análisis de producto se adapta a las capacidades del producto; `stock_flow` reemplaza `kardex` en `insights` | Accepted |
 | [0145](0145-precio-y-margen-por-producto.md) | Margen real e impacto de reglas de precio por producto; endpoint `sales-impact` e ingresos de `insights` netos de descuentos | Accepted |
+| [0146](0146-rendimiento-de-fabricacion-por-producto.md) | Rendimiento de fabricación por producto; endpoint `production-performance` (costo real vs BOM, desviación de insumos, etapas, margen por OT) | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
