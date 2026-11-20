@@ -61,3 +61,7 @@ Servidor: `inventory/subscription_analysis_selector.py`, serializer de parámetr
 ## Queda al implementador
 
 - Nombres, etiquetas y orden fino de las secciones.
+
+## Desvíos de la implementación
+
+- «Hoy» se calcula en el propio selector con la misma fórmula y factores de frecuencia que `operations` (test de equivalencia), en vez de llamar a `OperationsSelector._subscriptions`, para no repetir su consulta de pagos.
