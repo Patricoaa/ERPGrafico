@@ -25,41 +25,32 @@ export interface ProductCapabilities {
     segment: ProductSegment
 }
 
+/** Tabs por decisión (ADR-0150): cada uno absorbe varios tabs anteriores. */
 export type ProductAnalyticsTabId =
     | "overview"
     | "sales"
     | "pricing"
-    | "purchases"
-    | "price"
-    | "cost"
-    | "kardex"
+    | "costs"
+    | "procurement"
+    | "inventory"
     | "production"
-    | "manufacturing"
-    | "sourcing"
-    | "operations"
-    | "customers"
-    | "suppliers"
+    | "subscription"
 
 export type OverviewKpiId = "units_sold" | "valuation" | "stock" | "units_purchased" | "production_usage"
 
 const TAB_ORDER: ProductAnalyticsTabId[] = [
-    "overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "operations", "customers", "suppliers",
+    "overview", "sales", "pricing", "costs", "procurement", "inventory", "production", "subscription",
 ]
 
 const TAB_RULES: Record<ProductAnalyticsTabId, (c: ProductCapabilities) => boolean> = {
     overview: () => true,
     sales: (c) => c.sells,
     pricing: (c) => c.sells,
-    price: (c) => c.sells,
-    customers: (c) => c.sells,
-    purchases: (c) => c.buys,
-    suppliers: (c) => c.buys,
-    cost: (c) => c.buys || c.manufactures || c.tracks_stock,
-    kardex: (c) => c.tracks_stock,
+    costs: (c) => c.buys || c.manufactures || c.tracks_stock,
+    procurement: (c) => c.buys,
+    inventory: (c) => c.tracks_stock,
     production: (c) => c.manufactures || c.used_in_production,
-    manufacturing: (c) => c.manufactures,
-    operations: (c) => c.tracks_stock || c.recurring,
-    sourcing: (c) => (c.manufactures && c.buys) || c.used_in_production,
+    subscription: (c) => c.recurring,
 }
 
 /** Tabs que aplican al producto, en orden fijo. Sin capacidades (respuesta antigua) → todos. */
