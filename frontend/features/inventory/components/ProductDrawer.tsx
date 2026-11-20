@@ -751,7 +751,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
     const customHeaderActions = (
         <>
             {drawerIdentity.headerActions}
-            {effectiveInitialData?.id && (
+            {(mode === 'view' || mode === 'edit') && effectiveInitialData?.id && (
                 <DataCell.Action
                     icon={ChartColumn}
                     onClick={() => setInsightsOpen(true)}
