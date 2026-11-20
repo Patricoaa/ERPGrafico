@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React from "react"
+import { formatMoney } from "@/lib/money"
 import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { PageHeader, MoneyDisplay, SkeletonShell, StatCard, StaleDataBanner } from "@/components/shared"
-import type { KpiCardDef } from "@/components/shared"
+import { PageHeader, SkeletonShell, Metric, MetricStrip, StaleDataBanner } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { useBudgetDetailData } from "../hooks/useBudgets"
 import { budgetExecutionEntity, budgetExecutionViews, type BudgetExecutionItem } from "../entity-view/budgetExecution.entity"
@@ -78,23 +78,6 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const resolvedExecution = executionData ?? SKELETON_EXECUTION
     const collection = useEntityCollection(budgetExecutionEntity, { rows: resolvedExecution.items }, { pagination: { mode: "none" } })
 
-    const kpiCards = useMemo<KpiCardDef[]>(() => [
-        {
-            label: "Presupuestado",
-            value: <MoneyDisplay amount={resolvedExecution.summary.total_budgeted} />,
-            accent: "muted",
-        },
-        {
-            label: "Ejecutado",
-            value: <MoneyDisplay amount={resolvedExecution.summary.total_actual} />,
-            accent: "muted",
-        },
-        {
-            label: "Desviación",
-            value: <MoneyDisplay amount={resolvedExecution.summary.total_variance} />,
-            accent: "muted",
-        },
-    ], [resolvedExecution])
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando detalles del presupuesto">
@@ -120,11 +103,11 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                     }
                 />
 
-                <div className="grid gap-4 md:grid-cols-4">
-                    {kpiCards.map((card, i) => (
-                        <StatCard key={i} {...card} loading={isLoading} />
-                    ))}
-                </div>
+                <MetricStrip label="Resumen de ejecución presupuestaria">
+                    <Metric label="Presupuestado" value={formatMoney(resolvedExecution.summary.total_budgeted)} loading={isLoading} />
+                    <Metric label="Ejecutado" value={formatMoney(resolvedExecution.summary.total_actual)} loading={isLoading} />
+                    <Metric label="Desviación" value={formatMoney(resolvedExecution.summary.total_variance)} loading={isLoading} />
+                </MetricStrip>
                 <Collection.Root collection={collection} label="Ejecución presupuestaria">
                     <Collection.View table={budgetExecutionViews.table} emptyTitle="Sin datos" emptyDescription="No se encontraron cuentas presupuestarias" />
                 </Collection.Root>

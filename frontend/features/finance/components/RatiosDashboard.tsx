@@ -1,12 +1,15 @@
 "use client"
 
 import React from 'react';
-import { EmptyState, PieChart, BarChart, RadarChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard, ChartLegend } from '@/components/shared'
+import { EmptyState, PieChart, BarChart, RadarChart, SkeletonShell, Metric, MetricStrip, StaleDataBanner, SectionCard, ChartLegend } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
 import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import type { MetricHealth } from '@/components/shared'
+
+const fmtRatio = (v: number | undefined) => (v ?? 0).toFixed(2)
+const fmtPct = (v: number | undefined) => `${((v ?? 0) * 100).toFixed(1)}%`
 
 
 interface AnalysisData {
@@ -43,7 +46,7 @@ interface RatiosDashboardProps {
 }
 
 // Returns a health signal for a financial ratio
-function getRatioHealth(key: string, value: number): { color: string; label: string; icon: React.ReactNode } {
+function getRatioHealth(key: string, value: number): MetricHealth | undefined {
     const checks: Record<string, { ok: (v: number) => boolean; warn: (v: number) => boolean; okLabel: string; warnLabel: string; badLabel: string }> = {
         current_ratio: { ok: v => v >= 1.5, warn: v => v >= 1, okLabel: 'Saludable', warnLabel: 'Aceptable', badLabel: 'Crítico' },
         acid_test:     { ok: v => v >= 1,   warn: v => v >= 0.5, okLabel: 'Saludable', warnLabel: 'Aceptable', badLabel: 'Riesgo' },
@@ -53,10 +56,10 @@ function getRatioHealth(key: string, value: number): { color: string; label: str
         net_margin:    { ok: v => v >= 0.1, warn: v => v >= 0.03, okLabel: 'Excelente', warnLabel: 'Moderado', badLabel: 'Bajo' },
     }
     const c = checks[key]
-    if (!c) return { color: 'text-muted-foreground', label: '', icon: <Minus className="h-3 w-3" /> }
-    if (c.ok(value)) return { color: 'text-success', label: c.okLabel, icon: <TrendingUp className="h-3 w-3" /> }
-    if (c.warn(value)) return { color: 'text-warning', label: c.warnLabel, icon: <Minus className="h-3 w-3" /> }
-    return { color: 'text-destructive', label: c.badLabel, icon: <TrendingDown className="h-3 w-3" /> }
+    if (!c) return undefined
+    if (c.ok(value)) return { status: key, label: c.okLabel, intent: 'success' }
+    if (c.warn(value)) return { status: key, label: c.warnLabel, intent: 'warning' }
+    return { status: key, label: c.badLabel, intent: 'destructive' }
 }
 
 
@@ -159,145 +162,50 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
             {isError && <StaleDataBanner className="mx-4 mt-2" />}
 
             {/* ── Row 1: KPI Cards ── */}
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-                {/* Liquidez */}
-                {(() => {
-                    const health = getRatioHealth('current_ratio', d.liquidity.current_ratio)
-                    return (
-                        <KPIWrapper tooltip="Mide la capacidad de la empresa para pagar sus deudas a corto plazo con sus activos más líquidos (Activo Corriente / Pasivo Corriente). Un ratio saludable es mayor a 1.5.">
-                                <StatCard
-                                    label="Liquidez Corriente"
-                                    value={<KPIValue current={d.liquidity.current_ratio} previous={cd?.liquidity.current_ratio} showComparison={showComparison} />}
-                                    valueSize="xl"
-                                    accent="primary"
-                                    className="h-full rounded-md"
-                            >
-                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
-                                    {health.icon}{health.label}
-                                    {showComparison && cd && (
-                                        <DeltaBadge current={d.liquidity.current_ratio} previous={cd.liquidity.current_ratio} />
-                                    )}
-                                </div>
-                            </StatCard>
-                        </KPIWrapper>
-                    )
-                })()}
-
-                {/* Prueba Ácida */}
-                {(() => {
-                    const health = getRatioHealth('acid_test', d.liquidity.acid_test || 0)
-                    return (
-                        <KPIWrapper tooltip="Similar a la liquidez corriente, pero excluye el inventario por ser menos líquido. Muestra si la empresa puede pagar sus pasivos inmediatos sin depender de la venta de stock.">
-                            <StatCard
-                                label="Prueba Ácida"
-                                value={<KPIValue current={d.liquidity.acid_test || 0} previous={cd?.liquidity.acid_test || 0} showComparison={showComparison} />}
-                                valueSize="xl"
-                                accent="info"
-                                className="h-full rounded-md"
-                            >
-                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
-                                    {health.icon}{health.label}
-                                    {showComparison && cd && (
-                                        <DeltaBadge current={d.liquidity.acid_test || 0} previous={cd.liquidity.acid_test || 0} />
-                                    )}
-                                </div>
-                            </StatCard>
-                        </KPIWrapper>
-                    )
-                })()}
-
-                {/* D/E */}
-                {(() => {
-                    const health = getRatioHealth('debt_to_equity', d.structure.debt_to_equity)
-                    return (
-                        <KPIWrapper tooltip="Indica qué proporción de la empresa está financiada por deuda externa frente a recursos propios. Un ratio menor a 1 se considera conservador.">
-                            <StatCard
-                                label="Endeudamiento (D/E)"
-                                value={<KPIValue current={d.structure.debt_to_equity} previous={cd?.structure.debt_to_equity} showComparison={showComparison} />}
-                                valueSize="xl"
-                                accent="warning"
-                                className="h-full rounded-md"
-                            >
-                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
-                                    {health.icon}{health.label}
-                                    {showComparison && cd && (
-                                        <DeltaBadge current={d.structure.debt_to_equity} previous={cd.structure.debt_to_equity} />
-                                    )}
-                                </div>
-                            </StatCard>
-                        </KPIWrapper>
-                    )
-                })()}
-
-                {/* Solvencia */}
-                {(() => {
-                    const health = getRatioHealth('solvency_ratio', d.solvency.solvency_ratio)
-                    return (
-                        <KPIWrapper tooltip="Mide la viabilidad a largo plazo de la empresa comparando el total de sus activos con el total de sus deudas. Un ratio mayor a 2 sugiere solidez.">
-                            <StatCard
-                                label="Solvencia"
-                                value={<KPIValue current={d.solvency.solvency_ratio} previous={cd?.solvency.solvency_ratio} showComparison={showComparison} />}
-                                valueSize="xl"
-                                accent="success"
-                                className="h-full rounded-md"
-                            >
-                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
-                                    {health.icon}{health.label}
-                                    {showComparison && cd && (
-                                        <DeltaBadge current={d.solvency.solvency_ratio} previous={cd.solvency.solvency_ratio} />
-                                    )}
-                                </div>
-                            </StatCard>
-                        </KPIWrapper>
-                    )
-                })()}
-
-                {/* Margen Bruto */}
-                {(() => {
-                    const health = getRatioHealth('gross_margin', d.profitability?.gross_margin || 0)
-                    return (
-                        <KPIWrapper tooltip="Porcentaje de ingresos que queda tras descontar el costo directo de los bienes vendidos (COGS). Refleja la eficiencia básica en la producción.">
-                            <StatCard
-                                label="Margen Bruto"
-                                value={<KPIValue current={d.profitability?.gross_margin || 0} previous={cd?.profitability?.gross_margin || 0} showComparison={showComparison} isPercentage alreadyPercent={false} decimals={1} />}
-                                valueSize="xl"
-                                accent="accent"
-                                className="h-full rounded-md"
-                            >
-                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
-                                    {health.icon}{health.label}
-                                    {showComparison && cd && (
-                                        <DeltaBadge current={d.profitability?.gross_margin || 0} previous={cd.profitability?.gross_margin || 0} />
-                                    )}
-                                </div>
-                            </StatCard>
-                        </KPIWrapper>
-                    )
-                })()}
-
-                {/* Margen Neto */}
-                {(() => {
-                    const health = getRatioHealth('net_margin', d.profitability?.net_margin || 0)
-                    return (
-                        <KPIWrapper tooltip="Porcentaje de beneficio final obtenido por cada unidad de venta, tras descontar absolutamente todos los gastos, impuestos e intereses.">
-                            <StatCard
-                                label="Margen Neto"
-                                value={<KPIValue current={d.profitability?.net_margin || 0} previous={cd?.profitability?.net_margin || 0} showComparison={showComparison} isPercentage alreadyPercent={false} decimals={1} />}
-                                valueSize="xl"
-                                accent="muted"
-                                className="h-full rounded-md"
-                            >
-                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
-                                    {health.icon}{health.label}
-                                    {showComparison && cd && (
-                                        <DeltaBadge current={d.profitability?.net_margin || 0} previous={cd.profitability?.net_margin || 0} />
-                                    )}
-                                </div>
-                            </StatCard>
-                        </KPIWrapper>
-                    )
-                })()}
-            </div>
+            <MetricStrip label="Ratios financieros">
+                <Metric
+                    label="Liquidez Corriente"
+                    info="Mide la capacidad de la empresa para pagar sus deudas a corto plazo con sus activos más líquidos (Activo Corriente / Pasivo Corriente). Un ratio saludable es mayor a 1.5."
+                    value={fmtRatio(d.liquidity.current_ratio)}
+                    health={getRatioHealth('current_ratio', d.liquidity.current_ratio)}
+                    delta={showComparison && cd ? { current: d.liquidity.current_ratio, previous: cd?.liquidity.current_ratio } : undefined}
+                />
+                <Metric
+                    label="Prueba Ácida"
+                    info="Similar a la liquidez corriente, pero excluye el inventario por ser menos líquido. Muestra si la empresa puede pagar sus pasivos inmediatos sin depender de la venta de stock."
+                    value={fmtRatio(d.liquidity.acid_test || 0)}
+                    health={getRatioHealth('acid_test', d.liquidity.acid_test || 0)}
+                    delta={showComparison && cd ? { current: d.liquidity.acid_test || 0, previous: cd?.liquidity.acid_test || 0 } : undefined}
+                />
+                <Metric
+                    label="Endeudamiento (D/E)"
+                    info="Indica qué proporción de la empresa está financiada por deuda externa frente a recursos propios. Un ratio menor a 1 se considera conservador."
+                    value={fmtRatio(d.structure.debt_to_equity)}
+                    health={getRatioHealth('debt_to_equity', d.structure.debt_to_equity)}
+                    delta={showComparison && cd ? { current: d.structure.debt_to_equity, previous: cd?.structure.debt_to_equity } : undefined}
+                />
+                <Metric
+                    label="Solvencia"
+                    info="Mide la viabilidad a largo plazo de la empresa comparando el total de sus activos con el total de sus deudas. Un ratio mayor a 2 sugiere solidez."
+                    value={fmtRatio(d.solvency.solvency_ratio)}
+                    health={getRatioHealth('solvency_ratio', d.solvency.solvency_ratio)}
+                    delta={showComparison && cd ? { current: d.solvency.solvency_ratio, previous: cd?.solvency.solvency_ratio } : undefined}
+                />
+                <Metric
+                    label="Margen Bruto"
+                    info="Porcentaje de ingresos que queda tras descontar el costo directo de los bienes vendidos (COGS). Refleja la eficiencia básica en la producción."
+                    value={fmtPct(d.profitability?.gross_margin || 0)}
+                    health={getRatioHealth('gross_margin', d.profitability?.gross_margin || 0)}
+                    delta={showComparison && cd ? { current: d.profitability?.gross_margin || 0, previous: cd?.profitability?.gross_margin || 0 } : undefined}
+                />
+                <Metric
+                    label="Margen Neto"
+                    info="Porcentaje de beneficio final obtenido por cada unidad de venta, tras descontar absolutamente todos los gastos, impuestos e intereses."
+                    value={fmtPct(d.profitability?.net_margin || 0)}
+                    health={getRatioHealth('net_margin', d.profitability?.net_margin || 0)}
+                    delta={showComparison && cd ? { current: d.profitability?.net_margin || 0, previous: cd?.profitability?.net_margin || 0 } : undefined}
+                />
+            </MetricStrip>
 
             {/* ── Row 2: Radar + Capital de Trabajo ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">

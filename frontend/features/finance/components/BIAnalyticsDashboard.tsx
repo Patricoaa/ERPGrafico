@@ -2,12 +2,14 @@
 
 import React from 'react';
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
-import { Factory, Package, TrendingUp, TrendingDown, Users, Truck } from 'lucide-react';
-import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard, ChartLegend } from '@/components/shared';
+import { Factory, Package, ShoppingCart, TrendingUp, Users, Truck } from 'lucide-react';
+import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, Metric, MetricStrip, StaleDataBanner, SectionCard, ChartLegend } from '@/components/shared';
 import { useMemo } from "react";
 import { getChartPalette } from "@/lib/chart-colors";
-import { formatCurrency, formatMoney } from "@/lib/money";
+import { formatCurrency, formatMoney, formatQuantity } from "@/lib/money";
 import { format } from "date-fns";
+
+const fmtPct = (v: number | undefined) => `${(v ?? 0).toFixed(1)}%`;
 import { type DateRange } from "react-day-picker";
 
 interface BIAnalyticsDashboardProps {
@@ -113,101 +115,56 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
             {isError && <StaleDataBanner className="mx-4 mt-2" />}
             
             {/* ── Row 1: KPI Overview Cards ── */}
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-                
-                {/* Ingresos (Ventas) */}
-                <KPIWrapper tooltip="Monto total de ventas confirmadas en el período seleccionado. No incluye impuestos.">
-                    <StatCard
-                        label="Ingresos por Ventas"
-                        value={<KPIValue current={sales.total_sales} previous={cd?.sales?.total_sales} showComparison={showComparison} isCurrency />}
-                        valueSize="xl"
-                        accent="primary"
-                        className="h-full rounded-md"
-                    >
-                        <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${sales.growth >= 0 ? 'text-success' : 'text-destructive'}`}>
-                            {sales.growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            {Math.abs(sales.growth)}% vs período anterior
-                        </div>
-                    </StatCard>
-                </KPIWrapper>
-
-                {/* Volumen de Compra */}
-                <KPIWrapper tooltip="Suma total neta de todas las órdenes de compra confirmadas durante este período.">
-                    <StatCard
-                        label="Volumen de Compras"
-                        value={<KPIValue current={purchasing.purchase_total} previous={cd?.purchasing?.purchase_total} showComparison={showComparison} isCurrency />}
-                        valueSize="xl"
-                        accent="warning"
-                        className="h-full rounded-md"
-                    >
-                        {showComparison && cd && (
-                            <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold">
-                                Variación: <DeltaBadge current={purchasing.purchase_total} previous={cd?.purchasing?.purchase_total} inverse />
-                            </div>
-                        )}
-                    </StatCard>
-                </KPIWrapper>
-
-                {/* Nómina (Masa Salarial) */}
-                <KPIWrapper tooltip="Costo total de la masa salarial (Haberes totales) de las liquidaciones emitidas durante los meses que cruza el período seleccionado.">
-                    <StatCard
-                        label="Masa Salarial (Nómina)"
-                        value={<KPIValue current={payroll.total_cost} previous={cd?.payroll?.total_cost} showComparison={showComparison} isCurrency />}
-                        valueSize="xl"
-                        accent="destructive"
-                        className="h-full rounded-md"
-                    >
-                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
-                            <Users className="h-3 w-3" /> {payroll.employee_count} empleados
-                        </div>
-                    </StatCard>
-                </KPIWrapper>
-
-                {/* Eficiencia Producción */}
-                <KPIWrapper tooltip="Porcentaje de órdenes de trabajo (OTs) completadas respecto del total de OTs creadas en el período.">
-                    <StatCard
-                        label="Eficiencia Producción"
-                        value={<KPIValue current={production.efficiency} previous={cd?.production?.efficiency} showComparison={showComparison} isPercentage />}
-                        valueSize="xl"
-                        accent="info"
-                        className="h-full rounded-md"
-                    >
-                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
-                            <Factory className="h-3 w-3" /> {production.finished_wo} completadas
-                        </div>
-                    </StatCard>
-                </KPIWrapper>
-
-                {/* Valor de Inventario */}
-                <KPIWrapper tooltip="Valoración actual del inventario de productos almacenables, a costo promedio / precio de costo.">
-                    <StatCard
-                        label="Valoración Inventario"
-                        value={<KPIValue current={inventory.total_value} previous={cd?.inventory?.total_value} showComparison={showComparison} isCurrency />}
-                        valueSize="xl"
-                        accent="accent"
-                        className="h-full rounded-md"
-                    >
-                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
-                            <Package className="h-3 w-3" /> {inventory.item_count} SKU activos
-                        </div>
-                    </StatCard>
-                </KPIWrapper>
-
-                {/* Despachos Pendientes */}
-                <KPIWrapper tooltip="Cantidad de ventas confirmadas que todavía no han sido despachadas en su totalidad al cliente.">
-                    <StatCard
-                        label="Despachos Pendientes"
-                        value={<KPIValue current={sales.pending_deliveries} previous={cd?.sales?.pending_deliveries} showComparison={showComparison} />}
-                        valueSize="xl"
-                        accent="accent"
-                        className="h-full rounded-md"
-                    >
-                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
-                            <Truck className="h-3 w-3" /> órdenes en espera
-                        </div>
-                    </StatCard>
-                </KPIWrapper>
-            </div>
+            <MetricStrip label="Indicadores del negocio">
+                <Metric
+                    label="Ingresos por Ventas"
+                    info="Monto total de ventas confirmadas en el período seleccionado. No incluye impuestos."
+                    lead={TrendingUp}
+                    value={formatMoney(sales.total_sales)}
+                    delta={showComparison && cd?.sales?.total_sales !== undefined ? { current: sales.total_sales, previous: cd?.sales?.total_sales } : undefined}
+                    context={`${sales.growth >= 0 ? "+" : "−"}${Math.abs(sales.growth)}% vs período anterior`}
+                />
+                <Metric
+                    label="Volumen de Compras"
+                    info="Suma total neta de todas las órdenes de compra confirmadas durante este período."
+                    lead={ShoppingCart}
+                    value={formatMoney(purchasing.purchase_total)}
+                    delta={showComparison && cd?.purchasing?.purchase_total !== undefined ? { current: purchasing.purchase_total, previous: cd?.purchasing?.purchase_total, inverse: true } : undefined}
+                    context={undefined}
+                />
+                <Metric
+                    label="Masa Salarial (Nómina)"
+                    info="Costo total de la masa salarial (Haberes totales) de las liquidaciones emitidas durante los meses que cruza el período seleccionado."
+                    lead={Users}
+                    value={formatMoney(payroll.total_cost)}
+                    delta={showComparison && cd?.payroll?.total_cost !== undefined ? { current: payroll.total_cost, previous: cd?.payroll?.total_cost, inverse: true } : undefined}
+                    context={`${payroll.employee_count} empleados`}
+                />
+                <Metric
+                    label="Eficiencia Producción"
+                    info="Porcentaje de órdenes de trabajo (OTs) completadas respecto del total de OTs creadas en el período."
+                    lead={Factory}
+                    value={fmtPct(production.efficiency)}
+                    delta={showComparison && cd?.production?.efficiency !== undefined ? { current: production.efficiency, previous: cd?.production?.efficiency } : undefined}
+                    context={`${production.finished_wo} completadas`}
+                />
+                <Metric
+                    label="Valoración Inventario"
+                    info="Valoración actual del inventario de productos almacenables, a costo promedio / precio de costo."
+                    lead={Package}
+                    value={formatMoney(inventory.total_value)}
+                    delta={showComparison && cd?.inventory?.total_value !== undefined ? { current: inventory.total_value, previous: cd?.inventory?.total_value } : undefined}
+                    context={`${inventory.item_count} SKU activos`}
+                />
+                <Metric
+                    label="Despachos Pendientes"
+                    info="Cantidad de ventas confirmadas que todavía no han sido despachadas en su totalidad al cliente."
+                    lead={Truck}
+                    value={formatQuantity(sales.pending_deliveries)}
+                    delta={showComparison && cd?.sales?.pending_deliveries !== undefined ? { current: sales.pending_deliveries, previous: cd?.sales?.pending_deliveries, inverse: true } : undefined}
+                    context={"órdenes en espera"}
+                />
+            </MetricStrip>
 
             {/* ── Row 2: Cash Flow and Sales Trend ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">

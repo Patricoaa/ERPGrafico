@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { StatCard } from "@/components/shared"
+import { Metric, MetricStrip, type MetricDelta } from "@/components/shared"
 import { Landmark, Banknote, PiggyBank, TrendingUp } from "lucide-react"
 import type { BalanceSheetData } from "../types"
 import { formatMoney } from "@/lib/money"
@@ -15,11 +15,11 @@ interface BalanceSheetKPIsProps {
 export function BalanceSheetKPIs({ data, showComparison, isLoading }: BalanceSheetKPIsProps) {
     if (isLoading) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MetricStrip label="Indicadores del balance">
                 {[1, 2, 3, 4].map((i) => (
-                    <StatCard key={i} label="Cargando" value="—" loading />
+                    <Metric key={i} label="Cargando" value="—" loading />
                 ))}
-            </div>
+            </MetricStrip>
         )
     }
 
@@ -28,50 +28,36 @@ export function BalanceSheetKPIs({ data, showComparison, isLoading }: BalanceShe
     const e = data.total_equity || 0
     const workingCapital = a - p
 
-    const trend = (current: number, comp?: number) => {
-        if (!comp || comp === 0) return undefined
-        const diff = current - comp
-        const pct = (diff / Math.abs(comp)) * 100
-        return {
-            direction: (diff >= 0 ? 'up' : 'down') as 'up' | 'down',
-            value: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% vs período anterior`,
-        }
-    }
+    const trend = (current: number, comp?: number): MetricDelta | undefined =>
+        showComparison && comp ? { current, previous: comp } : undefined
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard
+        <MetricStrip label="Indicadores del balance">
+            <Metric
                 label="Total Activos"
                 value={formatMoney(a)}
-                icon={Landmark}
-                trend={showComparison ? trend(a, data.total_assets_comp) : undefined}
-                accent="info"
-                valueSize="lg"
+                lead={Landmark}
+                delta={trend(a, data.total_assets_comp)}
             />
-            <StatCard
+            <Metric
                 label="Total Pasivos"
                 value={formatMoney(p)}
-                icon={Banknote}
-                trend={showComparison ? trend(p, data.total_liabilities_comp) : undefined}
-                accent="warning"
-                valueSize="lg"
+                lead={Banknote}
+                delta={trend(p, data.total_liabilities_comp)}
             />
-            <StatCard
+            <Metric
                 label="Total Patrimonio"
                 value={formatMoney(e)}
-                icon={PiggyBank}
-                trend={showComparison ? trend(e, data.total_equity_comp) : undefined}
-                accent="primary"
-                valueSize="lg"
+                lead={PiggyBank}
+                delta={trend(e, data.total_equity_comp)}
             />
-            <StatCard
+            <Metric
                 label="Capital de Trabajo"
                 value={formatMoney(workingCapital)}
-                icon={TrendingUp}
-                trend={showComparison ? trend(workingCapital, (data.total_assets_comp ?? 0) - (data.total_liabilities_comp ?? 0)) : undefined}
-                accent={workingCapital >= 0 ? "success" : "destructive"}
-                valueSize="lg"
+                lead={TrendingUp}
+                delta={trend(workingCapital, (data.total_assets_comp ?? 0) - (data.total_liabilities_comp ?? 0))}
+                tone={workingCapital >= 0 ? "success" : "destructive"}
             />
-        </div>
+        </MetricStrip>
     )
 }

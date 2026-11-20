@@ -16,7 +16,8 @@ import {
     SelectValue 
 } from "@/components/ui/select";
 import { BudgetVarianceTable, type BudgetVarianceNode } from "./BudgetVarianceTable";
-import { EmptyState, MoneyDisplay, PageHeader, StatCard } from '@/components/shared';
+import { EmptyState, PageHeader, Metric, MetricStrip } from '@/components/shared';
+import { formatMoney } from '@/lib/money';
 import { useBudgets, useBudgetVariance } from "../hooks/useBudgets";
 const MONTH_NAMES = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -134,38 +135,20 @@ export function BudgetVarianceView() {
             />
 
              {summary && (
-                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                     <StatCard
+                 <MetricStrip label="Resumen de variación presupuestaria">
+                     <Metric
                          label="Margen Mes"
-                         value={<MoneyDisplay amount={summary.month_actual} />}
-                         trend={{
-                             direction: summary.month_variance >= 0 ? "up" : "down",
-                             value: `${summary.month_perc.toFixed(1)}% ejecución`,
-                         }}
-                         accent="primary"
+                         value={formatMoney(summary.month_actual)}
+                         delta={{ text: `${summary.month_perc.toFixed(1)}% ejecución`, direction: summary.month_variance >= 0 ? "up" : "down" }}
                      />
-                     <StatCard
-                         label="Presupuesto Mes"
-                         value={<MoneyDisplay amount={summary.month_budget} showColor={false} />}
-                         subtext="Projection objetivos periodo"
-                         accent="muted"
+                     <Metric label="Presupuesto Mes" value={formatMoney(summary.month_budget)} context="Proyección de objetivos del periodo" />
+                     <Metric
+                         label="Margen YTD (Acum.)"
+                         value={formatMoney(summary.ytd_actual)}
+                         delta={{ text: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`, direction: summary.ytd_variance >= 0 ? "up" : "down" }}
                      />
-                      <StatCard
-                          label="Margen YTD (Acum.)"
-                          value={<MoneyDisplay amount={summary.ytd_actual} />}
-                          trend={{
-                              direction: summary.ytd_variance >= 0 ? "up" : "down",
-                              value: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`,
-                          }}
-                          accent="primary"
-                      />
-                     <StatCard
-                         label="Desviación Neta YTD"
-                         value={<MoneyDisplay amount={summary.ytd_variance} />}
-                         subtext="Diferencia acumulada anual"
-                         accent="muted"
-                     />
-                 </div>
+                     <Metric label="Desviación Neta YTD" value={formatMoney(summary.ytd_variance)} context="Diferencia acumulada anual" />
+                 </MetricStrip>
              )}
 
              {!isLoading && varianceData.length === 0 ? (
