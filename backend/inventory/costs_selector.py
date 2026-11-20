@@ -173,9 +173,7 @@ def _work_orders(product: Product, date_from: date | None, date_to: date) -> lis
     """Órdenes terminadas con costo real, desde el mismo cálculo que ``production-performance``."""
     from .production_performance_selector import ProductionPerformanceSelector
 
-    # get_bom_cost() reads the active BOM: prefetch it so the other selector does not query each component.
-    prefetched = Product.objects.prefetch_related("boms__lines__component__uom", "boms__lines__uom").get(pk=product.pk)
-    perf = ProductionPerformanceSelector.get_performance(prefetched, date_from or HISTORY_START, date_to)
+    perf = ProductionPerformanceSelector.get_performance(product, date_from or HISTORY_START, date_to)
     rows = []
     for o in perf["orders"]:
         if o["real_cost"] is None or not o["qty"] or not o["date"]:

@@ -158,7 +158,9 @@ class ProductionPerformanceSelector:
 
         costed = [r for r in rows if r["_costed"]]
         unit_real = sum(r["real_cost"] for r in costed) / sum(r["qty"] for r in costed) if costed else 0.0
-        bom_cost = float(product.get_bom_cost() or 0)
+        # get_bom_cost() reads the active BOM line by line: prefetch it so the cost does not query each component.
+        bom_product = Product.objects.prefetch_related("boms__lines__component__uom", "boms__lines__uom").get(pk=product.pk)
+        bom_cost = float(bom_product.get_bom_cost() or 0)
         with_plan = [r for r in rows if r["_costed"] and r["planned_cost"] > 0]
         lead_times = [
             (o["finished_at"] - o["first_event_at"]).total_seconds() / _SECONDS_PER_DAY

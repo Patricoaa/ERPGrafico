@@ -328,3 +328,18 @@ def test_stage_average_ignores_same_stage_notes_and_is_per_order(env):
     )
     stages = {s["stage"]: s for s in _perf(env)["stages"]}
     assert stages["PREPRESS"]["avg_days"] == pytest.approx(4.0)
+
+
+def test_query_count_constant_with_more_bom_components(env):
+    """get_bom_cost() reads the active BOM: the selector must not query each component (product not prefetched)."""
+    bom = BillOfMaterials.objects.create(product=env["product"], name="BOM", active=True)
+    BillOfMaterialsLine.objects.create(bom=bom, component=_component(env, "C0", "10"), quantity=Decimal("1"), uom=env["uom"])
+    _ot(env)
+    _perf(env)
+    with CaptureQueriesContext(connection) as few:
+        _perf(env)
+    for i in range(1, 8):
+        BillOfMaterialsLine.objects.create(bom=bom, component=_component(env, f"C{i}", "10"), quantity=Decimal("1"), uom=env["uom"])
+    with CaptureQueriesContext(connection) as many:
+        _perf(env)
+    assert len(many) == len(few)

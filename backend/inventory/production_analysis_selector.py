@@ -39,9 +39,7 @@ def _buckets(rows: list[dict], granularity: str, fields: tuple[str, ...], shift:
 
 def _finished_orders(product: Product, start: date | None, end: date) -> tuple[list[dict], list[dict]]:
     """Órdenes terminadas (con fecha) y materiales del rango, del mismo cálculo que ``production-performance``."""
-    # get_bom_cost() reads the active BOM: prefetch it so the other selector does not query each component.
-    prefetched = Product.objects.prefetch_related("boms__lines__component__uom", "boms__lines__uom").get(pk=product.pk)
-    perf = ProductionPerformanceSelector.get_performance(prefetched, start or HISTORY_START, end)
+    perf = ProductionPerformanceSelector.get_performance(product, start or HISTORY_START, end)
     orders = [
         {"id": o["id"], "number": o["number"], "day": date.fromisoformat(o["date"]), "units": o["qty"],
          "orders": 1.0, "rectified": o["rectified"]}
