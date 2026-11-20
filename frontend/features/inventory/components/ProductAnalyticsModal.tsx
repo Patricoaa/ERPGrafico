@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, type ReactNode } from "react"
 import {
     Chip, SkeletonShell, StatCard, ChartLegend, AnalyticsChart, getCssChartColors,
     BaseModal, DataCell, DrawerLayout, RailNav,
@@ -39,24 +39,17 @@ import {
 import { productionUsageEntity, productionUsageViews } from "../entity-view/productionUsage.entity"
 import { topCustomerEntity, topCustomerViews } from "../entity-view/topCustomer.entity"
 import { topSupplierEntity, topSupplierViews } from "../entity-view/topSupplier.entity"
+import {
+    SEGMENT_LABELS, overviewKpiIds, visibleTabIds,
+    type OverviewKpiId, type ProductCapabilities,
+} from "../analytics/productAnalyticsRegistry"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "../entity-view/stockMove.entity"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface KardexEntry {
-    id: number
-    display_id: string
-    related_id: number
-    related_type: string
-    date: string
-    type: string
-    direction?: string
-    quantity: number
-    unit_price?: number
-    total_price?: number
-    warehouse: string
-    description: string
-    uom: string
+interface StockFlow {
+    totals: { in_qty: number; in_cost: number; out_qty: number; out_cost: number }
+    monthly: Array<{ month: string; in: number; out: number }>
 }
 
 interface ProductionUsage {
@@ -85,8 +78,9 @@ interface PurchaseAnalysis {
 }
 
 interface ProductInsights {
+    capabilities?: ProductCapabilities
     price_history: PriceHistoryEntry[]
-    kardex: KardexEntry[]
+    stock_flow: StockFlow
     stock_history: StockHistoryEntry[]
     sales_analysis: SalesAnalysis
     purchase_analysis: PurchaseAnalysis
@@ -160,6 +154,8 @@ const TABS = [
 
 type TabValue = typeof TABS[number]["value"]
 
+const KPI_GRID: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }
+
 // ─── Inner panel (runs inside the open modal) ──────────────────────────────────
 
 function ProductAnalyticsPanelInner({
@@ -177,9 +173,17 @@ function ProductAnalyticsPanelInner({
     const { product, isLoading: productLoading } = useProduct(productId)
     const loading = insightsLoading || productLoading
 
-    const [activeTab, setActiveTab] = useState<TabValue>("overview")
+    const [requestedTab, setActiveTab] = useState<TabValue>("overview")
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
+
+    const capabilities = data?.capabilities
+    const visibleTabs = useMemo(() => {
+        const ids = new Set<string>(visibleTabIds(capabilities))
+        return TABS.filter(t => ids.has(t.value))
+    }, [capabilities])
+    // A tab that stops applying (e.g. after switching product) falls back to the overview.
+    const activeTab: TabValue = visibleTabs.some(t => t.value === requestedTab) ? requestedTab : "overview"
 
     const openTransaction = (id: number | string, type: string) => setSelectedTransaction({ id, type: type as TransactionType })
     const closeTransaction = () => setSelectedTransaction(null)
@@ -304,19 +308,12 @@ function ProductAnalyticsPanelInner({
     }, [data])
 
     const kardexFlowData = useMemo((): LineChartConfig["data"] => {
-        if (!data?.kardex?.length) return []
-        const flowMap = new Map<string, { in: number, out: number }>()
-        data.kardex.forEach(entry => {
-            const dateStr = format(parseDateOnly(entry.date), "dd/MM/yy")
-            const curr = flowMap.get(dateStr) ?? { in: 0, out: 0 }
-            if (entry.direction === 'IN') curr.in += entry.quantity
-            else if (entry.direction === 'OUT') curr.out += entry.quantity
-            flowMap.set(dateStr, curr)
-        })
-        const arr = Array.from(flowMap.entries())
-            .map(([name, v]) => ({ name, 'Entradas': v.in, 'Salidas': v.out }))
-            .reverse().slice(-30)
-        return toLineSeries(arr, ['Entradas', 'Salidas'])
+        const monthly = data?.stock_flow?.monthly
+        if (!monthly?.length) return []
+        return toLineSeries(
+            monthly.slice(-12).map(m => ({ name: m.month, 'Entradas': m.in, 'Salidas': m.out })),
+            ['Entradas', 'Salidas'],
+        )
     }, [data])
 
     const stockHistoryData = useMemo((): LineChartConfig["data"] => {
@@ -348,17 +345,14 @@ function ProductAnalyticsPanelInner({
     const costMin = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
     const costMax = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
 
-    const kardexStats = useMemo(() => {
-        let inQty = 0, inCost = 0, outQty = 0, outCost = 0
-        data?.kardex?.forEach(k => {
-            const price = k.total_price ?? (k.quantity * (k.unit_price || 0))
-            if (k.direction === 'IN') { inQty += k.quantity; inCost += price }
-            else if (k.direction === 'OUT') { outQty += k.quantity; outCost += price }
-        })
-        return { inQty, inCost, outQty, outCost }
-    }, [data])
+    const flowTotals = data?.stock_flow?.totals
+    const kardexStats = {
+        inQty: flowTotals?.in_qty ?? 0, inCost: flowTotals?.in_cost ?? 0,
+        outQty: flowTotals?.out_qty ?? 0, outCost: flowTotals?.out_cost ?? 0,
+    }
 
-    const productSelectorSlot = onProductChange ? (
+    const segmentLabel = capabilities ? SEGMENT_LABELS[capabilities.segment] : null
+    const productIdentity = onProductChange ? (
         <ProductSelector
             value={productId}
             onChange={() => {}}
@@ -369,6 +363,22 @@ function ProductAnalyticsPanelInner({
     ) : productName ? (
         <span className="block text-sm font-semibold leading-tight break-words">{productName}</span>
     ) : null
+    const productSelectorSlot = productIdentity || segmentLabel ? (
+        <div className="flex flex-col gap-1.5">
+            {productIdentity}
+            {segmentLabel && <span className="text-xs text-muted-foreground">{segmentLabel}</span>}
+        </div>
+    ) : null
+
+    const kpiIds = overviewKpiIds(capabilities)
+    const productionUsageQty = (data?.production_usage ?? []).reduce((sum, u) => sum + u.quantity, 0)
+    const overviewKpiCards: Record<OverviewKpiId, ReactNode> = data && product ? {
+        units_sold: <StatCard key="units_sold" label="Ventas Totales" valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />,
+        units_purchased: <StatCard key="units_purchased" label="Unidades Compradas" valueSize="xl" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} icon={Truck} accent="info" />,
+        valuation: <StatCard key="valuation" label="Valoración Actual" valueSize="xl" value={formatCurrency(currentValuation)} icon={Banknote} accent="success" />,
+        stock: <StatCard key="stock" label="Stock Actual" valueSize="xl" value={`${formatQuantity(Number(product.current_stock ?? 0))} ${product.uom_name}`} icon={Package} accent="primary" />,
+        production_usage: <StatCard key="production_usage" label="Consumo en OT" valueSize="xl" value={`${formatQuantity(productionUsageQty)} ${product.uom_name}`} icon={Factory} accent="warning" />,
+    } : { units_sold: null, units_purchased: null, valuation: null, stock: null, production_usage: null }
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full">
@@ -398,7 +408,7 @@ function ProductAnalyticsPanelInner({
                         leftRail={
                             <RailNav
                                 ariaLabel="Secciones de análisis de producto"
-                                sections={[{ items: [...TABS] }]}
+                                sections={[{ items: [...visibleTabs] }]}
                                 value={activeTab}
                                 onValueChange={(v) => setActiveTab(v as TabValue)}
                                 top={productSelectorSlot}
@@ -415,17 +425,19 @@ function ProductAnalyticsPanelInner({
 
                             {/* OVERVIEW */}
                             <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "overview" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4 shrink-0">
-                                    <StatCard label="Ventas Totales"    valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />
-                                    <StatCard label="Valoración Actual" valueSize="xl" value={formatCurrency(currentValuation)} icon={Banknote} accent="success" />
-                                    <StatCard label="Stock Actual"      valueSize="xl" value={`${formatQuantity(Number(product.current_stock ?? 0))} ${product.uom_name}`} icon={Package} accent="primary" />
-                                </div>
-                                <StatCard
-                                    label="Evolución del Stock"
-                                    variant="chart"
-                                    className="flex-1 min-h-[350px]"
-                                    chart={stockHistoryData.length ? <AnalyticsChart type="line-chart" preset="card" data={stockHistoryData} enableArea /> : <EmptyChart />}
-                                />
+                                {kpiIds.length > 0 && (
+                                    <div className={cn("grid gap-4 shrink-0", KPI_GRID[Math.min(kpiIds.length, 4)])}>
+                                        {kpiIds.map(id => overviewKpiCards[id])}
+                                    </div>
+                                )}
+                                {(!capabilities || capabilities.tracks_stock) && (
+                                    <StatCard
+                                        label="Evolución del Stock"
+                                        variant="chart"
+                                        className="flex-1 min-h-[350px]"
+                                        chart={stockHistoryData.length ? <AnalyticsChart type="line-chart" preset="card" data={stockHistoryData} enableArea /> : <EmptyChart />}
+                                    />
+                                )}
                             </div>
 
                             {/* SALES */}

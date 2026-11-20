@@ -1,20 +1,24 @@
-import { render, screen } from "@testing-library/react"
-import { describe, it, expect, vi, beforeAll } from "vitest"
+import { fireEvent, render, screen, within } from "@testing-library/react"
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest"
+
+const state = vi.hoisted(() => ({ capsById: {} as Record<number, unknown> }))
 
 vi.mock("../../hooks/useProducts", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../hooks/useProducts")>()),
-    useProductInsights: () => ({
+    useProductInsights: (id: number) => ({
         isLoading: false,
         insights: {
-            price_history: [], kardex: [], stock_history: [], production_usage: [], production_history: [],
+            capabilities: state.capsById[id],
+            price_history: [], stock_history: [], production_usage: [], production_history: [],
             top_customers: [], top_suppliers: [],
+            stock_flow: { totals: { in_qty: 0, in_cost: 0, out_qty: 0, out_cost: 0 }, monthly: [] },
             sales_analysis: { history: [], total_sold: 0, total_revenue: 0, total_cost_basis: 0 },
             purchase_analysis: { history: [], total_purchased: 0, total_cost: 0 },
         },
     }),
-    useProduct: () => ({
+    useProduct: (id: number) => ({
         isLoading: false,
-        product: { id: 1, uom_name: "un", current_stock: 0, cost_price: 0, sale_price: 0, sale_price_gross: 0 },
+        product: { id, uom_name: "un", current_stock: 0, cost_price: 0, sale_price: 0, sale_price_gross: 0 },
     }),
 }))
 vi.mock("@/features/inventory/hooks/useStockMoves", () => ({ useStockMoves: () => ({ data: [], isLoading: false }) }))
@@ -47,5 +51,57 @@ describe("ProductAnalyticsModal", () => {
         render(<ProductAnalyticsModal productId={1} productName="Tarjeta Doble Faz" open onOpenChange={() => {}} />)
         expect(screen.getAllByText("Tarjeta Doble Faz")).toHaveLength(2)
         expect(screen.queryByText("selector-producto")).not.toBeInTheDocument()
+    })
+})
+
+
+const fullCaps = {
+    sells: true, buys: true, tracks_stock: true, manufactures: false, express: false,
+    recurring: false, used_in_production: false, has_variants: false, segment: "STORABLE",
+}
+const inputCaps = { ...fullCaps, sells: false, used_in_production: true, segment: "INPUT" }
+
+describe("ProductAnalyticsModal capabilities", () => {
+    beforeEach(() => {
+        state.capsById = { 1: fullCaps, 2: inputCaps }
+    })
+
+    const open = (productId = 1) =>
+        render(<ProductAnalyticsModal productId={productId} productName="Tinta" open onOpenChange={() => {}} />)
+
+    it("hides sales tabs and shows production for an input-only product", () => {
+        open(2)
+        expect(screen.queryByRole("button", { name: "Ventas" })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: "Clientes" })).not.toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Compras" })).toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Producción" })).toBeInTheDocument()
+    })
+
+    it("shows the stock tab only when the product tracks stock", () => {
+        state.capsById = { 1: { ...fullCaps, tracks_stock: false } }
+        open(1)
+        expect(screen.queryByRole("button", { name: "Mov. Stock" })).not.toBeInTheDocument()
+    })
+
+    it("shows the segment label in the rail", () => {
+        open(2)
+        expect(screen.getAllByText("Insumo").length).toBeGreaterThan(0)
+    })
+
+    it("falls back to overview when the active tab is no longer visible", () => {
+        const view = render(<ProductAnalyticsModal productId={1} productName="Tinta" open onOpenChange={() => {}} />)
+        fireEvent.click(screen.getByRole("button", { name: "Ventas" }))
+        expect(screen.getByRole("button", { name: "Ventas" })).toHaveAttribute("aria-current", "page")
+        view.rerender(<ProductAnalyticsModal productId={2} productName="Tinta" open onOpenChange={() => {}} />)
+        expect(screen.getByRole("button", { name: "Resumen" })).toHaveAttribute("aria-current", "page")
+    })
+
+    it("renders every tab when capabilities are missing", () => {
+        state.capsById = {}
+        open(1)
+        const rail = within(screen.getByRole("navigation", { name: "Secciones de análisis de producto" }))
+        for (const name of ["Resumen", "Ventas", "Compras", "Precio", "Costos", "Mov. Stock", "Producción", "Clientes", "Proveedores"]) {
+            expect(rail.getByRole("button", { name })).toBeInTheDocument()
+        }
     })
 })
