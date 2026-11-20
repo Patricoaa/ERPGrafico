@@ -8,6 +8,7 @@ import type { PeriodKey } from "./period"
 import { ProductionPerformanceBlock } from "./ProductionPerformanceBlock"
 import type { ProductAnalyticsTabId, ProductCapabilities } from "./productAnalyticsRegistry"
 import { PricingBlock } from "./PricingBlock"
+import { ProcurementBlock } from "./ProcurementBlock"
 import { SalesBlock } from "./SalesBlock"
 import { SourcingBlock } from "./SourcingBlock"
 
@@ -20,7 +21,7 @@ interface TabContentProps {
     onOpenWorkOrder: (id: number) => void
 }
 
-const MIGRATED_TABS: readonly ProductAnalyticsTabId[] = ["sales", "pricing", "costs", "subscription"]
+const MIGRATED_TABS: readonly ProductAnalyticsTabId[] = ["sales", "pricing", "costs", "procurement", "subscription"]
 
 /** Tabs que ya no usan contenido del endpoint `insights` (ni el período lo ignora). */
 export function tabHasLegacyContent(tab: ProductAnalyticsTabId): boolean {
@@ -55,7 +56,7 @@ export function TabContent({
         case "costs":
             return <CostsBlock productId={productId} period={period} />
         case "procurement":
-            return <>{legacy("purchases")}{legacy("suppliers")}</>
+            return <ProcurementBlock productId={productId} period={period} />
         case "inventory":
             return <>{legacy("kardex")}<OperationsBlock productId={productId} period={period} /></>
         case "production":
