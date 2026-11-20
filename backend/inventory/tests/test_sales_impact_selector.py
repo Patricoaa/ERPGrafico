@@ -154,6 +154,20 @@ def test_variants_included_and_sum_to_total(env):
     assert result["totals"]["units"] == pytest.approx(5.0)
 
 
+def test_granularity_week(env):
+    _sale(env, on=date(2026, 3, 10))
+    _sale(env, on=date(2026, 3, 12))
+    _sale(env, on=date(2026, 3, 20))
+    series = _impact(env, granularity="week")["series"]
+    assert [p["period"] for p in series] == ["2026-W11", "2026-W12"]
+
+
+def test_granularity_week_uses_iso_year(env):
+    _sale(env, on=date(2025, 12, 29))
+    result = _impact(env, granularity="week", date_from=date(2025, 1, 1))
+    assert [p["period"] for p in result["series"]] == ["2026-W01"]
+
+
 def test_granularity_month_and_day(env):
     _sale(env, on=date(2026, 3, 10))
     _sale(env, on=date(2026, 3, 20))

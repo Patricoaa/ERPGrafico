@@ -22,13 +22,21 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Cast, Coalesce, Greatest, Least, TruncMonth, TruncYear
+from django.db.models.functions import (
+    Cast,
+    Coalesce,
+    Greatest,
+    Least,
+    TruncMonth,
+    TruncWeek,
+    TruncYear,
+)
 
 from .models import PricingRule, Product
 
 METRICS = ("units", "net_revenue", "margin", "avg_price", "discount_total", "foregone_revenue")
 GROUP_BYS = ("rule", "channel", "customer", "variant", "uom")
-GRANULARITIES = ("day", "month", "year")
+GRANULARITIES = ("day", "week", "month", "year")
 
 _DECIMAL = DecimalField(max_digits=28, decimal_places=6)
 
@@ -79,6 +87,8 @@ def net_revenue_expression():
 def _period_expression(granularity: str):
     if granularity == "day":
         return F("delivery__delivery_date")
+    if granularity == "week":
+        return TruncWeek("delivery__delivery_date")
     if granularity == "year":
         return TruncYear("delivery__delivery_date")
     return TruncMonth("delivery__delivery_date")
@@ -87,6 +97,8 @@ def _period_expression(granularity: str):
 def _period_label(value: date, granularity: str) -> str:
     if granularity == "day":
         return value.isoformat()
+    if granularity == "week":
+        return value.strftime("%G-W%V")
     if granularity == "year":
         return f"{value.year}"
     return value.strftime("%Y-%m")
