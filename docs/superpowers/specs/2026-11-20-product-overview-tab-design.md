@@ -54,3 +54,8 @@ Sin endpoint nuevo. Resumen usa los hooks existentes (`useProductSales`, `usePro
 ## Queda al implementador
 
 - Detalle visual de las tarjetas y orden fino.
+
+## Desvíos de la implementación
+
+- Se retiró también el acceso a documentos (abrir venta, compra u OT) que solo existía en las tablas legado; los bloques nuevos no tienen enlaces por fila. Queda pendiente reponerlo con el contrato `openEntity`.
+- Las etiquetas de los tabs (`TAB_LABELS`) pasaron al registro para compartirlas entre el modal y Resumen.

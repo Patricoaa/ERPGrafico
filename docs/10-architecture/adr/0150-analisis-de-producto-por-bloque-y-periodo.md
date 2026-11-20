@@ -41,9 +41,11 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 
 - **Séptimo tab migrado: Suscripción** (`subscription`). Bloque propio `SubscriptionBlock` con endpoint `GET /inventory/products/{id}/subscription-analysis/`: costo anualizado, equivalente mensual, activas y próximos 90 días; pagos del período con período anterior; suscripciones con último pago real y su variación; hallazgos de subida de precio, pago distinto al configurado, pago vencido, término próximo y pausadas. Los pagos se asocian por proveedor (las líneas de compra no apuntan a una suscripción). `OperationsBlock` ya no se monta en el modal.
 
+- **Último tab migrado: Resumen** (`overview`). `OverviewBlock` no tiene endpoint propio: llama a los hooks de los tabs visibles (con los mismos parámetros, para compartir caché) y aplica sus funciones `compose*` para mostrar la cifra protagonista de cada tab y todos los hallazgos agrupados, con acceso directo al tab. Con esto ningún tab usa `insights` ni `LegacyInsightsPanel`; se retira el aviso «Este tab muestra todo el histórico» y el acceso a documentos que solo ofrecían las tablas legado.
+
 ## Consecuencias
 
-- Mientras existan tabs legados, el período no los afecta; el modal avisa «Este tab muestra todo el histórico» cuando el período no es Histórico. El aviso se retira tab por tab.
-- `insights` se mantiene hasta migrar el último tab legado; después se retira.
+- Todos los tabs respetan el período; el aviso de histórico de la etapa de transición se retiró.
+- `insights`, `LegacyInsightsPanel` y los bloques que ya no se montan (`OperationsBlock`, `ProductionPerformanceBlock`, `SourcingBlock`, `SalesImpactBlock` suelto salvo como desglose) quedan sin consumidores en el modal y se retiran en un plan aparte.
 - Cada tab nuevo agrega un endpoint con parámetros `date_from`/`date_to` validados por serializer, lógica en selector y vistas ≤ 20 líneas.
 - `useProductOperations` deja de usar `keepPreviousData` incondicional (ADR-0148): conserva datos solo si no cambia `date_from`.
