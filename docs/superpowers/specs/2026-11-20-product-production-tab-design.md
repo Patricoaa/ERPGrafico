@@ -65,3 +65,8 @@ Servidor: `inventory/production_analysis_selector.py`, serializer de parámetros
 ## Queda al implementador
 
 - Nombres, orden fino de las secciones y etiquetas.
+
+## Desvíos de la implementación
+
+- `production-performance` agrega `rectified` a cada orden (cambio aditivo) para no duplicar la consulta de órdenes.
+- El rol insumo reutiliza `SourcingSelector._used_in` tal cual; su resultado es idéntico al de `sourcing`.
