@@ -540,13 +540,15 @@ class ProductSelector:
 
         from sales.models import SaleDeliveryLine, SaleReturnLine
 
+        from .sales_impact_selector import net_revenue_expression
+
         delivery_stats = SaleDeliveryLine.objects.filter(
             product_id__in=product_ids, delivery__status="CONFIRMED"
         ).aggregate(
             avg_price=Avg("unit_price", filter=models.Q(unit_price__gt=0)),
             avg_cost=Avg("unit_cost", filter=models.Q(unit_cost__gt=0)),
             total_qty=Sum("quantity"),
-            total_revenue=Sum(F("quantity") * F("unit_price")),
+            total_revenue=Sum(net_revenue_expression()),
             total_cost_basis=Sum(F("quantity") * F("unit_cost")),
         )
 
@@ -559,7 +561,8 @@ class ProductSelector:
         )
 
         net_qty = (delivery_stats["total_qty"] or 0) - (return_stats["total_qty"] or 0)
-        net_revenue = (delivery_stats["total_revenue"] or 0) - (return_stats["total_revenue"] or 0)
+        # Delivered revenue is net of line discounts (float); returns are still gross Decimal.
+        net_revenue = float(delivery_stats["total_revenue"] or 0) - float(return_stats["total_revenue"] or 0)
         net_cost_basis = (delivery_stats["total_cost_basis"] or 0) - (
             return_stats["total_cost_basis"] or 0
         )
@@ -574,7 +577,7 @@ class ProductSelector:
         ).annotate(
             month=TruncMonth("delivery__delivery_date")
         ).values("month").annotate(
-            revenue=Sum(F("quantity") * F("unit_price")),
+            revenue=Sum(net_revenue_expression()),
             cost=Sum(F("quantity") * F("unit_cost")),
             qty=Sum("quantity")
         ).order_by("month"))
@@ -666,7 +669,7 @@ class ProductSelector:
         ).values(
             customer_name=models.F("delivery__sale_order__customer__name")
         ).annotate(
-            total_revenue=Sum(F("quantity") * F("unit_price")),
+            total_revenue=Sum(net_revenue_expression()),
             total_cost=Sum(F("quantity") * F("unit_cost")),
             total_qty=Sum("quantity"),
         ).order_by("-total_revenue")[:10])
