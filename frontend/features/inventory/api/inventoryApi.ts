@@ -1,5 +1,6 @@
 import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.types"
 import type { ProductionPerformance, ProductionPerformanceParams } from "../analytics/productionPerformance.types"
+import type { Sourcing, SourcingParams } from "../analytics/sourcing.types"
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
 import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse, ProductAnalyticsParams, ProductAnalyticsResponse } from '../analyticsTypes'
@@ -122,6 +123,12 @@ export const inventoryApi = {
     /** Production cost/time performance of a manufacturable product (ADR-0146). */
     getProductProductionPerformance: async (id: number, params: ProductionPerformanceParams): Promise<ProductionPerformance> => {
         const { data } = await api.get<ProductionPerformance>(`inventory/products/${id}/production-performance/`, { params })
+        return data
+    },
+
+    /** Make-vs-buy and input-usage sensitivity (ADR-0147). */
+    getProductSourcing: async (id: number, params: SourcingParams): Promise<Sourcing> => {
+        const { data } = await api.get<Sourcing>(`inventory/products/${id}/sourcing/`, { params })
         return data
     },
 
