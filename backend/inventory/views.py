@@ -224,6 +224,18 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(SalesImpactSelector.get_sales_impact(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="production-performance")
+    def production_performance(self, request, pk=None):
+        """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
+        from .production_performance_params import ProductionPerformanceParamsSerializer
+        from .production_performance_selector import ProductionPerformanceSelector
+
+        instance = self.get_object()
+        params = ProductionPerformanceParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        date_from, date_to = params.to_range()
+        return Response(ProductionPerformanceSelector.get_performance(instance, date_from, date_to))
+
     @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):
         from django.core.exceptions import ValidationError
