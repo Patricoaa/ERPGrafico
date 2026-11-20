@@ -84,6 +84,33 @@ def net_revenue_expression():
     )
 
 
+def list_net_expression():
+    """Precio de lista neto de IVA registrado en la línea de venta (``None`` si no se registró)."""
+    return Case(
+        When(
+            sale_line__list_unit_price_gross__isnull=False,
+            then=_f("sale_line__list_unit_price_gross")
+            / (Value(1.0, output_field=FloatField()) + _f("sale_line__tax_rate") / Value(100.0, output_field=FloatField())),
+        ),
+        default=None,
+        output_field=FloatField(),
+    )
+
+
+def foregone_expression():
+    """Ingreso no percibido por vender bajo la lista; requiere la anotación ``list_net``."""
+    return Case(
+        When(
+            list_net__gt=_f("unit_price"),
+            then=_f("quantity")
+            * (F("list_net") - _f("unit_price"))
+            * (Value(1.0, output_field=FloatField()) - discount_ratio_expression()),
+        ),
+        default=Value(0.0, output_field=FloatField()),
+        output_field=FloatField(),
+    )
+
+
 def _period_expression(granularity: str):
     if granularity == "day":
         return F("delivery__delivery_date")
@@ -212,25 +239,8 @@ class SalesImpactSelector:
             lines = lines.filter(sale_line__pricing_rule_id=params.rule_id)
 
         net = net_revenue_expression()
-        list_net = Case(
-            When(
-                sale_line__list_unit_price_gross__isnull=False,
-                then=_f("sale_line__list_unit_price_gross")
-                / (Value(1.0, output_field=FloatField()) + _f("sale_line__tax_rate") / Value(100.0, output_field=FloatField())),
-            ),
-            default=None,
-            output_field=FloatField(),
-        )
-        foregone = Case(
-            When(
-                list_net__gt=_f("unit_price"),
-                then=_f("quantity")
-                * (F("list_net") - _f("unit_price"))
-                * (Value(1.0, output_field=FloatField()) - discount_ratio_expression()),
-            ),
-            default=Value(0.0, output_field=FloatField()),
-            output_field=FloatField(),
-        )
+        list_net = list_net_expression()
+        foregone = foregone_expression()
 
         rows = list(
             lines.annotate(

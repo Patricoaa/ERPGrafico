@@ -231,6 +231,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(SalesImpactSelector.get_sales_impact(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="pricing")
+    def pricing(self, request, pk=None):
+        """Precio, margen realizado y efecto de los cambios de precio en las ventas."""
+        from .pricing_params import PricingParamsSerializer
+        from .pricing_selector import PricingSelector
+
+        instance = self.get_object()
+        params = PricingParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(PricingSelector.get_pricing(instance, params.to_params()))
+
     @action(detail=True, methods=["get"], url_path="production-performance")
     def production_performance(self, request, pk=None):
         """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
