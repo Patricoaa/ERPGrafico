@@ -85,3 +85,8 @@ Servidor: `inventory/sales_overview_selector.py` (nombre a criterio del implemen
 - Cómo tratar al cliente genérico del POS: el cliente del pedido es obligatorio (el POS usa un contacto genérico). El implementador revisa cómo lo asigna el POS; si hay una marca reconocible, se agrupa como «Mostrador (POS)» y no cuenta como cliente distinto ni en la concentración; si no la hay, cuenta como un cliente más.
 - Nombres de tipos, hooks y entidades, y orden fino de las secciones.
 - Cómo normalizar unidades entre unidades de medida distintas en el reparto por unidad (por defecto, sumar la cantidad vendida en cada unidad sin convertir).
+
+## Desvíos de la implementación
+
+- El cliente genérico del POS se reconoce con `Contact.is_default_customer`: aparece como «Mostrador (POS)» en el ranking, no cuenta como cliente distinto y la concentración se calcula sobre el ingreso de clientes identificados (el `share_pct` de cada fila es sobre el ingreso total).
+- El período anterior se dibuja en color atenuado, sin trazo punteado (Nivo no lo permite por serie sin una capa propia).

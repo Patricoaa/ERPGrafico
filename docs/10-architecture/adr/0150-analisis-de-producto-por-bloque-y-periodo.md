@@ -28,6 +28,8 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 
 - **Primer tab migrado: Precio y margen** (`pricing`). Bloque propio `PricingBlock` con endpoint `GET /inventory/products/{id}/pricing/` (margen realizado vs período anterior, precio de lista contra precio realizado y unidades, y «Antes vs después» de cada cambio de precio o regla con ventanas de 28 días). Ya no usa `insights`, por lo que no muestra el aviso de histórico.
 
+- **Segundo tab migrado: Ventas** (`sales`, absorbe Clientes). Bloque propio `SalesBlock` con endpoint `GET /inventory/products/{id}/sales/` (unidades con variación contra el período anterior superpuesto, clientes distintos reales sin el cliente genérico del POS, devoluciones, repartos por cliente, canal, variante y unidad, y hallazgos). Ya no usa `insights` ni muestra el aviso de histórico.
+
 ## Consecuencias
 
 - Mientras existan tabs legados, el período no los afecta; el modal avisa «Este tab muestra todo el histórico» cuando el período no es Histórico. El aviso se retira tab por tab.
