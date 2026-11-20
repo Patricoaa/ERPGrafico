@@ -5,6 +5,7 @@ import { AnalyticsChart, StatCard } from "@/components/shared"
 import { Collection, formatNumber, useEntityCollection } from "@/components/entity-view"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMoney } from "@/lib/money"
+import { monthsAgoIso } from "./monthsAgoIso"
 import { useProductProductionPerformance } from "../hooks/useProductProductionPerformance"
 import {
     productionOrderPerformanceEntity, productionOrderPerformanceViews,
@@ -14,15 +15,6 @@ import {
 } from "../entity-view/productionMaterialPerformance.entity"
 
 const RANGES = [{ months: 3, label: "3 m" }, { months: 12, label: "12 m" }, { months: 24, label: "24 m" }]
-
-/** Local-date ISO (yyyy-mm-dd), clamped to the last day of the target month (no overflow). */
-function monthsAgoIso(months: number, today = new Date()): string {
-    const target = new Date(today.getFullYear(), today.getMonth() - months, 1)
-    const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
-    target.setDate(Math.min(today.getDate(), lastDay))
-    const pad = (n: number) => String(n).padStart(2, "0")
-    return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`
-}
 
 const pct = (n: number) => formatNumber(n, 1, "%")
 const signedPct = (n: number) => `${n > 0 ? "+" : ""}${pct(n)}`

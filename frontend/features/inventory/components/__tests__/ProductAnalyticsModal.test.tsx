@@ -28,6 +28,9 @@ vi.mock("@/features/inventory/hooks/useStockMoves", () => ({ useStockMoves: () =
 vi.mock("@/components/selectors", () => ({ ProductSelector: () => <div>selector-producto</div> }))
 vi.mock("@/features/_shared", () => ({ LazyDrawer: () => null }))
 vi.mock("@/features/production", () => ({ WorkOrderWizard: () => null }))
+vi.mock("../../analytics/SourcingBlock", () => ({
+    SourcingBlock: ({ productId }: { productId: number }) => <div>bloque-abastecimiento-{productId}</div>,
+}))
 vi.mock("../../analytics/ProductionPerformanceBlock", () => ({
     ProductionPerformanceBlock: ({ productId }: { productId: number }) => <div>bloque-fabricacion-{productId}</div>,
 }))
@@ -148,5 +151,17 @@ describe("ProductAnalyticsModal capabilities", () => {
     it("hides the Fabricación tab for a product that is not manufactured", () => {
         open(1)
         expect(screen.queryByRole("button", { name: "Fabricación" })).not.toBeInTheDocument()
+    })
+
+    it("shows the Abastecimiento tab for an input and mounts its block only when active", () => {
+        open(2)
+        expect(screen.queryByText("bloque-abastecimiento-2")).not.toBeInTheDocument()
+        fireEvent.click(screen.getByRole("button", { name: "Abastecimiento" }))
+        expect(screen.getByText("bloque-abastecimiento-2")).toBeInTheDocument()
+    })
+
+    it("hides the Abastecimiento tab when the product is neither made+bought nor an input", () => {
+        open(1)
+        expect(screen.queryByRole("button", { name: "Abastecimiento" })).not.toBeInTheDocument()
     })
 })

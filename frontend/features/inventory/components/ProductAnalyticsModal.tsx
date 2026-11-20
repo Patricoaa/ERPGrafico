@@ -21,6 +21,7 @@ import {
     Building2,
     Percent,
     Hammer,
+    Scale,
 } from "lucide-react"
 import { useProductInsights, useProduct } from "../hooks/useProducts"
 import { format } from "date-fns"
@@ -43,6 +44,7 @@ import { topCustomerEntity, topCustomerViews } from "../entity-view/topCustomer.
 import { topSupplierEntity, topSupplierViews } from "../entity-view/topSupplier.entity"
 import { SalesImpactBlock } from "../analytics/SalesImpactBlock"
 import { ProductionPerformanceBlock } from "../analytics/ProductionPerformanceBlock"
+import { SourcingBlock } from "../analytics/SourcingBlock"
 import {
     SEGMENT_LABELS, overviewKpiIds, visibleTabIds,
     type OverviewKpiId, type ProductCapabilities,
@@ -154,6 +156,7 @@ const TABS = [
     { value: "kardex",      label: "Mov. Stock", icon: ArrowRightLeft },
     { value: "production",  label: "Producción", icon: Factory },
     { value: "manufacturing", label: "Fabricación", icon: Hammer },
+    { value: "sourcing", label: "Abastecimiento", icon: Scale },
     { value: "customers",   label: "Clientes",   icon: Users },
     { value: "suppliers",   label: "Proveedores", icon: Building2 },
 ] as const
@@ -489,6 +492,13 @@ function ProductAnalyticsPanelInner({
                             {activeTab === "manufacturing" && (
                                 <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
                                     <ProductionPerformanceBlock productId={productId} />
+                                </div>
+                            )}
+
+                            {/* SOURCING — mounted only while active so it fetches on demand */}
+                            {activeTab === "sourcing" && (
+                                <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
+                                    <SourcingBlock productId={productId} />
                                 </div>
                             )}
 

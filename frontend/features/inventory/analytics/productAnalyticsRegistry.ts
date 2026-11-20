@@ -35,6 +35,7 @@ export type ProductAnalyticsTabId =
     | "kardex"
     | "production"
     | "manufacturing"
+    | "sourcing"
     | "customers"
     | "suppliers"
 
@@ -52,7 +53,7 @@ export const SEGMENT_LABELS: Record<ProductSegment, string> = {
 }
 
 const TAB_ORDER: ProductAnalyticsTabId[] = [
-    "overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "customers", "suppliers",
+    "overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "customers", "suppliers",
 ]
 
 const TAB_RULES: Record<ProductAnalyticsTabId, (c: ProductCapabilities) => boolean> = {
@@ -67,6 +68,7 @@ const TAB_RULES: Record<ProductAnalyticsTabId, (c: ProductCapabilities) => boole
     kardex: (c) => c.tracks_stock,
     production: (c) => c.manufactures || c.used_in_production,
     manufacturing: (c) => c.manufactures,
+    sourcing: (c) => (c.manufactures && c.buys) || c.used_in_production,
 }
 
 /** Tabs que aplican al producto, en orden fijo. Sin capacidades (respuesta antigua) → todos. */

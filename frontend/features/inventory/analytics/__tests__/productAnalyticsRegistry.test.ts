@@ -24,7 +24,7 @@ const caps = (overrides: Partial<ProductCapabilities>): ProductCapabilities => (
 describe("visibleTabIds", () => {
     it("hides sales tabs and shows purchasing/stock/production for an input-only product", () => {
         const tabs = visibleTabIds(caps({ segment: "INPUT", buys: true, tracks_stock: true, used_in_production: true }))
-        expect(tabs).toEqual(["overview", "purchases", "cost", "kardex", "production", "suppliers"])
+        expect(tabs).toEqual(["overview", "purchases", "cost", "kardex", "production", "sourcing", "suppliers"])
     })
 
     it("shows sales tabs for a sellable product and no stock tab without stock", () => {
@@ -55,7 +55,7 @@ describe("visibleTabIds", () => {
     })
 
     it("returns every tab when capabilities are missing", () => {
-        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "customers", "suppliers"]
+        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "customers", "suppliers"]
         expect(visibleTabIds(undefined)).toEqual(all)
         expect(visibleTabIds(null)).toEqual(all)
     })
@@ -97,5 +97,13 @@ describe("SEGMENT_LABELS", () => {
         const tabs = visibleTabIds(caps({ manufactures: true, used_in_production: true }))
         expect(tabs.indexOf("manufacturing")).toBe(tabs.indexOf("production") + 1)
         expect(visibleTabIds(caps({ manufactures: false, used_in_production: true }))).not.toContain("manufacturing")
+    })
+
+    it("sourcing tab applies to products made and bought, or used as an input, right after manufacturing", () => {
+        const both = visibleTabIds(caps({ manufactures: true, buys: true }))
+        expect(both.indexOf("sourcing")).toBe(both.indexOf("manufacturing") + 1)
+        expect(visibleTabIds(caps({ manufactures: false, buys: false, used_in_production: true }))).toContain("sourcing")
+        expect(visibleTabIds(caps({ manufactures: true, buys: false, used_in_production: false }))).not.toContain("sourcing")
+        expect(visibleTabIds(caps({ manufactures: false, buys: true, used_in_production: false }))).not.toContain("sourcing")
     })
 })
