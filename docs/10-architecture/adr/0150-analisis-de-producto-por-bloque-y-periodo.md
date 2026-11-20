@@ -41,7 +41,7 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 
 - **Séptimo tab migrado: Suscripción** (`subscription`). Bloque propio `SubscriptionBlock` con endpoint `GET /inventory/products/{id}/subscription-analysis/`: costo anualizado, equivalente mensual, activas y próximos 90 días; pagos del período con período anterior; suscripciones con último pago real y su variación; hallazgos de subida de precio, pago distinto al configurado, pago vencido, término próximo y pausadas. Los pagos se asocian por proveedor (las líneas de compra no apuntan a una suscripción). `OperationsBlock` ya no se monta en el modal.
 
-- **Último tab migrado: Resumen** (`overview`). `OverviewBlock` no tiene endpoint propio: llama a los hooks de los tabs visibles (con los mismos parámetros, para compartir caché) y aplica sus funciones `compose*` para mostrar la cifra protagonista de cada tab y todos los hallazgos agrupados, con acceso directo al tab. Con esto ningún tab usa `insights` ni `LegacyInsightsPanel`; se retira el aviso «Este tab muestra todo el histórico» y el acceso a documentos que solo ofrecían las tablas legado.
+- **Último tab migrado: Resumen** (`overview`). `OverviewBlock` no tiene endpoint propio: llama a los hooks de los tabs visibles (con los mismos parámetros, para compartir caché) y aplica sus funciones `compose*` para mostrar la cifra protagonista de cada tab y todos los hallazgos agrupados, con acceso directo al tab. Con esto ningún tab usa `insights` ni `LegacyInsightsPanel`; se retira el aviso «Este tab muestra todo el histórico» y el acceso a documentos que solo ofrecían las tablas legado; no se repone porque el análisis vive en un modal (decisión del usuario).
 
 ## Consecuencias
 
