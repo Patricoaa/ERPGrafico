@@ -119,3 +119,15 @@ Resumen para orientación:
 - **ProductManufacturingProfile** (1:1 con `Product`) extrae los campos `mfg_*` de productos MANUFACTURABLE. Shortcut `product.mfg_profile`.
 - **Columnas legacy** (FKs directos en `JournalEntry`, `TreasuryMovement`, `Invoice`) siguen en DB pero ya no reciben writes. Migration de eliminación pendiente — ver ADR-0016 §"Deprecation window".
 
+
+## Procedencia del precio en líneas de venta
+
+`SaleLine` registra de dónde salió su precio (base de la analítica de reglas de precio por producto):
+
+- `pricing_rule` (FK a `PricingRule`, `SET_NULL`): regla aplicada, nula si no hubo ninguna.
+- `list_unit_price_gross`: precio bruto antes de las reglas.
+- `price_source`: `LIST` · `UOM_PRICE` · `RULE` · `MANUAL`.
+
+Los sella `SalesService.create_sale_order` (camino único de pedidos y POS, vía `SalesService._price_provenance`) al crear la línea. El backend vuelve a resolver el precio con `PricingService.resolve_product_price` y lo compara con el `unit_price_gross` enviado (o con el neto, con tolerancia de 1 peso): si coincide registra la regla y el origen; si no, `MANUAL` sin regla. Los descuentos (`discount_percentage`, `discount_amount`) no intervienen en la comparación.
+
+Los campos no son editables por el cliente. Quedan nulos en líneas anteriores a su existencia (sin backfill), en líneas de notas de débito y en despachos suplementarios. `PricingService.get_product_price` delega en `resolve_product_price` y no cambia su resultado.
