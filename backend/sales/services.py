@@ -39,12 +39,51 @@ class SalesService:
         order = SaleOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
 
         for line_data in lines_data:
-            SaleLine.objects.create(order=order, **line_data)
+            SaleLine.objects.create(order=order, **line_data, **SalesService._price_provenance(line_data))
 
         order.recalculate_totals()
         order.save()
 
         return order
+
+    @staticmethod
+    def _price_provenance(line_data: dict) -> dict:
+        """Provenance fields (rule, list price, source) for a line about to be created.
+
+        The price the client sent is compared with the one the backend resolves from the
+        same pricing logic: a match records the rule/source, a mismatch is a MANUAL price.
+        Discounts live in their own fields and do not affect the comparison.
+        """
+        from accounting.utils import get_vat_multiplier
+        from inventory.services import PricingService
+
+        product = line_data.get("product")
+        if product is None:
+            return {}
+
+        resolution = PricingService.resolve_product_price(
+            product, Decimal(str(line_data.get("quantity", 1))), uom=line_data.get("uom")
+        )
+        sent_gross = line_data.get("unit_price_gross")
+        if sent_gross is not None:
+            difference = abs(Decimal(sent_gross) - resolution.price_gross)
+        else:
+            resolved_net = (resolution.price_gross / get_vat_multiplier()).quantize(
+                Decimal("1"), rounding="ROUND_HALF_UP"
+            )
+            difference = abs(Decimal(line_data.get("unit_price", 0)) - resolved_net)
+
+        if difference <= 1:
+            return {
+                "pricing_rule": resolution.rule,
+                "list_unit_price_gross": resolution.list_price_gross,
+                "price_source": resolution.source,
+            }
+        return {
+            "pricing_rule": None,
+            "list_unit_price_gross": resolution.list_price_gross,
+            "price_source": SaleLine.PriceSource.MANUAL,
+        }
 
     @staticmethod
     def _resolve_pos_session(user, pos_session_id):
