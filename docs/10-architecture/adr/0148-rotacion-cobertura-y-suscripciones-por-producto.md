@@ -1,12 +1,14 @@
 ---
 id: 0148
 title: Rotación, cobertura y suscripciones por producto; endpoint `operations`
-status: Accepted
+status: Superseded by 0150
 date: 2026-11-19
 author: frontend-team + backend-team
 ---
 
 # 0148 — Rotación, cobertura y suscripciones por producto
+
+> **Reemplazada por [ADR-0150](0150-analisis-de-producto-por-bloque-y-periodo.md) (2026-11-20):** el endpoint `operations` y `OperationsBlock` se retiraron; la rotación y la cobertura (`OperationsSelector._rotation`, `coverage`) se conservan y las usan `stock-analysis` y `procurement`; las suscripciones pasaron a `subscription-analysis`.
 
 **Relacionado:** `docs/superpowers/specs/2026-11-19-product-operations-design.md`, ADR-0144 (capacidades), ADR-0147 (abastecimiento), `zero-n-plus-one-policy.md` (ADR-0118).
 

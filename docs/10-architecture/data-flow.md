@@ -134,16 +134,16 @@ Los campos no son editables por el cliente. Quedan nulos en líneas anteriores a
 
 ### Ingreso neto de descuentos (ADR-0145)
 
-El ingreso por línea de despacho confirmada es `quantity × unit_price × (1 − ratio)`, con `ratio = clamp(sale_line.discount_amount / (sale_line.quantity × sale_line.unit_price_gross), 0, 1)`, o 0 si la línea no tiene precio bruto (igual que `SaleLine.calculate_subtotal`); el descuento se prorratea por unidad despachada. El margen resta el `unit_cost` congelado en el despacho. `insights` y `GET /inventory/products/{id}/sales-impact/` comparten la expresión (`net_revenue_expression`), por lo que las cifras coinciden.
+El ingreso por línea de despacho confirmada es `quantity × unit_price × (1 − ratio)`, con `ratio = clamp(sale_line.discount_amount / (sale_line.quantity × sale_line.unit_price_gross), 0, 1)`, o 0 si la línea no tiene precio bruto (igual que `SaleLine.calculate_subtotal`); el descuento se prorratea por unidad despachada. El margen resta el `unit_cost` congelado en el despacho. `sales-impact`, `pricing` y `sales` comparten la expresión (`net_revenue_expression`), por lo que las cifras coinciden.
 
 ### Costo real de fabricación (ADR-0146)
 
-El costo real de una OT terminada es Σ `ProductionConsumption.quantity × stock_move.unit_cost` (sin movimiento: costo actual del insumo, marcado «estimado»). El planificado es Σ `WorkOrderMaterial.quantity_planned × unit_cost_snapshot` en unidad base del componente. La desviación es real − planificado y el costo real por unidad se compara con `Product.get_bom_cost()`. Expuesto en `GET /inventory/products/{id}/production-performance/`.
+El costo real de una OT terminada es Σ `ProductionConsumption.quantity × stock_move.unit_cost` (sin movimiento: costo actual del insumo, marcado «estimado»). El planificado es Σ `WorkOrderMaterial.quantity_planned × unit_cost_snapshot` en unidad base del componente. La desviación es real − planificado y el costo real por unidad se compara con `Product.get_bom_cost()` (por unidad producida: divide por el rendimiento y usa el precio de las líneas tercerizadas). Lo calcula `ProductionPerformanceSelector` y lo exponen `costs` y `production-analysis` (ADR-0150).
 
-### Fabricar vs comprar y sensibilidad de insumos (ADR-0147)
+### Sensibilidad de insumos (ADR-0147, ADR-0150)
 
-El ahorro por unidad es `costo de compra promedio − costo real fabricado` (ambos por unidad base, misma ventana); es `null` si falta un lado. Para un insumo, el aumento de costo de cada producto padre con subida `p %` es `costo del insumo en la BOM × p / 100`, con el margen recalculado sobre el precio neto del padre. Expuesto en `GET /inventory/products/{id}/sourcing/`.
+Un fabricable no se compra (`Product.save`), así que no hay comparación fabricar vs comprar. Para un insumo, el aumento de costo de cada producto padre con subida `p %` es `costo del insumo en la BOM × p / 100`, con el margen recalculado sobre el precio neto del padre. Lo calcula `SourcingSelector._used_in` y lo expone `production-analysis`.
 
 ### Rotación, cobertura y suscripciones (ADR-0148)
 
-La rotación es `salidas de la ventana / stock promedio ponderado por días` y la cobertura `stock actual / consumo diario de los últimos 90 días`; ambas son `null` sin datos. El costo anualizado de una suscripción es `monto × períodos por año`. Expuesto en `GET /inventory/products/{id}/operations/`.
+La rotación es `salidas de la ventana / stock promedio ponderado por días` y la cobertura `stock actual / consumo diario de los últimos 90 días`; ambas son `null` sin datos. El costo anualizado de una suscripción es `monto × períodos por año`. La rotación la exponen `stock-analysis` y `procurement` (cobertura); las suscripciones, `subscription-analysis` (ADR-0150).

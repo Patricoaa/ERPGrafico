@@ -206,11 +206,11 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0141](0141-cuadre-unificado-por-grupo.md) | El cuadre es un solo registro por grupo (documento ERP, pagos TUU, registros RCV) que el motor resuelve cada 10 minutos; sin vínculos por pares ni recálculo manual | Accepted |
 | [0142](0142-escala-unificada-fluida-densidad-y-puntero.md) | Escala unificada: tipografía fluida (Utopia), espaciado y alturas de control dirigidos por un dial (densidad × puntero) en atributos CSS | Accepted |
 | [0143](0143-wizard-de-notas-sobre-drawer-layout.md) | Wizard de notas NC/ND sobre Drawer + DrawerLayout (patrón de compra); el hook es la única fuente del paso | Accepted |
-| [0144](0144-capacidades-y-stock-flow-en-insights-de-producto.md) | El análisis de producto se adapta a las capacidades del producto; `stock_flow` reemplaza `kardex` en `insights` | Accepted |
+| [0144](0144-capacidades-y-stock-flow-en-insights-de-producto.md) | El análisis de producto se adapta a las capacidades del producto; `stock_flow` reemplaza `kardex` en `insights` | Superseded by 0150 |
 | [0145](0145-precio-y-margen-por-producto.md) | Margen real e impacto de reglas de precio por producto; endpoint `sales-impact` e ingresos de `insights` netos de descuentos | Accepted |
-| [0146](0146-rendimiento-de-fabricacion-por-producto.md) | Rendimiento de fabricación por producto; endpoint `production-performance` (costo real vs BOM, desviación de insumos, etapas, margen por OT) | Accepted |
-| [0147](0147-decisiones-de-abastecimiento-por-producto.md) | Decisiones de abastecimiento por producto; endpoint `sourcing` (fabricar vs comprar y uso como insumo con sensibilidad) | Accepted |
-| [0148](0148-rotacion-cobertura-y-suscripciones-por-producto.md) | Rotación, cobertura y suscripciones por producto; endpoint `operations` | Accepted |
+| [0146](0146-rendimiento-de-fabricacion-por-producto.md) | Rendimiento de fabricación por producto; endpoint `production-performance` (costo real vs BOM, desviación de insumos, etapas, margen por OT) | Superseded by 0150 |
+| [0147](0147-decisiones-de-abastecimiento-por-producto.md) | Decisiones de abastecimiento por producto; endpoint `sourcing` (fabricar vs comprar y uso como insumo con sensibilidad) | Superseded by 0150 |
+| [0148](0148-rotacion-cobertura-y-suscripciones-por-producto.md) | Rotación, cobertura y suscripciones por producto; endpoint `operations` | Superseded by 0150 |
 | [0149](0149-metric-card-system.md) | Sistema de cards de métrica: `Metric`, `MetricStrip` y `ChartCard` reemplazan a `StatCard` (valores en JetBrains Mono, densidad compacta, tono solo con significado) | Accepted |
 | [0150](0150-analisis-de-producto-por-bloque-y-periodo.md) | Análisis de producto por bloque, con período único en el riel y capacidades separadas (`capabilities`); segmento solo interno | Accepted |
 

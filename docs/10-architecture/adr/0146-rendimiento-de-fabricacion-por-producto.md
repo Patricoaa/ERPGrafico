@@ -1,12 +1,14 @@
 ---
 id: 0146
 title: Rendimiento de fabricación por producto; endpoint `production-performance` (costo real vs BOM, desviación de insumos, etapas, margen por OT)
-status: Accepted
+status: Superseded by 0150
 date: 2026-11-19
 author: frontend-team + backend-team
 ---
 
 # 0146 — Rendimiento de fabricación por producto
+
+> **Reemplazada por [ADR-0150](0150-analisis-de-producto-por-bloque-y-periodo.md) (2026-11-20):** el endpoint `production-performance` y `ProductionPerformanceBlock` se retiraron; `ProductionPerformanceSelector` se conserva y lo usan `costs` y `production-analysis`.
 
 **Relacionado:** `docs/superpowers/specs/2026-11-19-product-production-performance-design.md`, ADR-0144 (capacidades), ADR-0145 (precio y margen), `zero-n-plus-one-policy.md` (ADR-0118).
 

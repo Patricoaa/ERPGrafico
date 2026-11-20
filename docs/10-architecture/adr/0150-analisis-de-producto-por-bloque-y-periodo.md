@@ -46,6 +46,7 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 ## Consecuencias
 
 - Todos los tabs respetan el período; el aviso de histórico de la etapa de transición se retiró.
-- `insights`, `LegacyInsightsPanel` y los bloques que ya no se montan (`OperationsBlock`, `ProductionPerformanceBlock`, `SourcingBlock`, `SalesImpactBlock` suelto salvo como desglose) quedan sin consumidores en el modal y se retiran en un plan aparte.
+- **Legado retirado (2026-11-20):** endpoints `insights` de producto, `operations`, `production-performance` y `sourcing`; `ProductSelector.get_insights`, `OperationsSelector.get_operations`, `SourcingSelector.get_sourcing` y `make_vs_buy`; `LegacyInsightsPanel`, `OperationsBlock`, `ProductionPerformanceBlock`, `SourcingBlock`, sus hooks, tipos y entidades. Se conservan los selectores que usan los bloques nuevos (`_rotation`, `coverage`, `get_performance`, `_used_in`) y `sales-impact` como desglose de Precio y margen. ADR 0144, 0146, 0147 y 0148 quedan reemplazadas por esta.
+- **Excepción al playbook de deprecación:** el retiro se hizo sin período de deprecación por decisión del usuario, porque no existe producción y los únicos consumidores eran componentes del propio frontend que ya no se montaban.
 - Cada tab nuevo agrega un endpoint con parámetros `date_from`/`date_to` validados por serializer, lógica en selector y vistas ≤ 20 líneas.
 - `useProductOperations` deja de usar `keepPreviousData` incondicional (ADR-0148): conserva datos solo si no cambia `date_from`.
