@@ -2,8 +2,7 @@
 
 import React, { useState } from "react"
 import { LayoutDashboard } from "lucide-react"
-import { Drawer, TabBar } from "@/components/shared"
-import { Button } from "@/components/ui/button"
+import { Drawer, RailNav, TabBar } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
 import type { AnalyticsPanelProps, AnalyticsTab, AnalyticsPanelContentProps } from "./types"
 import { cn } from "@/lib/utils"
@@ -44,6 +43,7 @@ export function AnalyticsTabBar({
 }
 
 export function AnalyticsPanelContent({
+    entityName,
     tabs,
     activeTab: activeTabProp,
     onTabChange,
@@ -57,42 +57,17 @@ export function AnalyticsPanelContent({
 
     return (
         <div className="flex-1 flex flex-row gap-4 w-full h-full min-h-0 overflow-hidden bg-transparent">
-            <div className="w-52 shrink-0 flex flex-col gap-2 overflow-y-auto bg-transparent pb-4">
-                {tabs.map((t) => {
-                    const Icon = t.icon
-                    const isActive = t.value === currentTab
-                    return (
-                        <Button
-                            key={t.value}
-                            variant="ghost"
-                            type="button"
-                            onClick={() => handleTabChange(t.value)}
-                            className={cn(
-                                "flex w-full items-center justify-start gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all duration-200 h-auto",
-                                isActive 
-                                    ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground" 
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            )}
-                        >
-                            {Icon && <Icon className="w-4 h-4 shrink-0" />}
-                            <span className="truncate">{t.label}</span>
-                            {t.badge && (
-                                <span className={cn(
-                                    "ml-auto text-3xs px-1.5 py-0.5 rounded-full font-medium",
-                                    isActive ? "bg-primary-foreground/20" : "bg-muted-foreground/20"
-                                )}>
-                                    {t.badge}
-                                </span>
-                            )}
-                        </Button>
-                    )
-                })}
-                {granularity && onGranularityChange && (
-                    <>
-                        <div className="mt-auto border-t border-border/50 pt-3" />
-                        <GranularityControl value={granularity} onChange={onGranularityChange} />
-                    </>
-                )}
+            <div className="w-14 shrink-0 sm:w-56">
+                <RailNav
+                    ariaLabel={`Secciones de análisis de ${entityName}`}
+                    sections={[{ items: tabs }]}
+                    value={currentTab}
+                    onValueChange={handleTabChange}
+                    className="bg-transparent px-1.5 py-0 sm:px-0 sm:pr-4"
+                    bottom={granularity && onGranularityChange
+                        ? <GranularityControl value={granularity} onChange={onGranularityChange} />
+                        : undefined}
+                />
             </div>
             <div className="flex-1 flex flex-col min-w-0 h-full p-0">
                 {tabs.map((tab) => (
