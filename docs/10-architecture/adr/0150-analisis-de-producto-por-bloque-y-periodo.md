@@ -21,6 +21,9 @@ El modal «Análisis de producto» cargaba un endpoint monolítico (`insights`) 
 - **Capacidades separadas:** `GET /inventory/products/{id}/capabilities/` devuelve el mismo payload que `capabilities` de `insights`. El modal no muestra tabs ni consulta bloques hasta tenerlas.
 - **Segmento interno:** el segmento deja de mostrarse en la UI (`SEGMENT_LABELS` se elimina); sigue en `capabilities.segment` para elegir composiciones.
 - **Carga con `SkeletonShell`** en todos los bloques mediante `AnalyticsBlockFrame` (carga, error, vacío).
+- **8 tabs por decisión** (reemplazan a los 13 por origen de dato): Resumen (siempre), Ventas y Precio y margen (`sells`), Costos (`buys` o `manufactures` o `tracks_stock`), Abastecimiento (`buys`), Inventario (`tracks_stock`), Producción (`manufactures` o `used_in_production`) y Suscripción (`recurring`). Absorben Clientes, Precio, Compras, Proveedores, Mov. Stock, Operación, Fabricación y el antiguo Abastecimiento (fabricar vs comprar pasa a Costos; «uso como insumo» a Producción). Mientras se migra cada tab, `TabContent` apila el contenido actual que absorbe.
+- **Zona Vista del riel:** bajo «Período», cada bloque entrega sus controles contextuales (métrica, agrupar por, stock inmóvil, subida de precio del insumo) mediante `RailControls` (portal; copia móvil sobre el contenido). Se elimina el selector manual de granularidad.
+- **Granularidad automática** según el período: 1 m día; 3 y 6 m semana ISO; 12 y 24 m mes; Histórico año. `sales-impact` acepta `granularity=week` (etiqueta `AAAA-Www`, año ISO).
 - **Layout dinámico por composición:** cada bloque compone piezas compartidas según capacidades y datos; la definición de cada tab por segmento se hace en un plan por tab.
 
 ## Consecuencias
