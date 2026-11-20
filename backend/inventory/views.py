@@ -275,6 +275,17 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(ProcurementSelector.get_procurement(instance, params.to_params()))
 
+    @action(detail=True, methods=["get"], url_path="stock-analysis")
+    def stock_analysis(self, request, pk=None):
+        """Existencia, comprometido, rotación, flujos, ajustes, bodegas y variantes del producto."""
+        from .stock_analysis_params import StockAnalysisParamsSerializer
+        from .stock_analysis_selector import StockAnalysisSelector
+
+        instance = self.get_object()
+        params = StockAnalysisParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(StockAnalysisSelector.get_analysis(instance, params.to_params()))
+
     @action(detail=True, methods=["get"], url_path="production-performance")
     def production_performance(self, request, pk=None):
         """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
