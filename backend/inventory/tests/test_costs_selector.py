@@ -264,3 +264,59 @@ def test_bom_query_count_constant_with_more_components(env):
     with CaptureQueriesContext(connection) as many:
         _costs(env)
     assert len(many) == len(few)
+
+
+# ── Costo real por orden ─────────────────────────────────────────────────────
+
+def _finished_ot(env, units, real_unit, planned_unit=None, on=datetime(2026, 3, 10, 12, tzinfo=timezone.utc)):
+    from inventory.tests.test_production_performance_selector import _consume, _material, _ot
+
+    wo = _ot(env, qty=units, finished_on=on)
+    component = _component(env, name=f"Insumo {wo.id}", cost=real_unit)
+    _consume(env, wo, component, units, cost=real_unit)
+    if planned_unit is not None:
+        _material(wo, component, units, planned_unit, env["uom"])
+    return wo
+
+
+def test_work_orders_from_finished_orders(env):
+    _bom_with(env, [(_component(env), "1", env["uom"], None)])
+    wo = _finished_ot(env, "10", "20", planned_unit="15")
+    orders = _costs(env)["work_orders"]
+    assert len(orders) == 1
+    order = orders[0]
+    assert (order["id"], order["number"], order["date"]) == (wo.id, wo.number, "2026-03-10")
+    assert order["units"] == pytest.approx(10.0)
+    assert order["unit_real_cost"] == pytest.approx(20.0)
+    assert order["unit_bom_cost"] == pytest.approx(15.0)
+    assert order["deviation_pct"] == pytest.approx(50 / 150 * 100)
+
+
+def test_real_avg_per_period(env):
+    _bom_with(env, [(_component(env), "1", env["uom"], None)])
+    _finished_ot(env, "10", "20")
+    _finished_ot(env, "10", "30", on=datetime(2026, 3, 20, 12, tzinfo=timezone.utc))
+    series = {p["period"]: p for p in _costs(env)["series"]}
+    assert series["2026-03"]["real_avg"] == pytest.approx(25.0)
+
+
+def test_no_work_orders_for_purchased(env):
+    _finished_ot(env, "10", "20")
+    result = _costs(env)
+    assert result["work_orders"] == []
+    assert all(p["real_avg"] is None for p in result["series"])
+
+
+def test_history_period_includes_old_orders(env):
+    _bom_with(env, [(_component(env), "1", env["uom"], None)])
+    _finished_ot(env, "5", "20", on=datetime(2024, 5, 10, 12, tzinfo=timezone.utc))
+    assert len(_costs(env, date_from=None)["work_orders"]) == 1
+
+
+def test_no_bom_cost_change_uses_real_cost(env):
+    _as(env, "MANUFACTURABLE", track_inventory=True)
+    _finished_ot(env, "10", "20")
+    _finished_ot(env, "10", "30", on=datetime(2026, 6, 10, 12, tzinfo=timezone.utc))
+    result = _costs(env)
+    assert result["mode"] == "manufactured_no_bom"
+    assert result["kpis"]["cost_change_pct"] == pytest.approx(50.0)

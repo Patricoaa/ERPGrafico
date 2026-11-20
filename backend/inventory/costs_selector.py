@@ -164,6 +164,34 @@ def _bom_payload(bom: dict, start: date | None) -> dict:
     return {"lines": lines, "drivers": drivers}
 
 
+HISTORY_START = date(1900, 1, 1)
+
+
+def _work_orders(product: Product, date_from: date | None, date_to: date) -> list[dict]:
+    """Órdenes terminadas con costo real, desde el mismo cálculo que ``production-performance``."""
+    from .production_performance_selector import ProductionPerformanceSelector
+
+    # get_bom_cost() reads the active BOM: prefetch it so the other selector does not query each component.
+    prefetched = Product.objects.prefetch_related("boms__lines__component__uom", "boms__lines__uom").get(pk=product.pk)
+    perf = ProductionPerformanceSelector.get_performance(prefetched, date_from or HISTORY_START, date_to)
+    rows = []
+    for o in perf["orders"]:
+        if o["real_cost"] is None or not o["qty"] or not o["date"]:
+            continue
+        unit_real = o["real_cost"] / o["qty"]
+        unit_bom = o["planned_cost"] / o["qty"] if o["planned_cost"] else None
+        rows.append({
+            "id": o["id"],
+            "number": o["number"],
+            "date": o["date"],
+            "units": o["qty"],
+            "unit_real_cost": unit_real,
+            "unit_bom_cost": unit_bom,
+            "deviation_pct": _pct_change(unit_real, unit_bom),
+        })
+    return sorted(rows, key=lambda r: (r["date"], r["id"]))
+
+
 class CostsSelector:
     @staticmethod
     def get_costs(product: Product, params: CostsParams) -> dict:
@@ -180,13 +208,16 @@ class CostsSelector:
         ]
         to_base = _to_base_factory()
         receipts = _receipts(product_ids, to_base)
-        bom = _bom(product, to_base) if mode.startswith("manufactured") else None
+        manufactured = mode.startswith("manufactured")
+        bom = _bom(product, to_base) if manufactured else None
+        work_orders = _work_orders(product, params.date_from, date_to) if manufactured else []
         in_range = [r for r in receipts if (not params.date_from or r["date"] >= params.date_from) and r["date"] <= date_to]
 
         range_from = params.date_from or (history[0][0] if history else date_to)
         starts = {_period_start(date_to, granularity), _period_start(range_from, granularity)}
         starts |= {_period_start(day, granularity) for day, _ in history if range_from <= day <= date_to}
         starts |= {_period_start(r["date"], granularity) for r in in_range}
+        starts |= {_period_start(date.fromisoformat(o["date"]), granularity) for o in work_orders}
         if bom:
             starts |= {
                 _period_start(day, granularity)
@@ -198,12 +229,14 @@ class CostsSelector:
             close = min(_next_start(start, granularity) - timedelta(days=1), date_to)
             bucket = [r for r in in_range if _period_start(r["date"], granularity) == start]
             qty = sum(r["qty"] for r in bucket)
+            made = [o for o in work_orders if _period_start(date.fromisoformat(o["date"]), granularity) == start]
+            made_units = sum(o["units"] for o in made)
             series.append({
                 "period": _period_label(start, granularity),
                 "weighted_cost": _value_at(history, close),
                 "bom_cost": _bom_cost_at(bom, close) if bom else None,
                 "purchase_avg": sum(r["cost"] for r in bucket) / qty if qty else None,
-                "real_avg": None,
+                "real_avg": sum(o["unit_real_cost"] * o["units"] for o in made) / made_units if made_units else None,
             })
 
         weighted = float(product.cost_price or 0)
@@ -217,6 +250,9 @@ class CostsSelector:
             replacement = bom_today
         if params.date_from is None:
             cost_change = None
+        elif mode == "manufactured_no_bom":
+            real = [p["real_avg"] for p in series if p["real_avg"] is not None]
+            cost_change = _pct_change(real[-1], real[0]) if len(real) > 1 else None
         elif mode == "manufactured_on_demand" and bom:
             cost_change = _pct_change(bom_today, _bom_cost_at(bom, params.date_from))
         else:
@@ -245,5 +281,5 @@ class CostsSelector:
                 "count": len(in_range),
             },
             "bom": _bom_payload(bom, params.date_from) if bom else None,
-            "work_orders": [],
+            "work_orders": work_orders,
         }
