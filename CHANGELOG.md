@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.135](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.134...v0.3.135) (2026-11-20)
+
+
+### 🧪 Testing
+
+* **governance:** actualiza allowlists en contratos de animación e imports compartidos ([433b2a2](https://github.com/Patricoaa/ERPGrafico/commit/433b2a2a56c68e961f04e06fdc2492b69e46e47d))
+
 ### [0.3.134](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.133...v0.3.134) (2026-11-20)
 
 
