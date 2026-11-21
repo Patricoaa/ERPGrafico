@@ -530,7 +530,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "id", "internal_code", "code", "name", "category", "category_name",
             "product_type", "image_thumbnail", "is_active", "is_favorite",
             "uom", "uom_name", "sale_uom", "sale_uom_name",
-            "sale_price", "cost_price", "effective_price",
+            "sale_price", "sale_price_gross", "cost_price", "effective_price",
             "purchase_uom", "receiving_warehouse", "preferred_supplier", "preferred_supplier_name",
             "last_purchase_price",
             "current_stock", "qty_reserved", "qty_available",

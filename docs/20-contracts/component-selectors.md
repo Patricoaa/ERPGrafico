@@ -402,7 +402,7 @@ One anatomy for every context (POS, calculator, production); only the price and 
 ```
 
 - What the card says lives in `product-card-model.ts` (`getProductCardModel`, pure, unit-tested): availability by product type, action glyph (`+` add, `›` configure for variants / dynamic price, `–` unavailable) and price kind (`fixed` / `from` / `pending`). `ProductCard.tsx` only draws it.
-- Price is **c/IVA** (`PricingUtils.netToGross`). Templates show `min_variant_price` as "desde"; dynamic-pricing products show "Precio dinámico" **in place of** the amount.
+- Price is **c/IVA** and is read from the API as `sale_price_gross` / `min_variant_price_gross`; the card never converts net to gross (ADR-0151). Templates show `min_variant_price` as "desde"; dynamic-pricing products show "Precio dinámico" **in place of** the amount.
 - Variant hints (`variants_count`, `variant_axis_label`, `min_variant_price`) come from `ProductListSerializer`, read from the `variants` prefetch of `list_products` (no N+1; pinned by `inventory/tests/test_product_list_card_fields.py`).
 - Unavailable (disabled by the caller, or a template with no active variants): whole card at 50 % opacity on a washed `bg-muted/40`, grey name/price/availability (never red), lock, `–`, `cursor-not-allowed`, no ribbon, no hover; the reason is the availability text ("Sin existencias", "Sin variantes"). The favourite stays clickable.
 - Loading: `CardSkeleton variant="product"` mirrors the same strip + rows to avoid CLS.

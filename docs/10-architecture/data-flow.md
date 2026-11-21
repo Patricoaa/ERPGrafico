@@ -132,6 +132,8 @@ Los sella `SalesService.create_sale_order` (camino único de pedidos y POS, vía
 
 Los campos no son editables por el cliente. Quedan nulos en líneas anteriores a su existencia (sin backfill), en líneas de notas de débito y en despachos suplementarios. `PricingService.get_product_price` delega en `resolve_product_price` y no cambia su resultado.
 
+Cómo se derivan neto y bruto del precio de venta (el bruto es la autoridad, el neto se deriva con `accounting/vat.py`) está en [ADR-0151](adr/0151-bruto-autoridad-unica-del-precio-de-venta.md).
+
 ### Ingreso neto de descuentos (ADR-0145)
 
 El ingreso por línea de despacho confirmada es `quantity × unit_price × (1 − ratio)`, con `ratio = clamp(sale_line.discount_amount / (sale_line.quantity × sale_line.unit_price_gross), 0, 1)`, o 0 si la línea no tiene precio bruto (igual que `SaleLine.calculate_subtotal`); el descuento se prorratea por unidad despachada. El margen resta el `unit_cost` congelado en el despacho. `insights` y `GET /inventory/products/{id}/sales-impact/` comparten la expresión (`net_revenue_expression`), por lo que las cifras coinciden.
