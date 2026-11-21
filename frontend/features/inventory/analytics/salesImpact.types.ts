@@ -3,7 +3,7 @@
 export type SalesImpactMetric =
     | "units" | "net_revenue" | "margin" | "avg_price" | "discount_total" | "foregone_revenue"
 export type SalesImpactGroupBy = "rule" | "channel" | "customer" | "variant" | "uom"
-export type SalesImpactGranularity = "day" | "month" | "year"
+export type SalesImpactGranularity = "day" | "week" | "month" | "year"
 
 export interface SalesImpactParams {
     metric: SalesImpactMetric

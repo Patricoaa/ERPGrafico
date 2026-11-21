@@ -23,6 +23,8 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
     const productType = form.watch("product_type")
     const isService = productType === 'SERVICE'
     const canBeSold = form.watch("can_be_sold")
+    const canBePurchased = form.watch("can_be_purchased")
+    const trackInventory = form.watch("track_inventory")
     const stockUomId = form.watch("uom")
     const purchaseUomProduct = useMemo(() => ({
         id: 0,
@@ -36,11 +38,13 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
     // Determine if switch is disabled based on requirements
     const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || frozenFieldsOf(initialData).has('track_inventory')
 
+    const showControlSection = !isService && Boolean(trackInventory)
+
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10 items-start">
                 {/* Units Section */}
-                <div className={cn("col-span-1 space-y-4", isService ? "md:col-span-4" : "md:col-span-2")}>
+                <div className={cn("col-span-1 space-y-4", !showControlSection ? "md:col-span-4" : "md:col-span-2")}>
                     <Section.Header spaced title="Unidades y Conversión" icon={Package} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
@@ -62,28 +66,30 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                             />
                         </div>
 
-                        {!isService && <div className="col-span-2">
-                            <FormField
-                                control={form.control}
-                                name="purchase_uom"
-                                render={({ field, fieldState }) => (
-                                    <UoMSelector
-                                        label="Unidad de Compra"
-                                        variant="standalone"
-                                        value={field.value || ""}
-                                        onChange={field.onChange}
-                                        uoms={uoms}
-                                        product={purchaseUomProduct}
-                                        context="purchase"
-                                        error={fieldState.error?.message}
-                                        disabled={!stockUomId}
-                                    />
-                                )}
-                            />
-                        </div>}
+                        {canBePurchased && !isService && (
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="purchase_uom"
+                                    render={({ field, fieldState }) => (
+                                        <UoMSelector
+                                            label="Unidad de Compra"
+                                            variant="standalone"
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                            uoms={uoms}
+                                            product={purchaseUomProduct}
+                                            context="purchase"
+                                            error={fieldState.error?.message}
+                                            disabled={!stockUomId}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        )}
 
-                        <div className="col-span-2">
-                            {canBeSold && (
+                        {canBeSold && (
+                            <div className="col-span-2">
                                 <FormField
                                     control={form.control}
                                     name="allowed_sale_uoms"
@@ -113,87 +119,88 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                         );
                                     }}
                                 />
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Inventory and supply controls are not applicable to one-off services. */}
-                {!isService && <div className="col-span-1 md:col-span-2 space-y-2">
-                    <Section.Header spaced title="Control y Abastecimiento" icon={Warehouse} />
-                    <FormField
-                        control={form.control}
-                        name="track_inventory"
-                        render={({ field }) => (
-                            <div className="space-y-6">
-                                {!isMfg && (
-                                    <LabeledSwitch
-                                        label="Seguimiento de Inventario"
-                                        description="Habilita el control de existencias y movimientos para este producto."
-                                        checked={field.value}
-                                        onCheckedChange={(val) => {
-                                            requestAnimationFrame(() => {
-                                                form.setValue("track_inventory", val, { shouldDirty: true, shouldValidate: false })
-                                            })
-                                        }}
-                                        disabled={isSwitchDisabled}
-                                        color="info"
-                                        icon={<Warehouse className="h-4 w-4 transition-colors" />}
-                                        className="h-full"
-                                    />
-                                )}
-
-                                {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}
-                                <div className={cn("space-y-4 animate-in fade-in slide-in-from-top-2 duration-400", !field.value && "hidden")}>
-                                    <FormField
-                                        control={form.control}
-                                        name="receiving_warehouse"
-                                        render={({ field: whField, fieldState }) => (
-                                            <WarehouseSelector
-                                                label="Bodega de Recepción"
-                                                value={whField.value}
-                                                onChange={whField.onChange}
-                                                error={fieldState.error?.message}
-                                            />
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="preferred_supplier"
-                                        render={({ field: supplierField, fieldState }) => (
-                                            <AdvancedContactSelector
-                                                label="Proveedor Preferencial"
-                                                value={supplierField.value || ""}
-                                                onChange={supplierField.onChange}
-                                                contactType="SUPPLIER"
-                                                placeholder="Buscar proveedor..."
-                                                error={fieldState.error?.message}
-                                            />
-                                        )}
-                                    />
-
-                                    {initialData && (
-                                        <div className="grid grid-cols-3 gap-1 shadow-inner overflow-hidden">
-                                            <div className="flex flex-col items-center bg-background/10 py-3 rounded-md border border">
-                                                <span className="text-4xs font-bold uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
-                                                <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center bg-warning/5 py-3 rounded-md border border-warning/20">
-                                                <span className="text-4xs font-bold uppercase tracking-tight text-warning-text/80 mb-1">Reservado</span>
-                                                <span className="text-lg font-mono font-black text-warning-text">{initialData.qty_reserved || 0}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center bg-success/5 py-3 rounded-md border border-success/20">
-                                                <span className="text-4xs font-bold uppercase tracking-tight text-success-text mb-1">Disponible</span>
-                                                <span className="text-lg font-mono font-black text-success-text">{initialData.qty_available || 0}</span>
-                                            </div>
-                                        </div>
+                {/* Inventory and supply controls are only applicable when stock tracking is enabled and not a service. */}
+                {showControlSection && (
+                    <div className="col-span-1 md:col-span-2 space-y-2">
+                        <Section.Header spaced title="Control y Abastecimiento" icon={Warehouse} />
+                        <FormField
+                            control={form.control}
+                            name="track_inventory"
+                            render={({ field }) => (
+                                <div className="space-y-6">
+                                    {!isMfg && (
+                                        <LabeledSwitch
+                                            label="Seguimiento de Inventario"
+                                            description="Habilita el control de existencias y movimientos para este producto."
+                                            checked={field.value}
+                                            onCheckedChange={(val) => {
+                                                requestAnimationFrame(() => {
+                                                    form.setValue("track_inventory", val, { shouldDirty: true, shouldValidate: false })
+                                                })
+                                            }}
+                                            disabled={isSwitchDisabled}
+                                            color="info"
+                                            icon={<Warehouse className="h-4 w-4 transition-colors" />}
+                                            className="h-full"
+                                        />
                                     )}
+
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-400">
+                                        <FormField
+                                            control={form.control}
+                                            name="receiving_warehouse"
+                                            render={({ field: whField, fieldState }) => (
+                                                <WarehouseSelector
+                                                    label="Bodega de Recepción"
+                                                    value={whField.value}
+                                                    onChange={whField.onChange}
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="preferred_supplier"
+                                            render={({ field: supplierField, fieldState }) => (
+                                                <AdvancedContactSelector
+                                                    label="Proveedor Preferencial"
+                                                    value={supplierField.value || ""}
+                                                    onChange={supplierField.onChange}
+                                                    contactType="SUPPLIER"
+                                                    placeholder="Buscar proveedor..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+
+                                        {initialData && (
+                                            <div className="grid grid-cols-3 gap-1 shadow-inner overflow-hidden">
+                                                <div className="flex flex-col items-center bg-background/10 py-3 rounded-md border border">
+                                                    <span className="text-4xs font-bold uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
+                                                    <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
+                                                </div>
+                                                <div className="flex flex-col items-center bg-warning/5 py-3 rounded-md border border-warning/20">
+                                                    <span className="text-4xs font-bold uppercase tracking-tight text-warning-text/80 mb-1">Reservado</span>
+                                                    <span className="text-lg font-mono font-black text-warning-text">{initialData.qty_reserved || 0}</span>
+                                                </div>
+                                                <div className="flex flex-col items-center bg-success/5 py-3 rounded-md border border-success/20">
+                                                    <span className="text-4xs font-bold uppercase tracking-tight text-success-text mb-1">Disponible</span>
+                                                    <span className="text-lg font-mono font-black text-success-text">{initialData.qty_available || 0}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    />
-                </div>}
+                            )}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     )

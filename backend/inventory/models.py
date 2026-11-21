@@ -876,6 +876,10 @@ class Product(models.Model):
             # Express manufacturables never track finished-good inventory.
             if self.is_express:
                 self.track_inventory = False
+
+        # Manufacturables are made, never bought: purchasing them would bypass the BOM cost.
+        if self.product_type == self.Type.MANUFACTURABLE:
+            self.can_be_purchased = False
         # Fallback for base UoM if missing but others are present
         if not self.uom:
             if self.sale_uom:
@@ -1069,10 +1073,16 @@ class Product(models.Model):
         if not active_bom:
             return Decimal("0.00")
 
+        # Same rule as the BOM screen (ProductionSelectorExt.get_total_cost): outsourced lines cost
+        # quantity × their price; the rest, the converted quantity × the component's weighted cost.
+        # The recipe yields `yield_quantity` units, so the result is per produced unit.
         total_bom_cost = Decimal("0.00")
         # Use prefetched lines if available
         lines = active_bom.lines.all()
         for line in lines:
+            if line.is_outsourced:
+                total_bom_cost += line.quantity * line.unit_price
+                continue
             qty = line.quantity
             # Convert quantity from BOM Line UoM to Component Base UoM if they differ
             if line.uom and line.component.uom and line.uom != line.component.uom:
@@ -1084,6 +1094,8 @@ class Product(models.Model):
             # Use component's cost_price (weighted average)
             total_bom_cost += qty * line.component.cost_price
 
+        if active_bom.yield_quantity and active_bom.yield_quantity > 0:
+            total_bom_cost = total_bom_cost / active_bom.yield_quantity
         return total_bom_cost
 
     @property

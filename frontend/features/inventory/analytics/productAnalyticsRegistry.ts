@@ -25,67 +25,45 @@ export interface ProductCapabilities {
     segment: ProductSegment
 }
 
+/** Tabs por decisión (ADR-0150): cada uno absorbe varios tabs anteriores. */
 export type ProductAnalyticsTabId =
     | "overview"
     | "sales"
     | "pricing"
-    | "purchases"
-    | "price"
-    | "cost"
-    | "kardex"
+    | "costs"
+    | "procurement"
+    | "inventory"
     | "production"
-    | "manufacturing"
-    | "sourcing"
-    | "operations"
-    | "customers"
-    | "suppliers"
+    | "subscription"
 
-export type OverviewKpiId = "units_sold" | "valuation" | "stock" | "units_purchased" | "production_usage"
-
-export const SEGMENT_LABELS: Record<ProductSegment, string> = {
-    MANUFACTURABLE_EXPRESS: "Fabricable express",
-    MANUFACTURABLE_STOCKED: "Fabricable con stock",
-    MANUFACTURABLE_ON_DEMAND: "Fabricable bajo pedido",
-    SERVICE: "Servicio",
-    SUBSCRIPTION: "Suscripción",
-    INPUT: "Insumo",
-    STORABLE: "Almacenable",
-    CONSUMABLE: "Consumible",
+export const TAB_LABELS: Record<ProductAnalyticsTabId, string> = {
+    overview: "Resumen",
+    sales: "Ventas",
+    pricing: "Precio y margen",
+    costs: "Costos",
+    procurement: "Abastecimiento",
+    inventory: "Inventario",
+    production: "Producción",
+    subscription: "Suscripción",
 }
 
-const TAB_ORDER: ProductAnalyticsTabId[] = [
-    "overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "operations", "customers", "suppliers",
+export const TAB_ORDER: ProductAnalyticsTabId[] = [
+    "overview", "sales", "pricing", "costs", "procurement", "inventory", "production", "subscription",
 ]
 
 const TAB_RULES: Record<ProductAnalyticsTabId, (c: ProductCapabilities) => boolean> = {
     overview: () => true,
     sales: (c) => c.sells,
     pricing: (c) => c.sells,
-    price: (c) => c.sells,
-    customers: (c) => c.sells,
-    purchases: (c) => c.buys,
-    suppliers: (c) => c.buys,
-    cost: (c) => c.buys || c.manufactures || c.tracks_stock,
-    kardex: (c) => c.tracks_stock,
+    costs: (c) => c.buys || c.manufactures || c.tracks_stock,
+    procurement: (c) => c.buys,
+    inventory: (c) => c.tracks_stock,
     production: (c) => c.manufactures || c.used_in_production,
-    manufacturing: (c) => c.manufactures,
-    operations: (c) => c.tracks_stock || c.recurring,
-    sourcing: (c) => (c.manufactures && c.buys) || c.used_in_production,
+    subscription: (c) => c.recurring,
 }
 
 /** Tabs que aplican al producto, en orden fijo. Sin capacidades (respuesta antigua) → todos. */
 export function visibleTabIds(capabilities: ProductCapabilities | null | undefined): ProductAnalyticsTabId[] {
     if (!capabilities) return [...TAB_ORDER]
     return TAB_ORDER.filter((id) => TAB_RULES[id](capabilities))
-}
-
-/** KPIs del Resumen que aplican al producto. Sin capacidades → los tres originales. */
-export function overviewKpiIds(capabilities: ProductCapabilities | null | undefined): OverviewKpiId[] {
-    if (!capabilities) return ["units_sold", "valuation", "stock"]
-    const ids: OverviewKpiId[] = []
-    if (capabilities.sells) ids.push("units_sold")
-    if (capabilities.buys && !capabilities.sells) ids.push("units_purchased")
-    if (capabilities.tracks_stock) ids.push("valuation", "stock")
-    if (capabilities.used_in_production) ids.push("production_usage")
-    return ids
 }

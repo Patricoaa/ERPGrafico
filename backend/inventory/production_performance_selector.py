@@ -145,7 +145,7 @@ class ProductionPerformanceSelector:
             planned = planned_by_order.get(o["id"], 0.0)
             revenue = float(o["revenue_net"]) if o["sale_line_id"] and o["revenue_net"] is not None else None
             rows.append({
-                "id": o["id"], "number": o["number"],
+                "id": o["id"], "number": o["number"], "rectified": bool(o["is_rectified"]),
                 "date": timezone.localtime(o["finished_at"]).date().isoformat() if o["finished_at"] else None,
                 "qty": qty, "planned_cost": planned, "real_cost": real,
                 "deviation": real - planned if real is not None else None,
@@ -158,7 +158,9 @@ class ProductionPerformanceSelector:
 
         costed = [r for r in rows if r["_costed"]]
         unit_real = sum(r["real_cost"] for r in costed) / sum(r["qty"] for r in costed) if costed else 0.0
-        bom_cost = float(product.get_bom_cost() or 0)
+        # get_bom_cost() reads the active BOM line by line: prefetch it so the cost does not query each component.
+        bom_product = Product.objects.prefetch_related("boms__lines__component__uom", "boms__lines__uom").get(pk=product.pk)
+        bom_cost = float(bom_product.get_bom_cost() or 0)
         with_plan = [r for r in rows if r["_costed"] and r["planned_cost"] > 0]
         lead_times = [
             (o["finished_at"] - o["first_event_at"]).total_seconds() / _SECONDS_PER_DAY
