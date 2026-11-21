@@ -39,7 +39,7 @@ export interface OutsourcedServiceValues {
   uomId: string
   /** Gross price (with VAT) — stored as string for input ergonomics */
   grossPrice: string
-  /** Net price (without VAT) — derived from grossPrice / vatMultiplier */
+  /** Net price (without VAT) — derived from grossPrice via vat.ts */
   netPrice: string
   documentType: 'FACTURA' | 'BOLETA'
 }
