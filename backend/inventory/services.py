@@ -1296,17 +1296,26 @@ class UoMService:
 MAX_VARIANT_COMBINATIONS = 500
 
 
-def _net_writes_to_gross(data: dict) -> dict:
+def net_write_to_gross(data: dict, net_key: str, gross_key: str, *, clear_on_none: bool) -> dict:
     """ADR-0151: una escritura solo-neto se convierte a bruto (el bruto manda si vienen ambos).
 
     Se pre-convierte porque save() no ve el bruto viejo y lo re-derivaría sobre el neto nuevo.
+    Con ``clear_on_none``, un neto None explícito (sin bruto) limpia también el bruto.
     """
-    if data.get("sale_price") is not None and data.get("sale_price_gross") is None:
-        data["sale_price_gross"] = gross_from_net(data["sale_price"])
-    if "price_surcharge" in data and data.get("price_surcharge_gross") is None:
-        net = data["price_surcharge"]
-        # None limpia el recargo: sin esto el bruto viejo re-derivaría el neto.
-        data["price_surcharge_gross"] = None if net is None else gross_from_net(net)
+    if data.get(gross_key) is not None or net_key not in data:
+        return data
+    net = data[net_key]
+    if net is not None:
+        data[gross_key] = gross_from_net(net)
+    elif clear_on_none:
+        data[gross_key] = None
+    return data
+
+
+def _net_writes_to_gross(data: dict) -> dict:
+    net_write_to_gross(data, "sale_price", "sale_price_gross", clear_on_none=False)
+    # None limpia el recargo: sin esto el bruto viejo re-derivaría el neto.
+    net_write_to_gross(data, "price_surcharge", "price_surcharge_gross", clear_on_none=True)
     return data
 
 

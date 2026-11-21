@@ -1875,38 +1875,14 @@ class PricingRule(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        from accounting.utils import get_vat_multiplier
+        # ADR-0151: el bruto manda; el neto se deriva solo de la entrada actual.
+        from accounting.vat import sale_price_from_input
 
-        vat_rate = get_vat_multiplier()
-
-        if self.fixed_price and not self.fixed_price_gross:
-            self.fixed_price_gross = (self.fixed_price * vat_rate).quantize(
-                Decimal("1"), rounding="ROUND_HALF_UP"
-            )
-        elif self.fixed_price_gross and not self.fixed_price:
-            self.fixed_price = (self.fixed_price_gross / vat_rate).quantize(
-                Decimal("1"), rounding="ROUND_HALF_UP"
-            )
-        elif self.pk:
-            try:
-                old_instance = PricingRule.objects.get(pk=self.pk)
-                if (
-                    self.fixed_price != old_instance.fixed_price
-                    and self.fixed_price_gross == old_instance.fixed_price_gross
-                ):
-                    self.fixed_price_gross = (self.fixed_price * vat_rate).quantize(
-                        Decimal("1"), rounding="ROUND_HALF_UP"
-                    )
-                elif (
-                    self.fixed_price_gross != old_instance.fixed_price_gross
-                    and self.fixed_price == old_instance.fixed_price
-                ):
-                    self.fixed_price = (self.fixed_price_gross / vat_rate).quantize(
-                        Decimal("1"), rounding="ROUND_HALF_UP"
-                    )
-            except Exception:
-                pass
-
+        price = sale_price_from_input(
+            gross=self.fixed_price_gross or None, net=self.fixed_price or None
+        )
+        if price:
+            self.fixed_price, self.fixed_price_gross = price.net, price.gross
         super().save(*args, **kwargs)
 
 
@@ -1983,17 +1959,14 @@ class ProductUoMPrice(models.Model):
         return f"{self.product.name} / {self.uom.name}"
 
     def save(self, *args, **kwargs):
-        from accounting.utils import get_vat_multiplier
+        # ADR-0151: el bruto manda; el neto se deriva solo de la entrada actual.
+        from accounting.vat import sale_price_from_input
 
-        vat = get_vat_multiplier()
-        if self.price_net and not self.price_gross:
-            self.price_gross = (self.price_net * vat).quantize(
-                Decimal("1"), rounding="ROUND_HALF_UP"
-            )
-        elif self.price_gross and not self.price_net:
-            self.price_net = (self.price_gross / vat).quantize(
-                Decimal("1"), rounding="ROUND_HALF_UP"
-            )
+        price = sale_price_from_input(
+            gross=self.price_gross or None, net=self.price_net or None
+        )
+        if price:
+            self.price_net, self.price_gross = price.net, price.gross
         super().save(*args, **kwargs)
 
 

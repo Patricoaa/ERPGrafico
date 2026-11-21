@@ -27,7 +27,7 @@ from .models import (
     UoMCategory,
     Warehouse,
 )
-from .services import ProductService
+from .services import ProductService, net_write_to_gross
 
 
 class ProductUoMPriceSerializer(serializers.ModelSerializer):
@@ -36,6 +36,10 @@ class ProductUoMPriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductUoMPrice
         fields = ["id", "uom", "uom_name", "price_net", "price_gross"]
+
+    def validate(self, data):
+        # ADR-0151: un PATCH solo-neto no debe perder frente al bruto viejo de la fila.
+        return net_write_to_gross(dict(data), "price_net", "price_gross", clear_on_none=False)
 
 
 class ProductAttributeSerializer(serializers.ModelSerializer):
@@ -110,7 +114,8 @@ class PricingRuleSerializer(serializers.ModelSerializer):
                     "product": "No se pueden crear ni aplicar reglas de precio a un producto con precio dinámico."
                 }
             )
-        return data
+        # ADR-0151: un PATCH solo-neto no debe perder frente al bruto viejo de la regla.
+        return net_write_to_gross(dict(data), "fixed_price", "fixed_price_gross", clear_on_none=True)
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
