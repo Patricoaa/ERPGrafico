@@ -11,6 +11,7 @@ from django.utils import timezone
 from accounting.glosa_builder import GlosaBuilder
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
+from accounting.vat import gross_from_net
 
 from .models import (
     InventoryCount,
@@ -1295,6 +1296,15 @@ class UoMService:
 MAX_VARIANT_COMBINATIONS = 500
 
 
+def _net_writes_to_gross(data: dict) -> dict:
+    """ADR-0151: una escritura solo-neto se convierte a bruto (el bruto manda si vienen ambos)."""
+    if data.get("sale_price") is not None and data.get("sale_price_gross") is None:
+        data["sale_price_gross"] = gross_from_net(data["sale_price"])
+    if data.get("price_surcharge") is not None and data.get("price_surcharge_gross") is None:
+        data["price_surcharge_gross"] = gross_from_net(data["price_surcharge"])
+    return data
+
+
 def _variant_value_signatures(template):
     """Por cada variante del template, la lista de ids de sus valores de atributo (1 query)."""
     from django.db.models import Prefetch
@@ -1324,6 +1334,7 @@ class ProductService:
         variant_generation_selection = validated_data.pop("variant_generation_selection", None)
         uom_prices_data = validated_data.pop("uom_prices", [])
 
+        _net_writes_to_gross(validated_data)
         product = Product.objects.create(**validated_data)
 
         if allowed_sale_uoms:
@@ -1373,6 +1384,7 @@ class ProductService:
         uom_prices_data = validated_data.pop("uom_prices", None)
 
         # Standard scalar update
+        _net_writes_to_gross(validated_data)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -1454,13 +1466,16 @@ class ProductService:
                 try:
                     variant_product = Product.objects.get(id=variant_id, parent_template=instance)
 
+                    update_data = _net_writes_to_gross(dict(update_data))
                     for field in [
                         "sale_price",
+                        "sale_price_gross",
                         "code",
                         "has_bom",
                         "product_type",
                         "price_inheritance_mode",
                         "price_surcharge",
+                        "price_surcharge_gross",
                     ]:
                         if field in update_data:
                             setattr(variant_product, field, update_data[field])
@@ -1468,6 +1483,7 @@ class ProductService:
                     mode = update_data.get("price_inheritance_mode")
                     if mode == "INHERIT":
                         variant_product.price_surcharge = None
+                        variant_product.price_surcharge_gross = None
 
                     if "sale_uom" in update_data:
                         uom_id = update_data["sale_uom"]
@@ -2150,6 +2166,7 @@ class ProductService:
                     can_be_purchased=template.can_be_purchased,
                     parent_template=template,
                     sale_price=template.sale_price,
+                    sale_price_gross=template.sale_price_gross,
                     cost_price=template.cost_price,
                     requires_advanced_manufacturing=template.requires_advanced_manufacturing,
                     mfg_auto_finalize=template.mfg_auto_finalize,
@@ -2235,6 +2252,7 @@ class ProductService:
         updated = variants_qs.update(
             price_inheritance_mode=Product.PriceInheritance.SURCHARGE,
             price_surcharge=Decimal(str(surcharge)),
+            price_surcharge_gross=gross_from_net(Decimal(str(surcharge))),
         )
         return updated
 
@@ -2255,6 +2273,7 @@ class ProductService:
         updated = template.variants.filter(is_active=True).update(
             price_inheritance_mode=Product.PriceInheritance.INHERIT,
             price_surcharge=None,
+            price_surcharge_gross=None,
         )
         return {"updated": updated}
 

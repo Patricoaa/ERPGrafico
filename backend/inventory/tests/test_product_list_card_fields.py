@@ -13,6 +13,7 @@ LIST_URL = "/api/inventory/products/"
 def catalog(db):
     from django.contrib.auth import get_user_model
 
+    from accounting.vat import gross_from_net
     from inventory.models import Product, ProductAttribute, ProductAttributeValue, ProductCategory, UoM, UoMCategory
 
     user = get_user_model().objects.create_superuser(username="carduser", password="password")
@@ -31,7 +32,8 @@ def catalog(db):
         template = make(name, has_variants=True)
         for index, price in enumerate(prices):
             variant = make(f"{name} v{index}", parent_template=template)
-            variant.sale_price = Decimal(price)
+            # ADR-0151: el bruto manda; una escritura solo-neto se convierte a bruto.
+            variant.sale_price_gross = gross_from_net(Decimal(price))
             variant.save()
             for attribute in attributes:
                 value, _ = ProductAttributeValue.objects.get_or_create(attribute=attribute, value=f"{attribute.name}-{index}")

@@ -731,8 +731,16 @@ class Product(models.Model):
         null=True,
         blank=True,
         help_text=_(
-            "Monto adicional (neto) sobre el precio del template. Solo aplica cuando el modo es SURCHARGE."
+            "DEPRECADO: derivado de price_surcharge_gross. Monto adicional (neto) sobre el precio del template."
         ),
+    )
+    price_surcharge_gross = models.DecimalField(
+        _("Sobrecargo con IVA sobre precio template"),
+        max_digits=12,
+        decimal_places=0,
+        null=True,
+        blank=True,
+        help_text=_("Recargo con IVA sobre el bruto del template"),
     )
 
     is_active = models.BooleanField(
@@ -907,33 +915,20 @@ class Product(models.Model):
             new_num = str(max_num + 1).zfill(4)
             self.internal_code = f"{prefix}-{new_num}"
 
-        # Synchronize Net and Gross prices
-        from accounting.utils import get_vat_multiplier
+        # ADR-0151: el bruto es la autoridad; el neto se deriva solo de la entrada actual
+        # (nunca de la instancia anterior). Bruto 0 + neto > 0 cuenta como "solo neto" (legado).
+        from accounting.vat import gross_from_net, net_from_gross, sale_price_from_input
 
-        vat_rate = get_vat_multiplier()
+        price = sale_price_from_input(
+            gross=self.sale_price_gross or None, net=self.sale_price or None
+        )
+        if price:
+            self.sale_price, self.sale_price_gross = price.net, price.gross
 
-        if self.pk:
-            old_instance = Product.objects.get(pk=self.pk)
-            # If Net changed, update Gross
-            if self.sale_price != old_instance.sale_price:
-                self.sale_price_gross = (self.sale_price * vat_rate).quantize(
-                    Decimal("1"), rounding="ROUND_HALF_UP"
-                )
-            # If Gross changed, update Net
-            elif self.sale_price_gross != old_instance.sale_price_gross:
-                self.sale_price = (self.sale_price_gross / vat_rate).quantize(
-                    Decimal("1"), rounding="ROUND_HALF_UP"
-                )
-        else:
-            # New product: ensure Gross is set if only Net is provided, or vice versa
-            if self.sale_price and not self.sale_price_gross:
-                self.sale_price_gross = (self.sale_price * vat_rate).quantize(
-                    Decimal("1"), rounding="ROUND_HALF_UP"
-                )
-            elif self.sale_price_gross and not self.sale_price:
-                self.sale_price = (self.sale_price_gross / vat_rate).quantize(
-                    Decimal("1"), rounding="ROUND_HALF_UP"
-                )
+        if self.price_surcharge_gross is not None:
+            self.price_surcharge = net_from_gross(self.price_surcharge_gross)
+        elif self.price_surcharge is not None:
+            self.price_surcharge_gross = gross_from_net(self.price_surcharge)
 
         # Compress image if added/changed
         if self.image:
