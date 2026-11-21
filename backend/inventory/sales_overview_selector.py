@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from django.db.models import Count, F, Max, Q, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum
 
 from .models import Product
 from .pricing_selector import _lines, _period_start
@@ -27,13 +27,24 @@ def _totals(lines) -> dict:
     row = lines.aggregate(
         units=Sum("quantity"),
         net_revenue=Sum(net_revenue_expression()),
+        gross_revenue=Sum(ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField(max_digits=28, decimal_places=6))),
+        cost=Sum(ExpressionWrapper(F("quantity") * F("unit_cost"), output_field=DecimalField(max_digits=28, decimal_places=6))),
         customers=Count(
             "delivery__sale_order__customer_id",
             filter=Q(delivery__sale_order__customer__is_default_customer=False),
             distinct=True,
         ),
     )
-    return {"units": float(row["units"] or 0), "net_revenue": float(row["net_revenue"] or 0), "customers": row["customers"] or 0}
+    net = float(row["net_revenue"] or 0)
+    gross = float(row["gross_revenue"] or 0)
+    cost = float(row["cost"] or 0)
+    return {
+        "units": float(row["units"] or 0),
+        "net_revenue": net,
+        "gross_revenue": gross,
+        "cost": cost,
+        "customers": row["customers"] or 0,
+    }
 
 
 def _points(lines, granularity: str) -> list[dict]:
@@ -156,8 +167,28 @@ class SalesOverviewSelector:
             span = date_to - params.date_from
             prev_to = params.date_from - timedelta(days=1)
             prev_lines = _lines(product_ids, prev_to - span, prev_to)
-            previous = _totals(prev_lines)
+            prev_totals = _totals(prev_lines)
+            prev_net = prev_totals["net_revenue"]
+            prev_gross = prev_totals["gross_revenue"]
+            prev_cost = prev_totals["cost"]
+            has_prev_cost = float(product.cost_price or 0) > 0 or prev_cost > 0
+            prev_margin_pct = (prev_net - prev_cost) / prev_net * 100 if has_prev_cost and prev_net else None
+            prev_avg_discount_pct = (prev_gross - prev_net) / prev_gross * 100 if prev_gross else 0.0
+            previous = {
+                "units": prev_totals["units"],
+                "net_revenue": prev_net,
+                "customers": prev_totals["customers"],
+                "margin_pct": prev_margin_pct,
+                "avg_discount_pct": prev_avg_discount_pct,
+            }
             previous_points = _previous_points(prev_lines, params.granularity, span + timedelta(days=1))
+
+        has_cost = float(product.cost_price or 0) > 0 or totals["cost"] > 0
+        net = totals["net_revenue"]
+        gross = totals["gross_revenue"]
+        cost = totals["cost"]
+        margin_pct = (net - cost) / net * 100 if has_cost and net else None
+        avg_discount_pct = (gross - net) / gross * 100 if gross else 0.0
 
         returns = SaleReturnLine.objects.filter(
             product_id__in=product_ids, return_doc__status="CONFIRMED", return_doc__date__lte=date_to,
@@ -171,7 +202,11 @@ class SalesOverviewSelector:
 
         return {
             "kpis": {
-                **totals,
+                "units": totals["units"],
+                "net_revenue": net,
+                "customers": totals["customers"],
+                "margin_pct": margin_pct,
+                "avg_discount_pct": avg_discount_pct,
                 "return_units": return_units,
                 "return_rate_pct": return_units / totals["units"] * 100 if totals["units"] else 0.0,
                 "last_sale_date": last_sale.isoformat() if last_sale else None,

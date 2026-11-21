@@ -1,20 +1,15 @@
 "use client"
 
 import { useMemo } from "react"
-import { BarChart, LineChart, Metric, MetricStrip } from "@/components/shared"
-import type { MetricDelta } from "@/components/shared"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { DualAxisChart, Metric, MetricStrip } from "@/components/shared"
+import type { DualAxisSeries } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
 import { composePricing } from "./composePricing"
 import { periodToDateFrom, periodToGranularity, type PeriodKey } from "./period"
 import type { PricingParams, ProductPricing } from "./pricing.types"
-import { SalesImpactBlock } from "./SalesImpactBlock"
 import { useProductPricing } from "../hooks/useProductPricing"
-import { pricingEffectsEntity, pricingEffectsViews, type PricingEffectRow } from "../entity-view/pricingEffects.entity"
 
-const CHART_MARGIN = { top: 24, right: 16, bottom: 28, left: 64 }
-const MARKER_STYLE = { stroke: "var(--color-muted-foreground)", strokeDasharray: "4 4" }
 const percent = (value: number) => `${value.toFixed(1)}`
 
 interface PricingBlockProps {
@@ -23,7 +18,7 @@ interface PricingBlockProps {
     capabilities: { has_variants: boolean }
 }
 
-/** "Precio y margen": realized margin, price vs sales charts, before/after of every price change, breakdown. */
+/** "Precios y reglas": evolución de precios base con IVA en el tiempo, reglas activas y su impacto en ventas. */
 export function PricingBlock({ productId, period, capabilities }: PricingBlockProps) {
     const params = useMemo<PricingParams>(
         () => ({ granularity: periodToGranularity(period), date_from: periodToDateFrom(period) }),
@@ -34,53 +29,120 @@ export function PricingBlock({ productId, period, capabilities }: PricingBlockPr
         <AnalyticsBlockFrame
             isLoading={isLoading}
             isError={isError || !data}
-            errorMessage="No se pudo cargar el análisis de precio y margen."
+            errorMessage="No se pudo cargar el análisis de precios."
         >
             {data && <PricingBody data={data} productId={productId} period={period} capabilities={capabilities} />}
         </AnalyticsBlockFrame>
     )
 }
 
-function heroDelta(data: ProductPricing): MetricDelta | undefined {
-    const previous = data.kpis.previous
-    if (!previous) return undefined
-    if (data.has_cost) {
-        if (data.kpis.margin_pct === null || previous.margin_pct === null) return undefined
-        const diff = data.kpis.margin_pct - previous.margin_pct
-        return {
-            text: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)} pts`,
-            direction: diff > 0 ? "up" : diff < 0 ? "down" : "flat",
-            tone: diff > 0 ? "success" : diff < 0 ? "destructive" : "neutral",
-        }
-    }
-    return previous.avg_price > 0 ? { current: data.kpis.avg_price, previous: previous.avg_price } : undefined
-}
-
-function PricingBody({ data, productId, period, capabilities }: PricingBlockProps & { data: ProductPricing }) {
+function PricingBody({ data, capabilities }: PricingBlockProps & { data: ProductPricing }) {
     const composition = composePricing(data, capabilities)
-    const rows = useMemo<PricingEffectRow[]>(
-        () => data.effects.map((e) => ({
-            label: e.label,
-            date: e.date,
-            units_per_day_before: e.before.units_per_day,
-            units_per_day_after: e.after.units_per_day,
-            revenue_per_day_before: e.before.revenue_per_day,
-            revenue_per_day_after: e.after.revenue_per_day,
-            margin_per_unit_before: e.before.margin_per_unit,
-            margin_per_unit_after: e.after.margin_per_unit,
-            reliability: e.reliable ? "Confiable" : "Pocos datos",
-        })),
-        [data.effects],
-    )
-    const effectsCollection = useEntityCollection(pricingEffectsEntity, { rows }, { pagination: { mode: "none" } })
+    const { today, series, rule_windows: rules } = data
+    const totalUnits = data.kpis.units
 
-    const { kpis, today } = data
-    const hero = composition.hero === "margin"
-        ? <Metric label="Margen realizado" value={kpis.margin_pct === null ? null : percent(kpis.margin_pct)} unit="%" delta={heroDelta(data)} context="Neto de descuentos" />
-        : <Metric label="Precio realizado" value={formatMoney(kpis.avg_price)} delta={heroDelta(data)} context="Precio medio neto vendido" />
+    // Calcular unidades vendidas con el precio de lista vs reglas
+    const { listUnits, ruleUnitsMap } = useMemo(() => {
+        let lUnits = 0
+        const rMap = new Map<string, number>()
+
+        if (series.by_rule.length === 0) {
+            lUnits = totalUnits
+        } else {
+            for (const r of series.by_rule) {
+                if (r.key === "list") {
+                    lUnits += r.units
+                } else {
+                    const current = rMap.get(r.key) ?? 0
+                    rMap.set(r.key, current + r.units)
+                }
+            }
+        }
+        return { listUnits: lUnits, ruleUnitsMap: rMap }
+    }, [series.by_rule, totalUnits])
+
+    // Series para el gráfico compuesto de doble eje (Precios siempre con IVA en Y1, Ventas en Y2)
+    const chartData = useMemo(() => {
+        const periods = series.points.map((p) => p.period)
+        if (periods.length === 0) return { periods: [], chartSeries: [] }
+
+        const chartSeries: DualAxisSeries[] = []
+
+        // 1. Eje Izquierdo (Y1): Precio de lista con IVA
+        chartSeries.push({
+            id: "price_list",
+            label: "Precio de lista",
+            axis: "left",
+            type: "line",
+            data: series.points.map((p) => ({
+                x: p.period,
+                y: Math.round(p.avg_list_price_gross || (p.avg_list_price ? p.avg_list_price * 1.19 : today.list_price_gross)),
+            })),
+        })
+
+        // 2. Eje Izquierdo (Y1): Reglas de precio con IVA
+        for (const rule of rules) {
+            const rulePoints = series.points.map((p) => {
+                const entry = series.by_rule.find((r) => r.period === p.period && r.key === String(rule.rule_id))
+                let grossPrice = entry?.avg_price_gross
+                if (grossPrice == null || grossPrice === 0) {
+                    if (entry?.avg_price) {
+                        grossPrice = entry.avg_price * 1.19
+                    } else if (rule.fixed_price_gross && rule.fixed_price_gross > 0) {
+                        grossPrice = rule.fixed_price_gross
+                    } else if (rule.fixed_price > 0) {
+                        grossPrice = rule.fixed_price * 1.19
+                    } else if (rule.discount_percentage > 0) {
+                        const base = p.avg_list_price_gross || (p.avg_list_price ? p.avg_list_price * 1.19 : today.list_price_gross)
+                        grossPrice = base * (1 - rule.discount_percentage / 100)
+                    } else {
+                        grossPrice = today.list_price_gross
+                    }
+                }
+                return { x: p.period, y: Math.round(grossPrice) }
+            })
+
+            chartSeries.push({
+                id: `price_rule_${rule.rule_id}`,
+                label: rule.name,
+                axis: "left",
+                type: "line",
+                data: rulePoints,
+            })
+        }
+
+        // 3. Eje Derecho (Y2): Ventas Precio de lista
+        chartSeries.push({
+            id: "sales_list",
+            label: "Ventas Lista",
+            axis: "right",
+            type: "bar",
+            data: series.points.map((p) => {
+                const entry = series.by_rule.find((r) => r.period === p.period && r.key === "list")
+                const val = entry?.net_revenue ?? (series.by_rule.length === 0 ? p.net_revenue : 0)
+                return { x: p.period, y: Math.round(val) }
+            }),
+        })
+
+        // 4. Eje Derecho (Y2): Ventas por cada regla
+        for (const rule of rules) {
+            chartSeries.push({
+                id: `sales_rule_${rule.rule_id}`,
+                label: `Ventas ${rule.name}`,
+                axis: "right",
+                type: "bar",
+                data: series.points.map((p) => {
+                    const entry = series.by_rule.find((r) => r.period === p.period && r.key === String(rule.rule_id))
+                    return { x: p.period, y: Math.round(entry?.net_revenue ?? 0) }
+                }),
+            })
+        }
+
+        return { periods, chartSeries }
+    }, [series.points, series.by_rule, rules, today.list_price_gross])
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
             {composition.findings.length > 0 && (
                 <ul aria-label="Hallazgos" className="flex flex-col gap-2">
                     {composition.findings.map((finding) => (
@@ -90,97 +152,82 @@ function PricingBody({ data, productId, period, capabilities }: PricingBlockProp
                     ))}
                 </ul>
             )}
-            <MetricStrip label="Resultado del periodo">
-                {hero}
-                <Metric label="Ingreso neto" value={formatMoney(kpis.net_revenue)} />
-                <Metric label="Unidades" value={kpis.units} />
-                <Metric label="Descuento promedio" value={percent(kpis.avg_discount_pct)} unit="%" />
+
+            {/* Fila de KPIs: Precio Actual c/IVA + N Reglas con Barra de Progreso de ventas */}
+            <MetricStrip label="Precios vigentes y asignación en ventas">
+                <Metric
+                    label="Precio actual (c/IVA)"
+                    value={formatMoney(today.list_price_gross)}
+                    info="Precio de lista vigente con IVA incluido. La barra indica el volumen de ventas en que se usó este precio."
+                    visual={
+                        totalUnits > 0
+                            ? {
+                                kind: "progress",
+                                current: Math.round(listUnits),
+                                max: Math.round(totalUnits),
+                                noun: "unidades vendidas",
+                            }
+                            : undefined
+                    }
+                    context={today.list_price_net ? `Neto: ${formatMoney(today.list_price_net)}` : undefined}
+                />
+
+                {rules.map((rule) => {
+                    const grossPrice =
+                        rule.rule_type === "DISCOUNT_PERCENTAGE"
+                            ? Math.round(today.list_price_gross * (1 - rule.discount_percentage / 100))
+                            : (rule.fixed_price_gross || Math.round(rule.fixed_price * 1.19))
+                    const ruleValText = formatMoney(grossPrice)
+                    const used = ruleUnitsMap.get(String(rule.rule_id)) ?? 0
+
+                    return (
+                        <Metric
+                            key={rule.rule_id}
+                            label={rule.name}
+                            value={ruleValText}
+                            info={`Condición: ${rule.condition}. La barra indica en cuántas ventas del período se aplicó.`}
+                            visual={
+                                totalUnits > 0
+                                    ? {
+                                        kind: "progress",
+                                        current: Math.round(used),
+                                        max: Math.round(totalUnits),
+                                        noun: "unidades vendidas",
+                                    }
+                                    : undefined
+                            }
+                            context={
+                                rule.rule_type === "DISCOUNT_PERCENTAGE"
+                                    ? `${percent(rule.discount_percentage)}% dto · ${rule.condition}`
+                                    : `Fijo c/IVA · ${rule.condition}`
+                            }
+                        />
+                    )
+                })}
             </MetricStrip>
-            <MetricStrip label="Hoy">
-                <Metric label="Precio de lista c/IVA" value={formatMoney(today.list_price_gross)} />
-                <Metric label="Precio de lista neto" value={formatMoney(today.list_price_net)} />
-                {data.has_cost && <Metric label="Costo" value={formatMoney(today.cost)} />}
-                {data.has_cost && (
-                    <Metric label="Margen de lista" value={today.list_margin_pct === null ? null : percent(today.list_margin_pct)} unit="%" />
-                )}
-            </MetricStrip>
-            {composition.sections.length === 0 && (
+
+            {/* Gráfico compuesto de doble eje Y */}
+            {chartData.periods.length > 0 ? (
+                <section aria-label="Evolución de precios y ventas" className="flex flex-col gap-2">
+                    <h3 className="text-sm font-medium">Evolución de precios y ventas asociadas</h3>
+                    <DualAxisChart
+                        series={chartData.chartSeries}
+                        periods={chartData.periods}
+                        leftAxisFormat="currency"
+                        rightAxisFormat="currency"
+                        leftAxisLabel="Precios c/IVA ($)"
+                        rightAxisLabel="Ventas ($)"
+                        mode="bar-line"
+                        ariaLabel="Evolución de precios con IVA en eje izquierdo y ventas en eje derecho"
+                    />
+                </section>
+            ) : (
                 <p className="text-sm italic text-muted-foreground">Sin ventas en el periodo</p>
             )}
-            {composition.sections.map((section) => {
-                if (section === "charts") return <PriceVsSales key={section} data={data} />
-                if (section === "effects") {
-                    return (
-                        <section key={section} aria-label="Antes vs después" className="flex flex-col gap-2">
-                            <h3 className="text-sm font-medium">Antes vs después</h3>
-                            <Collection.Root collection={effectsCollection}>
-                                <Collection.View table={pricingEffectsViews.table} emptyTitle="Sin cambios" emptyDescription="No hubo cambios de precio ni reglas en el periodo." />
-                            </Collection.Root>
-                        </section>
-                    )
-                }
-                return <SalesImpactBlock key={section} productId={productId} period={period} defaultGroupBy={composition.defaultGroupBy} />
-            })}
+
             <p className="text-xs text-muted-foreground">
                 La comparación entre precios y reglas es una asociación, no causalidad: no demuestra que el cambio provocó la venta.
             </p>
         </div>
-    )
-}
-
-function PriceVsSales({ data }: { data: ProductPricing }) {
-    const { points, by_rule: byRule } = data.series
-    const periods = useMemo(() => new Set(points.map((p) => p.period)), [points])
-    const lines = useMemo(() => {
-        const rules = new Map<string, Array<{ x: string; y: number }>>()
-        for (const entry of byRule) rules.set(entry.label, [...(rules.get(entry.label) ?? []), { x: entry.period, y: entry.avg_price }])
-        return [
-            { id: "Precio de lista", data: points.map((p) => ({ x: p.period, y: p.avg_list_price })) },
-            { id: "Precio realizado", data: points.map((p) => ({ x: p.period, y: p.avg_price })) },
-            ...[...rules].map(([id, series]) => ({ id, data: series })),
-        ]
-    }, [points, byRule])
-    const markers = useMemo(
-        () => data.effects
-            .filter((e) => periods.has(e.period))
-            .map((e) => ({
-                axis: "x" as const,
-                value: e.period,
-                lineStyle: MARKER_STYLE,
-                legend: e.kind === "rule" ? "Regla" : "Lista",
-                legendPosition: "top" as const,
-            })),
-        [data.effects, periods],
-    )
-    const units = useMemo(() => points.map((p) => ({ period: p.period, Unidades: p.units })), [points])
-
-    return (
-        <section aria-label="Precio contra ventas" className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Precio contra ventas</h3>
-            <div className="h-64 min-h-0">
-                <LineChart
-                    data={lines}
-                    margin={CHART_MARGIN}
-                    markers={markers}
-                    tooltipFormat="currency"
-                    enableArea={false}
-                    pointSize={4}
-                    axisBottom={{ tickSize: 0, tickPadding: 8 }}
-                    axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                    ariaLabel="Precio de lista, precio realizado y precio por regla en el periodo"
-                />
-            </div>
-            <div className="h-40 min-h-0">
-                <BarChart
-                    data={units}
-                    keys={["Unidades"]}
-                    indexBy="period"
-                    margin={CHART_MARGIN}
-                    tooltipFormat="number"
-                    legends={[]}
-                    ariaLabel="Unidades vendidas por periodo"
-                />
-            </div>
-        </section>
     )
 }

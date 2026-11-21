@@ -1,10 +1,10 @@
 import type { ProductPricing } from "./pricing.types"
-import type { SalesImpactGroupBy } from "./salesImpact.types"
 
 export const COST_RISE_THRESHOLD = 0.05
 export const FOREGONE_THRESHOLD = 0.05
 
 export type PricingFindingId = "cost_up_price_flat" | "negative_margin" | "high_foregone"
+export type PricingSection = "timeline" | "impact" | "rules"
 
 export interface PricingFinding {
     id: PricingFindingId
@@ -14,8 +14,7 @@ export interface PricingFinding {
 export interface PricingComposition {
     hero: "margin" | "price"
     findings: PricingFinding[]
-    sections: Array<"charts" | "effects" | "breakdown">
-    defaultGroupBy: SalesImpactGroupBy
+    sections: PricingSection[]
 }
 
 function findCostRise(data: ProductPricing): PricingFinding | null {
@@ -48,16 +47,14 @@ export function composePricing(data: ProductPricing, capabilities: { has_variant
         })
     }
 
+    const sections: PricingSection[] = ["timeline"]
     const hasSales = data.series.points.length > 0
-    const sections: PricingComposition["sections"] = []
-    if (hasSales) sections.push("charts")
-    if (hasSales && data.effects.length > 0) sections.push("effects")
-    if (hasSales) sections.push("breakdown")
+    if (hasSales) sections.push("impact")
+    if (data.rule_windows.length > 0) sections.push("rules")
 
     return {
         hero: data.has_cost ? "margin" : "price",
         findings,
         sections,
-        defaultGroupBy: capabilities.has_variants ? "variant" : "rule",
     }
 }

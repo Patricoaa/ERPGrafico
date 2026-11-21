@@ -27,7 +27,9 @@ export interface PricingPoint {
     units: number
     net_revenue: number
     avg_price: number
+    avg_price_gross?: number
     avg_list_price: number
+    avg_list_price_gross?: number
     avg_cost: number
     margin_pct: number | null
 }
@@ -39,6 +41,20 @@ export interface PricingRulePoint {
     label: string
     units: number
     avg_price: number
+    avg_price_gross?: number
+    net_revenue: number
+}
+
+export interface PricingRuleWindow {
+    rule_id: number
+    name: string
+    start: string | null
+    end: string | null
+    rule_type: "FIXED" | "PACKAGE_FIXED" | "DISCOUNT_PERCENTAGE"
+    fixed_price: number
+    fixed_price_gross?: number
+    discount_percentage: number
+    condition: string
 }
 
 export interface PricingListChange {
@@ -77,6 +93,6 @@ export interface ProductPricing {
     kpis: PricingKpis
     series: { points: PricingPoint[]; by_rule: PricingRulePoint[] }
     list_price_changes: { baseline: number | null; changes: PricingListChange[] }
-    rule_windows: Array<{ rule_id: number; name: string; start: string | null; end: string | null }>
-    effects: PricingEffect[]
+    rule_windows: PricingRuleWindow[]
+    effects?: PricingEffect[]
 }

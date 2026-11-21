@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { LineChart, Metric, MetricStrip } from "@/components/shared"
+import { LineChart, Metric, MetricStrip, type MetricDelta } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
@@ -69,6 +69,14 @@ function SalesBody({ data, metric }: { data: ProductSales; metric: SalesMetric }
     const unitsDelta = kpis.previous && kpis.previous.units > 0
         ? { current: kpis.units, previous: kpis.previous.units }
         : undefined
+    const marginDelta: MetricDelta | undefined =
+        kpis.previous?.margin_pct != null && kpis.margin_pct != null
+            ? {
+                text: `${(kpis.margin_pct - kpis.previous.margin_pct) >= 0 ? "+" : ""}${(kpis.margin_pct - kpis.previous.margin_pct).toFixed(1)} pts`,
+                direction: kpis.margin_pct > kpis.previous.margin_pct ? "up" : kpis.margin_pct < kpis.previous.margin_pct ? "down" : "flat",
+                tone: kpis.margin_pct > kpis.previous.margin_pct ? "success" : kpis.margin_pct < kpis.previous.margin_pct ? "destructive" : "neutral",
+            }
+            : undefined
     const section = (id: string, title: string, body: ReactNode, note?: string) => (
         <section key={id} aria-label={id} className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">{title}</h3>
@@ -95,9 +103,25 @@ function SalesBody({ data, metric }: { data: ProductSales; metric: SalesMetric }
             )}
             <MetricStrip label="Resultado del periodo">
                 <Metric label="Unidades vendidas" value={kpis.units} delta={unitsDelta} context={kpis.previous ? `Antes: ${kpis.previous.units}` : undefined} />
-                <Metric label="Ingreso neto" value={formatMoney(kpis.net_revenue)} />
+                <Metric label="Ingreso neto" value={formatMoney(kpis.net_revenue)} info="Total facturado en el período, neto de descuentos y sin IVA" />
+                {kpis.margin_pct != null && (
+                    <Metric
+                        label="Margen realizado"
+                        value={kpis.margin_pct.toFixed(1)}
+                        unit="%"
+                        delta={marginDelta}
+                        info="Margen neto promedio sobre ventas del período, considerando costo y descuentos aplicados"
+                    />
+                )}
+                {kpis.avg_discount_pct > 0 && (
+                    <Metric
+                        label="Descuento promedio"
+                        value={kpis.avg_discount_pct.toFixed(1)}
+                        unit="%"
+                        info="Porcentaje promedio de descuento aplicado respecto al precio de lista"
+                    />
+                )}
                 <Metric label="Clientes" value={kpis.customers} context={customers.total > 3 ? `Top 3: ${customers.top3_share_pct.toFixed(0)} %` : undefined} />
-                <Metric label="Devoluciones" value={kpis.return_units} context={`${kpis.return_rate_pct.toFixed(1)} % de lo vendido`} />
             </MetricStrip>
             {kpis.last_sale_date && (
                 <p className="text-xs text-muted-foreground">

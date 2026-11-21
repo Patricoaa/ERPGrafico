@@ -116,15 +116,25 @@ def rule_windows(product: Product, product_ids: list[int]) -> list[dict]:
     rule_filter = Q(product_id__in=product_ids) | Q(category_id=product.category_id)
     if product.parent_template_id:
         rule_filter |= Q(product_id=product.parent_template_id)
-    return [
-        {
+    result = []
+    for r in PricingRule.objects.filter(rule_filter).order_by("start_date", "pk"):
+        min_q = int(r.min_quantity) if r.min_quantity == int(r.min_quantity) else float(r.min_quantity)
+        condition = f"{r.get_operator_display()} {min_q}"
+        if r.operator == "BT" and r.max_quantity:
+            max_q = int(r.max_quantity) if r.max_quantity == int(r.max_quantity) else float(r.max_quantity)
+            condition += f" y {max_q}"
+        result.append({
             "rule_id": r.pk,
             "name": r.name,
             "start": r.start_date.isoformat() if r.start_date else None,
             "end": r.end_date.isoformat() if r.end_date else None,
-        }
-        for r in PricingRule.objects.filter(rule_filter).order_by("start_date", "pk")
-    ]
+            "rule_type": r.rule_type,
+            "fixed_price": float(r.fixed_price or 0),
+            "fixed_price_gross": float(r.fixed_price_gross or (float(r.fixed_price) * 1.19 if r.fixed_price else 0)),
+            "discount_percentage": float(r.discount_percentage or 0),
+            "condition": condition,
+        })
+    return result
 
 
 def _period_expression(granularity: str):

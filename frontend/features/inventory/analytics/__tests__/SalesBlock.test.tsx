@@ -34,8 +34,9 @@ function sales(over: Partial<ProductSales> = {}): ProductSales {
     return {
         kpis: {
             units: 100, net_revenue: 100000, customers: 12, return_units: 4, return_rate_pct: 4,
+            margin_pct: null, avg_discount_pct: 0,
             last_sale_date: "2026-11-10", days_since_last_sale: 10,
-            previous: { units: 80, net_revenue: 80000, customers: 9 },
+            previous: { units: 80, net_revenue: 80000, customers: 9, margin_pct: null, avg_discount_pct: 0 },
         },
         series: {
             points: [{ period: "2026-10", units: 40, net_revenue: 40000 }, { period: "2026-11", units: 60, net_revenue: 60000 }],
@@ -146,8 +147,17 @@ describe("SalesBlock", () => {
         expect(last()).toEqual({ granularity: "year", date_from: undefined })
     })
 
-    it("shows no price, cost or margin figures", () => {
+    it("shows no price or cost figures, but shows margin when available", () => {
+        state.data = sales({
+            kpis: {
+                ...sales().kpis,
+                margin_pct: 45.5,
+                previous: { ...sales().kpis.previous!, margin_pct: 42.0 },
+            },
+        })
         render(<SalesBlock productId={7} period="12m" />)
-        expect(screen.queryByText(/margen|costo|precio/i)).not.toBeInTheDocument()
+        expect(screen.queryByText(/costo|precio de lista/i)).not.toBeInTheDocument()
+        expect(screen.getByText("Margen realizado")).toBeInTheDocument()
+        expect(screen.getByText(/\+3[,.]5 pts/)).toBeInTheDocument()
     })
 })

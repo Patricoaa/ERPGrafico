@@ -9,8 +9,9 @@ function sales(over: Partial<Omit<ProductSales, "kpis">> & { kpis?: Partial<Sale
     return {
         kpis: {
             units: 100, net_revenue: 100000, customers: 6, return_units: 0, return_rate_pct: 0,
+            margin_pct: null, avg_discount_pct: 0,
             last_sale_date: "2026-11-10", days_since_last_sale: 10,
-            previous: { units: 100, net_revenue: 100000, customers: 6 },
+            previous: { units: 100, net_revenue: 100000, customers: 6, margin_pct: null, avg_discount_pct: 0 },
             ...kpis,
         },
         series: { points: [{ period: "2026-10", units: 50, net_revenue: 50000 }], previous_points: [] },
@@ -22,7 +23,7 @@ function sales(over: Partial<Omit<ProductSales, "kpis">> & { kpis?: Partial<Sale
     }
 }
 const ids = (d: ProductSales) => composeSales(d).findings.map((f) => f.id)
-const previous = (units: number) => ({ units, net_revenue: 0, customers: 0 })
+const previous = (units: number) => ({ units, net_revenue: 0, customers: 0, margin_pct: null, avg_discount_pct: 0 })
 
 describe("composeSales findings", () => {
     it("flags a unit drop of 20% or more, not 19%", () => {

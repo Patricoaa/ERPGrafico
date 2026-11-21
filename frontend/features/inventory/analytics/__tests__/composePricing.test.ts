@@ -69,18 +69,21 @@ describe("composePricing", () => {
         expect(composePricing(data({ has_cost: false }), caps).hero).toBe("price")
     })
 
-    it("has no sections without sales", () => {
+    it("always has timeline section", () => {
         const empty = data({ series: { points: [], by_rule: [] } })
-        expect(composePricing(empty, caps).sections).toEqual([])
+        expect(composePricing(empty, caps).sections).toContain("timeline")
+        expect(composePricing(data(), caps).sections).toContain("timeline")
     })
 
-    it("omits effects when there are no events", () => {
-        expect(composePricing(data({ effects: [] }), caps).sections).toEqual(["charts", "breakdown"])
-        expect(composePricing(data(), caps).sections).toEqual(["charts", "effects", "breakdown"])
+    it("adds impact section when there are sales, not when empty", () => {
+        expect(composePricing(data(), caps).sections).toContain("impact")
+        const empty = data({ series: { points: [], by_rule: [] } })
+        expect(composePricing(empty, caps).sections).not.toContain("impact")
     })
 
-    it("groups the breakdown by variant for products with variants", () => {
-        expect(composePricing(data(), { has_variants: true }).defaultGroupBy).toBe("variant")
-        expect(composePricing(data(), caps).defaultGroupBy).toBe("rule")
+    it("adds rules section when rule_windows is non-empty", () => {
+        const withRules = data({ rule_windows: [{ rule_id: 1, name: "R1", start: null, end: null, rule_type: "FIXED", fixed_price: 100, discount_percentage: 0, condition: ">= 1" }] })
+        expect(composePricing(withRules, caps).sections).toContain("rules")
+        expect(composePricing(data(), caps).sections).not.toContain("rules")
     })
 })

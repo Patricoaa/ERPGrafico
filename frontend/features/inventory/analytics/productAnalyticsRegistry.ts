@@ -39,7 +39,7 @@ export type ProductAnalyticsTabId =
 export const TAB_LABELS: Record<ProductAnalyticsTabId, string> = {
     overview: "Resumen",
     sales: "Ventas",
-    pricing: "Precio y margen",
+    pricing: "Precio",
     costs: "Costos",
     procurement: "Abastecimiento",
     inventory: "Inventario",
