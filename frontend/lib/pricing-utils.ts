@@ -2,24 +2,24 @@ import { formatCurrency as canonicalFormatCurrency } from "@/lib/money";
 import { grossFromNet, netFromGross } from "@/lib/vat";
 
 export const PricingUtils = {
-    netToGross: (net: number, taxRate: number = 0.19): number => {
+    netToGross: (net: number, taxRate: number): number => {
         return grossFromNet(net, 1 + taxRate);
     },
 
-    grossToNet: (gross: number, taxRate: number = 0.19): number => {
+    grossToNet: (gross: number, taxRate: number): number => {
         return netFromGross(gross, 1 + taxRate);
     },
 
-    calculateTax: (net: number, taxRate: number = 0.19): number => {
+    calculateTax: (net: number, taxRate: number): number => {
         return Math.round(net * taxRate);
     },
 
-    extractTax: (gross: number, taxRate: number = 0.19): number => {
+    extractTax: (gross: number, taxRate: number): number => {
         const net = PricingUtils.grossToNet(gross, taxRate);
         return gross - net;
     },
 
-    calculateLineTotal: (quantity: number, unitPriceNet: number, taxRate: number = 0.19): number => {
+    calculateLineTotal: (quantity: number, unitPriceNet: number, taxRate: number): number => {
         const net = Math.round(quantity * unitPriceNet);
         return PricingUtils.netToGross(net, taxRate);
     },
@@ -51,19 +51,19 @@ export const PricingUtils = {
         return Math.round(total * (percent / 100));
     },
 
-    calculateLineFromGross: (quantity: number, unitPriceGross: number, discountAmount: number = 0, taxRate: number = 0.19): {
+    calculateLineFromGross: (quantity: number, unitPriceGross: number, discountAmount: number, taxRate: number): {
         gross: number;
         net: number;
         tax: number;
     } => {
         const totalGross = Math.round(quantity * unitPriceGross);
         const gross = Math.max(0, totalGross - discountAmount);
-        const net = Math.round(gross / (1 + taxRate));
+        const net = netFromGross(gross, 1 + taxRate);
         const tax = gross - net;
         return { gross, net, tax };
     },
 
-    calculateMultiLineTotal: (lines: Array<{ quantity: number; unit_price_net?: number; unit_price_gross?: number }>, useGross = false, taxRate: number = 0.19): {
+    calculateMultiLineTotal: (lines: Array<{ quantity: number; unit_price_net?: number; unit_price_gross?: number }>, useGross: boolean, taxRate: number): {
         net: number;
         tax: number;
         gross: number;
@@ -72,15 +72,15 @@ export const PricingUtils = {
             const gross = lines.reduce((acc, line) =>
                 acc + Math.round(line.quantity * (line.unit_price_gross || 0)), 0
             );
-            const net = Math.round(gross / (1 + taxRate));
+            const net = netFromGross(gross, 1 + taxRate);
             const tax = gross - net;
             return { net, tax, gross };
         } else {
             const net = lines.reduce((acc, line) =>
                 acc + PricingUtils.calculateLineNet(line.quantity, line.unit_price_net || 0), 0
             );
-            const tax = Math.ceil(net * taxRate);
-            const gross = net + tax;
+            const gross = grossFromNet(net, 1 + taxRate);
+            const tax = gross - net;
             return { net, tax, gross };
         }
     },

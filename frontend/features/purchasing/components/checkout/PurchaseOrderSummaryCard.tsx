@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/lib/pricing-utils'
+import { useVatRate } from '@/hooks/useVatRate'
 import { type CheckoutLine } from "../../types"
 
 interface PurchaseOrderSummaryCardProps {
@@ -19,9 +20,11 @@ export function PurchaseOrderSummaryCard({
     total,
     dteType
 }: PurchaseOrderSummaryCardProps) {
+    const { rate } = useVatRate()
+    const taxRate = rate / 100
     const isExempt = dteType === 'FACTURA_EXENTA' || dteType === 'BOLETA_EXENTA';
-    const net = isExempt ? total : PricingUtils.grossToNet(total);
-    const tax = isExempt ? 0 : PricingUtils.extractTax(total);
+    const net = isExempt ? total : PricingUtils.grossToNet(total, taxRate);
+    const tax = isExempt ? 0 : PricingUtils.extractTax(total, taxRate);
 
     return (
         <div className="h-full flex flex-col bg-transparent">

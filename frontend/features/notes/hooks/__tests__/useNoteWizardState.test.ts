@@ -4,6 +4,7 @@ import type { NoteLineItem, NoteWizardSourceDocument } from '../../types'
 import { useNoteWizardState } from '../useNoteWizardState'
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('@/hooks/useVatRate', () => ({ useVatRate: () => ({ rate: 19, multiplier: 1.19, isLoading: false }) }))
 
 const line = (over: Partial<NoteLineItem> = {}): NoteLineItem => ({
     lineId: 1,

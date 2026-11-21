@@ -11,6 +11,7 @@ import * as StockCalculator from '../utils/stock-calculator'
 import * as BOMResolver from '../utils/bom-resolver'
 import { posApi } from '../api/posApi'
 import { useOperatorGate } from '../operator'
+import { useVatRate } from '@/hooks/useVatRate'
 
 export function useCart() {
     const {
@@ -29,6 +30,8 @@ export function useCart() {
         currentDraftId
     } = usePOS()
     const { ensureOperator } = useOperatorGate()
+    const { rate } = useVatRate()
+    const taxRate = rate / 100
 
     // Fetch BOM wrapper
     const fetchBOM = useCallback(async (productId: number) => {
@@ -149,7 +152,7 @@ export function useCart() {
 
         if (existing) {
             // Update existing item
-            const updated = CartUtils.updateCartItemQuantity(existing, newQty, prices.net, prices.gross)
+            const updated = CartUtils.updateCartItemQuantity(existing, newQty, prices.net, prices.gross, taxRate)
             updateItem(existing.cartItemId, updated)
             toast.success(`Cantidad actualizada: ${product.name}`)
         } else {
@@ -161,6 +164,7 @@ export function useCart() {
                 defaultUomName,
                 prices.net,
                 prices.gross,
+                taxRate,
                 0,
                 0,
                 manufacturingData
@@ -168,7 +172,7 @@ export function useCart() {
             addItem(newItem)
             toast.success(`Agregado al carrito: ${product.name}`)
         }
-    }, [items, fetchBOM, validateStock, fetchEffectivePrice, addItem, updateItem, uoms, currentDraftId, ensureOperator])
+    }, [items, fetchBOM, validateStock, fetchEffectivePrice, addItem, updateItem, uoms, currentDraftId, ensureOperator, taxRate])
 
     // Update quantity
     const updateQuantity = useCallback(async (cartItemId: string, qty: number | string) => {
@@ -193,9 +197,9 @@ export function useCart() {
         const prices = await fetchEffectivePrice(item, newQty, item.uom || item.id)
 
         // Update
-        const updated = CartUtils.updateCartItemQuantity(item, newQty, prices.net, prices.gross)
+        const updated = CartUtils.updateCartItemQuantity(item, newQty, prices.net, prices.gross, taxRate)
         updateItem(cartItemId, updated)
-    }, [items, validateStock, fetchEffectivePrice, updateItem])
+    }, [items, validateStock, fetchEffectivePrice, updateItem, taxRate])
 
     // Remove from cart
     const removeFromCart = useCallback((cartItemId: string) => {

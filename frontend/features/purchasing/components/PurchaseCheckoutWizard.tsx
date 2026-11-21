@@ -214,13 +214,13 @@ export function PurchaseCheckoutWizard({
         const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';
         const newTotal = currentOrderLines.reduce((sum, line) => {
             const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
-            const tax = isExempt ? 0 : PricingUtils.calculateTax(net)
+            const tax = isExempt ? 0 : PricingUtils.calculateTax(net, rate / 100)
             return sum + net + tax
         }, 0)
         requestAnimationFrame(() => {
             setCurrentTotal(newTotal)
         })
-    }, [currentOrderLines, dteData.type])
+    }, [currentOrderLines, dteData.type, rate])
 
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,
