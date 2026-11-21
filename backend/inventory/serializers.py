@@ -27,7 +27,7 @@ from .models import (
     UoMCategory,
     Warehouse,
 )
-from .services import ProductService, net_write_to_gross
+from .services import ProductService, net_write_to_gross, variant_sale_price
 
 
 class ProductUoMPriceSerializer(serializers.ModelSerializer):
@@ -403,7 +403,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "receiving_warehouse",
             "sale_price", "sale_price_gross", "cost_price",
             "is_favorite", "is_active",
-            "price_inheritance_mode", "price_surcharge", "effective_price_net",
+            "price_inheritance_mode", "price_surcharge", "price_surcharge_gross", "effective_price_net",
             "uom_prices", "preferred_supplier", "preferred_supplier_name",
             "category_name", "uom_name", "uom_category",
             "sale_uom_name", "purchase_uom_name", "receiving_warehouse_name",
@@ -482,6 +482,18 @@ class ProductListSerializer(serializers.ModelSerializer):
         prices = [variant.sale_price for variant in obj.variants.all() if variant.sale_price is not None]
         return min(prices) if prices else None
 
+    min_variant_price_gross = serializers.SerializerMethodField()
+    def get_min_variant_price_gross(self, obj):
+        """Mínimo de los brutos resueltos (ADR-0151); `variants` viene prefetcheado, sin consultas.
+
+        Como `min_variant_price`, omite variantes sin precio; además omite brutos <= 0
+        (variante sin precio configurado) para que no aparezca "desde $0".
+        """
+        if not obj.has_variants:
+            return None
+        prices = [p for p in (variant_sale_price(v, obj).gross for v in obj.variants.all()) if p is not None and p > 0]
+        return min(prices) if prices else None
+
     # Defaults que lee el wizard de compra desde el listado. `last_purchase_price` y
     # `preferred_supplier_name` vienen anotados por `list_products` (sin joins ni N+1).
     last_purchase_price = serializers.SerializerMethodField()
@@ -523,7 +535,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "last_purchase_price",
             "current_stock", "qty_reserved", "qty_available",
             "track_inventory", "can_be_sold", "can_be_purchased",
-            "has_variants", "variants_count", "variant_axis_label", "min_variant_price",
+            "has_variants", "variants_count", "variant_axis_label", "min_variant_price", "min_variant_price_gross",
             "is_variable_amount", "is_dynamic_pricing",
             "has_bom", "requires_advanced_manufacturing", "mfg_auto_finalize",
             "manufacturable_quantity",
@@ -548,7 +560,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "track_inventory", "can_be_sold", "can_be_purchased",
             "uom", "sale_uom", "purchase_uom", "allowed_sale_uoms", "receiving_warehouse",
             "sale_price", "sale_price_gross", "cost_price", "is_active",
-            "price_inheritance_mode", "price_surcharge", "preferred_supplier",
+            "price_inheritance_mode", "price_surcharge", "price_surcharge_gross", "preferred_supplier",
             "subscription_supplier", "subscription_amount", "subscription_start_date",
             "auto_activate_subscription", "default_invoice_type", "is_indefinite",
             "contract_end_date", "payment_day_type", "payment_day", "payment_interval_days",

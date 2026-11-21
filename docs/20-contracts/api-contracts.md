@@ -435,7 +435,11 @@ Request schema (create/update key fields — partial; see serializer for full sc
   "uom": "number (id)",
   "sale_uom": "number (id) | null",
   "purchase_uom": "number (id) | null",
-  "sale_price": "decimal",
+  "sale_price_gross": "decimal (with IVA) — autoridad del precio de venta (ADR-0151)",
+  "sale_price": "decimal (net) — DEPRECATED como entrada; solo se usa si no llega sale_price_gross",
+  "price_inheritance_mode": "INHERIT|SURCHARGE|OVERRIDE (variantes)",
+  "price_surcharge_gross": "decimal (with IVA) | null — recargo de la variante, autoridad (ADR-0151)",
+  "price_surcharge": "decimal (net) | null — DEPRECATED como entrada; solo si no llega price_surcharge_gross",
   "cost_price": "decimal",
   "track_inventory": "boolean",
   "can_be_sold": "boolean",
@@ -468,8 +472,10 @@ Response key fields:
   "current_stock": "float (computed)",
   "qty_available": "float (computed, stock - reserved)",
   "qty_reserved": "float (computed)",
-  "sale_price": "decimal",
-  "sale_price_gross": "decimal (with IVA)",
+  "sale_price": "decimal (net, derivado del bruto)",
+  "sale_price_gross": "decimal (with IVA) — autoridad",
+  "price_surcharge_gross": "decimal (with IVA) | null — autoridad del recargo",
+  "price_surcharge": "decimal (net, derivado) | null — deprecated",
   "has_bom": "boolean",
   "requires_advanced_manufacturing": "boolean",
   "has_variants": "boolean",
@@ -477,6 +483,10 @@ Response key fields:
   "boms": "array (BOM with lines)"
 }
 ```
+
+Regla de escritura del precio de venta (ADR-0151, [ADR-0151](../10-architecture/adr/0151-bruto-autoridad-unica-del-precio-de-venta.md)): el bruto es la autoridad. Si la petición trae `sale_price_gross` (o `price_surcharge_gross`) este gana y el neto se deriva con `accounting/vat.py`, aunque también llegue un neto inconsistente; el neto (`sale_price` / `price_surcharge`) solo se acepta cuando el bruto está ausente, y entonces se convierte a bruto. El resultado depende solo de la entrada, nunca del valor previo guardado. `PricingRule` y `ProductUoMPrice` siguen la misma regla.
+
+Listado (`ProductListSerializer`): `min_variant_price_gross` (decimal con IVA | null) es el mínimo de los brutos resueltos de las variantes según su modo de herencia (omite variantes sin precio y brutos <= 0; `null` si `has_variants` es falso o no hay precios). `min_variant_price` (neto) se mantiene pero está **deprecado**: usar `min_variant_price_gross`.
 
 ### warehouses/
 
