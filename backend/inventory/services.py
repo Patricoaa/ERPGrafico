@@ -1298,6 +1298,11 @@ def net_write_to_gross(data: dict, net_key: str, gross_key: str, *, clear_on_non
         # Bruto None explícito sin neto: limpia ambos (si no, save() re-derivaría el bruto del neto viejo).
         data[net_key] = None
         return data
+    if gross_key in data and data[gross_key] == 0 and net_key not in data:
+        # Bruto 0 explícito sin neto es autoritativo (no "sin definir"): save() trataría 0 como
+        # ausente y re-derivaría el bruto del neto viejo de la instancia.
+        data[net_key] = data[gross_key]
+        return data
     if data.get(gross_key) is not None or net_key not in data:
         return data
     net = data[net_key]
@@ -1313,6 +1318,10 @@ def _net_writes_to_gross(data: dict) -> dict:
     # None limpia el recargo: sin esto el bruto viejo re-derivaría el neto.
     net_write_to_gross(data, "price_surcharge", "price_surcharge_gross", clear_on_none=True)
     return data
+
+
+def _uom_price_net_to_gross(data: dict) -> dict:
+    return net_write_to_gross(dict(data), "price_net", "price_gross", clear_on_none=False)
 
 
 def _variant_value_signatures(template):
@@ -1361,7 +1370,7 @@ class ProductService:
                 BillOfMaterialsLine.objects.create(bom=bom, **line_data)
 
         for uom_price in uom_prices_data:
-            ProductUoMPrice.objects.create(product=product, **uom_price)
+            ProductUoMPrice.objects.create(product=product, **_uom_price_net_to_gross(uom_price))
 
         if variant_generation_selection:
             if not product.has_variants:
@@ -1464,7 +1473,7 @@ class ProductService:
         if uom_prices_data is not None:
             instance.uom_prices.all().delete()
             for uom_price in uom_prices_data:
-                ProductUoMPrice.objects.create(product=instance, **uom_price)
+                ProductUoMPrice.objects.create(product=instance, **_uom_price_net_to_gross(uom_price))
 
         # Inline variant updates (price, BOM cloning, etc.)
         if variant_updates:
