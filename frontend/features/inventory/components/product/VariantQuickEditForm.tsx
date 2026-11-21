@@ -45,6 +45,12 @@ const quickEditSchema = z.object({
 
 type QuickEditValues = z.infer<typeof quickEditSchema>
 
+function grossOf(p: Pick<Product, 'sale_price' | 'sale_price_gross'> | undefined, multiplier: number): number {
+  return p?.sale_price_gross != null && p.sale_price_gross !== ''
+    ? Number(p.sale_price_gross) || 0
+    : grossFromNet(Number(p?.sale_price) || 0, multiplier)
+}
+
 interface VariantQuickEditFormProps {
   variant: Product
   templateData?: Product
@@ -63,10 +69,6 @@ export function VariantQuickEditForm({
   const [mounted, setMounted] = useState(false)
   const { uoms, isUoMsLoading } = useUoMs()
   const { rate, multiplier } = useVatRate()
-  const grossOf = (p: Pick<Product, 'sale_price' | 'sale_price_gross'> | undefined): number =>
-    p?.sale_price_gross != null && p.sale_price_gross !== ''
-      ? Number(p.sale_price_gross) || 0
-      : grossFromNet(Number(p?.sale_price) || 0, multiplier)
   const { boms: availableBOMs, deleteBom, refetch: refetchVariantBOMs, isBOMsLoading } = useBOMs({ product_id: variant.id })
   const isFetchingInitialData = isUoMsLoading || isBOMsLoading
     const { updateProduct } = useProductMutations()
@@ -84,7 +86,7 @@ export function VariantQuickEditForm({
   const form: UseFormReturn<QuickEditValues> = useForm<QuickEditValues>({
     resolver: zodResolver(quickEditSchema) as unknown as Resolver<QuickEditValues>,
     defaultValues: {
-      sale_price_gross: grossOf(variant),
+      sale_price_gross: grossOf(variant, multiplier),
       code: variant.code || "",
       sale_uom: variant.sale_uom?.toString() || "",
       price_inheritance_mode: hasUomPrices ? 'INHERIT' : ((variant.price_inheritance_mode ?? 'INHERIT') as 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'),
@@ -96,7 +98,7 @@ export function VariantQuickEditForm({
 
   useEffect(() => {
     form.reset({
-      sale_price_gross: grossOf(variant),
+      sale_price_gross: grossOf(variant, multiplier),
       code: variant.code || "",
       sale_uom: variant.sale_uom?.toString() || "",
       price_inheritance_mode: hasUomPrices ? 'INHERIT' : ((variant.price_inheritance_mode ?? 'INHERIT') as 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'),
@@ -106,7 +108,7 @@ export function VariantQuickEditForm({
     // uoms y availableBOMs se mantienen reactivos vía useUoMs / useBOMs —
     // ya no hace falta refetchear manualmente al cambiar de variant porque
     // el queryKey del useBOMs incluye variant.id (se re-fetchea solo).
-  }, [variant, form, hasUomPrices])
+  }, [variant, form, hasUomPrices, multiplier])
 
   const [pendingDeleteBomId, setPendingDeleteBomId] = useState<number | null>(null)
 
@@ -144,7 +146,7 @@ export function VariantQuickEditForm({
   }
 
   const currentMode = form.watch('price_inheritance_mode')
-  const templateGross = grossOf(templateData)
+  const templateGross = grossOf(templateData, multiplier)
   const currentSurchargeGross = form.watch('price_surcharge_gross') || 0
   const overrideGross = form.watch('sale_price_gross') || 0
 

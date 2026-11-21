@@ -1294,6 +1294,10 @@ def net_write_to_gross(data: dict, net_key: str, gross_key: str, *, clear_on_non
     Se pre-convierte porque save() no ve el bruto viejo y lo re-derivaría sobre el neto nuevo.
     Con ``clear_on_none``, un neto None explícito (sin bruto) limpia también el bruto.
     """
+    if clear_on_none and gross_key in data and data[gross_key] is None and net_key not in data:
+        # Bruto None explícito sin neto: limpia ambos (si no, save() re-derivaría el bruto del neto viejo).
+        data[net_key] = None
+        return data
     if data.get(gross_key) is not None or net_key not in data:
         return data
     net = data[net_key]
