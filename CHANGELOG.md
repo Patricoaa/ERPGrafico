@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.138](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.137...v0.3.138) (2026-11-21)
+
+
+### ✨ Features
+
+* **pricing:** merge tab Precio — dual-axis chart, precios c/IVA, Margen en Sales, remover efectos históricos ([07c2bca](https://github.com/Patricoaa/ERPGrafico/commit/07c2bca91e4f8d4f24e50a37937d23d73d5118c7))
+* **pricing:** rediseño tab Precio — dual-axis chart, precios c/IVA, remover efectos históricos y costo unitario ([5eb5c7b](https://github.com/Patricoaa/ERPGrafico/commit/5eb5c7b4d6f4a1da8e184705e7b3e71b3cffde35))
+
 ### [0.3.137](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.136...v0.3.137) (2026-11-21)
 
 
