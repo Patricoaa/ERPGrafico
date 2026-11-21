@@ -17,7 +17,8 @@ import { usePricingRuleMutations } from "@/features/inventory"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { Layers, Zap, DollarSign, Calendar } from "lucide-react"
-import { PricingUtils } from '@/lib/pricing-utils'
+import { useVatRate } from '@/hooks/useVatRate'
+import { buildPricingRulePayload, rulePriceFromGross, rulePriceFromNet } from './pricingRulePayload'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { useSingleProduct } from "@/features/inventory"
@@ -67,6 +68,7 @@ interface PricingRuleDrawerProps {
 
 export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, mode: modeProp }: PricingRuleDrawerProps) {
     const { uoms, isUoMsLoading } = useUoMs()
+    const { multiplier } = useVatRate()
     const { savePricingRule } = usePricingRuleMutations()
     const isFetchingInitialData = open && isUoMsLoading
     const [selectedProductObj, setSelectedProductObj] = useState<Product | null>(null)
@@ -149,9 +151,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
     async function onSubmit(values: FormValues) {
         try {
-            const payload = { ...values }
-            if (payload.product === null) delete (payload as unknown as Record<string, unknown>).product
-            if (payload.operator !== "BT") delete (payload as unknown as Record<string, unknown>).max_quantity
+            // ADR-0151: solo el bruto viaja al backend.
+            const payload = buildPricingRulePayload(values)
 
             // savePricingRule invalida PRICING_RULES + PRODUCTS_KEYS (los precios
             // computados en la lista de productos cambian) automáticamente.
@@ -311,13 +312,9 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                                     value={field.value || ""}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        field.onChange(val);
-                                        if (val) {
-                                            const gross = PricingUtils.netToGross(parseFloat(val));
-                                            form.setValue("fixed_price_gross", String(gross));
-                                        } else {
-                                            form.setValue("fixed_price_gross", "");
-                                        }
+                                        const next = rulePriceFromNet(val, multiplier);
+                                        field.onChange(val ? next.net : "");
+                                        form.setValue("fixed_price_gross", next.gross);
                                     }}
                                 />
                             )}
@@ -333,13 +330,9 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                                     value={field.value || ""}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        field.onChange(val);
-                                        if (val) {
-                                            const net = PricingUtils.grossToNet(parseFloat(val));
-                                            form.setValue("fixed_price", String(net));
-                                        } else {
-                                            form.setValue("fixed_price", "");
-                                        }
+                                        const next = rulePriceFromGross(val, multiplier);
+                                        field.onChange(val ? next.gross : "");
+                                        form.setValue("fixed_price", next.net);
                                     }}
                                 />
                             )}

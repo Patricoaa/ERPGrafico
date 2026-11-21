@@ -7,6 +7,7 @@ import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import { useVatRate } from '@/hooks/useVatRate'
 import { PricingUtils } from "@/lib/pricing-utils"
+import { fromTypedGross, fromTypedNet } from "./grossPricePayload"
 import { cn } from "@/lib/utils"
 import { type UoM } from "@/types/entities"
 
@@ -18,7 +19,7 @@ interface ProductPricingSectionProps {
 }
 
 export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingSectionProps) {
-    const { rate } = useVatRate()
+    const { rate, multiplier } = useVatRate()
     const isDynamicPricing = form.watch("is_dynamic_pricing")
     const productType = form.watch("product_type")
     const allowedSaleUomStrings = form.watch("allowed_sale_uoms") || []
@@ -29,15 +30,13 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
         .filter(u => allowedSaleUomIds.includes(u.id))
         .map(u => ({ value: String(u.id), label: u.name }))
 
-    const handleNetChange = (value: string) => {
-        const net = parseFloat(value) || 0
-        form.setValue("sale_price_gross", PricingUtils.netToGross(net), { shouldDirty: true, shouldValidate: true })
+    // ADR-0151: el bruto es la autoridad; el neto mostrado siempre se deriva de él.
+    const applyPrice = ({ net, gross }: { net: number; gross: number }) => {
+        form.setValue("sale_price_gross", gross, { shouldDirty: true, shouldValidate: true })
+        form.setValue("sale_price", net, { shouldDirty: true, shouldValidate: true })
     }
-
-    const handleGrossChange = (value: string) => {
-        const gross = parseFloat(value) || 0
-        form.setValue("sale_price", PricingUtils.grossToNet(gross), { shouldDirty: true, shouldValidate: true })
-    }
+    const handleNetChange = (value: string) => applyPrice(fromTypedNet(parseFloat(value) || 0, multiplier))
+    const handleGrossChange = (value: string) => applyPrice(fromTypedGross(parseFloat(value) || 0, multiplier))
 
     const salePrice = Number(form.watch("sale_price")) || 0
     const salePriceGross = Number(form.watch("sale_price_gross")) || 0
@@ -94,7 +93,6 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                                     className="h-9 font-black text-right"
                                     {...field}
                                     onChange={(e) => {
-                                        field.onChange(e)
                                         handleNetChange(e.target.value)
                                     }}
                                 />
@@ -120,7 +118,6 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                                     className="h-9 font-black text-right bg-primary/5 border-primary/20"
                                     {...field}
                                     onChange={(e) => {
-                                        field.onChange(e)
                                         handleGrossChange(e.target.value)
                                     }}
                                 />
