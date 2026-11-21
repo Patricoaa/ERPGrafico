@@ -24,6 +24,7 @@ const PRODUCTS: BaseProduct[] = Array.from({ length: 24 }, (_, i) => {
         code: `P-${String(i + 1).padStart(4, "0")}`,
         name: NAMES[i % NAMES.length],
         sale_price: 400 + i * 130,
+        sale_price_gross: Math.round((400 + i * 130) * 1.19),
         uom_name: ["Pliego", "Kg", "Cara", "Unidad"][categoryId - 1],
         category: categoryId,
         product_type: isService ? "SERVICE" : "STORABLE",

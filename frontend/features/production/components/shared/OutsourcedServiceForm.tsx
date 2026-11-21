@@ -22,6 +22,7 @@ import { UoMSelector } from '@/components/selectors/UoMSelector'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
+import { netFromGross } from '@/lib/vat'
 import { useCoreAllowedDteTypes } from '../../hooks/useProductionQueries'
 import { useUoMs } from '../../hooks'
 import type { Product } from "@/types/entities"
@@ -94,7 +95,7 @@ export function OutsourcedServiceForm({
     onChange({ ...value, ...patch })
 
   const handleGrossPriceChange = (raw: string) => {
-    const net = raw ? (parseFloat(raw) / vatMultiplier).toFixed(2) : '0'
+    const net = raw ? netFromGross(parseFloat(raw), vatMultiplier, { decimals: 2 }).toFixed(2) : '0'
     set({ grossPrice: raw, netPrice: net })
   }
 

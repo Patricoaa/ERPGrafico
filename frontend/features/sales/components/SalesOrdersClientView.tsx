@@ -2,6 +2,7 @@
 
 import { useState, lazy } from "react"
 import { useInvoices } from "@/features/billing"
+import { grossFromNet } from "@/lib/vat"
 import { useVatRate } from "@/hooks/useVatRate"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { FadeIn, SkeletonShell } from "@/components/shared"
@@ -16,6 +17,16 @@ const SALES_ORDER_LIST_KEYS = [[...SALES_KEYS.all, 'orders']] as const
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
 const DeliveryModal = lazy(() => import("./DeliveryDrawer"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
+
+/** Total bruto de un borrador sin total de orden: el bruto de la línea manda; sin él, se deriva del neto. */
+function checkoutLinesGross(lines: SaleOrderLine[], multiplier: number): number {
+    return lines.reduce((sum, l) => {
+        const gross = l.unit_price_gross
+        return sum + (gross != null
+            ? Math.round(l.quantity * gross)
+            : grossFromNet(l.quantity * (l.unit_price || 0), multiplier))
+    }, 0)
+}
 
 interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
@@ -61,7 +72,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                              qty: l.quantity,
                              unit_price_net: l.unit_price,
                          }))}
-                         total={payingOrder ? parseFloat(payingOrder.total.toString()) : (checkoutData?.lines?.reduce((sum: number, l: SaleOrderLine) => sum + (l.quantity * (l.unit_price || 0)) * vatMultiplier, 0) || 0)}
+                         total={payingOrder ? parseFloat(payingOrder.total.toString()) : checkoutLinesGross(checkoutData?.lines ?? [], vatMultiplier)}
                          initialCustomerId={payingOrder?.customer?.toString()}
                          initialCustomerName={payingOrder?.customer_name}
                          channel={checkoutData ? "SALE" : "POS"}

@@ -9,6 +9,7 @@ import { showApiError } from '@/lib/errors'
 import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
+import { grossFromNet } from '@/lib/vat'
 import { PlanningEmptyState } from '../shared/PlanningEmptyState'
 import { OutsourcedServiceForm, type OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
@@ -73,7 +74,7 @@ export function OutsourcingAssignmentStep({
       uomId: m.uom.toString(),
       supplierId: m.supplier?.toString() ?? null,
       netPrice: m.unit_price?.toString() ?? '0',
-      grossPrice: m.unit_price ? (parseFloat(m.unit_price) * vatMultiplier).toFixed(2) : '0',
+      grossPrice: m.unit_price ? grossFromNet(parseFloat(m.unit_price), vatMultiplier, { decimals: 2 }).toFixed(2) : '0',
       documentType: (m.document_type as 'FACTURA' | 'BOLETA') ?? 'FACTURA'
     })
     productionApi.getProduct(m.component).then((data) => {
@@ -123,7 +124,7 @@ export function OutsourcingAssignmentStep({
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium">{m.component_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {m.supplier_name} · <QuantityDisplay value={m.quantity_planned} uom={m.uom_name} decimals={2} className="font-sans" /> · {formatCurrency(parseFloat(m.unit_price ?? '0') * vatMultiplier)} bruto c/u
+                    {m.supplier_name} · <QuantityDisplay value={m.quantity_planned} uom={m.uom_name} decimals={2} className="font-sans" /> · {formatCurrency(grossFromNet(parseFloat(m.unit_price ?? '0'), vatMultiplier))} bruto c/u
                   </p>
                 </div>
               </div>
@@ -131,7 +132,7 @@ export function OutsourcingAssignmentStep({
                 <div className="text-right mr-2">
                   <p className="text-3xs font-bold uppercase text-muted-foreground">Total Estimado</p>
                   <p className="text-sm font-bold text-primary">
-                    {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier)}
+                    {formatCurrency(grossFromNet(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0'), vatMultiplier))}
                   </p>
                 </div>
                 {isViewingCurrentStage && !m.purchase_order_number && (

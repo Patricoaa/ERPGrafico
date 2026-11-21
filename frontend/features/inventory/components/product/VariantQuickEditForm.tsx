@@ -20,7 +20,7 @@ import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 import { BOMDrawer } from "@/features/production"
 import type { BOM, ProductMinimal } from "@/features/production"
 import { grossFromNet, netFromGross } from '@/lib/vat'
-import { fromTypedNet, fromTypedGross, variantQuickEditPayload } from './grossPricePayload'
+import { fromTypedNet, fromTypedGross, grossOf, variantQuickEditPayload } from './grossPricePayload'
 import { useVatRate } from '@/hooks/useVatRate'
 import { getDomainConceptMessage } from "@/lib/entity-registry"
 import { useUoMs } from "../../hooks/useUoMs"
@@ -44,12 +44,6 @@ const quickEditSchema = z.object({
 })
 
 type QuickEditValues = z.infer<typeof quickEditSchema>
-
-function grossOf(p: Pick<Product, 'sale_price' | 'sale_price_gross'> | undefined, multiplier: number): number {
-  return p?.sale_price_gross != null && p.sale_price_gross !== ''
-    ? Number(p.sale_price_gross) || 0
-    : grossFromNet(Number(p?.sale_price) || 0, multiplier)
-}
 
 interface VariantQuickEditFormProps {
   variant: Product

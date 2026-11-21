@@ -52,6 +52,7 @@ interface CostCalculatorDrawerProps {
 }
 
 import { useVatRate } from '@/hooks/useVatRate'
+import { grossFromNet } from '@/lib/vat'
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawerProps) {
@@ -322,7 +323,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                         </span>
                                     </div>
                                     <span className="text-3xl font-black text-primary tracking-tighter">
-                                        {formatCurrency(Math.round(totalCost * multiplier))}
+                                        {formatCurrency(grossFromNet(totalCost, multiplier))}
                                     </span>
                                 </div>
                             </div>

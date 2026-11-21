@@ -3,7 +3,7 @@ import { fn } from "storybook/test"
 import type { BaseProduct } from "@/features/inventory"
 import { ProductCard, type ProductCardProps } from "./ProductCard"
 
-const base = { sale_price: 1000, uom_name: "Pliego" } as const
+const base = { sale_price: 1000, sale_price_gross: 1190, uom_name: "Pliego" } as const
 
 const AVAILABLE: BaseProduct = { ...base, id: 1, code: "PAP-014", name: "Papel offset blanco 90 g", product_type: "STORABLE", qty_available: 3600 }
 const WITH_VARIANTS: BaseProduct = {
@@ -13,7 +13,7 @@ const WITH_VARIANTS: BaseProduct = {
 const FAVORITE: BaseProduct = { ...base, id: 3, code: "TIN-003", name: "Tinta offset cian proceso", product_type: "STORABLE", qty_available: 12.5, uom_name: "Kg", is_favorite: true }
 const DYNAMIC: BaseProduct = {
     ...base, id: 4, code: "IMP-021", name: "Impresión digital color A3", product_type: "SERVICE",
-    is_dynamic_pricing: true, sale_price: 850, uom_name: "Cara", has_variants: true, variants_count: 6,
+    is_dynamic_pricing: true, sale_price: 850, sale_price_gross: 1012, uom_name: "Cara", has_variants: true, variants_count: 6,
 }
 const OUT_OF_STOCK: BaseProduct = { ...base, id: 5, code: "TIN-004", name: "Tinta offset magenta proceso", product_type: "STORABLE", qty_available: 0, uom_name: "Kg" }
 
@@ -41,7 +41,7 @@ export const VariantsAndDynamicPrice: Story = { args: { product: DYNAMIC, catego
 export const Disabled: Story = { args: { product: OUT_OF_STOCK, categoryName: "Tintas", categoryIcon: "Droplet", isDisabled: true } }
 export const NoVariants: Story = {
     args: {
-        product: { ...WITH_VARIANTS, id: 6, name: "Papel kraft 120 g", variants_count: 0, min_variant_price: null },
+        product: { ...WITH_VARIANTS, id: 6, name: "Papel kraft 120 g", variants_count: 0, min_variant_price: null, min_variant_price_gross: null },
     },
 }
 export const CalculatorCost: Story = {

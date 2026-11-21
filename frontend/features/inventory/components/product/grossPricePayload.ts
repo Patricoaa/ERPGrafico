@@ -1,6 +1,14 @@
 // ADR-0151: los formularios envían solo el bruto; el backend deriva el neto.
 
+import type { Product } from "@/types/entities"
 import { grossFromNet, netFromGross } from "@/lib/vat"
+
+/** Bruto autoritativo de un producto; si la API no lo trae, se deriva del neto. */
+export function grossOf(p: Pick<Product, "sale_price" | "sale_price_gross"> | undefined, multiplier: number): number {
+    return p?.sale_price_gross != null && p.sale_price_gross !== ""
+        ? Number(p.sale_price_gross) || 0
+        : grossFromNet(Number(p?.sale_price) || 0, multiplier)
+}
 
 export interface GrossPriceFields {
     net: number
