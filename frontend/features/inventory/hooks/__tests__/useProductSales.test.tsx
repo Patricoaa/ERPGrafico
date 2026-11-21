@@ -13,7 +13,8 @@ vi.mock("../../api/inventoryApi", () => ({
 
 const EMPTY: ProductSales = {
     kpis: {
-        units: 0, net_revenue: 0, customers: 0, return_units: 0, return_rate_pct: 0,
+        units: 0, net_revenue: 0, customers: 0, margin_pct: null, avg_discount_pct: 0,
+        return_units: 0, return_rate_pct: 0,
         last_sale_date: null, days_since_last_sale: null, previous: null,
     },
     series: { points: [], previous_points: [] },

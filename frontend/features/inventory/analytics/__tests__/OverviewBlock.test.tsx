@@ -82,7 +82,7 @@ describe("OverviewBlock", () => {
         state.hooks.costs = { data: null, isLoading: false, isError: true }
         render_()
         expect(screen.getByText("Unidades vendidas")).toBeInTheDocument()
-        expect(screen.getByLabelText("Cargando Precio y margen")).toBeInTheDocument()
+        expect(screen.getByLabelText("Cargando Precio")).toBeInTheDocument()
         expect(screen.getByText("No se pudo cargar Costos")).toBeInTheDocument()
     })
 

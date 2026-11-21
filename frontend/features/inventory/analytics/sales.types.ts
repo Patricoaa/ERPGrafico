@@ -11,6 +11,8 @@ export interface SalesPeriodTotals {
     units: number
     net_revenue: number
     customers: number
+    margin_pct: number | null
+    avg_discount_pct: number
 }
 
 export interface SalesKpis extends SalesPeriodTotals {

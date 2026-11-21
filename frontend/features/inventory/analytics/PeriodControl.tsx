@@ -27,7 +27,7 @@ export function PeriodControl({ value, onChange }: PeriodControlProps) {
                         key={option.value}
                         value={option.value}
                         size="sm"
-                        className="text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                        className="text-3xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                     >
                         {option.label}
                     </ToggleGroupItem>

@@ -9,7 +9,7 @@ import type { ProductStockAnalysis } from "../stockAnalysis.types"
 import type { ProductSubscriptionAnalysis } from "../subscriptionAnalysis.types"
 
 const sales: ProductSales = {
-    kpis: { units: 120, net_revenue: 50000, customers: 4, return_units: 0, return_rate_pct: 0, last_sale_date: "2026-11-01", days_since_last_sale: 19, previous: { units: 100, net_revenue: 40000, customers: 3 } },
+    kpis: { units: 120, net_revenue: 50000, customers: 4, return_units: 0, return_rate_pct: 0, last_sale_date: "2026-11-01", days_since_last_sale: 19, margin_pct: null, avg_discount_pct: 0, previous: { units: 100, net_revenue: 40000, customers: 3, margin_pct: null, avg_discount_pct: 0 } },
     series: { points: [], previous_points: [] }, customers: { total: 4, top3_share_pct: 50, top: [] }, channels: [], variants: [], uoms: [],
 }
 const pricing: ProductPricing = {

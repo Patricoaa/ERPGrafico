@@ -92,7 +92,7 @@ describe("ProductAnalyticsModal", () => {
 
     it("shows the six tabs of a stocked product that is sold and bought", () => {
         open(1)
-        for (const name of ["Resumen", "Ventas", "Precio y margen", "Costos", "Abastecimiento", "Inventario"]) {
+        for (const name of ["Resumen", "Ventas", "Precio", "Costos", "Abastecimiento", "Inventario"]) {
             expect(rail().getByRole("button", { name })).toBeInTheDocument()
         }
         for (const name of ["Producción", "Suscripción", "Clientes", "Proveedores", "Mov. Stock", "Operación"]) {
@@ -103,7 +103,7 @@ describe("ProductAnalyticsModal", () => {
     it("shows production but no sales tabs for an input that is a BOM component", () => {
         open(2)
         expect(rail().queryByRole("button", { name: "Ventas" })).not.toBeInTheDocument()
-        expect(rail().queryByRole("button", { name: "Precio y margen" })).not.toBeInTheDocument()
+        expect(rail().queryByRole("button", { name: "Precio" })).not.toBeInTheDocument()
         expect(rail().getByRole("button", { name: "Abastecimiento" })).toBeInTheDocument()
         expect(rail().getByRole("button", { name: "Producción" })).toBeInTheDocument()
     })
@@ -147,7 +147,7 @@ describe("ProductAnalyticsModal", () => {
 
     it("passes the chosen period to the active block", () => {
         open(1)
-        fireEvent.click(rail().getByRole("button", { name: "Precio y margen" }))
+        fireEvent.click(rail().getByRole("button", { name: "Precio" }))
         expect(screen.getByText(/bloque-precio-margen-1/)).toHaveAttribute("data-period", "12m")
         fireEvent.click(screen.getAllByRole("radio", { name: "Histórico" })[0])
         expect(screen.getByText(/bloque-precio-margen-1/)).toHaveAttribute("data-period", "all")
@@ -156,7 +156,7 @@ describe("ProductAnalyticsModal", () => {
     it("never shows the legacy history warning", () => {
         state.capsById = { 1: caps({ sells: true, buys: true, tracks_stock: true, recurring: true }) }
         open(1)
-        for (const name of ["Resumen", "Ventas", "Precio y margen", "Costos", "Abastecimiento", "Inventario", "Suscripción"]) {
+        for (const name of ["Resumen", "Ventas", "Precio", "Costos", "Abastecimiento", "Inventario", "Suscripción"]) {
             fireEvent.click(rail().getByRole("button", { name }))
             expect(screen.queryByText("Este tab muestra todo el histórico")).not.toBeInTheDocument()
         }
@@ -170,7 +170,7 @@ describe("ProductAnalyticsModal", () => {
 
     it("shows the active tab's controls in the rail view zone and removes them when the tab changes", () => {
         open(1)
-        fireEvent.click(rail().getByRole("button", { name: "Precio y margen" }))
+        fireEvent.click(rail().getByRole("button", { name: "Precio" }))
         const slots = screen.getAllByRole("group", { name: "Controles de vista" })
         expect(within(slots[0]).getByText("control-precio")).toBeInTheDocument()
         fireEvent.click(rail().getByRole("button", { name: "Ventas" }))
