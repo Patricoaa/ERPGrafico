@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.139](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.138...v0.3.139) (2026-11-21)
+
+
+### ⚙️ Refactors
+
+* **dry:** unificar cancelacion de ordenes, notas de credito/debito y guards de periodo ([3a8a74e](https://github.com/Patricoaa/ERPGrafico/commit/3a8a74e768f45293897a018311e658064acbdcd9))
+
 ### [0.3.138](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.137...v0.3.138) (2026-11-21)
 
 
