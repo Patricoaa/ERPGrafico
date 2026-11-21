@@ -30,3 +30,26 @@ describe("vat.ts paridad con backend (ADR-0151)", () => {
         }
     })
 })
+
+describe("vat.ts con decimales (compras, solo frontend)", () => {
+    it("netFromGross redondea half-up a 2 decimales", () => {
+        expect(netFromGross(1190, 1.19, { decimals: 2 })).toBe(1000)
+        expect(netFromGross(100, 1.19, { decimals: 2 })).toBe(84.03)
+        expect(netFromGross(1.19, 1.19, { decimals: 2 })).toBe(1)
+        expect(netFromGross(0.1785, 1.19, { decimals: 2 })).toBe(0.15)
+        expect(netFromGross(1.785, 1.19, { decimals: 2 })).toBe(1.5)
+        // 0.00595 / 1.19 = 0.005 exacto: half-up sube al centavo
+        expect(netFromGross(0.00595, 1.19, { decimals: 2 })).toBe(0.01)
+    })
+
+    it("grossFromNet redondea half-up a 2 decimales", () => {
+        expect(grossFromNet(84.03, 1.19, { decimals: 2 })).toBe(100)
+        expect(grossFromNet(0.01, 1.19, { decimals: 2 })).toBe(0.01)
+        expect(grossFromNet(0.5, 1.19, { decimals: 2 })).toBe(0.6)
+        expect(grossFromNet(1000, 1.19, { decimals: 2 })).toBe(1190)
+    })
+
+    it("decimals 0 equivale al camino entero", () => {
+        expect(netFromGross(1450, 1.19, { decimals: 0 })).toBe(netFromGross(1450, 1.19))
+    })
+})
