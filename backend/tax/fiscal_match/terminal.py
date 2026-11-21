@@ -12,6 +12,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 
 from accounting.models import RCVDocument, RCVSettings
 from tax.fiscal_match.candidates import (
@@ -24,6 +25,55 @@ from tax.fiscal_match.candidates import (
 )
 from tax.models import FiscalMatch
 from treasury.models import TerminalSale, TreasuryMovement
+
+ANONYMOUS_SII_CODES = frozenset({39, 41, 48})
+
+
+def _pair_fifo_anonymous(
+    unmatched_sales: list[TerminalSale],
+    candidates: dict[int, set[int]],
+    by_id: dict[int, TreasuryMovement],
+    taken_m_ids: set[int],
+    rival_m_ids: set[int],
+) -> dict[int, TreasuryMovement]:
+    """Empareja ventas y cobros anónimos (39, 41, 48) homogéneos 1 a 1 por orden cronológico (FIFO).
+
+    Solo aplica si el número de ventas es exactamente igual al número de cobros disponibles
+    para ese día, monto, tipo DTE y dispositivo, y cada par resultante cae dentro de la ventana.
+    """
+    groups: dict[tuple, list[TerminalSale]] = defaultdict(list)
+    for s in unmatched_sales:
+        if s.document_type in ANONYMOUS_SII_CODES and (amount := _clp(s.sale_amount)) is not None:
+            day = timezone.localdate(s.transaction_at)
+            key = (day, amount, s.document_type, s.device_id)
+            groups[key].append(s)
+
+    fifo_matched: dict[int, TreasuryMovement] = {}
+    for key, group_sales in groups.items():
+        other_sale_cands = {
+            m_id
+            for other in unmatched_sales
+            if other not in group_sales
+            for m_id in candidates[other.id]
+        }
+        pool_ids = {
+            m_id
+            for s in group_sales
+            for m_id in candidates[s.id]
+            if m_id in by_id and m_id not in taken_m_ids and m_id not in rival_m_ids
+        }
+        if pool_ids & other_sale_cands:
+            continue
+        if len(group_sales) != len(pool_ids):
+            continue
+        sorted_sales = sorted(group_sales, key=lambda s: (s.transaction_at, s.id))
+        sorted_movements = sorted([by_id[mid] for mid in pool_ids], key=lambda m: (m.created_at, m.id))
+        if all(m.id in candidates[s.id] for s, m in zip(sorted_sales, sorted_movements)):
+            for s, m in zip(sorted_sales, sorted_movements):
+                fifo_matched[s.id] = m
+                taken_m_ids.add(m.id)
+
+    return fifo_matched
 
 
 @transaction.atomic
@@ -90,6 +140,20 @@ def link_terminal_sales(lo: datetime, hi: datetime, *, rematch_ids: set[int]) ->
         for s in sales
         if len(cands := candidates[s.id]) == 1 and uses[next(iter(cands))] == 1
     }
+
+    # Emparejamiento cronológico (FIFO) para documentos anónimos (39, 41, 48)
+    taken_m_ids = {m.id for m in unique.values()}
+    for s in sales:
+        if s.matched_movement_id is not None and s.matched_movement_id not in candidates[s.id]:
+            taken_m_ids.add(s.matched_movement_id)
+    rival_m_ids = {m for cands in rivals.values() for m in cands}
+    unmatched_sales = [s for s in sales if s.id not in unique]
+
+    fifo_unique = _pair_fifo_anonymous(
+        unmatched_sales, candidates, by_id, taken_m_ids, rival_m_ids
+    )
+    unique.update(fifo_unique)
+
     # Varios cobros, o un cobro que otra venta también reclama: no se elige por cercanía.
     ambiguous = {s.fiscal_match_id for s in sales if candidates[s.id] and s.id not in unique}
     return _attach(sales, unique, ambiguous)
