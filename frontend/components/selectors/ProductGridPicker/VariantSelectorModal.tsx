@@ -142,7 +142,7 @@ export function VariantSelectorModal({
                                                 ))}
                                             </div>
                                         }
-                                        amount={formatCurrency(Number(v.sale_price_gross) || 0)}
+                                        amount={formatCurrency(Number(v.effective_price ?? v.sale_price_gross) || 0)}
                                         trailing={<StatusBadge />}
                                         glyph={<GlyphChevron />}
                                         unavailable={disabled}

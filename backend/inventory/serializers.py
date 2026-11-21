@@ -448,6 +448,13 @@ class ProductListSerializer(serializers.ModelSerializer):
             return float(obj.annotated_effective_price)
         return obj.sale_price
 
+    effective_price_net = serializers.SerializerMethodField()
+    def get_effective_price_net(self, obj):
+        """Neto del precio resuelto; lo anota `bulk_annotate_pricing` (sin consultas)."""
+        if hasattr(obj, "annotated_effective_price_net"):
+            return float(obj.annotated_effective_price_net)
+        return obj.sale_price
+
     qty_reserved = serializers.SerializerMethodField()
     def get_qty_reserved(self, obj):
         return float(getattr(obj, "annotated_qty_reserved", None) or 0.0)
@@ -530,7 +537,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             "id", "internal_code", "code", "name", "category", "category_name",
             "product_type", "image_thumbnail", "is_active", "is_favorite",
             "uom", "uom_name", "sale_uom", "sale_uom_name",
-            "sale_price", "sale_price_gross", "cost_price", "effective_price",
+            "sale_price", "sale_price_gross", "cost_price", "effective_price", "effective_price_net",
+            "price_inheritance_mode", "price_surcharge", "price_surcharge_gross",
             "purchase_uom", "receiving_warehouse", "preferred_supplier", "preferred_supplier_name",
             "last_purchase_price",
             "current_stock", "qty_reserved", "qty_available",

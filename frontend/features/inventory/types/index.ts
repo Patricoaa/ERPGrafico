@@ -32,6 +32,8 @@ export interface BaseProduct {
     name: string
     sale_price: string | number
     sale_price_gross?: string | number
+    /** Resolved gross price actually charged (inheritance, UoM prices, rules); use this to display variants (ADR-0151) */
+    effective_price?: string | number
     product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION' | string
     image?: string | null
     image_thumbnail?: string | null
