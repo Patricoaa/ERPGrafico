@@ -762,7 +762,9 @@ class PriceResolution:
     source: str  # "LIST" | "UOM_PRICE" | "RULE"
 
 
-def variant_sale_price(variant: "Product", template: "Product | None") -> SalePrice:
+def variant_sale_price(
+    variant: "Product", template: "Product | None", multiplier: Decimal | None = None
+) -> SalePrice:
     """Precio de venta (neto, bruto) de una variante según su modo de herencia (ADR-0151).
 
     Función pura: no consulta la BD; el llamador entrega el template ya cargado
@@ -771,20 +773,22 @@ def variant_sale_price(variant: "Product", template: "Product | None") -> SalePr
     - INHERIT:   precios del template.
     - SURCHARGE: bruto del template + ``price_surcharge_gross``; el neto se deriva del bruto.
     - OVERRIDE:  precio propio de la variante.
-    Sin template devuelve el precio propio.
+    Sin template devuelve el precio propio. ``multiplier`` opcional evita consultar la tasa por
+    cada fila cuando el llamador procesa listas (se resuelve una vez y se pasa).
     """
     if template is None:
-        return SalePrice(net=variant.sale_price, gross=_gross_of(variant))
+        return SalePrice(net=variant.sale_price, gross=_gross_of(variant, multiplier))
     mode = variant.price_inheritance_mode
     if mode == "INHERIT":
-        return SalePrice(net=template.sale_price, gross=_gross_of(template))
+        return SalePrice(net=template.sale_price, gross=_gross_of(template, multiplier))
     if mode == "SURCHARGE":
-        return sale_price_from_gross(_gross_of(template) + (variant.price_surcharge_gross or Decimal("0")))
-    return SalePrice(net=variant.sale_price, gross=_gross_of(variant))
+        gross = _gross_of(template, multiplier) + (variant.price_surcharge_gross or Decimal("0"))
+        return sale_price_from_gross(gross, multiplier)
+    return SalePrice(net=variant.sale_price, gross=_gross_of(variant, multiplier))
 
 
-def _gross_of(product: "Product") -> Decimal:
-    return product.sale_price_gross or gross_from_net(product.sale_price)
+def _gross_of(product: "Product", multiplier: Decimal | None = None) -> Decimal:
+    return product.sale_price_gross or gross_from_net(product.sale_price, multiplier)
 
 
 class PricingService:
@@ -1616,6 +1620,9 @@ class ProductService:
 
         from collections import defaultdict
 
+        from accounting.utils import get_vat_multiplier
+
+        vat_mult = get_vat_multiplier()  # una vez por lista, no por fila
         today = timezone.localdate()
         product_ids = [p.id for p in products]
         category_ids = list({p.category_id for p in products if p.category_id})
@@ -1659,7 +1666,7 @@ class ProductService:
         templates_by_id = Product.objects.in_bulk(parent_ids) if parent_ids else {}
         for p in products:
             if p.parent_template_id and p.parent_template_id in templates_by_id:
-                own = variant_sale_price(p, templates_by_id[p.parent_template_id])
+                own = variant_sale_price(p, templates_by_id[p.parent_template_id], vat_mult)
                 base_price_gross, base_price_net = own.gross, own.net
             else:
                 base_price_gross = p.sale_price_gross
@@ -1683,7 +1690,7 @@ class ProductService:
             # If still no base price, fallback to sale_price
             if base_price_gross is None:
                 base_price_gross = (
-                    p.sale_price_gross or gross_from_net(p.sale_price) or Decimal("0")
+                    p.sale_price_gross or gross_from_net(p.sale_price, vat_mult) or Decimal("0")
                 )
             if base_price_net is None:
                 base_price_net = p.sale_price or Decimal("0")
@@ -1747,7 +1754,7 @@ class ProductService:
                     if rule.fixed_price_gross is not None:
                         rule_price = rule.fixed_price_gross
                     elif rule.fixed_price is not None:
-                        rule_price = gross_from_net(rule.fixed_price)
+                        rule_price = gross_from_net(rule.fixed_price, vat_mult)
                     else:
                         continue
 
@@ -1764,7 +1771,7 @@ class ProductService:
                     p_price = (
                         rule.fixed_price_gross
                         if rule.fixed_price_gross is not None
-                        else (gross_from_net(rule.fixed_price) if rule.fixed_price else None)
+                        else (gross_from_net(rule.fixed_price, vat_mult) if rule.fixed_price else None)
                     )
                     if p_price is not None:
                         unit_price = (p_price / Decimal("1")).quantize(
@@ -1786,7 +1793,7 @@ class ProductService:
                         ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
 
                 # First matching rule wins (highest priority)
-                effective_price_net = net_from_gross(effective_price_gross)
+                effective_price_net = net_from_gross(effective_price_gross, vat_mult)
                 break
 
             p.annotated_effective_price = effective_price_gross

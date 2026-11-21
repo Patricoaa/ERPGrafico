@@ -98,3 +98,49 @@ def test_dry_run_changes_nothing(product, capsys):
     call_command("audit_sale_prices", "--apply")
     p.refresh_from_db()
     assert p.sale_price == 1218
+
+
+@pytest.mark.django_db
+def test_migration_frozen_logic_matches_service(product):
+    """La copia congelada de la migración 0039 debe dar lo mismo que el módulo de servicio."""
+    import importlib
+
+    frozen = importlib.import_module("inventory.migrations.0039_rederive_sale_prices")
+    p, uom = product
+    rule = PricingRule.objects.create(product=p, fixed_price=Decimal("100"))
+    up = ProductUoMPrice.objects.create(product=p, uom=uom, price_net=Decimal("100"), price_gross=Decimal("119"))
+    extra = [
+        Product.objects.create(
+            name=f"E{i}", category=p.category, uom=uom, sale_uom=uom, purchase_uom=uom,
+            product_type="STORABLE", sale_price=Decimal("100"),
+        )
+        for i in range(4)
+    ]
+    # Casos: neto desviado, solo neto, recargo solo neto, recargo con bruto, ceros y empate .5.
+    _raw(p, sale_price=Decimal("1000"), sale_price_gross=Decimal("1450"),
+         price_surcharge=Decimal("504"), price_surcharge_gross=None)
+    _raw(extra[0], sale_price=Decimal("1000"), sale_price_gross=Decimal("0"))
+    _raw(extra[1], sale_price=Decimal("1"), sale_price_gross=Decimal("1"),
+         price_surcharge=Decimal("1"), price_surcharge_gross=Decimal("3"))
+    _raw(extra[2], sale_price=Decimal("0"), sale_price_gross=Decimal("0"))
+    _raw(extra[3], sale_price=Decimal("5"), sale_price_gross=Decimal("6"))
+    PricingRule.objects.filter(pk=rule.pk).update(fixed_price=Decimal("1000"), fixed_price_gross=Decimal("1450"))
+    ProductUoMPrice.objects.filter(pk=up.pk).update(price_net=Decimal("1000"), price_gross=Decimal("1450"))
+
+    models = (("Product", Product), ("PricingRule", PricingRule), ("ProductUoMPrice", ProductUoMPrice))
+
+    def snapshot():
+        return [list(m.objects.order_by("pk").values()) for _, m in models]
+
+    seed = snapshot()
+    service_changed = {k: v.changed for k, v in _run(True).items()}
+    service_result = snapshot()
+
+    for (_, model), rows in zip(models, seed):
+        for row in rows:
+            model.objects.filter(pk=row["id"]).update(**row)
+    frozen_changed = {name: frozen.rederive_model(model, M) for name, model in models}
+
+    assert snapshot() == service_result
+    assert frozen_changed == service_changed
+    assert sum(service_changed.values()) >= 5

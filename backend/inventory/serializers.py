@@ -498,7 +498,12 @@ class ProductListSerializer(serializers.ModelSerializer):
         """
         if not obj.has_variants:
             return None
-        prices = [p for p in (variant_sale_price(v, obj).gross for v in obj.variants.all()) if p is not None and p > 0]
+        mult = self.context.get("vat_multiplier")
+        if mult is None:  # una consulta de tasa por request, no por fila
+            from accounting.utils import get_vat_multiplier
+
+            mult = self.context["vat_multiplier"] = get_vat_multiplier()
+        prices = [p for p in (variant_sale_price(v, obj, mult).gross for v in obj.variants.all()) if p is not None and p > 0]
         return min(prices) if prices else None
 
     # Defaults que lee el wizard de compra desde el listado. `last_purchase_price` y
