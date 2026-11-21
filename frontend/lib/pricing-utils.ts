@@ -1,14 +1,13 @@
 import { formatCurrency as canonicalFormatCurrency } from "@/lib/money";
+import { grossFromNet, netFromGross } from "@/lib/vat";
 
 export const PricingUtils = {
     netToGross: (net: number, taxRate: number = 0.19): number => {
-        const roundedNet = Math.round(net);
-        const tax = Math.round(roundedNet * taxRate);
-        return roundedNet + tax;
+        return grossFromNet(net, 1 + taxRate);
     },
 
     grossToNet: (gross: number, taxRate: number = 0.19): number => {
-        return Math.round(gross / (1 + taxRate));
+        return netFromGross(gross, 1 + taxRate);
     },
 
     calculateTax: (net: number, taxRate: number = 0.19): number => {
