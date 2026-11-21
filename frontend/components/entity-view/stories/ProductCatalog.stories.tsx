@@ -28,7 +28,7 @@ const p = (o: Partial<Product>): Product => ({ ...BASE, ...o })
 
 const ROWS: Product[] = [
     p({ id: 1, internal_code: "INS-0005", name: "Plancha Offset GTO 510×400", sale_price: "3781", sale_price_gross: "4500", current_stock: 5420, qty_available: 5420, uom_name: "Plancha" }),
-    p({ id: 2, internal_code: "INS-0007", name: "Papel Couché Brillante 150 g", category_name: "Papeles", sale_price: "0", sale_price_gross: "0", min_variant_price: "168", current_stock: 0, qty_available: 0, uom_name: "Pliego", has_variants: true, variants_count: 4, variant_axis_label: "Gramaje" }),
+    p({ id: 2, internal_code: "INS-0007", name: "Papel Couché Brillante 150 g", category_name: "Papeles", sale_price: "0", sale_price_gross: "0", min_variant_price: "168", min_variant_price_gross: "200", current_stock: 0, qty_available: 0, uom_name: "Pliego", has_variants: true, variants_count: 4, variant_axis_label: "Gramaje" }),
     p({ id: 3, internal_code: "SRV-0004", name: "Corte por Guillotina", category_name: "Servicios Gráficos", product_type: "SERVICE", sale_price: "420", sale_price_gross: "500", uom_name: "Corte" }),
     p({ id: 4, internal_code: "SRV-0009", name: "Impresión Digital Color", category_name: "Servicios Gráficos", product_type: "SERVICE", is_dynamic_pricing: true, uom_name: "Hoja" }),
     p({ id: 5, internal_code: "MNT-0001", name: "Mantención Preventiva Offset Heidelberg", category_name: "Mantención", product_type: "SERVICE", can_be_sold: false, sale_price: "0", sale_price_gross: "0" }),

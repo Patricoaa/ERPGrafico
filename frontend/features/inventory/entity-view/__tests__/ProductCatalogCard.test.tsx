@@ -58,6 +58,7 @@ const ROWS: Product[] = [
         sale_price: "0",
         sale_price_gross: "0",
         min_variant_price: "7143",
+        min_variant_price_gross: "8500",
         qty_available: 0,
     }),
     product({

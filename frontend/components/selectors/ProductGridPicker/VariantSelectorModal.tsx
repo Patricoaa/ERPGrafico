@@ -10,7 +10,6 @@ import Image from "next/image"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Package, ImageIcon } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/lib/pricing-utils'
 import { BaseModal, Chip, CardRow, GlyphChevron } from '@/components/shared'
 import { resolveMediaUrl } from '@/lib/media-url'
 import type { BaseProduct } from '@/features/inventory'
@@ -143,7 +142,7 @@ export function VariantSelectorModal({
                                                 ))}
                                             </div>
                                         }
-                                        amount={formatCurrency(Number(v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price)))}
+                                        amount={formatCurrency(Number(v.sale_price_gross) || 0)}
                                         trailing={<StatusBadge />}
                                         glyph={<GlyphChevron />}
                                         unavailable={disabled}

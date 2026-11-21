@@ -3,7 +3,6 @@
 // One place for the availability / action / price rules that used to be five copy-pasted badge blocks.
 
 import type { BaseProduct } from '../types'
-import { PricingUtils } from '@/lib/pricing-utils'
 import { formatQuantity } from '@/lib/money'
 
 export type AvailabilityTone = 'ok' | 'warning' | 'none' | 'neutral'
@@ -155,10 +154,11 @@ export function getPrice(product: BaseProduct): CardPrice {
     const unit = unitOf(product)
     if (product.is_dynamic_pricing) return { kind: 'dynamic', gross: null, unit }
 
-    const fromNet = product.has_variants ? positiveNumber(product.min_variant_price) : null
-    if (fromNet !== null) return { kind: 'from', gross: PricingUtils.netToGross(fromNet), unit }
+    // ADR-0151: the gross is the API's authority; display code never converts net to gross.
+    const fromGross = product.has_variants ? positiveNumber(product.min_variant_price_gross) : null
+    if (fromGross !== null) return { kind: 'from', gross: fromGross, unit }
 
-    return { kind: 'fixed', gross: PricingUtils.netToGross(Number(product.sale_price || 0)), unit }
+    return { kind: 'fixed', gross: Number(product.sale_price_gross) || 0, unit }
 }
 
 /** Templates without active variants have nothing to configure, so they behave as disabled. */

@@ -32,7 +32,7 @@ const PRODUCTS: BaseProduct[] = Array.from({ length: 24 }, (_, i) => {
         has_variants: i % 6 === 1,
         variants_count: 4,
         variant_axis_label: "Gramaje",
-        min_variant_price: 480,
+        min_variant_price: 480, min_variant_price_gross: 571,
         is_dynamic_pricing: i % 8 === 3,
     }
 })

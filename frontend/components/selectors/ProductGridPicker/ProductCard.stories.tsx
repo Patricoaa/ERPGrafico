@@ -8,7 +8,7 @@ const base = { sale_price: 1000, uom_name: "Pliego" } as const
 const AVAILABLE: BaseProduct = { ...base, id: 1, code: "PAP-014", name: "Papel offset blanco 90 g", product_type: "STORABLE", qty_available: 3600 }
 const WITH_VARIANTS: BaseProduct = {
     ...base, id: 2, code: "PAP-001", name: "Papel couché mate 150 g", product_type: "STORABLE",
-    has_variants: true, variants_count: 4, variant_axis_label: "Gramaje", min_variant_price: 480,
+    has_variants: true, variants_count: 4, variant_axis_label: "Gramaje", min_variant_price: 480, min_variant_price_gross: 571,
 }
 const FAVORITE: BaseProduct = { ...base, id: 3, code: "TIN-003", name: "Tinta offset cian proceso", product_type: "STORABLE", qty_available: 12.5, uom_name: "Kg", is_favorite: true }
 const DYNAMIC: BaseProduct = {

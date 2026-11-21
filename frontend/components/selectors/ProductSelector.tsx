@@ -96,7 +96,7 @@ export function ProductSelector({
     const showCost = context === 'purchase'
     const listPrice = (product: Product) => showCost
         ? Number(product.cost_price) || 0
-        : Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))
+        : Number(product.sale_price_gross) || 0
     const resolvedCreateType = createType ?? (productTypes?.length === 1 ? productTypes[0] : undefined)
     const [open, setOpen] = useState(false)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
