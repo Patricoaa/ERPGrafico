@@ -74,7 +74,7 @@ def test_save_does_not_fetch_old_instance(base):
         and 'WHERE "inventory_product"."id" =' in q["sql"]
     ]
     # Solo la consulta del signal pre_save (margen); save() ya no hace la suya.
-    assert len(by_pk) <= 1, by_pk
+    assert len(by_pk) == 1, by_pk
 
 
 def test_surcharge_gross_derives_net(base):
@@ -128,3 +128,23 @@ def test_service_update_variant_net_and_surcharge(base):
     var.refresh_from_db()
     assert (var.sale_price, var.sale_price_gross) == (Decimal("2000"), Decimal("2380"))
     assert (var.price_surcharge, var.price_surcharge_gross) == (Decimal("200"), Decimal("238"))
+
+
+def test_service_update_clears_surcharge(base):
+    p = _make(base, price_surcharge_gross=Decimal("119"))
+    ProductService.update_product(p, {"price_surcharge": None})
+    p.refresh_from_db()
+    assert p.price_surcharge is None and p.price_surcharge_gross is None
+
+
+def test_service_variant_update_clears_surcharge(base):
+    tpl = _make(base, sale_price_gross=Decimal("1190"), has_variants=True)
+    var = _make(
+        base, parent_template=tpl, sale_price_gross=Decimal("1190"),
+        price_inheritance_mode="SURCHARGE", price_surcharge_gross=Decimal("119"),
+    )
+    ProductService.update_product(
+        tpl, {"variant_updates": [{"id": var.id, "price_surcharge": None}]}
+    )
+    var.refresh_from_db()
+    assert var.price_surcharge is None and var.price_surcharge_gross is None

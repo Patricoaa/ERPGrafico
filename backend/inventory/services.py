@@ -1297,11 +1297,16 @@ MAX_VARIANT_COMBINATIONS = 500
 
 
 def _net_writes_to_gross(data: dict) -> dict:
-    """ADR-0151: una escritura solo-neto se convierte a bruto (el bruto manda si vienen ambos)."""
+    """ADR-0151: una escritura solo-neto se convierte a bruto (el bruto manda si vienen ambos).
+
+    Se pre-convierte porque save() no ve el bruto viejo y lo re-derivaría sobre el neto nuevo.
+    """
     if data.get("sale_price") is not None and data.get("sale_price_gross") is None:
         data["sale_price_gross"] = gross_from_net(data["sale_price"])
-    if data.get("price_surcharge") is not None and data.get("price_surcharge_gross") is None:
-        data["price_surcharge_gross"] = gross_from_net(data["price_surcharge"])
+    if "price_surcharge" in data and data.get("price_surcharge_gross") is None:
+        net = data["price_surcharge"]
+        # None limpia el recargo: sin esto el bruto viejo re-derivaría el neto.
+        data["price_surcharge_gross"] = None if net is None else gross_from_net(net)
     return data
 
 
