@@ -1,17 +1,15 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useState, useCallback } from "react"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, LabeledSelect, LabeledInput } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { inventoryCountEntity, inventoryCountViews } from "../entity-view/inventoryCount.entity"
-import { InventoryCountDetailDrawer } from "./InventoryCountDetailDrawer"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useInventoryCounts, useInventoryCountMutations } from "../hooks/useInventoryCounts"
 import { useWarehouses } from "../hooks/useWarehouses"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { inventoryCountUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -43,15 +41,9 @@ export function InventoryCountClientView() {
         page_size: pageState.pageSize,
     })
 
-    const { openSelected } = useEntityRouteActions()
-    const panel = useEntityPanelRoute({ create: false })
-    const selectedId = panel.selectedId
-    // Latched (not reset to null on close) so the drawer's internal edit state only remounts
-    // when a *different* count opens, not while the current one is closing (keeps its exit animation).
-    const [drawerKey, setDrawerKey] = useState("none")
-    if (selectedId && String(selectedId) !== drawerKey) {
-        setDrawerKey(String(selectedId))
-    }
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada conteo abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.inventorycount")
     const { createCount, isCreating } = useInventoryCountMutations()
     const { warehouses } = useWarehouses()
 
@@ -59,12 +51,12 @@ export function InventoryCountClientView() {
         try {
             const result = await createCount({ warehouse: values.warehouse, notes: values.notes })
             setShowNewDialog(false)
-            openSelected(result.id)
+            openEntity("inventory.inventorycount", result.id)
             toast.success("Sesión de conteo creada")
         } catch (error) {
             showApiError(error, "Error al crear la sesión de conteo")
         }
-    }, [createCount, openSelected])
+    }, [createCount, openEntity])
 
     const countsCollection = useEntityCollection(
         inventoryCountEntity,
@@ -95,7 +87,6 @@ export function InventoryCountClientView() {
                 collection={countsCollection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(cnt) => openSelected(cnt.id)}
             >
                 <Collection.Toolbar action={createAction}>
                     <UnifiedSearchBar config={inventoryCountUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar conteos..." />
@@ -110,17 +101,6 @@ export function InventoryCountClientView() {
                 />
             </Collection.Root>
 
-            <EntityPanelTab label="inventory.inventorycount" {...panel.tab}>
-                {(open) => (
-                    <InventoryCountDetailDrawer
-                        key={drawerKey}
-                        countId={selectedId}
-                        open={open}
-                        onOpenChange={(open) => { if (!open) panel.close() }}
-                        onApplied={refetchCounts}
-                    />
-                )}
-            </EntityPanelTab>
 
             {/* New Count Dialog - migrated to BaseModal */}
             <BaseModal

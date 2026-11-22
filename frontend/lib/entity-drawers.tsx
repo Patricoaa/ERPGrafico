@@ -9,6 +9,7 @@ import type { ProductCategory, AppGroup } from "@/types/entities"
 import type { Contact } from "@/features/contacts"
 import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice } from "@/features/treasury"
 import type { UoM, Attribute } from "@/features/inventory"
+import type { UoMCategory } from "@/features/inventory/hooks/useUoMs"
 import type {
     ProductInitialData,
     WarehouseInitialData,
@@ -69,6 +70,18 @@ function PayrollDrawerEntry({ id, open, onOpenChange }: { id: number; open: bool
     )
 }
 
+function InventoryCountDrawerEntry({ id, open, onOpenChange }: { id: number; open: boolean; onOpenChange: (open: boolean) => void }) {
+    const queryClient = useQueryClient()
+    return (
+        <InventoryCountDetailDrawer
+            countId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+            onApplied={() => { void queryClient.invalidateQueries({ queryKey: ["inventory", "counts"] }) }}
+        />
+    )
+}
+
 const ContactDrawer = dynamic(() => import("@/features/contacts/components/ContactDrawer"), {
     ssr: false,
     loading: () => skeleton("contacto"),
@@ -87,6 +100,16 @@ const WorkOrderWizard = dynamic(
 const JournalEntryDrawer = dynamic(
     () => import("@/features/accounting").then((m) => m.JournalEntryDrawer),
     { ssr: false, loading: () => skeleton("asiento contable") }
+)
+
+const UoMCategoryDrawer = dynamic(
+    () => import("@/features/inventory").then((m) => m.UoMCategoryDrawer),
+    { ssr: false, loading: () => skeleton("categoría de unidades") }
+)
+
+const InventoryCountDetailDrawer = dynamic(
+    () => import("@/features/inventory").then((m) => m.InventoryCountDetailDrawer),
+    { ssr: false, loading: () => skeleton("conteo de inventario") }
 )
 
 const ProductDrawerById = dynamic(
@@ -407,6 +430,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             {(record) => <AttributeDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
         </RecordDrawer>
     ),
+    "inventory.uomcategory": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<UoMCategory> endpoint="/inventory/uom-categories" id={id} data={data} label="categoría de unidades">
+            {(record) => <UoMCategoryDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
+    ),
+    // El detalle del conteo dispara onApplied tras aplicarlo sin cerrarse: refresca la lista, no cierra la pestaña.
+    "inventory.inventorycount": ({ id, open, onOpenChange }) => <InventoryCountDrawerEntry id={id} open={open} onOpenChange={onOpenChange} />,
     "inventory.pricingrule": ({ id, open, onOpenChange, data, onSuccess }) => (
         <RecordDrawer<PricingRuleInitialData> endpoint="/inventory/pricing-rules" id={id} data={data} label="regla de precio">
             {(record) => <PricingRuleDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}

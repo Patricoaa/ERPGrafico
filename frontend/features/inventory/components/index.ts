@@ -20,3 +20,4 @@ export * from './WarehouseDrawer';
 export * from './DocumentsClientView';
 export * from './InventoryDocumentDrawer';
 export * from './InventoryCountClientView';
+export * from './InventoryCountDetailDrawer';

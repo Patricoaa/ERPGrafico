@@ -5,9 +5,7 @@
  */
 export const UNREGISTERED_PANEL_LABELS: string[] = [
     "accounting.budget",
-    "inventory.inventorycount",
     "inventory.subscription",
-    "inventory.uomcategory",
     "production.bom",
     "tax.taxperiod",
     "treasury.bank",
