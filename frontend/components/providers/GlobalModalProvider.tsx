@@ -171,6 +171,19 @@ function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | unde
     }
 }
 
+/**
+ * Dos pestañas con el mismo título (dos registros que comparten número o nombre) se distinguen con
+ * ` (2)`, ` (3)` por orden de apertura (ADR-0152). La primera conserva el título original.
+ */
+export function disambiguateTitles(views: WorkspaceTabView[]): WorkspaceTabView[] {
+    const seen = new Map<string, number>()
+    return views.map(view => {
+        const n = (seen.get(view.title) ?? 0) + 1
+        seen.set(view.title, n)
+        return n === 1 ? view : { ...view, title: `${view.title} (${n})` }
+    })
+}
+
 interface GlobalModalActionsContextType {
     /**
      * Abre el documento registrado en lib/entity-drawers.tsx como pestaña (o activa la pestaña si ya
@@ -598,7 +611,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
-        () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),
+        () => disambiguateTitles(tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId))),
         [tabs, activeKey, pageModuleId],
     )
 

@@ -8,7 +8,7 @@ author: frontend-team
 
 # 0101 — Workspace tab bar
 
-**Related:** ADR-0100 (stack over the origin list, unsaved-changes guard — this ADR replaces its breadcrumbs, `?stack=` and pins), ADR-0079 (module sidebar), ADR-0083 (document sheet), ADR-0020 (`?selected`), contract `module-layout-navigation.md` §2.1.
+**Related:** ADR-0152 (supersedes decisions 6 and 12: records open as one tab each via `openEntity`), ADR-0100 (stack over the origin list, unsaved-changes guard — this ADR replaces its breadcrumbs, `?stack=` and pins), ADR-0079 (module sidebar), ADR-0083 (document sheet), ADR-0020 (`?selected`), contract `module-layout-navigation.md` §2.1.
 
 ## Context
 
