@@ -451,14 +451,10 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     "treasury.posterminal": ({ id, open, onOpenChange, onSuccess }) => (
         <PosTerminalDrawerById id={id} open={open} onOpenChange={onOpenChange} onSuccess={() => onSuccess?.()} />
     ),
-    "treasury.terminalprovider": ({ open, onOpenChange, data, onSuccess }) => (
-        <ProviderDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            provider={(data as PaymentTerminalProvider | null) ?? null}
-            onSuccess={() => onSuccess?.()}
-        />
+    "treasury.terminalprovider": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PaymentTerminalProvider> endpoint="/treasury/terminal-providers" id={id} data={data} label="proveedor de terminal">
+            {(record) => <ProviderDrawer open={open} onOpenChange={onOpenChange} provider={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── POS ───────────────────────────────────────────────────────────────────
@@ -486,14 +482,10 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Treasury hardware extended ────────────────────────────────────────────
     // * requires full device data — EntityBadge always provides it
-    "treasury.terminaldevice": ({ open, onOpenChange, data, onSuccess }) => (
-        <DeviceDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            device={(data as PaymentTerminalDevice | null) ?? null}
-            onSuccess={() => onSuccess?.()}
-        />
+    "treasury.terminaldevice": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PaymentTerminalDevice> endpoint="/treasury/terminal-devices" id={id} data={data} label="terminal de cobro">
+            {(record) => <DeviceDrawer open={open} onOpenChange={onOpenChange} device={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── Finance ───────────────────────────────────────────────────────────────

@@ -12,7 +12,6 @@ export const UNREGISTERED_PANEL_LABELS: string[] = [
     "tax.taxperiod",
     "treasury.bank",
     "treasury.bankloan",
-    "treasury.bankmovement",
     "treasury.cardpendingcharge",
     "treasury.paymentmethod",
 ]

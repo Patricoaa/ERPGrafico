@@ -1,19 +1,16 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
 import { RefreshCw } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
-import { EntityPanelTab } from "@/components/providers"
 import { Can } from "@/components/auth"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useTerminalSyncRuns } from "../hooks/useTerminalSync"
 import { useTerminalProviders } from "../hooks/useTerminalProviders"
 import { terminalSyncRunUnifiedSearchDef } from "../unifiedSearchDef"
 import { terminalSyncRunEntity, terminalSyncRunViews } from "../entity-view/terminalSyncRun.entity"
 import type { TerminalSyncRunFilters, TerminalSyncRunStatus, TerminalSyncTrigger } from "../types"
-import { TerminalSyncRunDrawer } from "./TerminalSyncRunDrawer"
 import { TerminalSyncModal } from "./TerminalSyncModal"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
@@ -39,9 +36,6 @@ function toRunFilters(params: Record<string, string>): Omit<TerminalSyncRunFilte
 
 /** Historial de importaciones de ventas TUU: cada ejecución de sincronización es una entidad. */
 export function TerminalSyncRunsClientView() {
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const [syncOpen, setSyncOpen] = useState(false)
 
     const { providers } = useTerminalProviders()
@@ -52,7 +46,8 @@ export function TerminalSyncRunsClientView() {
     const search = useUnifiedSearch(terminalSyncRunUnifiedSearchDef, { provider: providerOptions })
     const filters = useMemo(() => toRunFilters(search.filters), [search.filters])
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalsyncrun")
-    const panel = useEntityPanelRoute({ create: false })
+    // ADR-0152: cada registro abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
+    useDeepLinkEntity("treasury.terminalsyncrun")
 
     const [pageState, setPageState] = useServerPage([filters], DEFAULT_PAGE)
     const { page, runs, isLoading, isRefetching, isError, refetch } = useTerminalSyncRuns({
@@ -67,11 +62,6 @@ export function TerminalSyncRunsClientView() {
         { pagination: { mode: "server", state: pageState, onChange: setPageState } },
     )
 
-    const openRun = useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
 
     const syncAction = (
         <Can permission="treasury.add_terminalsyncrun">
@@ -85,9 +75,6 @@ export function TerminalSyncRunsClientView() {
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                selection="panel"
-                selectedId={panel.selectedId}
-                onOpen={(run) => openRun(run.id)}
             >
                 <Collection.Toolbar action={syncAction}>
                     <UnifiedSearchBar
@@ -107,15 +94,6 @@ export function TerminalSyncRunsClientView() {
                 />
             </Collection.Root>
 
-            <EntityPanelTab label="treasury.terminalsyncrun" {...panel.tab}>
-                {(open) => (
-                    <TerminalSyncRunDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(o) => { if (!o) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
             <TerminalSyncModal open={syncOpen} onOpenChange={setSyncOpen} />
         </div>
     )

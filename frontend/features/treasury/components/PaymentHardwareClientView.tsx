@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
@@ -8,7 +8,8 @@ import { Collection, useCollectionViewMode, useEntityCollection } from "@/compon
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { terminalProviderEntity, terminalProviderViews } from "../entity-view/terminalProvider.entity"
 import { terminalDeviceEntity, terminalDeviceViews } from "../entity-view/terminalDevice.entity"
@@ -73,22 +74,13 @@ export function PaymentHardwareClientView({
         { pagination: { mode: "client", pageSize: 20 }, defaultSort: terminalDeviceViews.table.defaultSort },
     )
 
-    const providerPanel = useEntityPanelRoute<PaymentTerminalProvider>({ endpoint: '/treasury/terminal-providers', selectedParam: 'selected-provider', createValue: 'new-provider' })
-    const devicePanel = useEntityPanelRoute<PaymentTerminalDevice>({ endpoint: '/treasury/terminal-devices', selectedParam: 'selected-device', createValue: 'new-device' })
+    const providerPanel = useEntityPanelRoute({ selectedParam: 'selected-provider', createValue: 'new-provider', resolved: false })
+    const devicePanel = useEntityPanelRoute({ selectedParam: 'selected-device', createValue: 'new-device', resolved: false })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada proveedor/terminal abre su propia pestaña; `?selected-*` solo es enlace profundo.
+    useDeepLinkEntity("treasury.terminalprovider", { selectedParam: "selected-provider" })
+    useDeepLinkEntity("treasury.terminaldevice", { selectedParam: "selected-device" })
 
-    const openProviderSelected = useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected-provider", String(id))
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
-
-    const openDeviceSelected = useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected-device", String(id))
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
 
     useEffect(() => {
         if (externalDeviceOpen) {
@@ -123,12 +115,12 @@ export function PaymentHardwareClientView({
     })
 
     const providerActionsCtx: ProviderActionsCtx = {
-        onEdit: (provider) => openProviderSelected(provider.id),
+        onEdit: (provider) => openEntity("treasury.terminalprovider", provider.id, provider),
         onDelete: (provider) => deleteProviderConfirm.requestConfirm(provider),
     }
 
     const deviceActionsCtx: DeviceActionsCtx = {
-        onEdit: (device) => openDeviceSelected(device.id),
+        onEdit: (device) => openEntity("treasury.terminaldevice", device.id, device),
         onDelete: (device) => deleteDeviceConfirm.requestConfirm(device),
     }
 
@@ -147,7 +139,6 @@ export function PaymentHardwareClientView({
                     collection={providerCollection}
                     view={providerView.view}
                     onViewChange={providerView.onViewChange}
-                    onOpen={(provider) => openProviderSelected(provider.id)}
                     actions={providerActions.forCollection(providerActionsCtx)}
                 >
                     <Collection.Toolbar action={providerCreateAction}>
@@ -167,7 +158,6 @@ export function PaymentHardwareClientView({
                     collection={deviceCollection}
                     view={deviceView.view}
                     onViewChange={deviceView.onViewChange}
-                    onOpen={(device) => openDeviceSelected(device.id)}
                     actions={deviceActions.forCollection(deviceActionsCtx)}
                 >
                     <Collection.Toolbar action={deviceCreateAction}>
@@ -190,7 +180,7 @@ export function PaymentHardwareClientView({
                     <ProviderDrawer
                         open={open}
                         onOpenChange={(v) => { if (!v) providerPanel.close() }}
-                        provider={providerPanel.entity}
+                        provider={null}
                         onSuccess={() => { providerPanel.close(); refetchProviders() }}
                     />
                 )}
@@ -201,7 +191,7 @@ export function PaymentHardwareClientView({
                     <DeviceDrawer
                         open={open}
                         onOpenChange={(v) => { if (!v) devicePanel.close() }}
-                        device={devicePanel.entity}
+                        device={null}
                         providers={providers}
                         onSuccess={() => { devicePanel.close(); refetchDevices() }}
                     />
