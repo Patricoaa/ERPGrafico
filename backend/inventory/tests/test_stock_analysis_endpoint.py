@@ -24,7 +24,7 @@ def test_returns_expected_keys(env, client):
     _sale(env)
     response = client.get(_url(env), {"date_from": "2026-01-01", "date_to": "2026-12-31"})
     assert response.status_code == 200
-    assert set(response.json()) == {"today", "rotation", "series", "flows", "adjustments", "loss_pct", "warehouses", "variants"}
+    assert set(response.json()) == {"today", "rotation", "coverage", "series", "flows", "adjustments", "loss_pct", "warehouses", "variants"}
 
 
 def test_rejects_unknown_granularity(env, client):

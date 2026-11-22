@@ -31,6 +31,12 @@ export interface StockRotation {
     idle_days: number
 }
 
+export interface StockCoverage {
+    /** Days the on-hand stock lasts at the last-90-days consumption; `null` without consumption. */
+    coverage_days: number | null
+    daily_out: number
+}
+
 export interface StockPoint {
     period: string
     stock_end: number
@@ -70,6 +76,7 @@ export interface StockVariantRow {
 export interface ProductStockAnalysis {
     today: StockToday
     rotation: StockRotation
+    coverage: StockCoverage
     series: StockPoint[]
     flows: { outflows: StockFlowRow[]; inflows: StockFlowRow[] }
     adjustments: StockAdjustmentRow[]

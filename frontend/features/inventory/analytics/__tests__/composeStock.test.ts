@@ -11,6 +11,7 @@ function stock(over: Partial<ProductStockAnalysis> = {}): ProductStockAnalysis {
             in_qty: 30, out_qty: 10, avg_stock: 20, turnover: 0.5, days_of_inventory: 730,
             last_in_date: "2026-01-10", last_out_date: "2026-11-01", idle: false, idle_days: 90,
         },
+        coverage: { coverage_days: 180, daily_out: 0.1 },
         series: [{ period: "2026-01", stock_end: 20, in_qty: 30, out_qty: 10 }],
         flows: { outflows: [{ key: "sale", label: "Ventas", qty: 10 }], inflows: [{ key: "purchase", label: "Compras", qty: 30 }] },
         adjustments: [],

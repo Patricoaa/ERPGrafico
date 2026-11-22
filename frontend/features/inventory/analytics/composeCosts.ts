@@ -1,4 +1,4 @@
-import type { CostsMode, ProductCosts } from "./costs.types"
+import type { ProductCosts } from "./costs.types"
 
 export const REPLACEMENT_GAP_THRESHOLD = 5
 export const COST_RISE_THRESHOLD = 10
@@ -15,13 +15,10 @@ export interface CostsFinding {
 
 export interface CostsComposition {
     hero: { label: string; value: number | null }
-    secondary: Array<"bom_today" | "last_purchase" | "stock_value">
+    secondary: Array<"bom_today" | "last_purchase">
     findings: CostsFinding[]
     sections: Array<"chart" | "bom" | "work_orders" | "purchases">
 }
-
-/** Modes that show the capital tied up in stock (a manufactured product reports its cost, not its stock). */
-const STOCK_VALUE_MODES: readonly CostsMode[] = ["purchased", "stock_only"]
 
 function hero(data: ProductCosts): CostsComposition["hero"] {
     if (data.mode === "manufactured_on_demand") return { label: "Costo de LdM", value: data.today.bom_cost }
@@ -37,7 +34,6 @@ function secondary(data: ProductCosts): CostsComposition["secondary"] {
     const figures: CostsComposition["secondary"] = []
     if (data.mode === "manufactured_stock" && data.today.bom_cost !== null) figures.push("bom_today")
     if (data.mode === "purchased" && data.today.last_purchase) figures.push("last_purchase")
-    if (STOCK_VALUE_MODES.includes(data.mode) && data.today.stock_value !== null) figures.push("stock_value")
     return figures
 }
 

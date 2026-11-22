@@ -2,15 +2,14 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import type { ProductStockAnalysis } from "../stockAnalysis.types"
 
-type LineSeries = { id: string; data: Array<{ x: string; y: number }> }
+type ChartSeries = { id: string; axis: string; type: string; data: Array<{ x: string; y: number }> }
 
 const state = vi.hoisted(() => ({
     data: null as unknown,
     isLoading: false,
     isError: false,
     useStock: vi.fn(),
-    lines: [] as Array<{ data: LineSeries[] }>,
-    bars: [] as Array<{ keys: string[]; data: Array<Record<string, unknown>> }>,
+    charts: [] as Array<{ series: ChartSeries[] }>,
 }))
 
 vi.mock("../../hooks/useProductStockAnalysis", () => ({
@@ -21,13 +20,9 @@ vi.mock("../../hooks/useProductStockAnalysis", () => ({
 }))
 vi.mock("@/components/shared", async (importOriginal) => ({
     ...(await importOriginal<typeof import("@/components/shared")>()),
-    LineChart: (props: { data: LineSeries[] }) => {
-        state.lines.push(props)
-        return <div data-testid="line-chart" />
-    },
-    BarChart: (props: { keys: string[]; data: Array<Record<string, unknown>> }) => {
-        state.bars.push(props)
-        return <div data-testid="bar-chart" />
+    DualAxisChart: (props: { series: ChartSeries[] }) => {
+        state.charts.push(props)
+        return <div data-testid="dual-axis-chart" />
     },
 }))
 
@@ -40,6 +35,7 @@ function stock(over: Partial<ProductStockAnalysis> = {}): ProductStockAnalysis {
             in_qty: 200, out_qty: 80, avg_stock: 100, turnover: 0.8, days_of_inventory: 456,
             last_in_date: "2026-10-01", last_out_date: "2026-11-10", idle: false, idle_days: 90,
         },
+        coverage: { coverage_days: 30, daily_out: 4 },
         series: [
             { period: "2026-10", stock_end: 140, in_qty: 100, out_qty: 40 },
             { period: "2026-11", stock_end: 120, in_qty: 20, out_qty: 40 },
@@ -66,8 +62,7 @@ beforeEach(() => {
     state.data = stock()
     state.isLoading = false
     state.isError = false
-    state.lines = []
-    state.bars = []
+    state.charts = []
     state.useStock.mockClear()
 })
 
@@ -79,10 +74,14 @@ describe("StockBlock", () => {
         }
     })
 
-    it("shows rotation and days of inventory", () => {
+    it("shows coverage, days of inventory and last out, without turnover nor last in", () => {
         render(<StockBlock productId={7} period="12m" />)
-        expect(screen.getByText("Rotación")).toBeInTheDocument()
-        expect(screen.getByText("Días de inventario")).toBeInTheDocument()
+        for (const label of ["Cobertura", "Días de inventario", "Última salida"]) {
+            expect(screen.getByText(label)).toBeInTheDocument()
+        }
+        expect(screen.getByText(/4 un\/día/)).toBeInTheDocument()
+        expect(screen.queryByText("Rotación")).not.toBeInTheDocument()
+        expect(screen.queryByText("Última entrada")).not.toBeInTheDocument()
     })
 
     it("asks again with the idle threshold chosen in the view zone", () => {
@@ -92,10 +91,13 @@ describe("StockBlock", () => {
         expect(state.useStock.mock.calls.at(-1)?.[1]).toMatchObject({ idle_days: 30 })
     })
 
-    it("draws the closing stock line and the in/out bars", () => {
+    it("draws closing stock on the left axis and in/out bars on the right axis of one chart", () => {
         render(<StockBlock productId={7} period="12m" />)
-        expect(state.lines.at(-1)?.data[0].data.map((p) => p.y)).toEqual([140, 120])
-        expect(state.bars.at(-1)?.keys).toEqual(["Entradas", "Salidas"])
+        const series = state.charts.at(-1)?.series ?? []
+        expect(series.map((s) => [s.id, s.axis, s.type])).toEqual([
+            ["stock_end", "left", "line"], ["in_qty", "right", "bar"], ["out_qty", "right", "bar"],
+        ])
+        expect(series[0].data.map((p) => p.y)).toEqual([140, 120])
     })
 
     it("shows flows, adjustments and warehouses", () => {
@@ -134,7 +136,7 @@ describe("StockBlock", () => {
         render(<StockBlock productId={7} period="12m" />)
         expect(screen.getByText("Existencia")).toBeInTheDocument()
         expect(screen.getByText("Sin movimientos en el periodo")).toBeInTheDocument()
-        expect(screen.queryByTestId("line-chart")).not.toBeInTheDocument()
+        expect(screen.queryByTestId("dual-axis-chart")).not.toBeInTheDocument()
     })
 
     it("shows the skeleton while loading", () => {

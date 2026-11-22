@@ -12,7 +12,7 @@ export interface ProcurementFinding {
 
 export interface ProcurementComposition {
     findings: ProcurementFinding[]
-    sections: Array<"coverage" | "chart" | "suppliers" | "pending">
+    sections: Array<"chart" | "suppliers" | "pending">
 }
 
 /** Decides findings and sections of the procurement tab from recorded facts only. Pure. */
@@ -35,7 +35,6 @@ export function composeProcurement(data: ProductProcurement): ProcurementComposi
     }
 
     const sections: ProcurementComposition["sections"] = []
-    if (data.coverage) sections.push("coverage")
     if (data.series.points.length > 0) sections.push("chart")
     if (data.suppliers.length > 0) sections.push("suppliers")
     if (data.pending.length > 0) sections.push("pending")

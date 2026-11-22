@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { BarChart, ChartSection, LineChart, Metric, MetricStrip } from "@/components/shared"
+import { ChartSection, DualAxisChart, Metric, MetricStrip } from "@/components/shared"
+import type { DualAxisSeries } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
@@ -19,7 +20,6 @@ import {
 const IDLE: Array<{ value: IdleDays; label: string }> = [
     { value: 30, label: "30 d" }, { value: 90, label: "90 d" }, { value: 180, label: "180 d" },
 ]
-const CHART_MARGIN = { top: 24, right: 16, bottom: 28, left: 64 }
 const formatIsoDate = (iso: string | null) => (iso ? iso.split("-").reverse().join("-") : null)
 const round2 = (value: number) => Number(value.toFixed(2))
 
@@ -49,7 +49,7 @@ export function StockBlock({ productId, period }: { productId: number; period: P
 
 function StockBody({ data }: { data: ProductStockAnalysis }) {
     const composition = composeStock(data)
-    const { today, rotation } = data
+    const { today, rotation, coverage } = data
     const warehouseRows = useMemo<StockWarehouseTableRow[]>(
         () => data.warehouses.map((w) => ({
             name: w.name, on_hand: w.on_hand, last_move_date: w.last_move_date, status: w.idle ? "Inmóvil" : "",
@@ -64,14 +64,14 @@ function StockBody({ data }: { data: ProductStockAnalysis }) {
     const inflowsCollection = useEntityCollection(stockFlowsEntity, { rows: data.flows.inflows }, pagination)
     const adjustmentsCollection = useEntityCollection(stockAdjustmentsEntity, { rows: data.adjustments }, pagination)
 
-    const stockLine = useMemo(
-        () => [{ id: "Stock al cierre", data: data.series.map((p) => ({ x: p.period, y: p.stock_end })) }],
-        [data.series],
-    )
-    const inOut = useMemo(
-        () => data.series.map((p) => ({ period: p.period, Entradas: p.in_qty, Salidas: p.out_qty })),
-        [data.series],
-    )
+    const chart = useMemo(() => {
+        const series: DualAxisSeries[] = [
+            { id: "stock_end", label: "Stock al cierre", axis: "left", type: "line", data: data.series.map((p) => ({ x: p.period, y: p.stock_end })) },
+            { id: "in_qty", label: "Entradas", axis: "right", type: "bar", data: data.series.map((p) => ({ x: p.period, y: p.in_qty })) },
+            { id: "out_qty", label: "Salidas", axis: "right", type: "bar", data: data.series.map((p) => ({ x: p.period, y: p.out_qty })) },
+        ]
+        return { periods: data.series.map((p) => p.period), series }
+    }, [data.series])
 
     const section = (id: string, title: string, body: ReactNode, note?: string) => (
         <section key={id} aria-label={id} className="flex flex-col gap-2">
@@ -98,11 +98,17 @@ function StockBody({ data }: { data: ProductStockAnalysis }) {
                 <Metric label="Comprometido" value={round2(today.reserved)} unit="un" context="Ventas, POS y órdenes de trabajo" />
                 <Metric label="Disponible" value={round2(today.available)} unit="un" tone={today.available < 0 ? "destructive" : "neutral"} />
             </MetricStrip>
-            <MetricStrip label="Rotación del periodo">
-                <Metric label="Rotación" value={rotation.turnover === null ? null : round2(rotation.turnover)} unit="veces" context={`Stock promedio: ${round2(rotation.avg_stock)} un`} />
-                <Metric label="Días de inventario" value={rotation.days_of_inventory === null ? null : Math.round(rotation.days_of_inventory)} unit="días" />
+            <MetricStrip label="Cobertura y rotación">
+                <Metric
+                    label="Cobertura"
+                    value={coverage.coverage_days === null ? null : Math.round(coverage.coverage_days)}
+                    unit="días"
+                    context={coverage.daily_out > 0
+                        ? `Consumo: ${round2(coverage.daily_out)} un/día (últimos 90 días)`
+                        : "Sin salidas en los últimos 90 días"}
+                />
+                <Metric label="Días de inventario" value={rotation.days_of_inventory === null ? null : Math.round(rotation.days_of_inventory)} unit="días" context={`Stock promedio: ${round2(rotation.avg_stock)} un`} />
                 <Metric label="Última salida" value={formatIsoDate(rotation.last_out_date)} />
-                <Metric label="Última entrada" value={formatIsoDate(rotation.last_in_date)} />
             </MetricStrip>
             {!composition.sections.includes("chart") && (
                 <p className="text-sm italic text-muted-foreground">Sin movimientos en el periodo</p>
@@ -112,30 +118,16 @@ function StockBody({ data }: { data: ProductStockAnalysis }) {
                     case "chart":
                         return (
                             <ChartSection key="Evolución" title="Stock al cierre, entradas y salidas" label="Evolución">
-                                <div className="h-56 min-h-0">
-                                    <LineChart
-                                        data={stockLine}
-                                        margin={CHART_MARGIN}
-                                        tooltipFormat="number"
-                                        enableArea
-                                        pointSize={4}
-                                        axisBottom={{ tickSize: 0, tickPadding: 8 }}
-                                        axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                                        ariaLabel="Stock al cierre de cada periodo"
-                                    />
-                                </div>
-                                <div className="mt-3 h-36 min-h-0">
-                                    <BarChart
-                                        data={inOut}
-                                        keys={["Entradas", "Salidas"]}
-                                        indexBy="period"
-                                        groupMode="grouped"
-                                        margin={CHART_MARGIN}
-                                        tooltipFormat="number"
-                                        legends={[]}
-                                        ariaLabel="Entradas y salidas por periodo"
-                                    />
-                                </div>
+                                <DualAxisChart
+                                    series={chart.series}
+                                    periods={chart.periods}
+                                    leftAxisFormat="number"
+                                    rightAxisFormat="number"
+                                    leftAxisLabel="Stock (un)"
+                                    rightAxisLabel="Entradas y salidas (un)"
+                                    mode="bar-line"
+                                    ariaLabel="Stock al cierre en el eje izquierdo; entradas y salidas por periodo en el eje derecho"
+                                />
                             </ChartSection>
                         )
                     case "flows":

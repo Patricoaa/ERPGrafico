@@ -68,12 +68,12 @@ beforeEach(() => {
 })
 
 describe("CostsBlock", () => {
-    it("shows the weighted cost, last purchase, stock value and a purchases table for a purchased product", () => {
+    it("shows the weighted cost, last purchase and a purchases table for a purchased product", () => {
         render(<CostsBlock productId={7} period="12m" />)
         expect(screen.getByText("Costo ponderado")).toBeInTheDocument()
         expect(screen.getByText("Última compra")).toBeInTheDocument()
         expect(screen.getAllByText(/Papelera Sur/).length).toBeGreaterThan(1)
-        expect(screen.getByText("Capital inmovilizado")).toBeInTheDocument()
+        expect(screen.queryByText("Capital inmovilizado")).not.toBeInTheDocument()
         expect(seriesIds()).toEqual(["Costo ponderado"])
         expect(screen.getByRole("region", { name: "Compras del periodo" })).toBeInTheDocument()
         expect(screen.getByText("REC-0012")).toBeInTheDocument()

@@ -29,7 +29,7 @@ export function ViewControl<T extends string | number>({ label, value, options, 
                         key={String(o.value)}
                         value={String(o.value)}
                         size="sm"
-                        className="text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                        className="text-3xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                     >
                         {o.label}
                     </ToggleGroupItem>

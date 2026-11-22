@@ -32,6 +32,7 @@ const procurement: ProductProcurement = {
 const inventory: ProductStockAnalysis = {
     today: { on_hand: 30, value: 12000, reserved: 5, available: 25 },
     rotation: { in_qty: 0, out_qty: 0, avg_stock: 0, turnover: null, days_of_inventory: null, last_in_date: null, last_out_date: null, idle: false, idle_days: 90 },
+    coverage: { coverage_days: null, daily_out: 0 },
     series: [], flows: { outflows: [], inflows: [] }, adjustments: [], loss_pct: null, warehouses: [], variants: [],
 }
 const production: ProductProductionAnalysis = {

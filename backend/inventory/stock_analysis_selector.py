@@ -7,7 +7,7 @@ from django.db.models import F, Max, Min, Sum
 
 from .costs_selector import _next_start
 from .models import ADJUSTMENT_VIRTUAL_NAMES, Product, Stock, StockMove
-from .operations_selector import OperationsSelector, _StockCurve
+from .operations_selector import OperationsSelector, _StockCurve, coverage
 from .pricing_selector import _period_start
 from .sales_impact_selector import _period_label
 from .selectors import ProductSelector
@@ -211,6 +211,7 @@ class StockAnalysisSelector:
                 "available": on_hand - reserved,
             },
             "rotation": rotation,
+            "coverage": coverage(product_ids, date_to),
             "series": _series(product_ids, start, date_to, params.granularity),
             "flows": _flows(product_ids, start, date_to),
             "adjustments": adjustments,

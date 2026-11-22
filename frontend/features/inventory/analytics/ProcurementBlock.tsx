@@ -55,7 +55,7 @@ const seriesPoints = (points: ProcurementPoint[], metric: ProcurementMetric) =>
 
 function ProcurementBody({ data, metric }: { data: ProductProcurement; metric: ProcurementMetric }) {
     const composition = composeProcurement(data)
-    const { kpis, coverage } = data
+    const { kpis } = data
     const supplierRows = useMemo<ProcurementSupplierTableRow[]>(
         () => data.suppliers.map(({ preferred, ...row }) => ({ ...row, preferred_label: preferred ? "Preferido" : "" })),
         [data.suppliers],
@@ -92,19 +92,6 @@ function ProcurementBody({ data, metric }: { data: ProductProcurement; metric: P
                         </li>
                     ))}
                 </ul>
-            )}
-            {coverage && (
-                <MetricStrip label="Cobertura de stock">
-                    <Metric
-                        label="Cobertura"
-                        value={coverage.coverage_days === null ? null : Math.round(coverage.coverage_days)}
-                        unit="días"
-                        context={coverage.daily_out > 0
-                            ? `Consumo: ${round2(coverage.daily_out)} un/día (últimos 90 días)`
-                            : "Sin salidas en los últimos 90 días"}
-                    />
-                    <Metric label="Stock actual" value={round2(coverage.stock_now)} unit="un" />
-                </MetricStrip>
             )}
             <MetricStrip label="Compras del periodo">
                 <Metric label="Unidades compradas" value={round2(kpis.units)} delta={unitsDelta} />

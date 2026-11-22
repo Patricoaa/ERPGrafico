@@ -55,13 +55,13 @@ describe("composeProcurement findings", () => {
 })
 
 describe("composeProcurement sections", () => {
-    it("lists coverage, chart, suppliers and pending when there is data", () => {
+    it("lists chart, suppliers and pending when there is data", () => {
         const pending = [{ order_id: 1, number: "PO-1", supplier: "S1", date: "2026-06-01", ordered: 10, received: 4, pending: 6 }]
-        expect(composeProcurement(proc({ pending })).sections).toEqual(["coverage", "chart", "suppliers", "pending"])
+        expect(composeProcurement(proc({ pending })).sections).toEqual(["chart", "suppliers", "pending"])
     })
 
-    it("omits coverage without stock and chart/suppliers without purchases", () => {
-        const empty = proc({ coverage: null, series: { points: [], previous_points: [] }, suppliers: [] })
+    it("omits chart and suppliers without purchases", () => {
+        const empty = proc({ series: { points: [], previous_points: [] }, suppliers: [] })
         expect(composeProcurement(empty).sections).toEqual([])
     })
 })

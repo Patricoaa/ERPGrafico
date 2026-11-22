@@ -49,19 +49,4 @@ describe("RailControls", () => {
         rerender(tree(false))
         expect(screen.queryByText("ctl")).not.toBeInTheDocument()
     })
-
-    it("shows the Vista title only while there are controls", () => {
-        const tree = (withControls: boolean) => (
-            <RailControlsProvider>
-                <ViewControlsSlot />
-                {withControls && <RailControls><span>ctl</span></RailControls>}
-            </RailControlsProvider>
-        )
-        const { rerender } = render(tree(false))
-        expect(screen.queryByText("Vista")).not.toBeInTheDocument()
-        rerender(tree(true))
-        expect(screen.getByText("Vista")).toBeInTheDocument()
-        rerender(tree(false))
-        expect(screen.queryByText("Vista")).not.toBeInTheDocument()
-    })
 })

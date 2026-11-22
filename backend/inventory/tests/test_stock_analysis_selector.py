@@ -142,6 +142,19 @@ def test_rotation_matches_operations(env):
     assert rotation["idle_days"] == 90
 
 
+def test_coverage_uses_last_90_days_consumption(env):
+    _move(env, "vendor", "internal", "30", on=date(2026, 1, 10))
+    _move(env, "internal", "customer", "10", on=date(2026, 12, 1))
+    coverage = _analysis(env)["coverage"]
+    assert coverage["daily_out"] == pytest.approx(10 / 90)
+    assert coverage["coverage_days"] == pytest.approx(180.0)
+
+
+def test_coverage_days_none_without_consumption(env):
+    _move(env, "vendor", "internal", "30", on=date(2026, 1, 10))
+    assert _analysis(env)["coverage"]["coverage_days"] is None
+
+
 def test_rotation_history_without_date_from(env):
     _move(env, "vendor", "internal", "30", on=date(2023, 1, 10))
     _move(env, "internal", "customer", "10", on=date(2023, 6, 1))

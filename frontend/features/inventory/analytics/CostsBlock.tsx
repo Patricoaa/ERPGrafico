@@ -83,7 +83,7 @@ function Secondary({ figure, data }: { figure: CostsComposition["secondary"][num
             />
         )
     }
-    return <Metric label="Capital inmovilizado" value={money(today.stock_value)} context={`${today.stock_qty ?? 0} un en stock`} />
+    return null
 }
 
 function CostsBody({ data }: { data: ProductCosts }) {

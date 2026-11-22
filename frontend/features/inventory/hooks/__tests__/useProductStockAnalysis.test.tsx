@@ -17,6 +17,7 @@ const EMPTY: ProductStockAnalysis = {
         in_qty: 0, out_qty: 0, avg_stock: 0, turnover: null, days_of_inventory: null,
         last_in_date: null, last_out_date: null, idle: false, idle_days: 90,
     },
+    coverage: { coverage_days: null, daily_out: 0 },
     series: [],
     flows: { outflows: [], inflows: [] },
     adjustments: [],

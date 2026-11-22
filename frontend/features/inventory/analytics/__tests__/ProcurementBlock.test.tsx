@@ -61,14 +61,7 @@ beforeEach(() => {
 })
 
 describe("ProcurementBlock", () => {
-    it("shows the coverage with its daily consumption for a stocked product", () => {
-        render(<ProcurementBlock productId={7} period="12m" />)
-        expect(screen.getByText("Cobertura")).toBeInTheDocument()
-        expect(screen.getByText(/4 un\/día/)).toBeInTheDocument()
-    })
-
-    it("hides the coverage for a product without stock", () => {
-        state.data = proc({ coverage: null })
+    it("does not show the coverage metrics (they live in Inventario)", () => {
         render(<ProcurementBlock productId={7} period="12m" />)
         expect(screen.queryByText("Cobertura")).not.toBeInTheDocument()
     })

@@ -50,11 +50,11 @@ describe("composeCosts hero", () => {
 })
 
 describe("composeCosts secondary figures", () => {
-    it("shows last purchase and stock value for purchased products", () => {
-        expect(composeCosts(costs()).secondary).toEqual(["last_purchase", "stock_value"])
+    it("shows only the last purchase for purchased products", () => {
+        expect(composeCosts(costs()).secondary).toEqual(["last_purchase"])
     })
 
-    it("shows only the LdM cost (no tied-up capital) for stocked manufactured products", () => {
+    it("shows only the LdM cost for stocked manufactured products", () => {
         const data = costs({ mode: "manufactured_stock", today: { ...costs().today, bom_cost: 110 } })
         expect(composeCosts(data).secondary).toEqual(["bom_today"])
     })
