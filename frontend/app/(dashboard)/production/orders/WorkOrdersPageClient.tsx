@@ -1,6 +1,7 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
@@ -63,7 +64,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     const { annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
     const isNew = searchParams.get('new') === 'true' || searchParams.get('modal') === 'new'
-    const selectedId = searchParams.get('selected')
     const requestedType = searchParams.get('type')
     const requestedProductId = searchParams.get('product_id') || undefined
 
@@ -75,24 +75,19 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 defaultProductId: requestedProductId ? String(requestedProductId) : undefined,
             }
         }
-        if (selectedId) {
-            return {
-                kind: 'manage',
-                orderId: Number(selectedId),
-            }
-        }
         return null
-    }, [isNew, selectedId, requestedType, requestedProductId])
+    }, [isNew, requestedType, requestedProductId])
 
+    // ADR-0152: cada OT abre su propia pestaña (título = display_id de la fila); esta pestaña de página solo crea.
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("production.workorder")
     const handleManage = useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
+        openEntity("production.workorder", id, (orders as WorkOrder[]).find(o => o.id === id))
+    }, [openEntity, orders])
 
     const closeWizard = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
-        ;['new', 'modal', 'selected', 'type', 'product_id'].forEach(p => params.delete(p))
+        ;['new', 'modal', 'type', 'product_id'].forEach(p => params.delete(p))
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
@@ -136,7 +131,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <EntityPanelTab label="production.workorder" id={selectedId ? Number(selectedId) : null} open={!!wizardMode} onClose={closeWizard}>
+            <EntityPanelTab label="production.workorder" id={null} open={!!wizardMode} onClose={closeWizard}>
                 {(open) => wizardMode && (
                     <WorkOrderWizard
                         mode={wizardMode}

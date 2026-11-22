@@ -70,6 +70,19 @@ function PayrollDrawerEntry({ id, open, onOpenChange }: { id: number; open: bool
     )
 }
 
+/** OT como pestaña (ADR-0152): guardar no cierra la pestaña, solo refresca la lista. */
+function WorkOrderDrawerEntry({ id, open, onOpenChange }: { id: number; open: boolean; onOpenChange: (open: boolean) => void }) {
+    const queryClient = useQueryClient()
+    return (
+        <WorkOrderWizard
+            mode={{ kind: "manage", orderId: id }}
+            open={open}
+            onOpenChange={onOpenChange}
+            onSuccess={() => { void queryClient.invalidateQueries({ queryKey: ["work-orders"] }) }}
+        />
+    )
+}
+
 function InventoryCountDrawerEntry({ id, open, onOpenChange }: { id: number; open: boolean; onOpenChange: (open: boolean) => void }) {
     const queryClient = useQueryClient()
     return (
@@ -404,13 +417,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Production ────────────────────────────────────────────────────────────
-    "production.workorder": ({ id, open, onOpenChange }) => (
-        <WorkOrderWizard
-            mode={{ kind: "manage", orderId: id }}
-            open={open}
-            onOpenChange={onOpenChange}
-        />
-    ),
+    "production.workorder": ({ id, open, onOpenChange }) => <WorkOrderDrawerEntry id={id} open={open} onOpenChange={onOpenChange} />,
 
     // ── Accounting ────────────────────────────────────────────────────────────
     // Con data → vista con datos completos; solo con id (relaciones, /d/) → vista cargada por id.
