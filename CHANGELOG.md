@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.141](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.140...v0.3.141) (2026-11-22)
+
+
+### ✨ Features
+
+* **inventory-analytics:** rediseño tab Inventario, cobertura movida desde Abastecimiento ([bae2df9](https://github.com/Patricoaa/ERPGrafico/commit/bae2df90b0ed2655677b7b1aa0d0bc182e5d480a))
+
 ### [0.3.140](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.139...v0.3.140) (2026-11-22)
 
 
