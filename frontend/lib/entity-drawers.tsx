@@ -3,6 +3,7 @@
 import React from "react"
 import dynamic from "next/dynamic"
 import { SkeletonShell } from "@/components/shared"
+import { useQueryClient } from "@tanstack/react-query"
 import { useRecordById } from "@/hooks/useRecordById"
 import type { ProductCategory, AppGroup } from "@/types/entities"
 import type { Contact } from "@/features/contacts"
@@ -54,6 +55,18 @@ function RecordDrawer<T>({ endpoint, id, data, label, children }: {
     const resolved = (data as T | undefined) ?? record
     if (resolved) return <>{children(resolved)}</>
     return isError ? null : skeleton(label)
+}
+
+function PayrollDrawerEntry({ id, open, onOpenChange }: { id: number; open: boolean; onOpenChange: (open: boolean) => void }) {
+    const queryClient = useQueryClient()
+    return (
+        <PayrollDetailDrawer
+            open={open}
+            onOpenChange={onOpenChange}
+            payrollId={id}
+            onUpdate={() => { void queryClient.invalidateQueries({ queryKey: ["hr", "payrolls"] }) }}
+        />
+    )
 }
 
 const ContactDrawer = dynamic(() => import("@/features/contacts/components/ContactDrawer"), {
@@ -401,22 +414,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── HR ────────────────────────────────────────────────────────────────────
     // * requires full employee data — EntityBadge always provides it
-    "hr.employee": ({ open, onOpenChange, data, onSuccess }) => (
-        <EmployeeDrawer
-            open={open}
-            onOpenChange={onOpenChange}
-            employee={(data as Employee | null) ?? null}
-            onSaved={() => onSuccess?.()}
-        />
+    "hr.employee": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Employee> endpoint="/hr/employees" id={id} data={data} label="empleado">
+            {(record) => <EmployeeDrawer open={open} onOpenChange={onOpenChange} employee={record} onSaved={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    "hr.payroll": ({ id, open, onOpenChange, onSuccess }) => (
-        <PayrollDetailDrawer
-            open={open}
-            onOpenChange={onOpenChange}
-            payrollId={id}
-            onUpdate={() => onSuccess?.()}
-        />
-    ),
+    // El detalle dispara onUpdate tras confirmar/pagar/anular sin cerrarse: refresca la lista, no cierra la pestaña.
+    "hr.payroll": ({ id, open, onOpenChange }) => <PayrollDrawerEntry id={id} open={open} onOpenChange={onOpenChange} />,
 
     // ── Accounting ────────────────────────────────────────────────────────────
     // * requires full account data — EntityBadge always provides it
@@ -432,14 +436,10 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Users ─────────────────────────────────────────────────────────────────
     // * requires full user data — EntityBadge always provides it
-    "core.user": ({ open, onOpenChange, data, onSuccess }) => (
-        <UserDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as UserInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    "core.user": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<UserInitialData> endpoint="/core/users" id={id} data={data} label="usuario">
+            {(record) => <UserDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── Treasury hardware ─────────────────────────────────────────────────────
@@ -477,24 +477,16 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── HR extended ───────────────────────────────────────────────────────────
     // * requires full absence data — EntityBadge always provides it
-    "hr.absence": ({ open, onOpenChange, data, onSuccess }) => (
-        <AbsenceDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            absence={(data as Absence | null) ?? null}
-            onSaved={() => onSuccess?.()}
-        />
+    "hr.absence": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Absence> endpoint="/hr/absences" id={id} data={data} label="inasistencia">
+            {(record) => <AbsenceDrawer open={open} onOpenChange={onOpenChange} absence={record} onSaved={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
     // * requires full advance data — EntityBadge always provides it
-    "hr.salaryadvance": ({ open, onOpenChange, data, onSuccess }) => (
-        <AdvanceDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            advance={(data as SalaryAdvance | null) ?? null}
-            onSaved={() => onSuccess?.()}
-        />
+    "hr.salaryadvance": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<SalaryAdvance> endpoint="/hr/advances" id={id} data={data} label="anticipo">
+            {(record) => <AdvanceDrawer open={open} onOpenChange={onOpenChange} advance={record} onSaved={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── Treasury hardware extended ────────────────────────────────────────────
