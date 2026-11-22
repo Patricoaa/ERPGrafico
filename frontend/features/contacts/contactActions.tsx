@@ -2,7 +2,7 @@ import { createEntityActions } from '@/components/shared'
 import type { Contact } from '@/features/contacts/types'
 
 export interface ContactActionsCtx {
-    onEdit: (id: number) => void
+    onEdit: (contact: Contact) => void
     onArchive: (contact: Contact) => void
 }
 
@@ -10,7 +10,7 @@ export const contactActions = createEntityActions<
     Contact,
     ContactActionsCtx
 >((item, ctx) => [
-    { action: "edit", onClick: () => ctx.onEdit(item.id) },
+    { action: "edit", onClick: () => ctx.onEdit(item) },
     {
         action: item.is_active ? "archive" : "restore",
         onClick: () => ctx.onArchive(item),
