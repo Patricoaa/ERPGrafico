@@ -57,6 +57,12 @@ Riesgo principal: drawers que hoy reciben contexto de la vista (filtros de perio
 3. Contratos: `component-entity-drawers.md`, `module-layout-navigation.md` §2.1.1, `add-feature.md`, `add-settings-panel.md`, ADR-0020 (nota) y ADR-0101 (§6, §12 *superseded*). Ratchet de la oleada 0 en cero y eliminado.
 4. Decisión documentada sobre montaje persistente de pestañas (sí/no) con los datos de uso.
 
+### Estado de la Oleada 4 (2026-11-22)
+
+- Hecho: Partners, distribuciones, Movimientos y terminales POS migrados; contratos y ADR-0020/0101 anotados; `useEntityRouteActions` documenta que `openSelected/openView` solo sirven a paneles de página con contexto.
+- Se mantienen a propósito (no son «ficha de registro»): `useEntityPanelRoute` para creación y `variant` (crédito/ledger, desembolso, cargo de tarjeta, lotes de terminal), edición de asientos contables, `CreditPortfolio`, cheques y estados de tarjeta (`openAction`). Renombrar el hook a `useCreatePanelRoute` queda como refactor aparte.
+- Pendiente: **verificación en navegador** (gate de la Oleada 1) → recién entonces ADR-0152 a *Accepted*; decisión de montaje persistente de pestañas (sin datos de uso todavía, se difiere).
+
 ## Orden y dependencias
 
 `0 → 1 (gate) → 2 (módulos en paralelo) → 3 → 4`. La Oleada 3 puede empezar por las entidades ya registradas de tesorería mientras se registran las demás. Cada oleada es mergeable por sí sola: mientras una vista no migra, convive con el modelo de reemplazo.

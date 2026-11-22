@@ -46,10 +46,12 @@ export interface DrawerBaseProps {
 | Modo | Cuándo | Comportamiento | Ruta de apertura |
 |------|--------|----------------|-----------------|
 | `create` | sin `initialData`/`id` | formulario vacío, footer "Crear {Entidad}" | `openEntity` o montaje directo |
-| `edit` | con `initialData`/`id` | pre-fill, dirty tracking, footer "Guardar Cambios" | **exclusivamente** vía `?selected={id}` (ADR-0020) |
+| `edit` | con `initialData`/`id` | pre-fill, dirty tracking, footer "Guardar Cambios" | vía `openEntity(label, id, fila)` desde la lista (ADR-0152); `?selected={id}` solo como enlace profundo |
 | `view` | lectura | campos read-only, sin footer de edición; reemplaza al difunto `TransactionViewModal` | `openEntity` (del registro) |
 
-> **Importante:** `ENTITY_DRAWERS` y `openEntity` solo abren drawers en modo `view` (o `create` si no hay `id`). El modo `edit` **jamás** se alcanza desde el registro — es exclusivo del patrón `?selected` que monta el drawer directamente con `initialData` de la lista. No pasar `mode="edit"` en adaptadores de `ENTITY_DRAWERS`.
+> **ADR-0152:** las filas de una lista abren su registro con `openEntity(label, id, fila)` y el adaptador de `ENTITY_DRAWERS` (a menudo `RecordDrawer`, que usa la fila o carga por id) monta el drawer en **modo edición**; varias pestañas por entidad. Los puntos siguientes sobre `view`/`edit` describen el estado previo a ADR-0152 y se leen con esta excepción.
+>
+> **Importante (previo):** `ENTITY_DRAWERS` y `openEntity` solo abren drawers en modo `view` (o `create` si no hay `id`). El modo `edit` **jamás** se alcanza desde el registro — es exclusivo del patrón `?selected` que monta el drawer directamente con `initialData` de la lista. No pasar `mode="edit"` en adaptadores de `ENTITY_DRAWERS`.
 
 - Un drawer **deriva** el modo con el hook canónico: `const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })`. **Jamás resolver el modo inline**.
 - Un drawer de entidad es un componente con sufijo `Drawer` (ver [naming-conventions.md](../90-governance/naming-conventions.md)) que monta su propia `<Drawer>` ([component-drawer.md](./component-drawer.md)).
@@ -126,9 +128,9 @@ goBackEntity()  // vuelve al documento anterior
 | `activateTab` / `closeTab` | `(key: string) => void` | Activan/cierran una pestaña, con guarda de cambios sin guardar |
 | `openRootEntity` / `closeEntityByRef` | `(label, id) => void` | Pestaña de la selección de una lista (`?selected`); sin guarda, la aplicó quien llama |
 
-**Pestañas efímeras (ADR-0101, sustituye la pila y las migas de ADR-0080/0100).** `openEntity` abre el documento como **pestaña** en la barra de trabajo permanente (`WorkspaceTabBar`, bajo la topbar) o activa la pestaña si ya está abierta (máx. 8). Solo se monta el drawer de la pestaña activa; el provider no envuelve nada: los drawers no necesitan cambios. Cerrar (X / Escape / × de la pestaña / `onSuccess`) cierra la pestaña activa y activa a su vecina, con guarda. Las pestañas se cierran al cambiar de página y no se serializan en la URL. `closeEntity` cierra todas. La Calculadora de Costos es otra pestaña (`openTool("cost-calculator")`) y conserva su estado mientras exista. `?selected` es una sola pestaña, la fila explorada: elegir otra la reemplaza y cerrarla limpia `?selected`.
+**Pestañas efímeras (ADR-0101, sustituye la pila y las migas de ADR-0080/0100).** `openEntity` abre el documento como **pestaña** en la barra de trabajo permanente (`WorkspaceTabBar`, bajo la topbar) o activa la pestaña si ya está abierta (máx. 8). Solo se monta el drawer de la pestaña activa; el provider no envuelve nada: los drawers no necesitan cambios. Cerrar (X / Escape / × de la pestaña / `onSuccess`) cierra la pestaña activa y activa a su vecina, con guarda. Las pestañas se cierran al cambiar de página y no se serializan en la URL. `closeEntity` cierra todas. La Calculadora de Costos es otra pestaña (`openTool("cost-calculator")`) y conserva su estado mientras exista. ~~`?selected` es una sola pestaña, la fila explorada: elegir otra la reemplaza~~ — **superseded por ADR-0152**: cada registro abre su propia pestaña (varias por entidad; títulos repetidos se desambiguan ` (2)`); `?selected` es solo enlace profundo (`useDeepLinkEntity` abre la pestaña una vez y limpia la URL).
 
-**Drawers que monta la página (edición `?selected`, creación `?modal=new`).** Dos piezas, siempre juntas:
+**Drawers que monta la página (solo creación `?modal=new` y paneles de acción con `variant`; ADR-0152).** Los registros ya no se montan aquí: se registran en `ENTITY_DRAWERS` y se abren con `openEntity`; un test de contrato (`entity-panel-registry.contract.test.ts`) exige que todo `EntityPanelTab` sin `variant` use una etiqueta registrada. Dos piezas, siempre juntas:
 
 ```tsx
 const panel = useEntityPanelRoute<Contact>({ endpoint: '/contacts', external: { open: externalOpen, onOpenChange } })

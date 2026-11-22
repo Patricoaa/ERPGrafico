@@ -1,6 +1,7 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useMemo } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
@@ -13,7 +14,6 @@ import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { posTerminalEntity, posTerminalViews } from "../entity-view/posTerminal.entity"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
 
@@ -30,9 +30,10 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     const pathname = usePathname()
     const router = useRouter()
 
-    const panel = useEntityPanelRoute<Terminal>({ endpoint: '/treasury/pos-terminals', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    // Cada terminal abre su ficha en una pestaña propia (ADR-0152); esta pestaña de página solo crea.
+    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("treasury.posterminal")
 
     const handleToggleActive = async (terminal: Terminal) => {
         try {
@@ -62,7 +63,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     }, [terminals, search.filters.status])
 
     const actionsCtx: PosTerminalActionsCtx = {
-        onEdit: (terminal) => openSelected(terminal.id),
+        onEdit: (terminal) => openEntity("treasury.posterminal", terminal.id, terminal),
         onToggleActive: (terminal) => handleToggleActive(terminal),
         onDelete: (terminal) => handleDelete(terminal),
     }
@@ -90,7 +91,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(terminal) => openSelected(terminal.id)}
+                onOpen={(terminal) => openEntity("treasury.posterminal", terminal.id, terminal)}
                 actions={posTerminalActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={toolbarAction}>
@@ -111,7 +112,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                         onOpenChange={(open: boolean) => {
                             if (!open) panel.close()
                         }}
-                        terminal={panel.isCreate ? null : selectedFromUrl}
+                        terminal={null}
                         onSuccess={() => { panel.close(); refetch() }}
                     />
                 )}

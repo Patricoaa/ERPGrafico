@@ -7,7 +7,7 @@ import { PartnersClientView } from "../PartnersClientView"
 const m = vi.hoisted(() => ({
     partners: [] as Array<{ id: number; name: string }>,
     run: vi.fn(),
-    openSelected: vi.fn(),
+    openEntity: vi.fn(),
     rootProps: {} as Record<string, unknown>,
 }))
 
@@ -17,14 +17,9 @@ vi.mock("next/navigation", () => ({
     useSearchParams: () => new URLSearchParams(),
 }))
 vi.mock("@/components/providers", () => ({
-    EntityPanelTab: () => null,
+    useGlobalModals: () => ({ openEntity: m.openEntity }),
 }))
-vi.mock("@/hooks/useEntityPanelRoute", () => ({
-    useEntityPanelRoute: () => ({ tab: {}, selectedId: null, close: vi.fn() }),
-}))
-vi.mock("@/hooks/useEntityRouteActions", () => ({
-    useEntityRouteActions: () => ({ openSelected: m.openSelected }),
-}))
+vi.mock("@/hooks/useDeepLinkEntity", () => ({ useDeepLinkEntity: vi.fn() }))
 vi.mock("@/features/contacts", () => ({
     usePartners: () => ({ partners: m.partners, isLoading: false, isFetching: false, refetch: vi.fn(), error: null }),
     netEquityPercentages: () => ({}),
@@ -35,7 +30,6 @@ vi.mock("../../hooks/usePartnerEvolutionData", () => ({ usePartnerEvolutionData:
 vi.mock("../partnerAnalyticsScreen", () => ({ buildPartnerAnalyticsScreen: () => ({}) }))
 vi.mock("../../entity-view/partner.entity", () => ({ partnerEntity: {}, partnerViews: { table: {}, card: {} } }))
 vi.mock("../PartnerActionModal", () => ({ usePartnerActions: () => ({ run: m.run, host: null }) }))
-vi.mock("../PartnerDrawer", () => ({ PartnerDrawer: () => null }))
 vi.mock("@/components/shared", () => ({
     AnalyticsPanelContent: () => null,
     UnifiedSearchBar: () => null,
@@ -67,7 +61,7 @@ const createAction = <button>Añadir Socio</button>
 
 beforeEach(() => {
     m.run.mockClear()
-    m.openSelected.mockClear()
+    m.openEntity.mockClear()
     m.rootProps = {}
     m.partners = [{ id: 7, name: "Ana Socia" }]
 })
@@ -85,7 +79,7 @@ describe("PartnersClientView", () => {
     it("clic en una fila abre la ficha y no hay menú de acciones por fila", async () => {
         render(<PartnersClientView createAction={createAction} />)
         await userEvent.click(screen.getByRole("button", { name: "Ana Socia" }))
-        expect(m.openSelected).toHaveBeenCalledWith(7)
+        expect(m.openEntity).toHaveBeenCalledWith("contacts.partner", 7, { id: 7, name: "Ana Socia" })
         expect(m.rootProps.actions).toBeUndefined()
     })
 

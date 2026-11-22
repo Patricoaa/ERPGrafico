@@ -248,6 +248,8 @@ app/(dashboard)/[name]/
   [id]/page.tsx # redirect server-side a ?selected (ADR-0020)
 ```
 
+> **ADR-0152:** la fila abre el registro con `openEntity(label, id, fila)` (el comportamiento por defecto de `Collection.Root` si `entity.label` está en `ENTITY_DRAWERS`); registra el drawer en `lib/entity-drawers.tsx` y usa `useDeepLinkEntity(label)` para los enlaces `?selected=`. La página solo monta `EntityPanelTab` para creación o paneles con `variant`.
+
 > **Si la entidad está registrada en el `UniversalRegistry`** (aparece en la barra de búsqueda global), la ruta `[id]/page.tsx` DEBE ser un **redirect server-side** a `<list_url>?selected={id}` per [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md). La lista lee el param y abre su modal local con `initialData` fetcheado. Ver [list-modal-edit-pattern.md](../20-contracts/list-modal-edit-pattern.md) para el contrato completo.
 
 ```tsx
