@@ -1,4 +1,5 @@
 export * from './AccountsClientView';
+export * from './AccountRecordDrawer';
 export * from './LedgerDrawer';
 export * from './JournalEntryDrawer';
 export * from './LedgerSummaryPanel';

@@ -1,5 +1,5 @@
 export type { AccountActionsCtx } from './components'
-export { AccountingClosuresClientView, AccountsClientView, JournalEntryDrawer, LedgerDrawer, accountActions, LedgerSummaryPanel, RcvDocumentsClientView, RcvDocumentDrawer, RcvImportsClientView, RcvImportDrawer, RcvImportModal } from './components'
+export { AccountingClosuresClientView, AccountsClientView, AccountRecordDrawer, JournalEntryDrawer, LedgerDrawer, accountActions, LedgerSummaryPanel, RcvDocumentsClientView, RcvDocumentDrawer, RcvImportsClientView, RcvImportDrawer, RcvImportModal } from './components'
 export { ledgerMovementActions, type LedgerMovementActionsCtx } from './components/ledgerMovementActions'
 export type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerMovement } from './types'
 export { IS_CATEGORIES, CF_CATEGORIES, BS_CATEGORIES } from './types'

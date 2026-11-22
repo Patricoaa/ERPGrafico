@@ -129,8 +129,8 @@ const PricingRuleDrawer = dynamic(
     { ssr: false, loading: () => skeleton("regla de precio") }
 )
 
-const AccountDrawer = dynamic(
-    () => import("@/features/finance").then((m) => m.AccountDrawer),
+const AccountRecordDrawer = dynamic(
+    () => import("@/features/accounting").then((m) => m.AccountRecordDrawer),
     { ssr: false, loading: () => skeleton("cuenta contable") }
 )
 
@@ -364,7 +364,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             open={open}
             onOpenChange={onOpenChange}
             initialData={data as JournalEntryInitialData}
-            onSuccess={() => onSuccess?.()}
+            // En vista, onSuccess se dispara tras publicar/reversar desde la ficha, que sigue abierta (como en la página).
+            onSuccess={data || id ? undefined : () => onSuccess?.()}
         />
     ),
 
@@ -424,14 +425,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Accounting ────────────────────────────────────────────────────────────
     // * requires full account data — EntityBadge always provides it
-    "accounting.account": ({ open, onOpenChange, data, onSuccess }) => (
-        <AccountDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as Record<string, unknown>}
-            onSuccess={() => onSuccess?.()}
-        />
+    "accounting.account": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <AccountRecordDrawer id={id} data={data} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
     ),
 
     // ── Users ─────────────────────────────────────────────────────────────────

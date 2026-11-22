@@ -1,6 +1,7 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useEffect } from "react"
 
@@ -48,15 +49,17 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     }, [isTruncated, totalCount])
 
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
-    const { openSelected, openView } = useEntityRouteActions()
+    const { openSelected } = useEntityRouteActions()
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: ver un asiento abre su propia pestaña; editar sigue en el panel de página (`?selected`).
+    useDeepLinkEntity("accounting.journalentry", { actions: ["view"] })
 
-    // ?selected=<id> (sin action) → form de edición; ?selected=<id>&action=view → visor read-only
+    // ?selected=<id> (sin action) → form de edición (panel de página)
     const editPanel = useEntityPanelRoute<JournalEntry>({
         endpoint: '/accounting/entries',
         actions: [null],
         external: { open: externalOpen, onOpenChange: onExternalOpenChange },
     })
-    const viewPanel = useEntityPanelRoute({ actions: ['view'], create: false })
     const editingEntry = editPanel.entity
 
     const { postEntry } = usePostJournalEntry()
@@ -82,7 +85,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
     const journalEntryActionsCtx: JournalEntryActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onView: (id) => openView(id),
+        onView: (id) => openEntity("accounting.journalentry", id),
         onPublish: (id) => handlePost(id),
         onDelete: (id) => handleDelete(id),
         onReverse: (id) => handleReverse(id),
@@ -101,7 +104,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     collection={collection}
                     view={view}
                     onViewChange={onViewChange}
-                    onOpen={(entry) => openView(entry.id)}
                     actions={journalEntryActions.forCollection(journalEntryActionsCtx)}
                 >
                     <Collection.Toolbar action={createAction}>
@@ -132,16 +134,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     )}
                 </EntityPanelTab>
 
-                <EntityPanelTab label="accounting.journalentry" {...viewPanel.tab}>
-                    {(open) => viewPanel.selectedId && (
-                        <JournalEntryDrawer
-                            journalEntryId={viewPanel.selectedId}
-                            mode="view"
-                            open={open}
-                            onOpenChange={(open) => { if (!open) viewPanel.close() }}
-                        />
-                    )}
-                </EntityPanelTab>
             </div>
         </div>
     )
