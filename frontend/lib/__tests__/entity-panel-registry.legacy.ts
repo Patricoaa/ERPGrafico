@@ -4,9 +4,7 @@
  * docs/superpowers/plans/2026-11-22-pestanas-de-registro-multiples.md). Solo se pueden quitar entradas.
  */
 export const UNREGISTERED_PANEL_LABELS: string[] = [
-    "accounting.budget",
     "inventory.subscription",
-    "production.bom",
     "tax.taxperiod",
     "treasury.bank",
     "treasury.bankloan",

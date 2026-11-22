@@ -6,6 +6,7 @@ export { ProductionStepsSidebar } from './components/ProductionStepsSidebar'
 export { DraftMaterialsStep, DraftOutsourcingStep } from './components/shared/DraftPlanningSteps'
 export type { DraftMaterial, DraftOutsourcedService } from './components/shared/DraftPlanningSteps'
 export { BOMDrawer } from './components/BOMDrawer'
+export { BOMRecordDrawer } from './components/BOMRecordDrawer'
 export { BOMClientView } from './components/BOMClientView'
 export {
   useWorkOrderProducts,

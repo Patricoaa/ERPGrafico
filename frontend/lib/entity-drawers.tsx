@@ -112,6 +112,16 @@ const InventoryCountDetailDrawer = dynamic(
     { ssr: false, loading: () => skeleton("conteo de inventario") }
 )
 
+const BOMRecordDrawer = dynamic(
+    () => import("@/features/production").then((m) => m.BOMRecordDrawer),
+    { ssr: false, loading: () => skeleton("lista de materiales") }
+)
+
+const BudgetRecordEditor = dynamic(
+    () => import("@/features/finance").then((m) => m.BudgetRecordEditor),
+    { ssr: false, loading: () => skeleton("presupuesto") }
+)
+
 const ProductDrawerById = dynamic(
     () => import("@/features/inventory").then((m) => m.ProductDrawerById),
     { ssr: false, loading: () => skeleton("producto") }
@@ -429,6 +439,12 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         <RecordDrawer<Partial<Attribute>> endpoint="/inventory/attributes" id={id} data={data} label="atributo">
             {(record) => <AttributeDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
         </RecordDrawer>
+    ),
+    "production.bom": ({ id, open, onOpenChange, onSuccess }) => (
+        <BOMRecordDrawer id={id} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
+    ),
+    "accounting.budget": ({ id, data, open, onOpenChange }) => (
+        <BudgetRecordEditor id={id} data={data} open={open} onOpenChange={onOpenChange} />
     ),
     "inventory.uomcategory": ({ id, open, onOpenChange, data, onSuccess }) => (
         <RecordDrawer<UoMCategory> endpoint="/inventory/uom-categories" id={id} data={data} label="categoría de unidades">
