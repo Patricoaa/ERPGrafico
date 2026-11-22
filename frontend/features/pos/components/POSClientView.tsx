@@ -10,10 +10,10 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip } from '@/components/shared'
+import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip, StepHeader } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, FileText, BarChart3, Save, Lock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag } from 'lucide-react'
+import { Loader2, FileText, BarChart3, Save, Lock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag, ShoppingBasket } from 'lucide-react'
 
 import {
     DropdownMenu,
@@ -64,7 +64,8 @@ import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
 import { SessionControl, type SessionControlHandle } from '@/features/pos/components/SessionControl'
 import { SessionOpenView } from '@/features/pos/components/SessionOpenView'
 import { POSTopBar } from '@/features/pos/components/flow/POSTopBar'
-import { cashModeLabel } from '@/features/pos/components/flow/flowParts'
+import { POSIdleScreen, POSLiveTime } from '@/features/pos/components/flow/POSIdleScreen'
+import { useIdle } from '@/features/pos/hooks/useIdle'
 import { ScannerFeedback, type ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing-utils'
 import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
@@ -88,6 +89,9 @@ const NumpadModal = dynamic(
     () => import('@/components/shared').then(mod => ({ default: mod.NumpadModal })),
     { ssr: false }
 )
+
+/** Inactividad antes de mostrar el protector de pantalla del POS. */
+const POS_IDLE_TIMEOUT_MS = 5 * 60 * 1000
 
 export function POSClientView() {
     const {
@@ -158,7 +162,7 @@ export function POSClientView() {
     const { forget: forgetOperatorPass, release: releaseOperatorPass, ensureOperator, isMultiUser, activePass } = useOperatorGate()
     // En caja multiusuario el menú refleja a quien opera ahora; sin operador, a la cuenta del dispositivo.
     const menuUsername = (isMultiUser && activePass?.operator.username) || user?.username || 'Usuario'
-    const { saveDraft, loadDraft, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
+    const { saveDraft, loadDraft, deleteDraft, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
         browserSessionKey,
         acquireLock,
         releaseLock,
@@ -410,9 +414,21 @@ export function POSClientView() {
         setPosMode('SHOPPING'); toast.success("Venta completada exitosamente")
     }
 
-    const handleSuspendDraft = async (finalState: CheckoutWizardState) => {
+    const [handoffOpen, setHandoffOpen] = useState(false)
+
+    /** Vacía el carrito y elimina su borrador, si ya se había guardado. */
+    const handleClearCart = async () => {
+        if (currentDraftId) await deleteDraft(currentDraftId)
+        else await releaseCurrentLock()
+        setCurrentDraftId(null); setWizardState(null); clearCart()
+        await fetchDrafts()
+        forceSync()
+        setPosMode('SHOPPING')
+    }
+
+    const handleSuspendDraft = async (finalState?: CheckoutWizardState) => {
         try {
-            await saveDraft(undefined, true, finalState as unknown as Record<string, unknown>)
+            await saveDraft(undefined, true, finalState as unknown as Record<string, unknown> | undefined)
         } catch (error) {
             console.error("Failed to suspend draft", error)
         }
@@ -423,7 +439,7 @@ export function POSClientView() {
         await fetchDrafts()
         forceSync()
         setPosMode('SHOPPING')
-        toast.success("Borrador liberado y listo para pago")
+        toast.success("Carrito liberado: continúalo desde otro equipo")
     }
 
     const handleQuickSale = async () => {
@@ -440,6 +456,8 @@ export function POSClientView() {
         setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: dateString || new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as unknown as WizardState)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
+
+    const { idle: screenIdle, wake: wakeScreen } = useIdle(POS_IDLE_TIMEOUT_MS, currentSession !== null)
 
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)
 
@@ -460,18 +478,27 @@ export function POSClientView() {
         )
     }
 
+    const operatorName = isMultiUser && activePass ? activePass.operator.full_name : null
+    const sessionSubtitle = (
+        <>
+            {operatorName && <>{operatorName} · </>}
+            <span className="font-mono tabular-nums">Sesión #{currentSession?.id}</span> · <POSLiveTime />
+        </>
+    )
+
     return (
         <>
+        <POSIdleScreen
+            open={screenIdle}
+            title={currentSession?.terminal_name || "Punto de Venta"}
+            subtitle={sessionSubtitle}
+            detail={operatorName ? `Operador: ${operatorName}` : undefined}
+            onWake={wakeScreen}
+        />
         <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-500 motion-reduce:animate-none">
             <POSTopBar
                 title={currentSession?.terminal_name || "Punto de Venta"}
-                subtitle={currentSession
-                    ? [
-                        cashModeLabel(currentSession.my_mode),
-                        isMultiUser && activePass ? activePass.operator.full_name : null,
-                        `Sesión #${currentSession.id}`,
-                    ].filter(Boolean).join(" · ")
-                    : undefined}
+                subtitle={currentSession ? sessionSubtitle : undefined}
                 progress={<div className="w-full max-w-3xl"><POSCheckoutHeader /></div>}
                 actions={<>
                     {(() => {
@@ -618,8 +645,11 @@ export function POSClientView() {
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
                         <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
-                            <Card className="surface-panel flex-1 flex flex-col overflow-hidden border-border/60 shadow-lg shadow-black/10 p-2">
-                                <div className={cn("px-2 border-b border-border/40 space-y-2", "pb-1.5 mb-1.5")}>
+                            <div className="flex-1 flex flex-col min-h-0 rounded-sm border border-border bg-card p-3">
+                                <div className="pb-2">
+                                    <StepHeader title="Productos" description="Busque o escanee los productos para agregarlos al carrito." icon={ShoppingBasket} />
+                                </div>
+                                <div className="space-y-2 pb-2">
                                     <SearchBar
                                         className="bg-muted/50 hover:bg-muted/70 focus-within:bg-muted/70"
                                         value={searchTerm}
@@ -641,11 +671,11 @@ export function POSClientView() {
                                         />
                                     )}
                                 </div>
-                                <div className="flex-1 px-1.5 pb-1"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
-                            </Card>
+                                <div className="flex-1 min-h-0 overflow-hidden"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
+                            </div>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="surface-panel flex-1 flex flex-col min-h-0 border-border/50 shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
+                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 rounded-sm border border-border bg-card overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
                             <SalesCheckoutWizardView
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}
@@ -703,9 +733,9 @@ export function POSClientView() {
                         onCheckoutNext={handleCheckoutNext}
                         onCheckoutFinish={handleCheckoutFinish}
                         onCancel={() => setPosMode('SHOPPING')}
-                        onSuspend={() => {
-                            if (wizardState) handleSuspendDraft(wizardState as unknown as CheckoutWizardState)
-                        }}
+                        onHandoff={() => setHandoffOpen(true)}
+                        onClear={() => { void handleClearCart() }}
+                        autoSaveStatus={isSaving ? 'saving' : lastSaved ? 'synced' : 'idle'}
                         isLastStep={isCheckoutLastStep}
                         checkoutLoading={false}
                         paymentMethod={wizardState?.paymentData?.method}
@@ -785,6 +815,16 @@ export function POSClientView() {
                     />
                 )}
             </BaseModal>
+
+            <ActionConfirmModal
+                open={handoffOpen}
+                onOpenChange={setHandoffOpen}
+                onConfirm={() => handleSuspendDraft(wizardState as unknown as CheckoutWizardState | undefined)}
+                title="Continuar en otro equipo"
+                variant="warning"
+                confirmText="Liberar y continuar"
+                description="Esta acción liberará el carrito y podrás editarlo desde otro equipo."
+            />
 
             {/* Partner Withdrawal Confirmation */}
             <ActionConfirmModal

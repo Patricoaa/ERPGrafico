@@ -3,10 +3,13 @@
 import { Button } from "@/components/ui/button"
 import React, { useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { Trash2, Calculator, Info, Minus, Plus } from "lucide-react"
-import { Drawer } from '@/components/shared'
+import { Trash2, Calculator, Info, Minus, Plus, Package } from "lucide-react"
+import {
+    Drawer, StepHeader, SummaryActions, SummaryLine, SummaryLineList, SummaryMenu,
+    SummaryPanel, SummaryPanelHeader, SummaryTotal,
+} from '@/components/shared'
 import { ProductGridPicker } from "@/components/selectors"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
@@ -174,9 +177,15 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
         >
             <div className="flex-1 overflow-hidden flex">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="w-[60%] flex flex-col p-4 gap-4 min-h-0">
+                <div className="w-[60%] flex flex-col p-4 min-h-0">
+                    <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-sm border border-border bg-card p-3">
+                    <StepHeader
+                        title="Selección de Productos"
+                        description="Agregue los productos para estimar el costo de producción."
+                        icon={Package}
+                    />
                     {loading ? (
-                        <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-muted/10 py-1.5">
+                        <Card className="flex-1 flex flex-col shadow-none border-0 bg-transparent py-0">
                             <div className="px-2 pt-1.5 pb-1.5 border-b">
                                 <POSSearchSkeleton />
                             </div>
@@ -209,132 +218,134 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                 )
                             }}
                             priceLabel="Costo"
+                            transparent
                         />
                     )}
+                    </div>
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[45%] flex flex-col p-4 gap-4 min-h-0">
-                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border">
-                        <ScrollArea className="flex-1">
-                            {loading ? (
-                                <POSCartItemsSkeleton count={6} />
-                            ) : selectedItems.length === 0 ? (
-                                <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
-                                    <div className="h-16 w-16 rounded-sm flex items-center justify-center">
-                                        <Calculator className="h-8 w-8 text-muted-foreground/20" />
-                                    </div>
+                <div className="w-[45%] flex flex-col p-4 min-h-0">
+                    <SummaryPanel>
+                        <SummaryPanelHeader
+                            title="Tu lista"
+                            count={selectedItems.length}
+                            menu={<SummaryMenu items={[{
+                                id: 'clear',
+                                label: 'Vaciar lista',
+                                icon: Trash2,
+                                destructive: true,
+                                hidden: selectedItems.length === 0,
+                                onSelect: () => setSelectedItems([]),
+                            }]} />}
+                        />
+
+                        <SummaryLineList
+                            isLoading={loading}
+                            loading={<POSCartItemsSkeleton count={6} />}
+                            isEmpty={selectedItems.length === 0}
+                            empty={
+                                <>
+                                    <Calculator className="size-12 text-muted-foreground/30" aria-hidden />
                                     <div className="space-y-1">
-                                        <p className="font-bold text-sm">Tu lista está vacía</p>
-                                        <p className="max-w-[200px] text-2xs italic opacity-70">
-                                            Agrega productos del catálogo para calcular costos.
-                                        </p>
+                                        <p className="text-lg font-bold tracking-tight text-muted-foreground">Tu lista está vacía</p>
+                                        <p className="mx-auto max-w-[260px] text-sm">Toca productos del catálogo para calcular costos.</p>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col gap-2 p-3">
-                                    {selectedItems.map((item) => (
-                                        <div key={item.id} className="surface-item flex flex-col gap-1 p-3 border-border/40 bg-card/5 group">
-                                            <div className="grid grid-cols-[1fr_auto_1fr_auto_auto_auto] gap-x-1 items-start">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold truncate">{item.product.name}</span>
-                                                    <span className="text-3xs text-muted-foreground font-medium">{formatCurrency(item.unit_cost)}/u</span>
-                                                </div>
-
-                                                <div className="flex flex-col items-center">
-                                                    <div className="flex items-center gap-0">
-                                                        <Button
-                                                            className="rounded-full h-control-sm w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                                                            onClick={() => {
-                                                                const qty = Math.max(0.01, item.quantity - 1)
-                                                                updateQuantity(item.id, qty)
-                                                            }}
-                                                            disabled={item.quantity <= 0.01}
-                                                            type="button"
-                                                        >
-                                                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
-                                                        </Button>
-
-                                                        <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
-
-                                                        <Button
-                                                            className="rounded-full h-control-sm w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors"
-                                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                            type="button"
-                                                        >
-                                                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                                                        </Button>
-                                                    </div>
-                                                    <div className="flex justify-center mt-0.5">
-                                                        <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
-                                                            <SelectTrigger className="h-5 text-4xs border-muted-foreground/20 px-1.5 py-0 bg-background min-w-0">
-                                                                <SelectValue placeholder="Seleccionar..." />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {(item.product.available_uoms || []).map(uom => (
-                                                                    <SelectItem key={uom.id} value={String(uom.id)} className="text-4xs py-0.5">
-                                                                        {uom.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-
-                                                <div />
-                                                <div />
-
-                                                <div className="flex flex-col items-end ml-6">
-                                                    <span className="text-sm font-bold text-primary leading-none">{formatCurrency(item.subtotal)}</span>
-                                                </div>
-
-                                                <div>
-                                                    <Button
-                                                        className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-all h-control-sm w-8 rounded-full hover:bg-destructive/10"
-                                                        onClick={() => removeItem(item.id)}
-                                                        type="button"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
+                                </>
+                            }
+                        >
+                            {selectedItems.map((item) => (
+                                <SummaryLine
+                                    key={item.id}
+                                    name={item.product.name}
+                                    total={formatCurrency(item.subtotal)}
+                                    unit={<>{formatCurrency(item.unit_cost)} ×</>}
+                                    stepper={
+                                        <div className="flex h-control-lg items-center overflow-hidden rounded-sm border border-border bg-background">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="size-control-lg rounded-none border-none shadow-none disabled:opacity-30"
+                                                aria-label="Disminuir cantidad"
+                                                onClick={() => updateQuantity(item.id, Math.max(0.01, item.quantity - 1))}
+                                                disabled={item.quantity <= 0.01}
+                                            >
+                                                <Minus className="size-4" aria-hidden />
+                                            </Button>
+                                            <Input
+                                                type="number"
+                                                inputMode="decimal"
+                                                step="any"
+                                                min="0.01"
+                                                value={item.quantity}
+                                                onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
+                                                aria-label="Cantidad"
+                                                className="h-full w-16 rounded-none border-x border-y-0 border-border bg-transparent p-0 text-center font-mono text-base font-bold shadow-none focus-visible:ring-0"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="size-control-lg rounded-none border-none shadow-none"
+                                                aria-label="Aumentar cantidad"
+                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                            >
+                                                <Plus className="size-4" aria-hidden />
+                                            </Button>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </ScrollArea>
+                                    }
+                                    uom={
+                                        <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
+                                            <SelectTrigger className="h-control-lg w-auto min-w-24 gap-1 rounded-sm px-3 text-sm font-semibold text-foreground" aria-label="Unidad de medida">
+                                                <SelectValue placeholder="Unidad" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {(item.product.available_uoms || []).map(uom => (
+                                                    <SelectItem key={uom.id} value={String(uom.id)} className="min-h-control-touch text-base">
+                                                        {uom.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    }
+                                    actions={
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-control-lg rounded-sm text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                                            onClick={() => removeItem(item.id)}
+                                            aria-label={`Quitar ${item.product.name}`}
+                                        >
+                                            <Trash2 className="size-4" aria-hidden />
+                                        </Button>
+                                    }
+                                />
+                            ))}
+                        </SummaryLineList>
 
-                        {/* Totals Section Align with POS */}
-                        <div className="p-6 border-t space-y-4 shrink-0">
-                            <div className="space-y-1.5">
-                                <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
-                                    <span>Costo Neto</span>
-                                    <span>{formatCurrency(totalCost)}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
-                                    <span>IVA Estimado ({rate}%)</span>
-                                    <span>{formatCurrency(Math.round(totalCost * (rate / 100)))}</span>
-                                </div>
-                                <div className="flex justify-between items-center pt-3 border-t">
-                                    <div className="flex flex-col">
-                                        <span className="text-lg font-black text-primary uppercase tracking-tighter">
-                                            Total
-                                        </span>
-                                    </div>
-                                    <span className="text-3xl font-black text-primary tracking-tighter">
-                                        {formatCurrency(Math.round(totalCost * multiplier))}
-                                    </span>
-                                </div>
-                            </div>
+                        <SummaryTotal
+                            label="Costo total"
+                            total={formatCurrency(Math.round(totalCost * multiplier))}
+                            breakdown={[
+                                { label: 'Costo neto', value: formatCurrency(totalCost) },
+                                { label: `IVA estimado ${rate}%`, value: formatCurrency(Math.round(totalCost * (rate / 100))) },
+                            ]}
+                            note={<><Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />Simulación con precio de costo. No mueve stock ni genera registros.</>}
+                        />
 
-                            <div className="bg-primary/5 border border-primary/10 rounded-sm p-3 flex items-start gap-3">
-                                <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                                <p className="text-3xs text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
-                                    Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.
-                                </p>
-                            </div>
-                        </div>
-                    </Card>
+                        <SummaryActions>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-control-touch gap-2 rounded-sm text-base font-black"
+                                disabled={selectedItems.length === 0}
+                                onClick={() => setSelectedItems([])}
+                            >
+                                <Trash2 className="size-5" aria-hidden />
+                                Vaciar lista
+                            </Button>
+                        </SummaryActions>
+                    </SummaryPanel>
                 </div>
             </div>
         </Drawer>

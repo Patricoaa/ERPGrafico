@@ -3,12 +3,11 @@
 import { Button } from "@/components/ui/button"
 import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { BaseModal, CardSurface } from "@/components/shared"
+import { BaseModal, SummaryLine } from "@/components/shared"
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
 import { useTouchMode } from '@/hooks/useTouchMode'
-import { Trash2, Minus, Plus, Percent } from 'lucide-react'
+import { Trash2, Minus, Plus, Percent, ChevronDown } from 'lucide-react'
 import type { CartItem as CartItemType, Product, UoM } from '../types'
 import type { UoM as EntityUoM } from '@/types/entities'
 
@@ -117,229 +116,151 @@ function CartItemComponent({
 
     const isOverLimit = maxQty !== undefined && maxQty !== Infinity && item.qty > maxQty
 
-    return (
-        <CardSurface
-            kind="item"
-            interactive={false}
-            className="gap-2 p-2.5"
-            style={isTouchMode ? { touchAction: 'manipulation' } : undefined}
+    const hasDiscount = (item.discount_amount || 0) > 0
+    const hasMax = maxQty !== undefined && maxQty !== Infinity
+    const stepBtn = "size-control-lg rounded-none border-none shadow-none hover:bg-accent disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10"
+
+    const stepper = (
+        <div className="flex h-control-lg items-center overflow-hidden rounded-sm border border-border bg-background">
+            <Button
+                variant="ghost"
+                className={stepBtn}
+                aria-label="Disminuir cantidad"
+                {...(isTouchMode ? {
+                    onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(-1) },
+                    onPointerUp: clearLongPress,
+                    onPointerLeave: clearLongPress,
+                } : {
+                    onClick: () => handleQtyStep(-1),
+                })}
+                disabled={item.qty <= 0.01}
+                type="button"
+            >
+                <Minus className="size-4" aria-hidden />
+            </Button>
+
+            {isTouchMode ? (
+                <button
+                    type="button"
+                    className={cn("h-full w-14 select-none border-x border-border text-center font-mono text-base font-bold tabular-nums", isOverLimit && "text-destructive")}
+                    onClick={() => onOpenNumpad(item.cartItemId, 'qty', item.qty)}
+                    aria-label={`Cantidad ${item.qty}. Tocar para editar`}
+                >
+                    {item.qty}
+                </button>
+            ) : (
+                <Input
+                    type="number"
+                    inputMode="decimal"
+                    className={cn("h-full w-14 rounded-none border-x border-y-0 border-border bg-transparent p-0 text-center font-mono text-base font-bold shadow-none focus-visible:ring-0", isOverLimit && "text-destructive")}
+                    value={item.qty}
+                    onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
+                    min="0.01"
+                    aria-label="Cantidad"
+                />
+            )}
+
+            <Button
+                variant="ghost"
+                className={stepBtn}
+                aria-label="Aumentar cantidad"
+                {...(isTouchMode ? {
+                    onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(1) },
+                    onPointerUp: clearLongPress,
+                    onPointerLeave: clearLongPress,
+                } : {
+                    onClick: () => handleQtyStep(1),
+                })}
+                disabled={hasMax && item.qty >= (maxQty ?? 0)}
+                type="button"
+            >
+                <Plus className="size-4" aria-hidden />
+            </Button>
+        </div>
+    )
+
+    const uom = hasMultipleUoms ? (
+        <Button
+            variant="outline"
+            type="button"
+            className="h-control-lg gap-1 rounded-sm px-3 text-sm font-semibold text-foreground"
+            onClick={() => setUomDialogOpen(true)}
         >
-            {/* Top Row: Name and Total/Delete */}
-            <div className="flex justify-between items-start gap-3">
-                <div className="flex flex-col min-w-0 flex-1">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span className={cn(
-                                "font-medium truncate block cursor-default text-foreground/90", 
-                                "text-sm touch:text-base"
-                            )}>
-                                {item.name}
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">{item.name}</TooltipContent>
-                    </Tooltip>
-                    
-                    {/* Unit Price Info */}
-                    {originalProduct?.is_dynamic_pricing && (
-                        <Button 
-                            onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} 
-                            className={cn(
-                                "text-primary text-left underline-offset-2 hover:underline font-medium transition-colors mt-0.5", 
-                                "text-2xs touch:text-xs"
-                            )} 
-                            type="button"
-                        >
-                            Editar precio
-                        </Button>
-                    )}
-                </div>
+            {item.uom_name}
+            <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
+        </Button>
+    ) : (
+        <span className="text-sm">{item.uom_name}</span>
+    )
 
-                <div className="flex items-center gap-2 shrink-0">
-                    {/* Discount: icon when empty, amount when applied */}
-                    {showLineDiscount && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                {(item.discount_amount || 0) > 0 ? (
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "font-medium transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
-                                            "h-control-xs px-2 text-xs touch:h-control-md touch:text-sm"
-                                        )}
-                                        onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
-                                        type="button"
-                                        title="Editar descuento"
-                                    >
-                                        -{formatCurrency(item.discount_amount)}
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "flex items-center justify-center transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted",
-                                            "h-control-xs w-7 touch:h-control-md touch:w-9"
-                                        )}
-                                        onClick={() => onOpenNumpad(item.cartItemId, 'discount', 0)}
-                                        type="button"
-                                        title="Agregar descuento"
-                                    >
-                                        <Percent className={cn("h-4 w-4 touch:h-4.5 touch:w-4.5")} />
-                                    </Button>
-                                )}
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs">
-                                {(item.discount_amount || 0) > 0
-                                    ? `Descuento: ${formatCurrency(item.discount_amount)} — clic para editar`
-                                    : "Agregar descuento"
-                                }
-                            </TooltipContent>
-                        </Tooltip>
-                    )}
+    const badges = (
+        <>
+            {hasDiscount && (
+                <span className="rounded-sm bg-destructive/10 px-1.5 py-0.5 font-mono text-xs font-bold tabular-nums text-destructive">
+                    -{formatCurrency(item.discount_amount)}
+                </span>
+            )}
+            {hasMax && (
+                <span className={cn(
+                    "rounded-full border px-1.5 py-px text-3xs font-bold uppercase tracking-wider",
+                    isOverLimit ? "border-destructive bg-destructive text-destructive-foreground" : "border-border text-muted-foreground"
+                )}>
+                    Máx {maxQty}
+                </span>
+            )}
+            {originalProduct?.is_dynamic_pricing && (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-control-sm px-2 text-xs font-medium text-primary underline underline-offset-2"
+                    onClick={() => onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)}
+                >
+                    Editar precio
+                </Button>
+            )}
+        </>
+    )
 
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span className={cn(
-                                "font-bold text-primary leading-none cursor-help",
-                                "text-base ml-1 touch:text-lg"
-                            )}>
-                                {formatCurrency(item.total_gross)}
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <div className="flex flex-col gap-1 text-xs">
-                                <span>Bruto: {formatCurrency(item.unit_price_gross)}/u</span>
-                                <span>Neto: {formatCurrency(item.unit_price_net)}/u</span>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
+    const actions = (
+        <>
+            {showLineDiscount && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className={cn("size-control-lg rounded-sm", hasDiscount ? "border-destructive/40 text-destructive" : "text-muted-foreground hover:text-foreground")}
+                    onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
+                    aria-label={hasDiscount ? "Editar descuento" : "Agregar descuento"}
+                >
+                    <Percent className="size-4" aria-hidden />
+                </Button>
+            )}
+            {posMode === 'SHOPPING' && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-control-lg rounded-sm text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => onRemove(item.cartItemId)}
+                    aria-label={`Eliminar ${item.name}`}
+                >
+                    <Trash2 className="size-4" aria-hidden />
+                </Button>
+            )}
+        </>
+    )
 
-                    {posMode === 'SHOPPING' && (
-                        <Button
-                            variant="ghost"
-                            className={cn(
-                                "flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-md shrink-0 ml-1 border-none shadow-none",
-                                "h-control-xs w-7 touch:h-control-md touch:w-9"
-                            )}
-                            onClick={() => onRemove(item.cartItemId)}
-                            type="button"
-                            title="Eliminar"
-                        >
-                            <Trash2 className="h-4 w-4 touch:h-4.5 touch:w-4.5" />
-                        </Button>
-                    )}
-                </div>
-            </div>
-
-            {/* Bottom Row: UoM & Pill Stepper */}
-            <div className="flex items-center justify-between border-t border-border/50 pt-2.5 mt-0.5">
-                <div className="flex items-center">
-                    {hasMultipleUoms ? (
-                        <Button
-                            variant="ghost"
-                            type="button"
-                            className={cn(
-                                "font-semibold underline underline-offset-2 border-none bg-transparent text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center px-1 rounded-sm hover:bg-primary/5 shadow-none",
-                                "text-xs h-6 touch:text-sm touch:h-control-xs"
-                            )}
-                            onClick={() => setUomDialogOpen(true)}
-                        >
-                            {item.uom_name}
-                        </Button>
-                    ) : (
-                        <span className={cn(
-                            "text-muted-foreground/70 font-medium px-1", 
-                            "text-xs touch:text-sm"
-                        )}>
-                            {item.uom_name}
-                        </span>
-                    )}
-                </div>
-
-                {/* Right Side: Pill Stepper with floating MAX Chip */}
-                <div className="relative flex flex-col items-center">
-                    {/* Pill Stepper */}
-                    <div className={cn(
-                        "flex items-center bg-muted/40 border border-border/50 rounded-md overflow-hidden",
-                        "h-7 touch:h-8"
-                    )}>
-                    <Button
-                        variant="ghost"
-                        className={cn(
-                            "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
-                            "w-7 h-full touch:w-9"
-                        )}
-                        {...(isTouchMode ? {
-                            onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(-1) },
-                            onPointerUp: clearLongPress,
-                            onPointerLeave: clearLongPress,
-                        } : {
-                            onClick: () => handleQtyStep(-1),
-                        })}
-                        disabled={item.qty <= 0.01}
-                        type="button"
-                    >
-                        <Minus className={cn("text-foreground h-3 w-3 touch:h-3.5 touch:w-3.5")} />
-                    </Button>
-
-                    <div className="flex flex-col items-center justify-center border-x border-border/50 bg-background/50 h-full">
-                        {isTouchMode ? (
-                            <div className="w-12 text-center cursor-pointer select-none flex items-center justify-center h-full" onClick={() => onOpenNumpad(item.cartItemId, 'qty', item.qty)}>
-                                <span className={cn(
-                                    "font-bold text-foreground", 
-                                    isOverLimit && "text-destructive", 
-                                    "text-xs touch:text-sm"
-                                )}>
-                                    {item.qty}
-                                </span>
-                            </div>
-                        ) : (
-                            <Input
-                                type="number"
-                                className={cn(
-                                    "h-full w-10 text-center font-bold bg-transparent border-none focus-visible:ring-0 shadow-none p-0", 
-                                    isOverLimit && "text-destructive", 
-                                    "text-xs"
-                                )}
-                                value={item.qty}
-                                onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
-                                min="0.01"
-                            />
-                        )}
-                    </div>
-
-                    <Button
-                        variant="ghost"
-                        className={cn(
-                            "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
-                            "w-7 h-full touch:w-9"
-                        )}
-                        {...(isTouchMode ? {
-                            onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(1) },
-                            onPointerUp: clearLongPress,
-                            onPointerLeave: clearLongPress,
-                        } : {
-                            onClick: () => handleQtyStep(1),
-                        })}
-                        disabled={maxQty !== undefined && maxQty !== Infinity && item.qty >= maxQty}
-                        type="button"
-                    >
-                        <Plus className={cn("text-foreground h-3 w-3 touch:h-3.5 touch:w-3.5")} />
-                    </Button>
-                </div>
-
-                {maxQty !== undefined && maxQty !== Infinity && (
-                    <div className={cn(
-                        "absolute -bottom-2 flex items-center px-1.5 py-px rounded-full font-bold uppercase tracking-wider border shadow-sm",
-                        "text-4xs",
-                        isOverLimit 
-                            ? "bg-destructive text-destructive-foreground border-destructive" 
-                            : "bg-background text-muted-foreground border-border/70"
-                    )}>
-                        Max {maxQty}
-                    </div>
-                )}
-                </div>
-            </div>
+    return (
+        <div style={isTouchMode ? { touchAction: 'manipulation' } : undefined}>
+            <SummaryLine
+                name={item.name}
+                total={formatCurrency(item.total_gross)}
+                unit={<>{formatCurrency(item.unit_price_gross)} ×</>}
+                stepper={stepper}
+                uom={uom}
+                badges={badges}
+                actions={actions}
+            />
 
             <BaseModal
                 open={uomDialogOpen}
@@ -357,7 +278,7 @@ function CartItemComponent({
                             variant="ghost"
                             type="button"
                             className={cn(
-                                "w-full text-center px-4 py-3 text-sm rounded-lg hover:bg-muted transition-colors border border-transparent shadow-none",
+                                "h-control-touch w-full rounded-lg border border-transparent px-4 text-center text-base shadow-none hover:bg-muted",
                                 item.uom === uom.id && "bg-primary/5 border-primary/20 text-primary font-medium"
                             )}
                             onClick={() => {
@@ -370,7 +291,7 @@ function CartItemComponent({
                     ))}
                 </div>
             </BaseModal>
-        </CardSurface>
+        </div>
     )
 }
 

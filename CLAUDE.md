@@ -44,6 +44,7 @@ Task routing — common intents:
 | Entity collection / table / card / list columns / value kind / `defineEntity` / entity-view | [component-entity-view.md](docs/20-contracts/component-entity-view.md) |
 | Legacy field type / DataCell assignment / createEntityFields / \*Fields.ts (frozen) | [component-fields.md](docs/20-contracts/component-fields.md) |
 | KPI / métrica / stat / `Metric` / `MetricStrip` / `ChartCard` / `kpi-value` | [component-metric.md](docs/20-contracts/component-metric.md) |
+| Panel derecho de resumen (carrito POS / lista calculadora) / `SummaryPanel` / handoff "Continuar en otro equipo" | [component-summary-panel.md](docs/20-contracts/component-summary-panel.md) |
 | Card (choice / item / nav / metric / panel) / card surface / `CardLead` / `CardRail` / `cardAnatomy` | [component-card-family.md](docs/20-contracts/component-card-family.md) |
 | Badge / chip / pill for a label or tag | [component-chip.md](docs/20-contracts/component-chip.md) |
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
