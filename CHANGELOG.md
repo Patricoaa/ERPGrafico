@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.143](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.142...v0.3.143) (2026-11-22)
+
+
+### ✨ Features
+
+* **accounting:** cuenta, asiento (vista) y documentos/importaciones RCV abren pestañas propias (ADR-0152, oleada 2) ([8e6a1a2](https://github.com/Patricoaa/ERPGrafico/commit/8e6a1a256041868590591cda9653c48ce4a86d85))
+* **contacts:** cada contacto abre su propia pestaña (ADR-0152, oleada 1) ([614c4d2](https://github.com/Patricoaa/ERPGrafico/commit/614c4d2c4d365e8e7ba9afc9f9bf1e3c65ab24c5))
+* **documents:** las listas de documentos abren una pestaña por documento y resaltan la fila activa (ADR-0152, oleada 5) ([9fd57f8](https://github.com/Patricoaa/ERPGrafico/commit/9fd57f83f23f54d7be5177f3666e5a2c7fe7043b))
+* **hr,settings:** empleado, ausencia, anticipo, nómina y usuario abren pestañas propias (ADR-0152, oleada 2) ([6ab364c](https://github.com/Patricoaa/ERPGrafico/commit/6ab364cbf934f496a13d647766977e060c2ce6c1))
+* **inventory:** categoría de UdM y conteo abren pestañas propias (ADR-0152, oleada 3) ([74bb646](https://github.com/Patricoaa/ERPGrafico/commit/74bb6465179306f215707a12a0c36783b4e3c7f0))
+* **inventory:** producto, categoría, almacén, UdM, atributo y regla abren pestañas propias (ADR-0152, oleada 2) ([7f0738a](https://github.com/Patricoaa/ERPGrafico/commit/7f0738a90c11c88f29b8500099aa033fd4485d50))
+* **partners,inventory,sales:** socios, distribuciones, movimientos y terminales POS abren pestañas propias; contratos al día (ADR-0152, oleada 4) ([2f964fc](https://github.com/Patricoaa/ERPGrafico/commit/2f964fcc018ef3d95d98138e2c75c208f6ee60bb))
+* **production,finance:** lista de materiales y presupuesto abren pestañas propias (ADR-0152, oleada 3) ([ec6d1d0](https://github.com/Patricoaa/ERPGrafico/commit/ec6d1d03edfe93a0f510d29b8e1350a137d5b346))
+* **production:** las órdenes de trabajo abren una pestaña por OT con su display_id (ADR-0152) ([5f9814f](https://github.com/Patricoaa/ERPGrafico/commit/5f9814f80aa0b387503e7c21da9090035a87a6da))
+* **tabs:** ADR-0152 y oleada 0 de pestañas de registro múltiples ([#260](https://github.com/Patricoaa/ERPGrafico/issues/260)) ([663706e](https://github.com/Patricoaa/ERPGrafico/commit/663706e344bf10099f394e9121ef84197963831e))
+* **treasury,tax,purchasing:** banco, método de pago, crédito, F29 y suscripción abren pestañas propias (ADR-0152, oleada 3) ([3dc6c12](https://github.com/Patricoaa/ERPGrafico/commit/3dc6c12f6dc981e4b5c8fd688e93d3c9b2a4dcd6))
+* **treasury:** cuentas, movimientos, ventas/sincronizaciones y hardware de cobro abren pestañas propias (ADR-0152, oleada 3) ([70a7382](https://github.com/Patricoaa/ERPGrafico/commit/70a73825423e025421930d527bc9397c324dce76))
+* **workspace:** OT y asientos pasan a features/, detalle de estado de tarjeta como pestaña y retiro de código muerto (ADR-0152, oleada 5) ([b4b7409](https://github.com/Patricoaa/ERPGrafico/commit/b4b7409df67a98c8b24cfe2568355227c9cb3ddc))
+
 ### [0.3.142](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.141...v0.3.142) (2026-11-22)
 
 
