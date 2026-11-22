@@ -8,7 +8,7 @@ import type { TaskAttachment } from '@/features/workflow'
 
 export type WizardMode =
     | { kind: 'create'; defaultOtType?: 'LINKED' | 'NONE'; defaultProductId?: string; initialData?: WorkOrderInitialData }
-    | { kind: 'manage'; orderId: number; targetStage?: StageId | 'BASIC_INFO' }
+    | { kind: 'manage'; orderId: number }
 
 export interface WorkOrderMaterial {
     id: number

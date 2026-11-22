@@ -200,9 +200,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     mode.kind === 'manage' ? mode.orderId : null
   )
   const wasCreatingRef = useRef(false)
-  // targetStage from the URL is only used for the initial navigation; subsequent
-  // fetchOrder calls (after transitions) must navigate to the actual current_stage.
-  const initialTargetUsedRef = useRef(false)
   const isCreating = localOrderId === null
 
   // ── mutations (all write ops via hook) ─────────────────────────────────────
@@ -396,17 +393,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
       // Resolve index using the same STAGES the component uses
       const stages = getUnifiedStages(inferredType, orderData as unknown as WorkOrder)
-      let resolvedIndex = -1
-      // targetStage (from the URL ?step= param) is only honoured on the first load.
-      // Post-transition refreshes must follow the order to its new current_stage.
-      const targetStage = !initialTargetUsedRef.current && mode.kind === 'manage' ? mode.targetStage : undefined
-      if (targetStage) {
-        resolvedIndex = stages.findIndex((s) => s.id === targetStage)
-        initialTargetUsedRef.current = true
-      }
-      if (resolvedIndex === -1) {
-        resolvedIndex = stages.findIndex((s) => s.id === (orderData as unknown as WorkOrder).current_stage)
-      }
+      // Every load follows the order to its current stage.
+      const resolvedIndex = stages.findIndex((s) => s.id === (orderData as unknown as WorkOrder).current_stage)
       setViewingStepIndex(resolvedIndex >= 0 ? resolvedIndex : 1)
     } catch {
       toast.error('No se pudo cargar la información de la OT')
@@ -432,11 +420,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     setPrevOpen(open)
     setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
   }
-
-  useEffect(() => {
-    // Reset so the new targetStage (from the URL) is honoured on re-open.
-    initialTargetUsedRef.current = false
-  }, [mode, open])
 
   useEffect(() => {
     // chosenOtType of a managed OT is set by fetchOrder once the order loads
@@ -477,18 +460,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Sync viewing stage to URL step query param
-  useEffect(() => {
-    if (localOrderId === null) return
-    const stage = STAGES[viewingStepIndex]?.id
-    if (!stage) return
-    const url = new URL(window.location.href)
-    if (url.searchParams.get('selected') !== String(localOrderId)) return
-    if (url.searchParams.get('step') === stage) return
-    url.searchParams.set('step', stage)
-    router.replace(url.pathname + url.search, { scroll: false })
-  }, [viewingStepIndex, localOrderId, STAGES, router])
 
   // ── handlers ───────────────────────────────────────────────────────────────
   const [approving, setApproving] = useState(false)
@@ -562,7 +533,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     if (transitioning) return
     if (isMovingForward && !(await approvePendingTasks())) return
     try {
-      initialTargetUsedRef.current = true
       const res: unknown = await mutations.transition({ nextStageId, data, notes })
       const targetStage = (res as { current_stage?: string })?.current_stage || nextStageId
       const targetIdx = STAGES.findIndex((s) => s.id === targetStage)
@@ -919,7 +889,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                           url.searchParams.delete('type')
                           url.searchParams.delete('product_id')
                           url.searchParams.set('selected', String(workOrderId))
-                          url.searchParams.set('step', 'MATERIAL_ASSIGNMENT')
                           router.replace(url.pathname + url.search, { scroll: false })
 
                           onSuccess?.(workOrderId)

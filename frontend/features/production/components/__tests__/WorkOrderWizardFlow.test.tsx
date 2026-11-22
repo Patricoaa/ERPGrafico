@@ -5,7 +5,6 @@ import React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { WorkOrderWizard } from "../WorkOrderWizard"
-import type { StageId } from "../../constants/stages"
 
 // Regressions of the OT flow audit: the wizard must follow the server's stage plan,
 // approve before every forward move, and never offer actions that point nowhere.
@@ -71,10 +70,10 @@ const baseOrder = {
     requires_postpress: false,
 }
 
-const renderManage = (targetStage?: StageId) =>
+const renderManage = () =>
     render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-            <WorkOrderWizard mode={{ kind: "manage", orderId: 7, targetStage }} open onOpenChange={vi.fn()} />
+            <WorkOrderWizard mode={{ kind: "manage", orderId: 7 }} open onOpenChange={vi.fn()} />
         </QueryClientProvider>
     )
 
@@ -138,8 +137,7 @@ describe("WorkOrderWizard — audit regressions", () => {
             currentOrder = { ...currentOrder, current_stage: "RECTIFICATION", next_stage: "FINISHED" }
             return Promise.resolve({ data: {} })
         })
-        // Opened from a URL with ?step=OUTSOURCING_ASSIGNMENT (the wizard keeps that param in sync).
-        renderManage("OUTSOURCING_ASSIGNMENT")
+        renderManage()
 
         fireEvent.click(await screen.findByRole("button", { name: "Siguiente Etapa" }))
 
@@ -194,8 +192,9 @@ describe("WorkOrderWizard — audit regressions", () => {
             stage_plan: ["MATERIAL_ASSIGNMENT", "OUTSOURCING_ASSIGNMENT", "RECTIFICATION", "FINISHED"],
         }
 
-        renderManage("MATERIAL_ASSIGNMENT")
-
+        renderManage()
+        // View a past stage through the rail, where the reopen action lives.
+        fireEvent.click(await screen.findByRole("button", { name: /Asignación de Materiales, paso/ }))
         fireEvent.click(await screen.findByRole("button", { name: /Reabrir etapa/ }))
 
         expect(screen.getByText(/Al salir de Rectificación se restaurarán las cantidades planificadas/)).toBeInTheDocument()

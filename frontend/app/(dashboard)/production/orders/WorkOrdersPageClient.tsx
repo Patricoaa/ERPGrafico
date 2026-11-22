@@ -22,7 +22,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { workOrderUnifiedSearchDef } from "@/features/production"
 import { toast } from "sonner"
 import { Collection, useEntityCollection, type CollectionViewMode } from "@/components/entity-view"
-import { workOrderEntity, workOrderViews, type WorkOrder, type WizardMode, type StageId } from "@/features/production"
+import { workOrderEntity, workOrderViews, type WorkOrder, type WizardMode } from "@/features/production"
 
 interface WorkOrdersPageClientProps {
     initialOrders?: WorkOrder[]
@@ -66,7 +66,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     const selectedId = searchParams.get('selected')
     const requestedType = searchParams.get('type')
     const requestedProductId = searchParams.get('product_id') || undefined
-    const requestedStage = searchParams.get('step') || undefined
 
     const wizardMode = useMemo((): WizardMode | null => {
         if (isNew) {
@@ -80,11 +79,10 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             return {
                 kind: 'manage',
                 orderId: Number(selectedId),
-                targetStage: requestedStage as StageId | undefined,
             }
         }
         return null
-    }, [isNew, selectedId, requestedType, requestedProductId, requestedStage])
+    }, [isNew, selectedId, requestedType, requestedProductId])
 
     const handleManage = useCallback((id: number) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -94,7 +92,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
 
     const closeWizard = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
-        ;['new', 'modal', 'selected', 'type', 'product_id', 'step'].forEach(p => params.delete(p))
+        ;['new', 'modal', 'selected', 'type', 'product_id'].forEach(p => params.delete(p))
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
