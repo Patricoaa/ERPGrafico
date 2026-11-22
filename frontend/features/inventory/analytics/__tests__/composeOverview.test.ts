@@ -22,7 +22,7 @@ const costs: ProductCosts = {
     mode: "purchased",
     today: { weighted_cost: 400, bom_cost: null, last_purchase: null, stock_qty: 10, stock_value: 4000 },
     kpis: { cost_change_pct: 12, replacement_gap_pct: null },
-    series: [], purchases: { min: null, max: null, avg: null, count: 0 }, bom: null, work_orders: [],
+    series: [], purchases: { min: null, max: null, avg: null, count: 0, items: [] }, bom: null, work_orders: [],
 }
 const procurement: ProductProcurement = {
     coverage: { stock_now: 30, daily_out: 3, coverage_days: 10 },

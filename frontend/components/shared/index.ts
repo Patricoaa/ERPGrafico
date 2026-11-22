@@ -43,6 +43,7 @@ export * from './ActionDock';
 export * from './Metric';
 export * from './MetricStrip';
 export * from './ChartCard';
+export * from './ChartSection';
 export * from './ChartLegend';
 export * from './AnalyticsPanel';
 export * from './CardSkeleton';

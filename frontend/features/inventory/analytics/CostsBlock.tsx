@@ -1,16 +1,17 @@
 "use client"
 
 import { useMemo, type ReactNode } from "react"
-import { LineChart, Metric, MetricStrip, type MetricDelta } from "@/components/shared"
+import { ChartSection, LineChart, Metric, MetricStrip, type MetricDelta } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
+import { LdmComposition } from "./LdmComposition"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
 import { composeCosts, type CostsComposition } from "./composeCosts"
 import type { CostsMode, CostsParams, CostsPoint, ProductCosts } from "./costs.types"
 import { periodToDateFrom, periodToGranularity, type PeriodKey } from "./period"
 import { useProductCosts } from "../hooks/useProductCosts"
 import {
-    costsBomEntity, costsBomViews, costsWorkOrdersEntity, costsWorkOrdersViews, type CostsBomRow,
+    costsPurchasesEntity, costsPurchasesViews, costsWorkOrdersEntity, costsWorkOrdersViews,
 } from "../entity-view/costs.entity"
 
 const CHART_MARGIN = { top: 24, right: 16, bottom: 28, left: 64 }
@@ -20,15 +21,15 @@ const money = (value: number | null) => (value === null ? null : formatMoney(val
 type SeriesKey = "weighted_cost" | "bom_cost" | "purchase_avg" | "real_avg"
 const SERIES_LABELS: Record<SeriesKey, string> = {
     weighted_cost: "Costo ponderado",
-    bom_cost: "BOM teórica",
+    bom_cost: "LdM teórica",
     purchase_avg: "Compras",
     real_avg: "Real por orden",
 }
 const SERIES_BY_MODE: Record<CostsMode, SeriesKey[]> = {
-    purchased: ["weighted_cost", "purchase_avg"],
+    purchased: ["weighted_cost"],
     stock_only: ["weighted_cost"],
-    manufactured_stock: ["weighted_cost", "bom_cost", "real_avg"],
-    manufactured_on_demand: ["bom_cost", "real_avg"],
+    manufactured_stock: ["weighted_cost"],
+    manufactured_on_demand: ["bom_cost"],
     manufactured_no_bom: ["real_avg"],
 }
 
@@ -71,7 +72,7 @@ function chartLines(series: CostsPoint[], mode: CostsMode) {
 
 function Secondary({ figure, data }: { figure: CostsComposition["secondary"][number]; data: ProductCosts }) {
     const { today } = data
-    if (figure === "bom_today") return <Metric label="Costo de BOM hoy" value={money(today.bom_cost)} context="Receta activa con costos de hoy" />
+    if (figure === "bom_today") return <Metric label="Costo de LdM hoy" value={money(today.bom_cost)} />
     if (figure === "last_purchase" && today.last_purchase) {
         const last = today.last_purchase
         return (
@@ -87,22 +88,12 @@ function Secondary({ figure, data }: { figure: CostsComposition["secondary"][num
 
 function CostsBody({ data }: { data: ProductCosts }) {
     const composition = composeCosts(data)
-    const bomRows = useMemo<CostsBomRow[]>(
-        () => (data.bom?.lines ?? []).map((line) => ({
-            name: line.name,
-            source: line.is_outsourced ? "Tercerizado" : "Componente",
-            qty_per_unit: line.qty_per_unit,
-            unit_cost: line.unit_cost,
-            cost: line.cost,
-            share_pct: line.share_pct,
-            change_pct: line.change_pct,
-        })),
-        [data.bom],
-    )
-    const bomCollection = useEntityCollection(costsBomEntity, { rows: bomRows }, { pagination: { mode: "none" } })
+    const purchasesCollection = useEntityCollection(costsPurchasesEntity, { rows: data.purchases.items }, { pagination: { mode: "none" } })
     const ordersCollection = useEntityCollection(costsWorkOrdersEntity, { rows: data.work_orders }, { pagination: { mode: "none" } })
     const lines = useMemo(() => chartLines(data.series, data.mode), [data.series, data.mode])
 
+    const hasLdm = composition.sections.includes("bom")
+    const hasOrders = composition.sections.includes("work_orders")
     const section = (id: string, title: string, body: ReactNode, note?: string) => (
         <section key={id} aria-label={id} className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">{title}</h3>
@@ -112,7 +103,7 @@ function CostsBody({ data }: { data: ProductCosts }) {
     )
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="@container flex flex-col gap-4">
             {composition.findings.length > 0 && (
                 <ul aria-label="Hallazgos" className="flex flex-col gap-2">
                     {composition.findings.map((finding) => (
@@ -132,43 +123,40 @@ function CostsBody({ data }: { data: ProductCosts }) {
             {composition.sections.map((name) => {
                 switch (name) {
                     case "chart":
-                        return section("Evolución del costo", "Evolución del costo", (
-                            <div className="h-64 min-h-0">
-                                <LineChart
-                                    data={lines}
-                                    margin={CHART_MARGIN}
-                                    tooltipFormat="currency"
-                                    enableArea={false}
-                                    pointSize={4}
-                                    axisBottom={{ tickSize: 0, tickPadding: 8 }}
-                                    axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                                    ariaLabel="Evolución del costo unitario en el periodo"
-                                />
-                            </div>
-                        ))
-                    case "purchases":
                         return (
-                            <MetricStrip key={name} label="Compras del periodo">
-                                <Metric label="Mínimo" value={money(data.purchases.min)} />
-                                <Metric label="Máximo" value={money(data.purchases.max)} />
-                                <Metric label="Promedio" value={money(data.purchases.avg)} />
-                                <Metric label="Recepciones" value={data.purchases.count} />
-                            </MetricStrip>
+                            <ChartSection key={name} title="Evolución del costo" label="Evolución del costo">
+                                <div className="h-64 min-h-0">
+                                    <LineChart
+                                        data={lines}
+                                        margin={CHART_MARGIN}
+                                        tooltipFormat="currency"
+                                        enableArea={false}
+                                        pointSize={4}
+                                        axisBottom={{ tickSize: 0, tickPadding: 8 }}
+                                        axisLeft={{ tickSize: 0, tickPadding: 8 }}
+                                        ariaLabel="Evolución del costo unitario en el periodo"
+                                    />
+                                </div>
+                            </ChartSection>
                         )
-                    case "bom":
-                        return section("Composición de la BOM", "Composición de la BOM", (
-                            <Collection.Root collection={bomCollection}>
-                                <Collection.View table={costsBomViews.table} emptyTitle="Sin componentes" emptyDescription="La BOM activa no tiene líneas." />
-                            </Collection.Root>
-                        ), "La evolución usa la receta actual valorada con el costo histórico de cada componente: los cambios de receta no se ven.")
-                    case "work_orders":
-                        return section("Órdenes de trabajo", "Costo real por orden", (
-                            <Collection.Root collection={ordersCollection}>
-                                <Collection.View table={costsWorkOrdersViews.table} emptyTitle="Sin órdenes" emptyDescription="No hay órdenes terminadas en el periodo." />
+                    case "purchases":
+                        return section("Compras del periodo", "Compras del periodo", (
+                            <Collection.Root collection={purchasesCollection}>
+                                <Collection.View frame="card" table={costsPurchasesViews.table} emptyTitle="Sin compras" emptyDescription="No hubo recepciones en el periodo." />
                             </Collection.Root>
                         ))
                 }
             })}
+            {(hasLdm || hasOrders) && (
+                <div className="grid items-start gap-4 @[34rem]:grid-cols-2">
+                    {hasLdm && <LdmComposition lines={data.bom?.lines ?? []} />}
+                    {hasOrders && section("Órdenes de trabajo", "Costo real por orden", (
+                        <Collection.Root collection={ordersCollection}>
+                            <Collection.View frame="card" table={costsWorkOrdersViews.table} emptyTitle="Sin órdenes" emptyDescription="No hay órdenes terminadas en el periodo." />
+                        </Collection.Root>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }

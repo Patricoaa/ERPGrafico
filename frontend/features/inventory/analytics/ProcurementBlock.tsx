@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { LineChart, Metric, MetricStrip } from "@/components/shared"
+import { ChartSection, LineChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
@@ -121,7 +121,8 @@ function ProcurementBody({ data, metric }: { data: ProductProcurement; metric: P
             {composition.sections.map((name) => {
                 switch (name) {
                     case "chart":
-                        return section("Evolución", `${metricLabel} por periodo`, (
+                        return (
+                            <ChartSection key="Evolución" title={`${metricLabel} por periodo`} label="Evolución">
                             <div className="h-64 min-h-0">
                                 <LineChart
                                     data={lines}
@@ -135,17 +136,18 @@ function ProcurementBody({ data, metric }: { data: ProductProcurement; metric: P
                                     ariaLabel={`${metricLabel} comprado por periodo, con el período anterior superpuesto`}
                                 />
                             </div>
-                        ))
+                                                    </ChartSection>
+                        )
                     case "suppliers":
                         return section("Proveedores", "Proveedores", (
                             <Collection.Root collection={suppliersCollection}>
-                                <Collection.View table={procurementSuppliersViews.table} emptyTitle="Sin proveedores" emptyDescription="No hubo compras en el periodo." />
+                                <Collection.View frame="card" table={procurementSuppliersViews.table} emptyTitle="Sin proveedores" emptyDescription="No hubo compras en el periodo." />
                             </Collection.Root>
                         ))
                     case "pending":
                         return section("Pendiente de recibir", "Pendiente de recibir", (
                             <Collection.Root collection={pendingCollection}>
-                                <Collection.View table={procurementPendingViews.table} emptyTitle="Nada pendiente" emptyDescription="No hay órdenes confirmadas por recibir." />
+                                <Collection.View frame="card" table={procurementPendingViews.table} emptyTitle="Nada pendiente" emptyDescription="No hay órdenes confirmadas por recibir." />
                             </Collection.Root>
                         ), "Órdenes confirmadas con cantidad aún sin recibir, sin importar el periodo.")
                     default:

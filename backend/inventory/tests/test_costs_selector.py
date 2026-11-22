@@ -117,7 +117,9 @@ def test_purchases_avg_min_max_and_period_avg(env):
     _receipt(env, "10", "120", on=date(2026, 5, 1))
     _receipt(env, "10", "999", on=date(2025, 5, 1))
     result = _costs(env)
-    assert result["purchases"] == {"min": 100.0, "max": 200.0, "avg": pytest.approx(8200 / 50), "count": 3}
+    purchases = result["purchases"]
+    assert (purchases["min"], purchases["max"], purchases["avg"], purchases["count"]) == (100.0, 200.0, pytest.approx(8200 / 50), 3)
+    assert len(purchases["items"]) == 3 and purchases["items"][0]["number"].startswith("REC-")
     series = {p["period"]: p for p in result["series"]}
     assert series["2026-02"]["purchase_avg"] == pytest.approx(7000 / 40)
     assert series["2026-05"]["purchase_avg"] == pytest.approx(120.0)
@@ -138,7 +140,7 @@ def test_replacement_gap_purchased(env):
 def test_empty_product(env):
     result = _costs(env)
     assert result["kpis"] == {"cost_change_pct": None, "replacement_gap_pct": None}
-    assert result["purchases"] == {"min": None, "max": None, "avg": None, "count": 0}
+    assert result["purchases"] == {"min": None, "max": None, "avg": None, "count": 0, "items": []}
     assert result["today"]["last_purchase"] is None
 
 
@@ -285,7 +287,7 @@ def test_work_orders_from_finished_orders(env):
     orders = _costs(env)["work_orders"]
     assert len(orders) == 1
     order = orders[0]
-    assert (order["id"], order["number"], order["date"]) == (wo.id, wo.number, "2026-03-10")
+    assert (order["id"], order["number"], order["date"]) == (wo.id, wo.display_id, "2026-03-10")
     assert order["units"] == pytest.approx(10.0)
     assert order["unit_real_cost"] == pytest.approx(20.0)
     assert order["unit_bom_cost"] == pytest.approx(15.0)
@@ -320,3 +322,17 @@ def test_no_bom_cost_change_uses_real_cost(env):
     result = _costs(env)
     assert result["mode"] == "manufactured_no_bom"
     assert result["kpis"]["cost_change_pct"] == pytest.approx(50.0)
+
+
+def test_bom_line_shows_its_own_quantity_and_unit_not_the_component_base(env):
+    _bom_with(env, [(_component(env), "2", env["uom"], None)])
+    line = _costs(env)["bom"]["lines"][0]
+    assert line["qty_display"] == pytest.approx(2.0)
+    assert line["uom_singular"] == (env["uom"].name_singular or env["uom"].name)
+    assert line["uom_plural"] == (env["uom"].name_plural or env["uom"].name)
+
+
+def test_last_weighted_point_is_todays_cost(env):
+    _cost_history(env["product"], (date(2026, 3, 1), "120"))
+    last = _costs(env, date_to=date(2026, 3, 1))["series"][-1]
+    assert last["weighted_cost"] == pytest.approx(120.0)

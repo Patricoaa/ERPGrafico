@@ -5,6 +5,8 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 
+from core.prefix_registry import EntityPrefix, fmt_seq_num
+
 from .models import Product, UoM
 from .pricing_selector import _period_start
 from .sales_impact_selector import _period_label
@@ -16,6 +18,9 @@ class CostsParams:
     date_from: date | None = None
     date_to: date | None = None
     granularity: str = "month"
+
+
+PURCHASE_ITEMS_LIMIT = 50
 
 
 def _next_start(start: date, granularity: str) -> date:
@@ -79,6 +84,7 @@ def _receipts(product_ids: list[int], to_base) -> list[dict]:
     for line in PurchaseReceiptLine.objects.filter(product_id__in=product_ids, receipt__status="CONFIRMED").values(
         "id", "quantity_received", "uom_id", "unit_cost", "product__uom_id", "receipt__receipt_date",
         "receipt__purchase_order__supplier__name", "receipt__purchase_order_id", "receipt__purchase_order__supplier_id",
+        "receipt__number",
     ).order_by("receipt__receipt_date", "id"):
         base_qty = float(to_base(Decimal(line["quantity_received"]), line["uom_id"], line["product__uom_id"]))
         if base_qty <= 0:
@@ -89,6 +95,7 @@ def _receipts(product_ids: list[int], to_base) -> list[dict]:
             "supplier": line["receipt__purchase_order__supplier__name"],
             "supplier_id": line["receipt__purchase_order__supplier_id"],
             "order_id": line["receipt__purchase_order_id"],
+            "number": f"{EntityPrefix.PURCHASE_RECEIPT}-{fmt_seq_num(line['receipt__number'])}",
         })
     return rows
 
@@ -101,6 +108,7 @@ def _bom(product: Product, to_base) -> dict | None:
         BillOfMaterialsLine.objects.filter(bom__product=product, bom__active=True).values(
             "component_id", "component__name", "component__cost_price", "component__uom_id", "quantity", "uom_id",
             "is_outsourced", "unit_price", "bom__yield_quantity",
+            "uom__name", "uom__name_singular", "uom__name_plural",
         ).order_by("sequence", "id")
     )
     if not rows:
@@ -118,12 +126,16 @@ def _bom(product: Product, to_base) -> dict | None:
     for r in rows:
         batch = Decimal(r["bom__yield_quantity"] or 1) or Decimal(1)
         qty = Decimal(r["quantity"])
+        shown = qty  # as written in the LdM: the line's own quantity and unit
         if not r["is_outsourced"]:
             qty = to_base(qty, r["uom_id"], r["component__uom_id"])
         lines.append({
             "component_id": r["component_id"],
             "name": r["component__name"],
             "qty_per_unit": float(qty / batch),
+            "qty_display": float(shown / batch),
+            "uom_singular": r["uom__name_singular"] or r["uom__name"],
+            "uom_plural": r["uom__name_plural"] or r["uom__name"],
             "fixed_price": float(r["unit_price"]) if r["is_outsourced"] else None,
             "current": float(r["unit_price"]) if r["is_outsourced"] else float(r["component__cost_price"] or 0),
             "history": histories.get(r["component_id"], []),
@@ -153,6 +165,9 @@ def _bom_payload(bom: dict, start: date | None) -> dict:
             "component_id": line["component_id"],
             "name": line["name"],
             "qty_per_unit": line["qty_per_unit"],
+            "qty_display": line["qty_display"],
+            "uom_singular": line["uom_singular"],
+            "uom_plural": line["uom_plural"],
             "unit_cost": line["current"],
             "cost": cost,
             "share_pct": cost / total * 100 if total else 0.0,
@@ -182,7 +197,7 @@ def _work_orders(product: Product, date_from: date | None, date_to: date) -> lis
         unit_bom = o["planned_cost"] / o["qty"] if o["planned_cost"] else None
         rows.append({
             "id": o["id"],
-            "number": o["number"],
+            "number": f"{EntityPrefix.WORK_ORDER}-{fmt_seq_num(o['number'])}",
             "date": o["date"],
             "units": o["qty"],
             "unit_real_cost": unit_real,
@@ -233,7 +248,7 @@ class CostsSelector:
             made_units = sum(o["units"] for o in made)
             series.append({
                 "period": _period_label(start, granularity),
-                "weighted_cost": _value_at(history, close),
+                "weighted_cost": float(product.cost_price or 0) if close >= date_to else _value_at(history, close),
                 "bom_cost": _bom_cost_at(bom, close) if bom else None,
                 "purchase_avg": sum(r["cost"] for r in bucket) / qty if qty else None,
                 "real_avg": sum(o["unit_real_cost"] * o["units"] for o in made) / made_units if made_units else None,
@@ -279,6 +294,13 @@ class CostsSelector:
                 "max": max((r["unit_cost"] for r in in_range), default=None),
                 "avg": sum(r["cost"] for r in in_range) / total_qty if total_qty else None,
                 "count": len(in_range),
+                "items": [
+                    {
+                        "date": r["date"].isoformat(), "number": r["number"], "supplier": r["supplier"],
+                        "qty": r["qty"], "unit_cost": r["unit_cost"], "total": r["cost"],
+                    }
+                    for r in reversed(in_range[-PURCHASE_ITEMS_LIMIT:])
+                ],
             },
             "bom": _bom_payload(bom, params.date_from) if bom else None,
             "work_orders": work_orders,

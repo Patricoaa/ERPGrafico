@@ -44,11 +44,26 @@ export interface CostsBomLine {
     component_id: number
     name: string
     qty_per_unit: number
+    /** Quantity per produced unit as written in the LdM line, in the line's own unit (`uom_*`). */
+    qty_display: number
+    /** Unit names of the LdM line (not the component's stock unit that `qty_per_unit` is expressed in). */
+    uom_singular: string
+    uom_plural: string
     unit_cost: number
     cost: number
     share_pct: number
     change_pct: number | null
     is_outsourced: boolean
+}
+
+export interface CostsPurchaseItem {
+    date: string
+    /** Receipt number with its prefix (e.g. `REC-0012`). */
+    number: string
+    supplier: string | null
+    qty: number
+    unit_cost: number
+    total: number
 }
 
 export interface CostsWorkOrder {
@@ -66,7 +81,7 @@ export interface ProductCosts {
     today: CostsToday
     kpis: CostsKpis
     series: CostsPoint[]
-    purchases: { min: number | null; max: number | null; avg: number | null; count: number }
+    purchases: { min: number | null; max: number | null; avg: number | null; count: number; items: CostsPurchaseItem[] }
     bom: { lines: CostsBomLine[]; drivers: Array<{ component_id: number; name: string; delta: number }> } | null
     work_orders: CostsWorkOrder[]
 }

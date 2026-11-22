@@ -3,7 +3,7 @@ import { composeCosts } from "../composeCosts"
 import type { CostsBomLine, CostsWorkOrder, ProductCosts } from "../costs.types"
 
 const line = (name: string): CostsBomLine => ({
-    component_id: name.length, name, qty_per_unit: 1, unit_cost: 10, cost: 10, share_pct: 50, change_pct: 0, is_outsourced: false,
+    component_id: name.length, name, qty_per_unit: 1, qty_display: 1, uom_singular: "Unidad", uom_plural: "Unidades", unit_cost: 10, cost: 10, share_pct: 50, change_pct: 0, is_outsourced: false,
 })
 const order = (deviation: number | null, units = 10, unitReal = 20): CostsWorkOrder => ({
     id: units, number: "OT", date: "2026-03-10", units, unit_real_cost: unitReal, unit_bom_cost: 18, deviation_pct: deviation,
@@ -19,7 +19,10 @@ function costs(over: Partial<ProductCosts> = {}): ProductCosts {
         },
         kpis: { cost_change_pct: 2, replacement_gap_pct: 2 },
         series: [{ period: "2026-01", weighted_cost: 100, bom_cost: null, purchase_avg: 100, real_avg: null }],
-        purchases: { min: 90, max: 110, avg: 100, count: 3 },
+        purchases: {
+            min: 90, max: 110, avg: 100, count: 3,
+            items: [{ date: "2026-06-01", number: "REC-0001", supplier: "Proveedor", qty: 5, unit_cost: 100, total: 500 }],
+        },
         bom: null,
         work_orders: [],
         ...over,
@@ -36,7 +39,7 @@ describe("composeCosts hero", () => {
 
     it("uses the BOM cost for on-demand manufactured products", () => {
         const data = costs({ mode: "manufactured_on_demand", today: { ...costs().today, bom_cost: 80 } })
-        expect(composeCosts(data).hero).toEqual({ label: "Costo de BOM", value: 80 })
+        expect(composeCosts(data).hero).toEqual({ label: "Costo de LdM", value: 80 })
     })
 
     it("uses the unit-weighted real cost per order without a BOM", () => {
@@ -51,9 +54,9 @@ describe("composeCosts secondary figures", () => {
         expect(composeCosts(costs()).secondary).toEqual(["last_purchase", "stock_value"])
     })
 
-    it("shows the BOM cost next to the weighted cost for stocked manufactured products", () => {
+    it("shows only the LdM cost (no tied-up capital) for stocked manufactured products", () => {
         const data = costs({ mode: "manufactured_stock", today: { ...costs().today, bom_cost: 110 } })
-        expect(composeCosts(data).secondary).toEqual(["bom_today", "stock_value"])
+        expect(composeCosts(data).secondary).toEqual(["bom_today"])
     })
 
     it("omits figures without data", () => {
@@ -107,12 +110,12 @@ describe("composeCosts sections", () => {
     })
 
     it("lists chart, bom and work orders for manufactured products with data", () => {
-        const data = costs({ mode: "manufactured_stock", bom: { lines: [line("Papel")], drivers: [] }, work_orders: [order(5)], purchases: { min: null, max: null, avg: null, count: 0 } })
+        const data = costs({ mode: "manufactured_stock", bom: { lines: [line("Papel")], drivers: [] }, work_orders: [order(5)], purchases: { min: null, max: null, avg: null, count: 0, items: [] } })
         expect(composeCosts(data).sections).toEqual(["chart", "bom", "work_orders"])
     })
 
     it("omits the chart when no point has a value", () => {
-        const data = costs({ series: [{ period: "2026-01", weighted_cost: null, bom_cost: null, purchase_avg: null, real_avg: null }], purchases: { min: null, max: null, avg: null, count: 0 } })
+        const data = costs({ series: [{ period: "2026-01", weighted_cost: null, bom_cost: null, purchase_avg: null, real_avg: null }], purchases: { min: null, max: null, avg: null, count: 0, items: [] } })
         expect(composeCosts(data).sections).toEqual([])
     })
 })

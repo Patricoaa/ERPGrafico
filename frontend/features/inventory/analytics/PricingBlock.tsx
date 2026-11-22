@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { DualAxisChart, Metric, MetricStrip } from "@/components/shared"
+import { ChartSection, DualAxisChart, Metric, MetricStrip } from "@/components/shared"
 import type { DualAxisSeries } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
@@ -208,8 +208,7 @@ function PricingBody({ data, capabilities }: PricingBlockProps & { data: Product
 
             {/* Gráfico compuesto de doble eje Y */}
             {chartData.periods.length > 0 ? (
-                <section aria-label="Evolución de precios y ventas" className="flex flex-col gap-2">
-                    <h3 className="text-sm font-medium">Evolución de precios y ventas asociadas</h3>
+                <ChartSection title="Evolución de precios y ventas asociadas" label="Evolución de precios y ventas">
                     <DualAxisChart
                         series={chartData.chartSeries}
                         periods={chartData.periods}
@@ -220,7 +219,7 @@ function PricingBody({ data, capabilities }: PricingBlockProps & { data: Product
                         mode="bar-line"
                         ariaLabel="Evolución de precios con IVA en eje izquierdo y ventas en eje derecho"
                     />
-                </section>
+                </ChartSection>
             ) : (
                 <p className="text-sm italic text-muted-foreground">Sin ventas en el periodo</p>
             )}

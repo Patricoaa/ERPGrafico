@@ -36,7 +36,7 @@ const costs = {
     mode: "purchased",
     today: { weighted_cost: 400, bom_cost: null, last_purchase: null, stock_qty: null, stock_value: null },
     kpis: { cost_change_pct: 12, replacement_gap_pct: null },
-    series: [], purchases: { min: null, max: null, avg: null, count: 0 }, bom: null, work_orders: [],
+    series: [], purchases: { min: null, max: null, avg: null, count: 0, items: [] }, bom: null, work_orders: [],
 }
 
 beforeAll(() => {

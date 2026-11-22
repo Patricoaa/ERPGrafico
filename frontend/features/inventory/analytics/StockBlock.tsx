@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { BarChart, LineChart, Metric, MetricStrip } from "@/components/shared"
+import { BarChart, ChartSection, LineChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
@@ -110,8 +110,8 @@ function StockBody({ data }: { data: ProductStockAnalysis }) {
             {composition.sections.map((name) => {
                 switch (name) {
                     case "chart":
-                        return section("Evolución", "Stock al cierre, entradas y salidas", (
-                            <>
+                        return (
+                            <ChartSection key="Evolución" title="Stock al cierre, entradas y salidas" label="Evolución">
                                 <div className="h-56 min-h-0">
                                     <LineChart
                                         data={stockLine}
@@ -124,7 +124,7 @@ function StockBody({ data }: { data: ProductStockAnalysis }) {
                                         ariaLabel="Stock al cierre de cada periodo"
                                     />
                                 </div>
-                                <div className="h-36 min-h-0">
+                                <div className="mt-3 h-36 min-h-0">
                                     <BarChart
                                         data={inOut}
                                         keys={["Entradas", "Salidas"]}
@@ -136,35 +136,35 @@ function StockBody({ data }: { data: ProductStockAnalysis }) {
                                         ariaLabel="Entradas y salidas por periodo"
                                     />
                                 </div>
-                            </>
-                        ))
+                            </ChartSection>
+                        )
                     case "flows":
                         return section("Flujos", "Entradas por origen y salidas por destino", (
                             <div className="grid gap-4 @[40rem]:grid-cols-2">
                                 <Collection.Root collection={inflowsCollection}>
-                                    <Collection.View table={stockFlowsViews.table} emptyTitle="Sin entradas" emptyDescription="No hubo entradas en el periodo." />
+                                    <Collection.View frame="card" table={stockFlowsViews.table} emptyTitle="Sin entradas" emptyDescription="No hubo entradas en el periodo." />
                                 </Collection.Root>
                                 <Collection.Root collection={outflowsCollection}>
-                                    <Collection.View table={stockFlowsViews.table} emptyTitle="Sin salidas" emptyDescription="No hubo salidas en el periodo." />
+                                    <Collection.View frame="card" table={stockFlowsViews.table} emptyTitle="Sin salidas" emptyDescription="No hubo salidas en el periodo." />
                                 </Collection.Root>
                             </div>
                         ), flowRows.length > 0 ? "Las transferencias entre bodegas no cuentan como entrada ni salida." : undefined)
                     case "adjustments":
                         return section("Ajustes", "Ajustes de inventario", (
                             <Collection.Root collection={adjustmentsCollection}>
-                                <Collection.View table={stockAdjustmentsViews.table} emptyTitle="Sin ajustes" emptyDescription="No hubo ajustes en el periodo." />
+                                <Collection.View frame="card" table={stockAdjustmentsViews.table} emptyTitle="Sin ajustes" emptyDescription="No hubo ajustes en el periodo." />
                             </Collection.Root>
                         ))
                     case "warehouses":
                         return section("Bodegas", "Stock por bodega", (
                             <Collection.Root collection={warehousesCollection}>
-                                <Collection.View table={stockWarehousesViews.table} emptyTitle="Sin bodegas" emptyDescription="El producto no tiene stock en bodegas." />
+                                <Collection.View frame="card" table={stockWarehousesViews.table} emptyTitle="Sin bodegas" emptyDescription="El producto no tiene stock en bodegas." />
                             </Collection.Root>
                         ))
                     case "variants":
                         return section("Variantes", "Stock por variante", (
                             <Collection.Root collection={variantsCollection}>
-                                <Collection.View table={stockVariantsViews.table} emptyTitle="Sin variantes" emptyDescription="El producto no tiene variantes." />
+                                <Collection.View frame="card" table={stockVariantsViews.table} emptyTitle="Sin variantes" emptyDescription="El producto no tiene variantes." />
                             </Collection.Root>
                         ))
                 }

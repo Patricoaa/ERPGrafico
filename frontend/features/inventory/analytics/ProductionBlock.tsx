@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { LineChart, Metric, MetricStrip } from "@/components/shared"
+import { ChartSection, LineChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
 import { composeProduction } from "./composeProduction"
@@ -104,31 +104,31 @@ function ProductionBody({ data }: { data: ProductProductionAnalysis }) {
     const renderSection = (name: (typeof composition.sections)[number]) => {
         switch (name) {
             case "made_chart":
-                return section("Unidades producidas por periodo", "Unidades producidas por periodo", chart(madeLines, "Unidades producidas por periodo, con el período anterior superpuesto"))
+                return <ChartSection key="made_chart" title="Unidades producidas por periodo">{chart(madeLines, "Unidades producidas por periodo, con el período anterior superpuesto")}</ChartSection>
             case "materials":
                 return section("Insumos", "Consumo real contra planificado", (
                     <Collection.Root collection={materialsCollection}>
-                        <Collection.View table={madeMaterialsViews.table} emptyTitle="Sin insumos" emptyDescription="Las órdenes no registran consumos." />
+                        <Collection.View frame="card" table={madeMaterialsViews.table} emptyTitle="Sin insumos" emptyDescription="Las órdenes no registran consumos." />
                     </Collection.Root>
                 ), "En cantidad de cada insumo; el costo se analiza en el tab Costos.")
             case "orders":
                 return section("Órdenes terminadas", "Órdenes terminadas", (
                     <Collection.Root collection={ordersCollection}>
-                        <Collection.View table={madeOrdersViews.table} emptyTitle="Sin órdenes" emptyDescription="No hay órdenes terminadas en el periodo." />
+                        <Collection.View frame="card" table={madeOrdersViews.table} emptyTitle="Sin órdenes" emptyDescription="No hay órdenes terminadas en el periodo." />
                     </Collection.Root>
                 ))
             case "input_chart":
-                return section("Consumo por periodo", "Consumo como insumo por periodo", chart(inputLines, "Consumo como insumo por periodo, con el período anterior superpuesto"))
+                return <ChartSection key="input_chart" title="Consumo como insumo por periodo" label="Consumo por periodo">{chart(inputLines, "Consumo como insumo por periodo, con el período anterior superpuesto")}</ChartSection>
             case "by_product":
                 return section("Por producto", "Consumo por producto fabricado", (
                     <Collection.Root collection={byProductCollection}>
-                        <Collection.View table={inputByProductViews.table} emptyTitle="Sin consumo" emptyDescription="No hubo consumo en el periodo." />
+                        <Collection.View frame="card" table={inputByProductViews.table} emptyTitle="Sin consumo" emptyDescription="No hubo consumo en el periodo." />
                     </Collection.Root>
                 ))
             case "used_in":
                 return section("Productos que lo usan", `Productos que lo usan: margen si sube ${input?.used_in.increase_pct ?? 0} %`, (
                     <Collection.Root collection={usedInCollection}>
-                        <Collection.View table={inputUsedInViews.table} emptyTitle="Sin productos" emptyDescription="Ninguna BOM activa usa este insumo." />
+                        <Collection.View frame="card" table={inputUsedInViews.table} emptyTitle="Sin productos" emptyDescription="Ninguna BOM activa usa este insumo." />
                     </Collection.Root>
                 ))
         }

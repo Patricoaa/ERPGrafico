@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { LineChart, Metric, MetricStrip, type MetricDelta } from "@/components/shared"
+import { ChartSection, LineChart, Metric, MetricStrip, type MetricDelta } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
@@ -86,7 +86,7 @@ function SalesBody({ data, metric }: { data: ProductSales; metric: SalesMetric }
     )
     const table = (collection: typeof channelsCollection, empty: string) => (
         <Collection.Root collection={collection}>
-            <Collection.View table={salesSharesViews.table} emptyTitle={empty} emptyDescription="Sin ventas para este reparto." />
+            <Collection.View frame="card" table={salesSharesViews.table} emptyTitle={empty} emptyDescription="Sin ventas para este reparto." />
         </Collection.Root>
     )
 
@@ -134,7 +134,8 @@ function SalesBody({ data, metric }: { data: ProductSales; metric: SalesMetric }
             {composition.sections.map((name) => {
                 switch (name) {
                     case "chart":
-                        return section("Evolución", `${metricLabel} por periodo`, (
+                        return (
+                            <ChartSection key="Evolución" title={`${metricLabel} por periodo`} label="Evolución">
                             <div className="h-64 min-h-0">
                                 <LineChart
                                     data={lines}
@@ -148,11 +149,12 @@ function SalesBody({ data, metric }: { data: ProductSales; metric: SalesMetric }
                                     ariaLabel={`${metricLabel} por periodo, con el período anterior superpuesto`}
                                 />
                             </div>
-                        ))
+                                                    </ChartSection>
+                        )
                     case "customers":
                         return section("Clientes", "Mejores clientes", (
                             <Collection.Root collection={customersCollection}>
-                                <Collection.View table={salesCustomersViews.table} emptyTitle="Sin clientes" emptyDescription="Sin ventas a clientes en el periodo." />
+                                <Collection.View frame="card" table={salesCustomersViews.table} emptyTitle="Sin clientes" emptyDescription="Sin ventas a clientes en el periodo." />
                             </Collection.Root>
                         ))
                     case "channels":

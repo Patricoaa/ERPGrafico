@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, type ReactNode } from "react"
-import { LineChart, Metric, MetricStrip } from "@/components/shared"
+import { ChartSection, LineChart, Metric, MetricStrip } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { formatMoney } from "@/lib/money"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
@@ -105,7 +105,8 @@ function SubscriptionBody({ data }: { data: ProductSubscriptionAnalysis }) {
             {composition.sections.map((name) => {
                 switch (name) {
                     case "chart":
-                        return section("Evolución", "Pagado por periodo", (
+                        return (
+                            <ChartSection key="Evolución" title={"Pagado por periodo"} label="Evolución">
                             <div className="h-56 min-h-0">
                                 <LineChart
                                     data={lines}
@@ -119,17 +120,18 @@ function SubscriptionBody({ data }: { data: ProductSubscriptionAnalysis }) {
                                     ariaLabel="Pagado por periodo, con el período anterior superpuesto"
                                 />
                             </div>
-                        ))
+                                                    </ChartSection>
+                        )
                     case "subscriptions":
                         return section("Suscripciones", "Suscripciones", (
                             <Collection.Root collection={rowsCollection}>
-                                <Collection.View table={subscriptionRowsViews.table} emptyTitle="Sin suscripciones" emptyDescription="El producto no tiene suscripciones." />
+                                <Collection.View frame="card" table={subscriptionRowsViews.table} emptyTitle="Sin suscripciones" emptyDescription="El producto no tiene suscripciones." />
                             </Collection.Root>
                         ))
                     case "payments":
                         return section("Pagos", "Pagos del periodo", (
                             <Collection.Root collection={paymentsCollection}>
-                                <Collection.View table={subscriptionPaymentsViews.table} emptyTitle="Sin pagos" emptyDescription="No hubo pagos en el periodo." />
+                                <Collection.View frame="card" table={subscriptionPaymentsViews.table} emptyTitle="Sin pagos" emptyDescription="No hubo pagos en el periodo." />
                             </Collection.Root>
                         ))
                 }

@@ -69,7 +69,7 @@ export function SalesImpactBlock({
 
     const table = (
         <Collection.Root collection={tableCollection}>
-            <Collection.View table={salesImpactViews.table} emptyTitle="Sin ventas en el periodo" emptyDescription="No hay ventas confirmadas para este producto." />
+            <Collection.View frame="card" table={salesImpactViews.table} emptyTitle="Sin ventas en el periodo" emptyDescription="No hay ventas confirmadas para este producto." />
         </Collection.Root>
     )
 

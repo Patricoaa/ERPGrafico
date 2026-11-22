@@ -4,6 +4,7 @@ import React, { useId, useMemo, useRef, useState, useEffect } from "react"
 import { formatMoney, formatQuantity } from "@/lib/money"
 import { getChartPalette } from "@/lib/chart-colors"
 import { cn } from "@/lib/utils"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 export interface DualAxisDataPoint {
     x: string
@@ -193,19 +194,6 @@ export function DualAxisChart({
         return ticks
     }, [margin.top, innerHeight, minY1, maxY1, minY2, maxY2])
 
-    const toggleSeries = (id: string) => {
-        setActiveSeriesIds((current) => {
-            const next = new Set(current)
-            if (next.has(id)) {
-                // Prevenir apagar todas
-                if (next.size > 1) next.delete(id)
-            } else {
-                next.add(id)
-            }
-            return next
-        })
-    }
-
     // Hover mouse handler
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         const el = containerRef.current
@@ -236,38 +224,33 @@ export function DualAxisChart({
     }
 
     return (
-        <div className={cn("flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-xs", className)}>
-            {/* Header / Leyenda interactiva */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
-                <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground mr-0.5">
-                        Series:
-                    </span>
-                    {coloredSeries.map((s) => {
-                        const isActive = activeSeriesIds.has(s.id)
-                        return (
-                            <button
-                                key={s.id}
-                                type="button"
-                                onClick={() => toggleSeries(s.id)}
-                                aria-pressed={isActive}
-                                className={cn(
-                                    "flex items-center gap-1 rounded-full border px-1.5 py-px text-3xs font-normal transition-all cursor-pointer leading-none",
-                                    isActive
-                                        ? "border-foreground/20 bg-muted/50 text-foreground/80"
-                                        : "border-transparent bg-muted/20 text-muted-foreground opacity-40 line-through",
-                                )}
-                            >
-                                <span
-                                    className={cn("size-1.5 shrink-0", s.type === "bar" && mode === "bar-line" ? "rounded-xs" : "rounded-full")}
-                                    style={{ backgroundColor: s.color }}
-                                />
-                                <span>{s.label}</span>
-                            </button>
-                        )
-                    })}
-                </div>
-            </div>
+        <div className={cn("flex flex-col gap-3", className)}>
+            {/* Leyenda interactiva: mismos chips que el selector de período */}
+            <ToggleGroup
+                type="multiple"
+                value={[...activeSeriesIds]}
+                onValueChange={(ids) => {
+                    // Prevenir apagar todas
+                    if (ids.length > 0) setActiveSeriesIds(new Set(ids))
+                }}
+                aria-label="Series"
+                className="flex-wrap justify-start gap-1"
+            >
+                {coloredSeries.map((s) => (
+                    <ToggleGroupItem
+                        key={s.id}
+                        value={s.id}
+                        size="sm"
+                        className="gap-1.5 text-3xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    >
+                        <span
+                            className={cn("size-1.5 shrink-0", s.type === "bar" && mode === "bar-line" ? "rounded-xs" : "rounded-full")}
+                            style={{ backgroundColor: s.color }}
+                        />
+                        <span>{s.label}</span>
+                    </ToggleGroupItem>
+                ))}
+            </ToggleGroup>
 
             {/* Contenedor del Gráfico SVG */}
             <div
