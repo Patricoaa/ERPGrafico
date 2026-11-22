@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useRecordById } from "@/hooks/useRecordById"
 import type { ProductCategory, AppGroup } from "@/types/entities"
 import type { Contact } from "@/features/contacts"
-import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice } from "@/features/treasury"
+import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice, Bank, PaymentMethod } from "@/features/treasury"
 import type { UoM, Attribute } from "@/features/inventory"
 import type { UoMCategory } from "@/features/inventory/hooks/useUoMs"
 import type {
@@ -110,6 +110,31 @@ const UoMCategoryDrawer = dynamic(
 const InventoryCountDetailDrawer = dynamic(
     () => import("@/features/inventory").then((m) => m.InventoryCountDetailDrawer),
     { ssr: false, loading: () => skeleton("conteo de inventario") }
+)
+
+const LoanRecordDrawer = dynamic(
+    () => import("@/features/treasury").then((m) => m.LoanRecordDrawer),
+    { ssr: false, loading: () => skeleton("crédito") }
+)
+
+const DeclarationRecordWizard = dynamic(
+    () => import("@/features/tax").then((m) => m.DeclarationRecordWizard),
+    { ssr: false, loading: () => skeleton("declaración F29") }
+)
+
+const BankModal = dynamic(
+    () => import("@/features/treasury").then((m) => m.BankModal),
+    { ssr: false, loading: () => skeleton("banco") }
+)
+
+const PaymentMethodModal = dynamic(
+    () => import("@/features/treasury").then((m) => m.PaymentMethodModal),
+    { ssr: false, loading: () => skeleton("método de pago") }
+)
+
+const SubscriptionRecordDrawer = dynamic(
+    () => import("@/features/purchasing").then((m) => m.SubscriptionRecordDrawer),
+    { ssr: false, loading: () => skeleton("suscripción") }
 )
 
 const BOMRecordDrawer = dynamic(
@@ -439,6 +464,23 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         <RecordDrawer<Partial<Attribute>> endpoint="/inventory/attributes" id={id} data={data} label="atributo">
             {(record) => <AttributeDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
         </RecordDrawer>
+    ),
+    "treasury.bankloan": ({ id, open, onOpenChange }) => <LoanRecordDrawer id={id} open={open} onOpenChange={onOpenChange} />,
+    "tax.taxperiod": ({ id, open, onOpenChange, onSuccess }) => (
+        <DeclarationRecordWizard id={id} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
+    ),
+    "treasury.bank": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Bank> endpoint="/treasury/banks" id={id} data={data} label="banco">
+            {(record) => <BankModal open={open} onOpenChange={onOpenChange} bank={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
+    ),
+    "treasury.paymentmethod": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PaymentMethod> endpoint="/treasury/payment-methods" id={id} data={data} label="método de pago">
+            {(record) => <PaymentMethodModal open={open} onOpenChange={onOpenChange} method={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
+    ),
+    "inventory.subscription": ({ id, data, open, onOpenChange, onSuccess }) => (
+        <SubscriptionRecordDrawer id={id} data={data} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
     ),
     "production.bom": ({ id, open, onOpenChange, onSuccess }) => (
         <BOMRecordDrawer id={id} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
