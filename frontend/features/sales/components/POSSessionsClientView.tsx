@@ -83,7 +83,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     const actionsCtx: POSSessionActionsCtx = {
         // #233: solo quien abrió la sesión de POS o un superusuario puede cerrarla.
         canClose: (session) => !!authUser && (authUser.is_superuser || authUser.id === Number(session.user)),
-        onOpen: (session) => sheet.toggle(session.id),
+        onOpen: (session) => sheet.toggle(session.id, session),
         onDownloadReport: async (session, type) => {
             try {
                 await downloadPdf(session.id, type)
@@ -103,7 +103,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(session) => sheet.toggle(session.id)}
+                onOpen={(session) => sheet.toggle(session.id, session)}
                 actions={posSessionActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar>

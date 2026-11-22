@@ -247,6 +247,8 @@ interface GlobalModalStateContextType {
     /** Pestañas efímeras de la página, en orden de apertura (ADR-0101). */
     tabs: WorkspaceTabView[]
     isEntityOpen: (label: string, id: number) => boolean
+    /** Registro de la pestaña activa (null si la activa es la página, una herramienta o un panel). */
+    activeEntity: { label: string; id: number } | null
     getSheetOffset: (id: string) => number
     getSheetIndex: (id: string) => number
     isSheetCollapsed: (id: string) => boolean
@@ -626,12 +628,16 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         isSubModalActive: hasEntityTab,
         tabs: tabViews,
         isEntityOpen,
+        activeEntity: ((): { label: string; id: number } | null => {
+            const current = tabs.find(tab => tabKey(tab) === activeKey)
+            return current?.type === "entity" ? { label: current.label, id: current.id } : null
+        })(),
         getSheetOffset,
         getSheetIndex,
         isSheetCollapsed,
         expandedSheetWidth,
         totalSheetsWidth
-    }), [hasEntityTab, tabViews, isEntityOpen, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
+    }), [hasEntityTab, tabViews, isEntityOpen, tabs, activeKey, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
 
     // X / Escape / clic fuera cierran la pestaña activa (con guarda).
     const handleDrawerOpenChange = useCallback((open: boolean) => {

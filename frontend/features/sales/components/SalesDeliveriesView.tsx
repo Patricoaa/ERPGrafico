@@ -53,7 +53,7 @@ export function SalesDeliveriesView() {
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(delivery) => sheet.toggle(delivery.id)}
+                onOpen={(delivery) => sheet.toggle(delivery.id, delivery)}
                 view={view}
                 onViewChange={onViewChange}
             >

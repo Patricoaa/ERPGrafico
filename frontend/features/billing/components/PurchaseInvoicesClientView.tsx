@@ -50,7 +50,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(doc) => sheet.toggle(doc.id)}
+                onOpen={(doc) => sheet.toggle(doc.id, doc)}
                 view={view}
                 onViewChange={onViewChange}
                 actions={(inv) => <DocumentRowActions id={inv.id} kind="invoice" onOpen={sheet.toggle} />}

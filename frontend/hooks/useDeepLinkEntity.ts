@@ -20,10 +20,10 @@ export interface UseDeepLinkEntityOptions {
  * registro (`openEntity`) y limpia el parámetro. La URL no refleja las pestañas abiertas; abrir otra
  * fila no pasa por aquí sino por `openEntity` (clic de fila de la colección).
  *
- * No hace nada si la entidad no está en `ENTITY_DRAWERS` (deja la URL intacta para el drawer de la
+ * `label = null` lo desactiva. No hace nada si la entidad no está en `ENTITY_DRAWERS` (deja la URL intacta para el drawer de la
  * página) ni fuera del `GlobalModalProvider`.
  */
-export function useDeepLinkEntity(label: string, { selectedParam = "selected", actions }: UseDeepLinkEntityOptions = {}): void {
+export function useDeepLinkEntity(label: string | null, { selectedParam = "selected", actions }: UseDeepLinkEntityOptions = {}): void {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -36,7 +36,7 @@ export function useDeepLinkEntity(label: string, { selectedParam = "selected", a
     const applies = id !== null && (!actions || actions.includes(action))
 
     useEffect(() => {
-        if (!applies || id === null || !openEntity || !hasEntityDrawer(label)) return
+        if (!label || !applies || id === null || !openEntity || !hasEntityDrawer(label)) return
         const signature = `${label}:${id}:${action ?? ""}`
         if (handled.current === signature) return
         handled.current = signature

@@ -53,7 +53,7 @@ export function PurchaseReturnsView() {
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(ret) => sheet.toggle(ret.id)}
+                onOpen={(ret) => sheet.toggle(ret.id, ret)}
                 view={view}
                 onViewChange={onViewChange}
             >
