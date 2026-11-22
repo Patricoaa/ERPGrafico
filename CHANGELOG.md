@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.144](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.143...v0.3.144) (2026-11-22)
+
+
+### ⚙️ Refactors
+
+* **workspace:** useEntityPanelRoute pasa a useCreatePanelRoute y se congela la lectura manual de ?selected (ADR-0152) ([f3bf01c](https://github.com/Patricoaa/ERPGrafico/commit/f3bf01c478acee8548e4c62fa047abd341391712))
+
 ### [0.3.143](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.142...v0.3.143) (2026-11-22)
 
 
