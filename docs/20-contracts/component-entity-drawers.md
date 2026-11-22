@@ -126,7 +126,6 @@ goBackEntity()  // vuelve al documento anterior
 | `closeEntity` | `() => void` | Cierra **todas** las pestañas (documentos y herramientas) |
 | `openTool` | `(tool: ToolTabId) => void` | Abre una herramienta como pestaña (`"cost-calculator"`) |
 | `activateTab` / `closeTab` | `(key: string) => void` | Activan/cierran una pestaña, con guarda de cambios sin guardar |
-| `openRootEntity` / `closeEntityByRef` | `(label, id) => void` | Pestaña de la selección de una lista (`?selected`); sin guarda, la aplicó quien llama |
 
 **Pestañas efímeras (ADR-0101, sustituye la pila y las migas de ADR-0080/0100).** `openEntity` abre el documento como **pestaña** en la barra de trabajo permanente (`WorkspaceTabBar`, bajo la topbar) o activa la pestaña si ya está abierta (máx. 8). Solo se monta el drawer de la pestaña activa; el provider no envuelve nada: los drawers no necesitan cambios. Cerrar (X / Escape / × de la pestaña / `onSuccess`) cierra la pestaña activa y activa a su vecina, con guarda. Las pestañas se cierran al cambiar de página y no se serializan en la URL. `closeEntity` cierra todas. La Calculadora de Costos es otra pestaña (`openTool("cost-calculator")`) y conserva su estado mientras exista. ~~`?selected` es una sola pestaña, la fila explorada: elegir otra la reemplaza~~ — **superseded por ADR-0152**: cada registro abre su propia pestaña (varias por entidad; títulos repetidos se desambiguan ` (2)`); `?selected` es solo enlace profundo (`useDeepLinkEntity` abre la pestaña una vez y limpia la URL).
 

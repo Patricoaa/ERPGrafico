@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { ToolbarCreateButton } from "@/components/shared"
-import EntriesClientView from "./EntriesClientView"
+import { EntriesClientView } from "@/features/accounting"
 import { getAccountingTab } from "@/features/accounting/navigation"
 import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 

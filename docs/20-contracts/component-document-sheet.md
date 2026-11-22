@@ -66,11 +66,13 @@ Props: `label`, `id`, `sectionActions?: Partial<Record<DocumentDomain, DocumentA
 
 ## 5b. Navigation
 
-The list `?selected={id}` opens the sheet **through the `openEntity` stack** (not a page-local drawer), so everything opened from it (product, OT, related documents) shows "Volver a {display}". Closing the stack clears `?selected`. Sheets call `setEntityDisplay(label, id, display_id)` once loaded so the back label shows the real number. Entity drawers that need full data (e.g. product) accept an `id`-only open via a loader (`ProductDrawerById`).
+> **ADR-0152:** each document opens in **its own tab** (several per list; equal titles get ` (2)`); `?selected={id}` is only a deep link (`useDeepLinkEntity` opens the tab once and clears the URL). The "Volver a …" wording below predates the tab model.
+
+The list row opens the sheet **through the `openEntity` stack** (not a page-local drawer), so everything opened from it (product, OT, related documents) shows "Volver a {display}". Closing the stack clears `?selected`. Sheets call `setEntityDisplay(label, id, display_id)` once loaded so the back label shows the real number. Entity drawers that need full data (e.g. product) accept an `id`-only open via a loader (`ProductDrawerById`).
 
 ### Lists
 
-Document lists open the sheet with `useDocumentSheetRoute(label)` (`@/hooks`): `?selected={id}` ↔ the `openEntity` stack; `toggle(id)` for row clicks, `selectedId` for row highlight. Lists embedded in a host with their own panel (POS) pass `null`.
+Document lists open the sheet with `useDocumentSheetRoute(label)` (`@/hooks`): `toggle(id, row)` opens the document's tab (`openEntity`, the row feeds the tab title), `selectedId` is the document of the active tab of that list (row highlight), `?selected` is deep link only. Lists embedded in a host with their own panel (POS) pass `null`.
 
 ## 6. Embedded mode
 

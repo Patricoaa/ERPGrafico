@@ -192,13 +192,6 @@ interface GlobalModalActionsContextType {
     openEntity: (label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => void
     /** Cierra todas las pestañas (documentos y herramientas). */
     closeEntity: () => void
-    /**
-     * Abre `label:id` como pestaña de la selección de una lista (`?selected`) sin pasar por la guarda:
-     * quien la llama (`useDocumentSheetRoute`) ya la aplicó.
-     */
-    openRootEntity: (label: string, id: number) => void
-    /** Cierra la pestaña de `label:id` sin guarda (la selección de la lista cambió). */
-    closeEntityByRef: (label: string, id: number) => void
     /** Abre una herramienta (p. ej. la calculadora) como pestaña. */
     openTool: (tool: ToolTabId) => void
     /**
@@ -484,13 +477,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         runGuarded(() => addTab({ type: "entity", label, id, data, segmenter, display: options?.display }))
     }, [runGuarded, live, addTab])
 
-    const openRootEntity = useCallback((label: string, id: number) => {
-        if (!hasEntityDrawer(label)) return
-        addTab({ type: "entity", label, id })
-    }, [addTab])
-
-    const closeEntityByRef = useCallback((label: string, id: number) => removeTab(entityKey(label, id)), [removeTab])
-
     const registerPanelTab = useCallback((panel: PanelTabState, onClose: () => void) => {
         const tab: WorkspaceTab = { type: "panel", ...panel }
         const key = tabKey(tab)
@@ -595,8 +581,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const actionsValue = useMemo(() => ({
         openEntity,
         closeEntity,
-        openRootEntity,
-        closeEntityByRef,
         openTool,
         openWorkbench,
         openNoteWizard,
@@ -610,7 +594,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openTool, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
         () => disambiguateTitles(tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId))),

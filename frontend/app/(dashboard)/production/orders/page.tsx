@@ -1,6 +1,5 @@
 import { serverFetch } from "@/lib/server-fetch"
-import type { WorkOrder } from "@/features/production"
-import WorkOrdersPageClient from "./WorkOrdersPageClient"
+import { WorkOrdersClientView, type WorkOrder } from "@/features/production"
 
 const FILTER_PARAMS = new Set(['search', 'status', 'date_from', 'date_to'])
 
@@ -28,6 +27,6 @@ export default async function WorkOrdersPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <WorkOrdersPageClient initialOrders={initialOrders} />
+            <WorkOrdersClientView initialOrders={initialOrders} />
         </div>)
 }

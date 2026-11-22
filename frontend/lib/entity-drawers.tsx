@@ -363,6 +363,11 @@ const PurchaseReturnDrawer = dynamic(
     { ssr: false, loading: () => skeleton("devolución de compra") }
 )
 
+const StatementDetailModal = dynamic(
+    () => import("@/features/treasury").then((m) => m.StatementDetailModal),
+    { ssr: false, loading: () => skeleton("estado de cuenta") }
+)
+
 const BankStatementDrawer = dynamic(
     () => import("@/features/treasury/components/BankStatementDrawer").then((m) => m.BankStatementDrawer),
     { ssr: false, loading: () => skeleton("cartola bancaria") }
@@ -644,6 +649,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             onOpenChange={onOpenChange}
         />
     ),
+    "treasury.creditcardstatement": ({ id, open, onOpenChange }) => <StatementDetailModal statementId={id} open={open} onOpenChange={onOpenChange} />,
     "treasury.bankstatement": ({ id, open, onOpenChange }) => (
         <BankStatementDrawer
             statementId={id}

@@ -7,25 +7,24 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import { ActionConfirmModal } from '@/components/shared'
 import { getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
-import { workOrderActions, type WorkOrderActionsCtx } from '@/features/production'
+import { workOrderActions, type WorkOrderActionsCtx } from '../workOrderActions'
 import type { Page } from '@/lib/pagination'
 
 import { useViewMode } from "@/hooks/useViewMode"
-import {
-    WorkOrderWizard,
-    WorkOrderKanban,
-    WorkOrderTimeline,
-    useWorkOrders,
-    useWorkOrderListActions,
-} from "@/features/production"
+import { WorkOrderWizard } from "./WorkOrderWizard"
+import { WorkOrderKanban } from "./WorkOrderKanban"
+import { WorkOrderTimeline } from "./WorkOrderTimeline"
+import { useWorkOrders } from "../hooks/useWorkOrders"
+import { useWorkOrderListActions } from "../hooks/useWorkOrderListActions"
 import { FadeIn, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { workOrderUnifiedSearchDef } from "@/features/production"
+import { workOrderUnifiedSearchDef } from "../unifiedSearchDef"
 import { toast } from "sonner"
 import { Collection, useEntityCollection, type CollectionViewMode } from "@/components/entity-view"
-import { workOrderEntity, workOrderViews, type WorkOrder, type WizardMode } from "@/features/production"
+import { workOrderEntity, workOrderViews } from "../entity-view/workOrder.entity"
+import type { WorkOrder, WizardMode } from "../types"
 
-interface WorkOrdersPageClientProps {
+interface WorkOrdersClientViewProps {
     initialOrders?: WorkOrder[]
 }
 
@@ -35,7 +34,7 @@ function toCollectionView(v: string): CollectionViewMode {
     return "table"
 }
 
-export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageClientProps) {
+export function WorkOrdersClientView({ initialOrders }: WorkOrdersClientViewProps) {
     const { currentView, handleViewChange } = useViewMode("production.workorder")
     const searchParams = useSearchParams()
     const router = useRouter()

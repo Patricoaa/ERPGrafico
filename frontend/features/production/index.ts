@@ -1,5 +1,6 @@
 export { WorkOrderWizard } from './components/WorkOrderWizard'
 export { WorkOrderKanban } from './components/WorkOrderKanban'
+export { WorkOrdersClientView } from './components/WorkOrdersClientView'
 export { WorkOrderTimeline } from './components/WorkOrderTimeline'
 export { ProductionMetricsCard } from './components/ProductionMetricsCard'
 export { ProductionStepsSidebar } from './components/ProductionStepsSidebar'

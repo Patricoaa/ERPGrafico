@@ -5,19 +5,20 @@ import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useEffect } from "react"
 
-import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
+import { JournalEntryDrawer } from "./JournalEntryDrawer"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
-import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
+import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryRowActions'
 
-import { useJournalEntries, type JournalEntry, journalEntryEntity, journalEntryViews } from "@/features/accounting"
-import { useAccountingAccounts } from "@/features/accounting"
+import { useJournalEntries, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry, type JournalEntry } from "../hooks/useJournalEntries"
+import { journalEntryEntity, journalEntryViews } from "../entity-view/journalEntry.entity"
+import { useAccountingAccounts } from "../hooks/useAccounts"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { journalEntryUnifiedSearchDef } from "@/features/accounting"
+import { journalEntryUnifiedSearchDef } from "../unifiedSearchDef"
 import { toast } from "sonner"
 import type { JournalEntryInitialData } from '@/types/forms'
 
-interface EntriesPageProps {
+interface EntriesClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
@@ -27,7 +28,7 @@ interface EntriesPageProps {
 const ENTRY_GROUPS: Record<string, FieldId<typeof journalEntryEntity.fields>> = { status: "status", is_manual: "origin" }
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
-export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
+export function EntriesClientView({ externalOpen, onExternalOpenChange, createAction }: EntriesClientViewProps) {
     const search = useUnifiedSearch(journalEntryUnifiedSearchDef)
     const groupBy = search.groupBy ? ENTRY_GROUPS[search.groupBy] ?? null : null
     const [pageState, setPageState] = useServerPage([search.filters, groupBy], DEFAULT_PAGE)

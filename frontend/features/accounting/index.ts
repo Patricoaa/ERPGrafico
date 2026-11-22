@@ -29,3 +29,4 @@ export { useRcvSettings, useUpdateRcvSettings, useRcvApiKeys, useRcvApiKeyMutati
 export { RCV_SUB_TABS, getRcvSubTab } from './navigation'
 export { validateAccountingPeriod } from './actions'
 export { journalEntryActions } from './journalEntryActions'
+export { EntriesClientView } from './components/EntriesClientView'
