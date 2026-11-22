@@ -15,8 +15,8 @@ vi.mock("next/navigation", () => ({
     usePathname: () => "/tax",
 }))
 vi.mock("@/hooks/useServerDate", () => ({ useServerDate: () => ({ serverDate: null, dateString: "2026-11-12" }) }))
-vi.mock("@/hooks/useEntityPanelRoute", () => ({
-    useEntityPanelRoute: () => ({ close: m.close, selectedId: 7, tab: {}, open: true }),
+vi.mock("@/hooks/useCreatePanelRoute", () => ({
+    useCreatePanelRoute: () => ({ close: m.close, selectedId: 7, tab: {}, open: true }),
 }))
 vi.mock("@/components/providers", () => ({
     EntityPanelTab: ({ children }: { children: (open: boolean) => React.ReactNode }) => <>{children(true)}</>,

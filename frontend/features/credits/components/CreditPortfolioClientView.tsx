@@ -1,6 +1,6 @@
 "use client"
 
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab } from "@/components/providers"
 import { useCallback, useMemo, useState } from "react"
 
@@ -38,7 +38,7 @@ export function CreditPortfolioClientView({
     const { contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
     const { data: rawHistory, isLoading: loadingHistory } = useCreditHistory()
 
-    const assignmentPanel = useEntityPanelRoute<CreditContact>({ endpoint: '/contacts', external: { open: externalOpen } })
+    const assignmentPanel = useCreatePanelRoute<CreditContact>({ endpoint: '/contacts', external: { open: externalOpen } })
     const selectedContact = assignmentPanel.entity
     const clearSelection = assignmentPanel.close
     const { openSelected } = useEntityRouteActions()

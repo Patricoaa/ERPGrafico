@@ -7,7 +7,7 @@ import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSear
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
@@ -74,8 +74,8 @@ export function PaymentHardwareClientView({
         { pagination: { mode: "client", pageSize: 20 }, defaultSort: terminalDeviceViews.table.defaultSort },
     )
 
-    const providerPanel = useEntityPanelRoute({ selectedParam: 'selected-provider', createValue: 'new-provider', resolved: false })
-    const devicePanel = useEntityPanelRoute({ selectedParam: 'selected-device', createValue: 'new-device', resolved: false })
+    const providerPanel = useCreatePanelRoute({ selectedParam: 'selected-provider', createValue: 'new-provider', resolved: false })
+    const devicePanel = useCreatePanelRoute({ selectedParam: 'selected-device', createValue: 'new-device', resolved: false })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada proveedor/terminal abre su propia pestaña; `?selected-*` solo es enlace profundo.
     useDeepLinkEntity("treasury.terminalprovider", { selectedParam: "selected-provider" })

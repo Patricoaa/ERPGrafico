@@ -16,7 +16,7 @@ import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDecla
 import { taxPeriodEntity, taxPeriodViews } from '../entity-view/taxPeriod.entity'
 
 import { type TaxPeriod } from "../types"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { Metric, MetricStrip, SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
@@ -34,7 +34,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     // esta pestaña de página solo atiende el botón externo (nueva declaración).
     const { openEntity } = useGlobalModals()
     useDeepLinkEntity("tax.taxperiod", { actions: [null] })
-    const declarationPanel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const declarationPanel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { taxPeriods: periodsData, isLoading: isLoadingPeriods, isError: isPeriodsError, refetch: refetchPeriods } = useTaxPeriods()
 
     const periods = ((periodsData as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[]

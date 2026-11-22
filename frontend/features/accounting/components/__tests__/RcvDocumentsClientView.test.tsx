@@ -17,8 +17,8 @@ vi.mock("next/navigation", () => ({
     usePathname: () => "/accounting/rcv/purchases",
 }))
 vi.mock("@/hooks/useViewMode", () => ({ useViewMode: () => ({ currentView: "list", handleViewChange: vi.fn() }) }))
-vi.mock("@/hooks/useEntityPanelRoute", () => ({
-    useEntityPanelRoute: () => ({
+vi.mock("@/hooks/useCreatePanelRoute", () => ({
+    useCreatePanelRoute: () => ({
         selectedId: null,
         open: false,
         close: vi.fn(),

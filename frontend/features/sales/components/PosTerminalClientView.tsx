@@ -13,7 +13,7 @@ import type { Terminal } from "@/features/treasury"
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { posTerminalEntity, posTerminalViews } from "../entity-view/posTerminal.entity"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
 
@@ -31,7 +31,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     const router = useRouter()
 
     // Cada terminal abre su ficha en una pestaña propia (ADR-0152); esta pestaña de página solo crea.
-    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     useDeepLinkEntity("treasury.posterminal")
 

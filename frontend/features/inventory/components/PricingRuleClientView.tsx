@@ -13,7 +13,7 @@ import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inven
 import { usePricingRules, type PricingRule } from "@/features/inventory/hooks/usePricingRules"
 import { pricingRuleUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { pricingRuleEntity, pricingRuleViews } from "../entity-view/pricingRule.entity"
 
@@ -29,7 +29,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     const { view, onViewChange } = useCollectionViewMode("inventory.pricingrule")
     const collection = useEntityCollection(pricingRuleEntity, { rows: rules, isLoading, error: isError, refetch, isFiltered: search.isFiltered })
 
-    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("inventory.pricingrule")

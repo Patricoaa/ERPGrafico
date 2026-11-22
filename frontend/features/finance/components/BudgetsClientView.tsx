@@ -20,7 +20,7 @@ interface BudgetsClientViewProps {
 }
 
 import { useBudgets } from "@/features/finance/hooks/useBudgets"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useServerDate } from '@/hooks/useServerDate'
@@ -33,7 +33,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
     const { view, onViewChange } = useCollectionViewMode("accounting.budget")
 
     // Crear (`?modal=new` / botón externo) es la pestaña de página; editar abre la pestaña del presupuesto.
-    const createPanel = useEntityPanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const createPanel = useCreatePanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada presupuesto abre su editor en una pestaña propia; `?selected` solo es enlace profundo.
     useDeepLinkEntity("accounting.budget")

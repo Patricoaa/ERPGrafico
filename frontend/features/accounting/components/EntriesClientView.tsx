@@ -2,7 +2,7 @@
 
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useEffect } from "react"
 
 import { JournalEntryDrawer } from "./JournalEntryDrawer"
@@ -56,7 +56,7 @@ export function EntriesClientView({ externalOpen, onExternalOpenChange, createAc
     useDeepLinkEntity("accounting.journalentry", { actions: ["view"] })
 
     // ?selected=<id> (sin action) → form de edición (panel de página)
-    const editPanel = useEntityPanelRoute<JournalEntry>({
+    const editPanel = useCreatePanelRoute<JournalEntry>({
         endpoint: '/accounting/entries',
         actions: [null],
         external: { open: externalOpen, onOpenChange: onExternalOpenChange },

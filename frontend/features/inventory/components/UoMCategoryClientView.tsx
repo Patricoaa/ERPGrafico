@@ -12,7 +12,7 @@ import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSear
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inventory/uomCategoryActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useUoMs, type UoMCategory } from "@/features/inventory/hooks/useUoMs"
 import { uomCategoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { uomCategoryEntity, uomCategoryViews } from "../entity-view/uomCategory.entity"
@@ -37,7 +37,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
         { defaultSort: uomCategoryViews.table.defaultSort },
     )
 
-    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada categoría abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("inventory.uomcategory")

@@ -132,13 +132,13 @@ goBackEntity()  // vuelve al documento anterior
 **Drawers que monta la página (solo creación `?modal=new` y paneles de acción con `variant`; ADR-0152).** Los registros ya no se montan aquí: se registran en `ENTITY_DRAWERS` y se abren con `openEntity`; un test de contrato (`entity-panel-registry.contract.test.ts`) exige que todo `EntityPanelTab` sin `variant` use una etiqueta registrada. Dos piezas, siempre juntas:
 
 ```tsx
-const panel = useEntityPanelRoute<Contact>({ endpoint: '/contacts', external: { open: externalOpen, onOpenChange } })
+const panel = useCreatePanelRoute<Contact>({ endpoint: '/contacts', external: { open: externalOpen, onOpenChange } })
 <EntityPanelTab label="contacts.contact" {...panel.tab}>
   {(open) => <ContactDrawer open={open} contact={panel.entity ?? undefined} onOpenChange={(o) => { if (!o) panel.close() }} />}
 </EntityPanelTab>
 ```
 
-- `useEntityPanelRoute` (`@/hooks`) es el **único** lugar que lee `?selected` / `?action` / `?modal=new`, carga el registro (`endpoint`, vía `useSelectedEntity`) y cierra (`close`: limpia los tres params, con guarda de cambios sin guardar). Las vistas **no** escriben `handleClose*`, `isCreateOpen` ni `router.replace` a mano.
+- `useCreatePanelRoute` (`@/hooks`) es el **único** lugar que lee `?selected` / `?action` / `?modal=new`, carga el registro (`endpoint`, vía `useSelectedEntity`) y cierra (`close`: limpia los tres params, con guarda de cambios sin guardar). Las vistas **no** escriben `handleClose*`, `isCreateOpen` ni `router.replace` a mano.
 - Varios paneles sobre una ruta se separan con `actions` (`[null, 'detail']`, `['disburse']`, `['view']`); `create: false` en los paneles que no crean; `enabled` / `resolved` cubren pestañas de la página y selecciones que la vista resuelve de sus filas.
 - `EntityPanelTab` (`@/components/providers`) registra la pestaña mientras `open`, muestra el drawer solo con su pestaña activa y a tamaño completo, y llama `onClose` al cerrar la pestaña. `id = null` = creación. Para estado no ligado a la URL (p. ej. libro de crédito) se pasan `id`/`open`/`onClose` a mano.
 - Alcance: **todo lo que crea o edita una entidad** es pestaña (drawers, wizards y modales de formulario). Quedan como overlay las acciones puntuales sobre un registro (pagar, depositar, cerrar sesión/año/periodo, confirmaciones, historiales y detalles de solo lectura).
@@ -442,7 +442,7 @@ son las que lo hacen operar como un detalle real (DET-02):
 | Drawer de entidad sin `mode` (dos componentes view/edit separados) | un drawer con `mode?: DrawerMode` |
 | Calcular modo manualmente: `mode ?? (initialData ? "view" : "create")` | Usar `useDrawerMode({ mode, initialData })` |
 | Combinar `initialData` con fetch interno (`useQuery` dentro del drawer) | Elegir UNA estrategia: O `initialData`, O fetch con `id` |
-| `handleClose*` / `isCreateOpen` / `useSelectedEntity` + `router.replace` escritos en cada vista | `useEntityPanelRoute` + `EntityPanelTab` |
+| `handleClose*` / `isCreateOpen` / `useSelectedEntity` + `router.replace` escritos en cada vista | `useCreatePanelRoute` + `EntityPanelTab` |
 | Adaptador con aliases: `<Drawer accountId={id} onSaved={onSuccess} />` | Estandarizar props en el Drawer a `id` y `onSuccess` |
 | Cerrar tras guardar con `setTimeout(() => onOpenChange(false), …)` o en `mutate(…, { onSuccess })` sin `await` | `await` de la mutación y cerrar dentro del callback de `handleSubmit` |
 | Modal de confirmación que llama `save(pendingValues)` directo | `onConfirm={() => void form.handleSubmit(save)()}` |

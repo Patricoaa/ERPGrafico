@@ -1,7 +1,7 @@
 "use client"
 
 import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useState, lazy, Suspense, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { BaseModal, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
@@ -34,8 +34,8 @@ export function TerminalBatchesClientView({
     const { batches, isLoading, isRefetching, isError, refetch } = useTerminalBatches(search.filters)
     const filteredBatches = search.filterFn(batches)
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalbatch")
-    const batchPanel = useEntityPanelRoute({ actions: [], createValue: 'batch' })
-    const invoicePanel = useEntityPanelRoute({ actions: [], createValue: 'invoice' })
+    const batchPanel = useCreatePanelRoute({ actions: [], createValue: 'batch' })
+    const invoicePanel = useCreatePanelRoute({ actions: [], createValue: 'invoice' })
 
     const handleOpenBatch = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())

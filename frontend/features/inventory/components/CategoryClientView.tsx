@@ -11,7 +11,7 @@ import { Collection, useCollectionViewMode, useEntityCollection } from "@/compon
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { categoryEntity, categoryViews } from "../entity-view/category.entity"
@@ -36,7 +36,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         { defaultSort: categoryViews.table.defaultSort },
     )
 
-    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("inventory.category")

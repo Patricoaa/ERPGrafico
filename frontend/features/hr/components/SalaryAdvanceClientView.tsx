@@ -12,7 +12,7 @@ import { useAdvanceMutations } from "../hooks/useAdvanceMutations"
 import { PaymentModal } from "@/features/treasury"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { SalaryAdvance } from "@/types/hr"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { salaryAdvanceEntity, salaryAdvanceViews } from "../entity-view/salaryAdvance.entity"
 
@@ -35,7 +35,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     )
     const { employees } = useEmployees()
 
-    const panel = useEntityPanelRoute({ resolved: false })
+    const panel = useCreatePanelRoute({ resolved: false })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("hr.salaryadvance")

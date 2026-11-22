@@ -1,6 +1,6 @@
 "use client"
 
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import React from "react"
@@ -28,7 +28,7 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
 
 
     // La creación (`?modal=new`) es la pestaña de página; editar abre la pestaña de la BOM (ADR-0152).
-    const panel = useEntityPanelRoute({ resolved: false })
+    const panel = useCreatePanelRoute({ resolved: false })
     const { openEntity } = useGlobalModals()
     useDeepLinkEntity("production.bom")
 

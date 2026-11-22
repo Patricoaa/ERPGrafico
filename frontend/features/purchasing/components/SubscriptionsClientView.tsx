@@ -1,6 +1,6 @@
 "use client"
 
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { showApiError } from "@/lib/errors"
@@ -79,7 +79,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     // ADR-0152: editar una suscripción abre su pestaña (la ficha del producto); el panel de página solo crea.
     const { openEntity } = useGlobalModals()
     useDeepLinkEntity("inventory.subscription", { actions: ["edit"] })
-    const formPanel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen } })
+    const formPanel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen } })
     const isHistoryOpen = !!selectedId && action === "history"
 
     // Suscripción del historial abierto (`?selected&action=history`)

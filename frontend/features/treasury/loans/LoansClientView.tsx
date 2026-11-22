@@ -2,7 +2,7 @@
 
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import {
@@ -92,8 +92,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     // crédito abre su propia pestaña (ADR-0152).
     const { openEntity } = useGlobalModals()
     useDeepLinkEntity("treasury.bankloan", { actions: [null, "detail"] })
-    const registerPanel = useEntityPanelRoute({ actions: [] })
-    const disbursePanel = useEntityPanelRoute({ actions: ['disburse'], create: false })
+    const registerPanel = useCreatePanelRoute({ actions: [] })
+    const disbursePanel = useCreatePanelRoute({ actions: ['disburse'], create: false })
 
     const handleReset = useCallback(() => {
         search.clearAll()

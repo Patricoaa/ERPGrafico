@@ -18,8 +18,8 @@ vi.mock("@/components/providers", () => ({
     useGlobalModals: () => ({ openEntity: m.openEntity }),
 }))
 vi.mock("@/hooks/useDeepLinkEntity", () => ({ useDeepLinkEntity: (label: string): void => { m.deepLink(label) } }))
-vi.mock("@/hooks/useEntityPanelRoute", () => ({
-    useEntityPanelRoute: (options: unknown) => {
+vi.mock("@/hooks/useCreatePanelRoute", () => ({
+    useCreatePanelRoute: (options: unknown) => {
         m.panelOptions = options
         return { tab: { id: null, open: false, onClose: vi.fn() }, close: vi.fn() }
     },

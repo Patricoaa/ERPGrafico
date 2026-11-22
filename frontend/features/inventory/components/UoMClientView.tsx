@@ -11,7 +11,7 @@ import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSear
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { uomUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -27,7 +27,7 @@ interface UoMClientViewProps {
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
     const search = useUnifiedSearch(uomUnifiedSearchDef)
     const { uoms, isLoading, isError, refetch, archiveUoM } = useUoMs(search.filters)
-    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("inventory.uom")

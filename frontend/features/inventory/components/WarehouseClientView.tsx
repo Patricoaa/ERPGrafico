@@ -8,7 +8,7 @@ import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
@@ -58,7 +58,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
    })
 
     // T-106: clearSelection viene directamente del hook — no re-declarar localmente (ADR-0020)
-    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("inventory.warehouse")

@@ -9,7 +9,7 @@ import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } 
 import { AbsenceDrawer, useAbsences, deleteAbsence, absenceActions, type AbsenceActionsCtx, useEmployees } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { Absence } from "@/types/hr"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { absenceEntity, absenceViews } from "../entity-view/absence.entity"
 
@@ -37,7 +37,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     )
     const { employees } = useEmployees()
 
-    const panel = useEntityPanelRoute({ resolved: false })
+    const panel = useCreatePanelRoute({ resolved: false })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("hr.absence")

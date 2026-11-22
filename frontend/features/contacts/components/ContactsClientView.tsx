@@ -10,7 +10,7 @@ import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useGlobalModals } from "@/components/providers"
 import { contactEntity, contactViews } from "../entity-view/contact.entity"
@@ -40,7 +40,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
     // Editar un contacto abre su pestaña (varias a la vez, ADR-0152); `?selected` solo es enlace profundo.
     useDeepLinkEntity("contacts.contact")
     // Esta pestaña de página queda solo para crear: `resolved: false` ignora `?selected`.
-    const panel = useEntityPanelRoute<Contact>({ external: { open: isNewModalOpen }, resolved: false })
+    const panel = useCreatePanelRoute<Contact>({ external: { open: isNewModalOpen }, resolved: false })
 
     const confirmArchive = async () => {
         if (!archiveTarget) return

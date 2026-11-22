@@ -2,7 +2,7 @@
 
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useState, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import { CreatePayrollDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
@@ -68,7 +68,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     )
 
     // `?modal=new` crea una nómina; `?selected` abre el detalle (dos paneles sobre la misma ruta).
-    const createPanel = useEntityPanelRoute({ actions: [] })
+    const createPanel = useCreatePanelRoute({ actions: [] })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada nómina abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("hr.payroll")

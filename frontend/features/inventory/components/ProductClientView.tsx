@@ -24,7 +24,7 @@ import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -139,7 +139,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
-    const panel = useEntityPanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("inventory.product")

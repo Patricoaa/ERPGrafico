@@ -50,7 +50,7 @@ export interface EntityPanelRoute<T> {
  * para ver/editar, `?modal=new` o `external` para crear. Es la única implementación de "abrir, cargar y
  * cerrar" que alimenta a `EntityPanelTab`; las vistas no vuelven a escribir su `handleClose`.
  */
-export function useEntityPanelRoute<T = unknown>({
+export function useCreatePanelRoute<T = unknown>({
     endpoint,
     actions,
     selectedParam = "selected",

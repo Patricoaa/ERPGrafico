@@ -2,7 +2,7 @@
 
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useState } from "react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
@@ -38,7 +38,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada cuenta abre su propia pestaña; esta pestaña de página solo crea (con cuenta padre).
     useDeepLinkEntity("accounting.account")
-    const panel = useEntityPanelRoute({
+    const panel = useCreatePanelRoute({
         resolved: false,
         external: { open: externalOpen, onOpenChange: (open) => { onExternalOpenChange?.(open); if (!open) setFormParentId(null) } },
     })

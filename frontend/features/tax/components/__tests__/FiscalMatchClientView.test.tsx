@@ -62,8 +62,8 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: m.push, replace: m.replace }),
     usePathname: () => "/accounting/rcv/cuadre",
 }))
-vi.mock("@/hooks/useEntityPanelRoute", () => ({
-    useEntityPanelRoute: () => ({
+vi.mock("@/hooks/useCreatePanelRoute", () => ({
+    useCreatePanelRoute: () => ({
         selectedId: m.selectedId,
         open: m.selectedId !== null,
         close: vi.fn(),

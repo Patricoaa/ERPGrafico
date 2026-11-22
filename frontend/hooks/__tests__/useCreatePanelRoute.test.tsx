@@ -1,7 +1,7 @@
 import { render, screen, act } from "@testing-library/react"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 
-import { useEntityPanelRoute, type UseEntityPanelRouteOptions } from "../useEntityPanelRoute"
+import { useCreatePanelRoute, type UseEntityPanelRouteOptions } from "../useCreatePanelRoute"
 
 const nav = vi.hoisted(() => ({ query: "", replace: vi.fn() }))
 
@@ -20,7 +20,7 @@ vi.mock("@/hooks/useSelectedEntity", () => ({
 }))
 
 function Probe({ options }: { options?: UseEntityPanelRouteOptions }) {
-    const panel = useEntityPanelRoute(options)
+    const panel = useCreatePanelRoute(options)
     return (
         <div>
             <span>{`open:${panel.open} create:${panel.isCreate} id:${panel.selectedId} tab:${panel.tab.id}`}</span>
@@ -31,7 +31,7 @@ function Probe({ options }: { options?: UseEntityPanelRouteOptions }) {
 
 const status = () => screen.getByText(/^open:/).textContent
 
-describe("useEntityPanelRoute", () => {
+describe("useCreatePanelRoute", () => {
     beforeEach(() => { nav.query = ""; nav.replace.mockReset(); selected.mockReset() })
 
     it("stays closed without selection", () => {

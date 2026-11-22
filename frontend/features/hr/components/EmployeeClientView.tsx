@@ -2,7 +2,7 @@
 
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React from "react"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
@@ -31,7 +31,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
         // Groups span the whole list, not one page.
         { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
     )
-    const panel = useEntityPanelRoute({ resolved: false })
+    const panel = useCreatePanelRoute({ resolved: false })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada empleado abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("hr.employee")

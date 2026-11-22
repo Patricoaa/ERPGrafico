@@ -52,7 +52,7 @@ Riesgo principal: drawers que hoy reciben contexto de la vista (filtros de perio
 
 ## Oleada 4 — Retiro de lo antiguo y documentación
 
-1. Borrar los usos restantes de `useEntityPanelRoute` para registros (queda solo creación / `variant`); renombrar o recortar el hook a `useCreatePanelRoute` si es lo único que sobrevive.
+1. Borrar los usos restantes de `useCreatePanelRoute` para registros (queda solo creación / `variant`); renombrar o recortar el hook a `useCreatePanelRoute` si es lo único que sobrevive.
 2. Deprecar `openSelected/openView/openAction` para registros en `useEntityRouteActions`; limpiar `searchableEntityRoutes`, notificaciones y búsqueda global que generan `?selected=`.
 3. Contratos: `component-entity-drawers.md`, `module-layout-navigation.md` §2.1.1, `add-feature.md`, `add-settings-panel.md`, ADR-0020 (nota) y ADR-0101 (§6, §12 *superseded*). Ratchet de la oleada 0 en cero y eliminado.
 4. Decisión documentada sobre montaje persistente de pestañas (sí/no) con los datos de uso.
@@ -60,7 +60,7 @@ Riesgo principal: drawers que hoy reciben contexto de la vista (filtros de perio
 ### Estado de la Oleada 4 (2026-11-22)
 
 - Hecho: Partners, distribuciones, Movimientos y terminales POS migrados; contratos y ADR-0020/0101 anotados; `useEntityRouteActions` documenta que `openSelected/openView` solo sirven a paneles de página con contexto.
-- Se mantienen a propósito (no son «ficha de registro»): `useEntityPanelRoute` para creación y `variant` (crédito/ledger, desembolso, cargo de tarjeta, lotes de terminal), edición de asientos contables, `CreditPortfolio`, cheques y estados de tarjeta (`openAction`). Renombrar el hook a `useCreatePanelRoute` queda como refactor aparte.
+- Se mantienen a propósito (no son «ficha de registro»): `useCreatePanelRoute` para creación y `variant` (crédito/ledger, desembolso, cargo de tarjeta, lotes de terminal), edición de asientos contables, `CreditPortfolio`, cheques y estados de tarjeta (`openAction`). Renombrar el hook a `useCreatePanelRoute` queda como refactor aparte.
 - Pendiente: **verificación en navegador** (gate de la Oleada 1) → recién entonces ADR-0152 a *Accepted*; decisión de montaje persistente de pestañas (sin datos de uso todavía, se difiere).
 
 ### Oleada 5 (2026-11-22) — fuera de `features/` y fichas documentales
@@ -68,7 +68,7 @@ Riesgo principal: drawers que hoy reciben contexto de la vista (filtros de perio
 - `useDocumentSheetRoute` reescrito: una pestaña por documento (`openEntity`) y resaltado de la fila de la pestaña activa (`activeEntity` en el provider). Cubre las 12 listas de documentos.
 - `WorkOrdersClientView` y `EntriesClientView` movidos de `app/` a `features/production` y `features/accounting`; las OT abren una pestaña por orden.
 - Detalle del estado de tarjeta (`treasury.creditcardstatement`) como pestaña; pagar queda como panel de acción.
-- Retirados `openRootEntity`, `closeEntityByRef` y `useTransactionDrawer`. `useSelectedEntity` se queda (lo usan `useEntityPanelRoute` y `useRecordById`).
+- Retirados `openRootEntity`, `closeEntityByRef` y `useTransactionDrawer`. `useSelectedEntity` se queda (lo usan `useCreatePanelRoute` y `useRecordById`).
 - Sin tocar a propósito: cierres fiscales (`?selected` es un año), `TaskInbox`, mesa de conciliación, depósito de cheques.
 
 ## Orden y dependencias

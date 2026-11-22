@@ -1,7 +1,7 @@
 "use client"
 
 import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useMemo, useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -176,7 +176,7 @@ export function UnbilledChargesClientView({
         [filteredRows, currency],
     )
 
-    const chargePanel = useEntityPanelRoute({ enabled: !isAllCards, resolved: !!chargeToEdit })
+    const chargePanel = useCreatePanelRoute({ enabled: !isAllCards, resolved: !!chargeToEdit })
 
     useEffect(() => {
         if (selectedId && !chargeToEdit) clearActions()
