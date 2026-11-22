@@ -1,4 +1,5 @@
 export * from './BOMDrawer';
+export * from './BOMRecordDrawer';
 export * from './BOMClientView';
 export * from './BOMManager';
 export * from './MaterialAssignmentTabs';

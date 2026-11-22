@@ -1,11 +1,13 @@
 export { WorkOrderWizard } from './components/WorkOrderWizard'
 export { WorkOrderKanban } from './components/WorkOrderKanban'
+export { WorkOrdersClientView } from './components/WorkOrdersClientView'
 export { WorkOrderTimeline } from './components/WorkOrderTimeline'
 export { ProductionMetricsCard } from './components/ProductionMetricsCard'
 export { ProductionStepsSidebar } from './components/ProductionStepsSidebar'
 export { DraftMaterialsStep, DraftOutsourcingStep } from './components/shared/DraftPlanningSteps'
 export type { DraftMaterial, DraftOutsourcedService } from './components/shared/DraftPlanningSteps'
 export { BOMDrawer } from './components/BOMDrawer'
+export { BOMRecordDrawer } from './components/BOMRecordDrawer'
 export { BOMClientView } from './components/BOMClientView'
 export {
   useWorkOrderProducts,

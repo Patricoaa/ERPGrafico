@@ -1,19 +1,16 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
 import { Download } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
-import { EntityPanelTab } from "@/components/providers"
 import { Can } from "@/components/auth"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useRcvDocuments } from "../../hooks/useRcvDocuments"
 import { rcvDocumentEntity, rcvPurchaseViews, rcvSaleViews } from "../../entity-view/rcvDocument.entity"
 import { isFiscalMatchStatus } from "@/lib/fiscal-match"
 import { rcvDocumentUnifiedSearchDef, rcvSaleUnifiedSearchDef } from "../../unifiedSearchDef"
 import type { RcvDirection, RcvDocumentFilters } from "../../types"
-import { RcvDocumentDrawer } from "./RcvDocumentDrawer"
 import { RcvImportModal } from "./RcvImportModal"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
@@ -43,9 +40,6 @@ function toRcvFilters(direction: RcvDirection, params: Record<string, string>): 
 }
 
 export function RcvDocumentsClientView({ direction }: { direction: RcvDirection }) {
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const [importOpen, setImportOpen] = useState(false)
     const purchases = direction === "PURCHASES"
     const searchDef = purchases ? rcvDocumentUnifiedSearchDef : rcvSaleUnifiedSearchDef
@@ -55,7 +49,8 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
     // No default period: the tab lists every imported document until the user filters.
     const filters = useMemo(() => toRcvFilters(direction, search.filters), [direction, search.filters])
     const { view, onViewChange } = useCollectionViewMode("accounting.rcvdocument")
-    const panel = useEntityPanelRoute({ create: false })
+    // ADR-0152: cada documento abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
+    useDeepLinkEntity("accounting.rcvdocument")
 
     const [pageState, setPageState] = useServerPage([filters], DEFAULT_PAGE)
     const { page, documents, isLoading, isRefetching, isError, refetch } = useRcvDocuments({
@@ -70,11 +65,6 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
         { pagination: { mode: "server", state: pageState, onChange: setPageState } },
     )
 
-    const openDocument = useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
 
     const directions = useMemo(() => [direction], [direction])
     const importAction = (
@@ -89,9 +79,6 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                selection="panel"
-                selectedId={panel.selectedId}
-                onOpen={(doc) => openDocument(doc.id)}
             >
                 <Collection.Toolbar action={importAction}>
                     <UnifiedSearchBar
@@ -110,15 +97,6 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
                 />
             </Collection.Root>
 
-            <EntityPanelTab label="accounting.rcvdocument" {...panel.tab}>
-                {(open) => (
-                    <RcvDocumentDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(o) => { if (!o) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
             <RcvImportModal open={importOpen} onOpenChange={setImportOpen} defaultDirections={directions} />
         </div>
     )

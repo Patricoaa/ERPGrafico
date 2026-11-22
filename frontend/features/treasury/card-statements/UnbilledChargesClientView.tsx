@@ -484,7 +484,9 @@ export function UnbilledChargesClientView({
                 </Collection.Analytics>
             </Collection.Root>
 
-            <EntityPanelTab label="treasury.cardpendingcharge" {...chargePanel.tab}>
+            {/* Editor ligado al contexto de la página (tarjeta, moneda, cargos del período): panel de página con `variant`
+                (ADR-0152 §3), no ficha de registro del registro de drawers. */}
+            <EntityPanelTab label="treasury.cardpendingcharge" variant="charge" display={chargeToEdit ? "Cargo de tarjeta" : "Nuevo cargo"} {...chargePanel.tab}>
                 {(open) => (
                     <CardPendingChargeDrawer
                         open={open}

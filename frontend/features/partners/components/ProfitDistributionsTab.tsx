@@ -9,14 +9,12 @@ import { type ProfitDistribution } from "@/features/contacts"
 import { useProfitDistributions, useOnOpen } from "../hooks"
 import { CreateDistributionWizard } from "./CreateDistributionWizard"
 import { MassPaymentWizard } from "./MassPaymentWizard"
-import { ProfitDistributionDrawer } from "./ProfitDistributionDrawer"
 import { ProfitDistributionActionModal, type ProfitDistributionActionRequest } from "./ProfitDistributionActionModal"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { profitDistributionEntity, profitDistributionViews } from "../entity-view/profitDistribution.entity"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 
 const distributionSearchConfig: UnifiedSearchConfig = {
     searchFields: [
@@ -77,9 +75,9 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
     })
     const [actionRequest, setActionRequest] = useState<ProfitDistributionActionRequest | null>(null)
 
-    // Panel de entidad (ADR-0101): `?selected=id` → workspace tab
-    const { openSelected } = useEntityRouteActions()
-    const panel = useEntityPanelRoute<ProfitDistribution>({ create: false })
+    // Cada distribución abre su detalle en una pestaña propia (ADR-0152).
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("contacts.profitdistributionresolution")
 
     // Apertura del flujo desde la URL (?modal=new-distribution)
     useOnOpen(initialFlowOpen, () => setFlow(prev => ({ ...prev, selectedResolution: undefined, isFlowOpen: true })))
@@ -90,7 +88,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
     }
 
     const actionsCtx: ProfitDistributionActionsCtx = {
-        onViewDetail: (dist) => openSelected(dist.id),
+        onViewDetail: (dist) => openEntity("contacts.profitdistributionresolution", dist.id, dist),
         onRetake: (dist) => setFlow(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true })),
         onExecute: (dist) => setActionRequest({ kind: 'execute', distribution: dist }),
         onDelete: (dist) => setActionRequest({ kind: 'delete', distribution: dist }),
@@ -124,7 +122,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                     collection={collection}
                     label="Distribuciones de utilidades"
                     actions={profitDistributionActions.forCollection(actionsCtx)}
-                    onOpen={(dist) => openSelected(dist.id)}
+                    onOpen={(dist) => openEntity("contacts.profitdistributionresolution", dist.id, dist)}
                 >
                     <Collection.Toolbar action={createAction}>
                         <UnifiedSearchBar
@@ -159,16 +157,6 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 />
             )}
 
-            {/* Drawer de detalle — workspace tab (ADR-0101) */}
-            <EntityPanelTab label="contacts.profitdistributionresolution" {...panel.tab}>
-                {(open) => (
-                    <ProfitDistributionDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(o) => { if (!o) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
 
             <ProfitDistributionActionModal request={actionRequest} onClose={() => setActionRequest(null)} />
         </div>

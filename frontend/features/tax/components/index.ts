@@ -12,3 +12,4 @@ export * from './FiscalMatchPickerPanel';
 export * from './FiscalMatchCandidateCard';
 export * from './FiscalMatchSearchToolbar';
 export * from './FiscalMatchRegisterSaleSection';
+export * from './DeclarationRecordWizard';

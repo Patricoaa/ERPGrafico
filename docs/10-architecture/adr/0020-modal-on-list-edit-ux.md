@@ -8,6 +8,8 @@ author: core-team
 
 # 0020 — Modal-on-List Edit UX (URL-State Pattern)
 
+> **Nota ADR-0152:** `?selected` deja de montar el editor en la página; es solo **enlace profundo** (`useDeepLinkEntity` abre la pestaña del registro una vez y limpia la URL). Las filas abren cada registro con `openEntity`.
+
 > **Supersede parcialmente:** ADR-0025 — los reverts de Phase 4 siguen vigentes; la expansión schema-driven queda supersedida por este ADR. Firmas Stakeholder: @pato.
 
 ---

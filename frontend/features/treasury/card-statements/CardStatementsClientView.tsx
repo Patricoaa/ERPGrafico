@@ -16,7 +16,8 @@ import { creditCardStatementEntity, creditCardStatementViews } from '../entity-v
 import { useCardStatements } from '../hooks/useCardStatements'
 import { useCardAccounts } from '../hooks/useCardAccounts'
 import { useBanks } from '../hooks/useMasterData'
-import { StatementDetailModal } from './StatementDetailModal'
+import { useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { PayStatementModal } from './PayStatementModal'
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import type { CreditCardStatement } from './types'
@@ -49,7 +50,6 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
-    const isDetailOpen = !!selectedId && (action === "detail" || !action)
     const isPayOpen = !!selectedId && action === "pay"
 
     const unifiedConfig: UnifiedSearchConfig = useMemo(() => {
@@ -131,7 +131,13 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
 
     const { openAction, clearActions } = useEntityRouteActions()
 
-    const openStatement = (id: number, actionType: string) => openAction(id, actionType)
+    // ADR-0152: el detalle de cada estado abre su pestaña; pagar es una acción (`?action=pay`) de esta página.
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("treasury.creditcardstatement", { actions: [null, "detail"] })
+    const openStatement = (id: number, actionType: string) => {
+        if (actionType === "detail") openEntity("treasury.creditcardstatement", id, statements.find(s => s.id === id))
+        else openAction(id, actionType)
+    }
 
     const selectedStatement = useMemo(
         () => selectedId ? statements.find(s => s.id === selectedId) ?? null : null,
@@ -436,11 +442,6 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                 </Collection.Analytics>
             </Collection.Root>
 
-            <StatementDetailModal
-                statementId={selectedId}
-                open={isDetailOpen}
-                onOpenChange={(open) => { if (!open) clearActions() }}
-            />
             <PayStatementModal
                 statement={selectedStatement}
                 open={isPayOpen}

@@ -29,10 +29,10 @@ interface SalesOrdersViewProps {
     selectedId?: number | null
 }
 
-/** Shared selection: the document sheet (?selected, ADR-0083) or, in POS, the host's own selection. */
+/** Shared selection: the document sheet (one tab per document, ADR-0152) or, in POS, the host's own selection. */
 interface SheetSelection {
     selectedId: number | null
-    toggle: (id: number) => void
+    toggle: (id: number, data?: unknown) => void
 }
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
@@ -47,7 +47,7 @@ export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOr
     const sheet = useDocumentSheetRoute(onSelectOrder ? null : (viewMode === "orders" ? "sales.saleorder" : "billing.invoice"))
     const selection: SheetSelection = onSelectOrder
         ? { selectedId: selectedId ?? null, toggle: (id) => onSelectOrder(selectedId === id ? null : id) }
-        : { selectedId: sheet.selectedId ?? null, toggle: (id) => sheet.toggle(id) }
+        : { selectedId: sheet.selectedId ?? null, toggle: (id, data) => sheet.toggle(id, data) }
 
     // One collection per mode, each with its own hook: the hidden mode no longer fetches.
     return viewMode === "orders"
@@ -97,7 +97,7 @@ function SaleOrderCollection({ selection, withActions }: { selection: SheetSelec
                 collection={collection}
                 selection="panel"
                 selectedId={selection.selectedId}
-                onOpen={(order) => selection.toggle(order.id)}
+                onOpen={(order) => selection.toggle(order.id, order)}
                 actions={withActions ? (order) => <DocumentRowActions id={order.id} kind="sale-order" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}
@@ -168,7 +168,7 @@ function SaleNoteCollection({ selection, withActions }: { selection: SheetSelect
                 collection={collection}
                 selection="panel"
                 selectedId={selection.selectedId}
-                onOpen={(note) => selection.toggle(note.id)}
+                onOpen={(note) => selection.toggle(note.id, note)}
                 actions={withActions ? (note) => <DocumentRowActions id={note.id} kind="invoice" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}

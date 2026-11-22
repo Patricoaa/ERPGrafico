@@ -4,9 +4,8 @@ import React, { useEffect, useState, useMemo } from "react"
 import { MoveHorizontal } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { useOnOpen } from "../hooks"
@@ -24,7 +23,6 @@ import type { Granularity } from "@/lib/analytics-helpers"
 import { partnerEntity, partnerViews } from "../entity-view/partner.entity"
 import { buildPartnerAnalyticsScreen } from "./partnerAnalyticsScreen"
 import { usePartnerActions } from "./PartnerActionModal"
-import { PartnerDrawer } from "./PartnerDrawer"
 
 const partnerUnifiedSearchDef: UnifiedSearchConfig = {
     searchFields: [
@@ -81,7 +79,7 @@ export function PartnersClientView({
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { openSelected } = useEntityRouteActions()
+    const { openEntity } = useGlobalModals()
     const clearModalParams = React.useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         if (!params.has('modal') && !params.has('contact')) return
@@ -92,8 +90,8 @@ export function PartnersClientView({
     }, [searchParams, router, pathname])
     const { run, host } = usePartnerActions({ onClose: clearModalParams })
 
-    // La ficha del socio es un panel de entidad (`?selected=id`); no necesita endpoint: carga por id.
-    const panel = useEntityPanelRoute({ create: false })
+    // Cada socio abre su ficha en una pestaña propia (ADR-0152); `?selected=id` solo es enlace profundo.
+    useDeepLinkEntity("contacts.partner")
 
     // Enlaces antiguos `?ledger=id` (libro auxiliar) → ficha del socio.
     const ledgerParam = searchParams.get("ledger")
@@ -172,7 +170,7 @@ export function PartnersClientView({
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(partner) => openSelected(partner.id)}
+                onOpen={(partner) => openEntity("contacts.partner", partner.id, partner)}
             >
                 <Collection.Toolbar action={partnerActionButtons}>
                     <UnifiedSearchBar config={partnerUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar socio por nombre o ID fiscal..." />
@@ -188,15 +186,6 @@ export function PartnersClientView({
                 </Collection.Analytics>
             </Collection.Root>
 
-            <EntityPanelTab label="contacts.partner" {...panel.tab}>
-                {(open) => (
-                    <PartnerDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(o) => { if (!o) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
 
             {host}
         </div>

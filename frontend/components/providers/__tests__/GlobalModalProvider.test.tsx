@@ -47,6 +47,8 @@ function Controls() {
             <Button onClick={() => openEntity("sales.saledelivery", 1, undefined, undefined, { display: "DES-1" })}>abrir-despacho</Button>
             <Button onClick={() => openEntity("inventory.stockmove", 7, undefined, undefined, { display: "MOV-7" })}>abrir-move</Button>
             <Button onClick={() => openEntity("sales.saleorder", 42, undefined, undefined, { display: "OV-42" })}>abrir-ov</Button>
+            <Button onClick={() => openEntity("inventory.stockmove", 8, undefined, undefined, { display: "MOV-8" })}>abrir-move-8</Button>
+            <Button onClick={() => openEntity("inventory.stockmove", 9, undefined, undefined, { display: "MOV-7" })}>abrir-move-9-mismo-titulo</Button>
             <Button onClick={() => openTool("cost-calculator")}>abrir-calculadora</Button>
             <Button onClick={() => setEntityDisplay("sales.saleorder", 42, "OV-000042")}>nombrar-ov</Button>
             <Button onClick={closeEntity}>cerrar-todo</Button>
@@ -88,6 +90,22 @@ describe("GlobalModalProvider workspace tabs", () => {
         expect(tabTitles()).toEqual(["tab:DES-1", "tab:MOV-7*"])
         expect(screen.getByText("open:inventory.stockmove:7")).toBeInTheDocument()
         expect(screen.queryByText("open:sales.saledelivery:1")).toBeNull()
+    })
+
+    it("opens several records of the same entity as separate tabs (ADR-0152)", () => {
+        setup()
+        click("abrir-move")
+        click("abrir-move-8")
+        expect(tabTitles()).toEqual(["tab:MOV-7", "tab:MOV-8*"])
+        click("abrir-move")
+        expect(tabTitles()).toEqual(["tab:MOV-7*", "tab:MOV-8"])
+    })
+
+    it("tells apart two tabs that share a title with a numeric suffix", () => {
+        setup()
+        click("abrir-move")
+        click("abrir-move-9-mismo-titulo")
+        expect(tabTitles()).toEqual(["tab:MOV-7", "tab:MOV-7 (2)*"])
     })
 
     it("switches tabs without duplicating and re-opening an open document just activates it", () => {

@@ -1,20 +1,17 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
 import { RefreshCw } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
-import { EntityPanelTab } from "@/components/providers"
 import { Can } from "@/components/auth"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { isFiscalMatchStatus } from "@/lib/fiscal-match"
 import { useTerminalSales } from "../hooks/useTerminalSales"
 import { useTerminalProviders } from "../hooks/useTerminalProviders"
 import { terminalSaleUnifiedSearchDef } from "../unifiedSearchDef"
 import { terminalSaleEntity, terminalSaleViews } from "../entity-view/terminalSale.entity"
 import type { TerminalSalePaymentType, TerminalSaleStatus, TerminalSalesSummaryFilters } from "../types"
-import { TerminalSaleDrawer } from "./TerminalSaleDrawer"
 import { TerminalSyncModal } from "./TerminalSyncModal"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
@@ -43,9 +40,6 @@ function toSalesFilters(params: Record<string, string>): TerminalSalesSummaryFil
 }
 
 export function TerminalSalesClientView() {
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const [syncOpen, setSyncOpen] = useState(false)
 
     const { providers } = useTerminalProviders()
@@ -57,7 +51,8 @@ export function TerminalSalesClientView() {
     // No default period: the tab lists every synced sale until the user filters.
     const filters = useMemo(() => toSalesFilters(search.filters), [search.filters])
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalsale")
-    const panel = useEntityPanelRoute({ create: false })
+    // ADR-0152: cada registro abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
+    useDeepLinkEntity("treasury.terminalsale")
 
     const [pageState, setPageState] = useServerPage([filters], DEFAULT_PAGE)
     const { page, sales, isLoading, isRefetching, isError, refetch } = useTerminalSales({
@@ -72,11 +67,6 @@ export function TerminalSalesClientView() {
         { pagination: { mode: "server", state: pageState, onChange: setPageState } },
     )
 
-    const openSale = useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
 
     const syncAction = (
         <Can permission="treasury.add_terminalsyncrun">
@@ -90,9 +80,6 @@ export function TerminalSalesClientView() {
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                selection="panel"
-                selectedId={panel.selectedId}
-                onOpen={(sale) => openSale(sale.id)}
             >
                 <Collection.Toolbar action={syncAction}>
                     <UnifiedSearchBar
@@ -112,15 +99,6 @@ export function TerminalSalesClientView() {
                 />
             </Collection.Root>
 
-            <EntityPanelTab label="treasury.terminalsale" {...panel.tab}>
-                {(open) => (
-                    <TerminalSaleDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(o) => { if (!o) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
             <TerminalSyncModal open={syncOpen} onOpenChange={setSyncOpen} />
         </div>
     )

@@ -20,7 +20,9 @@ vi.mock("@/hooks/useEntityPanelRoute", () => ({
 }))
 vi.mock("@/components/providers", () => ({
     EntityPanelTab: ({ children }: { children: (open: boolean) => React.ReactNode }) => <>{children(true)}</>,
+    useGlobalModals: () => ({ openEntity: vi.fn() }),
 }))
+vi.mock("@/hooks/useDeepLinkEntity", () => ({ useDeepLinkEntity: vi.fn() }))
 vi.mock("@/components/entity-view", () => ({
     Collection: Object.assign(({ children }: { children: React.ReactNode }) => <>{children}</>, {
         Root: ({ children }: { children: React.ReactNode }) => <>{children}</>,

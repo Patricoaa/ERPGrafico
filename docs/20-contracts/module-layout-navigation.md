@@ -73,6 +73,8 @@ Una vista puede montar su propio `<PageHeader>` (p. ej. para `titleActions`) **s
 
 `WorkspaceTabBar` sustituye a la topbar: es el primer panel del viewport (`h-12` = `--header-height`). Una sola fila de pestañas con el mismo estilo: la de la **página** elegida en el riel (título e ícono del header de la vista; no se cierra; activa cuando no hay otra pestaña activa), las de los **documentos** abiertos con `openEntity` la de la **Calculadora de Costos** si se eligió en el riel (`openTool`), la **mesa de conciliación** (`openWorkbench`) y las **notas de crédito/débito en emisión** (`openNoteWizard`, ADR-0143; permanecen montadas para conservar lo ingresado). Las de documento y herramienta se cierran al cambiar de ruta. En los extremos: estado, `titleActions` y `children` de la vista, migas profundas y, en móvil, el botón de navegación (`UserActions` estaba vacío y se eliminó). El contenido de la pestaña activa ocupa siempre todo el área bajo la barra (full, sin redimensionar, sin cierre por clic fuera): la lista queda inoperable hasta volver a la pestaña de la página. La vista no monta su propio drawer de calculadora.
 
+> **ADR-0152:** las filas de una lista abren **una pestaña por registro** (`openEntity`, varias por entidad, títulos repetidos con ` (2)`); la pestaña de lista ya no es «la fila explorada» y `?selected` es solo enlace profundo.
+
 ### 2.2 Sub-vistas de módulo en el riel (caso Tesorería / Centro de Bancos)
 
 Todo acceso a una sub-vista DEBE quedar declarado en el árbol de navegación del módulo (`navigation.ts`), que es la **fuente única** de la que dependen tanto `[Module]Header` como cualquier header de sección (`BankPageHeader`). Reglas:

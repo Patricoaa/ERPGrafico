@@ -1,18 +1,15 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
 import { Download } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
-import { EntityPanelTab } from "@/components/providers"
 import { Can } from "@/components/auth"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useRcvImports } from "../../hooks/useRcvImports"
 import { rcvImportEntity, rcvImportViews } from "../../entity-view/rcvImport.entity"
 import { rcvImportUnifiedSearchDef } from "../../unifiedSearchDef"
 import type { RcvDirection, RcvImportFilters, RcvImportStatus, RcvImportTrigger } from "../../types"
-import { RcvImportDrawer } from "./RcvImportDrawer"
 import { RcvImportModal } from "./RcvImportModal"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
@@ -41,15 +38,13 @@ function toImportFilters(params: Record<string, string>): RcvImportFilters {
 }
 
 export function RcvImportsClientView() {
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const [importOpen, setImportOpen] = useState(false)
 
     const search = useUnifiedSearch(rcvImportUnifiedSearchDef)
     const filters = useMemo(() => toImportFilters(search.filters), [search.filters])
     const { view, onViewChange } = useCollectionViewMode("accounting.rcvimport")
-    const panel = useEntityPanelRoute({ create: false })
+    // ADR-0152: cada documento abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
+    useDeepLinkEntity("accounting.rcvimport")
 
     const [pageState, setPageState] = useServerPage([filters], DEFAULT_PAGE)
     const { page, imports, isLoading, isRefetching, isError, refetch } = useRcvImports({
@@ -64,11 +59,6 @@ export function RcvImportsClientView() {
         { pagination: { mode: "server", state: pageState, onChange: setPageState } },
     )
 
-    const openImport = useCallback((id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
 
     const importAction = (
         <Can permission="accounting.add_rcvimport">
@@ -82,9 +72,6 @@ export function RcvImportsClientView() {
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                selection="panel"
-                selectedId={panel.selectedId}
-                onOpen={(imp) => openImport(imp.id)}
             >
                 <Collection.Toolbar action={importAction}>
                     <UnifiedSearchBar
@@ -103,15 +90,6 @@ export function RcvImportsClientView() {
                 />
             </Collection.Root>
 
-            <EntityPanelTab label="accounting.rcvimport" {...panel.tab}>
-                {(open) => (
-                    <RcvImportDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(o) => { if (!o) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
             <RcvImportModal open={importOpen} onOpenChange={setImportOpen} />
         </div>
     )

@@ -1,5 +1,6 @@
 export {
     DeclarationWizard,
+    DeclarationRecordWizard,
     TaxDeclarationsClientView,
     F29PaymentStep,
     F29CloseStep,

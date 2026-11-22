@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
+import { EntityViewProvider } from "@/components/providers/EntityOpenerContext"
 import type { TerminalSale } from "../../types"
 
 const m = vi.hoisted(() => ({
@@ -9,7 +10,8 @@ const m = vi.hoisted(() => ({
     filters: {} as Record<string, string>,
     applyFilter: vi.fn(() => Promise.resolve()),
     push: vi.fn(),
-    panel: { selectedId: null as number | null, open: false },
+    deepLink: vi.fn(),
+    open: vi.fn(),
 }))
 
 vi.mock("next/navigation", () => ({
@@ -18,24 +20,9 @@ vi.mock("next/navigation", () => ({
     usePathname: () => "/treasury/terminal-cobro/sales",
 }))
 vi.mock("@/hooks/useViewMode", () => ({ useViewMode: () => ({ currentView: "list", handleViewChange: vi.fn() }) }))
-vi.mock("@/hooks/useEntityPanelRoute", () => ({
-    useEntityPanelRoute: () => ({
-        selectedId: m.panel.selectedId,
-        open: m.panel.open,
-        close: vi.fn(),
-        tab: { id: m.panel.selectedId, open: m.panel.open, onClose: vi.fn() },
-    }),
-}))
-vi.mock("@/components/providers", () => ({
-    EntityPanelTab: ({ label, open, children }: { label: string; open: boolean; children: (open: boolean) => React.ReactNode }) => (
-        <div data-testid={`panel-tab-${label}`}>{children(open)}</div>
-    ),
-}))
+vi.mock("@/hooks/useDeepLinkEntity", () => ({ useDeepLinkEntity: (label: string): void => { m.deepLink(label) } }))
 vi.mock("@/components/auth", () => ({
     Can: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
-vi.mock("../TerminalSaleDrawer", () => ({
-    TerminalSaleDrawer: ({ id, open }: { id: number | null; open: boolean }) => (open ? <div>drawer-venta #{id}</div> : null),
 }))
 vi.mock("@/components/shared", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@/components/shared")>()
@@ -86,7 +73,8 @@ describe("TerminalSalesClientView", () => {
         m.useTerminalSales.mockClear()
         m.applyFilter.mockClear()
         m.push.mockClear()
-        m.panel = { selectedId: null, open: false }
+        m.deepLink.mockClear()
+        m.open.mockClear()
     })
 
     it("sin filtros en la URL lista todas las ventas: no inyecta un período por defecto", () => {
@@ -141,16 +129,20 @@ describe("TerminalSalesClientView", () => {
         expect(screen.queryByText("Aún no hay ventas sincronizadas")).not.toBeInTheDocument()
     })
 
-    it("abrir una fila selecciona la venta vía ?selected", () => {
+    it("abrir una fila abre la pestaña de la venta con el abridor por defecto (ADR-0152)", () => {
         m.sales = [sale]
-        render(<TerminalSalesClientView />)
+        render(
+            <EntityViewProvider opener={{ open: m.open, labelOf: () => undefined }}>
+                <TerminalSalesClientView />
+            </EntityViewProvider>,
+        )
         fireEvent.click(screen.getByText("13347"))
-        expect(m.push).toHaveBeenCalledWith("/treasury/terminal-cobro/sales?selected=1", { scroll: false })
+        expect(m.open).toHaveBeenCalledWith("treasury.terminalsale", 1, expect.objectContaining({ id: 1 }))
+        expect(m.push).not.toHaveBeenCalled()
     })
 
-    it("con ?selected monta la ficha de la venta como pestaña de entidad", () => {
-        m.panel = { selectedId: 1, open: true }
+    it("trata ?selected como enlace profundo de la venta", () => {
         render(<TerminalSalesClientView />)
-        expect(within(screen.getByTestId("panel-tab-treasury.terminalsale")).getByText("drawer-venta #1")).toBeInTheDocument()
+        expect(m.deepLink).toHaveBeenCalledWith("treasury.terminalsale")
     })
 })

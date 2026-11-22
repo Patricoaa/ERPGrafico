@@ -1,9 +1,9 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
 import React, { useState } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
@@ -11,7 +11,6 @@ import { AccountDrawer } from "@/features/finance"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { showApiError } from "@/lib/errors"
 import { type Account } from "@/features/accounting/types"
-import { EntitySidebar } from "@/features/comments"
 import { accountActions, type AccountActionsCtx } from "./accountActions"
 import { buildAccountTree } from "../utils/accountTree"
 import { accountUnifiedSearchDef } from "../unifiedSearchDef"
@@ -36,15 +35,13 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         return []
     }, [flatAccounts])
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
-    const panel = useEntityPanelRoute<Account>({
-        endpoint: '/accounting/accounts',
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada cuenta abre su propia pestaña; esta pestaña de página solo crea (con cuenta padre).
+    useDeepLinkEntity("accounting.account")
+    const panel = useEntityPanelRoute({
+        resolved: false,
         external: { open: externalOpen, onOpenChange: (open) => { onExternalOpenChange?.(open); if (!open) setFormParentId(null) } },
     })
-    const editingAccount = panel.entity
 
     const confirmArchive = async () => {
         if (!archiveTarget) return
@@ -60,13 +57,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     }
 
     const actionCtx = React.useMemo<AccountActionsCtx>(() => ({
-        onEdit: (account) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('selected', String(account.id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onEdit: (account) => openEntity("accounting.account", account.id, account),
         onArchive: (account) => setArchiveTarget(account),
-    }), [router, pathname, searchParams])
+    }), [openEntity])
     // Stable row callbacks: the fully expanded chart re-renders every row when they change.
     const rowActions = React.useMemo(() => accountActions.forCollection(actionCtx), [actionCtx])
 
@@ -81,7 +74,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
-                onOpen={actionCtx.onEdit}
                 actions={rowActions}
             >
                 <Collection.Toolbar action={createAction}>
@@ -100,14 +92,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 {(open) => (
                     <AccountDrawer
                         accounts={flatAccounts as unknown as Record<string, unknown>[]}
-                        initialData={editingAccount as unknown as Record<string, unknown>}
                         parentId={formParentId || undefined}
-                        auditSidebar={
-                            editingAccount ? (
-                                <EntitySidebar entityId={editingAccount.id} entityType="account" />
-                            ) : undefined
-                        }
-                        mode={editingAccount ? 'edit' : 'create'}
+                        mode="create"
                         onSuccess={() => {
                             refetch()
                         }}

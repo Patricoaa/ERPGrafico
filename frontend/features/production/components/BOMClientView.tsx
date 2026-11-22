@@ -1,12 +1,12 @@
 "use client"
 
 import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import React from "react"
-import { useSearchParams, useRouter } from "next/navigation"
 import { ActionConfirmModal } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
-import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
+import { BOMDrawer, useAllBOMs, useDeleteBomMutation } from "@/features/production"
 import { bomActions, type BOMActionsCtx } from "./bomActions"
 import { bomEntity, bomViews } from "../entity-view/bom.entity"
 
@@ -15,7 +15,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
 import { bomUnifiedSearchDef } from "@/features/production"
 
-import type { BOM, ProductMinimal } from "@/features/production/types"
+import type { BOM } from "@/features/production/types"
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
 const BOM_GROUPS: Record<string, FieldId<typeof bomEntity.fields>> = { active: "active" }
@@ -27,15 +27,12 @@ interface BOMClientViewProps {
 export function BOMClientView({ initialBoms }: BOMClientViewProps) {
 
 
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const panel = useEntityPanelRoute()
-    const editingBomId = panel.selectedId
+    // La creación (`?modal=new`) es la pestaña de página; editar abre la pestaña de la BOM (ADR-0152).
+    const panel = useEntityPanelRoute({ resolved: false })
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("production.bom")
 
     const { deleteBom } = useDeleteBomMutation()
-    const { data: editingBomData } = useBOM(editingBomId ?? undefined)
-    // `getBOM` has no typed response: cast once here instead of a cast per field below.
-    const editingBom = editingBomData as BOM | undefined
 
     const search = useUnifiedSearch(bomUnifiedSearchDef)
     const allFilters = { ...search.filters }
@@ -50,11 +47,7 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
     )
 
 
-    const handleEdit = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        router.push(`?${params.toString()}`, { scroll: false })
-    }
+    const handleEdit = (id: number) => openEntity("production.bom", id)
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         await deleteBom(id)
@@ -76,7 +69,6 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(bom) => bom.id != null && handleEdit(bom.id)}
                 actions={bomActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -98,12 +90,6 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
                         onSuccess={refetchBoms}
-                        bomToEdit={editingBom}
-                        product={editingBom ? {
-                            id: editingBom.product,
-                            name: editingBom.product_name,
-                            code: editingBom.product_code,
-                        } as unknown as ProductMinimal : undefined}
                     />
                 )}
             </EntityPanelTab>
