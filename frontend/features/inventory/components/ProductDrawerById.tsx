@@ -15,14 +15,13 @@ interface ProductDrawerByIdProps {
 
 /**
  * Ficha de producto abierta solo con su id (enlaces desde documentos, ADR-0083): carga el
- * producto y abre `ProductDrawer` en modo vista. `ProductDrawer` necesita el objeto completo.
+ * producto y abre `ProductDrawer` (edición, ADR-0152). `ProductDrawer` necesita el objeto completo.
  */
 export function ProductDrawerById({ id, open, onOpenChange, onSuccess }: ProductDrawerByIdProps) {
     const { product, isLoading, isError } = useProduct(id)
     if (product) {
         return (
             <ProductDrawer
-                mode="view"
                 open={open}
                 onOpenChange={onOpenChange}
                 initialData={product as unknown as ProductInitialData}

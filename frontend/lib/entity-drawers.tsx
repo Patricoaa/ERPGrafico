@@ -3,6 +3,7 @@
 import React from "react"
 import dynamic from "next/dynamic"
 import { SkeletonShell } from "@/components/shared"
+import { useRecordById } from "@/hooks/useRecordById"
 import type { ProductCategory, AppGroup } from "@/types/entities"
 import type { Contact } from "@/features/contacts"
 import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice } from "@/features/treasury"
@@ -37,6 +38,23 @@ export interface EntityDrawerProps {
 }
 
 const skeleton = (label: string) => <SkeletonShell isLoading={true} ariaLabel={`Cargando ${label}`} />
+
+/**
+ * Drawer de registro (ADR-0152): usa la fila si el llamador la trae (`data`) y, si solo hay id
+ * (enlace profundo, relaciones), carga el registro de `endpoint` antes de montar el formulario.
+ */
+function RecordDrawer<T>({ endpoint, id, data, label, children }: {
+    endpoint: string
+    id: number
+    data: unknown
+    label: string
+    children: (record: T) => React.ReactNode
+}) {
+    const { record, isError } = useRecordById<T>(endpoint, data ? null : id)
+    const resolved = (data as T | undefined) ?? record
+    if (resolved) return <>{children(resolved)}</>
+    return isError ? null : skeleton(label)
+}
 
 const ContactDrawer = dynamic(() => import("@/features/contacts/components/ContactDrawer"), {
     ssr: false,
@@ -345,7 +363,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             <ProductDrawerById id={id} open={open} onOpenChange={onOpenChange} onSuccess={() => onSuccess?.()} />
         ) : (
             <ProductDrawer
-                mode={data ? 'view' : 'create'}
+                mode={data ? undefined : 'create'}
                 open={open}
                 onOpenChange={onOpenChange}
                 initialData={data as ProductInitialData}
@@ -353,54 +371,32 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             />
         )
     ),
-    // * requires full category data — EntityBadge always provides it
-    "inventory.category": ({ open, onOpenChange, data, onSuccess }) => (
-        <CategoryDrawer
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as ProductCategory}
-            onSuccess={() => onSuccess?.()}
-        />
+    // Categoría, almacén, UdM, atributo y regla de precio: con la fila abren directo; solo con id cargan
+    // el registro (ADR-0152). Siempre en edición, igual que al abrirlos desde su lista.
+    "inventory.category": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<ProductCategory> endpoint="/inventory/categories" id={id} data={data} label="categoría">
+            {(record) => <CategoryDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full warehouse data — EntityBadge always provides it
-    "inventory.warehouse": ({ open, onOpenChange, data, onSuccess }) => (
-        <WarehouseDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as WarehouseInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    "inventory.warehouse": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<WarehouseInitialData> endpoint="/inventory/warehouses" id={id} data={data} label="almacén">
+            {(record) => <WarehouseDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full UoM data — EntityBadge always provides it
-    "inventory.uom": ({ open, onOpenChange, data, onSuccess }) => (
-        <UoMDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as Partial<UoM>}
-            onSuccess={() => onSuccess?.()}
-        />
+    "inventory.uom": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Partial<UoM>> endpoint="/inventory/uoms" id={id} data={data} label="unidad de medida">
+            {(record) => <UoMDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full attribute data — EntityBadge always provides it
-    "inventory.attribute": ({ open, onOpenChange, data, onSuccess }) => (
-        <AttributeDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as Partial<Attribute>}
-            onSuccess={() => onSuccess?.()}
-        />
+    "inventory.attribute": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Partial<Attribute>> endpoint="/inventory/attributes" id={id} data={data} label="atributo">
+            {(record) => <AttributeDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full pricing rule data — EntityBadge always provides it
-    "inventory.pricingrule": ({ open, onOpenChange, data, onSuccess }) => (
-        <PricingRuleDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as PricingRuleInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    "inventory.pricingrule": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PricingRuleInitialData> endpoint="/inventory/pricing-rules" id={id} data={data} label="regla de precio">
+            {(record) => <PricingRuleDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── HR ────────────────────────────────────────────────────────────────────
