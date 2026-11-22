@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.140](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.139...v0.3.140) (2026-11-22)
+
+
+### ✨ Features
+
+* **costs:** rediseño tab Costos y layout común de gráficos (ChartSection) ([74907f8](https://github.com/Patricoaa/ERPGrafico/commit/74907f80baa8c7e5690b61045db8d9296028b957))
+
 ### [0.3.139](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.138...v0.3.139) (2026-11-21)
 
 
