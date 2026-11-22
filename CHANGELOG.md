@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.142](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.141...v0.3.142) (2026-11-22)
+
+
+### 🐛 Bug Fixes
+
+* **production:** el wizard de OT avanza tras activar la OT; quita ?step= de la URL ([e48e046](https://github.com/Patricoaa/ERPGrafico/commit/e48e0468eea4549c71e9d262c1d4c75eaab14bcc))
+
 ### [0.3.141](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.140...v0.3.141) (2026-11-22)
 
 
