@@ -740,15 +740,24 @@ export function useGlobalModalActions() {
  */
 export function EntityNavigationScope({
     open,
+    openNote,
     children,
 }: {
     open: (label: string, id: number, data?: unknown, options?: OpenEntityOptions) => void
+    /** Si se indica, el asistente de NC/ND se abre aquí (apilado) en lugar de como pestaña global. */
+    openNote?: (note: NoteTabState) => void
     children: ReactNode
 }) {
     const actions = useOptionalGlobalModalActions()
     const scopedActions = useMemo(
-        () => (actions ? { ...actions, openEntity: (label: string, id: number, data?: unknown, _segmenter?: ReactNode, options?: OpenEntityOptions) => open(label, id, data, options) } : undefined),
-        [actions, open],
+        () => (actions
+            ? {
+                ...actions,
+                openEntity: (label: string, id: number, data?: unknown, _segmenter?: ReactNode, options?: OpenEntityOptions) => open(label, id, data, options),
+                ...(openNote ? { openNoteWizard: openNote } : {}),
+            }
+            : undefined),
+        [actions, open, openNote],
     )
     const opener = useMemo(
         () => ({

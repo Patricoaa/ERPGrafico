@@ -8,8 +8,8 @@ import { ENTITY_DRAWERS, POSSessionDrawer } from "@/lib/entity-drawers"
 import { SalesOrdersView } from "@/features/sales"
 import { TabBar, Drawer, DrawerScope, SkeletonShell, DocumentHeaderSlotContext, DocumentBackAction, type DocumentHeaderSlots, type DrawerScopeValue } from "@/components/shared"
 import { EntityNavigationScope } from "@/components/providers/GlobalModalProvider"
-import { InvoiceSheet, OrderSheet } from "@/features/orders"
-import { usePosDocumentStack } from "../hooks/usePosDocumentStack"
+import { InvoiceSheet, NoteWizardTab, OrderSheet } from "@/features/orders"
+import { usePosDocumentStack, POS_NOTE_WIZARD_LABEL } from "../hooks/usePosDocumentStack"
 import { setPosOperatorHeaders } from "@/lib/pos-operator"
 import { useOperatorGate } from "../operator"
 import { overlayEntriesOf, paneEntryOf, type StackEntry } from "../utils/documentStack"
@@ -27,7 +27,7 @@ const POS_DRAWER_SCOPE: DrawerScopeValue = { boundary: "screen", className: "pos
 export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrdersDrawerProps) {
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
     const [shouldRenderContent, setShouldRenderContent] = useState(open)
-    const { state, open: openInPanel, setRoot, back, reset } = usePosDocumentStack()
+    const { state, open: openInPanel, openNote, setRoot, back, reset } = usePosDocumentStack()
 
     // La fila elegida se incrusta en este drawer y reemplaza a la lista. Toda entidad abierta desde ahí
     // se apila encima, cubriendo al padre; «Volver» (X) quita la cima y revela la anterior.
@@ -160,6 +160,9 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
             body = <OrderSheet id={entry.id} kind="sale" open={open} onOpenChange={onOpenChange} posSessionId={posSessionId} onActionSuccess={handleActionSuccess} />
         } else if (entry.label === "billing.invoice") {
             body = <InvoiceSheet id={entry.id} open={open} onOpenChange={onOpenChange} posSessionId={posSessionId} onActionSuccess={handleActionSuccess} />
+        } else if (entry.label === POS_NOTE_WIZARD_LABEL) {
+            const noteType = (entry.data as { noteType: "NOTA_CREDITO" | "NOTA_DEBITO" }).noteType
+            body = <NoteWizardTab invoiceId={entry.id} noteType={noteType} open={open} onOpenChange={onOpenChange} />
         } else if (entry.label === "treasury.possession") {
             body = <POSSessionDrawer id={entry.id} open={open} onOpenChange={onOpenChange} />
         } else {
@@ -170,7 +173,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
     }
 
     return (
-        <EntityNavigationScope open={openInPanel}>
+        <EntityNavigationScope open={openInPanel} openNote={openNote}>
             <DrawerScope value={POS_DRAWER_SCOPE}>
                 <Drawer
                     open={open}
