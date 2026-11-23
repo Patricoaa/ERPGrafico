@@ -124,3 +124,54 @@ describe("DocumentRelationsTab", () => {
         await waitFor(() => expect(screen.getByText("Sin documentos relacionados")).toBeInTheDocument())
     })
 })
+
+describe("DocumentRelationsTab — ventana reciente (ADR-0155)", () => {
+    beforeEach(() => { getMock.mockReset(); openEntityMock.mockReset(); pushMock.mockReset() })
+
+    const payload = (hidden: Record<string, number>) => ({
+        data: {
+            document: link("hr.employee", 5, "hr").target,
+            relations: [link("hr.payroll", 1, "hr", { role: "payroll", semantic: "association" })],
+            unresolved: [], hidden, window: "recent",
+        },
+    })
+
+    it("requests window=recent by default", async () => {
+        getMock.mockResolvedValue(payload({}))
+        wrap(<DocumentRelationsTab label="hr.employee" id={5} />)
+        await waitFor(() => expect(screen.getByText("hr.payroll-1")).toBeInTheDocument())
+        expect(getMock).toHaveBeenCalledWith("/core/documents/hr.employee/5/relations/", { params: { window: "recent" } })
+    })
+
+    it("shows '+N anteriores' in the area and a 'Ver más (N)' button", async () => {
+        getMock.mockResolvedValue(payload({ hr: 4 }))
+        wrap(<DocumentRelationsTab label="hr.employee" id={5} />)
+        await waitFor(() => expect(screen.getByText("hr.payroll-1")).toBeInTheDocument())
+        expect(screen.getByText("4 anteriores")).toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Ver más (4)" })).toBeInTheDocument()
+    })
+
+    it("Ver más refetches with window=all and the button goes away", async () => {
+        getMock.mockResolvedValueOnce(payload({ hr: 4 }))
+        getMock.mockResolvedValueOnce({ data: { ...payload({}).data, window: "all" } })
+        wrap(<DocumentRelationsTab label="hr.employee" id={5} />)
+        fireEvent.click(await screen.findByRole("button", { name: "Ver más (4)" }))
+        await waitFor(() => expect(getMock).toHaveBeenLastCalledWith("/core/documents/hr.employee/5/relations/", { params: { window: "all" } }))
+        await waitFor(() => expect(screen.queryByRole("button", { name: /Ver más/ })).not.toBeInTheDocument())
+    })
+
+    it("shows no button when nothing is hidden", async () => {
+        getMock.mockResolvedValue(payload({}))
+        wrap(<DocumentRelationsTab label="hr.employee" id={5} />)
+        await waitFor(() => expect(screen.getByText("hr.payroll-1")).toBeInTheDocument())
+        expect(screen.queryByRole("button", { name: /Ver más/ })).not.toBeInTheDocument()
+    })
+
+    it("never shows the button when window='all' is forced", async () => {
+        getMock.mockResolvedValue(payload({ hr: 4 }))
+        wrap(<DocumentRelationsTab label="hr.employee" id={5} window="all" />)
+        await waitFor(() => expect(screen.getByText("hr.payroll-1")).toBeInTheDocument())
+        expect(getMock).toHaveBeenCalledWith("/core/documents/hr.employee/5/relations/", { params: { window: "all" } })
+        expect(screen.queryByRole("button", { name: /Ver más/ })).not.toBeInTheDocument()
+    })
+})

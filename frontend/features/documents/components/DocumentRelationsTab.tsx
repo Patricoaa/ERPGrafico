@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import { useDocumentRelations } from "../hooks/useDocumentRelations"
 import { useOpenRelatedDocument } from "../hooks/useOpenRelatedDocument"
 import { DOCUMENT_DOMAIN_META, DOMAIN_ORDER } from "../utils/domains"
-import type { DocumentDomain, DocumentLink } from "../types"
+import type { DocumentDomain, DocumentLink, DocumentWindow } from "../types"
 
 export interface DocumentRelationsTabProps {
     label: string
@@ -30,6 +30,8 @@ export interface DocumentRelationsTabProps {
     /** Filtro por área (p. ej. al pulsar un paso del ciclo). */
     domain?: DocumentDomain | null
     onDomainChange?: (domain: DocumentDomain | null) => void
+    /** Ventana de relaciones (ADR-0155): `recent` por defecto; «Ver más» pasa a `all`. */
+    window?: DocumentWindow
     className?: string
 }
 
@@ -165,9 +167,13 @@ function SectionActionButton({ action }: { action: DocumentActionItem }) {
  * con acciones por área y por documento. Reemplaza las fases del Order Hub.
  */
 export function DocumentRelationsTab({
-    label, id, sectionActions, rowActions, domain, onDomainChange, className,
+    label, id, sectionActions, rowActions, domain, onDomainChange, window: windowProp = "recent", className,
 }: DocumentRelationsTabProps) {
-    const { data, isLoading, error } = useDocumentRelations(label, id ?? null)
+    const [showAll, setShowAll] = useState(false)
+    const effectiveWindow: DocumentWindow = showAll ? "all" : windowProp
+    const { data, isLoading, error } = useDocumentRelations(label, id ?? null, { window: effectiveWindow })
+    const hiddenByDomain = effectiveWindow === "recent" ? (data?.hidden ?? {}) : {}
+    const hiddenTotal = Object.values(hiddenByDomain).reduce((sum, n) => sum + n, 0)
     const open = useOpenRelatedDocument()
 
     // Cuando onDomainChange está provisto, el padre controla el filtro (lifecycle step clicks).
@@ -287,10 +293,21 @@ export function DocumentRelationsTab({
                                 </span>
                             </div>
                         )}
+                        {(hiddenByDomain[group.domain] ?? 0) > 0 && (
+                            <p className="border-t px-3 py-2 text-xs text-muted-foreground">
+                                {hiddenByDomain[group.domain]} anteriores
+                            </p>
+                        )}
                     </div>
                 </section>
             )
             })}
+
+            {hiddenTotal > 0 && (
+                <Button variant="ghost" size="sm" className="w-full" onClick={() => setShowAll(true)}>
+                    Ver más ({hiddenTotal})
+                </Button>
+            )}
 
             {(data?.unresolved.length ?? 0) > 0 && (
                 <p className="text-xs text-warning-text">
