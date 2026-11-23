@@ -1,3 +1,6 @@
+// Side-effect import: registers the `ledgerDate` kind (fecha del documento + hora de creación).
+import "@/features/accounting"
+
 import { defineEntity } from "@/components/entity-view"
 import { isOrderCompleted } from "@/lib/workflow-status"
 import { orderStageSummary } from "../utils/orderStage"
@@ -12,7 +15,7 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
     fields: {
         folio: f.code((o) => o.display_id ?? o.number, { label: "Folio", orderBy: "number" }),
         customer: f.contact((o) => ({ id: o.customer, name: o.customer_name }), { label: "Cliente", orderBy: "customer__name" }),
-        date: f.date("date", { label: "Fecha", orderBy: "date" }),
+        date: f.value("ledgerDate", (o) => ({ date: o.date, createdAt: o.created_at }), { label: "Fecha", orderBy: "date" }),
         hub: f.hubStatus((o) => o, { label: "Estado", entity: "sales.saleorder", caption: orderStageSummary }),
         channel: f.tags((o) => (o.channel_display ? [o.channel_display] : []), { label: "Canal" }),
         lines: f.number((o) => o.lines?.length ?? 0, { label: "Líneas" }),
@@ -22,7 +25,7 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
 }))
 
 export const saleOrderViews = saleOrderEntity.views({
-    table: { columns: ["folio", "customer", "date", "channel", "hub", "total"] },
+    table: { primary: "folio", columns: ["date", "folio", "customer", "channel", "hub", "total"] },
     card: {
         title: "folio",
         subtitle: ["customer", "date"],
