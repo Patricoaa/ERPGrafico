@@ -257,6 +257,8 @@ export interface CollectionSurfaceOptions {
     pager?: "pages" | "more"
     /** Caps the surface height (px or CSS length); rows scroll inside, the header stays sticky. */
     maxHeight?: number | string
+    /** Table header stays pinned while rows scroll (default `true`). `false` lets it scroll away with the rows. */
+    stickyHeader?: boolean
 }
 
 interface ResolvedSurface {
@@ -265,6 +267,7 @@ interface ResolvedSurface {
     empty: "message" | "columns"
     pager: "pages" | "more"
     maxHeight?: number | string
+    stickyHeader: boolean
 }
 
 function useResolvedSurface(options: CollectionSurfaceOptions, paging: CollectionPaging): ResolvedSurface {
@@ -277,6 +280,7 @@ function useResolvedSurface(options: CollectionSurfaceOptions, paging: Collectio
         empty: options.empty ?? (embedded ? "columns" : "message"),
         pager: options.pager ?? (wantsMore ? "more" : "pages"),
         maxHeight: options.maxHeight,
+        stickyHeader: options.stickyHeader ?? true,
     }
 }
 
@@ -480,7 +484,7 @@ function TreeToggleAll<T>({ table }: { table: EntityCollection<T, FieldMap<T>>["
 function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { layout: TableLayout<Id> } & CollectionSurfaceOptions) {
     const ctx = useCollectionContext<T>()
     const { table, status, isRefetching, total, groups, paging, moreStep } = ctx.collection
-    const { embedded, frame, pager, maxHeight } = useResolvedSurface(surfaceOptions, paging)
+    const { embedded, frame, pager, maxHeight, stickyHeader } = useResolvedSurface(surfaceOptions, paging)
     const entity = ctx.collection.entity
     const primary = layout.primary ?? layout.columns[0]
     const rows = table.getRowModel().rows
@@ -569,7 +573,7 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                     aria-rowcount={isTree ? undefined : total + 1}
                 >
                     {status === "empty" && <caption className="sr-only">Sin registros</caption>}
-                    <thead className={cn("sticky top-0 z-10", !embedded && "bg-background")}>
+                    <thead className={cn(stickyHeader && "sticky top-0 z-10", !embedded && "bg-background")}>
                         <tr className="border-b">
                             {isBulk && (
                                 <th scope="col" className="w-8 px-(--table-header-px) py-(--table-header-py)">

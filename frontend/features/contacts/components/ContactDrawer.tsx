@@ -23,7 +23,8 @@ import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefault
 
 import { EntitySidebar } from "@/features/comments"
 
-import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin} from "lucide-react"
+import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Link2} from "lucide-react"
+import { DocumentRelationsTab } from "@/features/documents"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { EmptyState, Chip } from '@/components/shared'
 import { Collection, useEntityCollection } from "@/components/entity-view"
@@ -222,7 +223,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!c)}
                 className="h-[90vh]"
-                contentClassName="p-0"
+                contentClassName="p-0 flex flex-col overflow-hidden"
                 mode={mode}
                 boundary={boundary}
                 showOverlay={showOverlay}
@@ -243,7 +244,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de contacto" className="flex-1 flex flex-col h-full">
                 <Form {...form}>
 
-                    <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
+                    <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0">
                         <DrawerLayout
                             contentDisabled={isView}
                             activeTab={activeTab}
@@ -260,64 +261,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                     label: "Perfil",
                                     icon: User,
                                     content: (
-                                        <div className="space-y-6">
-                                        <div className="space-y-4">
-                                            <Section.Header spaced title="Roles" icon={Scale} />
-
-                                            {(() => {
-                                                const isDefaultCustomer = form.watch('is_default_customer')
-                                                const isDefaultVendor = form.watch('is_default_vendor')
-                                                const commercialValue = isDefaultCustomer ? "customer" : isDefaultVendor ? "vendor" : "none"
-                                                return (
-                                                    <FormSelectionGroup
-                                                        mode="single"
-                                                        label="Preferencias Comerciales"
-                                                        icon={<Scale className="h-4 w-4" />}
-                                                        columns={2}
-                                                        disabled={isView}
-                                                        value={commercialValue === "none" ? null : commercialValue}
-                                                        onChange={(value) => {
-                                                            form.setValue('is_default_customer', value === 'customer', { shouldDirty: true })
-                                                            form.setValue('is_default_vendor', value === 'vendor', { shouldDirty: true })
-                                                        }}
-                                                        items={[
-                                                            {
-                                                                value: "customer",
-                                                                label: "Cliente por defecto",
-                                                                description: defaultCustomer && defaultCustomer.id !== c?.id
-                                                                    ? `Actual: ${defaultCustomer.name}`
-                                                                    : `Se selecciona automáticamente en nuevas ${getDomainConceptCode('ov')}`,
-                                                                icon: <ShoppingCart className="h-5 w-5" aria-hidden />,
-                                                            },
-                                                            {
-                                                                value: "vendor",
-                                                                label: "Proveedor por defecto",
-                                                                description: defaultVendor && defaultVendor.id !== c?.id
-                                                                    ? `Actual: ${defaultVendor.name}`
-                                                                    : "Se selecciona automáticamente en nuevas OC",
-                                                                icon: <Package className="h-5 w-5" aria-hidden />,
-                                                            },
-                                                        ]}
-                                                    />
-                                                )
-                                            })()}
-
-                                            <h4 className="text-2xs font-bold uppercase tracking-looser gap-3 pl-1 text-muted-foreground/70">Roles del Contacto </h4>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {c?.id && (c.active_roles ?? []).length > 0 ? (
-                                                        (c.active_roles ?? []).map(value => (
-                                                            <Chip.Category key={value} domain="contact_type" value={value} size="sm" />
-                                                        ))
-                                                    ) : (
-                                                        <span className="text-xs text-muted-foreground">Sin roles asignados</span>
-                                                    )}
-                                                </div>
-                                            
-                                        </div>
-
+                                        <div className="space-y-8">
                                         <div className="space-y-4">
                                             <Section.Header spaced title="Identidad del Contacto" icon={User} />
-                                            <div className="grid grid-cols-4 gap-4">
+                                            <div className="grid grid-cols-4 gap-6">
                                                 <FormField
                                                     control={form.control}
                                                     name="name"
@@ -359,7 +306,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
                                         <div className="space-y-4">
                                             <Section.Header spaced title="Información de Contacto" icon={Mail} />
-                                            <div className="grid grid-cols-4 gap-4">
+                                            <div className="grid grid-cols-4 gap-6">
                                                 <FormField
                                                     control={form.control}
                                                     name="email"
@@ -399,7 +346,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
                                         <div className="space-y-4">
                                             <Section.Header spaced title="Ubicación" icon={MapPin} />
-                                            <div className="grid grid-cols-4 gap-4">
+                                            <div className="grid grid-cols-4 gap-6">
                                                 <FormField
                                                     control={form.control}
                                                     name="address"
@@ -435,6 +382,61 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                 />
                                             </div>
                                         </div>
+                                        <div className="space-y-4">
+                                            <Section.Header spaced title="Roles y Preferencias" icon={Scale} />
+
+                                            {(() => {
+                                                const isDefaultCustomer = form.watch('is_default_customer')
+                                                const isDefaultVendor = form.watch('is_default_vendor')
+                                                const commercialValue = isDefaultCustomer ? "customer" : isDefaultVendor ? "vendor" : "none"
+                                                return (
+                                                    <FormSelectionGroup
+                                                        mode="single"
+                                                        label="Predeterminado en documentos"
+                                                        icon={<Scale className="h-4 w-4" />}
+                                                        columns={2}
+                                                        disabled={isView}
+                                                        value={commercialValue === "none" ? null : commercialValue}
+                                                        onChange={(value) => {
+                                                            form.setValue('is_default_customer', value === 'customer', { shouldDirty: true })
+                                                            form.setValue('is_default_vendor', value === 'vendor', { shouldDirty: true })
+                                                        }}
+                                                        items={[
+                                                            {
+                                                                value: "customer",
+                                                                label: "Cliente por defecto",
+                                                                description: defaultCustomer && defaultCustomer.id !== c?.id
+                                                                    ? `Actual: ${defaultCustomer.name}`
+                                                                    : `Se selecciona automáticamente en nuevas ${getDomainConceptCode('ov')}`,
+                                                                icon: <ShoppingCart className="h-5 w-5" aria-hidden />,
+                                                            },
+                                                            {
+                                                                value: "vendor",
+                                                                label: "Proveedor por defecto",
+                                                                description: defaultVendor && defaultVendor.id !== c?.id
+                                                                    ? `Actual: ${defaultVendor.name}`
+                                                                    : "Se selecciona automáticamente en nuevas OC",
+                                                                icon: <Package className="h-5 w-5" aria-hidden />,
+                                                            },
+                                                        ]}
+                                                    />
+                                                )
+                                            })()}
+
+                                            <div className="space-y-2">
+                                                <h4 className="text-2xs font-bold uppercase tracking-looser">Roles activos</h4>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {c?.id && (c.active_roles ?? []).length > 0 ? (
+                                                        (c.active_roles ?? []).map(value => (
+                                                            <Chip.Category key={value} domain="contact_type" value={value} size="sm" />
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">Sin roles asignados</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
                                     ),
                                 },
@@ -490,6 +492,16 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                     hidden: !c?.id,
                                     noPadding: true,
                                     content: <CreditLedgerTable data={ledgerData} loading={loadingLedger} />,
+                                },
+                                {
+                                    value: "relations",
+                                    label: "Relaciones",
+                                    icon: Link2,
+                                    // Solo socios: hoy el único vínculo propio del contacto es su ficha de socio.
+                                    hidden: !c?.id || !c.is_partner,
+                                    content: c?.id ? (
+                                        <DocumentRelationsTab label="contacts.contact" id={c.id} sectionActions={{}} rowActions={() => []} />
+                                    ) : null,
                                 },
                             ]}
                         />
@@ -600,37 +612,39 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     const workOrderCollection = useEntityCollection(workOrderEntity, { rows: type === 'work_order' ? filteredData as unknown as WorkOrder[] : [] }, { pagination: { mode: "none" } })
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col gap-4 p-6">
             {/* Summary Cards Grid */}
-            <MetricStrip label="Filtros por estado de documentos" className="mb-4">
+            <MetricStrip label="Filtros por estado de documentos" singleRow>
                 <Metric label="Total" value={metrics.total} lead={Icon} onPress={() => setActiveFilter('all')} pressed={activeFilter === 'all'} />
                 {type !== 'work_order' && (
-                    <>
-                        <Metric label={type === 'sale' ? 'Por Cobrar' : 'Por Pagar'} value={formatCurrency(metrics.totalPendingMoney)} context={`${metrics.pendingPaymentCount} documentos`} lead={Banknote} tone="destructive" onPress={() => setActiveFilter('financial')} pressed={activeFilter === 'financial'} />
-                        <Metric label={type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'} value={metrics.pendingLogisticsCount} lead={Truck} tone="warning" onPress={() => setActiveFilter('logistics')} pressed={activeFilter === 'logistics'} />
-                        <Metric label="Facturación Pdte." value={metrics.pendingBillingCount} lead={Receipt} onPress={() => setActiveFilter('billing')} pressed={activeFilter === 'billing'} />
-                    </>
+                    <Metric label={type === 'sale' ? 'Por Cobrar' : 'Por Pagar'} value={formatCurrency(metrics.totalPendingMoney)} context={`${metrics.pendingPaymentCount} documentos`} lead={Banknote} tone="destructive" onPress={() => setActiveFilter('financial')} pressed={activeFilter === 'financial'} />
+                )}
+                {type !== 'work_order' && (
+                    <Metric label={type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'} value={metrics.pendingLogisticsCount} lead={Truck} tone="warning" onPress={() => setActiveFilter('logistics')} pressed={activeFilter === 'logistics'} />
+                )}
+                {type !== 'work_order' && (
+                    <Metric label="Facturación Pdte." value={metrics.pendingBillingCount} lead={Receipt} onPress={() => setActiveFilter('billing')} pressed={activeFilter === 'billing'} />
                 )}
                 {type === 'work_order' && (
                     <Metric label="En Proceso / Pdte" value={metrics.pendingWOCount} lead={ClipboardList} onPress={() => setActiveFilter('pending')} pressed={activeFilter === 'pending'} />
                 )}
             </MetricStrip>
 
-            <Section.Header spaced title={title} icon={Icon} className="pb-6" />
-            <div className="flex-1 overflow-hidden p-0">
+            <Section.Header spaced title={title} icon={Icon} />
+            <div>
                 {type === 'sale' && (
                     <Collection.Root collection={saleCollection} label={title}>
-                        <Collection.View table={saleOrderViews.table.without("channel", "customer")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de venta para este contacto." />
+                        <Collection.View stickyHeader={false} table={saleOrderViews.table.without("channel", "customer")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de venta para este contacto." />
                     </Collection.Root>
                 )}
                 {type === 'purchase' && (
                     <Collection.Root collection={purchaseCollection} label={title}>
-                        <Collection.View table={purchaseOrderViews.table.without("supplier")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de compra para este contacto." />
+                        <Collection.View stickyHeader={false} table={purchaseOrderViews.table.without("supplier")} emptyTitle="Sin historial" emptyDescription="No hay órdenes de compra para este contacto." />
                     </Collection.Root>
                 )}
                 {type === 'work_order' && (
                     <Collection.Root collection={workOrderCollection} label={title}>
-                        <Collection.View table={workOrderViews.table} emptyTitle="Sin historial" emptyDescription="No hay órdenes de trabajo para este contacto." />
+                        <Collection.View stickyHeader={false} table={workOrderViews.table} emptyTitle="Sin historial" emptyDescription="No hay órdenes de trabajo para este contacto." />
                     </Collection.Root>
                 )}
             </div>
@@ -652,19 +666,23 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
 
     if (!loading && !data.length) {
         return (
-            <EmptyState
-                context="finance"
-                title="Sin documentos pendientes"
-                description="No hay documentos con deuda pendiente para este contacto."
-            />
+            <div className="p-6">
+                <EmptyState
+                    context="finance"
+                    title="Sin documentos pendientes"
+                    description="No hay documentos con deuda pendiente para este contacto."
+                />
+            </div>
         )
     }
 
     return (
-        <SkeletonShell isLoading={loading} ariaLabel="Cargando libro de cuenta">
-            <Collection.Root collection={collection} label="Documentos de crédito">
-                <Collection.View table={contactCreditDocumentViews.table} emptyTitle="Sin documentos" emptyDescription="No hay documentos pendientes." />
-            </Collection.Root>
-        </SkeletonShell>
+        <div className="flex h-full flex-col p-6">
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando libro de cuenta">
+                <Collection.Root collection={collection} label="Documentos de crédito">
+                    <Collection.View stickyHeader={false} table={contactCreditDocumentViews.table} emptyTitle="Sin documentos" emptyDescription="No hay documentos pendientes." />
+                </Collection.Root>
+            </SkeletonShell>
+        </div>
     )
 }
