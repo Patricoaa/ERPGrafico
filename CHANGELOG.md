@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.146](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.145...v0.3.146) (2026-11-23)
+
+
+### 🐛 Bug Fixes
+
+* **pos:** asistente de NC/ND apilado en el drawer padre en lugar de pestaña global ([88fd39c](https://github.com/Patricoaa/ERPGrafico/commit/88fd39c8196d9252532647294088019c968c1ff6))
+* **pos:** ítems del carrito desplegados en el checkout y botón Atrás del mismo tamaño que Siguiente ([f8500f8](https://github.com/Patricoaa/ERPGrafico/commit/f8500f8527630d544cf4403cc095f4f065060ad2))
+* **sales:** ocultar Registrar DTE en boletas auto-emitidas y limpiar código muerto del panel DTE ([916c37e](https://github.com/Patricoaa/ERPGrafico/commit/916c37e4d28a469315f9b30065908a31e9d2efdb))
+
 ### [0.3.145](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.144...v0.3.145) (2026-11-23)
 
 
