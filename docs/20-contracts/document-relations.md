@@ -39,11 +39,13 @@ Backend: `core.documents.build_ref(obj, user)` / `ref_for(label, id, user)`. Fro
 | Method | URL | Response |
 |---|---|---|
 | GET | `/api/core/documents/{label}/{id}/` | `DocumentRef` (404 if the document does not exist) |
-| GET | `/api/core/documents/{label}/{id}/relations/?semantic=&direction=` | `{document: DocumentRef, relations: DocumentLink[], unresolved: {label, id, role, reason}[]}` |
+| GET | `/api/core/documents/{label}/{id}/relations/?semantic=&direction=&window=` | `{document: DocumentRef, relations: DocumentLink[], unresolved: {label, id, role, reason}[], window: "recent"\|"all", hidden: {<domain>: number}}` |
 
 - 404 for an unknown label; 403 if the user cannot view **the requested** document. Related documents without permission are returned with `accessible=false` (the relation is shown, its content is not).
 - `unresolved` lists targets that do not exist; they never appear in `relations`.
 - Frontend hooks: `useDocumentRef(label, id)`, `useDocumentRelations(label, id, filters?)`.
+
+**`window` (ADR-0155).** `all` (default) devuelve todo y `hidden` vacío; `recent` recorta por área: solo si el área tiene más de 10 vínculos, nunca oculta `is_dependency` ni los sin fecha, conserva los de los últimos 12 meses y completa hasta 10 con los más recientes (`RELATIONS_RECENT_MONTHS`, `RELATIONS_MIN_VISIBLE` en `core/documents/relations.py`). `hidden` cuenta lo omitido por área. Valor inválido → 400. `DocumentRelationsTab` pide `recent`; los demás consumidores (hooks directos) siguen con `all`.
 
 ### `DocumentLink`
 
@@ -77,7 +79,7 @@ Rules:
 - A target that may not exist (GFK/PGFK) is yielded as `(label, id)`; the service reports it in `unresolved`.
 - Duplicate (role, target) pairs are collapsed by the service.
 - **View labels over an existing model** (ADR-0133): a label whose model already has its own label (e.g. `contacts.partner` over `Contact`, next to `contacts.contact`) declares `DocumentType(queryset=lambda: ..., permission=...)`. `queryset` resolves the label to its model and restricts rows (a non-partner contact is `404 Documento no encontrado` under `contacts.partner`); `permission` replaces the derived `app.view_<model>` (here `contacts.view_contact`). `label_for(model)` still returns the model's own label, so links *to* a contact keep `contacts.contact`. The label is not registered in `UniversalRegistry` (it would duplicate search indexing and make `get_for_model` ambiguous).
-- Pilot coverage (M2): `sales.saleorder`, `sales.saledelivery`, `billing.invoice`, `treasury.treasurymovement`, `accounting.journalentry`, `inventory.stockmove`, `inventory.inventorydocument`. Purchasing/production/other modules: phase M5.
+- Pilot coverage (M2): `sales.saleorder`, `sales.saledelivery`, `billing.invoice`, `treasury.treasurymovement`, `accounting.journalentry`, `inventory.stockmove`, `inventory.inventorydocument`. Purchasing/production/other modules: phase M5. RRHH (ADR-0155): `hr.employee`, `hr.payroll`, `hr.absence`, `hr.salaryadvance`, `hr.payrollpayment`, `hr.payrollconcept`, domain `hr`.
 
 ## 4. Canonical URL
 
@@ -114,7 +116,7 @@ Every document opens its document sheet with the relations tab (ADR-0083, U2–U
 
 ### `domain` (ADR-0083)
 
-Operational area of the document type: `origin | billing | production | logistics | treasury | accounting | contacts | other`, in lifecycle order. Declared by `DocumentTypeRegistry` — `DocumentType(domain=...)` overrides the app default (`DEFAULT_DOMAIN_BY_APP`; OV/OC declare `origin`). The document sheet's relations tab groups by it (`component-document-sheet.md` §5). Additive field; unknown values parse as `other` in the frontend.
+Operational area of the document type: `origin | billing | production | logistics | treasury | accounting | capital | hr | contacts | other`, in lifecycle order. Declared by `DocumentTypeRegistry` — `DocumentType(domain=...)` overrides the app default (`DEFAULT_DOMAIN_BY_APP`; OV/OC declare `origin`). The document sheet's relations tab groups by it (`component-document-sheet.md` §5). Additive field; unknown values parse as `other` in the frontend.
 
 ### Indirect links (ADR-0083)
 
