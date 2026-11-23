@@ -19,7 +19,7 @@
 - Dominio nuevo `hr` (etiqueta «RRHH»), ordenado después de `capital` y antes de `contacts`.
 - Proveedores: solo FKs tipadas, con `select_related`/`prefetch_related` (invariante zero-N+1); sin heurísticas de texto.
 - Frontend: zero `any`, tokens semánticos, import por barrel (`@/features/documents`, `@/components/shared`), sin `useQuery` en componentes.
-- Cambio de contrato de capa 20 → ADR-0155 (Task 5).
+- Cambio de contrato de capa 20 → ADR-0155 (Task 6).
 - Backend: ejecutar desde `backend/` con `DEBUG=1 CACHE_BACKEND=locmem CHANNEL_BACKEND=locmem venv/bin/python -m pytest -p no:cacheprovider …`. Frontend: `source ~/.nvm/nvm.sh && nvm use 24` antes de `npx vitest run …`; DoD `npm run type-check` y `npm run lint` sin errores.
 - Rama: `feat/hr-relations-tab` (ya creada). `core/tests/test_no_utc_today.py` falla de antes por `inventory/*`; no es de este trabajo.
 
@@ -192,7 +192,7 @@ Run: `npx vitest run features/documents features/partners features/orders featur
 - [ ] **Step 5: Commit**
 
 ```bash
-git add frontend/features/documents frontend
+git add frontend/features/documents frontend/features/partners frontend/features/orders frontend/features/tax frontend/features/production
 git commit -m "feat(documents): la pestaña de relaciones pide la ventana reciente y ofrece «Ver más»"
 ```
 
