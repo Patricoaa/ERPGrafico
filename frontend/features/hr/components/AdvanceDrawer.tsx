@@ -10,9 +10,11 @@ import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import { employeeSelectOptions } from '../employeeOptions'
 import type { SalaryAdvance, Employee } from "@/types/hr"
 import { EntitySidebar } from "@/features/comments"
+import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
+import { FileText, Link2 } from "lucide-react"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
-import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout, DrawerLayout } from "@/components/shared"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -39,6 +41,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
     const employeeOptions = employeeSelectOptions(employees, advance)
+    // Misma ventana que pide la pestaña → una sola petición compartida (ADR-0155).
+    const { data: relations } = useDocumentRelations("hr.salaryadvance", advance?.id ?? null, { window: "recent" })
     const mode: DrawerMode = !advance ? (modeProp ?? 'create')
         : advance.is_editable === false ? 'view'
         : (modeProp ?? 'edit')
@@ -145,13 +149,18 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 )}
             >
                 {advance ? (
-                    <FormSplitLayout
-                        className="space-y-6 p-6"
-                        collapsible
-                        collapseStorageKey="erpgrafico.drawer.sidebar.salaryadvance"
-                        showSidebar={true}
-                        sidebar={<EntitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
-                    >
+                    <DrawerLayout
+                        rightRail={<EntitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
+                        rightRailCollapsible
+                        rightRailStorageKey="erpgrafico.drawer.sidebar.salaryadvance"
+                        noPadding
+                        tabs={[
+                            {
+                                value: "details",
+                                label: "Datos",
+                                icon: FileText,
+                                className: "space-y-6 p-6",
+                                content: (
                         <Form {...form}>
                             <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)}>
                                     <fieldset disabled={isView} className="contents">
@@ -214,7 +223,18 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
 
                                 </form>
                             </Form>
-                    </FormSplitLayout>
+)
+                            },
+                            {
+                                value: "relations",
+                                label: "Relaciones",
+                                icon: Link2,
+                                badge: relations?.relations.length,
+                                className: "p-6",
+                                content: <DocumentRelationsTab label="hr.salaryadvance" id={advance.id} sectionActions={{}} rowActions={() => []} />,
+                            },
+                        ]}
+                    />
                 ) : (
                     <FormSplitLayout className="space-y-6 p-6">
                         <Form {...form}>

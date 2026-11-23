@@ -12,8 +12,10 @@ import type { Absence, Employee } from "@/types/hr"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
-import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout, DrawerLayout } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
+import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
+import { FileText, Link2 } from "lucide-react"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 export const absenceSchema = z.object({
@@ -41,6 +43,8 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
     const employeeOptions = employeeSelectOptions(employees, absence)
+    // Misma ventana que pide la pestaña → una sola petición compartida (ADR-0155).
+    const { data: relations } = useDocumentRelations("hr.absence", absence?.id ?? null, { window: "recent" })
     const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: absence })
     const { printRef, handlePrint } = usePrintableDrawer()
     const { saveAbsence, isSaving: saving } = useAbsenceMutations()
@@ -146,13 +150,18 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                 footer={footer}
             >
                 {absence ? (
-                    <FormSplitLayout
-                        className="space-y-6 p-6"
-                        collapsible
-                        collapseStorageKey="erpgrafico.drawer.sidebar.absence"
-                        showSidebar={true}
-                        sidebar={<EntitySidebar entityType="absence" entityId={absence.id} />}
-                    >
+                    <DrawerLayout
+                        rightRail={<EntitySidebar entityType="absence" entityId={absence.id} />}
+                        rightRailCollapsible
+                        rightRailStorageKey="erpgrafico.drawer.sidebar.absence"
+                        noPadding
+                        tabs={[
+                            {
+                                value: "details",
+                                label: "Datos",
+                                icon: FileText,
+                                className: "space-y-6 p-6",
+                                content: (
 
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -241,8 +250,18 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
 
                                 </form>
                             </Form>
-                        
-                    </FormSplitLayout>
+)
+                            },
+                            {
+                                value: "relations",
+                                label: "Relaciones",
+                                icon: Link2,
+                                badge: relations?.relations.length,
+                                className: "p-6",
+                                content: <DocumentRelationsTab label="hr.absence" id={absence.id} sectionActions={{}} rowActions={() => []} />,
+                            },
+                        ]}
+                    />
                 ) : (
                     <FormSplitLayout className="space-y-6 p-6">
                         <Form {...form}>
