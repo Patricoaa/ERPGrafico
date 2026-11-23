@@ -180,12 +180,12 @@ export function Cart({
                 />
 
                 {isCheckout ? (
-                    <details className="group shrink-0 border-b border-border">
-                        <summary className="flex h-control-touch cursor-pointer list-none items-center justify-between px-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+                    <details open className="group flex min-h-0 flex-1 flex-col border-b border-border">
+                        <summary className="flex h-control-touch shrink-0 cursor-pointer list-none items-center justify-between px-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
                             <span className="flex items-center gap-2"><ShoppingCart className="size-4" aria-hidden />{items.length} {items.length === 1 ? 'ítem' : 'ítems'}</span>
                             <ChevronDown className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden />
                         </summary>
-                        <ul className="max-h-48 space-y-1 overflow-auto px-3 pb-3 text-sm text-muted-foreground">
+                        <ul className="min-h-0 flex-1 space-y-1 overflow-auto px-3 pb-3 text-sm text-muted-foreground">
                             {items.map(item => (
                                 <li key={item.cartItemId} className="flex justify-between gap-3">
                                     <span className="truncate">{item.name} × {item.qty}</span>
@@ -226,8 +226,6 @@ export function Cart({
                     </SummaryLineList>
                 )}
 
-                {isCheckout && <div className="flex-1" />}
-
                 <SummaryTotal total={formatCurrency(totals.total_gross)} breakdown={breakdown} />
 
                 <SummaryActions hint={!isCheckout && !canQuickSale.allowed && !isEmpty ? canQuickSale.reason : undefined}>
@@ -261,8 +259,8 @@ export function Cart({
                         <>
                             {handoffButton}
                             <SummaryActionRow ratio="1:2">
-                                <Button type="button" variant="outline" className={ACTION_BUTTON} onClick={onCheckoutBack} disabled={checkoutLoading}>
-                                    <ChevronLeft className="size-5" aria-hidden />
+                                <Button type="button" variant="outline" className={PRIMARY_BUTTON} onClick={onCheckoutBack} disabled={checkoutLoading}>
+                                    <ChevronLeft className="size-6" aria-hidden />
                                     Atrás
                                 </Button>
                                 {!isLastStep ? (
