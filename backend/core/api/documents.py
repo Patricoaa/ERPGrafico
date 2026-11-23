@@ -6,6 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from core.documents import DocumentRelationService, DocumentTypeRegistry, ref_for
+from core.documents.relations import WINDOWS
 
 
 def _denied(label: str, user) -> Response | None:
@@ -30,9 +31,13 @@ def document_ref(request: Request, label: str, pk: int) -> Response:
 def document_relations(request: Request, label: str, pk: int) -> Response:
     if denied := _denied(label, request.user):
         return denied
+    window = request.query_params.get("window", "all")
+    if window not in WINDOWS:
+        return Response({"detail": f"window inválido: {window}"}, status=400)
     result = DocumentRelationService.relations(
         label, pk, request.user,
         semantic=request.query_params.get("semantic"), direction=request.query_params.get("direction"),
+        window=window,
     )
     if result is None:
         return Response({"detail": "Documento no encontrado."}, status=404)
