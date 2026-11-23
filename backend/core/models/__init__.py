@@ -11,7 +11,7 @@ from simple_history.models import HistoricalRecords
 from core.storages import PrivateMediaStorage, PublicMediaStorage
 from core.validators import validate_file_extension, validate_file_size, validate_image_extension
 
-from .abstracts import AuditedModel, TimeStampedModel, TransactionalDocument
+from .abstracts import AuditedModel, DocumentNotesMixin, TimeStampedModel, TransactionalDocument
 from .idempotency import IdempotencyRecord
 from .jobs import BackgroundJob
 from .period_reopen_log import PeriodReopenLog

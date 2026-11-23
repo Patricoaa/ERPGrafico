@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.edit_policy import DRAFT_ONLY_DOCUMENT
 from core.mixins import TotalsCalculationMixin
-from core.models import TimeStampedModel, TransactionalDocument, User
+from core.models import DocumentNotesMixin, TimeStampedModel, TransactionalDocument, User
 from core.services import SequenceService
 from core.strategies.totals import GrossFirstTotals
 from core.utils import get_current_date
@@ -591,7 +591,7 @@ class SalesSettings(TimeStampedModel):
 # Append to sales/models.py - SaleDelivery and SaleDeliveryLine models
 
 
-class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
+class SaleDelivery(TransactionalDocument, DocumentNotesMixin, TotalsCalculationMixin):
     """
     Represents a delivery/dispatch of a sale order.
     Can be partial or complete.
@@ -753,7 +753,7 @@ class SaleDeliveryLine(models.Model):
         super().save(*args, **kwargs)
 
 
-class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
+class SaleReturn(TransactionalDocument, DocumentNotesMixin, TotalsCalculationMixin):
     """
     Represents a return of goods from a customer (linked to a Sale Order).
     Used to process logistics before or after a Credit Note.

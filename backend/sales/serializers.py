@@ -403,7 +403,6 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
             "id",
             "number",
             "customer",
-            "notes",
             "payment_method",
             "payment_method_id",
             "total_discount_amount",
