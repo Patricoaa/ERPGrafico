@@ -99,6 +99,11 @@ export const RELATED_ROLE_LABELS: Record<string, string> = {
     customer: "Cliente",
     supplier: "Proveedor",
     contact: "Contacto",
+    employee: "Empleado",
+    payroll: "Liquidación",
+    salary_advance: "Anticipo",
+    absence: "Inasistencia",
+    payroll_payment: "Pago de remuneración",
     // POS (vinculados al dominio origen cuando la venta viene de TPV)
     pos_session: "Sesión POS",
     pos_box: "Caja POS",
