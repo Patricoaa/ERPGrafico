@@ -6,7 +6,7 @@ export type { AbsenceActionsCtx } from './absenceActions'
 export { absenceActions } from './absenceActions'
 export type { SalaryAdvanceActionsCtx } from './salaryAdvanceActions'
 export { salaryAdvanceActions } from './salaryAdvanceActions'
-export { createAFP, createAbsence, createAdvance, createEmployee, createPayroll, createPayrollConcept, createPayrollItem, deleteAFP, deleteAbsence, deleteAdvance, deleteEmployee, deletePayroll, deletePayrollConcept, deletePayrollItem, generateProformaPayroll, getAFPs, getAbsences, getAdvances, getEmployee, getEmployees, getGlobalHRSettings, getPayroll, getPayrollConcepts, getPayrollPayments, getPayrolls, payPrevired, paySalary, postPayroll, recalculatePayroll, triggerDraftPayrolls, updateAFP, updateAbsence, updateAdvance, updateEmployee, updateGlobalHRSettings, updatePayroll, updatePayrollConcept, updatePayrollItem } from './api/hrApi'
+export { createAFP, createAbsence, createAdvance, createEmployee, createPayroll, createPayrollConcept, createPayrollItem, deleteAFP, deleteAbsence, deleteAdvance, archiveEmployee, deletePayroll, deletePayrollConcept, deletePayrollItem, generateProformaPayroll, getAFPs, getAbsences, getAdvances, getEmployee, getEmployees, getGlobalHRSettings, getPayroll, getPayrollConcepts, getPayrollPayments, getPayrolls, payPrevired, paySalary, postPayroll, recalculatePayroll, triggerDraftPayrolls, updateAFP, updateAbsence, updateAdvance, updateEmployee, updateGlobalHRSettings, updatePayroll, updatePayrollConcept, updatePayrollItem } from './api/hrApi'
 export {
   usePayrolls,
   usePayrollDetail,

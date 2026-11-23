@@ -12,17 +12,17 @@ export const employeeUnifiedSearchDef: UnifiedSearchConfig = {
   filters: [
     {
       type: 'single',
-      key: 'status',
+      key: 'is_active',
       label: 'Estado',
-      serverParam: 'status',
+      serverParam: 'is_active',
       options: [
-        { label: 'Activo', value: 'ACTIVE' },
-        { label: 'Inactivo', value: 'INACTIVE' },
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
       ],
     },
   ],
   groupBy: [
-    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'is_active', label: 'Estado', field: 'is_active' },
     { key: 'contract_type', label: 'Tipo contrato', field: 'contract_type' },
     { key: 'department', label: 'Departamento', field: 'department' },
   ],

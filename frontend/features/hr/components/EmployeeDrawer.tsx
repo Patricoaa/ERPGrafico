@@ -31,7 +31,6 @@ export const employeeSchema = z.object({
     department: z.string().optional(),
     start_date: z.string().optional(),
     base_salary: z.string().min(1, "Sueldo base requerido"),
-    status: z.enum(["ACTIVE", "INACTIVE"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un estado de ficha"),
     contract_type: z.enum(["INDEFINIDO", "PLAZO_FIJO"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un tipo de contrato"),
     afp: z.string().min(1, "Institución Previsional requerida"),
     salud_type: z.enum(["FONASA", "ISAPRE"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un sistema de salud"),
@@ -94,7 +93,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: "",
             start_date: "",
             base_salary: "0",
-            status: "",
             contract_type: "",
             afp: "",
             salud_type: "",
@@ -128,7 +126,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: "",
             start_date: dateString,
             base_salary: "0",
-            status: "" as const,
             contract_type: "" as const,
             afp: "",
             salud_type: "" as const,
@@ -149,7 +146,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: emp.department || "",
             start_date: (emp.start_date || "").split("T")[0] || "",
             base_salary: String(emp.base_salary),
-            status: emp.status,
             contract_type: emp.contract_type,
             afp: emp.afp ? String(emp.afp) : "",
             salud_type: emp.salud_type,
@@ -201,7 +197,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
         const errors = form.formState.errors
         const tabErrors: { [key: string]: boolean } = {}
 
-        const contratacionFields: (keyof EmployeeFormValues)[] = ['contact', 'position', 'department', 'start_date', 'base_salary', 'status', 'contract_type']
+        const contratacionFields: (keyof EmployeeFormValues)[] = ['contact', 'position', 'department', 'start_date', 'base_salary', 'contract_type']
         contratacionFields.forEach(field => {
             if (errors[field]) tabErrors['contratacion'] = true
         })
@@ -383,21 +379,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                         className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
                                                                     />
                                                                 </LabeledContainer>
-                                                            )} />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <FormField control={form.control} name="status" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Estado Ficha"
-                                                                    required
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={[
-                                                                        { value: "ACTIVE", label: "Activo" },
-                                                                        { value: "INACTIVE", label: "Inactivo" }
-                                                                    ]}
-                                                                />
                                                             )} />
                                                         </div>
                                                     </div>

@@ -492,13 +492,6 @@ statement esté en `OPEN` (no pagado, no anulado).
 
 
 **Edit policy (ADR-0091):** editable solo en `OPEN` sin asiento de cierre; en `CLOSING`/`CLOSED` solo `notes`. Cierre y reapertura van por sus acciones.
-## Employee
-
-| Status | Intent |
-|--------|--------|
-| `ACTIVE` | `primary` |
-| `INACTIVE` | `neutral` |
-
 ## NoteWorkflow (Billing Note Creation)
 
 | Stage | Intent | Next |

@@ -386,7 +386,7 @@ function PersonalTab({
                             as="h2"
                             title="Ficha de Personal"
                             description={employee.display_id}
-                            actions={<StatusBadge status={employee.status} label={employee.status_display} />}
+                            actions={<StatusBadge status={employee.is_active ? "ACTIVE" : "INACTIVE"} label={employee.is_active ? "Activo" : "Archivado"} />}
                         />
                         <Section title="Datos personales">
                             <Section.Row variant="stat" plain title="Nombre" value={contact?.name || "—"} />

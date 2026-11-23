@@ -216,5 +216,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0151](0151-bruto-autoridad-unica-del-precio-de-venta.md) | El bruto es la única autoridad del precio de venta; el neto se deriva siempre con `accounting/vat.py` (espejo `lib/vat.ts`), el frontend no recalcula precios y un `ci_gate` bloquea aritmética de IVA fuera de esos módulos | Proposed |
 | [0152](0152-pestanas-de-registro-multiples-por-entidad.md) | Un registro = una pestaña: las filas abren pestañas por `openEntity` (varias por entidad, título con sufijo); `?selected` solo enlace profundo; reemplaza ADR-0101 §6 y §12 | Proposed |
 | [0153](0153-pos-pila-de-entidades-cubre-al-panel.md) | POS: toda entidad enlazada se apila y se dibuja en línea dentro del drawer de ventas (`DrawerScope.inline`) con «Volver», sin límite de niveles; reemplaza el punto 2 de ADR-0121 | Proposed |
+| [0154](0154-employee-archivo-is-active.md) | Employee migra de `status` ACTIVE/INACTIVE al patrón Archivo (`is_active`): listado solo activos por defecto, DELETE 405, acciones archive/restore; sale de `ARCHIVO_EXEMPT` | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

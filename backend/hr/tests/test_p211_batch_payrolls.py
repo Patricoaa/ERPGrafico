@@ -30,7 +30,7 @@ def _employee(contact_name, tax_id, active=True):
         contact=contact,
         base_salary=500000,
         dias_pactados=30,
-        status=Employee.Status.ACTIVE if active else Employee.Status.INACTIVE,
+        is_active=active,
     )
 
 

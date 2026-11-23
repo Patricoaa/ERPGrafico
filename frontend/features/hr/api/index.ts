@@ -5,7 +5,7 @@ export {
   getEmployees,
   createEmployee,
   updateEmployee,
-  deleteEmployee,
+  archiveEmployee,
   getPayrolls,
   createPayroll,
   deletePayroll,

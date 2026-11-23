@@ -199,10 +199,6 @@ class EmployeeConceptAmount(models.Model):
 class Employee(models.Model):
     """Ficha del Personal con datos previsionales."""
 
-    class Status(models.TextChoices):
-        ACTIVE = "ACTIVE", _("Activo")
-        INACTIVE = "INACTIVE", _("Inactivo")
-
     class ContractType(models.TextChoices):
         INDEFINIDO = "INDEFINIDO", _("Indefinido")
         PLAZO_FIJO = "PLAZO_FIJO", _("Plazo Fijo / Obra")
@@ -235,9 +231,8 @@ class Employee(models.Model):
 
     start_date = models.DateField(_("Fecha de Ingreso"), null=True, blank=True)
     end_date = models.DateField(_("Fecha de Egreso"), null=True, blank=True)
-    status = models.CharField(
-        _("Estado"), max_length=10, choices=Status.choices, default=Status.ACTIVE
-    )
+    # Patrón Archivo (deletion-policy.md, ADR-0154): False = ex-empleado archivado.
+    is_active = models.BooleanField(_("Activo"), default=True, db_index=True)
     contract_type = models.CharField(
         _("Tipo de Contrato"),
         max_length=20,

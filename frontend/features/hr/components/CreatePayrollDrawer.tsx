@@ -52,7 +52,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayro
         if (open) {
             requestAnimationFrame(() => {
                 setIsFetchingEmployees(true)
-                getEmployees({ status: 'ACTIVE' })
+                getEmployees()
                     .then(setEmployees)
                     .catch((e) => showApiError(e, "Error al cargar empleados"))
                     .finally(() => setIsFetchingEmployees(false))

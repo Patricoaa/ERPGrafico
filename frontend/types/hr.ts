@@ -1,6 +1,5 @@
 // HR TypeScript types
 
-export type EmployeeStatus = 'ACTIVE' | 'INACTIVE'
 export type PayrollStatus = 'DRAFT' | 'POSTED'
 export type ContractType = 'INDEFINIDO' | 'PLAZO_FIJO'
 export type SaludType = 'FONASA' | 'ISAPRE'
@@ -75,8 +74,7 @@ export interface Employee {
   department: string
   start_date: string | null
   end_date: string | null
-  status: EmployeeStatus
-  status_display: string
+  is_active: boolean
   contract_type: ContractType
   contract_type_display: string
   base_salary: string

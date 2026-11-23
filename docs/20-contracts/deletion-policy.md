@@ -50,7 +50,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 | `billing` | `Invoice` | Cancelación / Anulación | Cancel si DRAFT (sin JE o JE DRAFT). Annul si emitida a SII (requiere Nota de Crédito). |
 | `contacts` | `Contact` | Archivo | `is_active=False` saca del selector pero preserva FKs en docs históricos |
 | `core` | `User` | Archivo | `is_active=False`. Nunca borrar — preserva audit trail |
-| `hr` | `Employee` | Archivo | Excepción: usa `status` `ACTIVE`/`INACTIVE` para ex-empleados (ver `ARCHIVO_EXEMPT`) |
+| `hr` | `Employee` | Archivo | `is_active=False` para ex-empleados; excluye de liquidaciones masivas y de selectores. Sin hard delete (405). Ver [ADR-0154](../10-architecture/adr/0154-employee-archivo-is-active.md) |
 | `hr` | `AFP` | Archivo | `is_active` filtra selectores |
 | `hr` | `PayrollConcept` | Archivo | `is_active` filtra selectores; conceptos de sistema protegidos |
 | `inventory` | `Product` | Archivo | `is_active=False`; las líneas históricas siguen referenciándolo |
@@ -115,8 +115,8 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 - Pareja semántica obligatoria: si una entidad acepta `archive`, debe aceptar `restore`. Ambas viven en [row-actions registry](component-row-actions.md).
 - El servicio de archive **no** elimina FKs; los registros históricos que apunten siguen funcionando.
 
-> **Excepciones documentadas.** `Employee` (status `ACTIVE`/`INACTIVE`) y `TaxPeriod`
-> (status `OPEN`/`UNDER_REVIEW`/`CLOSED`) gobiernan su ciclo de vida con un enum `status`
+> **Excepciones documentadas.** `TaxPeriod`
+> (status `OPEN`/`UNDER_REVIEW`/`CLOSED`) y `Checkbook` gobiernan su ciclo de vida con un enum `status`
 > existente; un `is_active` paralelo crearía dos fuentes de verdad. Están declaradas en
 > `ARCHIVO_EXEMPT` dentro de
 > [`test_deletion_policy_consistency`](../../backend/core/tests/test_deletion_policy_consistency.py).

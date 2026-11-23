@@ -36,7 +36,6 @@ STATE_MAP_ENTITIES = {
     "TaxPeriod": ("tax", "taxperiod"),
     "AccountingPeriod": ("tax", "accountingperiod"),
     "FiscalYear": ("accounting", "fiscalyear"),
-    "Employee": ("hr", "employee"),
 }
 
 

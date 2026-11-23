@@ -155,12 +155,11 @@ class PayrollConceptViewSet(EditPolicyMixin, viewsets.ModelViewSet):
 
 
 class EmployeeFilter(django_filters.FilterSet):
-    status = django_filters.CharFilter(field_name="status")
     contact = django_filters.NumberFilter(field_name="contact__id")
 
     class Meta:
         model = Employee
-        fields = ["status", "contact"]
+        fields = ["contact"]
 
 
 class EmployeeViewSet(OptionalPaginationMixin, AuditHistory, viewsets.ModelViewSet):
@@ -177,6 +176,23 @@ class EmployeeViewSet(OptionalPaginationMixin, AuditHistory, viewsets.ModelViewS
         return EmployeeSerializer
     filterset_class = EmployeeFilter
     search_fields = ["contact__name", "contact__tax_id", "position"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action != "list":
+            return qs  # detalle/edición alcanzan fichas archivadas
+        is_active = self.request.query_params.get("is_active")
+        if is_active == "all":
+            return qs
+        if is_active == "false":
+            return qs.filter(is_active=False)
+        return qs.filter(is_active=True)
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for Employees. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
 
 # --- Absence ---

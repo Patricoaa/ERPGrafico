@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from contacts.models import Contact
@@ -15,6 +16,16 @@ from .models import (
     PayrollPayment,
     SalaryAdvance,
 )
+
+
+def _validate_assignable_employee(serializer, employee):
+    """Empleados archivados no reciben nuevos anticipos ni inasistencias (ADR-0154)."""
+    current = getattr(serializer.instance, "employee_id", None)
+    if not employee.is_active and employee.pk != current:
+        raise serializers.ValidationError(
+            "El empleado está archivado; restáuralo para registrar movimientos nuevos."
+        )
+    return employee
 
 
 class GlobalHRSettingsSerializer(serializers.ModelSerializer):
@@ -78,7 +89,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
     contact_detail = ContactMiniSerializer(source="contact", read_only=True)
     afp_detail = AFPSerializer(source="afp", read_only=True)
     display_id = serializers.CharField(read_only=True)
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
     salud_type_display = serializers.CharField(source="get_salud_type_display", read_only=True)
     contract_type_display = serializers.CharField(
         source="get_contract_type_display", read_only=True
@@ -100,8 +110,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "position",
             "department",
             "start_date",
-            "status",
-            "status_display",
+            "end_date",
+            "is_active",
             "contract_type",
             "contract_type_display",
             "base_salary",
@@ -147,7 +157,8 @@ class EmployeeWriteSerializer(serializers.ModelSerializer):
             "position",
             "department",
             "start_date",
-            "status",
+            "end_date",
+            "is_active",
             "contract_type",
             "base_salary",
             "afp",
@@ -164,6 +175,27 @@ class EmployeeWriteSerializer(serializers.ModelSerializer):
             "concept_amounts",
         ]
         read_only_fields = ["id", "code"]
+
+    def validate(self, attrs):
+        """`end_date` e `is_active` van juntos: archivar fija el egreso, restaurar lo limpia."""
+        instance = self.instance
+        is_active = attrs.get("is_active", instance.is_active if instance else True)
+        if is_active:
+            if attrs.get("end_date") is not None:
+                raise serializers.ValidationError(
+                    {"end_date": "Un empleado activo no puede tener fecha de egreso."}
+                )
+            attrs["end_date"] = None
+            return attrs
+        end_date = attrs.get("end_date") or (instance.end_date if instance else None)
+        end_date = end_date or timezone.localdate()
+        start_date = attrs.get("start_date", instance.start_date if instance else None)
+        if start_date and end_date < start_date:
+            raise serializers.ValidationError(
+                {"end_date": "La fecha de egreso no puede ser anterior a la de ingreso."}
+            )
+        attrs["end_date"] = end_date
+        return attrs
 
     def create(self, validated_data):
         from .services import EmployeeService
@@ -196,6 +228,9 @@ class AbsenceSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_employee(self, employee):
+        return _validate_assignable_employee(self, employee)
 
 
 # --- Payroll ---
@@ -377,6 +412,9 @@ class SalaryAdvanceSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "status", "journal_entry", "created_at", "updated_at"]
+
+    def validate_employee(self, employee):
+        return _validate_assignable_employee(self, employee)
 
     def validate(self, attrs):
         if "payroll" not in attrs:

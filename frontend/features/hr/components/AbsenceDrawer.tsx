@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useAbsenceMutations } from '../hooks/useAbsenceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
+import { employeeSelectOptions } from '../employeeOptions'
 import type { Absence, Employee } from "@/types/hr"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
@@ -39,6 +40,7 @@ export interface AbsenceDrawerProps {
 export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, mode: modeProp }: AbsenceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
+    const employeeOptions = employeeSelectOptions(employees, absence)
     const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: absence })
     const { printRef, handlePrint } = usePrintableDrawer()
     const { saveAbsence, isSaving: saving } = useAbsenceMutations()
@@ -164,10 +166,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    options={employees.map(e => ({
-                                                        value: e.id.toString(),
-                                                        label: e.contact_detail?.name || ""
-                                                    }))}
+                                                    options={employeeOptions}
                                                 />
                                             )} />
                                             <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
@@ -257,10 +256,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    options={employees.map(e => ({
-                                                        value: e.id.toString(),
-                                                        label: e.contact_detail?.name || ""
-                                                    }))}
+                                                    options={employeeOptions}
                                                 />
                                             )} />
                                             <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (

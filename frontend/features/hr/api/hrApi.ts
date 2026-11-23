@@ -86,8 +86,10 @@ export async function updateEmployee(id: number, data: Partial<Employee>): Promi
   return res.data
 }
 
-export async function deleteEmployee(id: number): Promise<void> {
-  await api.delete(`/hr/employees/${id}/`)
+/** Archivo pattern: `is_active=false` (hard DELETE is blocked server-side with 405). */
+export async function archiveEmployee(id: number, is_active: boolean, end_date?: string): Promise<Employee> {
+  const res = await api.patch(`/hr/employees/${id}/`, end_date ? { is_active, end_date } : { is_active })
+  return res.data
 }
 
 // ---- Absences ----

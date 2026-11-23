@@ -13,13 +13,13 @@ export const employeeEntity = defineEntity<Employee>()((f) => ({
         afp: f.text((e) => e.afp_detail?.name || "No disp.", { label: "Previsión", tone: "secondary" }),
         salud: f.text((e) => e.salud_type_display || "No disp.", { label: "Salud", tone: "secondary" }),
         baseSalary: f.money("base_salary", { label: "Sueldo Base" }),
-        status: f.status((e) => ({ status: e.status, label: e.status_display || e.status }), { label: "Estado" }),
+        isActive: f.status((e) => (e.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
         // Grouping dimension only (search "Tipo contrato"); not a column.
         contractType: f.text("contract_type_display", { label: "Tipo contrato" }),
     },
 }))
 
 export const employeeViews = employeeEntity.views({
-    table: { columns: ["displayId", "contact", "position", "department", "afp", "salud", "baseSalary", "status"] },
-    card: { title: "name", subtitle: ["displayId", "position"], meta: ["department", "baseSalary"], trailing: ["status"] },
+    table: { columns: ["displayId", "contact", "position", "department", "afp", "salud", "baseSalary", "isActive"] },
+    card: { title: "name", subtitle: ["displayId", "position"], meta: ["department", "baseSalary"], trailing: ["isActive"], muted: (e) => !e.is_active },
 })

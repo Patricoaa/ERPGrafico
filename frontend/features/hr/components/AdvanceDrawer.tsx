@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useAdvanceMutations } from '../hooks/useAdvanceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
+import { employeeSelectOptions } from '../employeeOptions'
 import type { SalaryAdvance, Employee } from "@/types/hr"
 import { EntitySidebar } from "@/features/comments"
 import { CancelButton, SubmitButton } from "@/components/shared"
@@ -37,6 +38,7 @@ export interface AdvanceDrawerProps {
 export function AdvanceDrawer({ open, onOpenChange, advance, employees: employeesProp, onSaved, mode: modeProp }: AdvanceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
+    const employeeOptions = employeeSelectOptions(employees, advance)
     const mode: DrawerMode = !advance ? (modeProp ?? 'create')
         : advance.is_editable === false ? 'view'
         : (modeProp ?? 'edit')
@@ -161,10 +163,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    options={employees.map(e => ({
-                                                        value: e.id.toString(),
-                                                        label: e.contact_detail?.name || ""
-                                                    }))}
+                                                    options={employeeOptions}
                                                 />
                                             )} />
 
@@ -229,10 +228,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
-                                                    options={employees.map(e => ({
-                                                        value: e.id.toString(),
-                                                        label: e.contact_detail?.name || ""
-                                                    }))}
+                                                    options={employeeOptions}
                                                 />
                                             )} />
 
