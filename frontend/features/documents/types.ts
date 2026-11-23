@@ -2,7 +2,7 @@ import * as z from "zod"
 
 /** Área operativa (ADR-0083): agrupa los relacionados en el orden del ciclo. */
 export const DOCUMENT_DOMAINS = [
-    "origin", "billing", "production", "logistics", "treasury", "accounting", "capital", "contacts", "other",
+    "origin", "billing", "production", "logistics", "treasury", "accounting", "capital", "hr", "contacts", "other",
 ] as const
 export const documentDomainSchema = z.enum(DOCUMENT_DOMAINS)
 export type DocumentDomain = z.infer<typeof documentDomainSchema>
@@ -45,6 +45,9 @@ export const documentLinkSchema = z.object({
 })
 export type DocumentLink = z.infer<typeof documentLinkSchema>
 
+export const documentWindowSchema = z.enum(["recent", "all"])
+export type DocumentWindow = z.infer<typeof documentWindowSchema>
+
 export const documentRelationsSchema = z.object({
     document: documentRefSchema,
     relations: z.array(documentLinkSchema),
@@ -54,10 +57,14 @@ export const documentRelationsSchema = z.object({
         role: z.string(),
         reason: z.string(),
     })),
+    /** Vínculos ocultos por la ventana reciente, por área (ADR-0155). */
+    hidden: z.record(z.string(), z.number()).catch({}),
+    window: documentWindowSchema.catch("all"),
 })
 export type DocumentRelations = z.infer<typeof documentRelationsSchema>
 
 export interface DocumentRelationsFilters {
     semantic?: DocumentSemantic
     direction?: "outgoing" | "incoming"
+    window?: DocumentWindow
 }
