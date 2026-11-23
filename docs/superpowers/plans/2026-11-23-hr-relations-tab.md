@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Añadir la pestaña «Relaciones» al `EmployeeDrawer`, un dominio documental `hr` («RRHH») y una ventana reciente con «Ver más» en todas las pestañas de relaciones.
+**Goal:** Añadir la pestaña «Relaciones» a los drawers de empleado, inasistencia y anticipo (la liquidación ya la tiene por botón), un dominio documental `hr` («RRHH») y una ventana reciente con «Ver más» en todas las pestañas de relaciones.
 
 **Architecture:** El backend registra los tipos documentales de RRHH con dominio `hr` y proveedores de relaciones tipados, y el servicio de relaciones aprende un parámetro `window` que recorta por área después de resolver (sin cambiar el default `all`). El frontend extiende el esquema Zod, el hook y `DocumentRelationsTab` (que pide `recent` y ofrece «Ver más»), y monta la pestaña en el drawer.
 
@@ -19,13 +19,13 @@
 - Dominio nuevo `hr` (etiqueta «RRHH»), ordenado después de `capital` y antes de `contacts`.
 - Proveedores: solo FKs tipadas, con `select_related`/`prefetch_related` (invariante zero-N+1); sin heurísticas de texto.
 - Frontend: zero `any`, tokens semánticos, import por barrel (`@/features/documents`, `@/components/shared`), sin `useQuery` en componentes.
-- Cambio de contrato de capa 20 → ADR-0155 (Task 6).
+- Cambio de contrato de capa 20 → ADR-0155 (Task 7).
 - Backend: ejecutar desde `backend/` con `DEBUG=1 CACHE_BACKEND=locmem CHANNEL_BACKEND=locmem venv/bin/python -m pytest -p no:cacheprovider …`. Frontend: `source ~/.nvm/nvm.sh && nvm use 24` antes de `npx vitest run …`; DoD `npm run type-check` y `npm run lint` sin errores.
 - Rama: `feat/hr-relations-tab` (ya creada). `core/tests/test_no_utc_today.py` falla de antes por `inventory/*`; no es de este trabajo.
 
 ## Review Focus
 
-1. Empleado sin ninguna relación (incluido archivado): la pestaña muestra el estado vacío, no rompe (Task 1 y 4).
+1. Empleado sin ninguna relación (incluido archivado) muestra el estado vacío; y crear un anticipo o inasistencia (sin registro) no muestra pestaña ni consulta relaciones (Tasks 1, 4 y 6).
 2. Área con exactamente 10 vínculos (no se recorta) y área con 11 donde todos son viejos (se completa hasta 10 con los más recientes) (Task 2).
 3. Vínculos de dependencia o sin fecha en un área grande: jamás se ocultan (Task 2).
 4. `window=basura` → 400; sin parámetro → respuesta idéntica a la actual (Task 2).
@@ -48,6 +48,7 @@
 | `frontend/features/documents/components/DocumentRelationsTab.tsx` (mod) | Ventana, «+N anteriores», «Ver más (N)» |
 | `frontend/components/shared/RelatedDocumentsTable.tsx` (mod) | Etiquetas de rol nuevas |
 | `frontend/features/hr/components/EmployeeDrawer.tsx` (mod) | Pestaña «Relaciones» |
+| `frontend/features/hr/components/AbsenceDrawer.tsx`, `AdvanceDrawer.tsx` (mod) | `DrawerLayout` con pestañas «Datos» y «Relaciones» cuando hay registro |
 | `docs/10-architecture/adr/0155-*.md` (new), índice, `document-relations.md`, `component-document-sheet.md` (mod) | Documentación y ADR |
 
 ---
@@ -229,7 +230,38 @@ git commit -m "feat(hr): pestaña Relaciones en la ficha de empleado"
 
 ---
 
-### Task 6: ADR-0155 y documentación de contratos
+### Task 6: Pestaña «Relaciones» en `AbsenceDrawer` y `AdvanceDrawer`
+
+**Files:**
+- Modify: `frontend/features/hr/components/AbsenceDrawer.tsx` (rama `absence ? …` desde la línea ~151), `frontend/features/hr/components/AdvanceDrawer.tsx` (rama equivalente)
+- Test: `frontend/features/hr/components/__tests__/AbsenceDrawer.relations.test.tsx`, `AdvanceDrawer.relations.test.tsx` (nuevos)
+
+**Interfaces:**
+- Consumes: `DocumentRelationsTab`, `useDocumentRelations` de `@/features/documents`; `DrawerLayout` de `@/components/shared` (props `tabs`, `rightRail`, `rightRailCollapsible`, `rightRailStorageKey`, `contentDisabled`); etiquetas `hr.absence` y `hr.salaryadvance` (Task 1).
+- Produces: con registro existente, tabs `[{ value: "details", label: "Datos", icon, content: <formulario actual> }, { value: "relations", label: "Relaciones", icon: Link2, badge, content: <DocumentRelationsTab …/> }]`.
+
+- [ ] **Step 1: Write the failing tests** (uno por drawer, con `@/features/documents` mockeado como en el Task 5 y las dependencias pesadas mockeadas): con un registro existente hay pestañas «Datos» y «Relaciones» (badge = nº de relaciones del mock) y al activar la segunda se renderiza `relations-tab` con `label="hr.absence"` / `"hr.salaryadvance"` y el `id` del registro; con `absence={null}` / `advance={null}` **no** hay pestañas y `useDocumentRelations` se llama con `id` `null`; en modo `view` el formulario sigue deshabilitado y la pestaña «Relaciones» responde a clics.
+
+- [ ] **Step 2: Run to verify they fail**
+
+Run: `npx vitest run features/hr/components/__tests__/AbsenceDrawer.relations.test.tsx features/hr/components/__tests__/AdvanceDrawer.relations.test.tsx` → FAIL.
+
+- [ ] **Step 3: Implement** en la rama con registro de cada drawer: reemplazar `FormSplitLayout` por `DrawerLayout` con las dos pestañas; mover el `EntitySidebar` actual a `rightRail` conservando `rightRailCollapsible` y las claves `erpgrafico.drawer.sidebar.absence` / `.advance`; el `<fieldset disabled={isView}>` queda dentro del contenido de «Datos» (la pestaña «Relaciones» queda fuera para que sus filas sean clicables). El badge sale de `useDocumentRelations(label, record?.id ?? null, { window: "recent" })` (misma query key que la pestaña). La rama de creación no cambia.
+
+- [ ] **Step 4: Run to verify they pass**
+
+Run: `npx vitest run features/hr features/documents && npm run type-check && npm run lint` → PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add frontend/features/hr
+git commit -m "feat(hr): pestaña Relaciones en los drawers de inasistencia y anticipo"
+```
+
+---
+
+### Task 7: ADR-0155 y documentación de contratos
 
 **Files:**
 - Create: `docs/10-architecture/adr/0155-hr-relations-window.md`
@@ -257,5 +289,6 @@ git commit -m "docs: ADR-0155 dominio RRHH y ventana reciente en relaciones docu
 - Tipos y proveedores de RRHH, URL canónica del pago, sin duplicar asientos/contraparte (los añade el servicio) → Task 1.
 - `window` (default `all`, `recent` pedido por la pestaña, reglas 12 meses / >10 / mínimo 10 / dependencias y sin fecha / `hidden`) → Task 2 y 4.
 - «Ver más» expande toda la pestaña, «+N anteriores» por área → Task 4.
-- Solo lectura al inicio (`sectionActions={{}}`) → Task 5.
-- ADR y contratos → Task 6. No objetivos (pestaña en otros drawers, optimizar resolución) no tienen tarea, a propósito.
+- Solo lectura al inicio (`sectionActions={{}}`) → Tasks 5 y 6.
+- Todos los drawers de entidades de RRHH: empleado (Task 5), inasistencia y anticipo (Task 6), liquidación ya cubierta por `DocumentRelationsButton` (hereda `hr` y la ventana vía Tasks 1-4).
+- ADR y contratos → Task 7. No objetivos (concepto/AFP/pago sin drawer, optimizar resolución) no tienen tarea, a propósito.

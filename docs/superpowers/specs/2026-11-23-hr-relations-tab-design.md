@@ -9,17 +9,18 @@ La ficha de empleado (`EmployeeDrawer`) hoy no muestra nada de lo que rodea al e
 1. Una pestaña **Relaciones** en el drawer del empleado con esas relaciones.
 2. Un **área (dominio) «RRHH»** en el agrupador de la pestaña, para que lo propio de RRHH no caiga en «Otros».
 3. Una **ventana reciente con «Ver más»** en la pestaña de relaciones, **para todas las entidades**, porque un empleado antiguo acumula decenas de liquidaciones y cientos de filas indirectas.
-4. Dejar listo el camino para **extender la pestaña al resto de entidades de RRHH** (liquidación, anticipo, inasistencia, pago, concepto, AFP) en un paso posterior.
+4. **Incorporar la pestaña a todos los drawers de entidades de RRHH** en esta misma iteración: empleado, inasistencia y anticipo (pestaña) y liquidación (que ya la tiene como botón de cabecera, ver Diseño).
 
 ## Objetivos / no objetivos / antiobjetivos
 
 **Objetivos**
-- Pestaña Relaciones en `EmployeeDrawer` (modos vista y edición, solo con empleado existente; también para archivados).
+- Pestaña Relaciones en `EmployeeDrawer`, `AbsenceDrawer` y `AdvanceDrawer` (modos vista y edición, solo con registro existente; también para empleados archivados).
+- La liquidación conserva su acceso por `DocumentRelationsButton` (ADR-0083 U5), que ya abre el mismo `DocumentRelationsTab` y hereda dominio `hr` y ventana reciente.
 - Tipos documentales de RRHH registrados con dominio `hr` y proveedores de relaciones tipados.
 - Ventana reciente en el servidor (`window`) con conteo de ocultos y «Ver más».
 
 **No objetivos (esta iteración)**
-- Pestaña en los demás drawers de RRHH (se habilita después; el backend ya queda listo).
+- Concepto de liquidación y AFP: son paneles de configuración sin drawer de entidad; el pago de remuneración tampoco tiene drawer. Quedan sin pestaña (sus tipos documentales sí se registran/resuelven).
 - Optimizar la *resolución* de vínculos: la ventana recorta respuesta y render, no el costo de armar los vínculos (ver Enfoques).
 - Acciones por área (`sectionActions`) como «+ Registrar anticipo»: la pestaña arranca de solo lectura (como `PartnerDrawer`).
 - Paginación por cursor; no se agrupa por año.
@@ -66,6 +67,8 @@ Regla, aplicada por área (`target.domain`) *después* de resolver y deduplicar:
 - `DOCUMENT_DOMAINS` y `documentDomainSchema` incorporan `hr`; `DOCUMENT_DOMAIN_META.hr = { label: "RRHH", icono de personal, order: tras "capital" y antes de "contacts" }`.
 - Esquema de la respuesta: `hidden` con default `{}`; `documentsApi.getRelations` y `useDocumentRelations` aceptan `window` (parte de la query key).
 - `DocumentRelationsTab` pide `recent` por defecto (prop `window` para forzar `all`). Cada área con ocultos muestra «+N anteriores»; el pie de la pestaña ofrece **«Ver más (N)»**, que cambia a `all` para toda la pestaña (un solo refetch). Mantiene `loading`/`empty`/`error`.
+- `AbsenceDrawer` y `AdvanceDrawer` hoy son un `Drawer` con `FormSplitLayout` (sin pestañas). Con registro existente pasan a `DrawerLayout` con pestañas «Datos» (el formulario actual) y «Relaciones»; crear (sin registro) no cambia y no muestra pestaña.
+- `PayrollDetailView` no cambia: ya expone «Relaciones» por `DocumentRelationsButton` (la liquidación es un flujo propio, no un formulario con pestañas).
 - `EmployeeDrawer`: pestaña «Relaciones» (`Link2`, con `badge` del conteo) con `<DocumentRelationsTab label="hr.employee" id={employee.id} sectionActions={{}} rowActions={() => []} />`, visible si `employee?.id`. Las filas se abren con `useOpenRelatedDocument` (ya existente).
 
 ### Contratos y documentación
@@ -85,6 +88,7 @@ Regla, aplicada por área (`target.domain`) *después* de resolver y deduplicar:
 3. «Ver más» expande toda la pestaña, no un área.
 4. Orden del área RRHH: antes de «Contactos».
 5. Pestaña de solo lectura al inicio (sin acciones por área).
+6. «Todos los drawers de RRHH» = empleado, inasistencia, anticipo (pestaña) y liquidación (botón existente); concepto, AFP y pago no tienen drawer de entidad.
 
 ## Pendiente para quien implemente
 Semántica exacta de cada `Link`, textos de `detail` de cada tipo, icono del área RRHH y estructura interna de los tests.
