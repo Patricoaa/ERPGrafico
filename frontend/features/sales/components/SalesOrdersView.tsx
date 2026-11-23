@@ -10,6 +10,7 @@ import {
     useCollectionViewMode,
     useEntityCollection,
     useServerPage,
+    type CollectionViewMode,
     type FieldId,
     type SortSpec,
 } from "@/components/entity-view"
@@ -55,13 +56,45 @@ export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOr
         : <SaleNoteCollection selection={selection} withActions={!onSelectOrder} />
 }
 
-function SaleOrderCollection({ selection, withActions }: { selection: SheetSelection; withActions: boolean }) {
+/**
+ * Vista (tabla / tarjetas / analítica) de la lista. En la página es estado de URL y preferencia guardada
+ * (`?view=`); embebida en el POS (`withActions` falso) es local al drawer: no toca la URL del POS ni la
+ * preferencia de la página de Ventas.
+ */
+interface ViewState { view: CollectionViewMode; onViewChange: (view: CollectionViewMode) => void }
+type CollectionProps = { selection: SheetSelection; withActions: boolean }
+
+function useLocalViewMode(initial: CollectionViewMode): ViewState {
+    const [view, onViewChange] = useState<CollectionViewMode>(initial)
+    return { view, onViewChange }
+}
+
+function SaleOrderCollection(props: CollectionProps) {
+    return props.withActions ? <UrlSaleOrderCollection {...props} /> : <LocalSaleOrderCollection {...props} />
+}
+function UrlSaleOrderCollection(props: CollectionProps) {
+    return <SaleOrderCollectionBody {...props} {...useCollectionViewMode("sales.saleorder")} />
+}
+function LocalSaleOrderCollection(props: CollectionProps) {
+    return <SaleOrderCollectionBody {...props} {...useLocalViewMode("card")} />
+}
+
+function SaleNoteCollection(props: CollectionProps) {
+    return props.withActions ? <UrlSaleNoteCollection {...props} /> : <LocalSaleNoteCollection {...props} />
+}
+function UrlSaleNoteCollection(props: CollectionProps) {
+    return <SaleNoteCollectionBody {...props} {...useCollectionViewMode("billing.invoice")} />
+}
+function LocalSaleNoteCollection(props: CollectionProps) {
+    return <SaleNoteCollectionBody {...props} {...useLocalViewMode("card")} />
+}
+
+function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
     const search = useUnifiedSearch(salesOrderUnifiedSearchDef)
     const groupBy = search.groupBy ? ORDER_GROUPS[search.groupBy] ?? null : null
     const [sort, setSort] = useState<SortSpec<FieldId<typeof saleOrderEntity.fields>> | null>(null)
     const filters = useMemo<SaleOrderFilters>(() => search.filters as SaleOrderFilters, [search.filters])
     const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
-    const { view, onViewChange } = useCollectionViewMode("sales.saleorder")
 
     const { page, orders, isLoading, isRefetching, isError, refetch } = useSalesOrders({
         filters: {
@@ -137,12 +170,11 @@ function SaleOrderCollection({ selection, withActions }: { selection: SheetSelec
     )
 }
 
-function SaleNoteCollection({ selection, withActions }: { selection: SheetSelection; withActions: boolean }) {
+function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
     const search = useUnifiedSearch(salesNoteUnifiedSearchDef)
     const groupBy = search.groupBy ? NOTE_GROUPS[search.groupBy] ?? null : null
     const filters = search.filters as Record<string, string>
     const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
-    const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
     const { page, notes, isLoading, isRefetching, isError, refetch } = useSalesNotes({
         filters: {
