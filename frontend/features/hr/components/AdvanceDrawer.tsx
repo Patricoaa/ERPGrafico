@@ -10,7 +10,7 @@ import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import { employeeSelectOptions } from '../employeeOptions'
 import type { SalaryAdvance, Employee } from "@/types/hr"
 import { EntitySidebar } from "@/features/comments"
-import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal } from "@/features/documents"
 import { FileText, Link2 } from "lucide-react"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
@@ -140,7 +140,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                         actions={
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
-                                <SubmitButton type="submit" form="advance-form" loading={saving}>
+                                <SubmitButton type="submit" onClick={form.handleSubmit(onSubmit)} loading={saving}>
                                     {mode === 'create' ? "Registrar" : "Actualizar"}
                                 </SubmitButton>
                             </>
@@ -229,7 +229,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                 value: "relations",
                                 label: "Relaciones",
                                 icon: Link2,
-                                badge: relations?.relations.length,
+                                badge: relationsTotal(relations),
                                 className: "p-6",
                                 content: <DocumentRelationsTab label="hr.salaryadvance" id={advance.id} sectionActions={{}} rowActions={() => []} />,
                             },

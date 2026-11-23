@@ -17,7 +17,7 @@ import { PrintableLayout, useDrawerIdentity, usePrintableDrawer } from "@/featur
 import {
     DocumentRelationsTab,
     resolveRegistryActions,
-    useDocumentRelations,
+    useDocumentRelations, relationsTotal,
     useInvalidateDocuments,
     type DocumentDomain,
     type ResolvedDocumentAction,
@@ -132,7 +132,7 @@ export function InvoiceSheet({ id, open, onOpenChange, embedded = false, posSess
             ),
         },
         {
-            value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
+            value: "relations", label: "Relaciones", icon: Link2, badge: relationsTotal(relations),
             content: (
                 <DocumentRelationsTab
                     label={LABEL}

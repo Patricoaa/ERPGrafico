@@ -57,7 +57,7 @@ function DomainFilterBar({
 
     return (
         <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
-            <Button
+            <Button type="button"
                 size="sm"
                 variant="ghost"
                 onClick={() => onDomainChange(null)}
@@ -75,7 +75,7 @@ function DomainFilterBar({
                 const isActive = activeDomain === group.domain
                 const hasPending = group.links.length === 0 && group.actions.length > 0
                 return (
-                    <Button
+                    <Button type="button"
                         key={group.domain}
                         size="sm"
                         variant="ghost"
@@ -144,7 +144,7 @@ function RelationsSectionHead({
 function SectionActionButton({ action }: { action: DocumentActionItem }) {
     const Icon = action.icon
     return (
-        <Button
+        <Button type="button"
             variant="outline"
             size="sm"
             className={cn(
@@ -263,7 +263,7 @@ export function DocumentRelationsTab({
                     <div className="rounded-sm border overflow-hidden">
                         <RelationsSectionHead
                             domain={group.domain}
-                            count={count}
+                            count={count + (hiddenByDomain[group.domain] ?? 0)}
                             actions={group.actions}
                         />
                         {group.links.length > 0 || selfLink?.target.domain === group.domain ? (
@@ -304,7 +304,7 @@ export function DocumentRelationsTab({
             })}
 
             {hiddenTotal > 0 && (
-                <Button variant="ghost" size="sm" className="w-full" onClick={() => setShowAll(true)}>
+                <Button type="button" variant="ghost" size="sm" className="w-full" onClick={() => setShowAll(true)}>
                     Ver más ({hiddenTotal})
                 </Button>
             )}

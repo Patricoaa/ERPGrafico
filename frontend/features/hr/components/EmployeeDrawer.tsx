@@ -13,7 +13,7 @@ import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { SubmitButton, CancelButton, DrawerLayout, type DrawerLayoutTab } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck, Link2 } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
-import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal } from "@/features/documents"
 
 import {
     Form, FormField
@@ -605,7 +605,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                             value: "relations",
                                             label: "Relaciones",
                                             icon: Link2,
-                                            badge: relations?.relations.length,
+                                            badge: relationsTotal(relations),
                                             content: <DocumentRelationsTab label="hr.employee" id={employee.id} sectionActions={{}} rowActions={() => []} />,
                                         }] : []),
                                     ], isView || saving)}

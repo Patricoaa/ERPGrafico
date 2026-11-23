@@ -284,7 +284,7 @@ export function RelatedDocumentRow({ item, onOpen, actions, hidePartner, isSelf 
                 <div className="flex items-center pr-2 transition-colors group-hover:bg-muted/60">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm" className="size-control-xs shrink-0" aria-label={`Acciones de ${target.display_id}`}>
+                            <Button type="button" variant="ghost" size="icon-sm" className="size-control-xs shrink-0" aria-label={`Acciones de ${target.display_id}`}>
                                 <MoreHorizontal />
                             </Button>
                         </DropdownMenuTrigger>

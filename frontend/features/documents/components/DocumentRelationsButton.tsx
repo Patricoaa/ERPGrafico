@@ -6,6 +6,7 @@ import { Drawer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDocumentRelations } from "../hooks/useDocumentRelations"
+import { relationsTotal } from "../utils/relationsTotal"
 import { DocumentRelationsTab } from "./DocumentRelationsTab"
 
 /**
@@ -17,7 +18,7 @@ export function DocumentRelationsButton({ label, id }: { label: string; id: numb
     const [open, setOpen] = useState(false)
     const { data } = useDocumentRelations(label, id ?? null)
     if (!id) return null
-    const count = data?.relations.length
+    const count = relationsTotal(data)
 
     return (
         <>

@@ -1,5 +1,7 @@
 """Proveedores de relaciones documentales de RRHH (ADR-0080, M5; dominio `hr`, ADR-0155)."""
 
+from django.db.models import Prefetch
+
 from core.documents import DocumentType, DocumentTypeRegistry, Link, related_or_none, relation_provider
 from core.documents.details import join
 
@@ -29,12 +31,16 @@ DocumentTypeRegistry.register(DocumentType(label="hr.payrollconcept", canonical_
 
 @relation_provider("hr.employee")
 def employee_relations(employee):
-    payrolls = employee.payrolls.prefetch_related("payments")
+    from .models import PayrollPayment
+
+    # Asientos y contraparte precargados: el servicio los lee por cada destino (zero-N+1, ADR-0118).
+    payments = Prefetch("payments", queryset=PayrollPayment.objects.select_related("journal_entry"))
+    payrolls = employee.payrolls.select_related("journal_entry", "previred_journal_entry").prefetch_related(payments)
     for payroll in payrolls:
         yield Link("association", "outgoing", "payroll", payroll, **_LOOSE)
         for payment in payroll.payments.all():
             yield Link("association", "outgoing", "payroll_payment", payment, amount=payment.amount, **_LOOSE)
-    for advance in employee.advances.all():
+    for advance in employee.advances.select_related("journal_entry"):
         yield Link("association", "outgoing", "salary_advance", advance, amount=advance.amount, **_LOOSE)
     for absence in employee.absences.all():
         yield Link("association", "outgoing", "absence", absence, **_LOOSE)

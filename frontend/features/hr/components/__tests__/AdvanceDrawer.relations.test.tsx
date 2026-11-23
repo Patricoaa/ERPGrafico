@@ -1,10 +1,10 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { SalaryAdvance } from "@/types/hr"
 import { AdvanceDrawer } from "../AdvanceDrawer"
 
-const m = vi.hoisted(() => ({ relationsCalls: [] as unknown[][] }))
+const m = vi.hoisted(() => ({ relationsCalls: [] as unknown[][], save: vi.fn() }))
 
 vi.mock("@/features/documents", async (importOriginal) => ({
     ...await importOriginal<typeof import("@/features/documents")>(),
@@ -22,11 +22,12 @@ vi.mock("@/features/_shared", () => ({
     PrintableLayout: () => null,
 }))
 vi.mock("@/features/hr/hooks/useEmployees", () => ({ useEmployees: () => ({ employees: [] }) }))
-vi.mock("../../hooks/useAdvanceMutations", () => ({ useAdvanceMutations: () => ({ saveAdvance: vi.fn(), isSaving: false }) }))
+vi.mock("../../hooks/useAdvanceMutations", () => ({ useAdvanceMutations: () => ({ saveAdvance: m.save, isSaving: false }) }))
 vi.mock("@/hooks/useServerDate", () => ({ useServerDate: () => ({ dateString: "2026-11-23" }) }))
 vi.mock("@/components/shared", async (importOriginal) => ({
     ...await importOriginal<typeof import("@/components/shared")>(),
     PeriodValidationDateInput: () => null,
+    LabeledSelect: () => null,
 }))
 
 const record = {
@@ -34,7 +35,7 @@ const record = {
     notes: "", status: "PAID", is_editable: true,
 } as unknown as SalaryAdvance
 
-beforeEach(() => { m.relationsCalls = [] })
+beforeEach(() => { m.relationsCalls = []; m.save.mockReset() })
 
 describe("AdvanceDrawer — pestaña Relaciones", () => {
     it("shows Datos and Relaciones tabs for an existing record and renders hr.salaryadvance", async () => {
@@ -59,5 +60,12 @@ describe("AdvanceDrawer — pestaña Relaciones", () => {
         render(<AdvanceDrawer open onOpenChange={vi.fn()} advance={null} onSaved={vi.fn()} />)
         expect(screen.queryByRole("tab", { name: /Relaciones/ })).not.toBeInTheDocument()
         expect(m.relationsCalls.every(([, id]) => id === null)).toBe(true)
+    })
+
+    it("still saves from the footer while the Relaciones tab is active", async () => {
+        render(<AdvanceDrawer open onOpenChange={vi.fn()} advance={record} employees={[{ id: 5, contact_detail: { name: "Ana Pérez" } } as never]} onSaved={vi.fn()} />)
+        await userEvent.click(screen.getByRole("tab", { name: /Relaciones/ }))
+        await userEvent.click(screen.getByRole("button", { name: /Actualizar/ }))
+        await waitFor(() => expect(m.save).toHaveBeenCalled())
     })
 })

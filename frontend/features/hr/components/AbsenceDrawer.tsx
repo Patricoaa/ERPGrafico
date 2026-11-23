@@ -14,7 +14,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout, DrawerLayout } from "@/components/shared"
 import { EntitySidebar } from "@/features/comments"
-import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal } from "@/features/documents"
 import { FileText, Link2 } from "lucide-react"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -256,7 +256,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                 value: "relations",
                                 label: "Relaciones",
                                 icon: Link2,
-                                badge: relations?.relations.length,
+                                badge: relationsTotal(relations),
                                 className: "p-6",
                                 content: <DocumentRelationsTab label="hr.absence" id={absence.id} sectionActions={{}} rowActions={() => []} />,
                             },

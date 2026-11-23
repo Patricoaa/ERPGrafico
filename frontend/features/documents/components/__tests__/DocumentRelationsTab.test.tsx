@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
@@ -173,5 +173,33 @@ describe("DocumentRelationsTab — ventana reciente (ADR-0155)", () => {
         await waitFor(() => expect(screen.getByText("hr.payroll-1")).toBeInTheDocument())
         expect(getMock).toHaveBeenCalledWith("/core/documents/hr.employee/5/relations/", { params: { window: "all" } })
         expect(screen.queryByRole("button", { name: /Ver más/ })).not.toBeInTheDocument()
+    })
+
+    it("counts hidden links in the area header", async () => {
+        getMock.mockResolvedValue(payload({ hr: 4 }))
+        wrap(<DocumentRelationsTab label="hr.employee" id={5} />)
+        await waitFor(() => expect(screen.getByText("hr.payroll-1")).toBeInTheDocument())
+        // 1 propio + 1 visible + 4 ocultos
+        expect(within(screen.getByRole("region", { name: "RRHH" })).getByText("6")).toBeInTheDocument()
+    })
+
+    it("never submits an enclosing form (chips and Ver más are type=button)", async () => {
+        const submit = vi.fn((e: React.FormEvent) => e.preventDefault())
+        getMock.mockResolvedValue({
+            data: {
+                document: link("hr.employee", 5, "hr").target,
+                relations: [
+                    link("hr.payroll", 1, "hr", { role: "payroll", semantic: "association" }),
+                    link("contacts.contact", 3, "contacts", { role: "contact", semantic: "association" }),
+                ],
+                unresolved: [], hidden: { hr: 4 }, window: "recent",
+            },
+        })
+        wrap(<form onSubmit={submit}><DocumentRelationsTab label="hr.employee" id={5} /></form>)
+        await waitFor(() => expect(screen.getByText("hr.payroll-1")).toBeInTheDocument())
+        fireEvent.click(screen.getByRole("button", { name: "Todas" }))
+        fireEvent.click(screen.getAllByRole("button", { name: /RRHH/ })[0])
+        fireEvent.click(screen.getByRole("button", { name: "Ver más (4)" }))
+        expect(submit).not.toHaveBeenCalled()
     })
 })

@@ -85,3 +85,44 @@ def test_user_without_payroll_permission_sees_inaccessible_refs(hr_world):
         assert link["target"]["accessible"] is False
         assert link["target"]["status"] is None
         assert link["target"]["date"] is None
+
+
+def _add_posted_payroll(employee, month):
+    from accounting.models import JournalEntry
+    from django.utils import timezone
+
+    entry = JournalEntry.objects.create(date=timezone.localdate(), description=f"Nómina {month}", status=JournalEntry.State.POSTED)
+    payroll = Payroll.objects.create(
+        employee=employee, period_year=2025, period_month=month, base_salary=1, journal_entry=entry,
+    )
+    pay_entry = JournalEntry.objects.create(date=timezone.localdate(), description=f"Pago {month}", status=JournalEntry.State.POSTED)
+    PayrollPayment.objects.create(
+        payroll=payroll, payment_type=PayrollPayment.PaymentType.SALARIO, amount=1, date=date(2025, month, 28),
+        journal_entry=pay_entry,
+    )
+
+
+def test_employee_relations_query_count_does_not_grow_with_history(hr_world):
+    """Zero N+1 en el proveedor de empleado: ninguna consulta por fila a tablas de RRHH ni
+    cargas sueltas de asientos (el costo por asiento de `build_ref` es del núcleo documental)."""
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    client, employee = hr_world["client"], hr_world["employee"]
+    url = f"/api/core/documents/hr.employee/{employee.pk}/relations/"
+
+    def provider_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            assert client.get(url).status_code == 200
+        return sum(
+            1 for q in ctx
+            if 'FROM "hr_' in q["sql"]
+            or ('FROM "accounting_journalentry"' in q["sql"] and '"accounting_journalentry"."id" =' in q["sql"])
+        )
+
+    for month in (1, 2):
+        _add_posted_payroll(employee, month)
+    small = provider_queries()
+    for month in range(3, 9):
+        _add_posted_payroll(employee, month)
+    assert provider_queries() == small
