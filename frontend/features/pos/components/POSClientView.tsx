@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip, StepHeader } from '@/components/shared'
+import type { ProductCategory } from '@/features/inventory'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { Loader2, FileText, BarChart3, Save, Lock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag, ShoppingBasket } from 'lucide-react'
@@ -284,6 +285,10 @@ export function POSClientView() {
     }, [wizardState?.selectedCustomerId, selectedCustomerId, setSelectedCustomerId])
 
     const handleProductClick = (product: Product) => {
+        if (product.has_variants && isPOSProductDisabled(product)) {
+            toast.error(`${product.name}: sin existencias`)
+            return
+        }
         if (product.has_variants && (product.variants_count || 0) > 0) {
             setSelectedProductForVariant(product); setVariantModalOpen(true)
         } else addProductToCart(product)
@@ -745,7 +750,7 @@ export function POSClientView() {
                 </div>
             </div>
 
-            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Product)} items={items} bomCache={bomCache as unknown as Record<number, Record<string, unknown>>} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
+            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Product)} items={items} bomCache={bomCache as unknown as Record<number, Record<string, unknown>>} componentCache={componentCache} calculateMaxQty={calculateMaxQty} categories={categories as unknown as ProductCategory[]} />
             <DraftCartsClientView open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} currentDraftId={currentDraftId} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
             <NumpadModal
                 open={numpadOpen}

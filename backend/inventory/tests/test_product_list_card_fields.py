@@ -98,3 +98,25 @@ def test_list_query_count_does_not_grow_with_templates(catalog):
         assert client.get(LIST_URL).status_code == 200
 
     assert len(grown) == len(baseline)
+
+
+def test_template_reports_variants_qty_available(catalog):
+    """`variants_qty_available` suma la disponibilidad de las variantes y no crece con las filas."""
+    from inventory.models import Product, Stock, Warehouse
+
+    client = catalog["client"]
+    template = catalog["make_template"]("Polera", ["1000", "1200"], [catalog["gramaje"]])
+    catalog["make_template"]("Gorro", ["500"], [catalog["gramaje"]])
+
+    rows = rows_by_name(client)
+    assert rows["Polera"]["variants_qty_available"] == 0
+    assert rows["Gorro"]["variants_qty_available"] == 0
+
+    variant = Product.objects.get(name="Polera v0")
+    warehouse = Warehouse.objects.create(name="Principal", code="PRI")
+    Stock.objects.create(product=variant, warehouse=warehouse, quantity=Decimal("7"))
+
+    rows = rows_by_name(client)
+    assert rows["Polera"]["variants_qty_available"] == 7
+    assert rows["Gorro"]["variants_qty_available"] == 0
+    assert template.has_variants

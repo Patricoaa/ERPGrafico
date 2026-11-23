@@ -477,6 +477,20 @@ class ProductListSerializer(serializers.ModelSerializer):
         prices = [variant.sale_price for variant in obj.variants.all() if variant.sale_price is not None]
         return min(prices) if prices else None
 
+    variants_qty_available = serializers.SerializerMethodField()
+    def get_variants_qty_available(self, obj):
+        """Suma de la disponibilidad (stock − reservas) de las variantes con stock; None si no aplica o no se calculó."""
+        if not obj.has_variants:
+            return None
+        total = 0.0
+        for variant in obj.variants.all():
+            stock = getattr(variant, "annotated_current_stock", None)
+            reserved = getattr(variant, "annotated_qty_reserved", None)
+            if stock is None or reserved is None:
+                return None
+            total += max(float(stock) - float(reserved), 0.0)
+        return total
+
     # Defaults que lee el wizard de compra desde el listado. `last_purchase_price` y
     # `preferred_supplier_name` vienen anotados por `list_products` (sin joins ni N+1).
     last_purchase_price = serializers.SerializerMethodField()
@@ -518,7 +532,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "last_purchase_price",
             "current_stock", "qty_reserved", "qty_available",
             "track_inventory", "can_be_sold", "can_be_purchased",
-            "has_variants", "variants_count", "variant_axis_label", "min_variant_price",
+            "has_variants", "variants_count", "variant_axis_label", "min_variant_price", "variants_qty_available",
             "is_variable_amount", "is_dynamic_pricing",
             "has_bom", "requires_advanced_manufacturing", "mfg_auto_finalize",
             "manufacturable_quantity",

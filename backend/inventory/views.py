@@ -113,6 +113,9 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         from .services import ProductService
         ProductService.bulk_annotate_reserved_qty(objects)
         ProductService.bulk_annotate_pricing(objects)
+        # Variantes ya prefetched (sin consultas por fila): reservas en bloque para `variants_qty_available`.
+        variants = [v for p in objects if p.has_variants for v in p.variants.all()]
+        ProductService.bulk_annotate_reserved_qty(variants)
 
         serializer = self.get_serializer(objects, many=True)
         if page is not None:

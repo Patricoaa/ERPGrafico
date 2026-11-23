@@ -93,8 +93,10 @@ def list_products(*, user, params: dict) -> QuerySet:
             "uom_prices",
             Prefetch(
                 "variants",
+                # Stock por variante (subquery): alimenta `variants_qty_available` sin N+1.
                 queryset=Product.objects.filter(is_active=True)
                 .select_related("uom")
+                .annotate(annotated_current_stock=_current_stock())
                 .prefetch_related("attribute_values", "attribute_values__attribute"),
             ),
         )
