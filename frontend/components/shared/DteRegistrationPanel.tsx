@@ -141,15 +141,6 @@ export function DteRegistrationPanel({
         )
     }
 
-    if (!hasFiscalMatch) {
-        return (
-            <div className={className ?? "space-y-4"}>
-                {assignedBadge}
-                {manualContent}
-            </div>
-        )
-    }
-
     const rcvDescription = (
         <p className="text-xs text-muted-foreground">
             Seleccione el documento del RCV para registrar el folio localmente y vincular el cuadre fiscal en un solo paso.

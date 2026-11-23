@@ -1,4 +1,5 @@
 import type { ActionRegistry } from '@/types/actions'
+import { isDteClassAutoIssued, type DteClass } from '@/lib/dte'
 import { getDomainConceptTitle, getDomainConceptMessage } from '@/lib/entity-registry'
 import {
     FileText,
@@ -19,6 +20,9 @@ import {
 
 /** DTE que una NC/ND puede corregir. Debe coincidir con el backend (billing.note_checkout_service). */
 export const CORRECTABLE_DTE_TYPES: readonly string[] = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA', 'COMPROBANTE_PAGO']
+
+/** Boleta de venta: se emite sola, no hay folio ni adjunto que registrar (el modal de registro quedaría vacío). */
+const isAutoIssuedSaleDte = (inv: Record<string, unknown>) => isDteClassAutoIssued(inv.dte_type as DteClass, 'sale')
 
 const isCorrectableDte = (inv: Record<string, unknown>) => CORRECTABLE_DTE_TYPES.includes(inv.dte_type as string)
 const isPostedCorrectableDte = (inv: Record<string, unknown>) => isCorrectableDte(inv) && inv.status === 'POSTED'
@@ -62,11 +66,12 @@ export const saleOrderActions: ActionRegistry<ActionDoc> = {
                     if (['CANCELLED'].includes(String(order.status))) return false
                     // Completing an existing DRAFT invoice
                     if (order.dte_type) {
+                        if (isAutoIssuedSaleDte(order)) return false
                         return order.status === 'DRAFT' || order.number === 'Draft' || !order.number
                     }
                     const invoices = order.invoices || []
-                    const hasDraft = invoices.some((inv) => inv.status === 'DRAFT' || inv.number === 'Draft')
-                    if (hasDraft) return true
+                    const drafts = invoices.filter((inv) => inv.status === 'DRAFT' || inv.number === 'Draft')
+                    if (drafts.length > 0) return drafts.some((inv) => !isAutoIssuedSaleDte(inv))
                     // Creating a new invoice
                     if (String(order.status) === 'DRAFT') return false
                     return order.invoicing_status !== 'INVOICED'
