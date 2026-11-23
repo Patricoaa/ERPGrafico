@@ -10,9 +10,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
-import { SubmitButton, CancelButton, DrawerLayout } from "@/components/shared"
-import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
+import { SubmitButton, CancelButton, DrawerLayout, type DrawerLayoutTab } from "@/components/shared"
+import { UserCog, CalendarCheck2, Plus, ShieldCheck, Link2 } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
+import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
 
 import {
     Form, FormField
@@ -76,6 +77,17 @@ const parseLocalDate = (dateStr?: string) => {
     return new Date(year, month - 1, day)
 }
 
+/**
+ * Bloquea las pestañas de formulario en vista/guardado sin deshabilitar «Relaciones»:
+ * `DrawerLayout.contentDisabled` envolvería todas las pestañas en un fieldset deshabilitado
+ * y las filas de relaciones dejarían de ser clicables.
+ */
+function lockFormTabs(tabs: DrawerLayoutTab[], locked: boolean): DrawerLayoutTab[] {
+    return tabs.map((tab) => tab.value === "relations"
+        ? tab
+        : { ...tab, content: <fieldset disabled={locked} className="contents">{tab.content}</fieldset> })
+}
+
 export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: modeProp }: EmployeeDrawerProps) {
     const { saveEmployee, isSaving: saving } = useEmployeeMutations()
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -84,6 +96,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
     const { dateString } = useServerDate()
 
     const [activeTab, setActiveTab] = useState("contratacion")
+    // Misma ventana que pide la pestaña → una sola petición compartida (ADR-0155).
+    const { data: relations } = useDocumentRelations("hr.employee", employee?.id ?? null, { window: "recent" })
 
     const form = useForm<EmployeeFormValues>({
         resolver: zodResolver(employeeSchema),
@@ -284,7 +298,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                                 <DrawerLayout
-                                    contentDisabled={isView || saving}
                                     activeTab={activeTab}
                                     onTabChange={setActiveTab}
                                     rightRail={employee?.id ? (
@@ -292,7 +305,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                     ) : undefined}
                                     rightRailCollapsible
                                     rightRailStorageKey="erpgrafico.drawer.sidebar.employee"
-                                    tabs={[
+                                    tabs={lockFormTabs([
                                         {
                                             value: "contratacion",
                                             label: "Contratación",
@@ -588,7 +601,14 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                 </div>
                                             ),
                                         },
-                                    ]}
+                                        ...(employee?.id ? [{
+                                            value: "relations",
+                                            label: "Relaciones",
+                                            icon: Link2,
+                                            badge: relations?.relations.length,
+                                            content: <DocumentRelationsTab label="hr.employee" id={employee.id} sectionActions={{}} rowActions={() => []} />,
+                                        }] : []),
+                                    ], isView || saving)}
                                 />
                         </form>
                     </Form>
