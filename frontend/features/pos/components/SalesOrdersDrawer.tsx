@@ -1,17 +1,18 @@
 "use client"
 
+import type React from "react"
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { ShoppingCart, FileText } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { ENTITY_DRAWERS, POSSessionDrawer } from "@/lib/entity-drawers"
 import { SalesOrdersView } from "@/features/sales"
-import { TabBar, Drawer, DrawerScope, SkeletonShell, DocumentHeaderSlotContext, type DocumentHeaderSlots, type DrawerScopeValue } from "@/components/shared"
+import { TabBar, Drawer, DrawerScope, SkeletonShell, DocumentHeaderSlotContext, DocumentBackAction, type DocumentHeaderSlots, type DrawerScopeValue } from "@/components/shared"
 import { EntityNavigationScope } from "@/components/providers/GlobalModalProvider"
 import { InvoiceSheet, OrderSheet } from "@/features/orders"
 import { usePosDocumentStack } from "../hooks/usePosDocumentStack"
 import { setPosOperatorHeaders } from "@/lib/pos-operator"
 import { useOperatorGate } from "../operator"
-import { overlayEntryOf, paneEntryOf } from "../utils/documentStack"
+import { overlayEntriesOf, paneEntryOf, type StackEntry } from "../utils/documentStack"
 
 interface SalesOrdersDrawerProps {
     open: boolean
@@ -22,16 +23,25 @@ interface SalesOrdersDrawerProps {
 /** Ámbito del POS: los drawers abiertos desde aquí se anclan a la pantalla y se mueven igual. */
 const POS_DRAWER_SCOPE: DrawerScopeValue = { boundary: "screen", className: "pos-motion" }
 
+
 export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrdersDrawerProps) {
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
     const [shouldRenderContent, setShouldRenderContent] = useState(open)
-    const { state, open: openInPanel, setRoot, closeEntry, closingKey, reset } = usePosDocumentStack()
+    const { state, open: openInPanel, setRoot, back, reset } = usePosDocumentStack()
 
-    // Un único drawer: el documento reemplaza el contenido de la lista dentro de este mismo drawer.
-    // Solo un drawer anidado (producto, contacto…) puede quedar encima, y reemplaza al anterior.
+    // La fila elegida se incrusta en este drawer y reemplaza a la lista. Toda entidad abierta desde ahí
+    // se apila encima, cubriendo al padre; «Volver» (X) quita la cima y revela la anterior.
     const documentEntry = paneEntryOf(state.entries)
-    const overlayEntry = overlayEntryOf(state.entries)
+    const overlayEntries = overlayEntriesOf(state.entries)
     const rootEntry = state.entries[0] ?? null
+    // Drilldown en el mismo drawer: solo la cima de las entidades apiladas se dibuja, en línea, en lugar de
+    // la lista o el documento; «Volver» (siempre visible en su encabezado) la quita y revela la anterior.
+    const topOverlay = overlayEntries[overlayEntries.length - 1] ?? null
+    const previousEntry = overlayEntries.length > 1 ? overlayEntries[overlayEntries.length - 2] : documentEntry
+    const showsEntity = documentEntry !== null || topOverlay !== null
+    const backLabel = previousEntry?.display ? `Volver a ${previousEntry.display}` : documentEntry ? "Volver al documento" : "Volver a la lista"
+    // Nodos del header de este drawer (los define más abajo `headerSlots`): la entidad en línea porta ahí su
+    // identidad y acciones, sin montar un encabezado propio.
 
     // Mientras hay un documento abierto sus modificaciones quedan en el seguimiento (ambos modos);
     // en caja multiusuario además piden operador (DOCUMENT_EDIT). Salir del documento termina ese pase.
@@ -56,6 +66,16 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
     const headerSlots = useMemo<DocumentHeaderSlots>(
         () => ({ title: titleSlot, subtitle: subtitleSlot, actions: actionsSlot }),
         [titleSlot, subtitleSlot, actionsSlot],
+    )
+
+    const inlineScope = useMemo<DrawerScopeValue>(
+        () => ({ ...POS_DRAWER_SCOPE, inline: { onBack: back, backLabel, header: headerSlots } }),
+        [back, backLabel, headerSlots],
+    )
+    // Con una entidad encima, el documento embebido deja de portar su identidad al header (queda montado, oculto).
+    const documentSlots = useMemo<DocumentHeaderSlots>(
+        () => topOverlay ? { title: null, subtitle: null, actions: null } : headerSlots,
+        [topOverlay, headerSlots],
     )
 
     useEffect(() => {
@@ -128,23 +148,25 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
         return <div key={documentEntry.key} className="pos-view-in flex min-h-0 flex-1 flex-col">{body}</div>
     }
 
-    // Drawer anidado (producto, contacto, OT…): sale con animación y vuelve al documento que lo abrió.
-    const renderOverlay = () => {
-        if (!overlayEntry) return null
-        const render = ENTITY_DRAWERS[overlayEntry.label]
-        if (!render) return null
-        const isClosing = closingKey === overlayEntry.key
-        return (
-            <Fragment key={overlayEntry.key}>
-                {render({
-                    id: overlayEntry.id,
-                    data: overlayEntry.data,
-                    open: !isClosing,
-                    onOpenChange: (isOpen) => { if (!isOpen) closeEntry(overlayEntry.key, "pop") },
-                    onSuccess: () => closeEntry(overlayEntry.key, "pop"),
-                })}
-            </Fragment>
-        )
+    // Entidad apilada (cima), dibujada en línea. Los documentos de panel conservan el contexto de la sesión POS
+    // (acciones de cobro); el resto sale del registro de drawers de entidad.
+    const renderOverlay = (entry: StackEntry) => {
+        const close = back
+        const onOpenChange = (isOpen: boolean) => { if (!isOpen) close() }
+        const open = true
+
+        let body: React.ReactNode = null
+        if (entry.label === "sales.saleorder") {
+            body = <OrderSheet id={entry.id} kind="sale" open={open} onOpenChange={onOpenChange} posSessionId={posSessionId} onActionSuccess={handleActionSuccess} />
+        } else if (entry.label === "billing.invoice") {
+            body = <InvoiceSheet id={entry.id} open={open} onOpenChange={onOpenChange} posSessionId={posSessionId} onActionSuccess={handleActionSuccess} />
+        } else if (entry.label === "treasury.possession") {
+            body = <POSSessionDrawer id={entry.id} open={open} onOpenChange={onOpenChange} />
+        } else {
+            const render = ENTITY_DRAWERS[entry.label]
+            body = render ? render({ id: entry.id, data: entry.data, open, onOpenChange, onSuccess: close }) : null
+        }
+        return <Fragment key={entry.key}>{body}</Fragment>
     }
 
     return (
@@ -153,10 +175,10 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                 <Drawer
                     open={open}
                     onOpenChange={handleOpenChange}
-                    title={documentEntry
+                    title={showsEntity
                         ? <span ref={setTitleSlot} className="block min-w-0" />
                         : (viewMode === 'orders' ? 'Notas de Ventas' : 'Notas Crédito / Débito')}
-                    subtitle={documentEntry
+                    subtitle={showsEntity
                         ? <span ref={setSubtitleSlot} className="block" />
                         : <>Historial <span className="opacity-30">|</span> Documentos emitidos</>}
                     icon={getEntityIcon('pos.session')}
@@ -166,7 +188,12 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                     defaultSize="90%"
                     fillContent
                     className="pos-motion"
-                    headerActions={documentEntry ? <div ref={setActionsSlot} className="flex items-center gap-1" /> : (
+                    headerActions={showsEntity ? (
+                        <div className="flex items-center gap-1">
+                            {topOverlay && <DocumentBackAction label={backLabel} onClick={back} />}
+                            <div ref={setActionsSlot} className="flex items-center gap-1" />
+                        </div>
+                    ) : (
                         <TabBar
                             value={viewMode}
                             onValueChange={handleViewModeChange}
@@ -182,11 +209,11 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                         </TabBar>
                     )}
                 >
-                    <div className="px-6 pb-4 pt-2 flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 flex flex-col min-h-0">
                         {shouldRenderContent && (
                             <div className="flex flex-1 min-h-0 flex-col">
-                                {/* La lista se mantiene montada (filtros, scroll) mientras hay un documento */}
-                                <div className={documentEntry ? "hidden" : "flex flex-1 min-h-0 flex-col"}>
+                                {/* La lista se mantiene montada (filtros, scroll) mientras hay un documento o una entidad */}
+                                <div className={documentEntry || topOverlay ? "hidden" : "flex flex-1 min-h-0 flex-col px-6 pb-4 pt-2"}>
                                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                                         <SalesOrdersView
                                             viewMode={viewMode}
@@ -195,14 +222,25 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                                         />
                                     </Suspense>
                                 </div>
-                                <DocumentHeaderSlotContext.Provider value={headerSlots}>
-                                    {renderDocument()}
-                                </DocumentHeaderSlotContext.Provider>
+                                {/* El documento embebido conserva su estado mientras una entidad lo cubre */}
+                                {documentEntry && (
+                                    <div className={topOverlay ? "hidden" : "flex flex-1 min-h-0 flex-col"}>
+                                        <DocumentHeaderSlotContext.Provider value={documentSlots}>
+                                            {renderDocument()}
+                                        </DocumentHeaderSlotContext.Provider>
+                                    </div>
+                                )}
+                                {topOverlay && (
+                                    <DrawerScope value={inlineScope}>
+                                        <div key={topOverlay.key} className="pos-view-in flex min-h-0 flex-1 flex-col">
+                                            {renderOverlay(topOverlay)}
+                                        </div>
+                                    </DrawerScope>
+                                )}
                             </div>
                         )}
                     </div>
                 </Drawer>
-                {renderOverlay()}
             </DrawerScope>
         </EntityNavigationScope>
     )

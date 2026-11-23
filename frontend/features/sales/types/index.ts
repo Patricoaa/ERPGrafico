@@ -74,6 +74,8 @@ export interface SaleOrder {
     number: string
     customer_name: string
     date: string
+    /** Marca de creación: aporta la hora que `date` (DateField) no trae. */
+    created_at?: string | null
     status: SaleOrderStatus | string
     /** Ejes independientes del estado (ADR-0081, ADR-0084). */
     invoicing_status?: 'PENDING' | 'PARTIAL' | 'INVOICED'

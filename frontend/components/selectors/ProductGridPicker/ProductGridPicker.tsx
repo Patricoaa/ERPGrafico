@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { SearchBar } from './SearchBar'
 import { CategoryFilter } from './CategoryFilter'
 import { ProductGrid } from './ProductGrid'
@@ -33,6 +34,8 @@ export interface ProductGridPickerProps {
     priceLabel?: string
     /** IDs of selected products (in cart, calculator, etc). Shows the CMYK ribbon + check on each. */
     selectedProductIds?: Set<number>
+    /** Sin fondo, borde ni sombra: el picker se integra al layout como panel izquierdo transparente. */
+    transparent?: boolean
 }
 
 export function ProductGridPicker({
@@ -49,13 +52,18 @@ export function ProductGridPicker({
     limits,
     priceRenderer,
     priceLabel,
-    selectedProductIds
+    selectedProductIds,
+    transparent = false
 }: ProductGridPickerProps) {
     const { isDesktop } = useDeviceContext()
 
     return (
-        <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
-            <div className="px-2 pt-1.5 pb-1.5 border-b space-y-2">
+        <Card className={cn(
+            "flex-1 flex flex-col py-1.5",
+            // Transparente: sin recorte, para que el borde y el foco del buscador no se corten.
+            transparent ? "min-h-0 overflow-visible border-0 bg-transparent shadow-none py-0" : "overflow-hidden bg-muted/10 border"
+        )}>
+            <div className={cn("space-y-2", transparent ? "pb-2" : "px-2 pt-1.5 pb-1.5 border-b")}>
                 <SearchBar
                     value={searchTerm}
                     onChange={onSearchChange}
@@ -76,7 +84,7 @@ export function ProductGridPicker({
                     />
                 )}
             </div>
-            <div className="flex-1 px-1.5 pt-1.5 pb-0">
+            <div className={cn("flex-1", transparent ? "min-h-0 overflow-hidden" : "px-1.5 pt-1.5 pb-0")}>
                 <ProductGrid
                     products={products}
                     categories={categories}

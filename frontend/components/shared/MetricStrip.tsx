@@ -9,7 +9,16 @@ export interface MetricStripProps {
     label: string
     /** 2 to 4 `Metric` cells. Each drops its own surface and shares the strip's. */
     children: React.ReactNode
+    /** Keeps every cell on one row at any width (no 1 → 2 → 4 reflow). For strips whose cells stay short. */
+    singleRow?: boolean
     className?: string
+}
+
+const SINGLE_ROW: Record<number, string> = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    4: "grid-cols-4",
 }
 
 /**
@@ -28,9 +37,10 @@ const COLUMNS: Record<number, string> = {
  * Several `Metric`s on one surface, separated by hairline dividers (ADR-0149). One border for the
  * whole row instead of one per card.
  */
-export function MetricStrip({ label, children, className }: MetricStripProps) {
+export function MetricStrip({ label, children, singleRow = false, className }: MetricStripProps) {
     const count = React.Children.toArray(children).length
-    const columns = COLUMNS[Math.min(Math.max(count, 1), 4)]
+    const index = Math.min(Math.max(count, 1), 4)
+    const columns = singleRow ? SINGLE_ROW[index] : COLUMNS[index]
     return (
         <MetricEmbeddedContext.Provider value>
             <div role="group" aria-label={label} className={cn("surface-panel @container overflow-hidden", className)}>

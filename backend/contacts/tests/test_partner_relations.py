@@ -163,3 +163,12 @@ def test_profit_distribution_relations(client):
     assert ("partner", "contacts.contact", partner.pk) in targets
     assert ("journal_entry", "accounting.journalentry", resolution.journal_entry_id) in targets
     assert ("partner_transaction", "contacts.partnertransaction", ptx.pk) in targets
+
+
+def test_contact_relations_link_partner_card_only_for_partners(client):
+    partner = _partner()
+    plain = Contact.objects.create(name="Cliente", tax_id="91111111-1")
+
+    url = lambda pk: f"/api/core/documents/contacts.contact/{pk}/relations/"  # noqa: E731
+    assert _targets(client.get(url(partner.pk)).data) == {("partner", "contacts.partner", partner.pk)}
+    assert _targets(client.get(url(plain.pk)).data) == set()

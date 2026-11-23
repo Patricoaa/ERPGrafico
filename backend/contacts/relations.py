@@ -95,3 +95,10 @@ def profit_distribution_relations(resolution):
             yield Link("settlement", "outgoing", "payment", payment.treasury_movement, amount=payment.amount)
         else:
             yield Link("settlement", "outgoing", "payment", payment, amount=payment.amount)
+
+
+@relation_provider("contacts.contact")
+def contact_relations(contact):
+    """Ficha de socio del contacto (si lo es). Los documentos del contacto viven en sus pestañas de historial."""
+    if contact.is_partner:
+        yield Link("association", "outgoing", "partner", ("contacts.partner", contact.pk), is_dependency=False)

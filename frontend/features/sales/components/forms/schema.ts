@@ -15,7 +15,6 @@ export const saleLineSchema = z.object({
 
 export const saleOrderSchema = z.object({
     payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
-    notes: z.string().optional(),
     lines: z.array(saleLineSchema).min(1, "Debe agregar al menos una línea"),
 })
 

@@ -8,6 +8,9 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet"
 
+import { createPortal } from "react-dom"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 import { PersistentPanelContext, usePersistentPanel } from "./PersistentPanelContext"
@@ -73,6 +76,17 @@ export interface DrawerProps extends PanelBaseProps {
 export interface DrawerScopeValue {
     boundary?: "screen" | "embedded"
     className?: string
+    /**
+     * Drilldown en el mismo lugar: todo drawer del subárbol se dibuja en línea (sin Sheet, velo ni animación
+     * propia) ocupando el espacio que le deja el contenedor, con «Volver» siempre visible en su encabezado.
+     * Lo usa el POS para que las entidades enlazadas reemplacen el contenido del drawer de ventas.
+     */
+    inline?: {
+        onBack: () => void
+        backLabel?: string
+        /** Nodos del encabezado del contenedor: si existen, título, subtítulo y acciones se portan ahí y no se dibuja otro encabezado. */
+        header?: { title: HTMLElement | null; subtitle: HTMLElement | null; actions: HTMLElement | null }
+    }
 }
 
 export const DrawerScopeContext = React.createContext<DrawerScopeValue>({})
@@ -108,8 +122,8 @@ export function Drawer({
     viewportClassName,
     fillContent = false
 }: DrawerProps) {
-    const isHorizontal = side === "left" || side === "right"
     const scope = useContext(DrawerScopeContext)
+    const isHorizontal = side === "left" || side === "right"
     const boundary = boundaryProp ?? scope.boundary ?? "embedded"
     // ADR-0101: el panel de una pestaña ocupa siempre todo el área bajo la barra (la lista de origen queda
     // inoperable) y persiste hasta cerrarlo: un clic fuera no lo descarta y no se redimensiona.
@@ -238,6 +252,57 @@ export function Drawer({
         if (overlay && self && overlay !== self && self.compareDocumentPosition(overlay) & Node.DOCUMENT_POSITION_FOLLOWING) {
             event.preventDefault()
         }
+    }
+
+    if (scope.inline) {
+        if (!open) return null
+        const { onBack, backLabel = "Volver", header: slots } = scope.inline
+        return (
+            <section
+                data-slot="inline-drawer"
+                className={cn("flex min-h-0 flex-1 flex-col overflow-hidden bg-card text-foreground", scope.className, className)}
+            >
+                {slots ? (
+                    <>
+                        {slots.title && createPortal(title, slots.title)}
+                        {slots.subtitle && subtitle && createPortal(subtitle, slots.subtitle)}
+                        {slots.actions && headerActions && createPortal(headerActions, slots.actions)}
+                    </>
+                ) : (
+                <header className={cn("flex shrink-0 items-center gap-3 border-b border-border bg-card px-6 py-1.5", headerClassName)}>
+                    <Button variant="ghost" size="sm" type="button" onClick={onBack} className="h-control-lg shrink-0 gap-1.5 px-3 text-sm font-semibold">
+                        <ArrowLeft className="size-4 shrink-0" aria-hidden />
+                        <span>{backLabel}</span>
+                    </Button>
+                    <PanelHeader
+                        className="min-w-0 flex-1"
+                        icon={iconElement}
+                        title={<h2 className={cn("text-base font-black tracking-tight text-foreground leading-none", titleClassName)}>{title}</h2>}
+                        subtitle={subtitle}
+                        headerActions={headerActions}
+                    />
+                </header>
+                )}
+                <PersistentPanelContext.Provider value={false}>
+                <EmbeddedSurfaceProvider>
+                {fillContent ? (
+                    <div className={cn("flex flex-1 flex-col overflow-hidden", mode === "view" && "bg-muted/30", contentClassName)}>
+                        {children}
+                    </div>
+                ) : (
+                    <ScrollArea className={cn("flex-1 flex flex-col pt-2", mode === "view" && "bg-muted/30", contentClassName)} viewportClassName={viewportClassName}>
+                        {children}
+                    </ScrollArea>
+                )}
+                </EmbeddedSurfaceProvider>
+                </PersistentPanelContext.Provider>
+                {footer && (
+                    <div className={cn("border-t border-border px-6 py-3 flex-shrink-0 bg-card", footerClassName)}>
+                        {footer}
+                    </div>
+                )}
+            </section>
+        )
     }
 
     return (

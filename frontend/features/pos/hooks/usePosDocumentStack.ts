@@ -65,6 +65,9 @@ export function usePosDocumentStack() {
         [runGuarded],
     )
 
+    /** «Volver» de una entrada en línea: la quita de inmediato (no hay animación de salida). */
+    const back = useCallback(() => runGuarded(() => dispatch({ type: "pop" })), [runGuarded])
+
     useEffect(() => {
         if (closing === null) return
         const timer = setTimeout(() => {
@@ -79,5 +82,5 @@ export function usePosDocumentStack() {
         dispatch({ type: "reset" })
     }, [])
 
-    return { state, open, setRoot, closeEntry, closingKey: closing?.key ?? null, reset }
+    return { state, open, setRoot, back, closeEntry, closingKey: closing?.key ?? null, reset }
 }

@@ -9,7 +9,7 @@ import React, { useCallback, useMemo } from 'react'
 import { VariantSelectorModal } from '@/components/selectors/ProductGridPicker'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 import type { Product, Variant, CartItem } from '../types'
-import type { BaseProduct } from '@/features/inventory'
+import type { BaseProduct, ProductCategory } from '@/features/inventory'
 
 
 export interface POSVariantSelectorModalProps {
@@ -23,6 +23,8 @@ export interface POSVariantSelectorModalProps {
     bomCache: Record<number, Record<string, unknown>>
     componentCache: Record<number, { stock: number, uom: number }>
     calculateMaxQty: (product: Variant, cartItemId?: string) => Promise<number>
+    /** Categorías del catálogo, para heredar su icono cuando la variante no tiene imagen. */
+    categories?: ProductCategory[]
 }
 
 export function POSVariantSelectorModal({
@@ -30,7 +32,8 @@ export function POSVariantSelectorModal({
     onOpenChange,
     product,
     onSelect,
-    calculateMaxQty
+    calculateMaxQty,
+    categories
 }: POSVariantSelectorModalProps) {
     // Pass the session ID to filter active/session specific variants if needed
     const extraParams = useMemo<Record<string, string> | undefined>(() => {
@@ -56,6 +59,7 @@ export function POSVariantSelectorModal({
             isVariantDisabled={(v) => isPOSProductDisabled(v as Product)}
             getVariantLimit={getVariantLimit}
             extraApiParams={extraParams}
+            categories={categories}
         />
     )
 }

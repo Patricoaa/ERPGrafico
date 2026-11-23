@@ -93,7 +93,8 @@ class DocumentService(ABC):
 
         # 5. Persistir estado y notas
         order.status = cancelled_status
-        if reason:
+        # El motivo queda en el registro de transiciones; solo los documentos con nota libre lo anexan a ella.
+        if reason and hasattr(order, "notes"):
             order.notes = (order.notes or "") + f"\nAnulado: {reason}"
         order.save()
 

@@ -57,7 +57,7 @@ export function POSStepper({ steps, current, label, className }: POSStepperProps
                                     {step.label}
                                 </span>
                                 {done && step.meta && (
-                                    <span className="max-w-28 truncate text-xs text-muted-foreground">{step.meta}</span>
+                                    <span className="max-w-28 truncate text-3xs text-muted-foreground">{step.meta}</span>
                                 )}
                             </span>
                         </li>

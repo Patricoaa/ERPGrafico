@@ -34,6 +34,7 @@ export * from './ActionFoldButton';
 export * from './ToolbarCreateButton';
 export * from './ActionButtons'
 export * from './StepHeader';
+export * from './SummaryPanel';
 export * from './WizardStepsSidebar';
 export * from './WizardSummarySidebar';
 export * from './CollapsibleSection';

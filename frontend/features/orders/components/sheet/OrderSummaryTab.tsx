@@ -1,9 +1,7 @@
 "use client"
 
-import { Package } from "lucide-react"
-import { DataCell, DocumentFieldGrid, Section } from "@/components/shared"
-import { DocumentLinesTable } from "./DocumentLinesTable"
-import { DocumentTotalsBox } from "./DocumentTotalsBox"
+import { DataCell, DocumentFieldGrid } from "@/components/shared"
+import { DocumentProductsSection } from "./DocumentProductsSection"
 import type { Order, OrderLine } from "../../types"
 import { localDayOf } from '@/lib/utils'
 
@@ -52,7 +50,7 @@ export function OrderSummaryTab({ order, kind, onCreateWorkOrder }: OrderSummary
     const total = num(order.effective_total ?? order.total)
 
     return (
-        <div className="space-y-8">
+        <div className="flex flex-1 flex-col gap-8">
             {/* Contexto: una sola fila, sin separador (lo encabeza el propio documento) */}
             <section aria-label="Contexto">
                 <DocumentFieldGrid
@@ -70,25 +68,22 @@ export function OrderSummaryTab({ order, kind, onCreateWorkOrder }: OrderSummary
                         { label: "Canal", value: text(order.channel_display), hidden: !isSale },
                         { label: "Bodega", value: text(order.warehouse_name), hidden: isSale },
                         { label: "Sesión POS", value: text(order.pos_session_display), hidden: !isSale || !order.pos_session },
-                        {
-                            label: "Notas",
-                            value: text(order.notes) && <span className="line-clamp-2" title={text(order.notes) ?? undefined}>{text(order.notes)}</span>,
-                        },
                     ]}
                 />
             </section>
 
-            <section className="space-y-4">
-                <Section.Header spaced title="Productos" icon={Package} />
-                <DocumentLinesTable lines={lines} kind={kind} onCreateWorkOrder={onCreateWorkOrder} />
-                <DocumentTotalsBox
-                    subtotal={subtotal}
-                    tax={num(order.total_tax)}
-                    total={total}
-                    paid={num(order.total_paid)}
-                    pending={num(order.pending_amount)}
-                />
-            </section>
+            <DocumentProductsSection
+                lines={lines}
+                kind={kind}
+                onCreateWorkOrder={onCreateWorkOrder}
+                totals={{
+                    subtotal,
+                    tax: num(order.total_tax),
+                    total,
+                    paid: num(order.total_paid),
+                    pending: num(order.pending_amount),
+                }}
+            />
         </div>
     )
 }

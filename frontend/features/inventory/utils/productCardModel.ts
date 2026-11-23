@@ -123,10 +123,23 @@ function manufacturableAvailability(product: BaseProduct, ctx: ProductCardContex
     }
 }
 
+/**
+ * Template almacenable cuyas variantes no tienen existencias: no tiene nada que seleccionar.
+ * Fail-open: sin el dato (`variants_qty_available` ausente) no se bloquea.
+ */
+export function variantsOutOfStock(product: BaseProduct): boolean {
+    return Boolean(product.has_variants)
+        && product.product_type === 'STORABLE'
+        && (product.variants_count ?? 0) > 0
+        && product.variants_qty_available != null
+        && product.variants_qty_available <= 0
+}
+
 export function getAvailability(product: BaseProduct, ctx: ProductCardContext): CardAvailability | null {
     // Templates: availability lives in the variants, not in the template itself.
     if (product.has_variants) {
         if (product.variants_count === 0) return { text: 'Sin variantes', tone: 'none', icon: 'blocked' }
+        if (variantsOutOfStock(product)) return { text: 'Sin existencias', tone: 'none', icon: 'blocked' }
         if (product.product_type === 'SERVICE') return { text: 'Servicio', tone: 'neutral', icon: 'service' }
         return { text: 'Disponibilidad por variante', tone: 'neutral', icon: 'stock' }
     }
@@ -161,9 +174,9 @@ export function getPrice(product: BaseProduct): CardPrice {
     return { kind: 'fixed', gross: PricingUtils.netToGross(Number(product.sale_price || 0)), unit }
 }
 
-/** Templates without active variants have nothing to configure, so they behave as disabled. */
+/** Templates without active variants (or with every variant out of stock) have nothing to pick, so they behave as disabled. */
 function hasNoVariants(product: BaseProduct): boolean {
-    return Boolean(product.has_variants) && product.variants_count === 0
+    return (Boolean(product.has_variants) && product.variants_count === 0) || variantsOutOfStock(product)
 }
 
 export function getAction(product: BaseProduct, ctx: ProductCardContext): CardAction {

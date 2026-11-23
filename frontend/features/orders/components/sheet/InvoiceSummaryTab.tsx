@@ -1,11 +1,10 @@
 "use client"
 
-import { Package } from "lucide-react"
-import { DataCell, DocumentFieldGrid, Section } from "@/components/shared"
+import { DataCell, DocumentFieldGrid } from "@/components/shared"
 import { DocumentRefLink } from "@/features/documents"
 import type { Order, OrderLine } from "../../types"
-import { DocumentTotalsBox, toNumber } from "./DocumentTotalsBox"
-import { DocumentLinesTable } from "./DocumentLinesTable"
+import { toNumber } from "./DocumentTotalsBox"
+import { DocumentProductsSection } from "./DocumentProductsSection"
 import { localDayOf } from '@/lib/utils'
 
 /** Las celdas DataCell se centran por defecto; en la ficha van a la izquierda. */
@@ -45,7 +44,7 @@ export function InvoiceSummaryTab({
     const pending = toNumber(invoice.pending_amount)
 
     return (
-        <div className="space-y-8">
+        <div className="flex flex-1 flex-col gap-8">
             <section aria-label="Contexto">
                 <DocumentFieldGrid
                     fields={[
@@ -83,17 +82,18 @@ export function InvoiceSummaryTab({
                 />
             </section>
 
-            <section className="space-y-4">
-                <Section.Header spaced title="Productos" icon={Package} />
-                <DocumentLinesTable lines={lines} kind={isSale ? "saleInvoice" : "purchaseInvoice"} onCreateWorkOrder={onCreateWorkOrder} />
-                <DocumentTotalsBox
-                    subtotal={subtotal}
-                    tax={toNumber(invoice.total_tax)}
-                    total={total}
-                    paid={Math.max(0, total - pending)}
-                    pending={pending}
-                />
-            </section>
+            <DocumentProductsSection
+                lines={lines}
+                kind={isSale ? "saleInvoice" : "purchaseInvoice"}
+                onCreateWorkOrder={onCreateWorkOrder}
+                totals={{
+                    subtotal,
+                    tax: toNumber(invoice.total_tax),
+                    total,
+                    paid: Math.max(0, total - pending),
+                    pending,
+                }}
+            />
         </div>
     )
 }

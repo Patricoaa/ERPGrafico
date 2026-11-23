@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from accounting.models import JournalEntry
 from core.edit_policy import DRAFT_ONLY_DOCUMENT
-from core.models import TransactionalDocument
+from core.models import DocumentNotesMixin, TransactionalDocument
 from core.storages import PrivateMediaStorage
 from core.utils import generic_upload_path, get_current_date
 from core.validators import validate_file_extension, validate_file_size
@@ -35,7 +35,7 @@ SII_CODE_TO_DTE_TYPE = {
 }
 
 
-class Invoice(TransactionalDocument):
+class Invoice(TransactionalDocument, DocumentNotesMixin):
     edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
 
     class DTEType(models.TextChoices):
