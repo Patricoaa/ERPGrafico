@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.145](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.144...v0.3.145) (2026-11-23)
+
+
+### ⚙️ Refactors
+
+* **sales:** quitar notes de la orden de venta ([fbda0a9](https://github.com/Patricoaa/ERPGrafico/commit/fbda0a9069015aa183d132725e11b9cf8a1ef5b9))
+
+
+### ✨ Features
+
+* **contacts:** alinear el layout del drawer de contacto y agregar pestaña Relaciones ([82ed97c](https://github.com/Patricoaa/ERPGrafico/commit/82ed97c7dc7136f0ae54bdbba9939422dc5b5a91))
+* **orders:** totales al pie de la ficha documental y sin campo Notas ([da607bc](https://github.com/Patricoaa/ERPGrafico/commit/da607bcbcecb101dd774fffc67dfaf0c6a5767fa))
+* **pos:** drilldown en línea de entidades enlazadas dentro del drawer de ventas (ADR-0153) ([53af862](https://github.com/Patricoaa/ERPGrafico/commit/53af8629e2f21e44dd790633464476984feb9176))
+* **pos:** modal de variantes en lista compacta y bloqueo de productos sin existencias ([7298331](https://github.com/Patricoaa/ERPGrafico/commit/7298331335102bc94ab7726c0d4e1e65d0af39cc))
+* **pos:** panel derecho de resumen táctil, salvapantallas por inactividad y encabezados de paso ([#277](https://github.com/Patricoaa/ERPGrafico/issues/277)) ([a1888ab](https://github.com/Patricoaa/ERPGrafico/commit/a1888abcc46d7cb85e1f6c8117617067111b0946))
+
+
+### 🚀 Maintenance
+
+* columna de fecha con hora de creación en listas de OV/OC e IP del servidor de desarrollo ([eb2cf8a](https://github.com/Patricoaa/ERPGrafico/commit/eb2cf8a606affd3ca0325750d465cdf5bfb9a458))
+
 ### [0.3.144](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.143...v0.3.144) (2026-11-22)
 
 
