@@ -100,6 +100,8 @@ Desde el 2026-11-24 la **suite completa también bloquea** el CI (Postgres, como
 | `fiscal_match` boletas / estados | El tipo DTE descartaba al único candidato TUU | El tipo desempata, no filtra |
 | `test_credit_history_bounded_queries` | N+1 en `ContactSelector.get_credit_history` | Precarga de `SaleOrderSelector.get_read_queryset` + `preload_invoices` |
 | `test_p26_stock_context` | La precarga de fabricables no usaba el predicado del selector | Mismo predicado |
+| `test_search_postgres` (solo con `DEBUG=False`, como en CI y producción) | `UniversalRegistry` conectaba sus señales de indexado como closures con referencia débil: se recolectaban y el índice dejaba de actualizarse | `weak=False`; tras desplegar, `manage.py rebuild_search_index` |
+| `test_pos_consumer_authz` (según el orden) | Channels cierra conexiones viejas de BD al desconectar el WebSocket | `pytestmark = pytest.mark.django_db` |
 | `test_workflow_config_permissions`, `test_aging` | Tests desalineados con ADR-0116 y con las fechas locales | Tests actualizados |
 
 Un test que falle ahora se arregla en el mismo PR. Si de verdad necesita cuarentena, se marca con `@pytest.mark.xfail(strict=True, reason="<issue>")` y se registra aquí con su síntoma.
