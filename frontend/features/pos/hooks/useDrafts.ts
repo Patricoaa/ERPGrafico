@@ -1,3 +1,5 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 // useDrafts Hook
 // Manages draft carts (save/load/delete) with lock integration

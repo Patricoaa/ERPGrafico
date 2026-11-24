@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useCallback } from "react"
 import api from "@/lib/api"
 import { showApiError } from "@/lib/errors"

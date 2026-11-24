@@ -1,3 +1,5 @@
+"use client"
+
 import { useCallback } from 'react'
 import type { NoteWizardPayload, NoteWizardSourceDocument } from '@/features/notes'
 import { billingApi } from '../api/billingApi'
