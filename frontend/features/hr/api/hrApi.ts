@@ -247,6 +247,9 @@ export async function previewLoanSchedule(body: LoanSchedulePreviewRequest): Pro
 }
 
 export async function getEmployeeMovementHistory(employeeId: number): Promise<EmployeeMovement[]> {
-  const res = await api.get<{ results: EmployeeMovement[] }>(`/hr/employees/${employeeId}/movements/`)
-  return res.data.results
+  const res = await api.get<{ results?: EmployeeMovement[] } | EmployeeMovement[]>(`/hr/employees/${employeeId}/movements/`)
+  if (Array.isArray(res.data)) {
+    return res.data
+  }
+  return res.data?.results ?? []
 }

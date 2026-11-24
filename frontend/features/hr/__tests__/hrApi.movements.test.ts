@@ -41,6 +41,12 @@ describe("employee movements api", () => {
         await getEmployeeMovementHistory(4)
         expect(getMock).toHaveBeenCalledWith("/hr/employees/4/movements/")
     })
+
+    it("history handles plain array responses from endpoints with OptionalPaginationMixin", async () => {
+        getMock.mockResolvedValue({ data: [{ id: 10, kind: "ADVANCE" }] })
+        const res = await getEmployeeMovementHistory(4)
+        expect(res).toEqual([{ id: 10, kind: "ADVANCE" }])
+    })
 })
 
 describe("employeeMovementFormSchema", () => {
