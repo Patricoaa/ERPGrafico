@@ -16,7 +16,8 @@ export const CMYK_ACCENT = [
     { text: "text-cyan", activeText: "data-[state=active]:text-cyan", openText: "data-[state=open]:text-cyan", hoverText: "hover:text-cyan", bar: "bg-cyan" },
     { text: "text-magenta", activeText: "data-[state=active]:text-magenta", openText: "data-[state=open]:text-magenta", hoverText: "hover:text-magenta", bar: "bg-magenta" },
     { text: "text-yellow", activeText: "data-[state=active]:text-yellow", openText: "data-[state=open]:text-yellow", hoverText: "hover:text-yellow", bar: "bg-yellow" },
-    { text: "text-black", activeText: "data-[state=active]:text-black", openText: "data-[state=open]:text-black", hoverText: "hover:text-black", bar: "bg-black" },
+    // K plate renders with `foreground` (like ribbon-cmyk) so it stays visible in dark mode (ADR-0157).
+    { text: "text-foreground", activeText: "data-[state=active]:text-foreground", openText: "data-[state=open]:text-foreground", hoverText: "hover:text-foreground", bar: "bg-foreground" },
 ] as const
 
 export interface TabItem {

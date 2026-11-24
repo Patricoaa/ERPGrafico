@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Card } from "@/components/ui/card"
-import { Chip } from "@/components/shared"
+import { Chip, fadeInClass } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { Info, Brain, Settings2, Calendar, Hash, User, CircleDollarSign, Loader2, Wand2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
@@ -139,7 +139,7 @@ export function ReconciliationIntelligencePanel({ accountId }: { accountId?: num
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 ) : settings && (
-                    <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className={cn("grid gap-6", fadeInClass({ from: "bottom", distance: 4, duration: 500 }))}>
                         <div className="flex justify-end">
                             <AutoSaveStatusBadge
                                 status={status}

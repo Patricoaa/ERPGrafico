@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Badge, IconButton } from "@/components/shared"
 import { Separator } from "@/components/ui/separator"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
+import { fadeInClass } from "./fade-in-class"
 
 export interface MultiSelectOption {
     label: string
@@ -135,7 +136,7 @@ export function MultiSelectTagInput({
                                         key={opt.value}
                                         intent="neutral"
                                         size="sm"
-                                        className="flex items-center gap-1 animate-in zoom-in-95 duration-200"
+                                        className={cn("flex items-center gap-1", fadeInClass({ zoom: true, fade: false, duration: 200 }))}
                                     >
                                         {opt.label}
                                         <IconButton
@@ -254,7 +255,7 @@ export function MultiSelectTagInput({
             </Popover>
 
             {hasError && (
-                <p role="alert" className="text-3xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">
+                <p role="alert" className={cn("text-3xs font-medium text-destructive pl-1", fadeInClass({ from: "top", distance: 1, duration: 200 }))}>
                     {error}
                 </p>
             )}

@@ -30,6 +30,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { ROW_ACTIONS, type RowActionKey } from "@/lib/row-actions"
+import { fadeInClass } from "./fade-in-class"
 
 interface BaseCellProps extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
@@ -488,7 +489,7 @@ export const DataCell = {
                         </div>
                     </TooltipTrigger>
                     {title && (
-                        <TooltipContent side="top" className="text-xs font-medium uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
+                        <TooltipContent side="top" className={cn("text-xs font-medium uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm", fadeInClass({ zoom: true, duration: 200 }))}>
                             {title}
                         </TooltipContent>
                     )}
@@ -550,7 +551,7 @@ export const DataCell = {
                 {title && (
                     <TooltipContent
                         side="top"
-                        className="text-xs font-semibold uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200"
+                        className={cn("text-xs font-semibold uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm", fadeInClass({ zoom: true, duration: 200 }))}
                     >
                         {title}
                     </TooltipContent>
@@ -649,7 +650,7 @@ export const DataCell = {
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent side="top" className="text-xs font-semibold uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
+                <TooltipContent side="top" className={cn("text-xs font-semibold uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm", fadeInClass({ zoom: true, duration: 200 }))}>
                     {title}
                 </TooltipContent>
             </Tooltip>
@@ -867,7 +868,7 @@ export function createHubTriggerColumn<TData>({
                         className={cn(
                             "transition-all",
                             selected
-                                ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
+                                ? cn("text-primary", fadeInClass({ from: "right", distance: 1, duration: 300 }))
                                 : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5",
                         )}
                         onClick={() => onToggle(row.original)}

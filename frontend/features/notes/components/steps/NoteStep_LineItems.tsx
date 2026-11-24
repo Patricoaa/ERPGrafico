@@ -18,6 +18,8 @@ import { Package } from "lucide-react"
 import { defineEditable, EditableCollection, type EditableRowValue } from "@/components/entity-view"
 import type { NoteLineItem, NoteType } from "@/features/notes"
 import { noteLineEntity } from "../../entity-view/noteLine.entity"
+import { fadeInClass } from "@/components/shared"
+import { cn } from "@/lib/utils"
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -188,7 +190,7 @@ export function NoteLineItemsStep({
     }
 
     return (
-        <div className="w-full h-full flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className={cn("w-full h-full flex flex-col space-y-6", fadeInClass({ from: "bottom", distance: 4, duration: 500 }))}>
             {selectionMode === "select" ? (
                 <>
                     <div className="flex flex-col gap-1">

@@ -76,6 +76,7 @@ last_review: 2026-06-19
 | "UI audit", "sobreingeniería", "ad-hoc que compartido ya resuelve", "centralizar componente", "simplificar shared", "deuda design system", "DataTable bloated", "refactor componentes shared", "barrel compartido" | [design-system-ui-audit.md](50-audit/design-system-ui-audit.md) | 50 |
 | “KPI”, “métrica”, “stat”, “StatCard”, “Metric”, “MetricStrip”, “ChartCard”, “tarjeta de gráfico”, “valor mono”, “kpi-value” | [component-metric.md](20-contracts/component-metric.md) | 20 |
 | “card”, “tarjeta”, “ChoiceCard”, “CardSurface”, “CardRail”, “CardLead”, “cardAnatomy”, “surface-item”, “card-flat”, “card-base”, “qué card uso”, “rol de card” | [component-card-family.md](20-contracts/component-card-family.md) | 20 |
+| “radio”, “rounded”, “esquinas”, “superficie”, “sombra”, “surface-item”, “surface-panel”, “flush-panel”, “cinta CMYK” | [geometry-surfaces.md](20-contracts/geometry-surfaces.md) |
 | “banner”, “aviso”, “alerta”, “warning”, “notificación inline”, “InfoBlock”, “Alert”, “banda de estado”, “bleed” | [component-banner.md](20-contracts/component-banner.md) | 20 |
 | “DataTable”, “view mode”, “card view”, “kanban view”, “view switching”, “cardMode”, “isLoading skeleton”, “EntityCard”, “variant embedded” | [component-datatable-views.md](20-contracts/component-datatable-views.md) | 20 |
 | “analytics”, “chart”, “analytics panel”, “DataTable analytics” | [add-analytics-panel.md](30-playbooks/add-analytics-panel.md) | 30 |

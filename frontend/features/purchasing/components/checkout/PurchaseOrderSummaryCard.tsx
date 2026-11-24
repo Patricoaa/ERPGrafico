@@ -1,12 +1,13 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
-import { Chip } from "@/components/shared"
+import { Chip, fadeInClass } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/lib/pricing-utils'
 import { type CheckoutLine } from "../../types"
+import { cn } from "@/lib/utils"
 
 interface PurchaseOrderSummaryCardProps {
     orderLines: CheckoutLine[]
@@ -35,7 +36,7 @@ export function PurchaseOrderSummaryCard({
 
                         <div className="space-y-4">
                             {orderLines.map((line, idx) => (
-                                <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
+                                <div key={idx} className={cn("flex justify-between items-start gap-4", fadeInClass({ duration: 500 }))}>
                                     <div className="space-y-1.5 flex-1 min-w-0">
                                         <Tooltip>
                                             <TooltipTrigger asChild>

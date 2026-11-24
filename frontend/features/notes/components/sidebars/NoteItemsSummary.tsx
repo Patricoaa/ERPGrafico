@@ -1,7 +1,7 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
-import { Chip, EmptyState, WizardSummarySidebar } from '@/components/shared'
+import { Chip, EmptyState, WizardSummarySidebar, fadeInClass } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingBag } from "lucide-react"
 
@@ -42,7 +42,7 @@ export function NoteItemsSummary({
                             <EmptyState context="inventory" variant="compact" title="Sin productos seleccionados" />
                         ) : (
                             filteredItems.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
+                                <div key={idx} className={cn("flex justify-between items-start gap-4", fadeInClass({ duration: 500 }))}>
                                     <div className="space-y-1.5 flex-1 min-w-0">
                                         <Tooltip>
                                             <TooltipTrigger asChild>

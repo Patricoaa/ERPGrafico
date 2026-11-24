@@ -2,8 +2,9 @@
 
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
-import { FieldLegend, fieldLegendClasses } from "./FieldLegend"
+import { FieldLegend } from "./FieldLegend"
 import { Eye, EyeOff } from "lucide-react"
+import { fadeInClass } from "./fade-in-class"
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -232,7 +233,7 @@ export const LabeledInput = forwardRef<
             {hasError && (
                 <div
                     role="alert"
-                    className="text-2xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1"
+                    className={cn("text-2xs font-medium text-destructive pl-1", fadeInClass({ from: "top", distance: 1, duration: 200 }))}
                 >
                     {error}
                 </div>
@@ -240,7 +241,7 @@ export const LabeledInput = forwardRef<
 
             {/* Caps Lock hint for password fields - outside fieldset */}
             {isPassword && isCapsLockOn && !hasError && (
-                <div className="text-2xs text-primary pl-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className={cn("text-2xs text-primary pl-1", fadeInClass({ from: "top", distance: 1, duration: 200 }))}>
                     Mayúsculas activadas
                 </div>
             )}

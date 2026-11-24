@@ -46,6 +46,7 @@ Task routing — common intents:
 | KPI / métrica / stat / `Metric` / `MetricStrip` / `ChartCard` / `kpi-value` | [component-metric.md](docs/20-contracts/component-metric.md) |
 | Panel derecho de resumen (carrito POS / lista calculadora) / `SummaryPanel` / handoff "Continuar en otro equipo" | [component-summary-panel.md](docs/20-contracts/component-summary-panel.md) |
 | Card (choice / item / nav / metric / panel) / card surface / `CardLead` / `CardRail` / `cardAnatomy` | [component-card-family.md](docs/20-contracts/component-card-family.md) |
+| Radius / surface / shadow / `surface-item` / `surface-panel` / `flush-panel` / ribbon CMYK | [geometry-surfaces.md](docs/20-contracts/geometry-surfaces.md) |
 | Badge / chip / pill for a label or tag | [component-chip.md](docs/20-contracts/component-chip.md) |
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |

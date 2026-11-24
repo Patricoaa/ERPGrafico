@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { type ReactNode } from "react"
+import { fadeInClass } from "./fade-in-class"
 
 interface SkeletonShellProps {
     isLoading: boolean
@@ -36,7 +37,7 @@ export function SkeletonShell({ isLoading, children, className, ariaLabel = 'Car
     return (
         <div
             data-skeleton-shell
-            className={cn("animate-in fade-in duration-200", className)}
+            className={cn(fadeInClass({ duration: 200 }), className)}
             aria-busy="true"
             aria-live="polite"
             aria-label={ariaLabel}

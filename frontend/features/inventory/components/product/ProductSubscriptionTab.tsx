@@ -1,7 +1,7 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, LabeledSwitch, Section } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, LabeledSwitch, Section, fadeInClass } from "@/components/shared"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import {CalendarClock, DollarSign, Calendar, Wallet} from "lucide-react"
@@ -15,7 +15,7 @@ interface ProductSubscriptionTabProps {
 
 export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionTabProps) {
     return (
-        <div className="space-y-10 animate-in fade-in duration-500">
+        <div className={cn("space-y-10", fadeInClass({ duration: 500 }))}>
             <div className="grid grid-cols-4 gap-x-8 gap-y-10 items-start">
                 {/* 1. Subscription Setup */}
                 <div className="col-span-2 space-y-4">
@@ -225,7 +225,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             />
 
                             {!form.watch("is_indefinite") && (
-                                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className={fadeInClass({ from: "top", duration: 300 })}>
                                     <FormField
                                         control={form.control}
                                         name="contract_end_date"

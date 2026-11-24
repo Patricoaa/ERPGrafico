@@ -100,10 +100,12 @@ describe('touch variant and device-driven input axis (ADR-0142 D5)', () => {
     expect(/\[data-input="mouse"\]\s*\{\s*--k-input:\s*1;\s*--hit-min:\s*2\.5rem;\s*--hit-role-min:\s*0px/.test(css)).toBe(true);
   });
 
-  it('POS cart has no JS size branches (isTouchPOS) — sizes come from the touch: variant', () => {
+  it('POS cart has no JS size branches (isTouchPOS / isTouchMode)', () => {
     const cart = read('../../features/pos/components/Cart.tsx');
     expect(/isTouchPOS|isTouchMode/.test(cart)).toBe(false);
-    expect(/touch:h-14 touch:text-xl/.test(cart)).toBe(true);
+    // Since the SummaryPanel redesign (#277) the cart's buttons are touch-sized at every pointer
+    // (h-control-touch / h-16) and the touch dial (--k = 1.125) scales them further: there is no
+    // `touch:` class left to assert, only that no size is chosen in JS (above).
   });
 
   it('product picker styling uses touch:, not an isTouch prop or isTouchPOS branches', () => {

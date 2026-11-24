@@ -5,6 +5,8 @@ import { Upload, X, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { LabeledContainer } from "@/components/shared"
+import { fadeInClass } from "./fade-in-class"
+import { cn } from "@/lib/utils"
 
 interface DocumentAttachmentDropzoneProps {
     file: File | null
@@ -63,7 +65,7 @@ export function DocumentAttachmentDropzone({
                     </div>
                 </>
             ) : (
-                <div className="flex items-center justify-between w-full px-2 py-1.5 animate-in zoom-in duration-200">
+                <div className={cn("flex items-center justify-between w-full px-2 py-1.5", fadeInClass({ zoom: true, fade: false, duration: 200 }))}>
                     <div className="flex items-center gap-2 min-w-0">
                         <div className="p-1 bg-success/10 rounded text-success-text shrink-0">
                             <FileText className="h-3.5 w-3.5" />

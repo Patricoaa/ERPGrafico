@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
-import { SubmitButton, CancelButton, DrawerLayout, type DrawerLayoutTab } from "@/components/shared"
+import { SubmitButton, CancelButton, DrawerLayout, fadeInClass, type DrawerLayoutTab } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck, Link2, HandCoins } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
 import { useGlobalModals } from "@/components/providers"
@@ -516,7 +516,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                             </div>
 
                                                             {watchSalud === "ISAPRE" && (
-                                                                <div className="col-span-4 animate-in slide-in-from-top-2 duration-300">
+                                                                <div className={cn("col-span-4", fadeInClass({ from: "top", fade: false, duration: 300 }))}>
                                                                     <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
                                                                         <LabeledInput
                                                                             label="Monto Pactado (UF)"

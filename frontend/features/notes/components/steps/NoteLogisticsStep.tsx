@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import {LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, StepHeader, Banner} from "@/components/shared"
+import { LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, StepHeader, Banner, fadeInClass } from "@/components/shared"
 import { Truck, Package, Calendar, ShoppingBag } from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import { cn } from "@/lib/utils"
@@ -162,9 +162,9 @@ export function NoteLogisticsStep({
                 </ChoiceGroup>
             </LabeledContainer>
 
-            <div className="space-y-4 animate-in fade-in duration-300">
+            <div className={cn("space-y-4", fadeInClass({ duration: 300 }))}>
                 {formData.delivery_type === 'PARTIAL' && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <div className={cn("space-y-4", fadeInClass({ from: "top" }))}>
                         <LabeledContainer
                             label="Cantidades para Movimiento Inmediato"
                             tooltip="Especifique las cantidades que procesará ahora. El resto quedará pendiente para despacho futuro."

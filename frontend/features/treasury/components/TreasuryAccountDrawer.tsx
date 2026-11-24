@@ -17,9 +17,10 @@ import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDra
 import type { Bank, TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from "../types"
 import type { CreditLine } from "../credit-lines/types"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormFooter, FormSplitLayout, SubmitButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay, Section } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormFooter, FormSplitLayout, SubmitButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay, Section, fadeInClass } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Form, FormField } from "@/components/ui/form"
+import { cn } from "@/lib/utils"
 
 const treasuryAccountSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -365,7 +366,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
 
                                     {/* Section 2: Bank Info (Conditional) */}
                                     {requiresBank(type) && (
-                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className={cn("space-y-4", fadeInClass({ from: "top", duration: 300 }))}>
                                             <Section.Header spaced title="Configuración Bancaria" icon={CreditCard} />
                                             <FormField
                                                 control={form.control}

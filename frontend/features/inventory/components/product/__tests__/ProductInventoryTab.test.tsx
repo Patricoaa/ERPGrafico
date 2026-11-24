@@ -8,6 +8,7 @@ vi.mock("@/components/shared", () => ({
     Section: { Header: ({ title }: { title: string }) => <h2>{title}</h2> },
     LabeledSwitch: ({ label }: { label: string }) => <div>{label}</div>,
     MultiSelectTagInput: ({ label }: { label: string }) => <div>{label}</div>,
+    fadeInClass: () => "",
 }))
 
 vi.mock("@/components/selectors", () => ({

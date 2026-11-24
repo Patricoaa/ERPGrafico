@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Building2, AlertCircle } from "lucide-react"
-import { StepHeader, ContactCardGrid } from "@/components/shared"
+import { StepHeader, ContactCardGrid, fadeInClass } from "@/components/shared"
 import { AdvancedWorkOrderSelector } from "@/components/selectors/AdvancedWorkOrderSelector"
 import { purchasingApi } from "../../api/purchasingApi"
+import { cn } from "@/lib/utils"
 
 export interface Step0_SupplierProps {
     selectedSupplierId: string | null
@@ -79,7 +80,7 @@ export function Step0_Supplier({
 
 
                 {!selectedSupplierId && !loading && (
-                    <div className="flex items-center gap-2 text-sm text-warning-text font-medium py-2 px-3 bg-warning/10 rounded-md border border-warning/10 animate-in fade-in slide-in-from-top-2">
+                    <div className={cn("flex items-center gap-2 text-sm text-warning-text font-medium py-2 px-3 bg-warning/10 rounded-md border border-warning/10", fadeInClass({ from: "top" }))}>
                         <AlertCircle className="h-4 w-4" />
                         Debe seleccionar un proveedor para proceder.
                     </div>

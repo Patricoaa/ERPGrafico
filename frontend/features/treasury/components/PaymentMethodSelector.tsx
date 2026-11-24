@@ -6,7 +6,7 @@ import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowed
 import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck, cardAnatomy, selectableCardClass } from '@/components/shared'
+import { BaseModal, Numpad, ChoiceCard, ChoiceGroup, SelectionCheck, cardAnatomy, selectableCardClass, fadeInClass } from '@/components/shared'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { LabeledInput, LabeledSelect, MoneyDisplay, Section } from "@/components/shared"
@@ -328,7 +328,7 @@ export function PaymentMethodSelector({
         })
 
         return (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+            <div className={cn("space-y-4", fadeInClass({ from: "top" }))}>
                 <Section.Header spaced title="Datos Adicionales" />
 
                 {method === 'CHECK' && (

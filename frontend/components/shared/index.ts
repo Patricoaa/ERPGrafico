@@ -102,6 +102,7 @@ export * from './SkeletonPresets';
 
 // Animations
 export * from './FadeIn';
+export * from './fade-in-class';
 
 // Generic Popover with search
 export { SearchablePopover } from './SearchablePopover';

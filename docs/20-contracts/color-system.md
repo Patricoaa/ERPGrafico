@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: color-system
 status: active
 owner: frontend-team
-last_review: 2026-05-29
+last_review: 2026-11-24
 stability: contract-changes-require-ADR
 ---
 
@@ -130,33 +130,31 @@ Every semantic intent uses a standardized opacity pattern across components:
 /* Full color */
 bg-{intent}        text-{intent}         border-{intent}        ring-{intent}
 
-/* Tinted (standard opacity) */
-bg-{intent}/10     text-{intent}         border-{intent}/20
+/* Tinted (standard opacity) — text uses the *-text variant (ADR-0149) */
+bg-{intent}/10     text-{intent}-text    border-{intent}/20
 
 /* Subtle (low opacity) */
-bg-{intent}/5      text-{intent}         border-{intent}/10
-
-/* Shadow / glow */
-shadow-[0_0_8px_var(--{intent})]
+bg-{intent}/5      text-{intent}-text    border-{intent}/10
 ```
+
+> `text-{intent}` (the fill ink) is only valid as **text** for `destructive`, `info` and `primary`. `text-warning` is banned and `text-success` is allowed only on lone icons in an allowlist that only shrinks (`intent-text-contrast.contract.test.ts`).
 
 **Standard component recipes:**
 
 | Context | Pattern | Example |
 |---------|---------|---------|
-| Badge / Chip / StatusBadge | `bg-{intent}/10 text-{intent}` (borderless) | `bg-info/10 text-info` |
-| StatCard *(eliminado, ADR-0149)* | tinte de fondo por acento | — |
+| Badge / Chip / StatusBadge | `bg-{intent}/10 text-{intent}-text` (borderless) | `bg-info/10 text-info-text` |
 | `Metric` / `ChartCard` | **sin tinte de fondo**; el tono solo colorea el icono del lead, el texto de variación y el relleno de progreso | `text-success-text`, `text-destructive`, `bg-success` |
 | Texto de intent sobre `bg-card` | `text-success-text` / `text-warning-text` / `text-destructive-text` / `text-info-text` (los cuatro los usa `Badge`) (≥ 4,5:1; se aclaran en `.dark`). `text-success`/`text-warning` solo como relleno | `text-success-text` |
 | Active ring | `ring-2 ring-{intent} ring-offset-2` | `ring-2 ring-primary ring-offset-2` |
-| Trend up | `text-success` | |
+| Trend up | `text-success-text` | |
 | Trend down | `text-destructive` | |
-| NumericFlow positive | badge `bg-success/10 text-success` | |
+| NumericFlow positive | badge `bg-success/10 text-success-text` | |
 | NumericFlow negative | badge `bg-destructive/10 text-destructive` | |
 | NumericFlow zero | badge `bg-muted/60 text-muted-foreground` | |
-| MoneyDisplay positive | `text-success` | |
-| MoneyDisplay negative | `text-destructive` | |
-| Progress complete | `bg-success` + glow | |
+| MoneyDisplay positive | `text-income` (Layer 3) | |
+| MoneyDisplay negative | `text-expense` (Layer 3) | |
+| Progress complete | `bg-success` | |
 | Progress in-progress | `bg-primary` | |
 | L1 Section | `text-muted-foreground/70` | |
 | L2 Legend (inactive) | `text-muted-foreground` | |
@@ -244,7 +242,7 @@ Categorical chips (`Chip.Category`, field type `chip-category`) are authorized t
 | `cyan` | Process Cyan | `bg-cyan/10 text-cyan border-cyan/20` |
 | `magenta` | Process Magenta | `bg-magenta/10 text-magenta border-magenta/20` |
 | `yellow` | Process Yellow | `bg-yellow/10 text-yellow border-yellow/20` |
-| `black` | Process Black | `bg-black/10 text-black border-black/20` |
+| `black` | Process Black (K plate) | `bg-foreground/10 text-foreground border-foreground/20` — the K plate renders with `foreground`, like `ribbon-cmyk`, so it stays visible on dark surfaces (ADR-0157) |
 
 Current domain mapping — `payment_method` (`frontend/lib/badge-resolvers.ts`):
 
@@ -256,7 +254,7 @@ Current domain mapping — `payment_method` (`frontend/lib/badge-resolvers.ts`):
 | `CHECK` | `black` |
 | `OTHER` | `neutral` |
 
-Rules: Layer 1 chip intents are **fixed** across light/dark (they carry no `.dark` override — the inks do not adapt) and are **restricted to categorical chips** — never for workflow state (`StatusBadge` / `STATUS_MAP` stays semantic).
+Rules: Layer 1 chip intents are **fixed** across light/dark (they carry no `.dark` override — the inks do not adapt), **except the K plate**, which uses `foreground` because Process Black is invisible on a dark surface (same rule as `ribbon-cmyk` and the `TabBar` CMYK accent) and are **restricted to categorical chips** — never for workflow state (`StatusBadge` / `STATUS_MAP` stays semantic).
 
 ### 4.6 Ledger Ink Metaphor (Layer 1 — ADR-0071)
 
@@ -421,7 +419,7 @@ The 3-layer form system uses a fixed set of color tokens (defined in `component-
 | Boolean field state colors | `component-boolean-fields.md` |
 | Typography color tokens | `typography-scale.md` |
 | Button variant colors | `component-button.md` |
-| Design system overview | `10-architecture/design-system.md` |
+| Design system overview | [`DESIGN.md`](../../DESIGN.md) · geometría en [geometry-surfaces.md](./geometry-surfaces.md) |
 | Governance (no raw colors) | `90-governance/GOVERNANCE.md` |
 | PR checklist | `90-governance/pr-review-checklist.md` |
 | Implementation source | `frontend/app/globals.css` — `@theme inline` |
