@@ -21,6 +21,7 @@ frontend/.next/
 frontend/out/
 frontend/build/
 frontend/.eslintcache
+frontend/.eslintcache-no-unsafe
 *.tsbuildinfo
 next-env.d.ts
 
