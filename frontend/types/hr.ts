@@ -145,6 +145,9 @@ export interface Payroll {
   previred_journal_entry: number | null
   items?: PayrollItem[]
   advances?: SalaryAdvance[]
+  allocations?: PayrollAllocation[]
+  balance?: string
+  cap_warning?: string | null
   payments?: PayrollPayment[]
   remuneration_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
   legal_deductions_worker?: string
@@ -177,6 +180,83 @@ export interface SalaryAdvance {
   payment_method_name?: string | null
   created_at: string
   updated_at: string
+}
+
+export type EmployeeMovementKind = 'PAYMENT' | 'ADVANCE' | 'LOAN'
+export type EmployeeMovementStatus = 'DRAFT' | 'POSTED' | 'SETTLED' | 'CANCELLED'
+export type LoanRatePeriod = 'MONTHLY' | 'ANNUAL'
+export type LoanInstallmentStatus = 'PENDING' | 'APPLIED'
+
+export interface LoanInstallment {
+  id: number
+  number: number
+  year: number
+  month: number
+  principal: number
+  interest: number
+  amount: number
+  status: LoanInstallmentStatus
+}
+
+export interface PayrollAllocation {
+  id: number
+  movement: number
+  movement_display_id?: string
+  movement_kind?: EmployeeMovementKind
+  payroll: number
+  payroll_display_id?: string
+  installment: number | null
+  amount: number
+  principal_part: number
+  interest_part: number
+}
+
+/** Pago de remuneración, anticipo o préstamo con un empleado (ADR-0156). */
+export interface EmployeeMovement {
+  id: number
+  display_id: string
+  employee: number
+  employee_name?: string
+  employee_display_id?: string
+  kind: EmployeeMovementKind
+  kind_display: string
+  date: string
+  amount: string
+  notes: string
+  status: EmployeeMovementStatus
+  status_display: string
+  journal_entry: number | null
+  is_editable?: boolean
+  rate: string | null
+  rate_period: LoanRatePeriod | null
+  installments_count: number | null
+  first_installment_year: number | null
+  first_installment_month: number | null
+  installments: LoanInstallment[]
+  allocations: PayrollAllocation[]
+  /** Capital aún no descontado en una liquidación contabilizada. */
+  balance: number | string
+  payment_method_name?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface LoanSchedulePreviewRequest {
+  amount: number
+  rate: string
+  rate_period: LoanRatePeriod
+  installments: number
+  first_year: number
+  first_month: number
+}
+
+export interface LoanSchedulePreviewRow {
+  number: number
+  year: number
+  month: number
+  principal: number
+  interest: number
+  amount: number
 }
 
 export type PaymentType = 'SALARIO' | 'PREVIRED'

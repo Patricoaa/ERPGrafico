@@ -11,6 +11,9 @@ import type {
   Absence,
   SalaryAdvance,
   PayrollPayment,
+  EmployeeMovement,
+  LoanSchedulePreviewRequest,
+  LoanSchedulePreviewRow,
 } from "@/types/hr"
 
 // ---- Global HR Settings (Singleton) ----
@@ -226,4 +229,56 @@ export async function updateAdvance(id: number, data: Partial<SalaryAdvance>): P
 
 export async function deleteAdvance(id: number): Promise<void> {
   await api.delete(`/hr/advances/${id}/`)
+}
+
+// ---- Employee movements (pagos, anticipos y préstamos — ADR-0156) ----
+const MOVEMENTS_URL = '/hr/employee-movements/'
+
+export async function getEmployeeMovements(params?: Record<string, string>): Promise<EmployeeMovement[]> {
+  const res = await api.get<{ results: EmployeeMovement[] }>(MOVEMENTS_URL, { params })
+  return res.data.results
+}
+
+export async function getEmployeeMovement(id: number): Promise<EmployeeMovement> {
+  const res = await api.get<EmployeeMovement>(`${MOVEMENTS_URL}${id}/`)
+  return res.data
+}
+
+export async function createEmployeeMovement(payload: Record<string, unknown>): Promise<EmployeeMovement> {
+  const res = await api.post<EmployeeMovement>(MOVEMENTS_URL, payload)
+  return res.data
+}
+
+export async function updateEmployeeMovement(id: number, payload: Record<string, unknown>): Promise<EmployeeMovement> {
+  const res = await api.patch<EmployeeMovement>(`${MOVEMENTS_URL}${id}/`, payload)
+  return res.data
+}
+
+export async function deleteEmployeeMovement(id: number): Promise<void> {
+  await api.delete(`${MOVEMENTS_URL}${id}/`)
+}
+
+export async function annulEmployeeMovement(id: number, reason: string): Promise<EmployeeMovement> {
+  const res = await api.post<EmployeeMovement>(`${MOVEMENTS_URL}${id}/annul/`, { reason })
+  return res.data
+}
+
+export async function allocateMovement(id: number, body: { payroll: number; amount?: string }): Promise<EmployeeMovement> {
+  const res = await api.post<EmployeeMovement>(`${MOVEMENTS_URL}${id}/allocate/`, body)
+  return res.data
+}
+
+export async function deallocateMovement(id: number, allocationId: number): Promise<EmployeeMovement> {
+  const res = await api.post<EmployeeMovement>(`${MOVEMENTS_URL}${id}/deallocate/`, { allocation: allocationId })
+  return res.data
+}
+
+export async function previewLoanSchedule(body: LoanSchedulePreviewRequest): Promise<LoanSchedulePreviewRow[]> {
+  const res = await api.post<LoanSchedulePreviewRow[]>(`${MOVEMENTS_URL}preview-schedule/`, body)
+  return res.data
+}
+
+export async function getEmployeeMovementHistory(employeeId: number): Promise<EmployeeMovement[]> {
+  const res = await api.get<{ results: EmployeeMovement[] }>(`/hr/employees/${employeeId}/movements/`)
+  return res.data.results
 }
