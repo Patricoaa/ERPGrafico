@@ -11,8 +11,11 @@ import * as z from "zod"
 import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { SubmitButton, CancelButton, DrawerLayout, type DrawerLayoutTab } from "@/components/shared"
-import { UserCog, CalendarCheck2, Plus, ShieldCheck, Link2 } from "lucide-react"
+import { UserCog, CalendarCheck2, Plus, ShieldCheck, Link2, HandCoins } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
+import { useGlobalModals } from "@/components/providers"
+import { useEmployeeMovementHistory } from "../hooks/useEmployeeMovementHistory"
+import { EmployeeMovementsHistory } from "./EmployeeMovementsHistory"
 import { DocumentRelationsTab, useDocumentRelations, relationsTotal } from "@/features/documents"
 
 import {
@@ -78,12 +81,12 @@ const parseLocalDate = (dateStr?: string) => {
 }
 
 /**
- * Bloquea las pestañas de formulario en vista/guardado sin deshabilitar «Relaciones»:
+ * Bloquea las pestañas de formulario en vista/guardado sin deshabilitar «Relaciones» ni «Movimientos»:
  * `DrawerLayout.contentDisabled` envolvería todas las pestañas en un fieldset deshabilitado
  * y las filas de relaciones dejarían de ser clicables.
  */
 function lockFormTabs(tabs: DrawerLayoutTab[], locked: boolean): DrawerLayoutTab[] {
-    return tabs.map((tab) => tab.value === "relations"
+    return tabs.map((tab) => tab.value === "relations" || tab.value === "movements"
         ? tab
         : { ...tab, content: <fieldset disabled={locked} className="contents">{tab.content}</fieldset> })
 }
@@ -98,6 +101,9 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
     const [activeTab, setActiveTab] = useState("contratacion")
     // Misma ventana que pide la pestaña → una sola petición compartida (ADR-0155).
     const { data: relations } = useDocumentRelations("hr.employee", employee?.id ?? null, { window: "recent" })
+    const { movements } = useEmployeeMovementHistory(employee?.id ?? null)
+    const { openEntity } = useGlobalModals()
+    const pendingMovements = movements.filter((mv) => Number(mv.balance) > 0).length
 
     const form = useForm<EmployeeFormValues>({
         resolver: zodResolver(employeeSchema),
@@ -602,6 +608,12 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                             ),
                                         },
                                         ...(employee?.id ? [{
+                                            value: "movements",
+                                            label: "Movimientos",
+                                            icon: HandCoins,
+                                            badge: pendingMovements || undefined,
+                                            content: <EmployeeMovementsHistory employeeId={employee.id} onOpen={(mv) => openEntity("hr.employeemovement", mv.id, mv)} />,
+                                        }, {
                                             value: "relations",
                                             label: "Relaciones",
                                             icon: Link2,

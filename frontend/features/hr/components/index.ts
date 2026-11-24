@@ -10,3 +10,5 @@ export * from './EmployeeClientView';
 export * from './AbsenceClientView';
 export * from './PayrollClientView';
 export * from './EmployeeMovementClientView';
+export * from './EmployeeMovementsHistory';
+export * from './NewEmployeeMovementFlow';

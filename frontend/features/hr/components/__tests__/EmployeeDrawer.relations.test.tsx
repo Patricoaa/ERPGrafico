@@ -24,6 +24,9 @@ vi.mock("../../hooks/useEmployees", () => ({
 vi.mock("../../hooks/useEmployeeMutations", () => ({
     useEmployeeMutations: () => ({ saveEmployee: vi.fn(), isSaving: false }),
 }))
+vi.mock("../EmployeeMovementsHistory", () => ({ EmployeeMovementsHistory: ({ employeeId }: { employeeId: number }) => <div data-testid="movements-tab">hist#{employeeId}</div> }))
+vi.mock("@/components/providers", () => ({ useGlobalModals: () => ({ openEntity: vi.fn() }) }))
+vi.mock("../../hooks/useEmployeeMovementHistory", () => ({ useEmployeeMovementHistory: () => ({ movements: [{ balance: 10 }, { balance: 0 }, { balance: "5" }] }) }))
 vi.mock("@/hooks/useServerDate", () => ({ useServerDate: () => ({ dateString: "2026-11-23" }) }))
 vi.mock("@/components/selectors/AdvancedContactSelector", () => ({ AdvancedContactSelector: () => null }))
 
@@ -56,5 +59,18 @@ describe("EmployeeDrawer — pestaña Relaciones", () => {
         render(<EmployeeDrawer open onOpenChange={vi.fn()} employee={null} onSaved={vi.fn()} />)
         expect(screen.queryByRole("tab", { name: /Relaciones/ })).not.toBeInTheDocument()
         expect(m.relationsCalls.every(([, id]) => id === null)).toBe(true)
+    })
+
+    it("shows a Movimientos tab (badge = movements with pending balance) that stays clickable in view mode", async () => {
+        render(<EmployeeDrawer open onOpenChange={vi.fn()} employee={employee} onSaved={vi.fn()} />)
+        const tab = screen.getByRole("tab", { name: /Movimientos/ })
+        expect(tab).toHaveTextContent("2")
+        await userEvent.click(tab)
+        expect(screen.getByTestId("movements-tab")).toHaveTextContent("hist#5")
+    })
+
+    it("has no Movimientos tab when creating a new employee", () => {
+        render(<EmployeeDrawer open onOpenChange={vi.fn()} employee={null} onSaved={vi.fn()} />)
+        expect(screen.queryByRole("tab", { name: /Movimientos/ })).not.toBeInTheDocument()
     })
 })

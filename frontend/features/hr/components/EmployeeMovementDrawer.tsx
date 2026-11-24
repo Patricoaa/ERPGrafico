@@ -33,6 +33,9 @@ export interface EmployeeMovementDrawerProps {
     /** En creación recibe el cuerpo para continuar con el pago; en edición no recibe nada. */
     onSaved: (payload?: Record<string, unknown>) => void
     mode?: DrawerMode
+    /** Creación desde la ficha del empleado: fija el empleado y el tipo inicial. */
+    fixedEmployeeId?: number
+    initialKind?: "ADVANCE" | "LOAN"
 }
 
 const KIND_OPTIONS = [
@@ -49,7 +52,7 @@ const MONTH_OPTIONS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "J
 /** La tasa se captura en porcentaje (1 = 1 %); el backend recibe el decimal. */
 const percentToDecimal = (percent: string) => String(Number((parseFloat(percent) / 100).toFixed(6)))
 
-export function EmployeeMovementDrawer({ open, onOpenChange, movement, employees: employeesProp, onSaved, mode: modeProp }: EmployeeMovementDrawerProps) {
+export function EmployeeMovementDrawer({ open, onOpenChange, movement, employees: employeesProp, onSaved, mode: modeProp, fixedEmployeeId, initialKind }: EmployeeMovementDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
     const employeeOptions = employeeSelectOptions(employees, movement)
@@ -65,9 +68,21 @@ export function EmployeeMovementDrawer({ open, onOpenChange, movement, employees
     const [preview, setPreview] = useState<LoanSchedulePreviewRow[]>([])
     const width = formDrawerWidth("medium", !!movement)
 
-    const emptyValues = (): EmployeeMovementFormValues => ({
-        kind: "ADVANCE", employee: "", amount: "", date: dateString, notes: "",
-    })
+    /** Primera cuota por defecto: el mes siguiente a la fecha del servidor. */
+    const nextMonth = () => {
+        const base = new Date(`${dateString}T12:00:00`)
+        base.setMonth(base.getMonth() + 1)
+        return { year: String(base.getFullYear()), month: String(base.getMonth() + 1) }
+    }
+    const emptyValues = (): EmployeeMovementFormValues => {
+        const common = { employee: fixedEmployeeId ? String(fixedEmployeeId) : "", amount: "", date: dateString, notes: "" }
+        if (initialKind !== "LOAN") return { ...common, kind: "ADVANCE" }
+        const first = nextMonth()
+        return {
+            ...common, kind: "LOAN", rate: "", rate_period: "MONTHLY", installments_count: "",
+            first_installment_year: first.year, first_installment_month: first.month,
+        }
+    }
     const form = useForm<EmployeeMovementFormValues>({
         resolver: zodResolver(employeeMovementFormSchema),
         defaultValues: emptyValues(),
@@ -98,13 +113,12 @@ export function EmployeeMovementDrawer({ open, onOpenChange, movement, employees
     const changeKind = (next: string) => {
         form.setValue("kind", next === "LOAN" ? "LOAN" : "ADVANCE")
         if (next !== "LOAN" || form.getValues("kind") !== "LOAN") return
-        const base = new Date(`${dateString}T12:00:00`)
-        base.setMonth(base.getMonth() + 1)
+        const first = nextMonth()
         form.setValue("rate_period", "MONTHLY")
         form.setValue("rate", "")
         form.setValue("installments_count", "")
-        form.setValue("first_installment_year", String(base.getFullYear()))
-        form.setValue("first_installment_month", String(base.getMonth() + 1))
+        form.setValue("first_installment_year", first.year)
+        form.setValue("first_installment_month", first.month)
         setPreview([])
     }
 
@@ -166,7 +180,7 @@ export function EmployeeMovementDrawer({ open, onOpenChange, movement, employees
                             <LabeledSelect label="Tipo" required value={field.value} onChange={changeKind} options={KIND_OPTIONS} disabled={!!movement} />
                         )} />
                         <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
-                            <LabeledSelect label="Empleado" required value={field.value} onChange={field.onChange} error={fieldState.error?.message} options={employeeOptions} />
+                            <LabeledSelect label="Empleado" required value={field.value} onChange={field.onChange} error={fieldState.error?.message} options={employeeOptions} disabled={!!fixedEmployeeId} />
                         )} />
                         <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
                             <LabeledInput label="Monto ($)" required type="number" placeholder="0" error={fieldState.error?.message} {...field} />
