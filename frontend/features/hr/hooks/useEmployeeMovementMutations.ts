@@ -23,8 +23,7 @@ export function useEmployeeMovementMutations() {
             ['documents', 'relations'],
         ])
     }
-    const done = (message: string) => () => {
-        markLocalMutation()
+    const finish = (message: string) => {
         toast.success(message)
         invalidate()
     }
@@ -32,21 +31,24 @@ export function useEmployeeMovementMutations() {
     const save = useMutation({
         mutationFn: ({ id, payload }: { id: number | null; payload: Record<string, unknown> }) =>
             id === null ? createEmployeeMovement(payload) : updateEmployeeMovement(id, payload),
-        onSuccess: (_, vars) => done(vars.id === null ? 'Movimiento registrado' : 'Movimiento actualizado')(),
+        onSuccess: (_, vars) => {
+            markLocalMutation()
+            finish(vars.id === null ? 'Movimiento registrado' : 'Movimiento actualizado')
+        },
     })
-    const remove = useMutation({ mutationFn: deleteEmployeeMovement, onSuccess: done('Movimiento eliminado') })
+    const remove = useMutation({ mutationFn: deleteEmployeeMovement, onSuccess: () => { markLocalMutation(); finish('Movimiento eliminado') } })
     const annul = useMutation({
         mutationFn: ({ id, reason }: { id: number; reason: string }) => annulEmployeeMovement(id, reason),
-        onSuccess: done('Movimiento anulado'),
+        onSuccess: () => { markLocalMutation(); finish('Movimiento anulado') },
     })
     const allocate = useMutation({
         mutationFn: ({ id, payroll, amount }: { id: number; payroll: number; amount?: string }) =>
             allocateMovement(id, { payroll, amount }),
-        onSuccess: done('Asignado a la liquidación'),
+        onSuccess: () => { markLocalMutation(); finish('Asignado a la liquidación') },
     })
     const deallocate = useMutation({
         mutationFn: ({ id, allocationId }: { id: number; allocationId: number }) => deallocateMovement(id, allocationId),
-        onSuccess: done('Asignación retirada'),
+        onSuccess: () => { markLocalMutation(); finish('Asignación retirada') },
     })
     const preview = useMutation({ mutationFn: (body: LoanSchedulePreviewRequest) => previewLoanSchedule(body) })
 

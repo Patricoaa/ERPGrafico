@@ -40,7 +40,7 @@ export const COMMENT_LABEL_BY_AUDIT_TYPE: Partial<Record<AuditEntityType, string
     attribute: "inventory.productattribute",
     account: "accounting.account",
     employee: "hr.employee",
-    salaryadvance: "hr.salaryadvance",
+    employeemovement: "hr.employeemovement",
     absence: "hr.absence",
     fiscal_year: "accounting.fiscalyear",
     tax_period: "tax.taxperiod",

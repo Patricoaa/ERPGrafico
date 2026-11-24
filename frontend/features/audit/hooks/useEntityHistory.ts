@@ -37,7 +37,7 @@ const ENDPOINT_MAP: Record<string, string> = {
     account: '/accounting/accounts',
     bank_journal: '/accounting/journals',
     employee: '/hr/employees',
-    salaryadvance: '/hr/salary-advances',
+    employeemovement: '/hr/employee-movements',
     absence: '/hr/absences',
     payroll: '/hr/payrolls',
     bank_loan: '/treasury/loans',

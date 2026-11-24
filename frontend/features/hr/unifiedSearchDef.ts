@@ -112,7 +112,7 @@ export const payrollUnifiedSearchDef: UnifiedSearchConfig = {
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
 
-export const salaryAdvanceUnifiedSearchDef: UnifiedSearchConfig = {
+export const employeeMovementUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
     {
       key: 'employee_name',
@@ -129,9 +129,20 @@ export const salaryAdvanceUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'status',
       options: [
         { label: 'Borrador', value: 'DRAFT' },
-        { label: 'Pagado', value: 'PAID' },
-        { label: 'Descontado', value: 'DISCOUNTED' },
+        { label: 'Vigente', value: 'POSTED' },
+        { label: 'Saldado', value: 'SETTLED' },
         { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'kind',
+      label: 'Tipo',
+      serverParam: 'kind',
+      options: [
+        { label: 'Pago de remuneración', value: 'PAYMENT' },
+        { label: 'Anticipo', value: 'ADVANCE' },
+        { label: 'Préstamo', value: 'LOAN' },
       ],
     },
   ],

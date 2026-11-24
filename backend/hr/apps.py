@@ -28,7 +28,7 @@ class HrConfig(AppConfig):
         try:
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
-            from hr.models import Absence, Employee, Payroll, PayrollConcept
+            from hr.models import Absence, Employee, EmployeeMovement, Payroll, PayrollConcept
 
             UniversalRegistry.register(
                 SearchableEntity(
@@ -77,6 +77,23 @@ class HrConfig(AppConfig):
                     list_url="/hr/absences",
                     detail_url_pattern="/hr/absences/{id}",
                     permission="hr.view_absence",
+                )
+            )
+            UniversalRegistry.register(
+                SearchableEntity(
+                    model=EmployeeMovement,
+                    label="hr.employeemovement",
+                    title_singular="Movimiento con Empleado",
+                    title_plural="Movimientos con Empleados",
+                    icon="hand-coins",
+                    search_fields=("employee__contact__name", "notes"),
+                    short_display_template=f"{EntityPrefix.EMPLOYEE_MOVEMENT}-{{id}}",
+                    display_template=f"{EntityPrefix.EMPLOYEE_MOVEMENT}-{{id}} · {{employee.contact.name}}",
+                    subtitle_template="{kind} · {date}",
+                    extra_info_template="{amount}",
+                    list_url="/hr/movements",
+                    detail_url_pattern="/hr/movements/{id}",
+                    permission="hr.view_employeemovement",
                 )
             )
             UniversalRegistry.register(
