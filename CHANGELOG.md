@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.148](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.147...v0.3.148) (2026-11-24)
+
+
+### 🧪 Testing
+
+* **ci:** el censo no-unsafe corre solo sus reglas y el job de tests tiene 4 GB de heap ([95598b3](https://github.com/Patricoaa/ERPGrafico/commit/95598b3501fe968989e1cf509b26a39455318241)), closes [#283](https://github.com/Patricoaa/ERPGrafico/issues/283)
+* **frontend:** alinea 6 tests rojos de master con decisiones de producto vigentes ([1dd4755](https://github.com/Patricoaa/ERPGrafico/commit/1dd4755e7a9e396ec68672354773baa47a6b3729))
+
+
+### 🐛 Bug Fixes
+
+* **frontend:** "use client" en los 24 hooks de cliente que no lo declaraban ([7d854aa](https://github.com/Patricoaa/ERPGrafico/commit/7d854aa4e7c4b8c0ecd0f75e7ae30d2fb5d3d722))
+* **inventory:** selectores de análisis usan timezone.localdate() en vez de date.today() ([13166b5](https://github.com/Patricoaa/ERPGrafico/commit/13166b5fc7877a04beec7e3fbed32c54b3769ec8))
+
 ### [0.3.147](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.146...v0.3.147) (2026-11-24)
 
 
