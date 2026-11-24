@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: './frontend/package-lock.json'
       
@@ -28,6 +28,10 @@ jobs:
         # Same flag as frontend/Dockerfile: @sentry/nextjs 8 does not declare Next 16 as a peer.
         run: npm ci --legacy-peer-deps
       
+      - name: Dependency audit (blocking)
+        # Runtime dependencies only; high/critical fail the job (moderate is tracked, not blocking).
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         # Errors block. Warnings are tracked by ratchets (no-unsafe.contract.test.ts) and GitHub would
         # only show the first 10 of ~600 as annotations.
@@ -107,11 +111,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff mypy pytest pytest-django pytest-cov factory-boy
+          # ruff pinned: the ratchet below counts findings, and a new ruff release changes the count.
+          pip install ruff==0.17.6 mypy pytest pytest-django pytest-cov factory-boy pip-audit
           pip install /tmp/wheels/*.whl
 
       - name: Rust unit tests
         run: cd rust_ext && cargo test
+
+      - name: Dependency audit (blocking)
+        # Audits the environment just installed from requirements.txt (pinned), transitive deps
+        # included. erpgrafico-rs is the local PyO3 wheel, not on PyPI.
+        run: pip-audit --progress-spinner off
 
       - name: Ruff undefined names (blocking)
         run: ruff check . --select F821
@@ -120,9 +130,9 @@ jobs:
         run: |
           out=$(ruff check . 2>&1 || true)
           count=$(echo "$out" | grep -oE 'Found [0-9]+ error' | grep -oE '[0-9]+' || echo 0)
-          echo "Ruff findings: ${count} (baseline 342)"
+          echo "Ruff findings: ${count} (baseline 338)"
           echo "$out" | grep -vE 'Found [0-9]+ error' | tail -40 || true
-          if [ "${count:-0}" -gt 342 ]; then
+          if [ "${count:-0}" -gt 338 ]; then
             echo "::error::New Ruff findings introduced. Run 'cd backend && ruff check . --fix' locally."
             exit 1
           fi
@@ -153,10 +163,11 @@ jobs:
           python-version: '3.12'
       
       - name: Install Security Tools
-        run: pip install bandit safety
-      
-      - name: Bandit Scan
-        run: bandit -r ./backend -ll || echo "Bandit found potential security issues"
-      
-      - name: Safety Check
-        run: safety check || echo "Safety found vulnerable dependencies"
+        run: pip install bandit
+
+      - name: Bandit (blocking on high severity)
+        # High severity fails; medium/low are printed for review. backend/tmp holds local helper
+        # scripts. Dependency CVEs are checked by pip-audit in the Backend job (it needs the env).
+        run: |
+          bandit -r ./backend -ll -x ./backend/tmp || true
+          bandit -r ./backend -lll -x ./backend/tmp -q

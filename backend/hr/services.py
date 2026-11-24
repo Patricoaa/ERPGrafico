@@ -257,10 +257,47 @@ class PayrollService:
 
     @staticmethod
     def _eval_condition(cond_str):
+        """Evaluate the condition of a ternary formula without ``eval``.
+
+        After variable substitution a condition is numeric (``1.0 and 5.0 <= 11``). Only number
+        literals, comparisons, ``and``/``or``/``not``, unary +/- and + - * / % are accepted; any
+        other node (names, calls, attributes, subscripts…) raises, so a concept formula can never
+        run code on the server.
+        """
+        import ast
+        import operator
+
         cond_str = cond_str.strip()
         if not cond_str:
             return False
-        return bool(eval(cond_str, {"__builtins__": {}}))
+
+        binops = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+                  ast.Div: operator.truediv, ast.Mod: operator.mod}
+        cmpops = {ast.Eq: operator.eq, ast.NotEq: operator.ne, ast.Lt: operator.lt,
+                  ast.LtE: operator.le, ast.Gt: operator.gt, ast.GtE: operator.ge}
+
+        def ev(node):
+            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+                return node.value
+            if isinstance(node, ast.BoolOp):
+                values = [ev(v) for v in node.values]
+                return all(values) if isinstance(node.op, ast.And) else any(values)
+            if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.Not, ast.USub, ast.UAdd)):
+                v = ev(node.operand)
+                return (not v) if isinstance(node.op, ast.Not) else (-v if isinstance(node.op, ast.USub) else +v)
+            if isinstance(node, ast.BinOp) and type(node.op) in binops:
+                return binops[type(node.op)](ev(node.left), ev(node.right))
+            if isinstance(node, ast.Compare) and all(type(op) in cmpops for op in node.ops):
+                left = ev(node.left)
+                for op, comparator in zip(node.ops, node.comparators):
+                    right = ev(comparator)
+                    if not cmpops[type(op)](left, right):
+                        return False
+                    left = right
+                return True
+            raise ValueError(f"Expresión no permitida en la condición: {ast.dump(node)[:60]}")
+
+        return bool(ev(ast.parse(cond_str, mode="eval").body))
 
     @staticmethod
     def _resolve_ternary(formula_str):

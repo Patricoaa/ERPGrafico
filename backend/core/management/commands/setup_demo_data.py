@@ -409,7 +409,7 @@ class Command(BaseCommand):
         counts: dict[str, int] = {}
         with connection.cursor() as cursor:
             for table in sorted(tables):
-                cursor.execute(f"SELECT COUNT(*) FROM {qn(table)}")
+                cursor.execute(f"SELECT COUNT(*) FROM {qn(table)}")  # nosec B608: table from model _meta, quoted with quote_name
                 counts[table] = cursor.fetchone()[0]
 
         self.stdout.write(f"\n  {'─' * 3} Purge total ({len(tables)} tablas) {'─' * 20}")
@@ -428,7 +428,7 @@ class Command(BaseCommand):
         leftovers = []
         with connection.cursor() as cursor:
             for table in sorted(tables):
-                cursor.execute(f"SELECT COUNT(*) FROM {qn(table)}")
+                cursor.execute(f"SELECT COUNT(*) FROM {qn(table)}")  # nosec B608: table from model _meta, quoted with quote_name
                 if cursor.fetchone()[0]:
                     leftovers.append(tables[table])
         if leftovers:

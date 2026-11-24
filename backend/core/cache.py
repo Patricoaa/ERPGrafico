@@ -111,7 +111,7 @@ def _build_report_key(module: str, endpoint: str, params: dict | None = None) ->
         filtered = {k: v for k, v in sorted(params.items()) if v is not None}
         if filtered:
             params_str = json.dumps(filtered, sort_keys=True, default=str)
-            params_hash = hashlib.md5(params_str.encode()).hexdigest()[:8]
+            params_hash = hashlib.md5(params_str.encode(), usedforsecurity=False).hexdigest()[:8]
             key = f"{key}:{params_hash}"
     return key
 
