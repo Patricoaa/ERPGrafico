@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card'
 import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip, StepHeader, fadeInClass } from '@/components/shared'
 import type { ProductCategory } from '@/features/inventory'
 import { useVatRate } from '@/hooks/useVatRate'
+import { netFromGross } from '@/lib/vat'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { Loader2, FileText, BarChart3, Save, Lock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag, ShoppingBasket } from 'lucide-react'
 
@@ -133,7 +134,8 @@ export function POSClientView() {
 
     const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
     const { limits: stockLimits, calculateMaxQty } = useStockValidation()
-    const { rate } = useVatRate()
+    const { rate, multiplier } = useVatRate()
+    const taxRate = rate / 100
 
     // ── Real-time Sync ──────────────────────────────────────────
     const handleNewDraft = useCallback((draft: SyncDraft) => {
@@ -333,13 +335,13 @@ export function POSClientView() {
 
     const handleItemPriceChange = (itemId: string, priceGross: number) => {
         const item = items.find(i => i.cartItemId === itemId); if (!item) return
-        const linePricing = PricingUtils.calculateLineFromGross(item.qty, priceGross, item.discount_amount || 0)
-        updateItem(itemId, { unit_price_net: PricingUtils.grossToNet(priceGross), unit_price_gross: priceGross, total_net: linePricing.net, total_gross: linePricing.gross })
+        const linePricing = PricingUtils.calculateLineFromGross(item.qty, priceGross, item.discount_amount || 0, taxRate)
+        updateItem(itemId, { unit_price_net: netFromGross(priceGross, multiplier), unit_price_gross: priceGross, total_net: linePricing.net, total_gross: linePricing.gross })
     }
 
     const handleItemDiscountChange = (itemId: string, amount: number, percent: number) => {
         const item = items.find(i => i.cartItemId === itemId); if (!item) return
-        const linePricing = PricingUtils.calculateLineFromGross(item.qty, item.unit_price_gross, amount)
+        const linePricing = PricingUtils.calculateLineFromGross(item.qty, item.unit_price_gross, amount, taxRate)
         updateItem(itemId, { discount_amount: amount, discount_percentage: percent, total_net: linePricing.net, total_gross: linePricing.gross })
     }
 

@@ -5,6 +5,7 @@ const state = vi.hoisted(() => ({
     capsById: {} as Record<number, unknown>,
 }))
 
+vi.mock("@/hooks/useVatRate", () => ({ useVatRate: () => ({ rate: 19, multiplier: 1.19, isLoading: false }) }))
 vi.mock("../../hooks/useProducts", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../hooks/useProducts")>()),
     useProductCapabilities: (id: number) => ({

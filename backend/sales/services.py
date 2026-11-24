@@ -66,7 +66,7 @@ class SalesService:
         ("different from what the backend resolves at creation", not necessarily user-edited).
         Discounts live in their own fields and do not affect the comparison.
         """
-        from accounting.utils import get_vat_multiplier
+        from accounting.vat import net_from_gross
         from inventory.services import PricingService
 
         product = line_data.get("product")
@@ -80,9 +80,7 @@ class SalesService:
         if sent_gross is not None:
             difference = abs(Decimal(sent_gross) - resolution.price_gross)
         else:
-            resolved_net = (resolution.price_gross / get_vat_multiplier()).quantize(
-                Decimal("1"), rounding="ROUND_HALF_UP"
-            )
+            resolved_net = net_from_gross(resolution.price_gross)
             difference = abs(Decimal(line_data.get("unit_price", 0)) - resolved_net)
 
         if difference <= 1:

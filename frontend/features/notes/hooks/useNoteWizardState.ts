@@ -15,6 +15,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { PricingUtils } from '@/lib/pricing-utils'
+import { useVatRate } from '@/hooks/useVatRate'
 import type {
     NoteLineItem,
     NoteLogisticsData,
@@ -198,6 +199,7 @@ export function useNoteWizardState({
     serverDateString,
     fetchSource,
 }: UseNoteWizardStateOptions): NoteWizardState {
+    const { rate: vatRate } = useVatRate()
     const [sourceDocument, setSourceDocument] = useState<NoteWizardSourceDocument | null>(null)
     const [initializing, setInitializing] = useState(true)
     const [submitting, setSubmitting] = useState(false)
@@ -268,8 +270,8 @@ export function useNoteWizardState({
             return lines.reduce((acc, l) => acc + l.noteQuantity * (l.taxAmountPerUnit ?? 0), 0)
         }
         // Purchase: derive tax from net using PricingUtils
-        return PricingUtils.calculateTax(totalNet)
-    }, [lines, mode, totalNet])
+        return PricingUtils.calculateTax(totalNet, vatRate / 100)
+    }, [lines, mode, totalNet, vatRate])
 
     const total = totalNet + totalTax
 

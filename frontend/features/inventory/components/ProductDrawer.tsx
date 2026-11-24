@@ -36,6 +36,7 @@ import { ChartColumn } from "lucide-react"
 import { ProductAnalyticsModal } from "./ProductAnalyticsModal"
 
 // Product subcomponents and schema
+import { uomPricesGrossPayload } from "./product/grossPricePayload"
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
 import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductVariantsTab } from "./product/ProductVariantsTab"
@@ -494,7 +495,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
             formData.append('name', data.name)
             formData.append('category', data.category)
             formData.append('product_type', data.product_type)
-            formData.append('sale_price', data.sale_price.toString())
+            // ADR-0151: solo el bruto; el backend deriva el neto.
             formData.append('sale_price_gross', (data.sale_price_gross || 0).toString())
             formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
 
@@ -558,7 +559,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, onCr
                 formData.append('variant_updates', JSON.stringify(data.variant_updates))
             }
             if (data.uom_prices && data.uom_prices.length > 0) {
-                formData.append('uom_prices', JSON.stringify(data.uom_prices))
+                formData.append('uom_prices', JSON.stringify(uomPricesGrossPayload(data.uom_prices)))
             }
 
             // Append Subscription fields

@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Package, ChevronRight, Search } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/lib/pricing-utils'
 import { cn } from "@/lib/utils"
 import { BaseModal, Chip, DynamicIcon, EmptyState } from '@/components/shared'
 import { resolveMediaUrl } from '@/lib/media-url'
@@ -162,7 +161,7 @@ export function VariantSelectorModal({
                                 const limit = variantLimits[v.id]
                                 const disabled = isVariantDisabled(v)
                                 const photo = v.image || product.image
-                                const price = Number(v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price))
+                                const price = Number(v.effective_price ?? v.sale_price_gross) || 0
 
                                 const stock = disabled ? (
                                     <Chip size="xs" intent="destructive">{v.has_active_bom ? "Sin insumos" : "Sin stock"}</Chip>
@@ -198,25 +197,25 @@ export function VariantSelectorModal({
                                                 ) : (
                                                     <Package className="size-6" aria-hidden />
                                                 )}
-                                            </span>
-                                            <span className="min-w-0 flex-1">
-                                                <span className="block truncate text-base font-medium">{variantLabel(v)}</span>
-                                                {!!v.attribute_values_data?.length && (
-                                                    <span className="mt-1 flex flex-wrap gap-1">
-                                                        {v.attribute_values_data.map((av) => (
-                                                            <Chip key={av.id} size="xs" intent="neutral">{av.value}</Chip>
-                                                        ))}
-                                                    </span>
-                                                )}
-                                            </span>
-                                            <span className="flex shrink-0 flex-col items-end gap-1">
-                                                <span className="font-mono text-base font-black tabular-nums">{formatCurrency(price)}</span>
-                                                {stock}
-                                            </span>
-                                            <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-                                        </Button>
-                                    </li>
-                                )
+                                             </span>
+                                             <span className="min-w-0 flex-1">
+                                                 <span className="block truncate text-base font-medium">{variantLabel(v)}</span>
+                                                 {!!v.attribute_values_data?.length && (
+                                                     <span className="mt-1 flex flex-wrap gap-1">
+                                                         {v.attribute_values_data.map((av) => (
+                                                             <Chip key={av.id} size="xs" intent="neutral">{av.value}</Chip>
+                                                         ))}
+                                                     </span>
+                                                 )}
+                                             </span>
+                                             <span className="flex shrink-0 flex-col items-end gap-1">
+                                                 <span className="font-mono text-base font-black tabular-nums">{formatCurrency(price)}</span>
+                                                 {stock}
+                                             </span>
+                                             <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                                         </Button>
+                                     </li>
+                                 )
                             })}
                         </ul>
                     </div>

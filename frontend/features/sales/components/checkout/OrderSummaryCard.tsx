@@ -8,6 +8,7 @@ import { translatePaymentMethod } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricingUtils } from '@/lib/pricing-utils'
+import { useVatRate } from '@/hooks/useVatRate'
 
 import { type SaleOrderLine } from "../../types"
 import { type Contact } from "@/types/entities"
@@ -31,13 +32,15 @@ export function OrderSummaryCard({
     paymentMethod,
     paymentAmount,
 }: OrderSummaryCardProps) {
+    const { rate } = useVatRate()
+    const taxRate = rate / 100
     const isExempt = dteType === 'FACTURA_EXENTA' || dteType === 'BOLETA_EXENTA';
 
     // Calculate totals
     const lineDiscounts = orderLines.reduce((acc, line) => acc + (line.discount_amount || 0), 0);
 
-    const net = isExempt ? total : PricingUtils.grossToNet(total);
-    const tax = isExempt ? 0 : PricingUtils.extractTax(total);
+    const net = isExempt ? total : PricingUtils.grossToNet(total, taxRate);
+    const tax = isExempt ? 0 : PricingUtils.extractTax(total, taxRate);
 
     return (
         <div className="h-full flex flex-col bg-muted/20 border border-border/50 shadow-card shadow-black/5 rounded-md">
@@ -81,7 +84,7 @@ export function OrderSummaryCard({
                                         </div>
                                     </div>
                                     <p className="text-xs font-medium whitespace-nowrap pt-0.5">
-                                        {formatCurrency(isExempt ? PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price) : (line.total_gross || PricingUtils.calculateLineTotal(line.qty || line.quantity, line.unit_price_net || line.unit_price)))}
+                                        {formatCurrency(isExempt ? PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price) : (line.total_gross || PricingUtils.calculateLineTotal(line.qty || line.quantity, line.unit_price_net || line.unit_price, taxRate)))}
                                     </p>
                                 </div>
                             ))}

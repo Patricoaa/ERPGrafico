@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { DataCell } from '@/components/shared'
 import { formatCurrency } from '@/lib/money'
 import { useVatRate } from '@/hooks/useVatRate'
+import { grossFromNet } from '@/lib/vat'
 import { PlanningEmptyState } from './PlanningEmptyState'
 import { MaterialLineForm, emptyMaterialLine, type MaterialLineValues } from './MaterialLineForm'
 import { OutsourcedServiceForm, emptyOutsourcedService, type OutsourcedServiceValues } from './OutsourcedServiceForm'
@@ -151,7 +152,7 @@ export function DraftOutsourcingStep({ items, onChange }: DraftListProps<DraftOu
               <div className="min-w-0">
                 <p className="text-xs font-medium truncate">{s.product_name}</p>
                 <p className="text-xs text-muted-foreground tabular-nums truncate">
-                  {s.supplier_name} · {s.quantity} {s.uom_name ?? ''} · {formatCurrency(parseFloat(s.unit_price) * vat)} c/u
+                  {s.supplier_name} · {s.quantity} {s.uom_name ?? ''} · {formatCurrency(grossFromNet(parseFloat(s.unit_price), vat))} c/u
                 </p>
               </div>
             </div>
@@ -166,7 +167,7 @@ export function DraftOutsourcingStep({ items, onChange }: DraftListProps<DraftOu
                   qty: s.quantity,
                   uomId: s.uom_id ? String(s.uom_id) : '',
                   netPrice: s.unit_price,
-                  grossPrice: (parseFloat(s.unit_price) * vat).toFixed(2),
+                  grossPrice: grossFromNet(parseFloat(s.unit_price), vat, { decimals: 2 }).toFixed(2),
                   documentType: s.document_type,
                 })
                 setOpen(true)

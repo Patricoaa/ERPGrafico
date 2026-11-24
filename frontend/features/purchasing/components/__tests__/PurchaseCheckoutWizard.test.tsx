@@ -41,7 +41,7 @@ vi.mock("@/lib/api", () => ({
 }))
 
 vi.mock("@/hooks/useVatRate", () => ({
-    useVatRate: () => ({ rate: 0.19, multiplier: 1.19 }),
+    useVatRate: () => ({ rate: 19, multiplier: 1.19 }),
 }))
 
 vi.mock("@/hooks/useTreasuryAccounts", () => ({

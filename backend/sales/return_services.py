@@ -134,10 +134,10 @@ class ReturnService:
                 unit_price_gross = original_delivery_line.unit_price_gross
             elif unit_price is None:  # Fallback to product current prices
                 unit_price = product.sale_price
-                # Note: gross calculation if product doesn't have it explicitly stored
-                from accounting.utils import get_vat_multiplier
+                # Bruto autoritativo (ADR-0151); fallback defensivo para filas legadas sin bruto
+                from accounting.vat import gross_from_net
 
-                unit_price_gross = product.sale_price * get_vat_multiplier()
+                unit_price_gross = product.sale_price_gross or gross_from_net(product.sale_price)
 
             # Create Line
             SaleReturnLine.objects.create(

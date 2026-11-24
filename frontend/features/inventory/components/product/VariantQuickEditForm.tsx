@@ -19,6 +19,8 @@ import { toast } from "sonner"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 import { BOMDrawer } from "@/features/production"
 import type { BOM, ProductMinimal } from "@/features/production"
+import { grossFromNet, netFromGross } from '@/lib/vat'
+import { fromTypedNet, fromTypedGross, grossOf, variantQuickEditPayload } from './grossPricePayload'
 import { useVatRate } from '@/hooks/useVatRate'
 import { getDomainConceptMessage } from "@/lib/entity-registry"
 import { useUoMs } from "../../hooks/useUoMs"
@@ -33,11 +35,12 @@ const ALL_PRICE_INHERITANCE_OPTIONS = [
 const INHERIT_ONLY_OPTION = [{ label: 'Hereda del template', value: 'INHERIT' }]
 
 const quickEditSchema = z.object({
-  sale_price: z.coerce.number().int("El precio debe ser un número entero").min(0, "El precio no puede ser negativo"),
+  // ADR-0151: el bruto (con IVA) es la autoridad; el neto se deriva.
+  sale_price_gross: z.coerce.number().int("El precio debe ser un número entero").min(0, "El precio no puede ser negativo"),
   code: z.string().optional(),
   sale_uom: z.string().min(1, "La unidad de medida es obligatoria"),
   price_inheritance_mode: z.enum(['INHERIT', 'OVERRIDE', 'SURCHARGE']).default('INHERIT'),
-  price_surcharge: z.coerce.number().int("El sobrecargo debe ser un número entero").min(0).optional(),
+  price_surcharge_gross: z.coerce.number().int("El sobrecargo debe ser un número entero").min(0).optional(),
 })
 
 type QuickEditValues = z.infer<typeof quickEditSchema>
@@ -77,11 +80,11 @@ export function VariantQuickEditForm({
   const form: UseFormReturn<QuickEditValues> = useForm<QuickEditValues>({
     resolver: zodResolver(quickEditSchema) as unknown as Resolver<QuickEditValues>,
     defaultValues: {
-      sale_price: Number(variant.sale_price) || 0,
+      sale_price_gross: grossOf(variant, multiplier),
       code: variant.code || "",
       sale_uom: variant.sale_uom?.toString() || "",
       price_inheritance_mode: hasUomPrices ? 'INHERIT' : ((variant.price_inheritance_mode ?? 'INHERIT') as 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'),
-      price_surcharge: variant.price_surcharge ? Number(variant.price_surcharge) : undefined,
+      price_surcharge_gross: variant.price_surcharge_gross ? Number(variant.price_surcharge_gross) : undefined,
     },
   })
 
@@ -89,17 +92,17 @@ export function VariantQuickEditForm({
 
   useEffect(() => {
     form.reset({
-      sale_price: Number(variant.sale_price) || 0,
+      sale_price_gross: grossOf(variant, multiplier),
       code: variant.code || "",
       sale_uom: variant.sale_uom?.toString() || "",
       price_inheritance_mode: hasUomPrices ? 'INHERIT' : ((variant.price_inheritance_mode ?? 'INHERIT') as 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'),
-      price_surcharge: variant.price_surcharge ? Number(variant.price_surcharge) : undefined,
+      price_surcharge_gross: variant.price_surcharge_gross ? Number(variant.price_surcharge_gross) : undefined,
     })
     setCloneSourceId('none')
     // uoms y availableBOMs se mantienen reactivos vía useUoMs / useBOMs —
     // ya no hace falta refetchear manualmente al cambiar de variant porque
     // el queryKey del useBOMs incluye variant.id (se re-fetchea solo).
-  }, [variant, form, hasUomPrices])
+  }, [variant, form, hasUomPrices, multiplier])
 
   const [pendingDeleteBomId, setPendingDeleteBomId] = useState<number | null>(null)
 
@@ -119,14 +122,14 @@ export function VariantQuickEditForm({
   }
 
   const onSubmit = async (data: QuickEditValues) => {
-    const mode = data.price_inheritance_mode ?? 'INHERIT'
-    const payload = {
-      sale_price: data.sale_price,
+    // ADR-0151: solo el bruto viaja al backend.
+    const payload = variantQuickEditPayload({
+      price_inheritance_mode: data.price_inheritance_mode ?? 'INHERIT',
+      sale_price_gross: data.sale_price_gross,
+      price_surcharge_gross: data.price_surcharge_gross,
       code: data.code || variant.code || "",
       sale_uom: data.sale_uom ? Number(data.sale_uom) : (typeof variant.sale_uom === 'object' ? variant.sale_uom?.id : variant.sale_uom),
-      price_inheritance_mode: mode,
-      price_surcharge: mode === 'SURCHARGE' ? (data.price_surcharge ?? null) : null,
-    }
+    })
     try {
       const res = await updateProduct({ id: variant.id, payload })
       toast.success("Variante guardada")
@@ -137,26 +140,27 @@ export function VariantQuickEditForm({
   }
 
   const currentMode = form.watch('price_inheritance_mode')
-  const templateNet = Number(templateData?.sale_price) || 0
-  const currentSurcharge = form.watch('price_surcharge') || 0
-  const overrideNet = form.watch('sale_price') || 0
+  const templateGross = grossOf(templateData, multiplier)
+  const currentSurchargeGross = form.watch('price_surcharge_gross') || 0
+  const overrideGross = form.watch('sale_price_gross') || 0
 
-  let effectiveNet = 0
-  if (currentMode === 'INHERIT') effectiveNet = templateNet
-  else if (currentMode === 'SURCHARGE') effectiveNet = templateNet + currentSurcharge
-  else effectiveNet = overrideNet
+  let effectiveGross = 0
+  if (currentMode === 'INHERIT') effectiveGross = templateGross
+  else if (currentMode === 'SURCHARGE') effectiveGross = templateGross + currentSurchargeGross
+  else effectiveGross = overrideGross
 
-  const currentIva = effectiveNet * (rate / 100)
-  const currentGross = effectiveNet * multiplier
+  const effectiveNet = netFromGross(effectiveGross, multiplier)
+  const currentIva = effectiveGross - effectiveNet
+  const currentGross = effectiveGross
 
   const handleOverrideNetChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
-    form.setValue("sale_price", Math.round(parseFloat(value) || 0), { shouldDirty: true, shouldValidate: true })
+    form.setValue("sale_price_gross", fromTypedNet(parseFloat(value) || 0, multiplier).gross, { shouldDirty: true, shouldValidate: true })
   }
 
   const handleOverrideGrossChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
-    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / multiplier), { shouldDirty: true, shouldValidate: true })
+    form.setValue("sale_price_gross", fromTypedGross(parseFloat(value) || 0, multiplier).gross, { shouldDirty: true, shouldValidate: true })
   }
 
   const handleCloneBOM = async () => {
@@ -233,12 +237,12 @@ export function VariantQuickEditForm({
                     onChange={(val) => {
                       if (hasUomPrices) return
                       field.onChange(val)
-                      if (val !== 'SURCHARGE') form.setValue('price_surcharge', undefined)
+                      if (val !== 'SURCHARGE') form.setValue('price_surcharge_gross', undefined)
                       const d = form.getValues()
                       onSaved({
                         ...variant,
                         price_inheritance_mode: val as 'INHERIT' | 'OVERRIDE' | 'SURCHARGE',
-                        price_surcharge: val === 'SURCHARGE' ? (d.price_surcharge ?? null) : null,
+                        price_surcharge_gross: val === 'SURCHARGE' ? (d.price_surcharge_gross ?? null) : null,
                       })
                     }}
                     options={priceOptions}
@@ -251,10 +255,10 @@ export function VariantQuickEditForm({
               {form.watch('price_inheritance_mode') === 'SURCHARGE' && (
                 <FormField
                   control={form.control}
-                  name="price_surcharge"
+                  name="price_surcharge_gross"
                   render={({ field, fieldState }) => (
                     <LabeledInput
-                      label="Sobrecargo (Neto)"
+                      label="Sobrecargo (con IVA)"
                       type="number"
                       placeholder="0"
                       error={fieldState.error?.message}
@@ -353,10 +357,10 @@ export function VariantQuickEditForm({
                     onSaved({
                       ...variant,
                       code: val,
-                      sale_price: d.sale_price,
+                      sale_price_gross: d.sale_price_gross,
                       sale_uom: d.sale_uom ? Number(d.sale_uom) : (typeof variant.sale_uom === 'object' ? variant.sale_uom?.id : variant.sale_uom),
                       price_inheritance_mode: mode,
-                      price_surcharge: mode === 'SURCHARGE' ? (d.price_surcharge ?? null) : null,
+                      price_surcharge_gross: mode === 'SURCHARGE' ? (d.price_surcharge_gross ?? null) : null,
                     })
                   }}
                 />

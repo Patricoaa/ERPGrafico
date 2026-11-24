@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils'
 import { formatEntityDisplay, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 import { showApiError } from '@/lib/errors'
 import { useVatRate } from '@/hooks/useVatRate'
+import { grossFromNet } from '@/lib/vat'
 import { useAuth } from '@/contexts/AuthContext'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useOnEntityStackClose } from '@/hooks/useOnEntityStackClose'
@@ -1060,9 +1061,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     <td className="p-2 font-medium">{m.supplier_name}</td>
                     <td className="p-2">{m.component_name}</td>
                     <td className="p-2 text-right">{m.quantity_planned}</td>
-                    <td className="p-2 text-right">{(parseFloat(m.unit_price ?? '0') * vatMultiplier).toFixed(0)}</td>
+                    <td className="p-2 text-right">{grossFromNet(parseFloat(m.unit_price ?? '0'), vatMultiplier).toFixed(0)}</td>
                     <td className="p-2 text-right font-bold">
-                      {(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier).toFixed(0)}
+                      {grossFromNet(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0'), vatMultiplier).toFixed(0)}
                     </td>
                   </tr>
                 ))}

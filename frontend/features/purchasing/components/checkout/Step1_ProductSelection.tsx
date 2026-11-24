@@ -14,6 +14,7 @@ import { useForm, useFieldArray } from "react-hook-form"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { useVatRate } from '@/hooks/useVatRate'
+import { netFromGross } from '@/lib/vat'
 import { useUoMs } from '@/features/inventory'
 import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
@@ -43,7 +44,7 @@ const COLUMNS = [
 
 function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: number }) {
     const [grossInput, setGrossInput] = useState("")
-    const netResult = grossInput ? Math.round(Number(grossInput) / multiplier) : null
+    const netResult = grossInput ? netFromGross(Number(grossInput), multiplier) : null
     const ivaAmount = netResult !== null ? Math.round(Number(grossInput)) - netResult : null
 
     return (

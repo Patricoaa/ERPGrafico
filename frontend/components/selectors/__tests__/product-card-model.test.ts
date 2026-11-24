@@ -160,24 +160,24 @@ describe('getProductCardModel · action', () => {
 
 describe('getProductCardModel · price', () => {
     it('fixed price is shown c/IVA with the lowercase unit', () => {
-        const { price } = getProductCardModel(product({ sale_price: '1000' }), ctx)
+        const { price } = getProductCardModel(product({ sale_price: '1000', sale_price_gross: '1190' }), ctx)
         expect(price).toEqual({ kind: 'fixed', gross: 1190, unit: 'pliego' })
     })
 
     it('templates show "desde" using the cheapest variant', () => {
-        const { price } = getProductCardModel(product({ has_variants: true, sale_price: 1000, min_variant_price: '480' }), ctx)
+        const { price } = getProductCardModel(product({ has_variants: true, sale_price: 1000, min_variant_price: '480', min_variant_price_gross: '571' }), ctx)
         expect(price).toMatchObject({ kind: 'from', gross: 571 })
     })
 
     it('templates without a variant price fall back to the template price', () => {
-        const { price } = getProductCardModel(product({ has_variants: true, sale_price: 1000, min_variant_price: null }), ctx)
+        const { price } = getProductCardModel(product({ has_variants: true, sale_price: 1000, sale_price_gross: 1190, min_variant_price: null, min_variant_price_gross: null }), ctx)
         expect(price).toMatchObject({ kind: 'fixed', gross: 1190 })
     })
 
     it('dynamic pricing replaces the amount, even with a base price or variants', () => {
         const { price } = getProductCardModel(product({ is_dynamic_pricing: true, sale_price: '850' }), ctx)
         expect(price).toEqual({ kind: 'dynamic', gross: null, unit: 'pliego' })
-        const template = getProductCardModel(product({ is_dynamic_pricing: true, has_variants: true, min_variant_price: 480 }), ctx)
+        const template = getProductCardModel(product({ is_dynamic_pricing: true, has_variants: true, min_variant_price: 480, min_variant_price_gross: 571 }), ctx)
         expect(template.price.kind).toBe('dynamic')
     })
 })

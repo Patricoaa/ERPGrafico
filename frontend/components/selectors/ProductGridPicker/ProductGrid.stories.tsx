@@ -24,6 +24,7 @@ const PRODUCTS: BaseProduct[] = Array.from({ length: 24 }, (_, i) => {
         code: `P-${String(i + 1).padStart(4, "0")}`,
         name: NAMES[i % NAMES.length],
         sale_price: 400 + i * 130,
+        sale_price_gross: Math.round((400 + i * 130) * 1.19),
         uom_name: ["Pliego", "Kg", "Cara", "Unidad"][categoryId - 1],
         category: categoryId,
         product_type: isService ? "SERVICE" : "STORABLE",
@@ -32,7 +33,7 @@ const PRODUCTS: BaseProduct[] = Array.from({ length: 24 }, (_, i) => {
         has_variants: i % 6 === 1,
         variants_count: 4,
         variant_axis_label: "Gramaje",
-        min_variant_price: 480,
+        min_variant_price: 480, min_variant_price_gross: 571,
         is_dynamic_pricing: i % 8 === 3,
     }
 })

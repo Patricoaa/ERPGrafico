@@ -102,6 +102,7 @@ export interface Product {
     // Variant price inheritance
     price_inheritance_mode?: 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'
     price_surcharge?: number | string | null
+    price_surcharge_gross?: number | string | null
     effective_price_net?: number | string
 
     // Per-UoM prices

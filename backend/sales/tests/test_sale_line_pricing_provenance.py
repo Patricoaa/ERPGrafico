@@ -193,3 +193,20 @@ def test_provenance_failure_does_not_block_the_sale(customer, product, monkeypat
     assert line.price_source is None
     assert line.pricing_rule is None
     assert line.list_unit_price_gross is None
+
+
+def test_return_without_origin_line_uses_integer_sale_price_gross(db, customer, product):
+    from inventory.models import Warehouse
+    from sales.return_services import ReturnService
+
+    product.sale_price_gross = Decimal("1725")
+    product.save()
+    product.refresh_from_db()
+    order = SaleOrder.objects.create(
+        customer=customer, number="T-RET-1", total=Decimal("0"), total_net=Decimal("0"), total_tax=Decimal("0")
+    )
+    wh = Warehouse.objects.create(name="Bodega Ret", code="BR")
+    ret = ReturnService.create_return_from_note_request(order, [{"product_id": product.id, "quantity": 1}], wh.id)
+    line = ret.lines.get()
+    assert line.unit_price_gross == Decimal("1725")
+    assert line.unit_price == product.sale_price

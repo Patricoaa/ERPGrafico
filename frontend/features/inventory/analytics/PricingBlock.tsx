@@ -4,6 +4,8 @@ import { useMemo } from "react"
 import { ChartSection, DualAxisChart, Metric, MetricStrip } from "@/components/shared"
 import type { DualAxisSeries } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
+import { grossFromNet } from "@/lib/vat"
+import { useVatRate } from "@/hooks/useVatRate"
 import { AnalyticsBlockFrame } from "./AnalyticsBlockFrame"
 import { composePricing } from "./composePricing"
 import { periodToDateFrom, periodToGranularity, type PeriodKey } from "./period"
@@ -39,6 +41,8 @@ export function PricingBlock({ productId, period, capabilities }: PricingBlockPr
 function PricingBody({ data, capabilities }: PricingBlockProps & { data: ProductPricing }) {
     const composition = composePricing(data, capabilities)
     const { today, series, rule_windows: rules } = data
+    // ADR-0151: net → gross only through lib/vat.ts with the configured VAT rate.
+    const { multiplier: vatMultiplier } = useVatRate()
     const totalUnits = data.kpis.units
 
     // Calcular unidades vendidas con el precio de lista vs reglas
@@ -76,7 +80,7 @@ function PricingBody({ data, capabilities }: PricingBlockProps & { data: Product
             type: "line",
             data: series.points.map((p) => ({
                 x: p.period,
-                y: Math.round(p.avg_list_price_gross || (p.avg_list_price ? p.avg_list_price * 1.19 : today.list_price_gross)),
+                y: Math.round(p.avg_list_price_gross || (p.avg_list_price ? grossFromNet(p.avg_list_price, vatMultiplier) : today.list_price_gross)),
             })),
         })
 
@@ -87,13 +91,13 @@ function PricingBody({ data, capabilities }: PricingBlockProps & { data: Product
                 let grossPrice = entry?.avg_price_gross
                 if (grossPrice == null || grossPrice === 0) {
                     if (entry?.avg_price) {
-                        grossPrice = entry.avg_price * 1.19
+                        grossPrice = grossFromNet(entry.avg_price, vatMultiplier)
                     } else if (rule.fixed_price_gross && rule.fixed_price_gross > 0) {
                         grossPrice = rule.fixed_price_gross
                     } else if (rule.fixed_price > 0) {
-                        grossPrice = rule.fixed_price * 1.19
+                        grossPrice = grossFromNet(rule.fixed_price, vatMultiplier)
                     } else if (rule.discount_percentage > 0) {
-                        const base = p.avg_list_price_gross || (p.avg_list_price ? p.avg_list_price * 1.19 : today.list_price_gross)
+                        const base = p.avg_list_price_gross || (p.avg_list_price ? grossFromNet(p.avg_list_price, vatMultiplier) : today.list_price_gross)
                         grossPrice = base * (1 - rule.discount_percentage / 100)
                     } else {
                         grossPrice = today.list_price_gross
@@ -139,7 +143,7 @@ function PricingBody({ data, capabilities }: PricingBlockProps & { data: Product
         }
 
         return { periods, chartSeries }
-    }, [series.points, series.by_rule, rules, today.list_price_gross])
+    }, [series.points, series.by_rule, rules, today.list_price_gross, vatMultiplier])
 
     return (
         <div className="flex flex-col gap-5">
@@ -176,7 +180,7 @@ function PricingBody({ data, capabilities }: PricingBlockProps & { data: Product
                     const grossPrice =
                         rule.rule_type === "DISCOUNT_PERCENTAGE"
                             ? Math.round(today.list_price_gross * (1 - rule.discount_percentage / 100))
-                            : (rule.fixed_price_gross || Math.round(rule.fixed_price * 1.19))
+                            : (rule.fixed_price_gross || grossFromNet(rule.fixed_price, vatMultiplier))
                     const ruleValText = formatMoney(grossPrice)
                     const used = ruleUnitsMap.get(String(rule.rule_id)) ?? 0
 

@@ -7,6 +7,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode, useEf
 import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM, WizardState, Customer } from '../types'
 import * as CartUtils from '../utils/cart-utils'
 import { posApi } from '../api/posApi'
+import { useVatRate } from '@/hooks/useVatRate'
 
 
 
@@ -180,7 +181,8 @@ export function POSProvider({ children }: { children: ReactNode }) {
     }, [defaultCustomerId])
 
     // Computed values
-    const totals = useMemo(() => CartUtils.calculateCartTotals(items, totalDiscountAmount), [items, totalDiscountAmount])
+    const { multiplier } = useVatRate()
+    const totals = useMemo(() => CartUtils.calculateCartTotals(items, totalDiscountAmount, multiplier), [items, totalDiscountAmount, multiplier])
 
     const value = useMemo<POSContextValue>(() => ({
         // Session

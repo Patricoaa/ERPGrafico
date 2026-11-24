@@ -55,6 +55,7 @@ interface CostCalculatorDrawerProps {
 }
 
 import { useVatRate } from '@/hooks/useVatRate'
+import { grossFromNet } from '@/lib/vat'
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawerProps) {
@@ -325,7 +326,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
 
                         <SummaryTotal
                             label="Costo total"
-                            total={formatCurrency(Math.round(totalCost * multiplier))}
+                            total={formatCurrency(grossFromNet(totalCost, multiplier))}
                             breakdown={[
                                 { label: 'Costo neto', value: formatCurrency(totalCost) },
                                 { label: `IVA estimado ${rate}%`, value: formatCurrency(Math.round(totalCost * (rate / 100))) },

@@ -13,6 +13,7 @@ LIST_URL = "/api/inventory/products/"
 def catalog(db):
     from django.contrib.auth import get_user_model
 
+    from accounting.vat import gross_from_net
     from inventory.models import Product, ProductAttribute, ProductAttributeValue, ProductCategory, UoM, UoMCategory
 
     user = get_user_model().objects.create_superuser(username="carduser", password="password")
@@ -31,7 +32,8 @@ def catalog(db):
         template = make(name, has_variants=True)
         for index, price in enumerate(prices):
             variant = make(f"{name} v{index}", parent_template=template)
-            variant.sale_price = Decimal(price)
+            # ADR-0151: el bruto manda; una escritura solo-neto se convierte a bruto.
+            variant.sale_price_gross = gross_from_net(Decimal(price))
             variant.save()
             for attribute in attributes:
                 value, _ = ProductAttributeValue.objects.get_or_create(attribute=attribute, value=f"{attribute.name}-{index}")
@@ -93,11 +95,38 @@ def test_list_query_count_does_not_grow_with_templates(catalog):
     for index in range(1, 6):
         catalog["make_template"](f"Plantilla {index}", ["480", "650", "900"], [catalog["gramaje"]])
     catalog["make"]("Tinta magenta")
+    for index in range(3):
+        _surcharge_variant(catalog, f"Plantilla recargo {index}")
 
     with CaptureQueriesContext(connection) as grown:
         assert client.get(LIST_URL).status_code == 200
 
     assert len(grown) == len(baseline)
+
+
+def _surcharge_variant(catalog, template_name):
+    template = catalog["make"](template_name, has_variants=True, sale_price_gross=Decimal("1000"))
+    return catalog["make"](
+        f"{template_name} V", parent_template=template, sale_price_gross=Decimal("1000"),
+        price_inheritance_mode="SURCHARGE", price_surcharge_gross=Decimal("500"),
+    ), template
+
+
+@pytest.mark.django_db
+def test_variant_row_exposes_inheritance_and_resolved_price(catalog):
+    variant, template = _surcharge_variant(catalog, "Plantilla recargo")
+
+    response = catalog["client"].get(
+        f"{LIST_URL}?parent_template={template.id}&show_technical_variants=true&is_active=true"
+    )
+    row = next(r for r in response.data["results"] if r["id"] == variant.id)
+
+    assert row["price_inheritance_mode"] == "SURCHARGE"
+    assert Decimal(str(row["price_surcharge_gross"])) == Decimal("500")
+    assert "price_surcharge" in row
+    # El precio cobrado (resuelto) es plantilla + recargo, no la copia guardada de la plantilla.
+    assert row["effective_price"] == 1500.0
+    assert row["effective_price_net"] == float(round(1500 / Decimal("1.19")))
 
 
 def test_template_reports_variants_qty_available(catalog):

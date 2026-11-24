@@ -22,6 +22,7 @@ import { UoMSelector } from '@/components/selectors/UoMSelector'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
+import { netFromGross } from '@/lib/vat'
 import { useCoreAllowedDteTypes } from '../../hooks/useProductionQueries'
 import { useUoMs } from '../../hooks'
 import type { Product } from "@/types/entities"
@@ -39,7 +40,7 @@ export interface OutsourcedServiceValues {
   uomId: string
   /** Gross price (with VAT) — stored as string for input ergonomics */
   grossPrice: string
-  /** Net price (without VAT) — derived from grossPrice / vatMultiplier */
+  /** Net price (without VAT) — derived from grossPrice via vat.ts */
   netPrice: string
   documentType: 'FACTURA' | 'BOLETA'
 }
@@ -95,7 +96,7 @@ export function OutsourcedServiceForm({
     onChange({ ...value, ...patch })
 
   const handleGrossPriceChange = (raw: string) => {
-    const net = raw ? (parseFloat(raw) / vatMultiplier).toFixed(2) : '0'
+    const net = raw ? netFromGross(parseFloat(raw), vatMultiplier, { decimals: 2 }).toFixed(2) : '0'
     set({ grossPrice: raw, netPrice: net })
   }
 

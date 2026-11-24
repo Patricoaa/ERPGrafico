@@ -2,6 +2,7 @@
 // Helper functions for cart management
 
 import type { CartItem, Product } from '../types'
+import { netFromGross } from '@/lib/vat'
 import { PricingUtils } from '@/lib/pricing-utils'
 import { getDomainConceptTitle } from '@/lib/entity-registry'
 
@@ -15,11 +16,11 @@ export function generateCartItemId(): string {
 /**
  * Calculate cart totals
  */
-export function calculateCartTotals(items: CartItem[], totalDiscount: number = 0, vatMultiplier: number = 1.19) {
+export function calculateCartTotals(items: CartItem[], totalDiscount: number, vatMultiplier: number) {
     const total_gross_before_global_discount = items.reduce((acc, i) => acc + i.total_gross, 0)
     const line_discounts_sum = items.reduce((acc, i) => acc + (i.discount_amount || 0), 0)
     const total_gross_sum = Math.max(0, total_gross_before_global_discount - totalDiscount)
-    const total_net_sum = Math.round(total_gross_sum / vatMultiplier)
+    const total_net_sum = netFromGross(total_gross_sum, vatMultiplier)
     const total_tax_sum = total_gross_sum - total_net_sum
 
     return {
@@ -43,11 +44,12 @@ export function createCartItem(
     uomName: string | undefined,
     priceNet: number,
     priceGross: number,
+    taxRate: number,
     discountPercentage: number = 0,
     discountAmount: number = 0,
     manufacturingData?: unknown
 ): CartItem {
-    const linePricing = PricingUtils.calculateLineFromGross(qty, priceGross, discountAmount);
+    const linePricing = PricingUtils.calculateLineFromGross(qty, priceGross, discountAmount, taxRate);
 
     return {
         ...product,
@@ -73,10 +75,11 @@ export function updateCartItemQuantity(
     newQty: number,
     newPriceNet: number,
     newPriceGross: number,
+    taxRate: number,
     newDiscountPercentage: number = 0,
     newDiscountAmount: number = 0
 ): CartItem {
-    const linePricing = PricingUtils.calculateLineFromGross(newQty, newPriceGross, newDiscountAmount);
+    const linePricing = PricingUtils.calculateLineFromGross(newQty, newPriceGross, newDiscountAmount, taxRate);
 
     return {
         ...item,

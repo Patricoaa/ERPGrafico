@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UnifiedNoteWizard } from '../UnifiedNoteWizard'
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('@/hooks/useVatRate', () => ({ useVatRate: () => ({ rate: 19, multiplier: 1.19, isLoading: false }) }))
 vi.mock('@/hooks/useServerDate', () => ({ useServerDate: () => ({ dateString: '2026-11-19' }) }))
 
 const fetchSource = async () => ({

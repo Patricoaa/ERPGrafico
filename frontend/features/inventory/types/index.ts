@@ -32,6 +32,8 @@ export interface BaseProduct {
     name: string
     sale_price: string | number
     sale_price_gross?: string | number
+    /** Resolved gross price actually charged (inheritance, UoM prices, rules); use this to display variants (ADR-0151) */
+    effective_price?: string | number
     product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION' | string
     image?: string | null
     image_thumbnail?: string | null
@@ -45,8 +47,10 @@ export interface BaseProduct {
     variants_count?: number
     /** Attribute shared by every variant ("Gramaje"); null when mixed or absent */
     variant_axis_label?: string | null
-    /** Lowest net sale price among active variants (templates only) */
+    /** @deprecated Lowest net sale price among active variants; display uses min_variant_price_gross (ADR-0151) */
     min_variant_price?: string | number | null
+    /** Lowest resolved gross sale price among active variants (templates only) */
+    min_variant_price_gross?: string | number | null
     /** Disponibilidad sumada de las variantes (templates); 0 = ninguna variante tiene existencias */
     variants_qty_available?: number | null
     // Display fields used by ProductGrid and VariantSelectorModal visual badges
@@ -110,12 +114,14 @@ export interface Product {
     uom_category?: number
     price_inheritance_mode?: 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'
     price_surcharge?: string | number | null
+    price_surcharge_gross?: string | number | null
     effective_price_net?: string | number
     qty_on_hand?: number
     has_variants?: boolean
     variants_count?: number
     variant_axis_label?: string | null
     min_variant_price?: string | number | null
+    min_variant_price_gross?: string | number | null
     variants_qty_available?: number | null
     variants?: Product[]
     is_child_variant?: boolean

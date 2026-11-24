@@ -11,6 +11,7 @@ from django.utils import timezone
 from accounting.glosa_builder import GlosaBuilder
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
+from accounting.vat import SalePrice, gross_from_net, net_from_gross, sale_price_from_gross
 
 from .models import (
     InventoryCount,
@@ -761,6 +762,35 @@ class PriceResolution:
     source: str  # "LIST" | "UOM_PRICE" | "RULE"
 
 
+def variant_sale_price(
+    variant: "Product", template: "Product | None", multiplier: Decimal | None = None
+) -> SalePrice:
+    """Precio de venta (neto, bruto) de una variante según su modo de herencia (ADR-0151).
+
+    Función pura: no consulta la BD; el llamador entrega el template ya cargado
+    (p. ej. desde un prefetch). Con filas legadas sin bruto, cae a ``gross_from_net``.
+
+    - INHERIT:   precios del template.
+    - SURCHARGE: bruto del template + ``price_surcharge_gross``; el neto se deriva del bruto.
+    - OVERRIDE:  precio propio de la variante.
+    Sin template devuelve el precio propio. ``multiplier`` opcional evita consultar la tasa por
+    cada fila cuando el llamador procesa listas (se resuelve una vez y se pasa).
+    """
+    if template is None:
+        return SalePrice(net=variant.sale_price, gross=_gross_of(variant, multiplier))
+    mode = variant.price_inheritance_mode
+    if mode == "INHERIT":
+        return SalePrice(net=template.sale_price, gross=_gross_of(template, multiplier))
+    if mode == "SURCHARGE":
+        gross = _gross_of(template, multiplier) + (variant.price_surcharge_gross or Decimal("0"))
+        return sale_price_from_gross(gross, multiplier)
+    return SalePrice(net=variant.sale_price, gross=_gross_of(variant, multiplier))
+
+
+def _gross_of(product: "Product", multiplier: Decimal | None = None) -> Decimal:
+    return product.sale_price_gross or gross_from_net(product.sale_price, multiplier)
+
+
 class PricingService:
     @staticmethod
     def get_product_price(
@@ -778,8 +808,6 @@ class PricingService:
         """
         Like get_product_price, but also reports the list price and the rule that set the price.
         """
-        from accounting.utils import get_vat_multiplier
-
         if date is None:
             date = timezone.localdate()
 
@@ -788,9 +816,7 @@ class PricingService:
 
         if uom is None:
             # If still no UoM, we can't do advanced pricing rules that depend on it
-            list_price = product.sale_price_gross or (product.sale_price * get_vat_multiplier()).quantize(
-                Decimal("1")
-            )
+            list_price = product.sale_price_gross or gross_from_net(product.sale_price)
             return PriceResolution(list_price, list_price, None, "LIST")
 
         # Check for an explicit per-UoM price before falling back to proportional conversion
@@ -868,20 +894,14 @@ class PricingService:
                     if rule.fixed_price_gross is not None:
                         rule_base = rule.fixed_price_gross
                     elif rule.fixed_price is not None:
-                        rule_base = (rule.fixed_price * get_vat_multiplier()).quantize(
-                            Decimal("1"), rounding="ROUND_HALF_UP"
-                        )
+                        rule_base = gross_from_net(rule.fixed_price)
 
                     if (
                         getattr(product, "parent_template_id", None)
                         and product.price_inheritance_mode == "SURCHARGE"
                         and rule.product_id == product.parent_template_id
                     ):
-                        surcharge = product.price_surcharge or Decimal("0")
-                        surcharge_gross = (surcharge * get_vat_multiplier()).quantize(
-                            Decimal("1"), rounding="ROUND_HALF_UP"
-                        )
-                        rule_base += surcharge_gross
+                        rule_base += product.price_surcharge_gross or Decimal("0")
 
                     best_price = rule_base
                 elif rule.rule_type == PricingRule.RuleType.PACKAGE_FIXED:
@@ -889,7 +909,7 @@ class PricingService:
                     p_price = (
                         rule.fixed_price_gross
                         if rule.fixed_price_gross is not None
-                        else (rule.fixed_price * get_vat_multiplier() if rule.fixed_price else None)
+                        else (gross_from_net(rule.fixed_price) if rule.fixed_price else None)
                     )
                     if p_price is not None:
                         # We need to return UNIT price, so we divide by quantity
@@ -905,11 +925,7 @@ class PricingService:
                             and product.price_inheritance_mode == "SURCHARGE"
                             and rule.product_id == product.parent_template_id
                         ):
-                            surcharge = product.price_surcharge or Decimal("0")
-                            surcharge_gross = (surcharge * get_vat_multiplier()).quantize(
-                                Decimal("1"), rounding="ROUND_HALF_UP"
-                            )
-                            unit_price += surcharge_gross
+                            unit_price += product.price_surcharge_gross or Decimal("0")
 
                         best_price = unit_price
                 else:
@@ -932,30 +948,14 @@ class PricingService:
         Devuelve (price_net, price_gross) resolviendo el modo de herencia de precio.
 
         - INHERIT:   usa los precios del template padre directamente.
-        - SURCHARGE: precio_template + price_surcharge (neto); recalcula bruto.
+        - SURCHARGE: bruto del template + price_surcharge_gross; el neto se deriva del bruto.
         - OVERRIDE:  precio propio de la variante (comportamiento anterior).
 
         Si la variante no tiene parent_template, devuelve su precio propio.
         """
-        from accounting.utils import get_vat_multiplier
-
-        vat = get_vat_multiplier()
-        if not variant.parent_template_id:
-            return variant.sale_price, variant.sale_price_gross
-
-        mode = variant.price_inheritance_mode
-        if mode == "INHERIT":
-            t = variant.parent_template
-            return t.sale_price, t.sale_price_gross
-        elif mode == "SURCHARGE":
-            t = variant.parent_template
-            surcharge = variant.price_surcharge or Decimal("0")
-            net = t.sale_price + surcharge
-            gross = (net * vat).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
-            return net, gross
-
-        # OVERRIDE — precio propio
-        return variant.sale_price, variant.sale_price_gross
+        template = variant.parent_template if variant.parent_template_id else None
+        price = variant_sale_price(variant, template)
+        return price.net, price.gross
 
     class ProductNotFound(Exception):
         pass
@@ -964,7 +964,6 @@ class PricingService:
     def get_effective_sale_price(product_id, quantity, uom_id=None):
         from decimal import Decimal
 
-        from accounting.utils import get_vat_multiplier
         from inventory.models import Product, UoM
 
         try:
@@ -980,9 +979,7 @@ class PricingService:
                 pass
 
         price_gross = PricingService.get_product_price(product, Decimal(str(quantity)), uom=uom)
-        price_net = (price_gross / get_vat_multiplier()).quantize(
-            Decimal("1"), rounding="ROUND_HALF_UP"
-        )
+        price_net = net_from_gross(price_gross)
         return {
             "price": float(price_net),
             "price_gross": float(price_gross),
@@ -1295,6 +1292,42 @@ class UoMService:
 MAX_VARIANT_COMBINATIONS = 500
 
 
+def net_write_to_gross(data: dict, net_key: str, gross_key: str, *, clear_on_none: bool) -> dict:
+    """ADR-0151: una escritura solo-neto se convierte a bruto (el bruto manda si vienen ambos).
+
+    Se pre-convierte porque save() no ve el bruto viejo y lo re-derivaría sobre el neto nuevo.
+    Con ``clear_on_none``, un neto None explícito (sin bruto) limpia también el bruto.
+    """
+    if clear_on_none and gross_key in data and data[gross_key] is None and net_key not in data:
+        # Bruto None explícito sin neto: limpia ambos (si no, save() re-derivaría el bruto del neto viejo).
+        data[net_key] = None
+        return data
+    if gross_key in data and data[gross_key] == 0 and net_key not in data:
+        # Bruto 0 explícito sin neto es autoritativo (no "sin definir"): save() trataría 0 como
+        # ausente y re-derivaría el bruto del neto viejo de la instancia.
+        data[net_key] = data[gross_key]
+        return data
+    if data.get(gross_key) is not None or net_key not in data:
+        return data
+    net = data[net_key]
+    if net is not None:
+        data[gross_key] = gross_from_net(net)
+    elif clear_on_none:
+        data[gross_key] = None
+    return data
+
+
+def _net_writes_to_gross(data: dict) -> dict:
+    net_write_to_gross(data, "sale_price", "sale_price_gross", clear_on_none=False)
+    # None limpia el recargo: sin esto el bruto viejo re-derivaría el neto.
+    net_write_to_gross(data, "price_surcharge", "price_surcharge_gross", clear_on_none=True)
+    return data
+
+
+def _uom_price_net_to_gross(data: dict) -> dict:
+    return net_write_to_gross(dict(data), "price_net", "price_gross", clear_on_none=False)
+
+
 def _variant_value_signatures(template):
     """Por cada variante del template, la lista de ids de sus valores de atributo (1 query)."""
     from django.db.models import Prefetch
@@ -1324,6 +1357,7 @@ class ProductService:
         variant_generation_selection = validated_data.pop("variant_generation_selection", None)
         uom_prices_data = validated_data.pop("uom_prices", [])
 
+        _net_writes_to_gross(validated_data)
         product = Product.objects.create(**validated_data)
 
         if allowed_sale_uoms:
@@ -1340,7 +1374,7 @@ class ProductService:
                 BillOfMaterialsLine.objects.create(bom=bom, **line_data)
 
         for uom_price in uom_prices_data:
-            ProductUoMPrice.objects.create(product=product, **uom_price)
+            ProductUoMPrice.objects.create(product=product, **_uom_price_net_to_gross(uom_price))
 
         if variant_generation_selection:
             if not product.has_variants:
@@ -1373,6 +1407,7 @@ class ProductService:
         uom_prices_data = validated_data.pop("uom_prices", None)
 
         # Standard scalar update
+        _net_writes_to_gross(validated_data)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -1442,7 +1477,7 @@ class ProductService:
         if uom_prices_data is not None:
             instance.uom_prices.all().delete()
             for uom_price in uom_prices_data:
-                ProductUoMPrice.objects.create(product=instance, **uom_price)
+                ProductUoMPrice.objects.create(product=instance, **_uom_price_net_to_gross(uom_price))
 
         # Inline variant updates (price, BOM cloning, etc.)
         if variant_updates:
@@ -1454,13 +1489,16 @@ class ProductService:
                 try:
                     variant_product = Product.objects.get(id=variant_id, parent_template=instance)
 
+                    update_data = _net_writes_to_gross(dict(update_data))
                     for field in [
                         "sale_price",
+                        "sale_price_gross",
                         "code",
                         "has_bom",
                         "product_type",
                         "price_inheritance_mode",
                         "price_surcharge",
+                        "price_surcharge_gross",
                     ]:
                         if field in update_data:
                             setattr(variant_product, field, update_data[field])
@@ -1468,6 +1506,7 @@ class ProductService:
                     mode = update_data.get("price_inheritance_mode")
                     if mode == "INHERIT":
                         variant_product.price_surcharge = None
+                        variant_product.price_surcharge_gross = None
 
                     if "sale_uom" in update_data:
                         uom_id = update_data["sale_uom"]
@@ -1583,6 +1622,7 @@ class ProductService:
 
         from accounting.utils import get_vat_multiplier
 
+        vat_mult = get_vat_multiplier()  # una vez por lista, no por fila
         today = timezone.localdate()
         product_ids = [p.id for p in products]
         category_ids = list({p.category_id for p in products if p.category_id})
@@ -1622,10 +1662,15 @@ class ProductService:
             uom_price_by_product_uom[(up.product_id, up.uom_id)] = up
 
         # 3. Compute annotated prices for each product
-        vat_mult = get_vat_multiplier()
+        # Plantillas de las variantes: una sola consulta, sin N+1.
+        templates_by_id = Product.objects.in_bulk(parent_ids) if parent_ids else {}
         for p in products:
-            base_price_gross = p.sale_price_gross
-            base_price_net = p.sale_price
+            if p.parent_template_id and p.parent_template_id in templates_by_id:
+                own = variant_sale_price(p, templates_by_id[p.parent_template_id], vat_mult)
+                base_price_gross, base_price_net = own.gross, own.net
+            else:
+                base_price_gross = p.sale_price_gross
+                base_price_net = p.sale_price
 
             # If product has UoM, try UoMPrice resolution
             if p.uom_id:
@@ -1645,9 +1690,7 @@ class ProductService:
             # If still no base price, fallback to sale_price
             if base_price_gross is None:
                 base_price_gross = (
-                    p.sale_price_gross
-                    or (p.sale_price * vat_mult).quantize(Decimal("1"))
-                    or Decimal("0")
+                    p.sale_price_gross or gross_from_net(p.sale_price, vat_mult) or Decimal("0")
                 )
             if base_price_net is None:
                 base_price_net = p.sale_price or Decimal("0")
@@ -1711,9 +1754,7 @@ class ProductService:
                     if rule.fixed_price_gross is not None:
                         rule_price = rule.fixed_price_gross
                     elif rule.fixed_price is not None:
-                        rule_price = (rule.fixed_price * vat_mult).quantize(
-                            Decimal("1"), rounding="ROUND_HALF_UP"
-                        )
+                        rule_price = gross_from_net(rule.fixed_price, vat_mult)
                     else:
                         continue
 
@@ -1722,11 +1763,7 @@ class ProductService:
                         and p.price_inheritance_mode == "SURCHARGE"
                         and rule.product_id == p.parent_template_id
                     ):
-                        surcharge = p.price_surcharge or Decimal("0")
-                        surcharge_gross = (
-                            surcharge * vat_mult
-                        ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
-                        rule_price += surcharge_gross
+                        rule_price += p.price_surcharge_gross or Decimal("0")
 
                     effective_price_gross = rule_price
 
@@ -1734,7 +1771,7 @@ class ProductService:
                     p_price = (
                         rule.fixed_price_gross
                         if rule.fixed_price_gross is not None
-                        else (rule.fixed_price * vat_mult if rule.fixed_price else None)
+                        else (gross_from_net(rule.fixed_price, vat_mult) if rule.fixed_price else None)
                     )
                     if p_price is not None:
                         unit_price = (p_price / Decimal("1")).quantize(
@@ -1745,11 +1782,7 @@ class ProductService:
                             and p.price_inheritance_mode == "SURCHARGE"
                             and rule.product_id == p.parent_template_id
                         ):
-                            surcharge = p.price_surcharge or Decimal("0")
-                            surcharge_gross = (
-                                surcharge * vat_mult
-                            ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
-                            unit_price += surcharge_gross
+                            unit_price += p.price_surcharge_gross or Decimal("0")
                         effective_price_gross = unit_price
 
                 else:  # DISCOUNT_PERCENTAGE
@@ -1760,9 +1793,7 @@ class ProductService:
                         ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
 
                 # First matching rule wins (highest priority)
-                effective_price_net = (
-                    effective_price_gross / vat_mult
-                ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
+                effective_price_net = net_from_gross(effective_price_gross, vat_mult)
                 break
 
             p.annotated_effective_price = effective_price_gross
@@ -2150,6 +2181,7 @@ class ProductService:
                     can_be_purchased=template.can_be_purchased,
                     parent_template=template,
                     sale_price=template.sale_price,
+                    sale_price_gross=template.sale_price_gross,
                     cost_price=template.cost_price,
                     requires_advanced_manufacturing=template.requires_advanced_manufacturing,
                     mfg_auto_finalize=template.mfg_auto_finalize,
@@ -2235,6 +2267,7 @@ class ProductService:
         updated = variants_qs.update(
             price_inheritance_mode=Product.PriceInheritance.SURCHARGE,
             price_surcharge=Decimal(str(surcharge)),
+            price_surcharge_gross=gross_from_net(Decimal(str(surcharge))),
         )
         return updated
 
@@ -2255,6 +2288,7 @@ class ProductService:
         updated = template.variants.filter(is_active=True).update(
             price_inheritance_mode=Product.PriceInheritance.INHERIT,
             price_surcharge=None,
+            price_surcharge_gross=None,
         )
         return {"updated": updated}
 

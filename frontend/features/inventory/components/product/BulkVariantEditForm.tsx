@@ -18,6 +18,8 @@ import { toast } from "sonner"
 import { BOMDrawer } from "@/features/production"
 import type { ProductMinimal } from "@/features/production"
 import { useVatRate } from '@/hooks/useVatRate'
+import { fromTypedNet, fromTypedGross, grossOf } from "./grossPricePayload"
+import { netFromGross } from "@/lib/vat"
 import { useUoMs } from "../../hooks/useUoMs"
 import { useProductMutations } from "../../hooks/useProductMutations"
 
@@ -35,10 +37,10 @@ const INHERIT_ONLY_OPTION = [
 ]
 
 const bulkEditSchema = z.object({
-  sale_price: z.coerce.number().int("El precio debe ser un número entero").min(0).optional(),
+  sale_price_gross: z.coerce.number().int("El precio debe ser un número entero").min(0).optional(),
   sale_uom: z.string().optional(),
   price_inheritance_mode: z.string().default('none'),
-  price_surcharge: z.coerce.number().int("El sobrecargo debe ser un número entero").min(0).optional(),
+  price_surcharge_gross: z.coerce.number().int("El sobrecargo debe ser un número entero").min(0).optional(),
 })
 
 type BulkEditValues = z.infer<typeof bulkEditSchema>
@@ -73,10 +75,10 @@ export function BulkVariantEditForm({
   const form: UseFormReturn<BulkEditValues> = useForm<BulkEditValues>({
     resolver: zodResolver(bulkEditSchema) as never,
     defaultValues: {
-      sale_price: undefined,
+      sale_price_gross: undefined,
       sale_uom: "",
       price_inheritance_mode: 'none',
-      price_surcharge: undefined,
+      price_surcharge_gross: undefined,
     },
   })
 
@@ -94,9 +96,9 @@ export function BulkVariantEditForm({
 
     if (mode !== 'none') {
       variantPayload.price_inheritance_mode = mode
-      if (mode === 'OVERRIDE' && data.sale_price !== undefined) variantPayload.sale_price = data.sale_price
-      if (mode === 'SURCHARGE' && data.price_surcharge !== undefined) variantPayload.price_surcharge = data.price_surcharge
-      if (mode === 'INHERIT') variantPayload.price_surcharge = null
+      if (mode === 'OVERRIDE' && data.sale_price_gross !== undefined) variantPayload.sale_price_gross = Math.round(data.sale_price_gross)
+      if (mode === 'SURCHARGE' && data.price_surcharge_gross !== undefined) variantPayload.price_surcharge_gross = data.price_surcharge_gross
+      if (mode === 'INHERIT') variantPayload.price_surcharge_gross = null
     }
     if (data.sale_uom && data.sale_uom !== 'none') variantPayload.sale_uom = Number(data.sale_uom)
 
@@ -162,21 +164,22 @@ export function BulkVariantEditForm({
   }
 
   const currentMode = form.watch('price_inheritance_mode')
-  const overrideNet = form.watch('sale_price') ?? 0
-  const currentSurcharge = form.watch('price_surcharge') ?? 0
-  const templateNet = Number(templateData?.sale_price) || 0
+  const overrideGross = form.watch('sale_price_gross') ?? 0
+  const currentSurchargeGross = form.watch('price_surcharge_gross') ?? 0
+  const templateGross = grossOf(templateData, multiplier)
 
   const showPreview = currentMode === 'OVERRIDE' || currentMode === 'SURCHARGE'
-  const previewNet = currentMode === 'OVERRIDE' ? overrideNet : templateNet + currentSurcharge
+  const previewGross = currentMode === 'OVERRIDE' ? overrideGross : templateGross + currentSurchargeGross
+  const previewNet = netFromGross(previewGross, multiplier)
 
   const handleOverrideNetChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
-    form.setValue("sale_price", Math.round(parseFloat(value) || 0), { shouldDirty: true, shouldValidate: true })
+    form.setValue("sale_price_gross", fromTypedNet(parseFloat(value) || 0, multiplier).gross, { shouldDirty: true, shouldValidate: true })
   }
 
   const handleOverrideGrossChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
-    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / multiplier), { shouldDirty: true, shouldValidate: true })
+    form.setValue("sale_price_gross", fromTypedGross(parseFloat(value) || 0, multiplier).gross, { shouldDirty: true, shouldValidate: true })
   }
 
   const cloneSources = [
@@ -242,8 +245,8 @@ export function BulkVariantEditForm({
                     onChange={(val) => {
                       if (hasUomPrices && val !== 'none' && val !== 'INHERIT') return
                       field.onChange(val)
-                      if (val !== 'SURCHARGE') form.setValue('price_surcharge', undefined)
-                      if (val !== 'OVERRIDE') form.setValue('sale_price', undefined)
+                      if (val !== 'SURCHARGE') form.setValue('price_surcharge_gross', undefined)
+                      if (val !== 'OVERRIDE') form.setValue('sale_price_gross', undefined)
                     }}
                     options={priceOptions}
                     disabled={hasUomPrices}
@@ -255,10 +258,10 @@ export function BulkVariantEditForm({
               {currentMode === 'SURCHARGE' && (
                 <FormField
                   control={form.control}
-                  name="price_surcharge"
+                  name="price_surcharge_gross"
                   render={({ field, fieldState }) => (
                     <LabeledInput
-                      label="Sobrecargo (Neto)"
+                      label="Sobrecargo (con IVA)"
                       type="number"
                       placeholder="0"
                       error={fieldState.error?.message}
@@ -284,7 +287,7 @@ export function BulkVariantEditForm({
                 <LabeledInput
                   label={`IVA (${rate}%)`}
                   type="number"
-                  value={showPreview ? (previewNet * (rate / 100)).toFixed(2) : ""}
+                  value={showPreview ? (previewGross - previewNet).toFixed(2) : ""}
                   placeholder="—"
                   readOnly
                   className="h-10 font-medium text-right bg-muted/20 cursor-default text-muted-foreground"
@@ -293,7 +296,7 @@ export function BulkVariantEditForm({
                   label="Precio Bruto"
                   type="number"
                   step="1"
-                  value={showPreview ? String(Math.round(previewNet * multiplier)) : ""}
+                  value={showPreview ? String(previewGross) : ""}
                   placeholder="Mantener"
                   readOnly={currentMode !== 'OVERRIDE'}
                   onChange={(e) => handleOverrideGrossChange(e.target.value)}

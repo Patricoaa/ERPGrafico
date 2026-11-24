@@ -25,6 +25,7 @@ import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import type { Product } from "@/types/entities"
 import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, FormSplitLayout, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell, Banner, fadeInClass } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
+import { grossFromNet, netFromGross } from "@/lib/vat"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatQuantity } from "@/lib/money"
 
@@ -231,7 +232,7 @@ export function BOMDrawer({
                     uom_name: l.uom_name || "",
                     supplier: l.supplier?.toString() || "",
                     supplier_name: l.supplier_name || "",
-                    gross_price: l.unit_price ? parseFloat(l.unit_price) * vatMultiplier : 0,
+                    gross_price: l.unit_price ? grossFromNet(parseFloat(l.unit_price), vatMultiplier) : 0,
                     document_type: l.document_type || "FACTURA",
                     notes: l.notes || ""
                 }))
@@ -264,7 +265,7 @@ export function BOMDrawer({
                 uom: l.uom ? parseInt(l.uom) : null,
                 is_outsourced: true,
                 supplier: parseInt(l.supplier),
-                unit_price: Math.round(l.gross_price / vatMultiplier),
+                unit_price: netFromGross(l.gross_price, vatMultiplier),
                 document_type: l.document_type,
                 notes: l.notes
             }))
@@ -309,7 +310,7 @@ export function BOMDrawer({
     const yieldQuantity = Number(form.watch("yield_quantity")) || 0
     const yieldUomName = uoms.find((u: UoM) => String(u.id) === String(form.watch("yield_uom")))?.name
     const materialsCost = watchedLines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * lineUnitCost(l), 0)
-    const servicesCost = watchedServices.reduce((sum, l) => sum + (Number(l.quantity) || 0) * ((Number(l.gross_price) || 0) / vatMultiplier), 0)
+    const servicesCost = watchedServices.reduce((sum, l) => sum + (Number(l.quantity) || 0) * netFromGross(Number(l.gross_price) || 0, vatMultiplier), 0)
     const costs = {
         materials: materialsCost,
         services: servicesCost,
