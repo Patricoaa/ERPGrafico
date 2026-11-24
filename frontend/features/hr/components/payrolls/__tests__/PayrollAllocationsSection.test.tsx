@@ -18,10 +18,10 @@ const allocation: PayrollAllocation = {
     kind_display: "Anticipo", installment: null, installment_number: null, amount: "40000", principal_part: "40000", interest_part: "0",
 }
 
-const advance = { id: 3, display_id: "MOV-3", kind: "ADVANCE", kind_display: "Anticipo", amount: "100000", balance: 60000, status: "POSTED", installments: [] } as unknown as EmployeeMovement
+const advance = { id: 3, display_id: "MOV-3", kind: "ADVANCE", kind_display: "Anticipo", amount: "100000", balance: 60000, free_balance: 60000, status: "POSTED", installments: [] } as unknown as EmployeeMovement
 const loan = {
-    id: 4, display_id: "MOV-4", kind: "LOAN", kind_display: "Préstamo", amount: "600000", balance: 600000, status: "POSTED",
-    installments: [{ id: 1, number: 1, year: 2026, month: 12, principal: 97529, interest: 6000, amount: 103529, status: "PENDING" }],
+    id: 4, display_id: "MOV-4", kind: "LOAN", kind_display: "Préstamo", amount: "600000", balance: 600000, free_balance: 600000, status: "POSTED",
+    installments: [{ id: 1, number: 1, year: 2026, month: 12, principal: 97529, interest: 6000, amount: 103529, status: "PENDING", is_allocated: false }],
 } as unknown as EmployeeMovement
 
 const renderSection = (over: Partial<React.ComponentProps<typeof PayrollAllocationsSection>> = {}) =>

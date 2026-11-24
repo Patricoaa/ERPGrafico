@@ -54,13 +54,15 @@ def _fixed_payment(balance: int, r: Decimal, n: int) -> int:
 def _amortize(balance: int, r: Decimal, n: int, first: tuple[int, int], start_number: int) -> list[InstallmentSpec]:
     if n < 1:
         raise ValueError("El préstamo requiere al menos una cuota.")
+    n = min(n, balance)  # cada cuota amortiza al menos $1 de capital: no hay cuotas de monto 0
     payment = _fixed_payment(balance, r, n)
     year, month = first
     remaining = balance
     rows: list[InstallmentSpec] = []
     for i in range(n):
         interest = _round(Decimal(remaining) * r)
-        principal = remaining if i == n - 1 else payment - interest
+        # Deja al menos $1 de capital a cada cuota posterior; la última absorbe el redondeo.
+        principal = remaining if i == n - 1 else min(max(payment - interest, 1), remaining - (n - 1 - i))
         rows.append(InstallmentSpec(start_number + i, year, month, principal, interest, principal + interest))
         remaining -= principal
         year, month = _next_period(year, month)

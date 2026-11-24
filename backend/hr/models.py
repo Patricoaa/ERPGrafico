@@ -596,14 +596,20 @@ class EmployeeMovement(TimeStampedModel):
     @property
     def applied_principal(self) -> Decimal:
         """Capital ya descontado: asignaciones a liquidaciones contabilizadas."""
-        total = self.allocations.filter(payroll__status="POSTED").aggregate(total=models.Sum("principal_part"))["total"]
-        return total or Decimal("0")
+        return sum((a.principal_part for a in self.allocations.all() if a.payroll.status == "POSTED"), Decimal("0"))
 
     @property
     def balance(self) -> Decimal:
-        if self.kind == self.Kind.PAYMENT:
-            return Decimal("0")
+        if self.kind == self.Kind.PAYMENT or self.status not in (self.Status.POSTED, self.Status.SETTLED):
+            return Decimal("0")  # borrador o anulado: no hay saldo vivo
         return self.amount - self.applied_principal
+
+    @property
+    def free_balance(self) -> Decimal:
+        """Capital aún sin asignar a ninguna liquidación (borradores incluidos)."""
+        if self.kind == self.Kind.PAYMENT or self.status != self.Status.POSTED:
+            return Decimal("0")
+        return self.amount - sum((a.principal_part for a in self.allocations.all()), Decimal("0"))
 
 
 class LoanInstallment(TimeStampedModel):

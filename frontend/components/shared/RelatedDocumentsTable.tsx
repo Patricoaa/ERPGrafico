@@ -88,6 +88,7 @@ export const RELATED_ROLE_LABELS: Record<string, string> = {
     corrected_invoice: "Factura corregida",
     note: "Nota",
     payment: "Pago",
+    employee_movement: "Movimiento con empleado",
     work_order: "Orden de trabajo",
     stock_move: "Movimiento de stock",
     inventory_document: "Documento de inventario",

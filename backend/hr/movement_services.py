@@ -6,7 +6,7 @@
 
 from dataclasses import dataclass, replace
 from datetime import date as date_type
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -64,6 +64,17 @@ def _specs_to_rows(movement, specs) -> list[LoanInstallment]:
     ]
 
 
+def _to_amount(value) -> Decimal:
+    """Monto entero positivo en CLP; cualquier otra cosa es un error de validación (no un 500)."""
+    try:
+        amount = Decimal(str(value))
+    except InvalidOperation:
+        raise ValidationError(_("El monto no es un número válido.")) from None
+    if not amount.is_finite() or amount != amount.to_integral_value() or amount <= 0:
+        raise ValidationError(_("El monto debe ser un entero mayor a cero."))
+    return amount
+
+
 def _rebuild_pending(movement) -> None:
     """Recalcula las cuotas sin asignación con el capital restante y el plazo restante original."""
     pending = list(movement.installments.filter(allocations__isnull=True).order_by("number"))
@@ -89,7 +100,14 @@ def _next_free_installment(movement):
 class EmployeeMovementService:
     @staticmethod
     def preview_schedule(amount: int, rate: Decimal, rate_period: str, installments: int, first: tuple[int, int]):
-        return loans.build_schedule(int(amount), loans.monthly_rate(Decimal(rate), rate_period), installments, first)
+        principal = _to_amount(amount)
+        try:
+            rate_value = Decimal(str(rate))
+        except InvalidOperation:
+            raise ValidationError(_("La tasa no es un número válido.")) from None
+        if rate_value < 0 or installments < 1 or not 1 <= first[1] <= 12:
+            raise ValidationError(_("Tasa, cuotas o mes de primera cuota inválidos."))
+        return loans.build_schedule(int(principal), loans.monthly_rate(rate_value, rate_period), installments, first)
 
     @staticmethod
     def create_from_request(validated: dict, raw: dict, user) -> EmployeeMovement:
@@ -166,7 +184,9 @@ class EmployeeMovementService:
             raise ValidationError(_("Configure la cuenta Préstamos a Trabajadores antes de desembolsar un préstamo."))
         if movement.kind == EmployeeMovement.Kind.ADVANCE and not settings.account_anticipos:
             raise ValidationError(_("Configure la cuenta Anticipos de Remuneraciones antes de desembolsar un anticipo."))
-        account = TreasuryAccount.objects.get(pk=treasury.treasury_account_id)
+        account = TreasuryAccount.objects.filter(pk=treasury.treasury_account_id).first()
+        if account is None:
+            raise ValidationError(_("La cuenta de tesorería no existe."))
         method = PaymentMethod.objects.filter(pk=treasury.payment_method_id).first() if treasury.payment_method_id else None
         is_loan = movement.kind == EmployeeMovement.Kind.LOAN
         label = "Préstamo" if is_loan else "Anticipo de sueldo"
@@ -209,7 +229,7 @@ class EmployeeMovementService:
         free = movement.amount - _committed_principal(movement)
         installment = None
         if movement.kind == EmployeeMovement.Kind.ADVANCE:
-            value = Decimal(amount) if amount is not None else free
+            value = _to_amount(amount) if amount is not None else free
             if value <= 0 or value > free:
                 raise ValidationError(_("El monto debe ser mayor a cero y no exceder el saldo del anticipo."))
             principal_part, interest_part = value, Decimal("0")
@@ -217,7 +237,7 @@ class EmployeeMovementService:
             installment = _next_free_installment(movement)
             if installment is None:
                 raise ValidationError(_("El préstamo no tiene cuotas pendientes."))
-            value = Decimal(amount) if amount is not None else installment.amount
+            value = _to_amount(amount) if amount is not None else installment.amount
             principal_part, interest_part = EmployeeMovementService._split_loan(movement, free, value)
 
         assigned = payroll.allocations.aggregate(total=Sum("amount"))["total"] or Decimal("0")
@@ -252,7 +272,8 @@ class EmployeeMovementService:
         from core.services.document import lock_document
 
         movement = lock_document(allocation.movement)
-        if allocation.payroll.status != Payroll.Status.DRAFT:
+        payroll = lock_document(allocation.payroll)
+        if payroll.status != Payroll.Status.DRAFT:
             raise ValidationError(_("La liquidación está contabilizada; no se pueden cambiar sus asignaciones."))
         allocation.delete()  # el post_delete reconstruye las cuotas pendientes
 
@@ -279,7 +300,8 @@ class EmployeeMovementService:
 
     @staticmethod
     def cap_warning(payroll) -> str | None:
-        cap = GlobalHRSettings.objects.get_or_create(pk=1)[0].loan_deduction_cap_percent
+        configured = GlobalHRSettings.objects.filter(pk=1).first()  # un GET no escribe: sin fila rige el valor por defecto
+        cap = configured.loan_deduction_cap_percent if configured else GlobalHRSettings._meta.get_field("loan_deduction_cap_percent").default
         deductions = payroll.allocations.exclude(movement__kind=EmployeeMovement.Kind.PAYMENT).aggregate(
             total=Sum("amount")
         )["total"] or Decimal("0")

@@ -20,7 +20,7 @@ def forward(apps, schema_editor):
     Movement = apps.get_model("hr", "EmployeeMovement")
     Allocation = apps.get_model("hr", "PayrollAllocation")
 
-    for adv in SalaryAdvance.objects.all():
+    for adv in SalaryAdvance.objects.order_by("created_at", "pk"):
         movement = Movement.objects.create(
             employee_id=adv.employee_id, kind="ADVANCE", date=adv.date, amount=adv.amount, notes=adv.notes,
             status=ADVANCE_TO_MOVEMENT[adv.status], journal_entry_id=adv.journal_entry_id,
@@ -29,7 +29,7 @@ def forward(apps, schema_editor):
         if adv.payroll_id:
             _allocation(Allocation, movement, adv.payroll_id, adv.amount).save()
 
-    for pay in PayrollPayment.objects.filter(payment_type="SALARIO").select_related("payroll"):
+    for pay in PayrollPayment.objects.filter(payment_type="SALARIO").select_related("payroll").order_by("created_at", "pk"):
         movement = Movement.objects.create(
             employee_id=pay.payroll.employee_id, kind="PAYMENT", date=pay.date, amount=pay.amount, notes=pay.notes,
             status="CANCELLED" if pay.status == "CANCELLED" else "POSTED", journal_entry_id=pay.journal_entry_id,

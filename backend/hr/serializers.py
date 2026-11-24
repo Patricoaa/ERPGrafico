@@ -30,6 +30,21 @@ def _validate_assignable_employee(serializer, employee):
     return employee
 
 
+_LOAN_TERM_FIELDS = ("rate", "installments_count", "first_installment_month")
+
+
+def _validate_loan_terms(terms: dict) -> None:
+    errors = {}
+    if terms["rate"] is not None and terms["rate"] < 0:
+        errors["rate"] = "La tasa no puede ser negativa."
+    if terms["installments_count"] is not None and terms["installments_count"] < 1:
+        errors["installments_count"] = "El préstamo requiere al menos una cuota."
+    if terms["first_installment_month"] is not None and not 1 <= terms["first_installment_month"] <= 12:
+        errors["first_installment_month"] = "El mes debe estar entre 1 y 12."
+    if errors:
+        raise serializers.ValidationError(errors)
+
+
 class GlobalHRSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = GlobalHRSettings
@@ -274,9 +289,14 @@ class PayrollAllocationSerializer(serializers.ModelSerializer):
 
 
 class LoanInstallmentSerializer(serializers.ModelSerializer):
+    is_allocated = serializers.SerializerMethodField()
+
+    def get_is_allocated(self, obj):
+        return bool(obj.allocations.all())
+
     class Meta:
         model = LoanInstallment
-        fields = ["id", "number", "year", "month", "principal", "interest", "amount", "status"]
+        fields = ["id", "number", "year", "month", "principal", "interest", "amount", "status", "is_allocated"]
         read_only_fields = fields
 
 
@@ -290,7 +310,8 @@ class EmployeeMovementSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     installments = LoanInstallmentSerializer(many=True, read_only=True)
     allocations = PayrollAllocationSerializer(many=True, read_only=True)
-    balance = serializers.SerializerMethodField()
+    balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    free_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     payment_method_name = serializers.SerializerMethodField()
     is_editable = IsEditableField()
 
@@ -300,15 +321,9 @@ class EmployeeMovementSerializer(serializers.ModelSerializer):
             "id", "display_id", "employee", "employee_name", "employee_display_id", "kind", "kind_display",
             "date", "amount", "notes", "status", "status_display", "journal_entry", "is_editable",
             "rate", "rate_period", "installments_count", "first_installment_year", "first_installment_month",
-            "installments", "allocations", "balance", "payment_method_name", "created_at", "updated_at",
+            "installments", "allocations", "balance", "free_balance", "payment_method_name", "created_at", "updated_at",
         ]
         read_only_fields = ["id", "status", "journal_entry", "created_at", "updated_at"]
-
-    def get_balance(self, obj):
-        if obj.kind == EmployeeMovement.Kind.PAYMENT:
-            return 0
-        applied = getattr(obj, "applied_annot", None)
-        return obj.amount - (applied if applied is not None else obj.applied_principal)
 
     def get_payment_method_name(self, obj):
         try:
@@ -322,6 +337,11 @@ class EmployeeMovementSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if self.instance is not None:
+            if "kind" in attrs and attrs["kind"] != self.instance.kind:
+                raise serializers.ValidationError({"kind": "El tipo de un movimiento no se puede cambiar."})
+            if self.instance.kind == EmployeeMovement.Kind.LOAN:
+                merged = {f: attrs.get(f, getattr(self.instance, f)) for f in _LOAN_TERM_FIELDS}
+                _validate_loan_terms(merged)
             return attrs
         kind = attrs.get("kind")
         if kind not in (EmployeeMovement.Kind.ADVANCE, EmployeeMovement.Kind.LOAN):
@@ -331,6 +351,7 @@ class EmployeeMovementSerializer(serializers.ModelSerializer):
             missing = {f: "Requerido para préstamos." for f in required if attrs.get(f) is None}
             if missing:
                 raise serializers.ValidationError(missing)
+            _validate_loan_terms({f: attrs[f] for f in _LOAN_TERM_FIELDS})
         return attrs
 
 

@@ -22,10 +22,10 @@ interface PayrollAllocationsSectionProps {
 /** Monto sugerido al asignar: la próxima cuota de un préstamo o el saldo de un anticipo. */
 function suggestedAmount(movement: EmployeeMovement): string {
     if (movement.kind === "LOAN") {
-        const next = movement.installments.find((i) => i.status === "PENDING")
+        const next = movement.installments.find((i) => i.status === "PENDING" && !i.is_allocated)
         return next ? String(Number(next.amount)) : ""
     }
-    return String(movement.balance)
+    return String(movement.free_balance)
 }
 
 /** Anticipos y préstamos descontados en una liquidación (ADR-0156). */
@@ -35,7 +35,7 @@ export function PayrollAllocationsSection({ payrollId, employeeId, isPosted, all
     const [busy, setBusy] = useState<number | null>(null)
     const { allocate, deallocate } = useEmployeeMovementMutations()
     const { movements, isLoading, isError } = useEmployeeMovements({ employee: String(employeeId), status: "POSTED" })
-    const pending = movements.filter((mv) => mv.kind !== "PAYMENT" && Number(mv.balance) > 0)
+    const pending = movements.filter((mv) => mv.kind !== "PAYMENT" && Number(mv.free_balance) > 0)
 
     const handleAssign = async (movement: EmployeeMovement) => {
         setBusy(movement.id)
@@ -120,7 +120,7 @@ export function PayrollAllocationsSection({ payrollId, employeeId, isPosted, all
                         <div key={mv.id} data-testid="pending-movement" className="flex items-end justify-between gap-3 rounded-sm border px-3 py-2 text-sm">
                             <div className="flex flex-col gap-1">
                                 <span className="font-medium">{mv.display_id}</span>
-                                <span className="text-xs text-muted-foreground">{mv.kind_display} · saldo <MoneyDisplay amount={mv.balance} /></span>
+                                <span className="text-xs text-muted-foreground">{mv.kind_display} · saldo libre <MoneyDisplay amount={mv.free_balance} /></span>
                                 <StatusBadge status={mv.status} label={mv.status_display} size="sm" />
                             </div>
                             <LabeledInput

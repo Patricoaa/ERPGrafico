@@ -32,7 +32,7 @@ def test_movement_defaults_and_display_id(employee):
     movement = EmployeeMovement.objects.create(employee=employee, kind="ADVANCE", date=date(2026, 9, 1), amount=50000)
     assert movement.status == EmployeeMovement.Status.DRAFT
     assert movement.display_id.startswith("MOV-")
-    assert movement.balance == Decimal("50000")
+    assert movement.balance == Decimal("0")  # borrador: sin saldo vivo hasta contabilizarse
 
 
 def test_allocation_check_constraint_rejects_inconsistent_parts(employee):

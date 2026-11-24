@@ -608,10 +608,14 @@ class PayrollService:
         return payroll
 
 
+@transaction.atomic
 def post_payroll(payroll):
     """
     Contabiliza la liquidación usando el asiento de remuneraciones v2.
     """
+    from core.services.document import lock_document
+
+    lock_document(payroll)  # serializa contra asignar/des-asignar sobre la misma liquidación
     from accounting.models import AccountingSettings, JournalEntry, JournalItem
 
     from .models import PayrollConcept

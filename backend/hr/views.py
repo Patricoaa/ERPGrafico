@@ -502,6 +502,8 @@ class EmployeeMovementViewSet(AuditHistory, EditPolicyMixin, viewsets.ModelViewS
 
     @action(detail=True, methods=["post"])
     def allocate(self, request, pk=None):
+        if not request.user.has_perm("hr.change_payroll"):
+            return Response({"detail": "Requiere permiso para modificar liquidaciones."}, status=status.HTTP_403_FORBIDDEN)
         movement = self.get_object()
         try:
             payroll = Payroll.objects.get(pk=request.data.get("payroll"))
@@ -526,6 +528,8 @@ class EmployeeMovementViewSet(AuditHistory, EditPolicyMixin, viewsets.ModelViewS
                 request.data["amount"], request.data["rate"], request.data["rate_period"],
                 int(request.data["installments"]), (int(request.data["first_year"]), int(request.data["first_month"])),
             )
+        except ValidationError as e:
+            return _bad_request(e)
         except (KeyError, ValueError, TypeError) as e:
             return Response({"detail": f"Parámetros inválidos: {e}"}, status=status.HTTP_400_BAD_REQUEST)
         return Response([vars(r) for r in rows])

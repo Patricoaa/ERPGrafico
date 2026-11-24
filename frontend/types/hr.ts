@@ -175,6 +175,7 @@ export interface LoanInstallment {
   interest: string | number
   amount: string | number
   status: LoanInstallmentStatus
+  is_allocated: boolean
 }
 
 export interface PayrollAllocation {
@@ -218,6 +219,7 @@ export interface EmployeeMovement {
   allocations: PayrollAllocation[]
   /** Capital aún no descontado en una liquidación contabilizada. */
   balance: number | string
+  free_balance: number | string
   payment_method_name?: string | null
   created_at: string
   updated_at: string
