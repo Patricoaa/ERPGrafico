@@ -17,10 +17,11 @@ stability: contract-changes-require-ADR
 
 | Token Tailwind | CSS Var | Fuente | Uso |
 |----------------|---------|--------|-----|
-| `font-sans` | `--font-sans` | Onest (variable 100–900) | **Única fuente de texto** (UI) |
-| `font-mono` | `--font-mono` | JetBrains Mono (bundleada vía `next/font`) | Cifras, datos tabulares, códigos, IDs, valores KPI |
+| `font-sans` | `--font-sans` | Onest (variable 100–900, autoalojada vía `next/font/local`) | **Única fuente de texto** (UI) |
+| `font-mono` | `--font-mono` | JetBrains Mono (autoalojada en `frontend/app/fonts` vía `next/font/local`) | Cifras, datos tabulares, códigos, IDs, valores KPI |
 
 - Onest es la única fuente de texto; JetBrains Mono solo se usa para datos. No existe `font-heading`.
+- Las dos fuentes se sirven desde el repo (`frontend/app/fonts/*.woff2`, subset latin, licencia OFL) con `next/font/local`: el build no depende de Google Fonts. Para actualizarlas se reemplaza el `.woff2` (fuente: paquetes `@fontsource-variable/*`).
 - Toda la jerarquía tipográfica se construye con: weight, size, tracking y text-transform.
 - `font-sans` es el default del `body` — no necesita declararse explícitamente en componentes.
 - Siempre usar `font-mono` + `tabular-nums` en columnas financieras para evitar layout shifts.
