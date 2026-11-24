@@ -29,7 +29,6 @@ import {
     Chip,
     Drawer,
     LabeledInput,
-    LabeledContainer,
     CancelButton,
     IconButton,
     PeriodValidationDateInput,
@@ -41,12 +40,10 @@ import {
     StatusBadge,
     DocumentDrawerShell,
     DocumentActionsMenu,
-    DocumentLifecycle,
     DocumentFieldGrid,
     type DocumentActionItem,
     type DocumentField,
     type DocumentSheetTab,
-    type LifecycleStep,
     Section,
 } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -199,13 +196,7 @@ function JournalEntryViewContent({
     const secondary = resolved.filter((r) => r.action.id !== "post-entry" && r.action.id !== "delete-entry")
     const destructive = resolved.find((r) => r.action.id === "delete-entry") ?? null
 
-    const lifecycleSteps = journalEntry ? getJournalEntryLifecycle(journalEntry) : null
     const lines = journalEntry?.items ?? []
-
-    const openRelationsAt = (stepId: string) => {
-        setDomain(["origin", "accounting", "treasury"].includes(stepId) ? (stepId as DocumentDomain) : null)
-        setTab("relations")
-    }
 
     const tabs: DocumentSheetTab[] = journalEntry
         ? [
@@ -240,7 +231,7 @@ function JournalEntryViewContent({
                 <PrintableLayout ref={printRef} title="Asiento Contable" displayId={String(displayId ?? "")}>
                     <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
-                            <span>Descripción:</span>
+                            <span>Glosa:</span>
                             <span>{journalEntry.description || "-"}</span>
                         </div>
                         {journalEntry.source_document && (
@@ -302,15 +293,6 @@ function JournalEntryViewContent({
                 isLoading={loading || (!journalEntry && !isError)}
                 error={isError ? new Error("No se pudo cargar el asiento") : undefined}
                 loadingLabel="Cargando asiento contable"
-                lifecycle={
-                    lifecycleSteps && (
-                        <DocumentLifecycle
-                            steps={lifecycleSteps}
-                            onStepClick={openRelationsAt}
-                            activeStepId={tab === "relations" ? domain : null}
-                        />
-                    )
-                }
                 tabs={tabs}
                 tab={tab}
                 onTabChange={setTab}
@@ -341,7 +323,7 @@ function JournalEntrySummaryTab({ entry }: { entry: JournalEntry }) {
             value: entry.date ? format(toDate(entry.date), "dd/MM/yyyy") : "—",
         },
         {
-            label: "Descripción",
+            label: "Glosa",
             value: entry.description || "—",
         },
         ...(entry.reversal_of
@@ -378,32 +360,6 @@ function JournalEntrySummaryTab({ entry }: { entry: JournalEntry }) {
             </section>
         </div>
     )
-}
-
-function getJournalEntryLifecycle(entry: JournalEntry): LifecycleStep[] {
-    const steps: LifecycleStep[] = [{ id: "origin", label: "Origen", icon: FileText, status: "success" }]
-
-    if (entry.is_manual) {
-        steps.push({ id: "draft", label: "Borrador", icon: FileText, status: "active" })
-    } else {
-        steps.push({ id: "auto", label: "Generado", icon: FileText, status: "success" })
-    }
-
-    if (entry.status === "POSTED" || entry.status === "CLOSED" || entry.status === "REVERSAL") {
-        steps.push({ id: "posted", label: "Publicado", icon: FileText, status: "success" })
-    } else {
-        steps.push({ id: "posted", label: "Publicar", icon: FileText, status: "neutral" })
-    }
-
-    if (entry.status === "CLOSED") {
-        steps.push({ id: "closed", label: "Cerrado", icon: FileText, status: "success" })
-    } else if (entry.status === "REVERSAL") {
-        steps.push({ id: "reversal", label: "Reversión", icon: FileText, status: "destructive" })
-    } else if (entry.status === "POSTED") {
-        steps.push({ id: "closed", label: "Cerrar periodo", icon: FileText, status: "neutral" })
-    }
-
-    return steps
 }
 
 function getSectionActions(
@@ -565,7 +521,6 @@ function JournalEntryFormContent({
         }
     }
 
-    const entryStatus = (initialData as unknown as { status?: string } | undefined)?.status ?? "DRAFT"
     const width = formDrawerWidth("master", !!initialData?.id)
     const formValues = form.watch()
 
@@ -581,17 +536,7 @@ function JournalEntryFormContent({
             <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)}>
                 <fieldset disabled={isViewMode} className="contents">
                     <div className="grid grid-cols-12 gap-4">
-                        <div className="col-span-3">
-                            <LabeledContainer label="Estado" disabled containerClassName="pointer-events-none">
-                                <StatusBadge status={entryStatus} size="sm" variant="badge" />
-                            </LabeledContainer>
-                        </div>
-                        <div className="col-span-3">
-                            <LabeledContainer label="Origen" disabled containerClassName="pointer-events-none">
-                                <Chip size="xs" intent="neutral">Manual</Chip>
-                            </LabeledContainer>
-                        </div>
-                        <div className="col-span-6">
+                        <div className="col-span-4">
                             <FormField
                                 control={form.control}
                                 name="date"
@@ -608,16 +553,13 @@ function JournalEntryFormContent({
                                 )}
                             />
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-12 gap-4 mt-4">
-                        <div className="col-span-12">
+                        <div className="col-span-8">
                             <FormField
                                 control={form.control}
                                 name="description"
                                 render={({ field, fieldState }) => (
                                     <LabeledInput
-                                        label="Descripción"
+                                        label="Glosa"
                                         required
                                         placeholder="Venta de mercadería..."
                                         error={fieldState.error?.message}
@@ -628,13 +570,15 @@ function JournalEntryFormContent({
                         </div>
                     </div>
 
-                    <Section.Header spaced title="Líneas del Asiento" className="space-y-2" />
+                    <section className="space-y-4">
+                        <Section.Header spaced title="Líneas del Asiento" />
 
-                    <AccountingLinesTable
-                        control={form.control as unknown as Control<FieldValues>}
-                        name="items"
-                        disabled={isViewMode}
-                    />
+                        <AccountingLinesTable
+                            control={form.control as unknown as Control<FieldValues>}
+                            name="items"
+                            disabled={isViewMode}
+                        />
+                    </section>
 
                     <FormMessage className="text-right" />
                     {form.formState.errors.items?.root && (
@@ -669,7 +613,7 @@ function JournalEntryFormContent({
                 <PrintableLayout ref={printRef} title="Asiento Contable" displayId={`#${entityId}`}>
                     <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
-                            <span>Descripción:</span>
+                            <span>Glosa:</span>
                             <span>{formValues.description || "-"}</span>
                         </div>
                         <div className="flex justify-between">

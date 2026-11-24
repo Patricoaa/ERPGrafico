@@ -31,13 +31,13 @@ const TotalsFooter = ({ control, name, disabled }: { control: Control<FieldValue
         <tfoot className="border-t bg-muted/30">
             <tr>
                 <td className="px-3 py-2 text-3xs font-bold uppercase tracking-widest text-muted-foreground">Total</td>
-                <td />
                 <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success-text" : "text-destructive")}>
                     <MoneyDisplay amount={totalDebit} inline />
                 </td>
                 <td className={cn("px-3 py-2 text-xs font-semibold text-right tabular-nums font-mono", isBalanced ? "text-success-text" : "text-destructive")}>
                     <MoneyDisplay amount={totalCredit} inline />
                 </td>
+                <td />
                 {!disabled && <td />}
             </tr>
         </tfoot>
@@ -65,9 +65,9 @@ interface AccountingLinesTableProps {
 
 const COLUMNS = [
     { header: "Cuenta",  width: "w-[300px]", align: "center" as const },
-    { header: "Glosa",                        align: "center" as const },
     { header: "Debe",   width: "w-[150px]",   align: "center" as const },
     { header: "Haber",  width: "w-[150px]",   align: "center" as const },
+    { header: "Concepto",                     align: "center" as const },
     { header: "",       width: "w-[50px]" },
 ]
 
@@ -79,7 +79,7 @@ const COLUMNS = [
  * **AccountingLinesTable**
  *
  * Specialized table for entering double-entry accounting journal lines.
- * Wraps `FormLineItemsTable` and injects AccountSelector, glosa input,
+ * Wraps `FormLineItemsTable` and injects AccountSelector, concept input,
  * debit/credit numeric inputs, and a real-time balance footer.
  *
  * Used for:
@@ -113,21 +113,6 @@ export function AccountingLinesTable({ control, name, isLoading, disabled }: Acc
                                             <AccountSelector value={field.value as string} onChange={field.onChange} className="w-full" disabled={disabled} />
                                         </FormControl>
                                         <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </TableCell>
-
-                        {/* Glosa */}
-                        <TableCell className="p-3">
-                            <FormField
-                                control={control}
-                                name={`${name}.${index}.label`}
-                                render={({ field }) => (
-                                    <FormItem className="space-y-0">
-                                        <FormControl>
-                                            <LabeledInput {...field} className={cn(tableInputClass, "text-center font-bold")} />
-                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -171,6 +156,21 @@ export function AccountingLinesTable({ control, name, isLoading, disabled }: Acc
                                                 onFocus={e => e.target.select()}
                                                 className={cn(tableInputClass, "text-right font-mono font-bold")}
                                             />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </TableCell>
+
+                        {/* Concepto */}
+                        <TableCell className="p-3">
+                            <FormField
+                                control={control}
+                                name={`${name}.${index}.label`}
+                                render={({ field }) => (
+                                    <FormItem className="space-y-0">
+                                        <FormControl>
+                                            <LabeledInput {...field} className={cn(tableInputClass, "text-center font-bold")} />
                                         </FormControl>
                                     </FormItem>
                                 )}
