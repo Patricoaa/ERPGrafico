@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 
 from contacts.models import Contact
 from core.documents.relations import RELATIONS_MIN_VISIBLE, RELATIONS_RECENT_MONTHS, apply_window
-from hr.models import Employee, SalaryAdvance
+from hr.models import Employee, EmployeeMovement
 
 TODAY = date(2026, 11, 23)
 
@@ -77,7 +77,7 @@ def employee_with_old_advances(db):
     contact = Contact.objects.create(name="Ana Pérez", tax_id="11111111-1")
     employee = Employee.objects.create(contact=contact, base_salary=500000)
     for month in range(1, 13):
-        SalaryAdvance.objects.create(employee=employee, amount=1000, date=date(2024, month, 10))
+        EmployeeMovement.objects.create(employee=employee, kind="ADVANCE", amount=1000, date=date(2024, month, 10), status="POSTED")
     user = get_user_model().objects.create_superuser(username="hr_admin", password="x")
     client = APIClient()
     client.force_authenticate(user=user)
@@ -85,7 +85,7 @@ def employee_with_old_advances(db):
 
 
 def _advances(body):
-    return [r for r in body["relations"] if r["role"] == "salary_advance"]
+    return [r for r in body["relations"] if r["role"] == "employee_movement"]
 
 
 @pytest.mark.django_db

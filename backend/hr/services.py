@@ -14,7 +14,7 @@ from django.utils.translation import gettext_lazy as _
 
 from accounting.glosa_builder import GlosaBuilder, Roles
 
-from .models import Employee, EmployeeConceptAmount, LoanInstallment, Payroll, SalaryAdvance
+from .models import Employee, EmployeeConceptAmount, LoanInstallment, Payroll
 from .movement_services import EmployeeMovementService, payroll_balance  # noqa: F401  (ADR-0156)
 
 
@@ -960,104 +960,4 @@ class PayrollPaymentService:
             is_pending_registration=is_pending_registration,
             created_by=created_by,
             amount=amount,
-        )
-
-class SalaryAdvanceService:
-    @staticmethod
-    @transaction.atomic
-    def create_advance_with_payment(
-        advance,
-        *,
-        payment_method_id: int | str | None,
-        treasury_account_id: int | str | None,
-        payment_method_slug: str = "",
-        transaction_number: str | None = None,
-        user=None,
-    ) -> None:
-        """
-        After creating a SalaryAdvance, optionally registers a treasury outbound
-        movement (payment) for the advance and links its journal entry.
-        """
-        if not payment_method_id or not treasury_account_id:
-            return
-
-        from treasury.models import PaymentMethod, TreasuryAccount, TreasuryMovement
-        from treasury.services import TreasuryService
-
-        try:
-            treasury_account = TreasuryAccount.objects.get(pk=int(treasury_account_id))
-        except (TreasuryAccount.DoesNotExist, ValueError):
-            return
-
-        payment_method_obj = None
-        try:
-            payment_method_obj = PaymentMethod.objects.get(pk=int(payment_method_id))
-        except (PaymentMethod.DoesNotExist, ValueError):
-            pass
-
-        movement = TreasuryService.create_movement(
-            amount=advance.amount,
-            movement_type=TreasuryMovement.Type.OUTBOUND,
-            from_account=treasury_account,
-            payment_method=payment_method_slug or TreasuryMovement.Method.CASH,
-            payment_method_new=payment_method_obj,
-            transaction_number=transaction_number,
-            reference=f"Anticipo de sueldo: {advance.employee.contact.name} - {advance.date}",
-            date=advance.date,
-            partner=advance.employee.contact,
-            payroll=advance.payroll,
-            payroll_payment_type=TreasuryMovement.PayrollPaymentType.ADVANCE,
-            created_by=user,
-        )
-        if movement and movement.journal_entry:
-            advance.journal_entry = movement.journal_entry
-            advance.status = SalaryAdvance.Status.PAID
-            advance.save(update_fields=["journal_entry", "status"])
-
-    @staticmethod
-    @transaction.atomic
-    def annul_advance(advance, *, reason: str, user=None):
-        """Anula un anticipo pagado y no descontado: anula su pago en tesorería
-        (asiento de reversa) y lo deja CANCELLED (ADR-0091)."""
-        from core.services.document import lock_document
-        from treasury.services import TreasuryService
-
-        lock_document(advance)
-        if advance.status == SalaryAdvance.Status.CANCELLED:
-            return advance
-        if advance.status != SalaryAdvance.Status.PAID:
-            raise ValidationError(_("Solo se pueden anular anticipos pagados y no descontados."))
-        if advance.payroll_id is not None:
-            raise ValidationError(_("Desvincule el anticipo de la liquidación antes de anularlo."))
-
-        movement = getattr(advance.journal_entry, "treasury_movement", None)
-        if movement is None:
-            raise ValidationError(_("El anticipo no tiene un pago de tesorería asociado."))
-        TreasuryService.annul_movement(movement, user=user, reason=reason, from_owner=True)
-
-        advance.status = SalaryAdvance.Status.CANCELLED
-        advance.save(update_fields=["status"])
-        return advance
-
-    @staticmethod
-    @transaction.atomic
-    def create_advance_from_serializer(serializer, request_data, user) -> None:
-        if "amount" in request_data:
-            from decimal import Decimal
-            try:
-                serializer.validated_data["amount"] = Decimal(str(request_data["amount"]))
-            except (ValueError, TypeError):
-                pass
-        if "date" in request_data:
-            serializer.validated_data["date"] = request_data["date"]
-
-        advance = serializer.save()
-
-        SalaryAdvanceService.create_advance_with_payment(
-            advance,
-            payment_method_id=request_data.get("payment_method_new"),
-            treasury_account_id=request_data.get("treasury_account_id"),
-            payment_method_slug=request_data.get("paymentMethod", ""),
-            transaction_number=request_data.get("transaction_number"),
-            user=user,
         )

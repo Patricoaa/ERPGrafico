@@ -69,13 +69,6 @@ _SENSITIVE_PERM_SETS: dict[str, frozenset[str]] = {
         "hr.annul_payrollpayment",
         # hr.pay_payrollpayment doesn't exist in current schema; omitted
     }),
-    "hr.salary_advances": frozenset({
-        "hr.view_salaryadvance",
-        "hr.add_salaryadvance",
-        "hr.change_salaryadvance",
-        "hr.delete_salaryadvance",
-        "hr.annul_salaryadvance",
-    }),
     "hr.employee_movements": frozenset({
         "hr.view_employeemovement",
         "hr.add_employeemovement",
@@ -311,12 +304,6 @@ _SENSITIVE_BUNDLE_METADATA: dict[str, Bundle] = {
         key="hr.payroll",
         label="Nómina",
         description="Contabilizar, pagar y anular nóminas. Acceso completo al módulo de nómina.",
-        sensitive=True,
-    ),
-    "hr.salary_advances": Bundle(
-        key="hr.salary_advances",
-        label="Anticipos de Sueldo",
-        description="Gestión completa de anticipos de sueldo incluyendo anulación.",
         sensitive=True,
     ),
     "hr.employee_movements": Bundle(

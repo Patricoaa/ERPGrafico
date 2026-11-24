@@ -45,7 +45,6 @@ DRAWER_DETAIL_ENTITIES: set[str] = {
     "treasury.treasurymovement",  # lista /treasury/operaciones/movements; detalle en drawer
     "treasury.treasuryaccount",  # lista /treasury/operaciones/accounts; detalle en drawer
     "hr.absence",  # lista /hr/absences; detalle en drawer
-    "hr.salaryadvance",  # lista /hr/advances; detalle en drawer
     "sales.saledelivery",  # lista /sales/dtes/fulfillment; detalle en drawer (ADR-0090)
     "sales.salereturn",  # lista /sales/dtes/fulfillment; detalle en drawer (ADR-0090)
     "purchasing.purchasereceipt",  # lista /purchasing/dtes/fulfillment; detalle en drawer (ADR-0090)

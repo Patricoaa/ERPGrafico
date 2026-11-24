@@ -940,7 +940,6 @@ class TreasuryService:
     # Documents whose payment movement must be annulled through the document
     # itself (ADR-0091): (reverse accessor on JournalEntry, is_many, label).
     _OWNER_ACCESSORS = (
-        ("salary_advances", True, "el anticipo de sueldo"),
         ("employee_movements", True, "el movimiento con el empleado"),
         ("payroll_payments", True, "el pago de la liquidación"),
         ("f29_payment", False, "el pago F29"),

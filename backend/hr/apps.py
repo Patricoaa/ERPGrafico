@@ -18,7 +18,6 @@ class HrConfig(AppConfig):
                     ("view_dashboard_hr", "Can view HR dashboard"),
                     ("post_payroll", "Puede contabilizar nómina"),
                     ("pay_payroll", "Puede pagar nómina/previred"),
-                    ("annul_salaryadvance", "Puede anular anticipo de sueldo"),
                     ("annul_employeemovement", "Puede anular movimientos con el empleado"),
                     ("annul_payrollpayment", "Puede anular pago de nómina"),
                 ],
@@ -29,7 +28,7 @@ class HrConfig(AppConfig):
         try:
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
-            from hr.models import Absence, Employee, Payroll, PayrollConcept, SalaryAdvance
+            from hr.models import Absence, Employee, Payroll, PayrollConcept
 
             UniversalRegistry.register(
                 SearchableEntity(
@@ -78,23 +77,6 @@ class HrConfig(AppConfig):
                     list_url="/hr/absences",
                     detail_url_pattern="/hr/absences/{id}",
                     permission="hr.view_absence",
-                )
-            )
-            UniversalRegistry.register(
-                SearchableEntity(
-                    model=SalaryAdvance,
-                    label="hr.salaryadvance",
-                    title_singular="Anticipo de Sueldo",
-                    title_plural="Anticipos de Sueldo",
-                    icon="hand-coins",
-                    search_fields=("employee__contact__name", "notes"),
-                    short_display_template=f"{EntityPrefix.SALARY_ADVANCE}-{{id}}",
-                    display_template=f"{EntityPrefix.SALARY_ADVANCE}-{{id}} · {{employee.contact.name}}",
-                    subtitle_template="{date}",
-                    extra_info_template="{amount}",
-                    list_url="/hr/advances",
-                    detail_url_pattern="/hr/advances/{id}",
-                    permission="hr.view_salaryadvance",
                 )
             )
             UniversalRegistry.register(

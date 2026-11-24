@@ -120,8 +120,8 @@ def test_absence_for_archived_employee_is_rejected_but_existing_stays_editable(c
 def test_advance_for_archived_employee_is_rejected(client):
     emp = _employee("Ana", "1-9", is_active=False)
     r = client.post(
-        "/api/hr/advances/",
-        {"employee": emp.id, "amount": "10000", "date": "2026-11-10"},
+        "/api/hr/employee-movements/",
+        {"employee": emp.id, "kind": "ADVANCE", "amount": "10000", "date": "2026-11-10"},
         format="json",
     )
     assert r.status_code == 400

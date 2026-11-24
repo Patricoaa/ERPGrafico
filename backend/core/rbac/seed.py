@@ -53,7 +53,6 @@ _ALL_MODULE_BUNDLES: list[str] = [
 _ALL_SENSITIVE_BUNDLES: list[str] = [
     "core.security",
     "hr.payroll",
-    "hr.salary_advances",
     "hr.employee_movements",
     "treasury.payments",
     "treasury.credit_cards",
@@ -68,7 +67,6 @@ _ALL_READ_BUNDLES: list[str] = [f"{app}.read" for app in _ALL_MODULE_APPS]
 # Sensitive bundles excluded from Gerencia
 _GERENCIA_EXCLUDED_SENSITIVE: frozenset[str] = frozenset({
     "hr.payroll",
-    "hr.salary_advances",
     "hr.employee_movements",
     "treasury.payments",
     "treasury.credit_cards",
@@ -217,7 +215,6 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "hr.operate",
             "hr.manage",
             "hr.payroll",
-            "hr.salary_advances",
             "hr.employee_movements",
     "hr.employee_movements",
         ],

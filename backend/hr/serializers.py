@@ -17,7 +17,6 @@ from .models import (
     PayrollAllocation,
     PayrollItem,
     PayrollPayment,
-    SalaryAdvance,
 )
 
 
@@ -461,80 +460,6 @@ class PayrollListSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-
-
-class SalaryAdvanceSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source="employee.contact.name", read_only=True)
-    employee_display_id = serializers.CharField(source="employee.display_id", read_only=True)
-    payroll_display_id = serializers.CharField(source="payroll.display_id", read_only=True)
-    payment_method_name = serializers.SerializerMethodField()
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
-    is_editable = IsEditableField()
-
-    class Meta:
-        model = SalaryAdvance
-        fields = [
-            "id",
-            "employee",
-            "employee_name",
-            "employee_display_id",
-            "payroll",
-            "payroll_display_id",
-            "amount",
-            "date",
-            "notes",
-            "status",
-            "status_display",
-            "is_editable",
-            "journal_entry",
-            "payment_method_name",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "status", "journal_entry", "created_at", "updated_at"]
-
-    def validate_employee(self, employee):
-        return _validate_assignable_employee(self, employee)
-
-    def validate(self, attrs):
-        if "payroll" not in attrs:
-            return attrs
-        target = attrs["payroll"]
-        if self.instance is None:
-            if target is not None:
-                raise serializers.ValidationError(
-                    {"payroll": "El anticipo se vincula desde la liquidación, no al crearlo."}
-                )
-            return attrs
-        current = self.instance.payroll
-        if target == current:
-            return attrs
-        if self.instance.status != SalaryAdvance.Status.PAID:
-            raise serializers.ValidationError(
-                {"payroll": "Solo un anticipo pagado y no descontado puede vincularse o desvincularse."}
-            )
-        for payroll in (current, target):
-            if payroll is not None and payroll.status != Payroll.Status.DRAFT:
-                raise serializers.ValidationError(
-                    {"payroll": "La liquidación está contabilizada; no se pueden cambiar sus anticipos."}
-                )
-        if target is not None and target.employee_id != self.instance.employee_id:
-            raise serializers.ValidationError(
-                {"payroll": "La liquidación pertenece a otro empleado."}
-            )
-        return attrs
-
-    def get_payment_method_name(self, obj):
-        if obj.journal_entry:
-            # Try to get the treasury movement associated with this journal entry
-            try:
-                movement = obj.journal_entry.treasury_movement
-                if movement.payment_method_new:
-                    return movement.payment_method_new.name
-                return movement.get_payment_method_display()
-            except Exception:
-                pass
-        return None
 
 
 class PayrollDetailSerializer(serializers.ModelSerializer):

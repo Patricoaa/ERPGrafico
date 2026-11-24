@@ -526,68 +526,6 @@ class Absence(models.Model):
         return f"{self.get_absence_type_display()} - {self.employee} ({self.days} días)"
 
 
-class SalaryAdvance(models.Model):
-    """
-    Anticipo de sueldo entregado al trabajador.
-    """
-
-    employee = models.ForeignKey(
-        Employee, on_delete=models.PROTECT, related_name="advances", verbose_name=_("Empleado")
-    )
-    payroll = models.ForeignKey(
-        "Payroll",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="advances",
-        verbose_name=_("Liquidación Asociada"),
-        help_text=_("Liquidación (en borrador o contabilizada) que descuenta el anticipo."),
-    )
-    amount = models.DecimalField(
-        _("Monto"), max_digits=14, decimal_places=0, validators=[MinValueValidator(Decimal("0.01"))]
-    )
-    date = models.DateField(_("Fecha del Anticipo"))
-    notes = models.TextField(_("Notas"), blank=True)
-
-    class Status(models.TextChoices):
-        DRAFT = "DRAFT", _("Borrador")
-        PAID = "PAID", _("Pagado")
-        DISCOUNTED = "DISCOUNTED", _("Descontado")
-        CANCELLED = "CANCELLED", _("Anulado")
-
-    status = models.CharField(
-        _("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT
-    )
-
-    # ADR-0091: once paid, only notes and the payroll link (validated in the
-    # serializer) change; corrections go through annul_advance.
-    edit_policy = EditPolicy(
-        editable_statuses=frozenset({"DRAFT"}),
-        mutable_when_locked=frozenset({"notes", "payroll"}),
-        deletable=True,
-    )
-
-    journal_entry = models.ForeignKey(
-        "accounting.JournalEntry",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="salary_advances",
-        verbose_name=_("Asiento Contable"),
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-date"]
-        verbose_name = _("Anticipo de Sueldo")
-        verbose_name_plural = _("Anticipos de Sueldo")
-
-    def __str__(self):
-        return f"Anticipo {self.employee} - ${self.amount} ({self.date})"
-
-
 class EmployeeMovement(TimeStampedModel):
     """
     Movimiento de dinero con el empleado (ADR-0156): pago de remuneración, anticipo o préstamo.
@@ -718,18 +656,17 @@ class PayrollAllocation(TimeStampedModel):
 
 class PayrollPayment(models.Model):
     """
-    Registro del pago efectivo de remuneraciones o previred.
+    Pago de Previred de una liquidación (el pago de remuneración es un EmployeeMovement, ADR-0156).
     """
 
     class PaymentType(models.TextChoices):
-        SALARIO = "SALARIO", _("Pago de Remuneración")
         PREVIRED = "PREVIRED", _("Pago de Previred")
 
     payroll = models.ForeignKey(
         "Payroll", on_delete=models.CASCADE, related_name="payments", verbose_name=_("Liquidación")
     )
     payment_type = models.CharField(
-        _("Tipo"), max_length=10, choices=PaymentType.choices, default=PaymentType.SALARIO
+        _("Tipo"), max_length=10, choices=PaymentType.choices, default=PaymentType.PREVIRED
     )
     amount = models.DecimalField(
         _("Monto Pagado"),

@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission
 from rest_framework.test import APIClient
 
 from contacts.models import Contact
-from hr.models import Absence, Employee, Payroll, PayrollPayment, SalaryAdvance
+from hr.models import Absence, Employee, EmployeeMovement, Payroll, PayrollPayment
 
 pytestmark = pytest.mark.django_db
 
@@ -18,13 +18,15 @@ def hr_world(db):
     contact = Contact.objects.create(name="Ana Pérez", tax_id="11111111-1")
     employee = Employee.objects.create(contact=contact, base_salary=500000)
     payroll = Payroll.objects.create(employee=employee, period_year=2026, period_month=9, base_salary=500000)
-    advance = SalaryAdvance.objects.create(employee=employee, amount=50000, date=date(2026, 9, 10))
+    advance = EmployeeMovement.objects.create(
+        employee=employee, kind="ADVANCE", amount=50000, date=date(2026, 9, 10), status="POSTED"
+    )
     absence = Absence.objects.create(
         employee=employee, absence_type="AUSENTISMO",
         start_date=date(2026, 9, 2), end_date=date(2026, 9, 3), days=2,
     )
     payment = PayrollPayment.objects.create(
-        payroll=payroll, payment_type=PayrollPayment.PaymentType.SALARIO, amount=450000, date=date(2026, 9, 30),
+        payroll=payroll, payment_type=PayrollPayment.PaymentType.PREVIRED, amount=70000, date=date(2026, 9, 30),
     )
     admin = get_user_model().objects.create_superuser(username="hr_admin", password="x")
     client = APIClient()
@@ -47,8 +49,8 @@ def _roles(relations):
 
 def test_employee_relations_list_hr_documents(hr_world):
     relations = _relations(hr_world["client"], "hr.employee", hr_world["employee"].pk)
-    assert {"payroll", "salary_advance", "absence", "payroll_payment", "contact"} <= _roles(relations)
-    hr_roles = {"payroll", "salary_advance", "absence", "payroll_payment"}
+    assert {"payroll", "employee_movement", "absence", "payroll_payment", "contact"} <= _roles(relations)
+    hr_roles = {"payroll", "employee_movement", "absence", "payroll_payment"}
     assert all(r["target"]["domain"] == "hr" for r in relations if r["role"] in hr_roles)
 
 
@@ -60,7 +62,7 @@ def test_payroll_relations_include_employee(hr_world):
 
 def test_advance_absence_and_payment_point_to_employee_or_payroll(hr_world):
     client = hr_world["client"]
-    assert "employee" in _roles(_relations(client, "hr.salaryadvance", hr_world["advance"].pk))
+    assert "employee" in _roles(_relations(client, "hr.employeemovement", hr_world["advance"].pk))
     assert "employee" in _roles(_relations(client, "hr.absence", hr_world["absence"].pk))
     payment_roles = _roles(_relations(client, "hr.payrollpayment", hr_world["payment"].pk))
     assert {"payroll", "employee"} <= payment_roles
@@ -97,7 +99,7 @@ def _add_posted_payroll(employee, month):
     )
     pay_entry = JournalEntry.objects.create(date=timezone.localdate(), description=f"Pago {month}", status=JournalEntry.State.POSTED)
     PayrollPayment.objects.create(
-        payroll=payroll, payment_type=PayrollPayment.PaymentType.SALARIO, amount=1, date=date(2025, month, 28),
+        payroll=payroll, payment_type=PayrollPayment.PaymentType.PREVIRED, amount=1, date=date(2025, month, 28),
         journal_entry=pay_entry,
     )
 

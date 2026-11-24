@@ -27,7 +27,6 @@ from .models import (
     PayrollConcept,
     PayrollItem,
     PayrollPayment,
-    SalaryAdvance,
 )
 from .payroll_pdf import generate_payroll_pdf
 from .serializers import (
@@ -44,7 +43,6 @@ from .serializers import (
     PayrollListSerializer,
     PayrollPaymentSerializer,
     PayrollWriteSerializer,
-    SalaryAdvanceSerializer,
 )
 from .movement_services import EmployeeMovementService
 from .selectors import employee_movements_for_list
@@ -403,56 +401,6 @@ class EmployeeConceptAmountViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeConceptAmountSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["employee", "concept"]
-
-
-# --- Salary Advances ---
-
-
-class SalaryAdvanceFilter(django_filters.FilterSet):
-    employee = django_filters.NumberFilter(field_name="employee__id")
-    payroll = django_filters.NumberFilter(field_name="payroll__id")
-    payroll_isnull = django_filters.BooleanFilter(field_name="payroll", lookup_expr="isnull")
-    date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
-    date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
-    employee_name = django_filters.CharFilter(field_name="employee__contact__name", lookup_expr="icontains")
-
-    class Meta:
-        model = SalaryAdvance
-        fields = ["employee", "payroll", "payroll_isnull", "status", "date_from", "date_to", "employee_name"]
-
-
-class SalaryAdvanceViewSet(EditPolicyMixin, viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
-    queryset = SalaryAdvance.objects.select_related(
-        "employee", "employee__contact", "payroll",
-        "journal_entry__treasury_movement__payment_method_new",
-    ).all()
-    serializer_class = SalaryAdvanceSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = SalaryAdvanceFilter
-    action_permissions = {
-        "annul": "hr.annul_salaryadvance",
-    }
-
-    def perform_create(self, serializer):
-        from .services import SalaryAdvanceService
-
-        SalaryAdvanceService.create_advance_from_serializer(
-            serializer, self.request.data, self.request.user
-        )
-
-    @action(detail=True, methods=["post"])
-    def annul(self, request, pk=None):
-        from .services import SalaryAdvanceService
-
-        try:
-            advance = SalaryAdvanceService.annul_advance(
-                self.get_object(), reason=request.data.get("reason", ""), user=request.user
-            )
-        except ValidationError as e:
-            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
-            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(self.get_serializer(advance).data)
 
 
 # --- Payroll Payments ---

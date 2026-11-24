@@ -19,7 +19,8 @@ DocumentTypeRegistry.register(DocumentType(
     partner_path="employee.contact", detail=lambda a: join(a.get_absence_type_display(), a.days and f"{a.days} d"),
 ))
 DocumentTypeRegistry.register(DocumentType(
-    label="hr.salaryadvance", date_field="date", partner_path="employee.contact",
+    label="hr.employeemovement", date_field="date", partner_path="employee.contact",
+    detail=lambda m: m.get_kind_display(),
 ))
 DocumentTypeRegistry.register(DocumentType(
     label="hr.payrollpayment", date_field="date", partner_path="payroll.employee.contact",
@@ -40,8 +41,8 @@ def employee_relations(employee):
         yield Link("association", "outgoing", "payroll", payroll, **_LOOSE)
         for payment in payroll.payments.all():
             yield Link("association", "outgoing", "payroll_payment", payment, amount=payment.amount, **_LOOSE)
-    for advance in employee.advances.select_related("journal_entry"):
-        yield Link("association", "outgoing", "salary_advance", advance, amount=advance.amount, **_LOOSE)
+    for movement in employee.movements.select_related("journal_entry"):
+        yield Link("association", "outgoing", "employee_movement", movement, amount=movement.amount, **_LOOSE)
     for absence in employee.absences.all():
         yield Link("association", "outgoing", "absence", absence, **_LOOSE)
 
@@ -51,21 +52,23 @@ def payroll_relations(payroll):
     yield Link("association", "outgoing", "employee", payroll.employee, **_LOOSE)
     for movement in payroll.treasury_movements.all():
         yield Link("settlement", "incoming", "payment", movement, amount=movement.amount)
+    for allocation in payroll.allocations.select_related("movement__journal_entry"):
+        yield Link("association", "incoming", "employee_movement", allocation.movement, amount=allocation.amount)
     for field in ("journal_entry", "previred_journal_entry"):
         if getattr(payroll, f"{field}_id"):
             yield Link("posting", "outgoing", "journal_entry", getattr(payroll, field))
 
 
-@relation_provider("hr.salaryadvance")
-def salary_advance_relations(advance):
-    yield Link("association", "outgoing", "employee", advance.employee, **_LOOSE)
-    if advance.payroll_id:
-        yield Link("association", "outgoing", "payroll", advance.payroll, **_LOOSE)
-    if advance.journal_entry_id:
-        yield Link("posting", "outgoing", "journal_entry", advance.journal_entry)
-        movement = related_or_none(advance.journal_entry, "treasury_movement")
-        if movement is not None:
-            yield Link("settlement", "incoming", "payment", movement, amount=movement.amount)
+@relation_provider("hr.employeemovement")
+def employee_movement_relations(movement):
+    yield Link("association", "outgoing", "employee", movement.employee, **_LOOSE)
+    for allocation in movement.allocations.select_related("payroll"):
+        yield Link("association", "outgoing", "payroll", allocation.payroll, amount=allocation.amount)
+    if movement.journal_entry_id:
+        yield Link("posting", "outgoing", "journal_entry", movement.journal_entry)
+        treasury = related_or_none(movement.journal_entry, "treasury_movement")
+        if treasury is not None:
+            yield Link("settlement", "incoming", "payment", treasury, amount=treasury.amount)
 
 
 @relation_provider("hr.absence")
