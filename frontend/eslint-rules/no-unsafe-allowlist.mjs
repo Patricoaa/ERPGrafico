@@ -47,7 +47,6 @@ export const NO_UNSAFE_BASELINE = {
     "features/pos/hooks/useProducts.ts": 2,
     "features/pos/utils/bom-resolver.ts": 5,
     "features/production/api/productionApi.ts": 32,
-    "features/production/components/BOMClientView.tsx": 1,
     "features/production/components/BOMDrawer.tsx": 1,
     "features/production/components/WorkOrderWizard.tsx": 1,
     "features/production/components/__tests__/WorkOrderWizard.test.tsx": 2,

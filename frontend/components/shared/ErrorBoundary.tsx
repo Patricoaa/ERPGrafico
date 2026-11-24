@@ -6,6 +6,8 @@ import { AlertTriangle, RefreshCw, AlertCircle, RefreshCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { getErrorMessage } from "@/lib/errors"
+import { fadeInClass } from "./fade-in-class"
+import { cn } from "@/lib/utils"
 
 interface Props {
     children?: ReactNode
@@ -86,7 +88,7 @@ export class ErrorBoundary extends Component<Props, State> {
             }
 
             return (
-                <div className="flex min-h-[400px] h-screen w-full flex-col items-center justify-center bg-background p-8 text-center animate-in fade-in duration-500">
+                <div className={cn("flex min-h-[400px] h-screen w-full flex-col items-center justify-center bg-background p-8 text-center", fadeInClass({ duration: 500 }))}>
                     <div className="relative flex h-24 w-24 items-center justify-center border border-destructive/20 bg-destructive/5 mb-8">
                         <AlertTriangle className="h-10 w-10 text-destructive/60" />
                     </div>

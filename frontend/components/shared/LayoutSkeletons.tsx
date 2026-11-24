@@ -4,6 +4,8 @@ import React from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card } from "@/components/ui/card"
 import { SkeletonShell } from "./SkeletonShell"
+import { fadeInClass } from "./fade-in-class"
+import { cn } from "@/lib/utils"
 
 /**
  * Skeleton for the Page Header area in the top bar.
@@ -11,7 +13,7 @@ import { SkeletonShell } from "./SkeletonShell"
  */
 export function PageHeaderSkeleton() {
     return (
-        <div className="flex items-center gap-3 pointer-events-none min-w-0 animate-in fade-in duration-300">
+        <div className={cn("flex items-center gap-3 pointer-events-none min-w-0", fadeInClass({ duration: 300 }))}>
             <div className="flex items-center gap-2">
                 <Skeleton className="h-4 w-4 shrink-0 rounded-sm opacity-20" />
                 <Skeleton className="h-4 w-32 opacity-20" />
@@ -87,7 +89,7 @@ export function PageLayoutSkeleton({
         <div
             role="status"
             aria-label="Cargando página"
-            className="flex-1 flex flex-col min-w-0 animate-in fade-in duration-500"
+            className={cn("flex-1 flex flex-col min-w-0", fadeInClass({ duration: 500 }))}
         >
             {hasTabs && <PageTabsSkeleton count={tabsCount} />}
 

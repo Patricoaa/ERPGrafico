@@ -19,6 +19,7 @@ import { Paintbrush, Printer, FileText, Wrench } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LabeledInput, Section } from "@/components/shared"
 import { DesignFilesField } from "./DesignFilesField"
+import { fadeInClass } from "../fade-in-class"
 
 // ── Canonical shape ───────────────────────────────────────────────────────────
 
@@ -182,7 +183,7 @@ export function ManufacturingSpecsEditor({
           {phaseToggle('prepress')}
 
           {value.phases.prepress && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className={cn("space-y-4", fadeInClass({ from: "top", duration: 300 }))}>
               <LabeledInput
                 label="Especificaciones"
                 as="textarea"
@@ -225,7 +226,7 @@ export function ManufacturingSpecsEditor({
                 />
               </div>
               {value.folio_enabled && (
-                <div className="animate-in zoom-in-95 duration-200">
+                <div className={fadeInClass({ zoom: true, fade: false, duration: 200 })}>
                   <LabeledInput
                     label="N° Inicial"
                     placeholder="Ej: 0001"
@@ -246,7 +247,7 @@ export function ManufacturingSpecsEditor({
           {phaseToggle('press')}
 
           {value.phases.press && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className={cn("space-y-4", fadeInClass({ from: "top", duration: 300 }))}>
               <LabeledInput
                 label="Especificaciones"
                 as="textarea"
@@ -291,7 +292,7 @@ export function ManufacturingSpecsEditor({
           {phaseToggle('postpress')}
 
           {value.phases.postpress && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className={cn("space-y-4", fadeInClass({ from: "top", duration: 300 }))}>
               <LabeledInput
                 label="Especificaciones"
                 as="textarea"

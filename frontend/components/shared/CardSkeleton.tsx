@@ -3,6 +3,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { fadeInClass } from "./fade-in-class"
 
 interface CardSkeletonProps {
     count?: number
@@ -26,7 +27,7 @@ export function CardSkeleton({
             <div
                 role="status"
                 aria-label={ariaLabel}
-                className={cn("flex flex-col gap-2 animate-in fade-in duration-500", className)}
+                className={cn(cn("flex flex-col gap-2", fadeInClass({ duration: 500 })), className)}
             >
                 {Array.from({ length: count }).map((_, i) => (
                     <div
@@ -52,7 +53,7 @@ export function CardSkeleton({
                 role="status"
                 aria-label={ariaLabel}
                 className={cn(
-                    "grid grid-cols-2 lg:grid-cols-3 gap-3 animate-in fade-in duration-500",
+                    cn("grid grid-cols-2 lg:grid-cols-3 gap-3", fadeInClass({ duration: 500 })),
                     gridClassName,
                     className
                 )}
@@ -88,7 +89,7 @@ export function CardSkeleton({
             <div
                 role="status"
                 aria-label={ariaLabel}
-                className={cn("flex flex-col gap-3 animate-in fade-in duration-500", className)}
+                className={cn(cn("flex flex-col gap-3", fadeInClass({ duration: 500 })), className)}
             >
                 {Array.from({ length: count }).map((_, i) => (
                     <div
@@ -133,7 +134,7 @@ export function CardSkeleton({
                 role="status"
                 aria-label={ariaLabel}
                 className={cn(
-                    "grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 animate-in fade-in duration-500",
+                    cn("grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4", fadeInClass({ duration: 500 })),
                     gridClassName,
                     className
                 )}
@@ -165,7 +166,7 @@ export function CardSkeleton({
             role="status"
             aria-label={ariaLabel}
             className={cn(
-                "grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 animate-in fade-in duration-500",
+                cn("grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6", fadeInClass({ duration: 500 })),
                 gridClassName,
                 className
             )}

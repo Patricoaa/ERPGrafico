@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from "react"
 import { cn, formatDateWith } from "@/lib/utils"
 import { useNow } from "../../hooks/useNow"
 import { POSTopBar } from "./POSTopBar"
+import { fadeInClass } from "@/components/shared"
 
 /** Margen tras abrir el salvapantallas en el que el movimiento del mouse no lo cierra. */
 const WAKE_GRACE_MS = 1000
@@ -55,7 +56,7 @@ export function POSIdleScreen({ open, title, subtitle, detail, onWake }: POSIdle
             role="dialog"
             aria-modal="true"
             aria-label="Protector de pantalla"
-            className="fixed inset-0 z-[100] flex cursor-pointer flex-col bg-background text-foreground animate-in fade-in duration-500 motion-reduce:animate-none"
+            className={cn("fixed inset-0 z-[100] flex cursor-pointer flex-col bg-background text-foreground", fadeInClass({ duration: 500 }))}
             onPointerDown={onWake}
             onPointerMove={wakeOnMove}
             onKeyDown={onWake}

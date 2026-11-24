@@ -59,8 +59,8 @@ import { Chip } from "@/components/shared"
 
 | `size` | Height | Padding | Font size | Gap | Typical use |
 |--------|--------|---------|-----------|-----|-------------|
-| `xs` | `h-[18px]` | `px-2` | `text-xs` | `gap-1` | Table cells, dense lists, inline annotations |
-| `sm` | `h-[22px]` | `px-2.5` | `text-xs` | `gap-1` | General UI chrome, form labels, sidebar |
+| `xs` | `h-4.5` (18 px con `--k = 1`) | `px-2` | `text-xs` | `gap-1` | Table cells, dense lists, inline annotations |
+| `sm` | `h-5.5` (22 px con `--k = 1`) | `px-2.5` | `text-xs` | `gap-1` | General UI chrome, form labels, sidebar |
 | `md` (default) | auto | `px-2 py-0.5` | `text-xs` | `gap-1` | Detail views, modal sections, emphasis |
 
 **Invariant typography** (never override): `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068). El tamaño sólo cambia la caja, nunca la tipografía.

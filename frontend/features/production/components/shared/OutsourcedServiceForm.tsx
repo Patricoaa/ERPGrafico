@@ -15,7 +15,7 @@
 
 import { Truck, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { LabeledInput, LabeledSelect } from '@/components/shared'
+import { LabeledInput, LabeledSelect, fadeInClass } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
@@ -26,6 +26,7 @@ import { useCoreAllowedDteTypes } from '../../hooks/useProductionQueries'
 import { useUoMs } from '../../hooks'
 import type { Product } from "@/types/entities"
 import type { ProductMinimal, UoM } from '../../types'
+import { cn } from "@/lib/utils"
 
 // ── Canonical shape for one outsourced service ──────────────────────────────
 export interface OutsourcedServiceValues {
@@ -105,7 +106,7 @@ export function OutsourcedServiceForm({
     parseFloat(value.grossPrice) > 0
 
   return (
-    <div className="p-4 border rounded-md bg-muted/20 space-y-4 animate-in slide-in-from-top-2 duration-300">
+    <div className={cn("p-4 border rounded-md bg-muted/20 space-y-4", fadeInClass({ from: "top", fade: false, duration: 300 }))}>
       {/* Info banner (optional) */}
       {showInfo && (
         <div className="flex items-start gap-2 text-xs text-primary/80">

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { type ReactNode } from "react"
+import { fadeInClass } from "./fade-in-class"
 
 interface PageContainerProps {
   children: ReactNode
@@ -34,7 +35,7 @@ export function PageContainer({
       className={cn(
         "flex-1 min-h-0 space-y-6 p-8 pt-6",
         scrollable && "overflow-y-auto h-full",
-        animate && "animate-in fade-in duration-500",
+        animate && fadeInClass({ duration: 500 }),
         className
       )}
     >

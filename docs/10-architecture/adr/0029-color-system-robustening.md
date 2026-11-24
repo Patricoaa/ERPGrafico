@@ -43,7 +43,7 @@ The 3-layer color architecture (Process CMYK → Semantic → Domain, OKLCH) is 
 ## References
 
 - Contract: [color-system.md](../../20-contracts/color-system.md) (§2 fixed Layer 1, §3.1 intents, §4.4 data-viz, §5 dark strategy, §6 sidebar, §8 forbidden + exceptions)
-- [design-system.md](../design-system.md), [GOVERNANCE.md](../../90-governance/GOVERNANCE.md) rules 12–13
+- [DESIGN.md](../../../DESIGN.md) (antes `design-system.md`, retirado en ADR-0157), [GOVERNANCE.md](../../90-governance/GOVERNANCE.md) rules 12–13
 - Implementation: `frontend/app/globals.css`, `frontend/eslint-rules/no-raw-tailwind-colors.mjs`
 - Test: `frontend/lib/__tests__/color-system.contract.test.ts`
 - Supersedes the dark-mode strategy described (but not implemented) in the prior `color-system.md`; builds on [0003](0003-tailwind-v4-theme-inline.md).

@@ -13,12 +13,13 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import { Banner, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from "@/components/shared"
+import { Banner, SubmitButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay, fadeInClass } from "@/components/shared"
 
 import { useContactMutations } from "@/features/contacts"
 import { type CreditContact } from '@/features/credits/api/creditsApi'
 import { AdvancedContactSelector } from "@/components/selectors"
 import { type Contact } from "@/types/entities"
+import { cn } from "@/lib/utils"
 
 const creditSchema = z.object({
     credit_limit: z.coerce.number().min(0, "El límite debe ser mayor o igual a 0").nullable(),
@@ -125,7 +126,7 @@ export default function CreditAssignmentModal({
                         )}
 
                         {activeContact ? (
-                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
+                            <div className={cn("space-y-6", fadeInClass({ from: "bottom", duration: 300 }))}>
                                 {/* Indicators grid */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="p-4 rounded-md border bg-muted/30 flex flex-col gap-1 items-center justify-center">

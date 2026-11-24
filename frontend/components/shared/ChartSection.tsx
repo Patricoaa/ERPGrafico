@@ -37,7 +37,7 @@ export function ChartSection({ title, label, note, actions, loading = false, emp
                 {actions}
             </div>
             {note && <p className="text-xs text-muted-foreground">{note}</p>}
-            <div className="rounded-md border border-border bg-card p-4 shadow-xs">{body}</div>
+            <div className="surface-panel p-4">{body}</div>
         </section>
     )
 }

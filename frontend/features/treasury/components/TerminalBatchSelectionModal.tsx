@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
-import { EmptyState, LabeledSelect, SelectorTrigger } from '@/components/shared'
+import { EmptyState, LabeledSelect, SelectorTrigger, fadeInClass } from '@/components/shared'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -275,7 +275,7 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                     />
                                 </div>
                             ) : (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+                                <div className={cn("space-y-4", fadeInClass({ from: "right", distance: 4, duration: 500 }))}>
                                     <LabeledInput
                                         label="Monto Bruto (Ventas)"
                                         type="number"

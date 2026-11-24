@@ -1,7 +1,7 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSwitch, LabeledSelect, Section } from "@/components/shared"
+import { LabeledInput, LabeledSwitch, LabeledSelect, Section, fadeInClass } from "@/components/shared"
 import { DollarSign, Zap } from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
@@ -45,7 +45,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
 
     return (
         <div className={cn(
-            "space-y-4 animate-in fade-in duration-300",
+            cn("space-y-4", fadeInClass({ duration: 300 })),
             (!canBeSold || productType === 'SUBSCRIPTION') && "hidden"
         )}>
             <Section.Header spaced title="Precio de Venta" icon={DollarSign} />

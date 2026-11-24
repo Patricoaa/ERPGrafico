@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: typography-scale
 status: active
 owner: frontend-team
-last_review: 2026-10-14
+last_review: 2026-11-24
 stability: contract-changes-require-ADR
 ---
 
@@ -17,10 +17,10 @@ stability: contract-changes-require-ADR
 
 | Token Tailwind | CSS Var | Fuente | Uso |
 |----------------|---------|--------|-----|
-| `font-sans` | `--font-sans` | Onest (variable 100–900) | **Única fuente del sistema** |
-| `font-mono` | `--font-mono` | JetBrains Mono (bundleada vía `next/font`) | Datos tabulares, códigos, IDs |
+| `font-sans` | `--font-sans` | Onest (variable 100–900) | **Única fuente de texto** (UI) |
+| `font-mono` | `--font-mono` | JetBrains Mono (bundleada vía `next/font`) | Cifras, datos tabulares, códigos, IDs, valores KPI |
 
-- Onest es la única fuente del sistema. No existe `font-heading`.
+- Onest es la única fuente de texto; JetBrains Mono solo se usa para datos. No existe `font-heading`.
 - Toda la jerarquía tipográfica se construye con: weight, size, tracking y text-transform.
 - `font-sans` es el default del `body` — no necesita declararse explícitamente en componentes.
 - Siempre usar `font-mono` + `tabular-nums` en columnas financieras para evitar layout shifts.
@@ -54,12 +54,14 @@ Definidos en `frontend/app/globals.css @layer base`. El estilo base es heredado 
 
 | Heading | Tamaño base | Tailwind equiv. | Estilo base | Uso típico |
 |---------|-------------|-----------------|-------------|------------|
-| `h1` | 30→34px (fluido) | `text-3xl` | `font-extrabold tracking-tighter uppercase` | Página de login, hero sections |
-| `h2` | 24→28px (fluido) | `text-2xl` | idem | Título principal de vista/sección |
-| `h3` | 1.25rem (20px) | `text-xl` | idem | Subtítulo, wizard steps, panel headers |
-| `h4` | 1.125rem (18px) | `text-lg` | idem | Card titles con peso visual |
-| `h5` | 14→16px (fluido) | `text-sm` | idem | Agrupaciones compactas |
-| `h6` | 0.75rem (12px) | `text-xs` | idem | Labels de sección mínima |
+| `h1` | 30→34px | `text-3xl` | `font-extrabold tracking-tighter` | Página de login, hero sections |
+| `h2` | 24→28px | `text-2xl` | idem | Título principal de vista/sección |
+| `h3` | 20→24px | `text-xl` | idem | Subtítulo, wizard steps, panel headers |
+| `h4` | 18→20px | `text-lg` | idem | Card titles con peso visual |
+| `h5` | 14→16px | `text-sm` | idem | Agrupaciones compactas |
+| `h6` | 12→14px | `text-xs` | idem | Labels de sección mínima |
+
+> Todos los tamaños son fluidos (ADR-0142). La base **no** aplica `uppercase`: las mayúsculas las pone cada rol de la tabla de contextos.
 
 > Los componentes que necesiten un tamaño diferente deben override explícitamente con clase Tailwind. El override es correcto y no viola ningún contrato.
 
@@ -85,8 +87,9 @@ Equivalencias canónicas (el rango micro es exclusivo para chrome denso; desde A
 | **N0 — KPI/Metric** | `Metric` value (`kpi-value`), PieChart center | `text-2xl` / `text-xl` en celdas angostas, **JetBrains Mono `font-bold`** | `tracking-[-0.045em]` | normal | "1.234" |
 | **N0 — Empty state** | EmptyState title | `text-lg font-black` | `tracking-tighter` | `uppercase` | "Sin resultados" |
 | **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-black` | `tracking-tighter` | `uppercase` | "Algo salió mal" |
-| **N1 — Sección** | FormSection, SectionHeader, ActivitySidebar | `text-2xs font-bold` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
-| **N2 — Etiqueta de campo** | LabeledInput legend | `text-2xs font-bold` | `tracking-widest` | `uppercase` | "Nombre / Razón Social" |
+| **N1 — Sección** | `SectionHeader`, ActivitySidebar | `text-2xs font-bold` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
+| **N1 — Sección (`Section`)** | `Section/SectionHeader` (encabezado de `<Section>`, ADR-0137) | `text-2xs font-semibold` | `tracking-[0.25em]` | `uppercase` | "Líneas", "Pagos" |
+| **N2 — Etiqueta de campo** | `FieldLegend` (LabeledInput / LabeledSelect / LabeledContainer) | `text-3xs font-bold` | `tracking-widest` | `uppercase` | "Nombre / Razón Social" |
 | **N2 — Botón acción** | SubmitButton, CancelButton | `text-3xs font-black h-control-md` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
 | **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-3xs font-bold` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
 | **N2 — Badge/Chip** | Chip, EntityBadge | `text-xs font-medium font-sans` | `normal` | normal | "Pagado", "Pendiente" |
@@ -110,7 +113,7 @@ Equivalencias canónicas (el rango micro es exclusivo para chrome denso; desde A
 | **N4 — Timestamp** | ActivitySidebar time | `text-3xs font-medium text-muted-foreground/60` | normal | normal | "hace 2 horas" |
 | **N4 — Badge count** | TabBar badge number | `text-4xs font-bold` | normal | normal | 3, 15 |
 
-> **Peso de labels micro (N1/N2/N4): `font-bold`.** El sistema reserva `font-black` para valores de display (N0), botones de acción y el indicador de paso del wizard. La versión previa de este contrato declaraba `font-black` en todos los labels; el código enviado estandariza en `font-bold` (headers de tabla, títulos de sección, labels de campo, tabs). Ver [ADR-0082](../10-architecture/adr/0082-typography-scale-token-reconciliation.md).
+> **Peso de labels micro (N1/N2/N4): `font-bold`** (salvo el encabezado de `<Section>`, `font-semibold`, ADR-0157). El sistema reserva `font-black` para valores de display (N0), botones de acción y el indicador de paso del wizard. La versión previa de este contrato declaraba `font-black` en todos los labels; el código enviado estandariza en `font-bold` (headers de tabla, títulos de sección, labels de campo, tabs). Ver [ADR-0082](../10-architecture/adr/0082-typography-scale-token-reconciliation.md).
 
 ---
 
@@ -178,8 +181,8 @@ Todos los badges son **borderless + `rounded-sm`** (CurrencyFlow aesthetic, ADR-
 
 | Prop `size` | Altura | Font | Uso |
 |-------------|--------|------|-----|
-| `xs` | `h-[18px]` | `text-xs` | Table cells, dense lists, overlaid counters |
-| `sm` | `h-[22px]` | `text-xs` | General UI chrome, wizard steps |
+| `xs` | `h-4.5` (18 px con `--k = 1`) | `text-xs` | Table cells, dense lists, overlaid counters |
+| `sm` | `h-5.5` (22 px con `--k = 1`) | `text-xs` | General UI chrome, wizard steps |
 | `md` (default) | auto (`px-2 py-0.5`) | `text-xs` | Detail panels, modal sub-headers |
 
 ### StatusBadge — matriz de tamaños
@@ -188,8 +191,8 @@ Todos los badges son **borderless + `rounded-sm`** (CurrencyFlow aesthetic, ADR-
 
 | Prop `size` | Altura | Font | Uso |
 |-------------|--------|------|-----|
-| `xs` | `h-[18px]` | `text-xs` | Tablas, listas densas |
-| `sm` | `h-[22px]` | `text-xs` | Tablas, listas densas |
+| `xs` | `h-4.5` | `text-xs` | Tablas, listas densas |
+| `sm` | `h-5.5` | `text-xs` | Tablas, listas densas |
 | `md` (default) | auto (`px-2 py-0.5`) | `text-xs` | Modales, panels de detalle |
 | `lg` | `h-8` | `text-sm` | Headers, énfasis |
 | `xl` | `h-10` | `text-base` | Hero, dashboards |
@@ -209,7 +212,7 @@ kpi-value-compact  font-mono text-xl  font-bold tracking-[-0.045em] tabular-nums
 
 > Etiquetas, contexto y unidades siguen en Onest. `font-black` y `tracking-tighter` quedan **prohibidos** para valores KPI.
 
-**Etiqueta de `Metric`** — `cardAnatomy.eyebrow` (`text-3xs font-semibold uppercase tracking-wider text-muted-foreground`). *(Las etiquetas de `StatCard`, deprecado, usan `tracking-widest`.)*
+**Etiqueta de `Metric`** — `cardAnatomy.eyebrow` (`text-3xs font-semibold uppercase tracking-wider text-muted-foreground`).
 
 ---
 
@@ -247,11 +250,11 @@ Solo usar tokens semánticos. Nunca `text-blue-500`, `text-red-400`, etc.
 | `text-foreground` | Casi negro/blanco según modo | Texto principal, valores de datos |
 | `text-muted-foreground` | Gris medio | Descripciones, labels de campos |
 | `text-primary` | Process Black K100 | Acciones primarias, foco, superficie de alto contraste (ADR-0070) |
-| `text-accent` | Golden amber | Acentos cálidos, highlights |
-| `text-success` | Verde | Positivo, activo, aprobado |
-| `text-warning` | Ámbar | Pendiente, atención requerida |
-| `text-destructive` | Rojo | Error, eliminación, peligro |
-| `text-info` | Azul | Informativo, neutral-positivo |
+| `text-accent-foreground` | Neutro | Texto sobre la superficie `accent` (hover/selección). `accent` **no** es un color de énfasis ([color-system.md §3.1](./color-system.md)) |
+| `text-success-text` | Verde (≥ 4,5:1) | Positivo, activo, aprobado. `text-success` solo en iconos sueltos |
+| `text-warning-text` | Ámbar oscuro (≥ 4,5:1) | Pendiente, atención requerida. `text-warning` está **prohibido** como texto |
+| `text-destructive` / `text-destructive-text` | Rojo | Error, eliminación, peligro |
+| `text-info` / `text-info-text` | Azul | Informativo, neutral-positivo |
 | `text-secondary-foreground` | Gris oscuro | Texto sobre fondos secundarios |
 
 ### Identificadores de tipo de producto (excepción documentada)
@@ -261,8 +264,8 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 | Tipo | Token |
 |------|-------|
 | `STORABLE` (Almacenable) | `text-info` |
-| `CONSUMABLE` (Consumible) | `text-warning` |
-| `MANUFACTURABLE` (Fabricable) | `text-success` |
+| `CONSUMABLE` (Consumible) | `text-warning-text` |
+| `MANUFACTURABLE` (Fabricable) | `text-success-text` |
 | `SERVICE` (Servicio) | `text-primary` |
 | `SUBSCRIPTION` (Suscripción) | `text-destructive` |
 
@@ -272,12 +275,13 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 
 | Clase Tailwind | Valor real | Uso |
 |----------------|-----------|-----|
-| `tracking-tighter` | `-0.04em` | Headings h1-h6, KPIs |
-| `tracking-tight` | `-0.02em` | Texto denso, modal titles |
+| `tracking-[-0.045em]` | `-0.045em` | Valores KPI (`kpi-value`) — único valor custom negativo |
+| `tracking-tighter` | `-0.05em` | Headings h1-h6, brand/hero, empty states (**prohibido** en valores KPI) |
+| `tracking-tight` | `-0.025em` | Texto denso, modal titles |
 | `tracking-normal` | `0` | Body text (default) |
 | `tracking-wider` | `0.05em` | Wizard steps, PageTabs tabs, elementos secundarios |
-| `tracking-widest` | `0.1em` | Botones de acción, badges estándar |
-| `tracking-widest` | `0.1em` | N2: LabeledInput / LabeledContainer legend |
+| `tracking-widest` | `0.1em` | Botones de acción, N2 (`FieldLegend`), headers de tabla |
+| `tracking-loose` / `tracking-looser` | `0.15em` / `0.2em` | Tokens propios (`globals.css`); uso puntual en chrome |
 | `tracking-[0.25em]` | `0.25em` | N1: FormSection title |
 
 > El valor custom (`[0.25em]`) es parte del sistema de capas N1/N2 — no es ad-hoc.
@@ -307,8 +311,8 @@ Para evitar fatiga visual, los iconos dentro de componentes (selectores, seccion
 <span className="text-red-400">
 
 // ❌ Reemplazar el sistema de capas con px crudos o clases semánticas
-<legend className="text-[10px]">  // Usar text-2xs (N2)
-<legend className="text-xs">       // Usar text-2xs (N2)
+<legend className="text-[10px]">  // Usar FieldLegend (N2: text-3xs)
+<legend className="text-xs">       // Usar FieldLegend (N2: text-3xs)
 
 // ❌ Tamaños px crudos en el chrome del shell
 <nav className="text-[13px]">  // Usar text-xs
@@ -346,4 +350,4 @@ Se permite `text-3xs` / `text-2xs` / `font-bold` solo para metadatos secundarios
 
 ### Deprecación
 
-`labelClassName` y `hintClassName` en `LabeledContainer`, `LabeledInput`, `LabeledSelect` → **deprecated**. No usar. Toda la tipografía de legend se gestiona vía `FieldLegend` (N2: `text-2xs font-bold uppercase tracking-widest`).
+`labelClassName` y `hintClassName` en `LabeledContainer`, `LabeledInput`, `LabeledSelect` → **deprecated**. No usar. Toda la tipografía de legend se gestiona vía `FieldLegend` (N2: `text-3xs font-bold uppercase tracking-widest`).

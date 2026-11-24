@@ -5,6 +5,7 @@ import { type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Fragment, type ReactNode, useEffect, useId, useRef } from "react"
+import { fadeInClass } from "./fade-in-class"
 
 export type WizardStepStatus = "active" | "past" | "future" | "current"
 
@@ -359,7 +360,7 @@ export function WizardStepsSidebar({
                                                 {showDetail && step.detail && (
                                                     <div
                                                         id={detailId}
-                                                        className="mt-0.5 animate-in fade-in duration-200 motion-reduce:animate-none"
+                                                        className={cn("mt-0.5", fadeInClass({ duration: 200 }))}
                                                     >
                                                         <div className={cn(detailSize, "text-muted-foreground/80 leading-snug truncate")}>
                                                             {step.detail}

@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils"
 
 export function SummaryPanel({ children, className }: { children: ReactNode; className?: string }) {
     return (
-        <section className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-sm border border-border bg-card", className)}>
+        <section className={cn("surface-panel flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
             {children}
         </section>
     )

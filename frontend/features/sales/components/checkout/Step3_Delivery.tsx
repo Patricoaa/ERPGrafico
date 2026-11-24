@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, Banner} from "@/components/shared"
+import { LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, Banner, fadeInClass } from "@/components/shared"
 import {Truck, Package, Calendar} from "lucide-react"
 import { useAllowedUoMs } from "@/features/inventory"
 import { LabeledSelect } from "@/components/shared"
@@ -17,6 +17,7 @@ import { NumpadModal } from "@/components/shared"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
 import { type CheckoutDeliveryData, type SaleOrderLine } from "../../types"
+import { cn } from "@/lib/utils"
 
 function UoMCell({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
     const prodId = line.product && typeof line.product === 'object' ? line.product.id : line.product
@@ -133,7 +134,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
             </ChoiceGroup>
 
             {deliveryData.type === 'PARTIAL' && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <div className={cn("space-y-4", fadeInClass({ from: "top" }))}>
                     <div className="flex flex-col gap-1">
                         <p className="text-sm font-semibold">Cantidades para Despacho Inmediato</p>
                         <p className="text-xs text-muted-foreground">

@@ -10,13 +10,14 @@ import { showApiError } from "@/lib/errors"
 import { ArrowLeftRight, DollarSign } from "lucide-react"
 import { useDrawerIdentity, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { TreasuryAccountSelector } from "@/components/selectors"
-import { PeriodValidationDateInput } from "@/components/shared"
+import { PeriodValidationDateInput, fadeInClass } from "@/components/shared"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
 import { useTransfer } from "@/features/treasury/hooks/useTransfer"
 import { Form, FormField } from "@/components/ui/form"
 import { CancelButton, LabeledInput, FormFooter, FormSplitLayout, SubmitButton, Drawer, MoneyDisplay, SkeletonShell, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { cn } from "@/lib/utils"
 
 const transferSchema = z.object({
     from_account_id: z.string().min(1, "Seleccione una cuenta de origen"),
@@ -222,7 +223,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                             )}
                                         />
                                         {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
-                                            <div className="p-2.5 rounded-md bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+                                            <div className={cn("p-2.5 rounded-md bg-warning/5 border border-warning/20 flex flex-col items-center justify-center", fadeInClass({ zoom: true, fade: false, duration: 300 }))}>
                                                 <p className="text-xs font-medium text-warning-text mb-1">Impacto en Origen</p>
                                                 <p className="text-xs font-bold text-warning-text">
                                                     <MoneyDisplay amount={(sourceAccount.current_balance ?? 0) - parseFloat(amount)} />

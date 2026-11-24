@@ -64,19 +64,14 @@ export function DualAxisChart({
     const chartId = useId()
     const containerRef = useRef<HTMLDivElement>(null)
     const [dimensions, setDimensions] = useState<{ width: number; height: number }>({ width: 600, height: 360 })
-    const [activeSeriesIds, setActiveSeriesIds] = useState<Set<string>>(() => new Set(series.map((s) => s.id)))
+    const [selectedSeriesIds, setActiveSeriesIds] = useState<Set<string>>(() => new Set(series.map((s) => s.id)))
     const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
-    // Sincronizar series activas si cambia la lista de series
-    useEffect(() => {
-        setActiveSeriesIds((current) => {
-            const next = new Set<string>()
-            for (const s of series) {
-                if (current.has(s.id)) next.add(s.id)
-            }
-            return next.size > 0 ? next : new Set(series.map((s) => s.id))
-        })
-    }, [series])
+    // Series activas = las elegidas que siguen en la lista; si ninguna sigue, todas.
+    const activeSeriesIds = useMemo(() => {
+        const next = new Set(series.filter((s) => selectedSeriesIds.has(s.id)).map((s) => s.id))
+        return next.size > 0 ? next : new Set(series.map((s) => s.id))
+    }, [series, selectedSeriesIds])
 
     // Responsividad vía ResizeObserver
     useEffect(() => {
@@ -514,7 +509,7 @@ export function DualAxisChart({
                 {/* Tooltip unificado flotante */}
                 {hoverIndex !== null && periods[hoverIndex] && (
                     <div
-                        className="pointer-events-none absolute z-20 min-w-52 rounded-lg border border-border bg-card p-3 text-xs shadow-lg transition-all duration-75"
+                        className="pointer-events-none absolute z-20 min-w-52 rounded-lg border border-border bg-popover p-3 text-xs text-popover-foreground shadow-floating transition-all duration-75"
                         style={{
                             left: Math.min(
                                 Math.max(10, scaleX(hoverIndex) - 105),

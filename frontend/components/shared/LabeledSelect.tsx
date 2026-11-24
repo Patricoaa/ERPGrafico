@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select"
 import { type SelectProps } from "@radix-ui/react-select"
 import { FieldLegend } from "./FieldLegend"
+import { fadeInClass } from "./fade-in-class"
 
 export interface LabeledSelectOption {
     value: string
@@ -147,7 +148,7 @@ export const LabeledSelect = forwardRef<
 
                 {/* Error or Hint Text */}
                 {hasError ? (
-                    <div className="mt-1.5 text-3xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 px-1">
+                    <div className={cn("mt-1.5 text-3xs font-medium text-destructive px-1", fadeInClass({ from: "top", distance: 1 }))}>
                         {error}
                     </div>
                 ) : hint ? (

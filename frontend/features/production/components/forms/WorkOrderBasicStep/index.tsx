@@ -1,5 +1,5 @@
 "use client"
-import { formatPlainDate, toDate } from "@/lib/utils"
+import { formatPlainDate, toDate, cn } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/errors"
 import { getDomainConceptTitle, getDomainConceptMessage } from "@/lib/entity-registry"
 import { useState, useEffect, useRef } from "react"
@@ -13,7 +13,7 @@ import { toast } from "sonner"
 
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
 import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
-import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
+import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData, fadeInClass } from '@/components/shared'
 import {workOrderSchema, type WorkOrderFormValues } from "@/types/forms"
 import { LabeledInput, SkeletonShell } from "@/components/shared"
 import type { ManufacturingContact } from "@/components/shared"
@@ -331,7 +331,7 @@ export function WorkOrderBasicStep({
                     )}
 
                     {otType && (
-                        <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-6">
+                        <div className={cn("space-y-6", fadeInClass({ from: "top", duration: 300 }))}>
                             <WorkOrderBasicInfo
                                 initialData={initialData}
                                 isAutoCreated={isAutoCreated}

@@ -5,6 +5,7 @@ import { X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge, IconButton } from '@/components/shared'
 import { Button } from "@/components/ui/button"
+import { fadeInClass } from "./fade-in-class"
 
 interface MultiTagInputProps {
     label?: string
@@ -113,7 +114,7 @@ export function MultiTagInput({
                                 key={`${tag}-${index}`}
                                 intent="neutral"
                                 size="sm"
-                                className="flex items-center gap-1 animate-in zoom-in-95 duration-200"
+                                className={cn("flex items-center gap-1", fadeInClass({ zoom: true, fade: false, duration: 200 }))}
                             >
                                 {tag}
                                 <IconButton
@@ -180,7 +181,7 @@ export function MultiTagInput({
             )}
 
             {hasError && (
-                <p role="alert" className="text-3xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">
+                <p role="alert" className={cn("text-3xs font-medium text-destructive pl-1", fadeInClass({ from: "top", distance: 1, duration: 200 }))}>
                     {error}
                 </p>
             )}

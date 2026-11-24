@@ -12,7 +12,8 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { Banner, LabeledInput, SubmitButton } from '@/components/shared'
+import { Banner, LabeledInput, SubmitButton, fadeInClass } from '@/components/shared'
+import { cn } from "@/lib/utils"
 
 const formSchema = z.object({
     username: z.string().min(2, {
@@ -52,7 +53,7 @@ export function LoginForm() {
 
     return (
         <div
-            className="w-full max-w-sm relative z-10 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms] delay-200"
+            className={cn("w-full max-w-sm relative z-10", fadeInClass({ from: "bottom", distance: 3, duration: 600, delay: 200, ease: "premium" }))}
         >
             {/* Form header */}
             <div className="mb-8 text-center">
@@ -98,7 +99,7 @@ export function LoginForm() {
 
                     {/* Error message */}
                     {error && (
-                        <Banner tone="destructive" live="alert" className="animate-in fade-in slide-in-from-top-1 duration-200 fill-mode-both">
+                        <Banner tone="destructive" live="alert" className={fadeInClass({ from: "top", distance: 1, duration: 200 })}>
                             {error}
                         </Banner>
                     )}

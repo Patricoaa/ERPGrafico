@@ -13,7 +13,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { cn } from "@/lib/utils"
 import { type Product, type ProductAttributeValue } from "@/types/entities"
 import { type ProductInitialData } from "@/types/forms"
-import { ActionConfirmModal, Chip, DataCell, type MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
+import { ActionConfirmModal, Chip, DataCell, type MultiSelectOption, MultiSelectTagInput, fadeInClass } from '@/components/shared'
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -200,7 +200,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
     }
 
     return (
-        <div className="mt-0 space-y-2 flex flex-col h-[650px] animate-in fade-in duration-500">
+        <div className={cn("mt-0 space-y-2 flex flex-col h-[650px]", fadeInClass({ duration: 500 }))}>
             {/* Header / Actions */}
             <div className="surface-panel flex items-center justify-between border-primary/20 p-4">
                 <div className="flex items-center gap-4">
@@ -275,7 +275,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                 </div>
             </div>
 
-            <div className="flex-1 flex gap-4 overflow-hidden relative animate-in fade-in slide-in-from-left-8 duration-300">
+            <div className={cn("flex-1 flex gap-4 overflow-hidden relative", fadeInClass({ from: "left", distance: 8, duration: 300 }))}>
                 {/* Left: Master Table */}
                 <div className={cn(
                     "surface-panel flex flex-1 flex-col overflow-hidden transition-all duration-300",
@@ -437,7 +437,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                             onTabChange={(tab: string) => onTabChange?.(tab)}
                         />
                     ) : (
-                        <div className="surface-panel flex h-full min-h-0 w-full flex-1 flex-col p-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className={cn("surface-panel flex h-full min-h-0 w-full flex-1 flex-col p-5", fadeInClass({ from: "right", distance: 4, duration: 300 }))}>
                             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin pb-4">
                                 <div className="flex flex-col gap-y-6">
                                     {availableAttributes.map(attr => {

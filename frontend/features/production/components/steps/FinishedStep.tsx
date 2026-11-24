@@ -2,9 +2,10 @@
 
 import type { ReactNode } from 'react'
 import {CheckCircle2, Copy} from 'lucide-react'
-import { SubmitButton, StepHeader, CardSurface, Banner } from "@/components/shared"
+import { SubmitButton, StepHeader, CardSurface, Banner, fadeInClass } from "@/components/shared"
 import type { WorkOrder } from '../../types'
 import { getDomainConceptTitle } from "@/lib/entity-registry"
+import { cn } from "@/lib/utils"
 
 interface FinishedStepProps {
   order: WorkOrder
@@ -21,7 +22,7 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating, headerActions 
   return (
     <div className="flex flex-1 flex-col gap-6">
       
-    <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
+    <div className={cn("flex flex-col items-center justify-center py-12 text-center space-y-6", fadeInClass({ zoom: true, fade: false, duration: 500 }))}>
       <div className="relative">
         <div className="absolute inset-0 bg-success/20 blur-2xl rounded-full scale-150 animate-pulse" />
         <div className="relative bg-success p-6 rounded-full shadow-elevated shadow-success/20">

@@ -1,7 +1,7 @@
 "use client"
 
 import {useState, useEffect} from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, ChoiceCard, ChoiceGroup, StepHeader, Section } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, ChoiceCard, ChoiceGroup, StepHeader, Section, fadeInClass } from "@/components/shared"
 import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -15,6 +15,7 @@ import {
 import { type ReceiptData, type CheckoutLine, type PartialReceiptLine } from "../../types"
 import { type Warehouse, type UoM } from "@/types/entities"
 import {Receipt, FileText, FileCheck} from "lucide-react"
+import { cn } from "@/lib/utils"
 interface Step4_ReceiptProps {
     receiptData: ReceiptData
     setReceiptData: (data: ReceiptData | ((prev: ReceiptData) => ReceiptData)) => void
@@ -226,7 +227,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             </LabeledContainer>
 
             {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <div className={cn("space-y-4", fadeInClass({ from: "top" }))}>
                     <Section.Header title="Cantidades a Recibir" />
                     <div className="rounded-md border">
                         <Table>
@@ -279,7 +280,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {hasSubscriptions && (receiptData.type as string) !== 'DEFERRED' && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <div className={cn("space-y-4", fadeInClass({ from: "top" }))}>
                     <Section.Header title="Fechas de Inicio de Suscripciones" />
                     <div className="rounded-md border">
                         <Table>
@@ -320,7 +321,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) !== 'DEFERRED' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                <div className={cn("space-y-6", fadeInClass({ from: "top" }))}>
                     <LabeledInput
                         label="Referencia de Entrega"
                         placeholder="Ej: Guía de despacho #123"

@@ -15,7 +15,7 @@ import { useNotifications, type NotificationPayload } from "@/features/notificat
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Blobatar } from "@/components/ui/blobatar"
-import { TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
+import { TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState, fadeInClass } from "@/components/shared"
 import {
     CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText,
     Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt,
@@ -244,7 +244,7 @@ function SectionGroup({ title, count, hint, expanded, onToggle, children, always
                 </div>
             </Button>
             {expanded && (
-                <div className="mt-1 space-y-1 px-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className={cn("mt-1 space-y-1 px-3", fadeInClass({ from: "top", distance: 1, duration: 150 }))}>
                     {children}
                 </div>
             )}

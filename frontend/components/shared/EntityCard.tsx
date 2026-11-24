@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SelectionRing } from "@/components/shared"
 import { CardSurface, CardLead, Chip, cardAnatomy } from "@/components/shared"
+import { fadeInClass } from "./fade-in-class"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
 
@@ -878,7 +879,7 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
                     "h-control-xs w-7 rounded-full transition-all duration-200",
                     "hover:scale-105 active:scale-95 hover:bg-accent hover:text-accent-foreground",
                     isSelected
-                        ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
+                        ? cn("text-primary", fadeInClass({ from: "right", distance: 1, duration: 300 }))
                         : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5",
                     className,
                 )}

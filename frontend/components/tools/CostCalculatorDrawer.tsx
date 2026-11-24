@@ -178,7 +178,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
             <div className="flex-1 overflow-hidden flex">
                 {/* Panel Izquierdo: Catálogo */}
                 <div className="w-[60%] flex flex-col p-4 min-h-0">
-                    <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-sm border border-border bg-card p-3">
+                    <div className="surface-panel flex min-h-0 flex-1 flex-col gap-3 p-3">
                     <StepHeader
                         title="Selección de Productos"
                         description="Agregue los productos para estimar el costo de producción."
