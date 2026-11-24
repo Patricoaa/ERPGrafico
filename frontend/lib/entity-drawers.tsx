@@ -18,7 +18,7 @@ import type {
     PaymentInitialData,
     JournalEntryInitialData,
 } from "@/types/forms"
-import type { Employee, Absence, EmployeeMovement } from "@/types/hr"
+import type { Employee, Absence, EmployeeMovement, PayrollConcept } from "@/types/hr"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 /**
@@ -240,6 +240,10 @@ const AbsenceDrawer = dynamic(
     { ssr: false, loading: () => skeleton("inasistencia") }
 )
 
+const PayrollConceptDrawer = dynamic(
+    () => import("@/features/settings").then((m) => m.PayrollConceptDrawer),
+    { ssr: false, loading: () => skeleton("concepto") }
+)
 const EmployeeMovementDrawer = dynamic(
     () => import("@/features/hr").then((m) => m.EmployeeMovementDrawer),
     { ssr: false, loading: () => skeleton("movimiento") }
@@ -572,6 +576,10 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         <RecordDrawer<Absence> endpoint="/hr/absences" id={id} data={data} label="inasistencia">
             {(record) => <AbsenceDrawer open={open} onOpenChange={onOpenChange} absence={record} onSaved={() => onSuccess?.()} />}
         </RecordDrawer>
+    ),
+    // * requires full concept data — EntityBadge always provides it
+    "hr.payrollconcept": ({ open, onOpenChange, data, onSuccess }) => (
+        <PayrollConceptDrawer open={open} onOpenChange={onOpenChange} concept={(data as PayrollConcept | undefined) ?? null} onSuccess={() => onSuccess?.()} />
     ),
     // * requires full movement data — EntityBadge always provides it
     "hr.employeemovement": ({ id, open, onOpenChange, data, onSuccess }) => (

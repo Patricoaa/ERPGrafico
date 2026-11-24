@@ -1050,15 +1050,15 @@ const REGISTRY = {
   // ── HR (missing entities) ──────────────────────────────────────────────
   'hr.payrollconcept': {
     label: 'hr.payrollconcept',
-    title: 'Concepto de Liquidación',
-    titlePlural: 'Conceptos de Liquidación',
+    title: 'Concepto de Nómina',
+    titlePlural: 'Conceptos de Nómina',
     icon: ClipboardList,
     iconName: 'ClipboardList',
     description: 'Ítem configurable de liquidación',
     shortTemplate: 'CON-LIQ-{id}',
-    listUrl: '/hr/payrolls',
+    listUrl: '/hr/settings/concepts',
     detailUrlPattern: '/hr/settings/concepts',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
 
   // ── Inventory (missing entities) ───────────────────────────────────────

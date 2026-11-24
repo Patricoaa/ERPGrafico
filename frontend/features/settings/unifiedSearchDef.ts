@@ -10,6 +10,17 @@ export const groupUnifiedSearchDef: UnifiedSearchConfig = {
   ],
 }
 
+export const payrollConceptUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'name',
+      label: 'Nombre / Cuenta',
+      serverParam: 'search',
+      clientKey: ['name', 'account_code', 'category_display'],
+    },
+  ],
+}
+
 export const jobUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
     {

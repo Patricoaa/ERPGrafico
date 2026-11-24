@@ -1,5 +1,6 @@
 "use client"
 
+import { ClipboardList } from "lucide-react"
 import { Chip } from "@/components/shared"
 import { defineEntity, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
 import type { PayrollConcept } from "@/types/hr"
@@ -46,7 +47,7 @@ function registerPayrollConceptValueKinds(): void {
 registerPayrollConceptValueKinds()
 
 export const payrollConceptEntity = defineEntity<PayrollConcept>()((f) => ({
-    title: "Concepto de Nómina",
+    label: "hr.payrollconcept",
     rowId: (c) => c.id,
     fields: {
         name: f.value("payrollConceptName", (c) => c, { label: "Concepto de Nómina" }),
@@ -60,5 +61,12 @@ export const payrollConceptViews = payrollConceptEntity.views({
     table: {
         columns: ["name", "category", "formulaType", "accountCode"],
         primary: "name",
+        defaultSort: "name",
+    },
+    card: {
+        title: "name",
+        subtitle: ["category"],
+        meta: ["formulaType", "accountCode"],
+        rail: { status: () => null, icon: ClipboardList },
     },
 })

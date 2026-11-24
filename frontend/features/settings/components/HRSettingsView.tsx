@@ -24,15 +24,12 @@ import type {
 import { FormulaBuilder } from "@/features/hr"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { payrollConceptActions, type PayrollConceptActionsCtx } from './payrollConceptActions'
-import { Collection, useEntityCollection } from "@/components/entity-view"
-import { payrollConceptEntity, payrollConceptViews } from "../entity-view/payrollConcept.entity"
+import { PayrollConceptClientView } from './PayrollConceptClientView'
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
 export function HRSettingsView({ activeTab = "global" }: { activeTab?: string }) {
-    const { settings, concepts, afps, isLoading, updateSettings, createConcept, updateConcept, deleteConcept, createAfp, updateAfp, deleteAfp, refetch } = useHrSettings()
-    const [editingConcept, setEditingConcept] = useState<PayrollConcept | null>(null)
+    const { settings, afps, isLoading, updateSettings, createAfp, updateAfp, deleteAfp, refetch } = useHrSettings()
 
     // Global Settings Form
     const globalForm = useForm<z.infer<typeof globalSettingsSchema>>({
@@ -64,15 +61,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         setFormInitialized(true)
     }
 
-    const conceptDeleteConfirm = useConfirmAction<number>(async (id) => {
-        try {
-            await deleteConcept(id)
-            toast.success("Concepto eliminado")
-        } catch {
-            toast.error("Error al eliminar concepto")
-        }
-    })
-
     const afpDeleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await deleteAfp(id)
@@ -93,17 +81,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
     })
 
     useUnsavedChangesGuard(globalStatus)
-
-    const payrollConceptActionsCtx: PayrollConceptActionsCtx = {
-        onEdit: (concept) => setEditingConcept(concept),
-        onDelete: (id) => conceptDeleteConfirm.requestConfirm(id),
-    }
-
-    const conceptCollection = useEntityCollection(
-        payrollConceptEntity,
-        { rows: concepts },
-        { pagination: { mode: "none" } }
-    )
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando configuración de RRHH">
@@ -196,27 +173,11 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 {/* --- Tab: Conceptos --- */}
                 {activeTab === "concepts" && (
                     <div className="flex flex-col flex-1 min-h-0 space-y-6 m-0 p-0 border-0 outline-none mt-6">
-                        <div className="flex justify-between items-center px-1">
-                            <div>
-                                <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
-                                <p className="text-3xs uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
-                            </div>
-                            <ConceptDialog onSaved={() => refetch()} onCreate={createConcept} onUpdate={updateConcept} />
+                        <div className="px-1">
+                            <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
+                            <p className="text-3xs uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
                         </div>
-
-                        <div className="flex-1 min-h-0 overflow-x-auto">
-                            <Collection.Root
-                                collection={conceptCollection}
-                                label="Conceptos de nómina"
-                                actions={payrollConceptActions.forCollection(payrollConceptActionsCtx)}
-                            >
-                                <Collection.View
-                                    table={payrollConceptViews.table}
-                                    emptyTitle="Sin conceptos"
-                                    emptyDescription="Cree el primer concepto de nómina."
-                                />
-                            </Collection.Root>
-                        </div>
+                        <PayrollConceptClientView />
                     </div>
                 )}
 
@@ -260,25 +221,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 )}
             </FadeIn>
 
-            <ConceptDialog
-                key={editingConcept?.id ?? 'new'}
-                concept={editingConcept || undefined}
-                onSaved={() => refetch()}
-                open={!!editingConcept}
-                onOpenChange={(open) => { if (!open) setEditingConcept(null) }}
-                onCreate={createConcept}
-                onUpdate={updateConcept}
-            />
-
-            <ActionConfirmModal
-                open={conceptDeleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) conceptDeleteConfirm.cancel() }}
-                onConfirm={conceptDeleteConfirm.confirm}
-                title="Eliminar Concepto"
-                description="¿Está seguro de que desea eliminar este concepto de nómina? Esta acción no se puede deshacer."
-                variant="destructive"
-            />
-
             <ActionConfirmModal
                 open={afpDeleteConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) afpDeleteConfirm.cancel() }}
@@ -293,217 +235,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 }
 
 // --- DIALOGS ---
-
-function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: setControlledOpen, onCreate, onUpdate }: {
-    concept?: PayrollConcept
-    onSaved: () => void
-    open?: boolean
-    onOpenChange?: (open: boolean) => void
-    onCreate: (data: Record<string, unknown>) => Promise<unknown>
-    onUpdate: (id: number, data: Record<string, unknown>) => Promise<unknown>
-}) {
-    const frozen = frozenFieldsOf(concept)
-    const [internalOpen, setInternalOpen] = useState(false)
-    const [saving, setSaving] = useState(false)
-
-    const isControlled = controlledOpen !== undefined
-    const isOpen = isControlled ? controlledOpen : internalOpen
-    const setOpen = (val: boolean) => {
-        if (isControlled) setControlledOpen?.(val)
-        else setInternalOpen(val)
-    }
-
-    const form = useForm<ConceptFormValues>({
-        resolver: zodResolver(conceptSchema),
-        defaultValues: concept ? {
-            name: concept.name,
-            category: concept.category,
-            account: concept.account.toString(),
-            formula_type: concept.formula_type,
-            formula: concept.formula || "",
-            default_amount: concept.default_amount,
-        } : {
-            name: "",
-            category: "HABER_IMPONIBLE",
-            account: "",
-            formula_type: "FIXED",
-            formula: "",
-            default_amount: "0",
-        }
-    })
-
-    const onSubmit = async (data: ConceptFormValues) => {
-        setSaving(true)
-        try {
-            const convertedData = {
-                ...data,
-                account: Number(data.account),
-            }
-            if (concept) {
-                await onUpdate(concept.id, convertedData)
-                toast.success("Concepto actualizado")
-            } else {
-                await onCreate(convertedData)
-                toast.success("Concepto creado")
-            }
-            onSaved()
-            setOpen(false)
-        } catch {
-            toast.error("Error al guardar concepto")
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    return (
-        <>
-            {!isControlled && (
-                <ToolbarCreateButton onClick={() => setOpen(true)} label="Nuevo Concepto" />
-            )}
-
-            <BaseModal
-                open={isOpen}
-                onOpenChange={setOpen}
-                size="md"
-                title={
-                    <div className="flex items-center gap-2 text-sm font-black uppercase tracking-widest">
-                        Mantenimiento de Concepto
-                    </div>
-                }
-                description="Defina el comportamiento y la cuenta contable de este ítem de nómina."
-                footer={
-                    <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <SubmitButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-control-lg font-bold uppercase tracking-widest text-2xs">
-                            Validar y Guardar Cambios
-                        </SubmitButton>
-                    </div>
-                }
-            >
-                <Form {...form}>
-                    <form id="concept-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    label="Nombre Público"
-                                    error={fieldState.error?.message}
-                                    {...field}
-                                />
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="category"
-                            render={({ field, fieldState }) => (
-                                <LabeledSelect
-                                    label="Categoría Nómina"
-                                    disabled={frozen.has("category")}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={fieldState.error?.message}
-                                    options={[
-                                        { value: "HABER_IMPONIBLE", label: "Haber Imponible" },
-                                        { value: "HABER_NO_IMPONIBLE", label: "Haber No Imponible" },
-                                        { value: "DESCUENTO_LEGAL_TRABAJADOR", label: "Desc. Legal (Cargo Trabajador)" },
-                                        { value: "DESCUENTO_LEGAL_EMPLEADOR", label: "Desc. Legal (Cargo Empleador)" },
-                                        { value: "OTRO_DESCUENTO", label: "Otro Descuento / Anticipo" },
-                                    ]}
-                                    placeholder="Seleccione categoría"
-                                />
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="account"
-                            render={({ field }) => {
-                                const category = form.watch("category")
-                                let accountType: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE" | undefined = undefined
-
-                                if (category === 'HABER_IMPONIBLE' || category === 'HABER_NO_IMPONIBLE' || category === 'DESCUENTO_LEGAL_EMPLEADOR') {
-                                    accountType = 'EXPENSE'
-                                } else if (category === 'DESCUENTO_LEGAL_TRABAJADOR') {
-                                    accountType = 'LIABILITY'
-                                }
-                                return (
-                                    <AccountSelector
-                                        label="Asignación Contable"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        accountType={accountType}
-                                    />
-                                )
-                            }}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="formula_type"
-                            render={({ field, fieldState }) => (
-                                <LabeledSelect
-                                    label="Lógica de Cálculo"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={fieldState.error?.message}
-                                    options={[
-                                        { value: "FIXED", label: "Monto Fijo (Manual)" },
-                                        { value: "PERCENTAGE", label: "Porcentaje % (del Imponible)" },
-                                        { value: "EMPLOYEE_SPECIFIC", label: "Ficha Empleado (Individual)" },
-                                        { value: "FORMULA", label: "Fórmula Matemática" },
-                                        { value: "CHILEAN_LAW", label: "Legal Chile (Automático)" },
-                                    ]}
-                                    placeholder="Seleccione lógica"
-                                />
-                            )}
-                        />
-
-                        {form.watch("formula_type") === 'FORMULA' && (
-                            <FormField
-                                control={form.control}
-                                name="formula"
-                                render={({ field, fieldState }) => (
-                                    <div className="bg-primary/5 p-3 rounded-md border border-dashed border-primary/20 space-y-3">
-                                        <span className="flex items-center gap-2 text-4xs font-bold uppercase tracking-widest text-primary">
-                                            Constructor de Fórmula
-                                            <Chip size="xs">ADVANCED</Chip>
-                                        </span>
-                                        <LabeledInput
-                                            label="Expresión"
-                                            placeholder="BASE * 0.25"
-                                            className="font-mono text-2xs"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                        <FormulaBuilder
-                                            value={field.value || ""}
-                                            onChange={field.onChange}
-                                        />
-                                    </div>
-                                )}
-                            />
-                        )}
-
-                        {(form.watch("formula_type") === 'FIXED' || form.watch("formula_type") === 'PERCENTAGE') && (
-                            <FormField
-                                control={form.control}
-                                name="default_amount"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label={form.watch("formula_type") === 'PERCENTAGE' ? "Factor Porcentual (%)" : "Monto Predeterminado ($)"}
-                                        type="number"
-                                        step="0.0001"
-                                        className="font-mono"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
-                            />
-                        )}
-                    </form>
-                </Form>
-            </BaseModal>
-        </>
-    )
-}
 
 function AFPDialog({ afp, onSaved, onCreate, onUpdate }: { afp?: AFP, onSaved: () => void, onCreate: (data: Record<string, unknown>) => Promise<unknown>, onUpdate: (id: number, data: Record<string, unknown>) => Promise<unknown> }) {
     const [open, setOpen] = useState(false)
