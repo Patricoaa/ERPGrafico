@@ -72,6 +72,9 @@ def test_save_does_not_fetch_old_instance(base):
         if q["sql"].startswith("SELECT")
         and 'FROM "inventory_product"' in q["sql"]
         and 'WHERE "inventory_product"."id" =' in q["sql"]
+        # The search-index post_save (Postgres only) re-reads the row to build its vector:
+        # that is indexing, not save() fetching the old instance.
+        and "computed_vector" not in q["sql"]
     ]
     # Solo la consulta del signal pre_save (margen); save() ya no hace la suya.
     assert len(by_pk) == 1, by_pk
