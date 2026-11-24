@@ -2,7 +2,13 @@
 
 from django.db.models import Prefetch
 
-from core.documents import DocumentType, DocumentTypeRegistry, Link, related_or_none, relation_provider
+from core.documents import (
+    DocumentType,
+    DocumentTypeRegistry,
+    Link,
+    related_or_none,
+    relation_provider,
+)
 from core.documents.details import join
 
 # Vínculos de asociación (empleado ↔ sus documentos): no son cadenas de dependencia, por lo que

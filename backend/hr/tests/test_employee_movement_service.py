@@ -10,7 +10,12 @@ from django.utils import timezone
 from accounting.models import Account, AccountingSettings, AccountType
 from contacts.models import Contact
 from hr.models import Employee, EmployeeMovement, GlobalHRSettings, Payroll, PayrollAllocation
-from hr.movement_services import EmployeeMovementService, LoanTerms, TreasuryPayload, payroll_balance
+from hr.movement_services import (
+    EmployeeMovementService,
+    LoanTerms,
+    TreasuryPayload,
+    payroll_balance,
+)
 from treasury.models import TreasuryAccount
 
 pytestmark = pytest.mark.django_db

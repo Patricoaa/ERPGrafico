@@ -16,7 +16,7 @@ def generate_payroll_pdf(payroll) -> BytesIO:
     except ImportError:
         raise ImportError("ReportLab no está instalado. Ejecute: pip install reportlab")
 
-    from .models import PayrollConcept, PayrollPayment
+    from .models import PayrollConcept
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(

@@ -46,7 +46,7 @@ def test_fill_up_to_min_visible_with_newest():
     links = old(11)
     kept, hidden = apply_window(links, TODAY)
     newest = sorted(links, key=lambda x: x["target"]["date"], reverse=True)[:10]
-    assert sorted(l["target"]["id"] for l in kept) == sorted(l["target"]["id"] for l in newest)
+    assert sorted(link["target"]["id"] for link in kept) == sorted(link["target"]["id"] for link in newest)
     assert hidden == {"hr": 1}
 
 
@@ -61,7 +61,7 @@ def test_original_order_preserved_and_datetime_dates_accepted():
     links = [mk("hr", "2025-01-05T10:00:00Z", key=i) for i in range(5)] + recent(7)
     kept, hidden = apply_window(links, TODAY)
     # 7 recientes + (por empate de fecha, estable) los 3 primeros antiguos; orden original intacto.
-    assert [l["target"]["id"] for l in kept] == [0, 1, 2, *[f"r{n}" for n in range(7)]]
+    assert [link["target"]["id"] for link in kept] == [0, 1, 2, *[f"r{n}" for n in range(7)]]
     assert hidden == {"hr": 2}
 
 
@@ -69,7 +69,7 @@ def test_other_areas_are_independent():
     links = old(11) + old(4, domain="accounting")
     kept, hidden = apply_window(links, TODAY)
     assert hidden == {"hr": 1}
-    assert len([l for l in kept if l["target"]["domain"] == "accounting"]) == 4
+    assert len([link for link in kept if link["target"]["domain"] == "accounting"]) == 4
 
 
 @pytest.fixture

@@ -12,7 +12,14 @@ from rest_framework.test import APIClient
 
 from accounting.models import Account, AccountingSettings, AccountType, JournalItem
 from contacts.models import Contact
-from hr.models import Employee, EmployeeMovement, LoanInstallment, Payroll, PayrollConcept, PayrollItem
+from hr.models import (
+    Employee,
+    EmployeeMovement,
+    LoanInstallment,
+    Payroll,
+    PayrollConcept,
+    PayrollItem,
+)
 from hr.movement_services import EmployeeMovementService, LoanTerms, payroll_balance
 from hr.services import post_payroll
 

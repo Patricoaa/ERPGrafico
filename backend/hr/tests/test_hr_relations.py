@@ -90,8 +90,9 @@ def test_user_without_payroll_permission_sees_inaccessible_refs(hr_world):
 
 
 def _add_posted_payroll(employee, month):
-    from accounting.models import JournalEntry
     from django.utils import timezone
+
+    from accounting.models import JournalEntry
 
     entry = JournalEntry.objects.create(date=timezone.localdate(), description=f"Nómina {month}", status=JournalEntry.State.POSTED)
     payroll = Payroll.objects.create(

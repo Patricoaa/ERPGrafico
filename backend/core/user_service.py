@@ -1,12 +1,12 @@
 class UserServiceExt:
     @staticmethod
     def get_my_profile_data(user):
-        from hr.models import Employee, EmployeeMovement, Payroll, PayrollPayment
+        from hr.models import Employee, Payroll, PayrollPayment
         from hr.serializers import (
             ContactMiniSerializer,
+            EmployeeMovementSerializer,
             EmployeeSerializer,
             PayrollListSerializer,
-            EmployeeMovementSerializer,
             PayrollPaymentSerializer,
         )
 
