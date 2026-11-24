@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LoadingFallback } from "./LoadingFallback"
+import { fadeInClass } from "./fade-in-class"
 
 export interface WizardStep {
     id: string | number
@@ -383,7 +384,7 @@ export function GenericWizard({
 
     const stepContent = (
         <div className={cn(
-            "animate-in fade-in slide-in-from-right-4 duration-300",
+            fadeInClass({ from: "right", distance: 4, duration: 300 }),
             "px-1 py-1",
             (isStepTransitioning || isLoading) && "opacity-50 pointer-events-none"
         )}>

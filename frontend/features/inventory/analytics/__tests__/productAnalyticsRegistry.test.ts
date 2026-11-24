@@ -1,11 +1,8 @@
 import { describe, it, expect } from "vitest"
 
 import {
-    SEGMENT_LABELS,
-    overviewKpiIds,
     visibleTabIds,
     type ProductCapabilities,
-    type ProductSegment,
 } from "../productAnalyticsRegistry"
 
 const base: ProductCapabilities = {
@@ -22,96 +19,88 @@ const base: ProductCapabilities = {
 const caps = (overrides: Partial<ProductCapabilities>): ProductCapabilities => ({ ...base, ...overrides })
 
 describe("visibleTabIds", () => {
-    it("hides sales tabs and shows purchasing/stock/production for an input-only product", () => {
-        const tabs = visibleTabIds(caps({ segment: "INPUT", buys: true, tracks_stock: true, used_in_production: true }))
-        expect(tabs).toEqual(["overview", "purchases", "cost", "kardex", "production", "sourcing", "operations", "suppliers"])
-    })
-
-    it("shows sales tabs for a sellable product and no stock tab without stock", () => {
-        const tabs = visibleTabIds(caps({ sells: true }))
-        expect(tabs).toEqual(["overview", "sales", "pricing", "price", "customers"])
-    })
-
-    it("express manufacturable has production and cost but no stock tab", () => {
-        const tabs = visibleTabIds(caps({ segment: "MANUFACTURABLE_EXPRESS", sells: true, manufactures: true, express: true }))
-        expect(tabs).toContain("production")
-        expect(tabs).toContain("cost")
-        expect(tabs).not.toContain("kardex")
-    })
-
-    it("stocked manufacturable has the stock tab", () => {
-        const tabs = visibleTabIds(caps({ segment: "MANUFACTURABLE_STOCKED", sells: true, manufactures: true, tracks_stock: true }))
-        expect(tabs).toContain("kardex")
-    })
-
-    it("service sold without purchasing only shows overview, sales, price and customers", () => {
-        expect(visibleTabIds(caps({ segment: "SERVICE", sells: true }))).toEqual(["overview", "sales", "pricing", "price", "customers"])
-    })
-
-    it("subscription bought without selling shows purchasing tabs only", () => {
-        expect(visibleTabIds(caps({ segment: "SUBSCRIPTION", buys: true, recurring: true }))).toEqual([
-            "overview", "purchases", "cost", "operations", "suppliers",
+    it("stocked storable that sells and buys", () => {
+        expect(visibleTabIds(caps({ sells: true, buys: true, tracks_stock: true }))).toEqual([
+            "overview", "sales", "pricing", "costs", "procurement", "inventory",
         ])
     })
 
+    it("stocked storable that only sells", () => {
+        expect(visibleTabIds(caps({ sells: true, tracks_stock: true }))).toEqual([
+            "overview", "sales", "pricing", "costs", "inventory",
+        ])
+    })
+
+    it("stocked input that is a BOM component", () => {
+        expect(visibleTabIds(caps({ segment: "INPUT", buys: true, tracks_stock: true, used_in_production: true }))).toEqual([
+            "overview", "costs", "procurement", "inventory", "production",
+        ])
+    })
+
+    it("resale storable without stock control", () => {
+        expect(visibleTabIds(caps({ sells: true, buys: true }))).toEqual([
+            "overview", "sales", "pricing", "costs", "procurement",
+        ])
+    })
+
+    it("consumable that is only bought", () => {
+        expect(visibleTabIds(caps({ segment: "CONSUMABLE", buys: true }))).toEqual(["overview", "costs", "procurement"])
+    })
+
+    it("express manufacturable that sells has production but no inventory", () => {
+        expect(visibleTabIds(caps({ segment: "MANUFACTURABLE_EXPRESS", sells: true, manufactures: true, express: true }))).toEqual([
+            "overview", "sales", "pricing", "costs", "production",
+        ])
+    })
+
+    it("stocked manufacturable adds inventory before production", () => {
+        expect(visibleTabIds(caps({ segment: "MANUFACTURABLE_STOCKED", sells: true, manufactures: true, tracks_stock: true }))).toEqual([
+            "overview", "sales", "pricing", "costs", "inventory", "production",
+        ])
+    })
+
+    it("manufacturable that also buys adds procurement", () => {
+        expect(visibleTabIds(caps({ segment: "MANUFACTURABLE_ON_DEMAND", sells: true, buys: true, manufactures: true }))).toEqual([
+            "overview", "sales", "pricing", "costs", "procurement", "production",
+        ])
+    })
+
+    it("service that only sells", () => {
+        expect(visibleTabIds(caps({ segment: "SERVICE", sells: true }))).toEqual(["overview", "sales", "pricing"])
+    })
+
+    it("service that sells and buys", () => {
+        expect(visibleTabIds(caps({ segment: "SERVICE", sells: true, buys: true }))).toEqual([
+            "overview", "sales", "pricing", "costs", "procurement",
+        ])
+    })
+
+    it("subscription that is not sold or bought only has overview and subscription", () => {
+        expect(visibleTabIds(caps({ segment: "SUBSCRIPTION", recurring: true }))).toEqual(["overview", "subscription"])
+    })
+
+    it("subscription that is bought adds costs and procurement", () => {
+        expect(visibleTabIds(caps({ segment: "SUBSCRIPTION", buys: true, recurring: true }))).toEqual([
+            "overview", "costs", "procurement", "subscription",
+        ])
+    })
+
+    it("a product that neither sells, buys nor holds stock only has the overview", () => {
+        expect(visibleTabIds(caps({}))).toEqual(["overview"])
+    })
+
     it("returns every tab when capabilities are missing", () => {
-        const all = ["overview", "sales", "pricing", "purchases", "price", "cost", "kardex", "production", "manufacturing", "sourcing", "operations", "customers", "suppliers"]
+        const all = ["overview", "sales", "pricing", "costs", "procurement", "inventory", "production", "subscription"]
         expect(visibleTabIds(undefined)).toEqual(all)
         expect(visibleTabIds(null)).toEqual(all)
     })
 })
 
-describe("overviewKpiIds", () => {
-    it("sellable stocked product shows units sold, valuation and stock", () => {
-        expect(overviewKpiIds(caps({ sells: true, tracks_stock: true }))).toEqual(["units_sold", "valuation", "stock"])
-    })
-
-    it("input used in production adds production usage and purchases", () => {
-        expect(overviewKpiIds(caps({ buys: true, tracks_stock: true, used_in_production: true }))).toEqual([
-            "units_purchased", "valuation", "stock", "production_usage",
-        ])
-    })
-
-    it("falls back to the original three KPIs when capabilities are missing", () => {
-        expect(overviewKpiIds(undefined)).toEqual(["units_sold", "valuation", "stock"])
-    })
-})
-
-describe("SEGMENT_LABELS", () => {
-    it("covers every segment with a non-empty label", () => {
-        const segments: ProductSegment[] = [
-            "MANUFACTURABLE_EXPRESS", "MANUFACTURABLE_STOCKED", "MANUFACTURABLE_ON_DEMAND",
-            "SERVICE", "SUBSCRIPTION", "INPUT", "STORABLE", "CONSUMABLE",
-        ]
-        for (const segment of segments) expect(SEGMENT_LABELS[segment]).toBeTruthy()
-    })
-
+describe("pricing tab", () => {
     it("pricing tab (price and margin) only applies to products that sell, right after sales", () => {
         expect(visibleTabIds(caps({ sells: true }))).toContain("pricing")
         const tabs = visibleTabIds(caps({ sells: true, buys: true, tracks_stock: true }))
         expect(tabs.indexOf("pricing")).toBe(tabs.indexOf("sales") + 1)
         expect(visibleTabIds(caps({ sells: false, buys: true }))).not.toContain("pricing")
-    })
-
-    it("manufacturing tab only applies to products that manufacture, right after production", () => {
-        const tabs = visibleTabIds(caps({ manufactures: true, used_in_production: true }))
-        expect(tabs.indexOf("manufacturing")).toBe(tabs.indexOf("production") + 1)
-        expect(visibleTabIds(caps({ manufactures: false, used_in_production: true }))).not.toContain("manufacturing")
-    })
-
-    it("sourcing tab applies to products made and bought, or used as an input, right after manufacturing", () => {
-        const both = visibleTabIds(caps({ manufactures: true, buys: true }))
-        expect(both.indexOf("sourcing")).toBe(both.indexOf("manufacturing") + 1)
-        expect(visibleTabIds(caps({ manufactures: false, buys: false, used_in_production: true }))).toContain("sourcing")
-        expect(visibleTabIds(caps({ manufactures: true, buys: false, used_in_production: false }))).not.toContain("sourcing")
-        expect(visibleTabIds(caps({ manufactures: false, buys: true, used_in_production: false }))).not.toContain("sourcing")
-    })
-
-    it("operations tab applies to stocked or recurring products, right after sourcing when both show", () => {
-        const stocked = visibleTabIds(caps({ tracks_stock: true, used_in_production: true }))
-        expect(stocked.indexOf("operations")).toBe(stocked.indexOf("sourcing") + 1)
-        expect(visibleTabIds(caps({ tracks_stock: true }))).toContain("operations")
-        expect(visibleTabIds(caps({ recurring: true }))).toContain("operations")
-        expect(visibleTabIds(caps({ sells: true }))).not.toContain("operations")
     })
 })

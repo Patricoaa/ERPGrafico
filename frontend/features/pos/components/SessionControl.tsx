@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
-import { Chip, SubmitButton } from "@/components/shared"
+import { Chip, SubmitButton, fadeInClass } from "@/components/shared"
 import { forwardRef, useImperativeHandle } from "react"
 import { useOperatorGate } from "../operator"
 
@@ -197,8 +197,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     }
 
     const reportOverlay = reportDialogOpen && (
-        <div className="fixed inset-0 z-[100] bg-overlay/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground motion-reduce:animate-none">
-            <div className="w-full max-w-sm animate-in zoom-in-95 duration-200 space-y-3 motion-reduce:animate-none">
+        <div className={cn("fixed inset-0 z-[100] bg-overlay/50 flex items-center justify-center p-4 print:hidden text-foreground", fadeInClass({ duration: 200 }))}>
+            <div className={cn("w-full max-w-sm space-y-3", fadeInClass({ zoom: true, fade: false, duration: 200 }))}>
                 {reportData && (
                     <POSReport
                         data={reportData}

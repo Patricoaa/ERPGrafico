@@ -7,7 +7,7 @@ import { cn, formatDateWith, formatTimeWith } from "@/lib/utils"
 import { Printer, Download, Calculator, CreditCard, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { DataCell, SheetCloseButton } from "@/components/shared"
+import { DataCell, SheetCloseButton, fadeInClass } from "@/components/shared"
 import { toast } from "sonner"
 import { useDownloadPOSReportPDF } from "../hooks/usePOSSessions"
 
@@ -133,7 +133,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
     return (
         <div ref={reportRef} className={cn(
             // card-family-allow: printed receipt (80mm ticket), not a card
-            "w-full max-w-[380px] mx-auto bg-card p-6 shadow-overlay border border-border/50 text-card-foreground font-sans relative rounded-md animate-in zoom-in-95 duration-200 motion-reduce:animate-none",
+            cn("w-full max-w-[380px] mx-auto bg-card p-6 shadow-overlay border border-border/50 text-card-foreground font-sans relative rounded-md", fadeInClass({ zoom: true, fade: false, duration: 200 })),
             "print:shadow-none print:border-none print:p-0 print:w-[80mm]"
         )}>
             {loading && (

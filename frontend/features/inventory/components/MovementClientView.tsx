@@ -1,11 +1,9 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useState, useMemo, useEffect } from "react"
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
-import { LazyDrawer, type TransactionType } from "@/features/_shared"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
@@ -37,14 +35,12 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         }
     }, [search.groupBy, totalCount])
 
-    const panel = useEntityPanelRoute<StockMove>({ endpoint: '/inventory/moves', create: false })
-    const selectedFromUrl = panel.entity
-    const { openView } = useEntityRouteActions()
-
-    const viewingTransaction = selectedFromUrl ? { type: 'stock_move' as TransactionType, id: selectedFromUrl.id } : null
+    // Cada movimiento abre su detalle en una pestaña propia (ADR-0152); `?selected&action=view` es enlace profundo.
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("inventory.stockmove", { actions: [null, "view"] })
 
     const actionsCtx: StockMoveActionsCtx = {
-        onViewDetails: (id) => openView(id),
+        onViewDetails: (id) => openEntity("inventory.stockmove", id),
     }
 
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("flujo")
@@ -246,7 +242,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
             <div className="flex-1 flex flex-col min-h-0">
                 <Collection.Root
                     collection={collection}
-                    onOpen={(move: StockMove) => openView(move.id)}
+                    onOpen={(move: StockMove) => openEntity("inventory.stockmove", move.id, move)}
                     actions={stockMoveActions.forCollection(actionsCtx)}
                 >
                     <Collection.Toolbar action={createAction}>
@@ -278,16 +274,6 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                 </Collection.Root>
             </div>
 
-            <EntityPanelTab label="inventory.stockmove" {...panel.tab}>
-                {(open) => viewingTransaction && (
-                    <LazyDrawer
-                        type={viewingTransaction.type}
-                        id={Number(viewingTransaction.id)}
-                        open={open}
-                        onOpenChange={(open) => { if (!open) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
         </div>
     )
 }

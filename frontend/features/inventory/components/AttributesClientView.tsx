@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useCallback, useMemo } from "react"
@@ -10,8 +10,8 @@ import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
 import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { attributeEntity, attributeViews } from "../entity-view/attribute.entity"
@@ -42,9 +42,10 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
         { defaultSort: attributeViews.table.defaultSort },
     )
 
-    const panel = useEntityPanelRoute<Attribute>({ endpoint: '/inventory/attributes', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.attribute")
 
     const archiveConfirm = useConfirmAction<Attribute>(async (attribute) => {
         const isArchiving = attribute.is_active
@@ -68,7 +69,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
     const handleDeleteValue = useCallback((id: number) => deleteValueConfirm.requestConfirm(id), [deleteValueConfirm])
 
     const attributeActionsCtx: AttributeActionsCtx = {
-        onEdit: (id) => openSelected(id),
+        onEdit: (id) => openEntity("inventory.attribute", id),
         onArchive: (attribute) => archiveConfirm.requestConfirm(attribute),
     }
 
@@ -107,7 +108,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
             <AttributeValuesProvider
                 value={{
                     onDeleteValue: (valueId) => handleDeleteValue(valueId),
-                    onAddValue: (attributeId) => openSelected(attributeId),
+                    onAddValue: (attributeId) => openEntity("inventory.attribute", attributeId),
                 }}
             >
                 <Collection.Root
@@ -115,7 +116,6 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
                     selection="bulk"
                     view={view}
                     onViewChange={onViewChange}
-                    onOpen={(attr) => openSelected(attr.id)}
                     actions={attributeActions.forCollection(attributeActionsCtx)}
                 >
                     <Collection.Toolbar action={createAction}>
@@ -143,7 +143,6 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
                         onSuccess={() => { void refetch() }}
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
-                        initialData={selectedFromUrl || undefined}
                     />
                 )}
             </EntityPanelTab>

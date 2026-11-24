@@ -1,34 +1,18 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import React, { useState, useEffect } from "react"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Landmark } from "lucide-react"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { bankActions, type BankActionsCtx } from './bankActions'
-import { EntitySidebar } from "@/features/comments"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Form, FormField } from "@/components/ui/form"
-import { CancelButton, LabeledInput, BaseModal, FormFooter, FormSplitLayout, SubmitButton, ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { bankUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank } from "@/features/treasury/types"
 import { BankCreationWizard } from "./BankCreationWizard"
 import { bankEntity, bankViews, type BankRow } from "../entity-view/bank.entity"
-
-// --- Schemas ---
-
-const bankSchema = z.object({
-    name: z.string().min(1, "El nombre es requerido"),
-    code: z.string().nullable().optional(),
-    swift_code: z.string().max(11, "Máximo 11 caracteres").nullable().optional(),
-})
-
-type BankFormValues = z.infer<typeof bankSchema>
 
 // --- Bank Management ---
 
@@ -42,9 +26,8 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
     const { banks, isLoading, isError, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
     const search = useUnifiedSearch(bankUnifiedSearchDef)
-    const [dialogOpen, setDialogOpen] = useState(false)
     const [wizardOpen, setWizardOpen] = useState(false)
-    const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
+    const { openEntity } = useGlobalModals()
     const router = useRouter()
 
     const archiveConfirm = useConfirmAction<number>(async (id) => {
@@ -63,19 +46,11 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
         }
     })
 
-    const openEdit = (bank: Bank) => {
-        setSelectedBank(bank)
-        setDialogOpen(true)
-    }
+    // ADR-0152: cada banco abre su ficha en una pestaña propia; esta pestaña de página solo crea (asistente).
+    const openEdit = (bank: Bank) => openEntity("treasury.bank", bank.id, bank)
 
     const closeWizard = () => {
         setWizardOpen(false)
-        onOpenChange?.(false)
-    }
-
-    const closeBankModal = () => {
-        setDialogOpen(false)
-        setSelectedBank(null)
         onOpenChange?.(false)
     }
 
@@ -130,7 +105,7 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                 />
             </Collection.Root>
 
-            <EntityPanelTab label="treasury.bank" id={null} open={wizardOpen || (!!externalOpen && !selectedBank)} onClose={closeWizard}>
+            <EntityPanelTab label="treasury.bank" id={null} open={wizardOpen || !!externalOpen} onClose={closeWizard}>
                 {(open) => (
                     <BankCreationWizard
                         open={open}
@@ -142,19 +117,6 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                 )}
             </EntityPanelTab>
 
-            <EntityPanelTab label="treasury.bank" id={selectedBank?.id ?? null} open={dialogOpen || (!!externalOpen && !!selectedBank)} onClose={closeBankModal}>
-                {(open) => (
-                    <BankModal
-                        open={open}
-                        onOpenChange={(open: boolean) => { if (!open) closeBankModal() }}
-                        bank={selectedBank}
-                        onSuccess={() => {
-                            closeBankModal()
-                            refetch()
-                        }}
-                    />
-                )}
-            </EntityPanelTab>
 
             <ActionConfirmModal
                 open={archiveConfirm.isOpen}
@@ -175,154 +137,3 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
         </div>
     )
 }
-
-interface BankModalProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    bank: Bank | null
-    onSuccess: () => void
-}
-
-function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
-    const { createBank, updateBank, isCreating, isUpdating } = useBanks()
-    const isSaving = isCreating || isUpdating
-
-    const form = useForm<BankFormValues>({
-        resolver: zodResolver(bankSchema),
-        defaultValues: {
-            name: "",
-            code: "",
-            swift_code: "",
-        },
-    })
-
-    useEffect(() => {
-        if (open) {
-            form.reset({
-                name: bank?.name || "",
-                code: bank?.code || "",
-                swift_code: bank?.swift_code || "",
-            })
-        }
-    }, [open, bank, form])
-
-    const onSubmit = async (data: BankFormValues) => {
-        try {
-            if (bank) {
-                await updateBank({ id: bank.id, payload: data })
-            } else {
-                await createBank(data)
-            }
-            onSuccess()
-        } catch {
-            // Error handled by hook
-        }
-    }
-
-    return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            size={bank ? "xl" : "md"}
-            hideScrollArea={true}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <Landmark className="h-5 w-5 text-muted-foreground" />
-                    <span>{bank ? "Ficha de Banco" : "Nuevo Banco"}</span>
-                </div>
-            }
-            description={bank ? "Modifique los datos del banco y revise su historial." : "Ingrese el nombre y código identificador del nuevo banco."}
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <SubmitButton
-                                type="submit"
-                                form="bank-form"
-                                loading={isSaving}
-                                disabled={isSaving}
-                                onClick={form.handleSubmit(onSubmit)}
-                            >
-                                {bank ? "Guardar Cambios" : "Crear Banco"}
-                            </SubmitButton>
-                        </>
-                    }
-                />
-            }
-        >
-            <FormSplitLayout
-                collapsible
-                collapseStorageKey="erpgrafico.drawer.sidebar.bank"
-                showSidebar={!!bank?.id}
-                sidebar={
-                    bank?.id && (
-                        <EntitySidebar
-                            entityType="bank"
-                            entityId={bank.id}
-                            title="Historial"
-                        />
-                    )
-                }
-            >
-                <Form {...form}>
-                    <form id="bank-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
-                        <div className="grid grid-cols-4 gap-4">
-                            <div className="col-span-4">
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Nombre"
-                                            required
-                                            error={fieldState.error?.message}
-                                            placeholder="Ej: Banco de Chile"
-                                            {...field}
-                                            value={field.value || ""}
-                                        />
-                                    )}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <FormField
-                                    control={form.control}
-                                    name="code"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Código (Alias)"
-                                            error={fieldState.error?.message}
-                                            placeholder="Ej: BCHILE"
-                                            {...field}
-                                            value={field.value || ""}
-                                        />
-                                    )}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <FormField
-                                    control={form.control}
-                                    name="swift_code"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Código SWIFT/BIC"
-                                            error={fieldState.error?.message}
-                                            placeholder="Ej: BCHICLRM"
-                                            maxLength={11}
-                                            hint="Código internacional para transferencias"
-                                            {...field}
-                                            value={field.value || ""}
-                                        />
-                                    )}
-                                />
-                            </div>
-                        </div>
-                    </form>
-                </Form>
-            </FormSplitLayout>
-        </BaseModal>
-    )
-}
-
-

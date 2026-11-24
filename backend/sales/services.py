@@ -1066,35 +1066,17 @@ class SalesService:
         original_invoice_id=None,
         date=None,
     ):
-        print(f"DEBUG: create_note service started for order {order.number}")
-        print(f"DEBUG: note_type: {note_type}, return_items: {return_items}")
         """
         Creation of a Credit or Debit Note linked to a Sale Order.
         - note_type: NOTA_CREDITO or NOTA_DEBITO
         - return_items: list of { 'product_id': int, 'quantity': Decimal }
         """
-        from accounting.models import AccountingSettings
         from billing.models import Invoice
         from inventory.models import Product, Warehouse
 
         # 0. Initial Validations
-        settings = AccountingSettings.get_solo()
-        if not settings:
-            raise ValidationError("Debe configurar la contabilidad primero.")
-
-        original_invoice = None
-        if original_invoice_id:
-            original_invoice = Invoice.objects.filter(id=original_invoice_id).first()
-        else:
-            # Fallback: link to the first primary invoice if exists
-            original_invoice = order.invoices.filter(
-                dte_type__in=[
-                    Invoice.DTEType.FACTURA,
-                    Invoice.DTEType.FACTURA_EXENTA,
-                    Invoice.DTEType.BOLETA,
-                    Invoice.DTEType.BOLETA_EXENTA,
-                ]
-            ).first()
+        settings = BaseNoteService.get_accounting_settings("Debe configurar la contabilidad primero.")
+        original_invoice = BaseNoteService.resolve_original_invoice(order, original_invoice_id)
 
         # 1. Business Logic Validations
         if return_items:
@@ -1265,12 +1247,10 @@ class SalesService:
             for item in return_items:
                 product_id = item.get("product_id")
                 if not product_id:
-                    print(f"DEBUG: item missing product_id: {item}")
                     continue
 
                 product = Product.objects.get(id=product_id)
                 quantity = Decimal(str(item.get("quantity", 0)))
-                print(f"DEBUG: Processing return for product {product.name}, quantity {quantity}")
 
                 if quantity <= 0:
                     continue
@@ -1282,9 +1262,6 @@ class SalesService:
                     if sale_line.quantity_delivered < 0:
                         sale_line.quantity_delivered = 0
                     sale_line.save()
-                    print(
-                        f"DEBUG: Reverted delivered qty for line {sale_line.id} to {sale_line.quantity_delivered}"
-                    )
 
                 # Check if we should track inventory for this move
                 if product.track_inventory:
@@ -1297,7 +1274,6 @@ class SalesService:
                             unit_cost=product.cost_price
                         )
                     )
-                    print(f"DEBUG: Created InventoryDocumentDetail for {product.internal_code}")
 
             if details_to_create:
                 InventoryDocumentDetail.objects.bulk_create(details_to_create)
@@ -1324,10 +1300,6 @@ class SalesService:
                 )
                 line_cogs = (quantity * unit_cost).quantize(
                     Decimal("0.01"), rounding="ROUND_HALF_UP"
-                )
-
-                print(
-                    f"DEBUG: Calculated Reversal COGS for {product.name}: {line_cogs} (Unit Cost: {unit_cost})"
                 )
 
                 if line_cogs > 0:
@@ -1370,13 +1342,6 @@ class SalesService:
                             debit=0,
                             credit=line_cogs,
                             label=GlosaBuilder.item(Roles.COSTO_VENTA, doc_ref=doc_id),
-                        )
-                        print(
-                            f"DEBUG: Created JournalItems for COGS reversal (Inv: {inventory_account.code}, COGS: {cogs_account.code})"
-                        )
-                    else:
-                        print(
-                            f"DEBUG: Skipping accounting items - missing accounts (Inv: {inventory_account}, COGS: {cogs_account})"
                         )
 
         JournalEntryService.post_entry(entry)
@@ -1493,34 +1458,16 @@ class SaleOrderService(DocumentService):
         """
         Annuls a sale order and all its associated documents.
         """
-        order = document
         force = kwargs.get("force", False)
+        return self._cancel_order_base(
+            document,
+            user=user,
+            reason=reason,
+            cancelled_status=SaleOrder.Status.CANCELLED,
+            force=force,
+        )
 
-        from core.services.document import lock_document
-
-        lock_document(order)
-
-        if order.status == SaleOrder.Status.CANCELLED:
-            return order
-
-        if not reason:
-            raise ValidationError("Debe indicar el motivo de la anulación.")
-
-        from billing.models import Invoice
-        from billing.services import BillingService
-        from treasury.models import TreasuryMovement
-        from treasury.services import TreasuryService
-
-        # 1. Handle Invoices — cancel if DRAFT, annul if POSTED/PAID
-        for invoice in order.invoices.all():
-            if invoice.status == Invoice.Status.CANCELLED:
-                continue
-            if invoice.status == Invoice.Status.DRAFT:
-                BillingService.cancel_invoice(invoice, user=user, reason=reason)
-            else:
-                BillingService.annul_invoice(invoice, force=force, user=user, reason=reason)
-
-        # 2. Handle Deliveries — cancel if DRAFT, annul if CONFIRMED
+    def _cancel_physical_documents(self, order, *, user, reason: str, force: bool = False):
         for delivery in order.deliveries.all():
             if delivery.status == SaleDelivery.Status.CANCELLED:
                 continue
@@ -1530,42 +1477,12 @@ class SaleOrderService(DocumentService):
             else:
                 SalesService.annul_delivery(delivery, user=user, reason=reason)
 
-        # 3. Handle Payments — cancel if DRAFT (sin JE POSTED), annul if POSTED
-        for movement in order.payments.all():
-            if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
-                continue
-            je_posted = movement.journal_entry and movement.journal_entry.status == "POSTED"
-            if movement.status == TreasuryMovement.MovementStatus.DRAFT and not je_posted:
-                TreasuryService.cancel_movement(movement, user=user, reason=reason)
-            else:
-                TreasuryService.annul_movement(
-                    movement,
-                    user=user,
-                    reason=reason,
-                    treasury_account_id=(
-                        movement.to_account_id
-                        if movement.movement_type == "INBOUND"
-                        else movement.from_account_id
-                    ),
-                )
-
-        # 4. Handle Work Orders — annul with stage-limit/consumption validations.
-        # Si una OT superó la etapa límite, ValidationError aborta toda la anulación.
+    def _cancel_auxiliary_documents(self, order, *, user, reason: str, force: bool = False):
         from production.models import WorkOrder
         from production.services import WorkOrderService
 
         for work_order in order.work_orders.exclude(status=WorkOrder.Status.CANCELLED):
             WorkOrderService.annul_work_order(work_order, user=user, notes=reason)
-
-        order.status = SaleOrder.Status.CANCELLED
-        if reason:
-            order.notes = (order.notes or "") + f"\nAnulado: {reason}"
-        order.save()
-
-        from workflow.services import WorkflowService
-
-        WorkflowService.log_transition(order, "annul", user=user, reason=reason)
-        return order
 
     @staticmethod
     def get_comments_queryset(order):

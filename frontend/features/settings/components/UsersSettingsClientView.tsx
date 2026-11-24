@@ -1,16 +1,14 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useMemo, useState } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { FadeIn, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { UserDrawer, useUsers } from "@/features/users"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
-import type { AppUser } from "@/types/entities"
 import { userEntity, userViews } from "../entity-view/user.entity"
 import { userActions, type UserActionsCtx } from "./userActions"
 
@@ -37,18 +35,13 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
         page_size: pageState.pageSize,
     } as Parameters<typeof useUsers>[0])
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
 
-    const panel = useEntityPanelRoute<AppUser>({ endpoint: '/core/users', create: false })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada usuario abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("core.user")
 
     const actionsCtx: UserActionsCtx = {
-        onEdit: (id) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('selected', String(id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onEdit: (id) => openEntity("core.user", id),
     }
 
     const { view, onViewChange } = useCollectionViewMode("core.user")
@@ -82,7 +75,6 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                             collection={collection}
                             view={view}
                             onViewChange={onViewChange}
-                            onOpen={(user) => actionsCtx.onEdit(user.id)}
                             actions={userActions.forCollection(actionsCtx)}
                         >
                             <Collection.Toolbar action={usersCreateAction}>
@@ -99,19 +91,6 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                 onResetFilters={search.clearAll}
                             />
                         </Collection.Root>
-                        <EntityPanelTab label="core.user" {...panel.tab}>
-                            {(open) => (
-                                <UserDrawer
-                                    open={open}
-                                    onOpenChange={(open) => { if (!open) panel.close() }}
-                                    initialData={panel.entity || undefined}
-                                    onSuccess={() => {
-                                        refetch()
-                                        panel.close()
-                                    }}
-                                />
-                            )}
-                        </EntityPanelTab>
                     </TabsContent>
 
                     <TabsContent value="groups" className="mt-0 outline-none flex-1 min-h-0">

@@ -113,6 +113,9 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         from .services import ProductService
         ProductService.bulk_annotate_reserved_qty(objects)
         ProductService.bulk_annotate_pricing(objects)
+        # Variantes ya prefetched (sin consultas por fila): reservas en bloque para `variants_qty_available`.
+        variants = [v for p in objects if p.has_variants for v in p.variants.all()]
+        ProductService.bulk_annotate_reserved_qty(variants)
 
         serializer = self.get_serializer(objects, many=True)
         if page is not None:
@@ -198,20 +201,11 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         )
 
     @action(detail=True, methods=["get"])
-    def insights(self, request, pk=None):
-        """
-        Returns a unified view of product performance:
-        0. Capabilities (which blocks apply to this product)
-        1. Price/Cost History
-        2. Stock flow (in/out totals and monthly flow) and stock history
-        3. Sales Performance (Avg Price, Cost, Margin)
-        4. Production Usage (OTs)
-        """
+    def capabilities(self, request, pk=None):
+        """Capacidades del producto (qué tabs de análisis aplican), sin cargar los insights."""
         from .selectors import ProductSelector
 
-        instance = self.get_object()
-        data = ProductSelector.get_insights(instance)
-        return Response(data)
+        return Response(ProductSelector.get_capabilities(self.get_object()))
 
     @action(detail=True, methods=["get"], url_path="sales-impact")
     def sales_impact(self, request, pk=None):
@@ -224,41 +218,82 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
         params.is_valid(raise_exception=True)
         return Response(SalesImpactSelector.get_sales_impact(instance, params.to_params()))
 
-    @action(detail=True, methods=["get"], url_path="production-performance")
-    def production_performance(self, request, pk=None):
-        """Costo real vs BOM, desviación por insumo, etapas y margen por OT (ADR-0146)."""
-        from .production_performance_params import ProductionPerformanceParamsSerializer
-        from .production_performance_selector import ProductionPerformanceSelector
+    @action(detail=True, methods=["get"], url_path="pricing")
+    def pricing(self, request, pk=None):
+        """Precio, margen realizado y efecto de los cambios de precio en las ventas."""
+        from .pricing_params import PricingParamsSerializer
+        from .pricing_selector import PricingSelector
 
         instance = self.get_object()
-        params = ProductionPerformanceParamsSerializer(data=request.query_params)
+        params = PricingParamsSerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
-        date_from, date_to = params.to_range()
-        return Response(ProductionPerformanceSelector.get_performance(instance, date_from, date_to))
+        return Response(PricingSelector.get_pricing(instance, params.to_params()))
 
-    @action(detail=True, methods=["get"], url_path="operations")
-    def operations(self, request, pk=None):
-        """Rotación, cobertura, stock inmóvil y suscripciones del producto (ADR-0148)."""
-        from .operations_params import OperationsParamsSerializer
-        from .operations_selector import OperationsSelector
+    @action(detail=True, methods=["get"], url_path="sales")
+    def sales_overview(self, request, pk=None):
+        """Volumen de ventas, clientes y mezcla por canal, variante y unidad."""
+        from .sales_overview_params import SalesOverviewParamsSerializer
+        from .sales_overview_selector import SalesOverviewSelector
 
         instance = self.get_object()
-        params = OperationsParamsSerializer(data=request.query_params)
+        params = SalesOverviewParamsSerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
-        date_from, date_to, idle_days = params.to_args()
-        return Response(OperationsSelector.get_operations(instance, date_from, date_to, idle_days))
+        return Response(SalesOverviewSelector.get_overview(instance, params.to_params()))
 
-    @action(detail=True, methods=["get"], url_path="sourcing")
-    def sourcing(self, request, pk=None):
-        """Fabricar vs comprar y uso como insumo con sensibilidad de costo (ADR-0147)."""
-        from .sourcing_params import SourcingParamsSerializer
-        from .sourcing_selector import SourcingSelector
+    @action(detail=True, methods=["get"], url_path="costs")
+    def costs(self, request, pk=None):
+        """Costo del producto según su modo: comprado, fabricado con o sin stock, sin BOM o solo stock."""
+        from .costs_params import CostsParamsSerializer
+        from .costs_selector import CostsSelector
 
         instance = self.get_object()
-        params = SourcingParamsSerializer(data=request.query_params)
+        params = CostsParamsSerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
-        date_from, date_to, increase_pct = params.to_args()
-        return Response(SourcingSelector.get_sourcing(instance, date_from, date_to, increase_pct))
+        return Response(CostsSelector.get_costs(instance, params.to_params()))
+
+    @action(detail=True, methods=["get"], url_path="procurement")
+    def procurement(self, request, pk=None):
+        """Cobertura, compras, proveedores y pendiente de recibir del producto."""
+        from .procurement_params import ProcurementParamsSerializer
+        from .procurement_selector import ProcurementSelector
+
+        instance = self.get_object()
+        params = ProcurementParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(ProcurementSelector.get_procurement(instance, params.to_params()))
+
+    @action(detail=True, methods=["get"], url_path="stock-analysis")
+    def stock_analysis(self, request, pk=None):
+        """Existencia, comprometido, rotación, flujos, ajustes, bodegas y variantes del producto."""
+        from .stock_analysis_params import StockAnalysisParamsSerializer
+        from .stock_analysis_selector import StockAnalysisSelector
+
+        instance = self.get_object()
+        params = StockAnalysisParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(StockAnalysisSelector.get_analysis(instance, params.to_params()))
+
+    @action(detail=True, methods=["get"], url_path="production-analysis")
+    def production_analysis(self, request, pk=None):
+        """Producción del producto como fabricado (OT, rectificación, insumos) y como insumo (consumo, uso en BOM)."""
+        from .production_analysis_params import ProductionAnalysisParamsSerializer
+        from .production_analysis_selector import ProductionAnalysisSelector
+
+        instance = self.get_object()
+        params = ProductionAnalysisParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(ProductionAnalysisSelector.get_analysis(instance, params.to_params()))
+
+    @action(detail=True, methods=["get"], url_path="subscription-analysis")
+    def subscription_analysis(self, request, pk=None):
+        """Costo recurrente, pagos del período, subidas de precio y vencimientos de una suscripción."""
+        from .subscription_analysis_params import SubscriptionAnalysisParamsSerializer
+        from .subscription_analysis_selector import SubscriptionAnalysisSelector
+
+        instance = self.get_object()
+        params = SubscriptionAnalysisParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        return Response(SubscriptionAnalysisSelector.get_analysis(instance, params.to_params()))
 
     @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):

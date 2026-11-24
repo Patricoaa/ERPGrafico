@@ -127,3 +127,25 @@ def test_variant_row_exposes_inheritance_and_resolved_price(catalog):
     # El precio cobrado (resuelto) es plantilla + recargo, no la copia guardada de la plantilla.
     assert row["effective_price"] == 1500.0
     assert row["effective_price_net"] == float(round(1500 / Decimal("1.19")))
+
+
+def test_template_reports_variants_qty_available(catalog):
+    """`variants_qty_available` suma la disponibilidad de las variantes y no crece con las filas."""
+    from inventory.models import Product, Stock, Warehouse
+
+    client = catalog["client"]
+    template = catalog["make_template"]("Polera", ["1000", "1200"], [catalog["gramaje"]])
+    catalog["make_template"]("Gorro", ["500"], [catalog["gramaje"]])
+
+    rows = rows_by_name(client)
+    assert rows["Polera"]["variants_qty_available"] == 0
+    assert rows["Gorro"]["variants_qty_available"] == 0
+
+    variant = Product.objects.get(name="Polera v0")
+    warehouse = Warehouse.objects.create(name="Principal", code="PRI")
+    Stock.objects.create(product=variant, warehouse=warehouse, quantity=Decimal("7"))
+
+    rows = rows_by_name(client)
+    assert rows["Polera"]["variants_qty_available"] == 7
+    assert rows["Gorro"]["variants_qty_available"] == 0
+    assert template.has_variants

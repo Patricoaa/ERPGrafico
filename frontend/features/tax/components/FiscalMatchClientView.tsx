@@ -15,7 +15,7 @@ import {
 } from "@/components/shared"
 import { EntityPanelTab } from "@/components/providers"
 import { Button } from "@/components/ui/button"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { FISCAL_MATCH_PAGE_SIZE } from "../api/fiscalMatchApi"
 import { useFiscalMatchCounts, useFiscalMatches } from "../hooks/useFiscalMatches"
 import { fiscalMatchEntity, fiscalMatchViews } from "../entity-view/fiscalMatch.entity"
@@ -42,7 +42,7 @@ export function FiscalMatchClientView() {
     const pathname = usePathname()
     const searchParams = useSearchParams()
     // `?selected={id}` abre la ficha del grupo (enlaces directos, `detailUrlPattern` del registro).
-    const panel = useEntityPanelRoute({ create: false })
+    const panel = useCreatePanelRoute({ create: false })
     // Los filtros por defecto viven en la URL: así se ven como chips y «Limpiar» vuelve a
     // ellos de forma visible. Solo escribe si faltan (tras escribir, ya no faltan: sin bucle).
     const query = searchParams.toString()

@@ -13,9 +13,15 @@ import type { Product } from '../types'
  *       Nunca se bloquea; se fabrica contra pedido y el operador evalúa insumos.
  */
 export function isPOSProductDisabled(product: Product): boolean {
-    // Templates with variants are only launchers for the variant modal;
-    // availability is evaluated per variant inside the modal.
-    if (product.has_variants) return false
+    // Templates with variants are launchers for the variant modal; availability is evaluated per
+    // variant inside it. The exception: a storable template whose variants are all out of stock has
+    // nothing to pick, so it is blocked (fail-open when the aggregate is missing).
+    if (product.has_variants) {
+        return product.product_type === 'STORABLE'
+            && (product.variants_count ?? 0) > 0
+            && product.variants_qty_available != null
+            && product.variants_qty_available <= 0
+    }
 
     if (product.product_type === 'STORABLE') {
         return (product.qty_available ?? 0) <= 0

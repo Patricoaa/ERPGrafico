@@ -86,6 +86,7 @@ Una superficie `surface-panel` con celdas `Metric` sin borde ni radio, separadas
 
 - `label` (obligatorio): nombre accesible del grupo (`role="group"`).
 - Soporta **2 a 4** celdas. Las columnas dependen del ancho del propio strip (container queries): 4 celdas → 1 · 2 · 4; 3 celdas → 1 · 3. Nunca queda una fila a medias. Para más de 4 indicadores, usa dos strips.
+- `singleRow` (opcional): fuerza todas las celdas en una sola fila a cualquier ancho (sin el reflujo 1 · 2 · 4). Solo para strips de celdas cortas (p. ej. filtros de historial en un drawer con riel lateral).
 
 ## `ChartCard`
 

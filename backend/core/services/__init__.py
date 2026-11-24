@@ -71,6 +71,43 @@ class SequenceService:
 
 class BaseNoteService:
     @staticmethod
+    def get_accounting_settings(error_message="Debe configurar la contabilidad primero."):
+        """Obtiene la configuración contable global (Singleton) o levanta ValidationError."""
+        from accounting.models import AccountingSettings
+
+        settings = AccountingSettings.get_solo()
+        if not settings:
+            raise ValidationError(error_message)
+        return settings
+
+    @staticmethod
+    def resolve_original_invoice(order, original_invoice_id=None, extra_dte_types=None, required=False):
+        """
+        Localiza la factura o boleta original asociada a la orden para la emisión de notas.
+        Soporta búsqueda por ID explícito o fallback a facturas primarias de la orden.
+        """
+        from billing.models import Invoice
+
+        if original_invoice_id:
+            inv = Invoice.objects.filter(id=original_invoice_id).first()
+            if inv:
+                return inv
+
+        types = [
+            Invoice.DTEType.FACTURA,
+            Invoice.DTEType.FACTURA_EXENTA,
+            Invoice.DTEType.BOLETA,
+            Invoice.DTEType.BOLETA_EXENTA,
+        ]
+        if extra_dte_types:
+            types.extend(extra_dte_types)
+
+        inv = order.invoices.filter(dte_type__in=types).first()
+        if not inv and required:
+            raise ValidationError("No se encontró factura/boleta original para crear la nota.")
+        return inv
+
+    @staticmethod
     def create_document_note(
         order,
         note_type,

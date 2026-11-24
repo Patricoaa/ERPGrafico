@@ -51,6 +51,8 @@ export interface BaseProduct {
     min_variant_price?: string | number | null
     /** Lowest resolved gross sale price among active variants (templates only) */
     min_variant_price_gross?: string | number | null
+    /** Disponibilidad sumada de las variantes (templates); 0 = ninguna variante tiene existencias */
+    variants_qty_available?: number | null
     // Display fields used by ProductGrid and VariantSelectorModal visual badges
     qty_available?: number
     manufacturable_quantity?: number | null
@@ -120,6 +122,7 @@ export interface Product {
     variant_axis_label?: string | null
     min_variant_price?: string | number | null
     min_variant_price_gross?: string | number | null
+    variants_qty_available?: number | null
     variants?: Product[]
     is_child_variant?: boolean
     variant_display_name?: string

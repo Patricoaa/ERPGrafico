@@ -22,13 +22,21 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Cast, Coalesce, Greatest, Least, TruncMonth, TruncYear
+from django.db.models.functions import (
+    Cast,
+    Coalesce,
+    Greatest,
+    Least,
+    TruncMonth,
+    TruncWeek,
+    TruncYear,
+)
 
 from .models import PricingRule, Product
 
 METRICS = ("units", "net_revenue", "margin", "avg_price", "discount_total", "foregone_revenue")
 GROUP_BYS = ("rule", "channel", "customer", "variant", "uom")
-GRANULARITIES = ("day", "month", "year")
+GRANULARITIES = ("day", "week", "month", "year")
 
 _DECIMAL = DecimalField(max_digits=28, decimal_places=6)
 
@@ -76,9 +84,64 @@ def net_revenue_expression():
     )
 
 
+def list_net_expression():
+    """Precio de lista neto de IVA registrado en la línea de venta (``None`` si no se registró)."""
+    return Case(
+        When(
+            sale_line__list_unit_price_gross__isnull=False,
+            then=_f("sale_line__list_unit_price_gross")
+            / (Value(1.0, output_field=FloatField()) + _f("sale_line__tax_rate") / Value(100.0, output_field=FloatField())),
+        ),
+        default=None,
+        output_field=FloatField(),
+    )
+
+
+def foregone_expression():
+    """Ingreso no percibido por vender bajo la lista; requiere la anotación ``list_net``."""
+    return Case(
+        When(
+            list_net__gt=_f("unit_price"),
+            then=_f("quantity")
+            * (F("list_net") - _f("unit_price"))
+            * (Value(1.0, output_field=FloatField()) - discount_ratio_expression()),
+        ),
+        default=Value(0.0, output_field=FloatField()),
+        output_field=FloatField(),
+    )
+
+
+def rule_windows(product: Product, product_ids: list[int]) -> list[dict]:
+    """Vigencia de las reglas de precio que pueden aplicar al producto (propias, de categoría o de plantilla)."""
+    rule_filter = Q(product_id__in=product_ids) | Q(category_id=product.category_id)
+    if product.parent_template_id:
+        rule_filter |= Q(product_id=product.parent_template_id)
+    result = []
+    for r in PricingRule.objects.filter(rule_filter).order_by("start_date", "pk"):
+        min_q = int(r.min_quantity) if r.min_quantity == int(r.min_quantity) else float(r.min_quantity)
+        condition = f"{r.get_operator_display()} {min_q}"
+        if r.operator == "BT" and r.max_quantity:
+            max_q = int(r.max_quantity) if r.max_quantity == int(r.max_quantity) else float(r.max_quantity)
+            condition += f" y {max_q}"
+        result.append({
+            "rule_id": r.pk,
+            "name": r.name,
+            "start": r.start_date.isoformat() if r.start_date else None,
+            "end": r.end_date.isoformat() if r.end_date else None,
+            "rule_type": r.rule_type,
+            "fixed_price": float(r.fixed_price or 0),
+            "fixed_price_gross": float(r.fixed_price_gross or (float(r.fixed_price) * 1.19 if r.fixed_price else 0)),
+            "discount_percentage": float(r.discount_percentage or 0),
+            "condition": condition,
+        })
+    return result
+
+
 def _period_expression(granularity: str):
     if granularity == "day":
         return F("delivery__delivery_date")
+    if granularity == "week":
+        return TruncWeek("delivery__delivery_date")
     if granularity == "year":
         return TruncYear("delivery__delivery_date")
     return TruncMonth("delivery__delivery_date")
@@ -87,6 +150,8 @@ def _period_expression(granularity: str):
 def _period_label(value: date, granularity: str) -> str:
     if granularity == "day":
         return value.isoformat()
+    if granularity == "week":
+        return value.strftime("%G-W%V")
     if granularity == "year":
         return f"{value.year}"
     return value.strftime("%Y-%m")
@@ -200,25 +265,8 @@ class SalesImpactSelector:
             lines = lines.filter(sale_line__pricing_rule_id=params.rule_id)
 
         net = net_revenue_expression()
-        list_net = Case(
-            When(
-                sale_line__list_unit_price_gross__isnull=False,
-                then=_f("sale_line__list_unit_price_gross")
-                / (Value(1.0, output_field=FloatField()) + _f("sale_line__tax_rate") / Value(100.0, output_field=FloatField())),
-            ),
-            default=None,
-            output_field=FloatField(),
-        )
-        foregone = Case(
-            When(
-                list_net__gt=_f("unit_price"),
-                then=_f("quantity")
-                * (F("list_net") - _f("unit_price"))
-                * (Value(1.0, output_field=FloatField()) - discount_ratio_expression()),
-            ),
-            default=Value(0.0, output_field=FloatField()),
-            output_field=FloatField(),
-        )
+        list_net = list_net_expression()
+        foregone = foregone_expression()
 
         rows = list(
             lines.annotate(
@@ -280,18 +328,7 @@ class SalesImpactSelector:
         # Return lines carry the undiscounted price: net them with the average discount of the period.
         discount_factor = totals_acc["net_revenue"] / totals_acc["gross_revenue"] if totals_acc["gross_revenue"] else 1.0
 
-        rule_filter = Q(product_id__in=product_ids) | Q(category_id=product.category_id)
-        if product.parent_template_id:
-            rule_filter |= Q(product_id=product.parent_template_id)
-        windows = [
-            {
-                "rule_id": r.pk,
-                "name": r.name,
-                "start": r.start_date.isoformat() if r.start_date else None,
-                "end": r.end_date.isoformat() if r.end_date else None,
-            }
-            for r in PricingRule.objects.filter(rule_filter).order_by("start_date", "pk")
-        ]
+        windows = rule_windows(product, product_ids)
 
         return {
             "series": [series[p] for p in sorted(series)],

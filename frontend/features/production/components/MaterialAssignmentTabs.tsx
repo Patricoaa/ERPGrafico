@@ -1,6 +1,7 @@
 import * as React from "react"
-import { TabBar, TabBarContent, type TabItem } from "@/components/shared"
+import { TabBar, TabBarContent, type TabItem, fadeInClass } from "@/components/shared"
 import { Package, Briefcase } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface MaterialAssignmentTabsProps {
     stockContent: React.ReactNode
@@ -51,11 +52,11 @@ export function MaterialAssignmentTabs({
                 onValueChange={setActiveTab}
                 orientation="horizontal"
             >
-                <TabBarContent value="stock" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
+                <TabBarContent value="stock" className={cn("space-y-4 pt-6", fadeInClass({ duration: 300 }))}>
                     {stockContent}
                 </TabBarContent>
 
-                <TabBarContent value="outsourced" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
+                <TabBarContent value="outsourced" className={cn("space-y-4 pt-6", fadeInClass({ duration: 300 }))}>
                     {outsourcedContent}
                 </TabBarContent>
             </TabBar>

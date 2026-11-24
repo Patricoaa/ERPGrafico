@@ -131,10 +131,10 @@ describe("WorkOrderWizard Tests", () => {
         expect(screen.queryByText("Vincular a Venta")).not.toBeInTheDocument()
     })
 
-    it("modo manage en targetStage", async () => {
+    it("modo manage abre en la etapa actual de la OT", async () => {
         renderWithProviders(
             <WorkOrderWizard
-                mode={{ kind: 'manage', orderId: 123, targetStage: 'PREPRESS' }}
+                mode={{ kind: 'manage', orderId: 123 }}
                 open={true}
                 onOpenChange={vi.fn()}
             />

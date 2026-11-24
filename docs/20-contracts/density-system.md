@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: density-system
 status: active
 owner: frontend-team
-last_review: 2026-08-04
+last_review: 2026-11-24
 stability: stable
 ---
 
@@ -95,7 +95,7 @@ Definidos en `:root` de `globals.css`. Son la única fuente de verdad para el pa
 
 ---
 
-## 5. Alturas de control por rol (ADR-0142 D4)
+## 4. Alturas de control por rol (ADR-0142 D4)
 
 | Token | Valor (`--k = 1`) | Utilidad | Uso |
 |-------|------------------|----------|-----|
@@ -107,15 +107,15 @@ Definidos en `:root` de `globals.css`. Son la única fuente de verdad para el pa
 
 Los roles se derivan de `--u`, así que escalan con `--k` (comfortable: ×1.125). Cada utilidad fija además `min-height: var(--hit-role-min)` — `0` por defecto, `3rem` con `data-input="touch"` — de modo que en táctil todo control con rol llega a 48 px sin tocar el componente.
 
-**Guarda de Fitts (GOVERNANCE #17).** Los controles *sin* rol reciben `min-height: var(--hit-min)` (40 px; `0` en `[data-density="compact"]` con puntero fino; 48 px en táctil). Los controles *con* rol quedan exentos por cascada (la utilidad vive en una capa superior a la guarda), sin listar nombres de clase. Transitorio: `.h-7/.h-8/.h-9` literales siguen excluidos hasta que el inventario de alturas literales en controles llegue a 0 (Fase 6).
+**Guarda de Fitts (GOVERNANCE #17).** Los controles *sin* rol reciben `min-height: var(--hit-min)` (40 px; `0` en `[data-density="compact"]` con puntero fino; 48 px en táctil). Los controles *con* rol quedan exentos por cascada (la utilidad vive en una capa superior a la guarda), sin listar nombres de clase. Desde la Fase 6 (inventario de alturas literales en 0) no quedan exclusiones transitorias. Los `input`/`select` nativos tienen su propio piso: `max(2.5rem, var(--hit-role-min))`.
 
 `cn()` (`lib/utils.ts`) extiende `tailwind-merge` para que `h-control-*`/`size-control-*` entren en los grupos `h`/`size`: un `className="h-7"` sigue reemplazando al rol por defecto y viceversa.
 
-**Fuera de la Fase 3** (decisión explícita): `ui/select` (el `SelectTrigger` es un `<button>` que hoy recibe el piso de 40 px por la guarda y se sobreescribe con `h-9` en `LabeledSelect`; migrarlo cambiaría alturas efectivas) y `Chip`/`Badge`/`StatusBadge` (no son controles interactivos; sus alturas `h-[18px]`/`h-[22px]` no son roles). Se tratan en la Fase 5.
+**Fuera de la Fase 3** (decisión explícita): `ui/select` (el `SelectTrigger` es un `<button>` que hoy recibe el piso de 40 px por la guarda y se sobreescribe con `h-9` en `LabeledSelect`; migrarlo cambiaría alturas efectivas) y `Chip`/`Badge`/`StatusBadge` (no son controles interactivos; sus alturas `h-4.5`/`h-5.5` no son roles). Se tratan en la Fase 5.
 
 ---
 
-## 6. Eje de puntero: variante `touch:` y modo táctil (ADR-0142 D5)
+## 5. Eje de puntero: variante `touch:` y modo táctil (ADR-0142 D5)
 
 **Estilos.** Se escriben con la variante Tailwind `touch:`, sin ramas JS:
 
@@ -133,17 +133,16 @@ Los roles se derivan de `--u`, así que escalan con `--k` (comfortable: ×1.125)
 
 ---
 
-## 4. Referencias
+## 6. Preferencia de usuario y lint
+
+- **Preferencia:** `useDensityPreference()` (`hooks/useDensityPreference.ts`) guarda `compact | comfortable` en `localStorage` (`ui_density`, por dispositivo) y `Providers` la publica en `<html data-density>`. Se cambia en Perfil → Preferencias. `comfortable` sube `--k` a 1.125 en todo el chrome; las tablas conservan su `data-density`.
+- **Lint:** `controls/token-height` (error) reporta alturas literales `h-7…h-12` en controles; usa `h-control-*`/`size-control-*`. Es **error** desde la Fase 6 (inventario 0; `h-11` fuera de la regla).
+- **Select/Badge:** el trigger de `ui/select` usa `--control-h-md/sm`; `Badge` xs/sm usan `h-4.5`/`h-5.5` (escalan con `--k`).
+
+## 7. Referencias
 
 - [ADR-0070 — Primary = Process Black K100](../10-architecture/adr/0070-primary-process-black.md) (criterio de densidad operativa)
 - [ADR-0030 — DataTable compact variant](../10-architecture/adr/0030-datatable-compact-variant.md)
 - [component-datatable-views.md](component-datatable-views.md) — contratos de las variantes de DataTable
 - [component-skeleton.md](component-skeleton.md) — estados de carga con densidad consistente
 - Implementation: `frontend/app/globals.css` (`:root`, sección "RHYTHM & SPACING" / "TABLE SYSTEM" / "DENSITY MODES") y `frontend/components/shared/DataTable.tsx` (prop `density`)
-
-## 7. Preferencia de usuario y lint
-
-- **Preferencia:** `useDensityPreference()` (`hooks/useDensityPreference.ts`) guarda `compact | comfortable` en `localStorage` (`ui_density`, por dispositivo) y `Providers` la publica en `<html data-density>`. Se cambia en Perfil → Preferencias. `comfortable` sube `--k` a 1.125 en todo el chrome; las tablas conservan su `data-density`.
-- **Lint:** `controls/token-height` (error) reporta alturas literales `h-7…h-12` en controles; usa `h-control-*`/`size-control-*`. Es **error** desde la Fase 6 (inventario 0; `h-11` fuera de la regla).
-- **Select/Badge:** el trigger de `ui/select` usa `--control-h-md/sm`; `Badge` xs/sm usan `h-4.5`/`h-5.5` (escalan con `--k`).
-

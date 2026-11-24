@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Check, Minus } from "lucide-react"
+import { fadeInClass } from "./fade-in-class"
 
 type SelectionRingSize = "2xs" | "xs" | "sm" | "md" | "lg"
 
@@ -112,7 +113,7 @@ export function SelectionRing({
       {isChecked && (
         <span
           className={cn(
-            "flex items-center justify-center rounded-full bg-primary text-primary-foreground animate-in zoom-in-95 duration-150",
+            cn("flex items-center justify-center rounded-full bg-primary text-primary-foreground", fadeInClass({ zoom: true, fade: false, duration: 150 })),
             SIZE_CLASSES[size]
           )}
           aria-hidden="true"

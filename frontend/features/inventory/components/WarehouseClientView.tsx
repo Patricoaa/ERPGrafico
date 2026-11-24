@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 import React, { useMemo } from "react"
 
@@ -8,8 +8,8 @@ import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
@@ -58,12 +58,13 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
    })
 
     // T-106: clearSelection viene directamente del hook — no re-declarar localmente (ADR-0020)
-    const panel = useEntityPanelRoute<Warehouse>({ endpoint: '/inventory/warehouses', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.warehouse")
 
     const actionsCtx: WarehouseActionsCtx = {
-        onEdit: (id) => openSelected(id),
+        onEdit: (id) => openEntity("inventory.warehouse", id),
         onArchive: (warehouse) => archiveConfirm.requestConfirm(warehouse),
     }
 
@@ -93,7 +94,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(warehouse) => openSelected(warehouse.id)}
                 actions={warehouseActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -120,7 +120,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                         onSuccess={refetch}
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
-                        initialData={selectedFromUrl || undefined}
                     />
                 )}
             </EntityPanelTab>

@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import React, { useMemo, useState } from "react"
 
 import { toast } from "sonner"
@@ -12,8 +12,8 @@ import { useAdvanceMutations } from "../hooks/useAdvanceMutations"
 import { PaymentModal } from "@/features/treasury"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { SalaryAdvance } from "@/types/hr"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { salaryAdvanceEntity, salaryAdvanceViews } from "../entity-view/salaryAdvance.entity"
 
 interface SalaryAdvanceClientViewProps {
@@ -35,9 +35,10 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     )
     const { employees } = useEmployees()
 
-    const panel = useEntityPanelRoute<SalaryAdvance>({ endpoint: '/hr/advances' })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("hr.salaryadvance")
 
     const [paymentModalOpen, setPaymentModalOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<Record<string, unknown> | null>(null)
@@ -46,7 +47,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     const { deleteAdvance, annulAdvance } = useAdvanceMutations()
 
     const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
-        onEdit: (advance) => openSelected(advance.id),
+        onEdit: (advance) => openEntity("hr.salaryadvance", advance.id, advance),
         onDelete: setToDelete,
         onAnnul: setToAnnul,
     }
@@ -57,7 +58,6 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(advance) => openSelected(advance.id)}
                 actions={salaryAdvanceActions.forCollection(salaryAdvanceActionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -82,17 +82,13 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                     <AdvanceDrawer
                         open={open}
                         onOpenChange={(o) => { if (!o) panel.close() }}
-                        advance={selectedFromUrl}
+                        advance={null}
                         employees={employees}
                         onSaved={(data) => {
-                            if (selectedFromUrl) {
-                                refetchAdvances()
-                                panel.close()
-                            } else {
-                                setTempAdvanceData(data || null)
-                                panel.close()
-                                setPaymentModalOpen(true)
-                            }
+                            // Esta pestaña solo crea (editar abre la pestaña del anticipo por `openEntity`).
+                            setTempAdvanceData(data || null)
+                            panel.close()
+                            setPaymentModalOpen(true)
                         }}
                     />
                 )}

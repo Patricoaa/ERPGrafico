@@ -85,7 +85,7 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(order) => sheet.toggle(order.id)}
+                onOpen={(order) => sheet.toggle(order.id, order)}
                 actions={(order) => <DocumentRowActions id={order.id} kind="purchase-order" onOpen={sheet.toggle} />}
                 view={view}
                 onViewChange={onViewChange}
@@ -156,7 +156,7 @@ function PurchaseNoteCollection() {
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(note) => sheet.toggle(note.id)}
+                onOpen={(note) => sheet.toggle(note.id, note)}
                 actions={(note) => <DocumentRowActions id={note.id} kind="invoice" onOpen={sheet.toggle} />}
                 view={view}
                 onViewChange={onViewChange}

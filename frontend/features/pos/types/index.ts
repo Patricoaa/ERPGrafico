@@ -20,6 +20,8 @@ export interface Product {
     track_inventory?: boolean
     variants_count?: number
     has_variants?: boolean
+    /** Disponibilidad sumada de las variantes (templates); 0 = ninguna tiene existencias. */
+    variants_qty_available?: number | null
     image?: string | null
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean

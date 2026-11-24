@@ -4,6 +4,7 @@ export * from './BudgetVarianceView';
 export * from './BudgetDetailView';
 export * from './BIAnalyticsDashboard';
 export * from './BudgetEditor';
+export * from './BudgetRecordEditor';
 export * from './CashFlowTable';
 export * from './RatiosDashboard';
 export * from './FinancialStatementsReport';

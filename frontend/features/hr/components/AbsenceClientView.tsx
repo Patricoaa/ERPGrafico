@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import React, { useMemo } from "react"
 
 import { toast } from "sonner"
@@ -9,8 +9,8 @@ import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } 
 import { AbsenceDrawer, useAbsences, deleteAbsence, absenceActions, type AbsenceActionsCtx, useEmployees } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { Absence } from "@/types/hr"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { absenceEntity, absenceViews } from "../entity-view/absence.entity"
 
 interface AbsenceClientViewProps {
@@ -37,12 +37,13 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     )
     const { employees } = useEmployees()
 
-    const panel = useEntityPanelRoute<Absence>({ endpoint: '/hr/absences' })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("hr.absence")
 
     const absenceActionsCtx: AbsenceActionsCtx = {
-        onEdit: (absence) => openSelected(absence.id),
+        onEdit: (absence) => openEntity("hr.absence", absence.id, absence),
         onDelete: async (id) => {
             if (!confirm("¿Eliminar esta inasistencia?")) return
             try {
@@ -63,7 +64,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                     <AbsenceDrawer
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
-                        absence={selectedFromUrl}
+                        absence={null}
                         employees={employees}
                         onSaved={() => { panel.close(); fetchAbsences() }}
                     />
@@ -74,7 +75,6 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(absence) => openSelected(absence.id)}
                 actions={absenceActions.forCollection(absenceActionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>

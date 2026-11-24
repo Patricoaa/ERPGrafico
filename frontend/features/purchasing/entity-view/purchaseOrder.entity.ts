@@ -1,3 +1,6 @@
+// Side-effect import: registers the `ledgerDate` kind (fecha del documento + hora de creación).
+import "@/features/accounting"
+
 import { defineEntity } from "@/components/entity-view"
 import { isOrderCompleted } from "@/lib/workflow-status"
 import type { PurchaseOrderAPI } from "../types"
@@ -18,7 +21,7 @@ export const purchaseOrderEntity = defineEntity<PurchaseOrderAPI>()((f) => ({
     fields: {
         folio: f.code((o) => o.display_id ?? o.number, { label: "Folio", orderBy: "number" }),
         supplier: f.contact((o) => ({ id: typeof o.supplier === "number" ? o.supplier : o.supplier.id, name: o.supplier_name }), { label: "Proveedor", orderBy: "supplier__name" }),
-        date: f.date("date", { label: "Fecha", orderBy: "date" }),
+        date: f.value("ledgerDate", (o) => ({ date: o.date, createdAt: o.created_at }), { label: "Fecha", orderBy: "date" }),
         expected: f.date("receipt_date", { label: "Entrega esperada", orderBy: "receipt_date" }),
         warehouse: f.text("warehouse_name", { label: "Almacén", tone: "secondary" }),
         receiving: f.status((o) => RECEIVING[o.receiving_status], { label: "Recepción" }),
@@ -37,7 +40,7 @@ export const purchaseOrderEntity = defineEntity<PurchaseOrderAPI>()((f) => ({
 }))
 
 export const purchaseOrderViews = purchaseOrderEntity.views({
-    table: { columns: ["folio", "supplier", "date", "expected", "warehouse", "hub", "total"] },
+    table: { primary: "folio", columns: ["date", "folio", "supplier", "expected", "warehouse", "hub", "total"] },
     card: {
         title: "folio",
         subtitle: ["supplier", "date"],

@@ -1,7 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import React from "react"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
@@ -13,10 +12,8 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
-import type { TreasuryMovement } from "@/features/treasury/types"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 
-import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
 const MOVEMENT_GROUPS: Record<string, FieldId<typeof treasuryMovementEntity.fields>> = { date: "date", movement_type: "movementType", payment_method: "paymentMethod" }
@@ -62,7 +59,8 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     })
 
-    const panel = useEntityPanelRoute<TreasuryMovement>({ endpoint: '/treasury/movements', create: false })
+    // ADR-0152: `?selected` solo es enlace profundo; abrir un movimiento es `openEntity`.
+    useDeepLinkEntity("treasury.treasurymovement")
 
     const handleViewDetails = React.useCallback((id: number) => {
         openEntity("treasury.treasurymovement", id)
@@ -107,15 +105,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                 />
             </Collection.Root>
 
-            <EntityPanelTab label="treasury.bankmovement" {...panel.tab}>
-                {(open) => panel.selectedId && (
-                    <CashMovementDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(open) => { if (!open) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
         </div>
     )
 }

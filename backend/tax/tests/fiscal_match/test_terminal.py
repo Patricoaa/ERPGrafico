@@ -154,19 +154,76 @@ def test_amount_compared_against_payment_not_invoice_total(env):
     assert result == LinkResult(0)
 
 
-def test_two_movements_same_amount_in_window_is_ambiguous(env):
-    make_pos_document(env, 5000, T0)
-    make_pos_document(env, 5000, T0 + timedelta(minutes=1))
+def test_two_movements_same_amount_in_window_paired_fifo(env):
+    """Opción A: dos cobros y dos ventas anónimas (48) del mismo monto en la misma ventana
+    se emparejan 1 a 1 en orden cronológico (FIFO)."""
+    inv1 = make_pos_document(env, 5000, T0)
+    inv2 = make_pos_document(env, 5000, T0 + timedelta(minutes=1))
     a = make_terminal_sale(env, 5000, T0 + timedelta(minutes=2))
     b = make_terminal_sale(env, 5000, T0 + timedelta(minutes=4))
 
     result = run()
 
     _reload(a, b)
-    assert a.fiscal_match.invoice_id is None and b.fiscal_match.invoice_id is None
+    g1 = FiscalMatch.objects.get(invoice=inv1)
+    g2 = FiscalMatch.objects.get(invoice=inv2)
+    assert a.fiscal_match_id == g1.id and a.matched_movement_id == _movement(inv1).id
+    assert b.fiscal_match_id == g2.id and b.matched_movement_id == _movement(inv2).id
+    assert result.linked == 2
+    assert result.ambiguous_group_ids == set()
+
+
+def test_imbalance_same_amount_in_window_is_ambiguous(env):
+    """Si hay diferente cantidad de ventas que de cobros (ej. 3 ventas y 2 cobros),
+    no se puede resolver por FIFO y quedan como ambiguas."""
+    make_pos_document(env, 5000, T0)
+    make_pos_document(env, 5000, T0 + timedelta(minutes=1))
+    a = make_terminal_sale(env, 5000, T0 + timedelta(minutes=2))
+    b = make_terminal_sale(env, 5000, T0 + timedelta(minutes=3))
+    c = make_terminal_sale(env, 5000, T0 + timedelta(minutes=4))
+
+    result = run()
+
+    _reload(a, b, c)
+    assert a.matched_movement_id is None and b.matched_movement_id is None and c.matched_movement_id is None
+    assert result.linked == 0
+    assert result.ambiguous_group_ids == {a.fiscal_match_id, b.fiscal_match_id, c.fiscal_match_id}
+
+
+def test_two_facturas_same_amount_in_window_remain_ambiguous(env):
+    """Facturas (DTE 33 nominativas): no se emparejan a ciegas por FIFO, deben quedar ambiguas."""
+    inv1, m1, _ = _split_factura(env, 50_000, 0)
+    inv2, m2, _ = _split_factura(env, 50_000, 0)
+    a = make_terminal_sale(env, 50_000, T0 + timedelta(minutes=2), document_type=33)
+    b = make_terminal_sale(env, 50_000, T0 + timedelta(minutes=4), document_type=33)
+
+    result = run()
+
+    _reload(a, b)
     assert a.matched_movement_id is None and b.matched_movement_id is None
     assert result.linked == 0
     assert result.ambiguous_group_ids == {a.fiscal_match_id, b.fiscal_match_id}
+
+
+def test_two_movements_same_amount_different_dte_type_not_ambiguous(env):
+    """Dos ventas del mismo monto en la misma ventana pero con distinto tipo DTE (39 vs 48)
+    no deben colisionar: el tipo DTE las desempata inequívocamente."""
+    doc_48 = make_pos_document(env, 1800, T0, dte_type=Invoice.DTEType.COMPROBANTE_PAGO)
+    doc_39 = make_pos_document(env, 1800, T0 + timedelta(minutes=1), dte_type=Invoice.DTEType.BOLETA)
+    sale_48 = make_terminal_sale(env, 1800, T0 + timedelta(minutes=2), document_type=48)
+    sale_39 = make_terminal_sale(env, 1800, T0 + timedelta(minutes=4), document_type=39)
+
+    result = run()
+
+    _reload(sale_48, sale_39)
+    group_48 = FiscalMatch.objects.get(invoice=doc_48)
+    group_39 = FiscalMatch.objects.get(invoice=doc_39)
+    assert sale_48.fiscal_match_id == group_48.id
+    assert sale_48.matched_movement_id == _movement(doc_48).id
+    assert sale_39.fiscal_match_id == group_39.id
+    assert sale_39.matched_movement_id == _movement(doc_39).id
+    assert result.linked == 2
+    assert result.ambiguous_group_ids == set()
 
 
 def test_border_competitor_makes_ambiguous(env):

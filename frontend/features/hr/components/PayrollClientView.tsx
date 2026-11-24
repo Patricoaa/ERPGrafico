@@ -1,11 +1,11 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useState, useMemo, useCallback } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { toast } from "sonner"
-import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
+import { CreatePayrollDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { AnalyticsPanelContent, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
@@ -31,9 +31,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
 
     const createAction = <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const search = useUnifiedSearch(payrollUnifiedSearchDef)
     const groupBy = search.groupBy ? PAYROLL_GROUPS[search.groupBy] ?? null : null
     const { payrolls, isLoading: loading, isRefetching, isError, refetch: fetchPayrolls } = usePayrolls(search.filters, initialPayrolls)
@@ -71,17 +68,15 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     )
 
     // `?modal=new` crea una nómina; `?selected` abre el detalle (dos paneles sobre la misma ruta).
-    const createPanel = useEntityPanelRoute({ actions: [] })
-    const detailPanel = useEntityPanelRoute<Payroll>({ endpoint: '/hr/payrolls', create: false })
+    const createPanel = useCreatePanelRoute({ actions: [] })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada nómina abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("hr.payroll")
 
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
     const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
 
-    const openDetail = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
+    const openDetail = (id: number) => openEntity("hr.payroll", id)
 
     const handleConfirmPayment = async (data: Record<string, unknown>) => {
         if (!selectedPayroll || !paymentMode) return
@@ -152,7 +147,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(payroll) => openDetail(payroll.id)}
                 actions={payrollActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={toolbarActions}>
@@ -171,16 +165,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 </Collection.Analytics>
             </Collection.Root>
 
-            <EntityPanelTab label="hr.payroll" {...detailPanel.tab}>
-                {(open) => (
-                    <PayrollDetailDrawer
-                        payrollId={detailPanel.selectedId}
-                        open={open}
-                        onOpenChange={(open) => { if (!open) detailPanel.close() }}
-                        onUpdate={fetchPayrolls}
-                    />
-                )}
-            </EntityPanelTab>
 
             <PaymentModal
                 open={!!paymentMode}

@@ -22,6 +22,15 @@ class AuditedModel(TimeStampedModel):
         abstract = True
 
 
+class DocumentNotesMixin(models.Model):
+    """Nota libre del documento. Solo los documentos que la capturan (logística, compras, facturas) la declaran; la OV no."""
+
+    notes = models.TextField(_("Notas"), blank=True)
+
+    class Meta:
+        abstract = True
+
+
 class TransactionalDocument(AuditedModel):
     """
     Cabecera de documento de negocio: número, estado, totales, journal entry.
@@ -37,7 +46,6 @@ class TransactionalDocument(AuditedModel):
 
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     status = models.CharField(_("Estado"), max_length=20)
-    notes = models.TextField(_("Notas"), blank=True)
     journal_entry = models.OneToOneField(
         "accounting.JournalEntry",
         on_delete=models.PROTECT,

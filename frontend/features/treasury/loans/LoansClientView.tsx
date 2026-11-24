@@ -1,7 +1,8 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import {
@@ -13,7 +14,6 @@ import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-sea
 import { useLoans } from '../hooks/useLoans'
 import { useBanks } from '../hooks/useMasterData'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
-import { LoanViewDrawer } from './LoanViewDrawer'
 import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { loanActions, type LoanActionsCtx } from './loanActions'
 import { bankLoanEntity, bankLoanViews } from '../entity-view/bankLoan.entity'
@@ -88,18 +88,21 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const { openAction } = useEntityRouteActions()
 
-    // Una misma ruta, tres superficies: registrar (`?modal=new`), detalle y desembolso.
-    const registerPanel = useEntityPanelRoute({ actions: [] })
-    const viewPanel = useEntityPanelRoute({ actions: [null, 'detail'], create: false })
-    const disbursePanel = useEntityPanelRoute({ actions: ['disburse'], create: false })
+    // Registrar (`?modal=new`) y desembolsar (`?action=disburse`) son pestañas de página; el detalle de cada
+    // crédito abre su propia pestaña (ADR-0152).
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("treasury.bankloan", { actions: [null, "detail"] })
+    const registerPanel = useCreatePanelRoute({ actions: [] })
+    const disbursePanel = useCreatePanelRoute({ actions: ['disburse'], create: false })
 
     const handleReset = useCallback(() => {
         search.clearAll()
     }, [search.clearAll])
 
     const openLoan = useCallback((id: number, actionType: string) => {
-        openAction(id, actionType)
-    }, [openAction])
+        if (actionType === "detail") openEntity("treasury.bankloan", id)
+        else openAction(id, actionType)
+    }, [openAction, openEntity])
 
     const registerAction = (
         <ToolbarCreateButton
@@ -127,7 +130,6 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(loan) => openLoan(loan.id, "detail")}
                 actions={loanActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={registerAction}>
@@ -157,17 +159,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                     />
                 )}
             </EntityPanelTab>
-            <EntityPanelTab label="treasury.bankloan" {...viewPanel.tab}>
-                {(open) => (
-                    <LoanViewDrawer
-                        loanId={selectedId}
-                        open={open}
-                        onOpenChange={(open) => { if (!open) viewPanel.close() }}
-                        onDisburse={(loan) => openLoan(loan.id, "disburse")}
-                    />
-                )}
-            </EntityPanelTab>
-            <EntityPanelTab label="treasury.bankloan" {...disbursePanel.tab}>
+            <EntityPanelTab label="treasury.bankloan" variant="disburse" display="Desembolso" {...disbursePanel.tab}>
                 {(open) => (
                     <LoanDisburseDrawer
                         open={open}

@@ -10,15 +10,15 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
 import { taxPeriodEntity, taxPeriodViews } from '../entity-view/taxPeriod.entity'
 
 import { type TaxPeriod } from "../types"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { EntityPanelTab } from "@/components/providers"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { Metric, MetricStrip, SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useTaxPeriods } from "../hooks/useTaxQueries"
@@ -30,11 +30,11 @@ interface TaxDeclarationsClientViewProps {
 }
 
 export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, createAction }: TaxDeclarationsClientViewProps) {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-    // Declarar, pagar y cerrar F29 viven en el wizard unificado (`?selected` o botón externo).
-    const declarationPanel = useEntityPanelRoute<TaxPeriod>({ endpoint: '/tax/periods', actions: [null], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    // Declarar, pagar y cerrar F29 viven en el wizard unificado: cada período lo abre en su pestaña (ADR-0152);
+    // esta pestaña de página solo atiende el botón externo (nueva declaración).
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("tax.taxperiod", { actions: [null] })
+    const declarationPanel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { taxPeriods: periodsData, isLoading: isLoadingPeriods, isError: isPeriodsError, refetch: refetchPeriods } = useTaxPeriods()
 
     const periods = ((periodsData as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[]
@@ -44,12 +44,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         declarationPanel.close()
     }
 
-    const handleOpenWizard = (period: TaxPeriod) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(period.id))
-        params.delete('action')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
+    const handleOpenWizard = (period: TaxPeriod) => openEntity("tax.taxperiod", period.id, period)
 
     const { serverDate } = useServerDate()
 
@@ -134,7 +129,6 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                             refetchPeriods()
                             handleCloseModal()
                         }}
-                        periodId={declarationPanel.selectedId ?? undefined}
                         onSuccess={() => {
                             refetchPeriods()
                             handleCloseModal()

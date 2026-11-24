@@ -1,10 +1,11 @@
 "use client"
 
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { EntityPanelTab } from "@/components/providers"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { showApiError } from "@/lib/errors"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Pause, Play, AlertCircle, Archive } from "lucide-react"
 import { toast } from "sonner"
@@ -22,8 +23,6 @@ import {
 import { formatMoney } from '@/lib/money'
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { ProductDrawer, ArchivingRestrictionsModal, useProducts, type Restriction } from "@/features/inventory"
-import type { ProductInitialData } from "@/types/forms"
-import type { Product } from "@/types/entities"
 import { SubscriptionHistoryModal } from "./SubscriptionHistoryModal"
 import { subscriptionActions, type SubscriptionActionsCtx } from "../subscriptionActions"
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "../hooks/useSubscriptions"
@@ -61,7 +60,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
     )
     const { data: stats } = useSubscriptionStats<Stats>()
-    const { updateProduct, fetchProductById } = useProducts()
+    const { updateProduct } = useProducts()
 
     // Archive confirmation state (local — not URL-driven, it's a transient flow)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
@@ -77,32 +76,19 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     // URL-driven state
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
-    // Crear (`?modal=new`) o editar (`?selected&action=edit`) comparten el drawer de producto.
-    const formPanel = useEntityPanelRoute({ actions: ['edit'], external: { open: externalOpen } })
-    const isEditOpen = formPanel.open
+    // ADR-0152: editar una suscripción abre su pestaña (la ficha del producto); el panel de página solo crea.
+    const { openEntity } = useGlobalModals()
+    useDeepLinkEntity("inventory.subscription", { actions: ["edit"] })
+    const formPanel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen } })
     const isHistoryOpen = !!selectedId && action === "history"
 
-    // Find subscription from the local list
+    // Suscripción del historial abierto (`?selected&action=history`)
     const selectedSubscription = useMemo(
-        () => selectedId && (action === "edit" || action === "history")
+        () => selectedId && action === "history"
             ? subscriptions.find(s => s.id === selectedId) ?? null
             : null,
         [selectedId, action, subscriptions],
     )
-
-    // Fetch product for edit mode
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-    const [prevEditOpen, setPrevEditOpen] = useState(isEditOpen)
-    // Adjust state during render: reset editing product when form closes
-    if (!isEditOpen && isEditOpen !== prevEditOpen) {
-        setPrevEditOpen(isEditOpen)
-        setEditingProduct(null)
-    }
-    useEffect(() => {
-        if (selectedSubscription && action === "edit") {
-            fetchProductById(selectedSubscription.product).then((p) => setEditingProduct(p as Product)).catch(() => {})
-        }
-    }, [selectedSubscription, action, fetchProductById])
 
     const clearAll = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
@@ -177,7 +163,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     const actionsCtx: SubscriptionActionsCtx = useMemo(() => ({
         onEdit: (productId) => {
             const sub = subscriptions.find(s => s.product === productId)
-            if (sub) openSubscription(sub.id, "edit")
+            if (sub) openEntity("inventory.subscription", sub.id, sub)
         },
         onPause: (id) => handlePause(id),
         onResume: (id) => handleResume(id),
@@ -186,7 +172,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
             setCurrentArchivingProduct(product)
             setIsConfirmModalOpen(true)
         },
-    }), [subscriptions, handlePause, handleResume, openSubscription])
+    }), [subscriptions, handlePause, handleResume, openSubscription, openEntity])
 
     const bulkActions = useMemo<BulkAction<Subscription>[]>(() => [
         {
@@ -275,7 +261,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(sub) => openSubscription(sub.id, "edit")}
                 actions={subscriptionActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -301,7 +286,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                     <ProductDrawer
                         open={open}
                         onOpenChange={(open) => { if (!open) formPanel.close() }}
-                        initialData={(editingProduct || undefined) as ProductInitialData | undefined}
                         onSuccess={() => {
                             formPanel.close()
                             fetchSubscriptions()

@@ -835,28 +835,14 @@ class PurchasingService:
         from accounting.models import JournalItem
         from billing.models import Invoice
 
-        settings = AccountingSettings.get_solo()
-        if not settings:
-            raise ValidationError("No se encontró configuración contable.")
+        settings = BaseNoteService.get_accounting_settings("No se encontró configuración contable.")
 
-        # Get the original invoice to determine document type
-        original_invoice = None
-        if original_invoice_id:
-            original_invoice = Invoice.objects.filter(id=original_invoice_id).first()
-
-        if not original_invoice:
-            original_invoice = order.invoices.filter(
-                dte_type__in=[
-                    Invoice.DTEType.FACTURA,
-                    Invoice.DTEType.FACTURA_EXENTA,
-                    Invoice.DTEType.BOLETA,
-                    Invoice.DTEType.BOLETA_EXENTA,
-                    Invoice.DTEType.PURCHASE_INV,
-                ]
-            ).first()
-
-        if not original_invoice:
-            raise ValidationError("No se encontró factura/boleta original para crear la nota.")
+        original_invoice = BaseNoteService.resolve_original_invoice(
+            order,
+            original_invoice_id=original_invoice_id,
+            extra_dte_types=[Invoice.DTEType.PURCHASE_INV],
+            required=True,
+        )
 
         is_boleta = original_invoice.dte_type == Invoice.DTEType.BOLETA
 
@@ -1629,33 +1615,16 @@ class PurchaseOrderService(DocumentService):
         """
         Annuls a purchase order and all its associated documents.
         """
-        order = document
         force = kwargs.get("force", False)
+        return self._cancel_order_base(
+            document,
+            user=user,
+            reason=reason,
+            cancelled_status=PurchaseOrder.Status.CANCELLED,
+            force=force,
+        )
 
-        from core.services.document import lock_document
-
-        lock_document(order)
-
-        if order.status == PurchaseOrder.Status.CANCELLED:
-            return order
-
-        if not reason:
-            raise ValidationError("Debe indicar el motivo de la anulación.")
-
-        from billing.models import Invoice
-        from billing.services import BillingService
-        from treasury.services import TreasuryService
-
-        # 1. Handle Invoices — cancel if DRAFT, annul if POSTED/PAID
-        for invoice in order.invoices.all():
-            if invoice.status == Invoice.Status.CANCELLED:
-                continue
-            if invoice.status == Invoice.Status.DRAFT:
-                BillingService.cancel_invoice(invoice, user=user, reason=reason)
-            else:
-                BillingService.annul_invoice(invoice, force=force, user=user, reason=reason)
-
-        # 2. Handle Receipts — cancel if DRAFT, annul if CONFIRMED
+    def _cancel_physical_documents(self, order, *, user, reason: str, force: bool = False):
         for receipt in order.receipts.all():
             if receipt.status == PurchaseReceipt.Status.CANCELLED:
                 continue
@@ -1663,32 +1632,3 @@ class PurchaseOrderService(DocumentService):
                 PurchasingService.cancel_receipt(receipt, user=user, reason=reason)
             else:
                 PurchasingService.annul_receipt(receipt, user=user, reason=reason)
-
-        # 3. Handle Payments — cancel if DRAFT (sin JE POSTED), annul if POSTED
-        for movement in order.payments.all():
-            if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
-                continue
-            je_posted = movement.journal_entry and movement.journal_entry.status == "POSTED"
-            if movement.status == TreasuryMovement.MovementStatus.DRAFT and not je_posted:
-                TreasuryService.cancel_movement(movement, user=user, reason=reason)
-            else:
-                TreasuryService.annul_movement(
-                    movement,
-                    user=user,
-                    reason=reason,
-                    treasury_account_id=(
-                        movement.to_account_id
-                        if movement.movement_type == "INBOUND"
-                        else movement.from_account_id
-                    ),
-                )
-
-        order.status = PurchaseOrder.Status.CANCELLED
-        if reason:
-            order.notes = (order.notes or "") + f"\nAnulado: {reason}"
-        order.save()
-
-        from workflow.services import WorkflowService
-
-        WorkflowService.log_transition(order, "annul", user=user, reason=reason)
-        return order

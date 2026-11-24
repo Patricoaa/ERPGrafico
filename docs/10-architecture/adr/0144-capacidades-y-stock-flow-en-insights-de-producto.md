@@ -1,12 +1,14 @@
 ---
 id: 0144
 title: El análisis de producto se adapta a las capacidades del producto; `stock_flow` reemplaza `kardex` en `insights`
-status: Accepted
+status: Superseded by 0150
 date: 2026-11-19
 author: frontend-team + backend-team
 ---
 
 # 0144 — Capacidades y `stock_flow` en el payload de `insights` de producto
+
+> **Reemplazada por [ADR-0150](0150-analisis-de-producto-por-bloque-y-periodo.md) (2026-11-20):** el endpoint `insights` de producto se retiró; las capacidades viven en `GET /inventory/products/{id}/capabilities/` y el flujo de stock en `stock-analysis`.
 
 **Relacionado:** `docs/superpowers/specs/2026-11-19-product-analytics-hub-design.md` (hub de analítica), `docs/superpowers/specs/2026-11-19-product-analytics-capabilities-design.md` (Fase 2), `zero-n-plus-one-policy.md` (ADR-0118), ADR-0016 (`ProductTypeStrategy`).
 

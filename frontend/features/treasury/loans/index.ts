@@ -1,6 +1,7 @@
 export { LoansClientView } from './LoansClientView'
 export { LoanRegisterDrawer } from './LoanRegisterDrawer'
 export { LoanViewDrawer } from './LoanViewDrawer'
+export { LoanRecordDrawer } from './LoanRecordDrawer'
 export { LoanDisburseDrawer } from './LoanDisburseDrawer'
 export { LoanDetailModal } from './LoanDetailModal'
 export { LoanPayInstallmentModal } from './LoanPayInstallmentModal'

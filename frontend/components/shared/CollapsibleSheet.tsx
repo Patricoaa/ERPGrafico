@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { type LucideIcon } from "lucide-react"
+import { fadeInClass } from "./fade-in-class"
 
 interface CollapsibleSheetProps {
     children: React.ReactNode
@@ -171,7 +172,7 @@ export function CollapsibleSheet({
                     onKeyDown={(e) => { if (isCollapsed && open && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onOpenChange(true) } }}
                     aria-label={`Expandir panel ${tabLabel}`}
                 >
-                    <div className="flex flex-col items-center gap-4 py-4 animate-in fade-in slide-in-from-right-4 duration-700">
+                    <div className={cn("flex flex-col items-center gap-4 py-4", fadeInClass({ from: "right", distance: 4, duration: 700 }))}>
                         <div className="relative">
                             <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
                             {badge !== undefined && badge > 0 && (
@@ -193,7 +194,7 @@ export function CollapsibleSheet({
             <div
                 className={cn(
                     "flex-1 flex flex-col min-h-0",
-                    open && !isCollapsed && "animate-in fade-in slide-in-from-right-4 ease-premium fill-mode-both motion-reduce:animate-none motion-reduce:opacity-100"
+                    open && !isCollapsed && fadeInClass({ from: "right", distance: 4, ease: "premium" })
                 )}
                 style={open && !isCollapsed ? ({
                     animationDuration: "0.2s",

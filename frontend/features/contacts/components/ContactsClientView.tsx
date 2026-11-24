@@ -10,8 +10,9 @@ import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
+import { useGlobalModals } from "@/components/providers"
 import { contactEntity, contactViews } from "../entity-view/contact.entity"
 
 // Lazy load heavy components
@@ -34,10 +35,12 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
         initialData: initialContacts,
    })
     const [archiveTarget, setArchiveTarget] = useState<Contact | null>(null)
-    const { openSelected } = useEntityRouteActions()
+    const { openEntity } = useGlobalModals()
 
-    const panel = useEntityPanelRoute<Contact>({ endpoint: '/contacts', external: { open: isNewModalOpen } })
-    const selectedFromUrl = panel.entity
+    // Editar un contacto abre su pestaña (varias a la vez, ADR-0152); `?selected` solo es enlace profundo.
+    useDeepLinkEntity("contacts.contact")
+    // Esta pestaña de página queda solo para crear: `resolved: false` ignora `?selected`.
+    const panel = useCreatePanelRoute<Contact>({ external: { open: isNewModalOpen }, resolved: false })
 
     const confirmArchive = async () => {
         if (!archiveTarget) return
@@ -53,7 +56,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
     }
 
     const actionsCtx: ContactActionsCtx = {
-        onEdit: (id) => openSelected(id),
+        onEdit: (contact) => openEntity("contacts.contact", contact.id, contact),
         onArchive: (contact) => setArchiveTarget(contact),
     }
 
@@ -72,7 +75,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(contact) => openSelected(contact.id)}
                 actions={contactActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -94,7 +96,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                         <ContactDrawer
                             open={open}
                             onOpenChange={(open) => { if (!open) panel.close() }}
-                            contact={selectedFromUrl ?? undefined}
                             onSuccess={() => {
                                 panel.close()
                                 // Automatic invalidation handles refetch

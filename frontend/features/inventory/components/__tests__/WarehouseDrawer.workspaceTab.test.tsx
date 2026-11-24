@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
 
 import { GlobalModalProvider, EntityPanelTab, useGlobalModals } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { WarehouseDrawer } from "../WarehouseDrawer"
 
 const nav = vi.hoisted(() => {
@@ -46,7 +46,7 @@ function Tabs() {
 }
 
 function Page() {
-    const panel = useEntityPanelRoute<{ id: number; name: string; code: string; address: string }>({ endpoint: "/inventory/warehouses" })
+    const panel = useCreatePanelRoute<{ id: number; name: string; code: string; address: string }>({ endpoint: "/inventory/warehouses" })
     return (
         <EntityPanelTab label="inventory.warehouse" {...panel.tab}>
             {(open) => <WarehouseDrawer open={open} onOpenChange={(o) => { if (!o) panel.close() }} initialData={panel.entity ?? undefined} />}

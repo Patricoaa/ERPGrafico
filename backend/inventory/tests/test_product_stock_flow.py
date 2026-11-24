@@ -1,4 +1,4 @@
-"""stock_flow y stock_history de ProductSelector.get_insights: agregados en la BD, sin tope de 100 movimientos."""
+"""ProductSelector._stock_flow: flujo y evolución de stock agregados en la BD, sin tope de 100 movimientos."""
 from datetime import date
 from decimal import Decimal
 
@@ -47,7 +47,10 @@ def _move(env, src, dst, qty, cost="100", on=date(2026, 1, 15), product=None):
 
 
 def _insights(env):
-    return ProductSelector.get_insights(env["product"])
+    product = env["product"]
+    ids = [product.id] + (list(product.variants.values_list("id", flat=True)) if product.has_variants else [])
+    flow, history = ProductSelector._stock_flow(ids)
+    return {"stock_flow": flow, "stock_history": history}
 
 
 def test_stock_flow_totals_by_direction(env):
@@ -95,10 +98,6 @@ def test_transfers_and_adjustments_excluded_from_flow(env):
     assert totals["out_qty"] == 0.0
 
 
-def test_insights_has_no_kardex_key(env):
-    assert "kardex" not in _insights(env)
-
-
 def test_stock_history_uses_every_move_not_only_the_last_100(env):
     for i in range(120):
         _move(env, "vendor", "internal", "1", on=date(2026, 1, 1))
@@ -114,7 +113,7 @@ def test_stock_history_counts_adjustments_and_ignores_transfers(env):
     assert [row["stock"] for row in history] == [10.0, 10.0, 9.0, 5.0]
 
 
-def test_insights_query_count_does_not_grow_with_moves(env):
+def test_stock_flow_query_count_does_not_grow_with_moves(env):
     _move(env, "vendor", "internal", "1")
     with CaptureQueriesContext(connection) as few:
         _insights(env)

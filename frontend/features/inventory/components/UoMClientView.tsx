@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
@@ -11,8 +11,8 @@ import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSear
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { uomUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { uomEntity, uomViews } from "../entity-view/uom.entity"
@@ -27,9 +27,10 @@ interface UoMClientViewProps {
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
     const search = useUnifiedSearch(uomUnifiedSearchDef)
     const { uoms, isLoading, isError, refetch, archiveUoM } = useUoMs(search.filters)
-    const panel = useEntityPanelRoute<UoM>({ endpoint: '/inventory/uoms', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedUoM = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.uom")
     const { view, onViewChange } = useCollectionViewMode("inventory.uom")
     const collection = useEntityCollection(uomEntity, { rows: uoms, isLoading, error: isError, refetch, isFiltered: search.isFiltered }, { defaultSort: uomViews.table.defaultSort })
 
@@ -53,7 +54,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
         }
    })
     const actionsCtx: UoMActionsCtx = {
-        onEdit: (id) => openSelected(id),
+        onEdit: (id) => openEntity("inventory.uom", id),
         onArchive: (uom) => archiveConfirm.requestConfirm(uom),
     }
 
@@ -84,7 +85,6 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                 view={view}
                 onViewChange={onViewChange}
                 // Edit through the UoM modal (?selected, ADR-0020), not the drawer registry.
-                onOpen={(uom) => openSelected(uom.id)}
                 actions={uomActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -112,7 +112,6 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     <UoMDrawer
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
-                        initialData={selectedUoM ?? undefined}
                         onSuccess={() => { refetch() }}
                     />
                 )}

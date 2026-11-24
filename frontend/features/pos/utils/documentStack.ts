@@ -1,10 +1,10 @@
 /**
- * Pila de navegación del panel de ventas del POS (opción B). Cada entrada es un documento o un maestro
- * abierto desde el panel. Los documentos de `PANE_LABELS` se muestran en el panel derecho; el resto
- * (producto, contacto, OT…) se muestra como drawer anidado encima del panel. «Volver» quita la cima.
+ * Pila de navegación del panel de ventas del POS. La entrada raíz (OV, nota, sesión) se incrusta en el
+ * panel; toda entidad que se abra desde ahí (links, pestaña Relaciones) se apila y se monta cubriendo al
+ * padre (`DrawerScope.cover`). «Volver» / X quita la cima y revela la entrada anterior. Sin límite de niveles.
  */
 
-/** Documentos que se renderizan dentro del panel (ficha incrustada). */
+/** Documentos que se incrustan en el panel cuando son la raíz de la pila. */
 export const PANE_LABELS: ReadonlySet<string> = new Set(["sales.saleorder", "billing.invoice", "treasury.possession"])
 
 export interface StackEntry {
@@ -34,19 +34,17 @@ export function isPaneLabel(label: string): boolean {
 }
 
 /**
- * Añade una entrada. Un documento de panel (OV, nota) **reemplaza** lo abierto: no hay drill-back por
- * cada documento. Un drawer anidado (producto, contacto…) reemplaza al anterior drawer anidado: nunca hay
- * más de un documento y un drawer anidado a la vez, así no se abre una cadena de drawers.
- * Si la entrada ya es la cima, no hace nada (doble clic).
+ * Añade una entrada encima de la pila (cualquier entidad, incluidos documentos de panel). Si ya es la
+ * cima no hace nada (doble clic). Abrir de nuevo una entrada que está más abajo la lleva a la cima sin
+ * duplicarla: se recorta la pila hasta ella.
  */
 export function pushEntry(state: StackState, entry: Omit<StackEntry, "key">): StackState {
     const key = entryKey(entry.label, entry.id)
     const top = state.entries[state.entries.length - 1]
     if (top && top.key === key) return state
-    if (isPaneLabel(entry.label)) return { entries: [{ ...entry, key }], direction: "forward" }
-    // Un único drawer anidado: el nuevo reemplaza al anterior en lugar de apilarse.
-    const documents = state.entries.filter(e => isPaneLabel(e.label))
-    return { entries: [...documents, { ...entry, key }], direction: "forward" }
+    const existing = state.entries.findIndex(e => e.key === key)
+    if (existing !== -1) return { entries: state.entries.slice(0, existing + 1), direction: "back" }
+    return { entries: [...state.entries, { ...entry, key }], direction: "forward" }
 }
 
 /** «Volver»: quita la cima. Vacía no cambia nada. */
@@ -63,16 +61,12 @@ export function setRootEntry(state: StackState, entry: Omit<StackEntry, "key"> |
     return { entries: [{ ...entry, key }], direction: "forward" }
 }
 
-/** Documento que ocupa el panel: el último de tipo panel (aunque haya un maestro encima). */
+/** Documento que ocupa el panel: la raíz de la pila, si es un documento de panel. */
 export function paneEntryOf(entries: readonly StackEntry[]): StackEntry | null {
-    for (let i = entries.length - 1; i >= 0; i--) {
-        if (isPaneLabel(entries[i].label)) return entries[i]
-    }
-    return null
+    return entries.length > 0 && isPaneLabel(entries[0].label) ? entries[0] : null
 }
 
-/** Drawer anidado a mostrar: la cima, si no es un documento de panel. */
-export function overlayEntryOf(entries: readonly StackEntry[]): StackEntry | null {
-    const top = entries[entries.length - 1]
-    return top && !isPaneLabel(top.label) ? top : null
+/** Entidades que cubren al panel, de la más antigua a la cima (todo lo que no es la raíz incrustada). */
+export function overlayEntriesOf(entries: readonly StackEntry[]): readonly StackEntry[] {
+    return paneEntryOf(entries) ? entries.slice(1) : entries
 }

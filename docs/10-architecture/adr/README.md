@@ -206,12 +206,16 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0141](0141-cuadre-unificado-por-grupo.md) | El cuadre es un solo registro por grupo (documento ERP, pagos TUU, registros RCV) que el motor resuelve cada 10 minutos; sin vínculos por pares ni recálculo manual | Accepted |
 | [0142](0142-escala-unificada-fluida-densidad-y-puntero.md) | Escala unificada: tipografía fluida (Utopia), espaciado y alturas de control dirigidos por un dial (densidad × puntero) en atributos CSS | Accepted |
 | [0143](0143-wizard-de-notas-sobre-drawer-layout.md) | Wizard de notas NC/ND sobre Drawer + DrawerLayout (patrón de compra); el hook es la única fuente del paso | Accepted |
-| [0144](0144-capacidades-y-stock-flow-en-insights-de-producto.md) | El análisis de producto se adapta a las capacidades del producto; `stock_flow` reemplaza `kardex` en `insights` | Accepted |
+| [0144](0144-capacidades-y-stock-flow-en-insights-de-producto.md) | El análisis de producto se adapta a las capacidades del producto; `stock_flow` reemplaza `kardex` en `insights` | Superseded by 0150 |
 | [0145](0145-precio-y-margen-por-producto.md) | Margen real e impacto de reglas de precio por producto; endpoint `sales-impact` e ingresos de `insights` netos de descuentos | Accepted |
-| [0146](0146-rendimiento-de-fabricacion-por-producto.md) | Rendimiento de fabricación por producto; endpoint `production-performance` (costo real vs BOM, desviación de insumos, etapas, margen por OT) | Accepted |
-| [0147](0147-decisiones-de-abastecimiento-por-producto.md) | Decisiones de abastecimiento por producto; endpoint `sourcing` (fabricar vs comprar y uso como insumo con sensibilidad) | Accepted |
-| [0148](0148-rotacion-cobertura-y-suscripciones-por-producto.md) | Rotación, cobertura y suscripciones por producto; endpoint `operations` | Accepted |
+| [0146](0146-rendimiento-de-fabricacion-por-producto.md) | Rendimiento de fabricación por producto; endpoint `production-performance` (costo real vs BOM, desviación de insumos, etapas, margen por OT) | Superseded by 0150 |
+| [0147](0147-decisiones-de-abastecimiento-por-producto.md) | Decisiones de abastecimiento por producto; endpoint `sourcing` (fabricar vs comprar y uso como insumo con sensibilidad) | Superseded by 0150 |
+| [0148](0148-rotacion-cobertura-y-suscripciones-por-producto.md) | Rotación, cobertura y suscripciones por producto; endpoint `operations` | Superseded by 0150 |
 | [0149](0149-metric-card-system.md) | Sistema de cards de métrica: `Metric`, `MetricStrip` y `ChartCard` reemplazan a `StatCard` (valores en JetBrains Mono, densidad compacta, tono solo con significado) | Accepted |
+| [0150](0150-analisis-de-producto-por-bloque-y-periodo.md) | Análisis de producto por bloque, con período único en el riel y capacidades separadas (`capabilities`); segmento solo interno | Accepted |
 | [0151](0151-bruto-autoridad-unica-del-precio-de-venta.md) | El bruto es la única autoridad del precio de venta; el neto se deriva siempre con `accounting/vat.py` (espejo `lib/vat.ts`), el frontend no recalcula precios y un `ci_gate` bloquea aritmética de IVA fuera de esos módulos | Accepted |
+| [0152](0152-pestanas-de-registro-multiples-por-entidad.md) | Un registro = una pestaña: las filas abren pestañas por `openEntity` (varias por entidad, título con sufijo); `?selected` solo enlace profundo; reemplaza ADR-0101 §6 y §12 | Proposed |
+| [0153](0153-pos-pila-de-entidades-cubre-al-panel.md) | POS: toda entidad enlazada se apila y se dibuja en línea dentro del drawer de ventas (`DrawerScope.inline`) con «Volver», sin límite de niveles; reemplaza el punto 2 de ADR-0121 | Proposed |
+| [0157](0157-design-system-doc-consolidation.md) | Consolidación del design system: `DESIGN.md` única entrada (retira `design-system.md`, nace `geometry-surfaces.md`), contratos alineados al código, receta `fadeInClass()` y ratchets de diseño en 0 | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

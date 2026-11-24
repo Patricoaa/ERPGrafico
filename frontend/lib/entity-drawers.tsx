@@ -3,10 +3,13 @@
 import React from "react"
 import dynamic from "next/dynamic"
 import { SkeletonShell } from "@/components/shared"
+import { useQueryClient } from "@tanstack/react-query"
+import { useRecordById } from "@/hooks/useRecordById"
 import type { ProductCategory, AppGroup } from "@/types/entities"
 import type { Contact } from "@/features/contacts"
-import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice } from "@/features/treasury"
+import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice, Bank, PaymentMethod } from "@/features/treasury"
 import type { UoM, Attribute } from "@/features/inventory"
+import type { UoMCategory } from "@/features/inventory/hooks/useUoMs"
 import type {
     ProductInitialData,
     WarehouseInitialData,
@@ -38,6 +41,60 @@ export interface EntityDrawerProps {
 
 const skeleton = (label: string) => <SkeletonShell isLoading={true} ariaLabel={`Cargando ${label}`} />
 
+/**
+ * Drawer de registro (ADR-0152): usa la fila si el llamador la trae (`data`) y, si solo hay id
+ * (enlace profundo, relaciones), carga el registro de `endpoint` antes de montar el formulario.
+ */
+function RecordDrawer<T>({ endpoint, id, data, label, children }: {
+    endpoint: string
+    id: number
+    data: unknown
+    label: string
+    children: (record: T) => React.ReactNode
+}) {
+    const { record, isError } = useRecordById<T>(endpoint, data ? null : id)
+    const resolved = (data as T | undefined) ?? record
+    if (resolved) return <>{children(resolved)}</>
+    return isError ? null : skeleton(label)
+}
+
+function PayrollDrawerEntry({ id, open, onOpenChange }: { id: number; open: boolean; onOpenChange: (open: boolean) => void }) {
+    const queryClient = useQueryClient()
+    return (
+        <PayrollDetailDrawer
+            open={open}
+            onOpenChange={onOpenChange}
+            payrollId={id}
+            onUpdate={() => { void queryClient.invalidateQueries({ queryKey: ["hr", "payrolls"] }) }}
+        />
+    )
+}
+
+/** OT como pestaña (ADR-0152): guardar no cierra la pestaña, solo refresca la lista. */
+function WorkOrderDrawerEntry({ id, open, onOpenChange }: { id: number; open: boolean; onOpenChange: (open: boolean) => void }) {
+    const queryClient = useQueryClient()
+    return (
+        <WorkOrderWizard
+            mode={{ kind: "manage", orderId: id }}
+            open={open}
+            onOpenChange={onOpenChange}
+            onSuccess={() => { void queryClient.invalidateQueries({ queryKey: ["work-orders"] }) }}
+        />
+    )
+}
+
+function InventoryCountDrawerEntry({ id, open, onOpenChange }: { id: number; open: boolean; onOpenChange: (open: boolean) => void }) {
+    const queryClient = useQueryClient()
+    return (
+        <InventoryCountDetailDrawer
+            countId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+            onApplied={() => { void queryClient.invalidateQueries({ queryKey: ["inventory", "counts"] }) }}
+        />
+    )
+}
+
 const ContactDrawer = dynamic(() => import("@/features/contacts/components/ContactDrawer"), {
     ssr: false,
     loading: () => skeleton("contacto"),
@@ -56,6 +113,51 @@ const WorkOrderWizard = dynamic(
 const JournalEntryDrawer = dynamic(
     () => import("@/features/accounting").then((m) => m.JournalEntryDrawer),
     { ssr: false, loading: () => skeleton("asiento contable") }
+)
+
+const UoMCategoryDrawer = dynamic(
+    () => import("@/features/inventory").then((m) => m.UoMCategoryDrawer),
+    { ssr: false, loading: () => skeleton("categoría de unidades") }
+)
+
+const InventoryCountDetailDrawer = dynamic(
+    () => import("@/features/inventory").then((m) => m.InventoryCountDetailDrawer),
+    { ssr: false, loading: () => skeleton("conteo de inventario") }
+)
+
+const LoanRecordDrawer = dynamic(
+    () => import("@/features/treasury").then((m) => m.LoanRecordDrawer),
+    { ssr: false, loading: () => skeleton("crédito") }
+)
+
+const DeclarationRecordWizard = dynamic(
+    () => import("@/features/tax").then((m) => m.DeclarationRecordWizard),
+    { ssr: false, loading: () => skeleton("declaración F29") }
+)
+
+const BankModal = dynamic(
+    () => import("@/features/treasury").then((m) => m.BankModal),
+    { ssr: false, loading: () => skeleton("banco") }
+)
+
+const PaymentMethodModal = dynamic(
+    () => import("@/features/treasury").then((m) => m.PaymentMethodModal),
+    { ssr: false, loading: () => skeleton("método de pago") }
+)
+
+const SubscriptionRecordDrawer = dynamic(
+    () => import("@/features/purchasing").then((m) => m.SubscriptionRecordDrawer),
+    { ssr: false, loading: () => skeleton("suscripción") }
+)
+
+const BOMRecordDrawer = dynamic(
+    () => import("@/features/production").then((m) => m.BOMRecordDrawer),
+    { ssr: false, loading: () => skeleton("lista de materiales") }
+)
+
+const BudgetRecordEditor = dynamic(
+    () => import("@/features/finance").then((m) => m.BudgetRecordEditor),
+    { ssr: false, loading: () => skeleton("presupuesto") }
 )
 
 const ProductDrawerById = dynamic(
@@ -98,8 +200,8 @@ const PricingRuleDrawer = dynamic(
     { ssr: false, loading: () => skeleton("regla de precio") }
 )
 
-const AccountDrawer = dynamic(
-    () => import("@/features/finance").then((m) => m.AccountDrawer),
+const AccountRecordDrawer = dynamic(
+    () => import("@/features/accounting").then((m) => m.AccountRecordDrawer),
     { ssr: false, loading: () => skeleton("cuenta contable") }
 )
 
@@ -261,6 +363,11 @@ const PurchaseReturnDrawer = dynamic(
     { ssr: false, loading: () => skeleton("devolución de compra") }
 )
 
+const StatementDetailModal = dynamic(
+    () => import("@/features/treasury").then((m) => m.StatementDetailModal),
+    { ssr: false, loading: () => skeleton("estado de cuenta") }
+)
+
 const BankStatementDrawer = dynamic(
     () => import("@/features/treasury/components/BankStatementDrawer").then((m) => m.BankStatementDrawer),
     { ssr: false, loading: () => skeleton("cartola bancaria") }
@@ -315,13 +422,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Production ────────────────────────────────────────────────────────────
-    "production.workorder": ({ id, open, onOpenChange }) => (
-        <WorkOrderWizard
-            mode={{ kind: "manage", orderId: id }}
-            open={open}
-            onOpenChange={onOpenChange}
-        />
-    ),
+    "production.workorder": ({ id, open, onOpenChange }) => <WorkOrderDrawerEntry id={id} open={open} onOpenChange={onOpenChange} />,
 
     // ── Accounting ────────────────────────────────────────────────────────────
     // Con data → vista con datos completos; solo con id (relaciones, /d/) → vista cargada por id.
@@ -333,7 +434,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             open={open}
             onOpenChange={onOpenChange}
             initialData={data as JournalEntryInitialData}
-            onSuccess={() => onSuccess?.()}
+            // En vista, onSuccess se dispara tras publicar/reversar desde la ficha, que sigue abierta (como en la página).
+            onSuccess={data || id ? undefined : () => onSuccess?.()}
         />
     ),
 
@@ -345,7 +447,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             <ProductDrawerById id={id} open={open} onOpenChange={onOpenChange} onSuccess={() => onSuccess?.()} />
         ) : (
             <ProductDrawer
-                mode={data ? 'view' : 'create'}
+                mode={data ? undefined : 'create'}
                 open={open}
                 onOpenChange={onOpenChange}
                 initialData={data as ProductInitialData}
@@ -353,97 +455,86 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             />
         )
     ),
-    // * requires full category data — EntityBadge always provides it
-    "inventory.category": ({ open, onOpenChange, data, onSuccess }) => (
-        <CategoryDrawer
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as ProductCategory}
-            onSuccess={() => onSuccess?.()}
-        />
+    // Categoría, almacén, UdM, atributo y regla de precio: con la fila abren directo; solo con id cargan
+    // el registro (ADR-0152). Siempre en edición, igual que al abrirlos desde su lista.
+    "inventory.category": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<ProductCategory> endpoint="/inventory/categories" id={id} data={data} label="categoría">
+            {(record) => <CategoryDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full warehouse data — EntityBadge always provides it
-    "inventory.warehouse": ({ open, onOpenChange, data, onSuccess }) => (
-        <WarehouseDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as WarehouseInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    "inventory.warehouse": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<WarehouseInitialData> endpoint="/inventory/warehouses" id={id} data={data} label="almacén">
+            {(record) => <WarehouseDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full UoM data — EntityBadge always provides it
-    "inventory.uom": ({ open, onOpenChange, data, onSuccess }) => (
-        <UoMDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as Partial<UoM>}
-            onSuccess={() => onSuccess?.()}
-        />
+    "inventory.uom": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Partial<UoM>> endpoint="/inventory/uoms" id={id} data={data} label="unidad de medida">
+            {(record) => <UoMDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full attribute data — EntityBadge always provides it
-    "inventory.attribute": ({ open, onOpenChange, data, onSuccess }) => (
-        <AttributeDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as Partial<Attribute>}
-            onSuccess={() => onSuccess?.()}
-        />
+    "inventory.attribute": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Partial<Attribute>> endpoint="/inventory/attributes" id={id} data={data} label="atributo">
+            {(record) => <AttributeDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    // * requires full pricing rule data — EntityBadge always provides it
-    "inventory.pricingrule": ({ open, onOpenChange, data, onSuccess }) => (
-        <PricingRuleDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as PricingRuleInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    "treasury.bankloan": ({ id, open, onOpenChange }) => <LoanRecordDrawer id={id} open={open} onOpenChange={onOpenChange} />,
+    "tax.taxperiod": ({ id, open, onOpenChange, onSuccess }) => (
+        <DeclarationRecordWizard id={id} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
+    ),
+    "treasury.bank": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Bank> endpoint="/treasury/banks" id={id} data={data} label="banco">
+            {(record) => <BankModal open={open} onOpenChange={onOpenChange} bank={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
+    ),
+    "treasury.paymentmethod": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PaymentMethod> endpoint="/treasury/payment-methods" id={id} data={data} label="método de pago">
+            {(record) => <PaymentMethodModal open={open} onOpenChange={onOpenChange} method={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
+    ),
+    "inventory.subscription": ({ id, data, open, onOpenChange, onSuccess }) => (
+        <SubscriptionRecordDrawer id={id} data={data} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
+    ),
+    "production.bom": ({ id, open, onOpenChange, onSuccess }) => (
+        <BOMRecordDrawer id={id} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
+    ),
+    "accounting.budget": ({ id, data, open, onOpenChange }) => (
+        <BudgetRecordEditor id={id} data={data} open={open} onOpenChange={onOpenChange} />
+    ),
+    "inventory.uomcategory": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<UoMCategory> endpoint="/inventory/uom-categories" id={id} data={data} label="categoría de unidades">
+            {(record) => <UoMCategoryDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
+    ),
+    // El detalle del conteo dispara onApplied tras aplicarlo sin cerrarse: refresca la lista, no cierra la pestaña.
+    "inventory.inventorycount": ({ id, open, onOpenChange }) => <InventoryCountDrawerEntry id={id} open={open} onOpenChange={onOpenChange} />,
+    "inventory.pricingrule": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PricingRuleInitialData> endpoint="/inventory/pricing-rules" id={id} data={data} label="regla de precio">
+            {(record) => <PricingRuleDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── HR ────────────────────────────────────────────────────────────────────
     // * requires full employee data — EntityBadge always provides it
-    "hr.employee": ({ open, onOpenChange, data, onSuccess }) => (
-        <EmployeeDrawer
-            open={open}
-            onOpenChange={onOpenChange}
-            employee={(data as Employee | null) ?? null}
-            onSaved={() => onSuccess?.()}
-        />
+    "hr.employee": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Employee> endpoint="/hr/employees" id={id} data={data} label="empleado">
+            {(record) => <EmployeeDrawer open={open} onOpenChange={onOpenChange} employee={record} onSaved={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
-    "hr.payroll": ({ id, open, onOpenChange, onSuccess }) => (
-        <PayrollDetailDrawer
-            open={open}
-            onOpenChange={onOpenChange}
-            payrollId={id}
-            onUpdate={() => onSuccess?.()}
-        />
-    ),
+    // El detalle dispara onUpdate tras confirmar/pagar/anular sin cerrarse: refresca la lista, no cierra la pestaña.
+    "hr.payroll": ({ id, open, onOpenChange }) => <PayrollDrawerEntry id={id} open={open} onOpenChange={onOpenChange} />,
 
     // ── Accounting ────────────────────────────────────────────────────────────
     // * requires full account data — EntityBadge always provides it
-    "accounting.account": ({ open, onOpenChange, data, onSuccess }) => (
-        <AccountDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as Record<string, unknown>}
-            onSuccess={() => onSuccess?.()}
-        />
+    "accounting.account": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <AccountRecordDrawer id={id} data={data} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
     ),
 
     // ── Users ─────────────────────────────────────────────────────────────────
     // * requires full user data — EntityBadge always provides it
-    "core.user": ({ open, onOpenChange, data, onSuccess }) => (
-        <UserDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            initialData={data as UserInitialData}
-            onSuccess={() => onSuccess?.()}
-        />
+    "core.user": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<UserInitialData> endpoint="/core/users" id={id} data={data} label="usuario">
+            {(record) => <UserDrawer open={open} onOpenChange={onOpenChange} initialData={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── Treasury hardware ─────────────────────────────────────────────────────
@@ -460,14 +551,10 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     "treasury.posterminal": ({ id, open, onOpenChange, onSuccess }) => (
         <PosTerminalDrawerById id={id} open={open} onOpenChange={onOpenChange} onSuccess={() => onSuccess?.()} />
     ),
-    "treasury.terminalprovider": ({ open, onOpenChange, data, onSuccess }) => (
-        <ProviderDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            provider={(data as PaymentTerminalProvider | null) ?? null}
-            onSuccess={() => onSuccess?.()}
-        />
+    "treasury.terminalprovider": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PaymentTerminalProvider> endpoint="/treasury/terminal-providers" id={id} data={data} label="proveedor de terminal">
+            {(record) => <ProviderDrawer open={open} onOpenChange={onOpenChange} provider={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── POS ───────────────────────────────────────────────────────────────────
@@ -481,36 +568,24 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── HR extended ───────────────────────────────────────────────────────────
     // * requires full absence data — EntityBadge always provides it
-    "hr.absence": ({ open, onOpenChange, data, onSuccess }) => (
-        <AbsenceDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            absence={(data as Absence | null) ?? null}
-            onSaved={() => onSuccess?.()}
-        />
+    "hr.absence": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<Absence> endpoint="/hr/absences" id={id} data={data} label="inasistencia">
+            {(record) => <AbsenceDrawer open={open} onOpenChange={onOpenChange} absence={record} onSaved={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
     // * requires full advance data — EntityBadge always provides it
-    "hr.salaryadvance": ({ open, onOpenChange, data, onSuccess }) => (
-        <AdvanceDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            advance={(data as SalaryAdvance | null) ?? null}
-            onSaved={() => onSuccess?.()}
-        />
+    "hr.salaryadvance": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<SalaryAdvance> endpoint="/hr/advances" id={id} data={data} label="anticipo">
+            {(record) => <AdvanceDrawer open={open} onOpenChange={onOpenChange} advance={record} onSaved={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── Treasury hardware extended ────────────────────────────────────────────
     // * requires full device data — EntityBadge always provides it
-    "treasury.terminaldevice": ({ open, onOpenChange, data, onSuccess }) => (
-        <DeviceDrawer
-            mode={data ? 'view' : 'create'}
-            open={open}
-            onOpenChange={onOpenChange}
-            device={(data as PaymentTerminalDevice | null) ?? null}
-            onSuccess={() => onSuccess?.()}
-        />
+    "treasury.terminaldevice": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<PaymentTerminalDevice> endpoint="/treasury/terminal-devices" id={id} data={data} label="terminal de cobro">
+            {(record) => <DeviceDrawer open={open} onOpenChange={onOpenChange} device={record} onSuccess={() => onSuccess?.()} />}
+        </RecordDrawer>
     ),
 
     // ── Finance ───────────────────────────────────────────────────────────────
@@ -574,6 +649,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             onOpenChange={onOpenChange}
         />
     ),
+    "treasury.creditcardstatement": ({ id, open, onOpenChange }) => <StatementDetailModal statementId={id} open={open} onOpenChange={onOpenChange} />,
     "treasury.bankstatement": ({ id, open, onOpenChange }) => (
         <BankStatementDrawer
             statementId={id}

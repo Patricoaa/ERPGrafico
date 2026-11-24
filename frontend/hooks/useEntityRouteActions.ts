@@ -12,6 +12,9 @@
  * `?hub` was removed with the Order Hub (ADR-0083): documents open their document sheet via
  * `?selected` (`useDocumentSheetRoute`).
  * `?action` is only valid alongside `?selected`.
+ * ADR-0152: opening a RECORD from a list is `openEntity(label, id, row)` (one tab per record). `openSelected` /
+ * `openView` remain only for page panels that depend on the view's context (`variant` panels, journal-entry edit,
+ * credit assignment); `openAction` for action panels (`disburse`, `deposit`…). Do not add new record openers here.
  * `?detail={id}` is DEPRECATED — use `openView(id)` instead.
  *
  * @contract docs/20-contracts/component-row-actions.md §5.3

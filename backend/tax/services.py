@@ -14,7 +14,42 @@ from billing.models import Invoice
 from core.edit_policy import assert_editable, changed_fields
 from workflow.services import WorkflowService
 
-from .models import F29Declaration, F29Payment, TaxPeriod
+from .models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
+
+
+def _check_period_closed(period_model, document_date) -> bool:
+    """
+    Función interna genérica: verifica si el período de la fecha dada está cerrado.
+    Funciona para TaxPeriod y AccountingPeriod — solo cambia el modelo recibido.
+    Soporta objetos date y strings ISO.
+    """
+    if not document_date:
+        return False
+    if isinstance(document_date, str):
+        document_date = parse_date(document_date)
+        if not document_date:
+            return False
+    try:
+        period = period_model.objects.get(year=document_date.year, month=document_date.month)
+        return period.status == period_model.Status.CLOSED
+    except period_model.DoesNotExist:
+        return False
+
+
+def _parse_and_check_period_closed(period_model, date_str) -> dict:
+    """
+    Función interna genérica: parsea una fecha ISO y verifica si su período está cerrado.
+    Reutilizada por TaxPeriodService y AccountingPeriodService.
+    """
+    from datetime import datetime as _datetime
+
+    if not date_str:
+        raise ValidationError("Date required")
+    try:
+        parsed = _datetime.strptime(date_str, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        raise ValidationError("Invalid date")
+    return {"is_closed": _check_period_closed(period_model, parsed), "date": date_str}
 
 
 def ensure_no_draft_invoices(year: int, month: int, action: str) -> None:
@@ -606,36 +641,13 @@ class TaxPeriodService:
 
     @staticmethod
     def is_period_closed(document_date) -> bool:
-        """
-        Checks if a given date falls within a closed tax period.
-        Supports both date objects and ISO date strings.
-        """
-        if not document_date:
-            return False
-
-        # Convert string to date object if necessary
-        if isinstance(document_date, str):
-            document_date = parse_date(document_date)
-            if not document_date:
-                return False
-
-        try:
-            period = TaxPeriod.objects.get(year=document_date.year, month=document_date.month)
-            return period.status == TaxPeriod.Status.CLOSED
-        except TaxPeriod.DoesNotExist:
-            return False
+        """Verifica si la fecha cae dentro de un período tributario cerrado."""
+        return _check_period_closed(TaxPeriod, document_date)
 
     @staticmethod
     def parse_and_check_closed(date_str):
-        from datetime import datetime
-
-        if not date_str:
-            raise ValidationError("Date required")
-        try:
-            parsed = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
-            raise ValidationError("Invalid date")
-        return {"is_closed": TaxPeriodService.is_period_closed(parsed), "date": date_str}
+        """Parsea una fecha ISO y verifica si su período tributario está cerrado."""
+        return _parse_and_check_period_closed(TaxPeriod, date_str)
 
     @staticmethod
     def validate_can_close(user):
@@ -931,40 +943,13 @@ class AccountingPeriodService:
 
     @staticmethod
     def is_period_closed(document_date) -> bool:
-        """
-        Checks if a given date falls within a closed accounting period.
-        Supports both date objects and ISO date strings.
-        """
-        from .models import AccountingPeriod
-
-        if not document_date:
-            return False
-
-        # Convert string to date object if necessary
-        if isinstance(document_date, str):
-            document_date = parse_date(document_date)
-            if not document_date:
-                return False
-
-        try:
-            period = AccountingPeriod.objects.get(
-                year=document_date.year, month=document_date.month
-            )
-            return period.status == AccountingPeriod.Status.CLOSED
-        except AccountingPeriod.DoesNotExist:
-            return False
+        """Verifica si la fecha cae dentro de un período contable cerrado."""
+        return _check_period_closed(AccountingPeriod, document_date)
 
     @staticmethod
     def parse_and_check_closed(date_str):
-        from datetime import datetime
-
-        if not date_str:
-            raise ValidationError("Date required")
-        try:
-            parsed = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
-            raise ValidationError("Invalid date")
-        return {"is_closed": AccountingPeriodService.is_period_closed(parsed), "date": date_str}
+        """Parsea una fecha ISO y verifica si su período contable está cerrado."""
+        return _parse_and_check_period_closed(AccountingPeriod, date_str)
 
     @staticmethod
     def validate_can_close(user):

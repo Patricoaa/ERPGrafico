@@ -4,8 +4,9 @@ import Image from "next/image"
 import { LoginForm } from "@/features/auth"
 import { GuestGuard } from "@/components/auth"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { PrepressPanel } from "@/components/shared"
+import { PrepressPanel, fadeInClass } from "@/components/shared"
 import { getFrontendVersion } from "@/lib/version"
+import { cn } from "@/lib/utils"
 
 export default function LoginPage() {
     const { logo, company } = useBranding()
@@ -16,7 +17,7 @@ export default function LoginPage() {
         <GuestGuard>
             <div className="min-h-screen w-full flex items-center justify-center bg-background selection:bg-primary/20 relative overflow-hidden">
                 <div
-                    className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]"
+                    className={cn("w-full max-w-sm relative z-10 mx-6", fadeInClass({ from: "bottom", distance: 3, duration: 600, ease: "premium" }))}
                 >
                     <PrepressPanel className="surface-panel shadow-card p-8">
                         {/* Logo */}

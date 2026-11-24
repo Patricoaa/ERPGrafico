@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useState } from "react"
 import { hasEntityDrawer } from "@/lib/entity-drawers"
-import { useGlobalModalActions, type OpenEntityOptions } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions, type NoteTabState, type OpenEntityOptions } from "@/components/providers/GlobalModalProvider"
 import {
     EMPTY_STACK,
     popEntry,
@@ -11,6 +11,9 @@ import {
     type StackEntry,
     type StackState,
 } from "../utils/documentStack"
+
+/** Etiqueta de la entrada de pila del asistente de NC/ND (no es una entidad del registro de drawers). */
+export const POS_NOTE_WIZARD_LABEL = "billing.note-wizard"
 
 /** Duración de la salida del drawer anidado (ver `--duration-pos-exit` en globals.css) + margen. */
 export const POS_OVERLAY_EXIT_MS = 480
@@ -51,6 +54,14 @@ export function usePosDocumentStack() {
         runGuarded(() => dispatch({ type: "push", entry: { label, id, data, display: options?.display } }))
     }, [runGuarded])
 
+    /** Apila el asistente de NC/ND sobre la factura (`id` = factura origen; el tipo viaja en `data`). */
+    const openNote = useCallback((note: NoteTabState) => {
+        runGuarded(() => dispatch({
+            type: "push",
+            entry: { label: POS_NOTE_WIZARD_LABEL, id: note.invoiceId, data: { noteType: note.noteType }, display: note.noteType === "NOTA_CREDITO" ? "Nota de crédito" : "Nota de débito" },
+        }))
+    }, [runGuarded])
+
     const setRoot = useCallback(
         (entry: Omit<StackEntry, "key"> | null) => runGuarded(() => dispatch({ type: "root", entry })),
         [runGuarded],
@@ -64,6 +75,9 @@ export function usePosDocumentStack() {
         (key: string, mode: PosCloseMode) => runGuarded(() => setClosing({ key, mode })),
         [runGuarded],
     )
+
+    /** «Volver» de una entrada en línea: la quita de inmediato (no hay animación de salida). */
+    const back = useCallback(() => runGuarded(() => dispatch({ type: "pop" })), [runGuarded])
 
     useEffect(() => {
         if (closing === null) return
@@ -79,5 +93,5 @@ export function usePosDocumentStack() {
         dispatch({ type: "reset" })
     }, [])
 
-    return { state, open, setRoot, closeEntry, closingKey: closing?.key ?? null, reset }
+    return { state, open, openNote, setRoot, back, closeEntry, closingKey: closing?.key ?? null, reset }
 }

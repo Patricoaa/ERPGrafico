@@ -5,6 +5,7 @@ export {
   BudgetDetailView,
   BIAnalyticsDashboard,
   BudgetEditor,
+  BudgetRecordEditor,
   CashFlowTable,
   RatiosDashboard,
   FinancialStatementsReport,

@@ -53,7 +53,7 @@ const badgeVariants = cva(
                 cyan:        'bg-cyan/10 text-cyan',
                 magenta:     'bg-magenta/10 text-magenta',
                 yellow:      'bg-yellow/10 text-yellow',
-                black:       'bg-black/10 text-black',
+                black:       'bg-foreground/10 text-foreground', // K plate = foreground so it reads in dark mode (ADR-0157)
             },
 
             /**
@@ -208,7 +208,7 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
         cyan:        'bg-cyan',
         magenta:     'bg-magenta',
         yellow:      'bg-yellow',
-        black:       'bg-black',
+        black:       'bg-foreground',
     }
 
     return (
@@ -242,7 +242,7 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
         cyan:        'text-cyan bg-cyan/10 border-cyan/20',
         magenta:     'text-magenta bg-magenta/10 border-magenta/20',
         yellow:      'text-yellow bg-yellow/10 border-yellow/20',
-        black:       'text-black bg-black/10 border-black/20',
+        black:       'text-foreground bg-foreground/10 border-foreground/20',
     }
 
     const ringColor: Record<string, string> = {
@@ -255,7 +255,7 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
         cyan:        'text-cyan',
         magenta:     'text-magenta',
         yellow:      'text-yellow',
-        black:       'text-black',
+        black:       'text-foreground',
     }
 
     const hasProgress = progress !== undefined

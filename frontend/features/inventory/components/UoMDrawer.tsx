@@ -8,7 +8,7 @@ import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell, SelectorTrigger } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell, SelectorTrigger, fadeInClass } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -410,7 +410,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                         />
 
                                         {watchType && watchType !== 'REFERENCE' && (
-                                            <div className="animate-in fade-in zoom-in-95 duration-300">
+                                            <div className={fadeInClass({ zoom: true, duration: 300 })}>
                                                 <FormField
                                                     control={form.control}
                                                     name="ratio"

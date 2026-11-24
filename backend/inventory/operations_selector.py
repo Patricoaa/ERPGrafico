@@ -11,18 +11,12 @@ from datetime import date, timedelta
 
 from django.db.models import Max, Sum
 from django.db.models.functions import TruncMonth
-from django.utils import timezone
 
-from .models import Product, StockMove, Subscription
+from .models import StockMove
 from .selectors import ProductSelector
 
 _FREQUENCY_FACTOR = {"WEEKLY": 52, "MONTHLY": 12, "QUARTERLY": 4, "SEMIANNUAL": 2, "ANNUAL": 1}
 _COVERAGE_DAYS = 90
-_PAYMENTS_SHOWN = 24
-
-
-def _pct_change(new: float, old: float) -> float | None:
-    return (new - old) / old * 100 if old else None
 
 
 class _StockCurve:
@@ -49,26 +43,29 @@ class _StockCurve:
         return acc / total_days if total_days > 0 else 0.0
 
 
+def _coverage_days(stock_now: float, recent_out: float) -> float | None:
+    return stock_now / (recent_out / _COVERAGE_DAYS) if recent_out > 0 and stock_now > 0 else None
+
+
+def coverage(product_ids: list[int], date_to: date) -> dict:
+    """Stock al cierre, consumo diario de los últimos 90 días y días de cobertura (mismo cálculo que la rotación)."""
+    _, history = ProductSelector._stock_flow(product_ids)
+    stock_now = _StockCurve(history).at(date_to)
+    _, _, flow = ProductSelector._flow_case()
+    recent_out = float(
+        StockMove.objects.filter(
+            product_id__in=product_ids, date__lte=date_to, date__gte=date_to - timedelta(days=_COVERAGE_DAYS - 1)
+        ).annotate(flow=flow).filter(flow="OUT").aggregate(q=Sum("quantity"))["q"] or 0
+    )
+    return {
+        "stock_now": stock_now,
+        "daily_out": recent_out / _COVERAGE_DAYS,
+        "coverage_days": _coverage_days(stock_now, recent_out),
+    }
+
+
 class OperationsSelector:
-    @staticmethod
-    def get_operations(
-        product: Product, date_from: date | None = None, date_to: date | None = None, idle_days: int = 90,
-    ) -> dict:
-        date_to = date_to or date.today()
-        date_from = date_from or (date_to - timedelta(days=365))
-        caps = ProductSelector.get_capabilities(product)
-        product_ids = [product.id]
-        if product.has_variants:
-            product_ids += list(product.variants.values_list("id", flat=True))
-        return {
-            "rotation": (
-                OperationsSelector._rotation(product, product_ids, date_from, date_to, idle_days)
-                if caps["tracks_stock"] else None
-            ),
-            "subscriptions": (
-                OperationsSelector._subscriptions(product_ids) if caps["recurring"] else None
-            ),
-        }
+    """Rotación del stock de un producto (la usan Inventario y Abastecimiento, ADR-0150)."""
 
     @staticmethod
     def _rotation(product, product_ids, date_from, date_to, idle_days) -> dict:
@@ -122,7 +119,7 @@ class OperationsSelector:
             "avg_stock": avg_stock,
             "turnover": turnover,
             "days_of_inventory": window_days / turnover if turnover else None,
-            "coverage_days": stock_now / (recent_out / _COVERAGE_DAYS) if recent_out > 0 and stock_now > 0 else None,
+            "coverage_days": _coverage_days(stock_now, recent_out),
             "last_out_date": last_out.isoformat() if last_out else None,
             "last_in_date": last["IN"].isoformat() if last.get("IN") else None,
             "idle": idle,
@@ -130,62 +127,3 @@ class OperationsSelector:
             "series": series,
         }
 
-    @staticmethod
-    def _subscriptions(product_ids) -> dict:
-        from purchasing.models import PurchaseLine
-
-        # next_payment_date is current state, so it is always measured from today (not from date_to).
-        as_of = timezone.localdate()
-
-        items = []
-        for sub in Subscription.objects.filter(product_id__in=product_ids).select_related("supplier"):
-            annualized = float(sub.amount) * _FREQUENCY_FACTOR.get(sub.recurrence_period, 12)
-            items.append({
-                "id": sub.id,
-                "supplier": sub.supplier.name,
-                "status": sub.status,
-                "amount": float(sub.amount),
-                "frequency": sub.recurrence_period,
-                "annualized": annualized,
-                "next_payment_date": sub.next_payment_date.isoformat() if sub.next_payment_date else None,
-                "days_to_payment": (sub.next_payment_date - as_of).days if sub.next_payment_date else None,
-            })
-        active = [i for i in items if i["status"] == Subscription.Status.ACTIVE]
-        horizon = as_of + timedelta(days=90)
-        due = sum(
-            i["amount"] for i in active
-            if i["next_payment_date"] and date.fromisoformat(i["next_payment_date"]) <= horizon
-        )
-
-        payments = []
-        previous_by_supplier: dict[str | None, float] = {}
-        lines = (
-            PurchaseLine.objects.filter(product_id__in=product_ids)
-            .exclude(order__status__in=("DRAFT", "CANCELLED"))
-            .select_related("order__supplier").order_by("order__date", "id")
-        )
-        for line in lines:
-            cost = float(line.unit_cost)
-            supplier = line.order.supplier.name if line.order.supplier else None
-            previous = previous_by_supplier.get(supplier)
-            payments.append({
-                "date": line.order.date.isoformat(),
-                "supplier": supplier,
-                "unit_cost": cost,
-                "quantity": float(line.quantity),
-                "change_pct": _pct_change(cost, previous) if previous is not None else None,
-            })
-            previous_by_supplier[supplier] = cost
-        first_to_last = (
-            _pct_change(payments[-1]["unit_cost"], payments[0]["unit_cost"]) if len(payments) > 1 and len({p["supplier"] for p in payments}) == 1 else None
-        )
-        annualized_total = sum(i["annualized"] for i in active)
-        return {
-            "annualized_total": annualized_total,
-            "monthly_equivalent_total": annualized_total / 12,
-            "count": len(active),
-            "due_90d_total": due,
-            "items": sorted(items, key=lambda i: (i["next_payment_date"] is None, i["next_payment_date"] or "")),
-            "payments": payments[-_PAYMENTS_SHOWN:],
-            "first_to_last_pct": first_to_last,
-        }

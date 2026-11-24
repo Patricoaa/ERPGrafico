@@ -23,7 +23,7 @@ import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import type { Product } from "@/types/entities"
-import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, FormSplitLayout, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell, Banner } from "@/components/shared"
+import { SubmitButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, FormSplitLayout, IconButton, LabeledContainer, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell, Banner, fadeInClass } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 import { grossFromNet, netFromGross } from "@/lib/vat"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -461,7 +461,7 @@ export function BOMDrawer({
                                                     </div>
 
                                                     {selectedProduct?.has_variants && (
-                                                        <div className="sm:col-span-1 animate-in fade-in slide-in-from-left-2">
+                                                        <div className={cn("sm:col-span-1", fadeInClass({ from: "left" }))}>
                                                             <LabeledSelect
                                                                 label="Variante (opcional)"
                                                                 value={selectedVariant?.id?.toString() || "template"}

@@ -1,9 +1,9 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { EmployeeDrawer, useEmployees } from "@/features/hr"
@@ -21,9 +21,6 @@ const EMPLOYEE_GROUPS: Record<string, FieldId<typeof employeeEntity.fields>> = {
 
 export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Empleado" href="/hr/employees?modal=new" />
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const search = useUnifiedSearch(employeeUnifiedSearchDef)
     const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees, error } = useEmployees(search.filters, initialEmployees)
     const groupBy = search.groupBy ? EMPLOYEE_GROUPS[search.groupBy] ?? null : null
@@ -34,14 +31,13 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
         // Groups span the whole list, not one page.
         { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
     )
-    const panel = useEntityPanelRoute<Employee>({ endpoint: '/hr/employees' })
+    const panel = useCreatePanelRoute({ resolved: false })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada empleado abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("hr.employee")
 
     const actionsCtx: EmployeeActionsCtx = {
-        onEdit: (id) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('selected', String(id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onEdit: (id) => openEntity("hr.employee", id),
     }
 
     return (
@@ -50,7 +46,6 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(emp) => actionsCtx.onEdit(emp.id)}
                 actions={employeeActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -74,7 +69,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                     <EmployeeDrawer
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
-                        employee={panel.entity}
+                        employee={null}
                         onSaved={() => {
                             panel.close()
                             fetchEmployees()

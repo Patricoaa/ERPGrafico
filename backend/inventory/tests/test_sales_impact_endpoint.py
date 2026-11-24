@@ -45,7 +45,7 @@ def test_filters_are_passed_through(env, client):
 
 @pytest.mark.parametrize(
     "query",
-    [{"metric": "bogus"}, {"group_by": "bogus"}, {"granularity": "week"},
+    [{"metric": "bogus"}, {"group_by": "bogus"}, {"granularity": "quarter"},
      {"date_from": "2026-12-31", "date_to": "2026-01-01"}, {"date_from": "not-a-date"}],
 )
 def test_invalid_params_return_400(env, client, query):
@@ -58,3 +58,8 @@ def test_requires_authentication(env):
 
 def test_unknown_product_returns_404(env, client):
     assert client.get("/api/inventory/products/999999/sales-impact/").status_code == 404
+
+
+def test_week_granularity_is_accepted(env, client):
+    response = client.get(_url(env), {"granularity": "week"})
+    assert response.status_code == 200

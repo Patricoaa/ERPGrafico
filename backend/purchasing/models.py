@@ -7,14 +7,14 @@ from django.utils.translation import gettext_lazy as _
 
 from core.edit_policy import DRAFT_ONLY_DOCUMENT
 from core.mixins import TotalsCalculationMixin
-from core.models import TransactionalDocument
+from core.models import DocumentNotesMixin, TransactionalDocument
 from core.services import SequenceService
 from core.strategies.totals import NetFirstTotals
 from core.utils import get_current_date
 from inventory.models import Product, Warehouse
 
 
-class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
+class PurchaseOrder(TransactionalDocument, DocumentNotesMixin, TotalsCalculationMixin):
     edit_policy = DRAFT_ONLY_DOCUMENT  # ADR-0091
 
     class Status(models.TextChoices):
@@ -365,7 +365,7 @@ class PurchaseLine(models.Model):
         return self.quantity - self.quantity_received
 
 
-class PurchaseReceipt(TransactionalDocument, TotalsCalculationMixin):
+class PurchaseReceipt(TransactionalDocument, DocumentNotesMixin, TotalsCalculationMixin):
     """
     Represents a receipt of a purchase order.
     Can be partial or complete.
@@ -499,7 +499,7 @@ class PurchaseReceiptLine(models.Model):
         super().save(*args, **kwargs)
 
 
-class PurchaseReturn(TransactionalDocument, TotalsCalculationMixin):
+class PurchaseReturn(TransactionalDocument, DocumentNotesMixin, TotalsCalculationMixin):
     """
     Represents a return of goods to a supplier (linked to a Purchase Order).
     Used to process logistics before or after a Credit Note.

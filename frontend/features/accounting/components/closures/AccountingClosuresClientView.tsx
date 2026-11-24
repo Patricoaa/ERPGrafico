@@ -1,6 +1,6 @@
 "use client";
 
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, {useState, useMemo, useCallback} from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
@@ -71,7 +71,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const isLoading = isLoadingYr || isLoadingPeriods || isLoadingTax;
 
     // Nuevo año fiscal: ?modal=new o externalOpen. Solo creación: ?selected es el preview de cierre.
-    const newFYPanel = useEntityPanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } });
+    const newFYPanel = useCreatePanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } });
 
     // Derivado de URL: abrir preview wizard si hay ?selected= con datos
     const previewModalOpen = !!selectedFromUrl;

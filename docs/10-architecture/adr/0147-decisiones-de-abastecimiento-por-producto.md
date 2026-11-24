@@ -1,12 +1,14 @@
 ---
 id: 0147
 title: Decisiones de abastecimiento por producto; endpoint `sourcing` (fabricar vs comprar y uso como insumo con sensibilidad)
-status: Accepted
+status: Superseded by 0150
 date: 2026-11-19
 author: frontend-team + backend-team
 ---
 
 # 0147 — Decisiones de abastecimiento por producto
+
+> **Reemplazada por [ADR-0150](0150-analisis-de-producto-por-bloque-y-periodo.md) (2026-11-20):** el endpoint `sourcing`, `SourcingBlock` y el cálculo fabricar vs comprar se retiraron (un fabricable no se compra); `SourcingSelector._used_in` se conserva y lo usa `production-analysis`.
 
 **Relacionado:** `docs/superpowers/specs/2026-11-19-product-sourcing-decisions-design.md`, ADR-0144 (capacidades), ADR-0146 (rendimiento de fabricación), `zero-n-plus-one-policy.md` (ADR-0118).
 

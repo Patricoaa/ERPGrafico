@@ -1,0 +1,283 @@
+"use client"
+
+import React, { useEffect, useState } from "react"
+import { frozenFieldsOf } from "@/lib/edit-policy"
+import { CreditCard, Lock, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { EntitySidebar } from "@/features/comments"
+import { useForm, type Resolver } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Form, FormField } from "@/components/ui/form"
+import { CancelButton, LabeledInput, LabeledSelect, MultiSelectTagInput, BaseModal, FormFooter, FormSplitLayout, SubmitButton, Section } from "@/components/shared"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
+import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
+import type { PaymentMethod, PaymentMethodCreatePayload, PaymentMethodUpdatePayload } from "@/features/treasury/types"
+
+const paymentMethodSchema = z.object({
+    name: z.string().min(1, "El nombre es requerido"),
+    method_type: z.string().min(1, "El tipo es requerido"),
+    treasury_account: z.string().min(1, "La cuenta es requerida"),
+    settlement_account: z.string().nullable().optional(),
+    requires_reference: z.boolean().default(false),
+    allow_for_sales: z.boolean().default(true),
+    allow_for_purchases: z.boolean().default(true),
+})
+
+type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>
+
+export interface PaymentMethodModalProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    method: PaymentMethod | null
+    onSuccess: () => void
+}
+
+export function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMethodModalProps) {
+    const frozen = frozenFieldsOf(method)
+    const { createMethod, updateMethod, isCreating, isUpdating } = usePaymentMethods()
+    const isSaving = isCreating || isUpdating
+
+    const [showAdvanced, setShowAdvanced] = useState(false)
+
+    const form = useForm<PaymentMethodFormValues>({
+        resolver: zodResolver(paymentMethodSchema) as unknown as Resolver<PaymentMethodFormValues>,
+        defaultValues: {
+            name: "",
+            method_type: "",
+            treasury_account: "",
+            settlement_account: null,
+            requires_reference: false,
+            allow_for_sales: true,
+            allow_for_purchases: true,
+        },
+    })
+
+    useEffect(() => {
+        if (open) {
+            setShowAdvanced(false)
+            const acc = method?.treasury_account
+            const accountId = acc ? (typeof acc === 'object' ? (acc as unknown as { id: number }).id.toString() : acc.toString()) : ""
+            const settlementAcc = method?.settlement_account
+            const settlementId = settlementAcc ? (typeof settlementAcc === 'object' ? (settlementAcc as unknown as { id: number }).id.toString() : settlementAcc.toString()) : null
+
+            form.reset({
+                name: method?.name || "",
+                method_type: method?.method_type || "",
+                treasury_account: accountId,
+                settlement_account: settlementId,
+                requires_reference: method?.requires_reference || false,
+                allow_for_sales: method?.allow_for_sales ?? true,
+                allow_for_purchases: method?.allow_for_purchases ?? true,
+            })
+        }
+    }, [open, method, form])
+
+    // Al crear, el uso (ventas/compras) se deriva del tipo; el usuario no está obligado
+    // a configurarlo (queda en "Avanzado"). Débito/crédito empresa → solo compras;
+    // terminal → solo ventas; resto → ambos.
+    const watchedType = form.watch("method_type")
+    useEffect(() => {
+        if (method) return // editar: respetar lo guardado
+        if (watchedType === "DEBIT_CARD" || watchedType === "CREDIT_CARD") {
+            form.setValue("allow_for_sales", false)
+            form.setValue("allow_for_purchases", true)
+        } else if (watchedType === "CARD_TERMINAL") {
+            form.setValue("allow_for_sales", true)
+            form.setValue("allow_for_purchases", false)
+        } else {
+            form.setValue("allow_for_sales", true)
+            form.setValue("allow_for_purchases", true)
+        }
+    }, [watchedType, method, form])
+
+    const onSubmit = async (formData: PaymentMethodFormValues) => {
+        // La liquidación aparte solo existe en CARD_TERMINAL (la fija el backend desde el proveedor).
+        const data = { ...formData, settlement_account: null }
+        try {
+            if (method) {
+                await updateMethod({ id: method.id, payload: data as unknown as PaymentMethodUpdatePayload })
+            } else {
+                await createMethod(data as unknown as PaymentMethodCreatePayload)
+            }
+            onSuccess()
+        } catch {
+            // Error handled by hook
+        }
+    }
+
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size={method ? "xl" : "md"}
+            hideScrollArea={true}
+            contentClassName="p-0"
+            title={
+                <div className="flex items-center gap-3">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <span>{method ? "Ficha de Método de Pago" : "Nuevo Método de Pago"}</span>
+                </div>
+            }
+            description={method ? "Modifique el método de pago y revise su historial." : "Defina el método de pago vinculado a una cuenta de tesorería."}
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <SubmitButton
+                                type="submit"
+                                form="method-form"
+                                loading={isSaving}
+                                disabled={isSaving}
+                                onClick={form.handleSubmit(onSubmit)}
+                            >
+                                {method ? "Guardar Cambios" : "Crear Método"}
+                            </SubmitButton>
+                        </>
+                    }
+                />
+            }
+        >
+            <FormSplitLayout
+                collapsible
+                collapseStorageKey="erpgrafico.drawer.sidebar.paymentmethod"
+                showSidebar={!!method?.id}
+                sidebar={
+                    method?.id && (
+                        <EntitySidebar
+                            entityType="paymentmethod"
+                            entityId={method.id}
+                            title="Historial"
+                        />
+                    )
+                }
+            >
+                <Form {...form}>
+                    <form id="method-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <div className="grid grid-cols-4 gap-4">
+                            <div className="col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre"
+                                            required
+                                            error={fieldState.error?.message}
+                                            placeholder="Ej: Visa Santander Debito"
+                                            {...field}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="method_type"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledSelect
+                                            label="Tipo"
+                                            disabled={frozen.has("method_type")}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                            options={[
+                                                { value: "CASH", label: "Efectivo Directo" },
+                                                { value: "CARD_TERMINAL", label: "Tarjeta (terminal de cobro)" },
+                                                { value: "TRANSFER", label: "Transferencia Bancaria" },
+                                                { value: "DEBIT_CARD", label: "Tarjeta Débito Empresa" },
+                                                { value: "CREDIT_CARD", label: "Tarjeta Crédito Empresa" },
+                                                { value: "CHECK", label: "Cheque" },
+                                            ]}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="treasury_account"
+                                    render={({ field, fieldState }) => (
+                                        <TreasuryAccountSelector
+                                            label="Cuenta de tesorería"
+                                            disabled={frozen.has("treasury_account")}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            {watchedType === "CARD_TERMINAL" && (
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="settlement_account"
+                                        render={({ field, fieldState }) => (
+                                            <TreasuryAccountSelector
+                                                label="Cuenta de liquidación (destino real)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                disabled
+                                            />
+                                        )}
+                                    />
+                                    <p className="text-4xs text-muted-foreground italic mt-1">Gestionado automáticamente por el proveedor de terminal de cobro.</p>
+                                </div>
+                            )}
+
+                            <div className="col-span-4">
+                                <Button
+                                    variant="ghost"
+                                    type="button"
+                                    onClick={() => setShowAdvanced((v) => !v)}
+                                    className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
+                                >
+                                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
+                                    Avanzado · Permisos de uso
+                                </Button>
+                                {!showAdvanced && (
+                                    <p className="text-2xs text-muted-foreground mt-1 ml-5">
+                                        Por defecto se deriva del tipo. Ábrelo solo si necesitas restringir ventas/compras.
+                                    </p>
+                                )}
+                                {showAdvanced && (
+                                    <div className="pt-3">
+                                        <Section.Header spaced title="Permisos de Uso" icon={Lock} />
+                                        <FormField
+                                            control={form.control}
+                                            name="allow_for_sales"
+                                            render={() => (
+                                                <div className="pt-2">
+                                                    <MultiSelectTagInput
+                                                        label="Habilitado para"
+                                                        options={[
+                                                            { label: "Ventas", value: "sales" },
+                                                            { label: "Compras", value: "purchases" }
+                                                        ]}
+                                                        value={[
+                                                            ...(form.watch("allow_for_sales") ? ["sales"] : []),
+                                                            ...(form.watch("allow_for_purchases") ? ["purchases"] : [])
+                                                        ]}
+                                                        onChange={(vals) => {
+                                                            form.setValue("allow_for_sales", vals.includes("sales"))
+                                                            form.setValue("allow_for_purchases", vals.includes("purchases"))
+                                                        }}
+                                                        placeholder="Defina dónde se permite este método..."
+                                                    />
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </form>
+                </Form>
+            </FormSplitLayout>
+        </BaseModal>
+    )
+}

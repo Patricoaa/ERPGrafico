@@ -175,9 +175,9 @@ describe('typography contract', () => {
     expect(/titleClassName = "text-sm font-semibold tracking-tight"/.test(shell.panelHeader)).toBe(true);
   });
 
-  it('N1 section headings are font-bold (not font-black), tracking-[0.25em]', () => {
+  it('N1 section headings are not font-black, tracking-[0.25em] (SectionHeader bold, <Section> semibold — ADR-0157)', () => {
     expect(/text-2xs font-bold uppercase tracking-\[0\.25em\]/.test(shell.sectionHeader)).toBe(true);
-    expect(/text-2xs font-bold uppercase tracking-\[0\.25em\]/.test(shell.sectionHeaderN1)).toBe(true);
+    expect(/text-2xs font-semibold uppercase tracking-\[0\.25em\]/.test(shell.sectionHeaderN1)).toBe(true);
     expect(/font-black/.test(shell.sectionHeader)).toBe(false);
     expect(/font-black/.test(shell.sectionHeaderN1)).toBe(false);
   });
@@ -188,10 +188,10 @@ describe('typography contract', () => {
   });
 
   describe('N2 field legends — single source via FieldLegend', () => {
-    it('FieldLegend exports text-2xs font-bold uppercase tracking-widest', () => {
+    it('FieldLegend exports text-3xs font-bold uppercase tracking-widest (ADR-0157)', () => {
       const src = formPrimitives.fieldLegend;
-      expect(/text-2xs font-bold uppercase tracking-widest/.test(src)).toBe(true);
-      expect(/text-3xs/.test(src)).toBe(false);
+      expect(/text-3xs font-bold uppercase tracking-widest/.test(src)).toBe(true);
+      expect(/px-1\.5 text-2xs/.test(src)).toBe(false);
     });
 
     it('LabeledInput delegates to FieldLegend component (no inline legend styles)', () => {

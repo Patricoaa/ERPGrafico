@@ -171,6 +171,19 @@ function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | unde
     }
 }
 
+/**
+ * Dos pestañas con el mismo título (dos registros que comparten número o nombre) se distinguen con
+ * ` (2)`, ` (3)` por orden de apertura (ADR-0152). La primera conserva el título original.
+ */
+export function disambiguateTitles(views: WorkspaceTabView[]): WorkspaceTabView[] {
+    const seen = new Map<string, number>()
+    return views.map(view => {
+        const n = (seen.get(view.title) ?? 0) + 1
+        seen.set(view.title, n)
+        return n === 1 ? view : { ...view, title: `${view.title} (${n})` }
+    })
+}
+
 interface GlobalModalActionsContextType {
     /**
      * Abre el documento registrado en lib/entity-drawers.tsx como pestaña (o activa la pestaña si ya
@@ -179,13 +192,6 @@ interface GlobalModalActionsContextType {
     openEntity: (label: string, id: number, data?: unknown, segmenter?: React.ReactNode, options?: OpenEntityOptions) => void
     /** Cierra todas las pestañas (documentos y herramientas). */
     closeEntity: () => void
-    /**
-     * Abre `label:id` como pestaña de la selección de una lista (`?selected`) sin pasar por la guarda:
-     * quien la llama (`useDocumentSheetRoute`) ya la aplicó.
-     */
-    openRootEntity: (label: string, id: number) => void
-    /** Cierra la pestaña de `label:id` sin guarda (la selección de la lista cambió). */
-    closeEntityByRef: (label: string, id: number) => void
     /** Abre una herramienta (p. ej. la calculadora) como pestaña. */
     openTool: (tool: ToolTabId) => void
     /**
@@ -234,6 +240,8 @@ interface GlobalModalStateContextType {
     /** Pestañas efímeras de la página, en orden de apertura (ADR-0101). */
     tabs: WorkspaceTabView[]
     isEntityOpen: (label: string, id: number) => boolean
+    /** Registro de la pestaña activa (null si la activa es la página, una herramienta o un panel). */
+    activeEntity: { label: string; id: number } | null
     getSheetOffset: (id: string) => number
     getSheetIndex: (id: string) => number
     isSheetCollapsed: (id: string) => boolean
@@ -469,13 +477,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         runGuarded(() => addTab({ type: "entity", label, id, data, segmenter, display: options?.display }))
     }, [runGuarded, live, addTab])
 
-    const openRootEntity = useCallback((label: string, id: number) => {
-        if (!hasEntityDrawer(label)) return
-        addTab({ type: "entity", label, id })
-    }, [addTab])
-
-    const closeEntityByRef = useCallback((label: string, id: number) => removeTab(entityKey(label, id)), [removeTab])
-
     const registerPanelTab = useCallback((panel: PanelTabState, onClose: () => void) => {
         const tab: WorkspaceTab = { type: "panel", ...panel }
         const key = tabKey(tab)
@@ -580,8 +581,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const actionsValue = useMemo(() => ({
         openEntity,
         closeEntity,
-        openRootEntity,
-        closeEntityByRef,
         openTool,
         openWorkbench,
         openNoteWizard,
@@ -595,10 +594,10 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openRootEntity, closeEntityByRef, openTool, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openTool, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
-        () => tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId)),
+        () => disambiguateTitles(tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId))),
         [tabs, activeKey, pageModuleId],
     )
 
@@ -613,12 +612,16 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         isSubModalActive: hasEntityTab,
         tabs: tabViews,
         isEntityOpen,
+        activeEntity: ((): { label: string; id: number } | null => {
+            const current = tabs.find(tab => tabKey(tab) === activeKey)
+            return current?.type === "entity" ? { label: current.label, id: current.id } : null
+        })(),
         getSheetOffset,
         getSheetIndex,
         isSheetCollapsed,
         expandedSheetWidth,
         totalSheetsWidth
-    }), [hasEntityTab, tabViews, isEntityOpen, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
+    }), [hasEntityTab, tabViews, isEntityOpen, tabs, activeKey, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
 
     // X / Escape / clic fuera cierran la pestaña activa (con guarda).
     const handleDrawerOpenChange = useCallback((open: boolean) => {
@@ -737,15 +740,24 @@ export function useGlobalModalActions() {
  */
 export function EntityNavigationScope({
     open,
+    openNote,
     children,
 }: {
     open: (label: string, id: number, data?: unknown, options?: OpenEntityOptions) => void
+    /** Si se indica, el asistente de NC/ND se abre aquí (apilado) en lugar de como pestaña global. */
+    openNote?: (note: NoteTabState) => void
     children: ReactNode
 }) {
     const actions = useOptionalGlobalModalActions()
     const scopedActions = useMemo(
-        () => (actions ? { ...actions, openEntity: (label: string, id: number, data?: unknown, _segmenter?: ReactNode, options?: OpenEntityOptions) => open(label, id, data, options) } : undefined),
-        [actions, open],
+        () => (actions
+            ? {
+                ...actions,
+                openEntity: (label: string, id: number, data?: unknown, _segmenter?: ReactNode, options?: OpenEntityOptions) => open(label, id, data, options),
+                ...(openNote ? { openNoteWizard: openNote } : {}),
+            }
+            : undefined),
+        [actions, open, openNote],
     )
     const opener = useMemo(
         () => ({

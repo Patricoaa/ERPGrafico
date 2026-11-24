@@ -5,6 +5,7 @@ import { Check, X, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import { cn } from "@/lib/utils"
+import { fadeInClass } from "./fade-in-class"
 
 interface ActionDockProps {
     isVisible: boolean
@@ -46,7 +47,7 @@ export function ActionDock({ isVisible, children, className }: ActionDockProps) 
         <div
             className={cn(
                 "surface-panel fixed bottom-6 z-[100] px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
-                "animate-in fade-in slide-in-from-bottom-4 ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 fill-mode-both",
+                fadeInClass({ from: "bottom", distance: 4, duration: 500, ease: "spring" }),
                 getPositionClass(),
                 className
             )}

@@ -53,7 +53,7 @@ export function PurchaseReceiptsView() {
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(receipt) => sheet.toggle(receipt.id)}
+                onOpen={(receipt) => sheet.toggle(receipt.id, receipt)}
                 view={view}
                 onViewChange={onViewChange}
             >

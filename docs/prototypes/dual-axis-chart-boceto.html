@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boceto: Constructor de Gráfico Doble Eje Y — Tab Precio ERPGrafico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: 'hsl(var(--background))',
+            foreground: 'hsl(var(--foreground))',
+            card: 'hsl(var(--card))',
+            'card-foreground': 'hsl(var(--card-foreground))',
+            muted: 'hsl(var(--muted))',
+            'muted-foreground': 'hsl(var(--muted-foreground))',
+            border: 'hsl(var(--border))',
+            primary: 'hsl(var(--primary))',
+            'primary-foreground': 'hsl(var(--primary-foreground))',
+            success: 'hsl(var(--success))',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --background: 220 20% 97%;
+      --foreground: 224 71% 4%;
+      --card: 0 0% 100%;
+      --card-foreground: 224 71% 4%;
+      --muted: 220 14% 94%;
+      --muted-foreground: 220 9% 46%;
+      --border: 220 13% 90%;
+      --primary: 221 83% 53%;
+      --primary-foreground: 210 40% 98%;
+      --success: 142 71% 45%;
+    }
+    .dark {
+      --background: 224 71% 4%;
+      --foreground: 210 40% 98%;
+      --card: 224 71% 7%;
+      --card-foreground: 210 40% 98%;
+      --muted: 217 33% 15%;
+      --muted-foreground: 215 20% 65%;
+      --border: 217 33% 18%;
+      --primary: 217 91% 60%;
+      --primary-foreground: 222 47% 11%;
+      --success: 142 71% 45%;
+    }
+    body {
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .chart-grid-line {
+      stroke: hsl(var(--border));
+      stroke-dasharray: 4 4;
+      stroke-opacity: 0.6;
+    }
+    .chart-axis-text {
+      fill: hsl(var(--muted-foreground));
+      font-size: 11px;
+      font-family: ui-monospace, monospace;
+    }
+    .tooltip-shadow {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen">
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Header bar -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-primary/20 text-primary">
+            PROTOTIPO INTERACTIVO
+          </span>
+          <span class="text-xs text-muted-foreground">ADR-0152 / DualAxisChart Component</span>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight mt-1">Análisis de Producto: Tab «Precio»</h1>
+        <p class="text-sm text-muted-foreground mt-0.5">
+          Demostración del constructor de gráficos compuestos de doble eje Y + KPIs dinámicos con barras de uso en ventas.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3 self-start sm:self-auto">
+        <button id="themeToggle" class="px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-card hover:bg-muted transition-colors flex items-center gap-1.5">
+          <span id="themeIcon">☀️</span> Tema claro/oscuro
+        </button>
+      </div>
+    </header>
+
+    <!-- SECTION 1: KPIS CON BARRA DE PROGRESO DE USO EN VENTAS -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Precios Vigentes y Distribución en Ventas del Período
+        </h2>
+        <span class="text-xs text-muted-foreground">Total ventas período: <strong class="text-foreground">120 unidades</strong></span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- KPI 1: Precio Actual / Lista -->
+        <div class="rounded-lg border border-border bg-card p-3.5 flex flex-col gap-2 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-xs font-medium text-muted-foreground block">Precio Actual (Lista Neto)</span>
+              <span class="text-xl font-bold font-mono text-foreground mt-0.5 block">$ 5.500</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-3xs font-semibold bg-blue-500/15 text-blue-400">Base</span>
+          </div>
+          <!-- Barra de progreso -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-2xs text-muted-foreground">
+              <span>Uso en ventas: <strong>66 de 120</strong> uds</span>
+              <strong class="text-foreground font-mono">55%</strong>
+            </div>
+            <div class="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div class="h-full bg-blue-500 rounded-full" style="width: 55%"></div>
+            </div>
+          </div>
+          <span class="text-3xs text-muted-foreground mt-auto">Vendido al precio general sin regla especial.</span>
+        </div>
+
+        <!-- KPI 2: Regla Mayorista -->
+        <div class="rounded-lg border border-border bg-card p-3.5 flex flex-col gap-2 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-xs font-medium text-muted-foreground block">Mayorista (≥ 10 un)</span>
+              <span class="text-xl font-bold font-mono text-foreground mt-0.5 block">$ 4.675</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-3xs font-semibold bg-emerald-500/15 text-emerald-400">15% dto</span>
+          </div>
+          <!-- Barra de progreso -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-2xs text-muted-foreground">
+              <span>Uso en ventas: <strong>36 de 120</strong> uds</span>
+              <strong class="text-foreground font-mono">30%</strong>
+            </div>
+            <div class="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full" style="width: 30%"></div>
+            </div>
+          </div>
+          <span class="text-3xs text-muted-foreground mt-auto">Condición: Cantidad mínima 10 unidades.</span>
+        </div>
+
+        <!-- KPI 3: Regla Distribuidor -->
+        <div class="rounded-lg border border-border bg-card p-3.5 flex flex-col gap-2 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-xs font-medium text-muted-foreground block">Distribuidor (≥ 50 un)</span>
+              <span class="text-xl font-bold font-mono text-foreground mt-0.5 block">$ 4.125</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-3xs font-semibold bg-amber-500/15 text-amber-400">25% dto</span>
+          </div>
+          <!-- Barra de progreso -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-2xs text-muted-foreground">
+              <span>Uso en ventas: <strong>18 de 120</strong> uds</span>
+              <strong class="text-foreground font-mono">15%</strong>
+            </div>
+            <div class="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div class="h-full bg-amber-500 rounded-full" style="width: 15%"></div>
+            </div>
+          </div>
+          <span class="text-3xs text-muted-foreground mt-auto">Condición: Pedidos por volumen mayor a 50 un.</span>
+        </div>
+
+        <!-- KPI 4: Regla Precio Fijo Promo -->
+        <div class="rounded-lg border border-border bg-card p-3.5 flex flex-col gap-2 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-xs font-medium text-muted-foreground block">Promo Aniversario</span>
+              <span class="text-xl font-bold font-mono text-foreground mt-0.5 block">$ 4.900</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-3xs font-semibold bg-purple-500/15 text-purple-400">Fijo</span>
+          </div>
+          <!-- Barra de progreso -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-2xs text-muted-foreground">
+              <span>Uso en ventas: <strong>0 de 120</strong> uds</span>
+              <strong class="text-foreground font-mono">0%</strong>
+            </div>
+            <div class="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div class="h-full bg-purple-500 rounded-full" style="width: 0%"></div>
+            </div>
+          </div>
+          <span class="text-3xs text-muted-foreground mt-auto">Vigencia: Inicia el 01-12-2026.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: GRÁFICO COMPUESTO DE DOBLE EJE Y -->
+    <section class="rounded-xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border/70">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-semibold text-foreground">Evolución de Precios y Ventas Asociadas</h3>
+            <span class="text-3xs uppercase font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Doble Eje Y</span>
+          </div>
+          <p class="text-xs text-muted-foreground mt-0.5">
+            Eje Izquierdo: Valor de Precios ($). Eje Derecho: Ventas Netas Facturadas ($) por período.
+          </p>
+        </div>
+
+        <!-- Modos y Controles -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="inline-flex rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
+            <button id="modeBarLine" class="px-2.5 py-1 rounded-md font-medium transition-colors bg-card text-foreground shadow-xs">
+              Línea + Columnas
+            </button>
+            <button id="modeLineLine" class="px-2.5 py-1 rounded-md font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Línea + Línea
+            </button>
+          </div>
+
+          <button id="resetZoom" class="px-2.5 py-1 text-xs font-medium rounded-md border border-border bg-card hover:bg-muted text-muted-foreground transition-colors">
+            Restablecer series
+          </button>
+        </div>
+      </div>
+
+      <!-- Leyenda interactiva con filtros para activar/desactivar series -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="text-2xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Series visibles:</span>
+
+        <!-- Eje Y1: Precios -->
+        <button data-series="price_list" class="series-btn active flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-400 font-medium transition-all">
+          <span class="size-2 rounded-full bg-blue-500"></span>
+          <span>Precio Lista (Y1)</span>
+        </button>
+
+        <button data-series="price_mayorista" class="series-btn active flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-medium transition-all">
+          <span class="size-2 rounded-full bg-emerald-500"></span>
+          <span>Regla Mayorista (Y1)</span>
+        </button>
+
+        <button data-series="price_distribuidor" class="series-btn active flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 font-medium transition-all">
+          <span class="size-2 rounded-full bg-amber-500"></span>
+          <span>Regla Distribuidor (Y1)</span>
+        </button>
+
+        <span class="text-muted-foreground/40 font-light">|</span>
+
+        <!-- Eje Y2: Ventas -->
+        <button data-series="sales_list" class="series-btn active flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 text-indigo-300 font-medium transition-all">
+          <span class="size-2 rounded-xs bg-indigo-400"></span>
+          <span>Ventas Lista (Y2)</span>
+        </button>
+
+        <button data-series="sales_mayorista" class="series-btn active flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-teal-400/40 bg-teal-500/10 text-teal-300 font-medium transition-all">
+          <span class="size-2 rounded-xs bg-teal-400"></span>
+          <span>Ventas Mayorista (Y2)</span>
+        </button>
+
+        <button data-series="sales_distribuidor" class="series-btn active flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-orange-400/40 bg-orange-500/10 text-orange-300 font-medium transition-all">
+          <span class="size-2 rounded-xs bg-orange-400"></span>
+          <span>Ventas Distribuidor (Y2)</span>
+        </button>
+      </div>
+
+      <!-- Contenedor del Gráfico SVG Interactivo -->
+      <div class="relative w-full h-80 sm:h-96 select-none" id="chartContainer">
+        <!-- SVG Canvas -->
+        <svg id="chartSvg" class="w-full h-full overflow-visible"></svg>
+
+        <!-- Tooltip Flotante -->
+        <div id="chartTooltip" class="absolute pointer-events-none opacity-0 transition-opacity duration-150 rounded-lg border border-border bg-card p-3 text-xs tooltip-shadow z-20 min-w-56" style="display: none;">
+          <div class="font-bold text-foreground border-b border-border/80 pb-1.5 mb-2 flex items-center justify-between">
+            <span id="tooltipPeriod">Periodo</span>
+            <span class="text-3xs px-1 rounded bg-muted text-muted-foreground font-mono">Mes</span>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="text-2xs font-semibold uppercase text-muted-foreground tracking-wider">Eje Y1 (Precios):</div>
+            <div id="tooltipPrices" class="space-y-1 pl-1 text-2xs"></div>
+
+            <div class="text-2xs font-semibold uppercase text-muted-foreground tracking-wider pt-1 border-t border-border/50">Eje Y2 (Ventas Facturadas):</div>
+            <div id="tooltipSales" class="space-y-1 pl-1 text-2xs"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leyenda de Ejes Explicativa -->
+      <div class="flex items-center justify-between text-2xs text-muted-foreground px-2 pt-2 border-t border-border/60">
+        <div class="flex items-center gap-2">
+          <span class="size-2.5 rounded-full bg-blue-500"></span>
+          <span><strong>Eje Y Izquierdo (Líneas):</strong> Precios unitarios ($ 3.000 - $ 6.500)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="size-2.5 rounded-xs bg-indigo-400"></span>
+          <span><strong>Eje Y Derecho (Columnas/Líneas):</strong> Monto ventas neto ($ 0 - $ 450.000)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: ESPECIFICACIÓN DE ARQUITECTURA TÉCNICA -->
+    <div class="rounded-lg border border-border/70 bg-muted/20 p-4 text-xs space-y-2">
+      <h4 class="font-semibold text-foreground flex items-center gap-2">
+        <span>🛠️</span> Especificación de Implementación en React (<code class="bg-muted px-1.5 py-0.5 rounded text-3xs font-mono">DualAxisChart.tsx</code>)
+      </h4>
+      <p class="text-muted-foreground leading-relaxed">
+        Este componente será implementado en <code class="text-foreground font-mono">frontend/components/shared/charts/DualAxisChart.tsx</code> con soporte nativo para:
+      </p>
+      <ul class="list-disc list-inside space-y-1 text-muted-foreground pl-1">
+        <li><strong>Doble Escala Numérica Independiente:</strong> Eje izquierdo (Y1) y eje derecho (Y2) con formateadores configurables (<code class="font-mono">currency</code>, <code class="font-mono">number</code> o función propia).</li>
+        <li><strong>Hasta 3 o más series por eje:</strong> Soporte de combinaciones mixtas (Línea + Columnas o Línea + Línea).</li>
+        <li><strong>Filtros interactivos en tiempo real:</strong> Toggles en la leyenda para ocultar/mostrar cualquier serie sin recargar.</li>
+        <li><strong>Tooltip unificado y Crosshair:</strong> Sincronización perfecta en el eje X para comparar inmediatamente el impacto del precio en la venta.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Script interactivo del gráfico -->
+  <script>
+    // --- DATOS MOCK DE PRUEBA ---
+    const periods = ["2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"];
+    const periodLabels = ["Jun 2026", "Jul 2026", "Ago 2026", "Sep 2026", "Oct 2026", "Nov 2026"];
+
+    const seriesData = {
+      // Eje Y1: Precios
+      price_list: { name: "Precio Lista", axis: "y1", color: "#3b82f6", values: [5000, 5000, 5200, 5200, 5500, 5500] },
+      price_mayorista: { name: "Regla Mayorista", axis: "y1", color: "#10b981", values: [4250, 4250, 4420, 4420, 4675, 4675] },
+      price_distribuidor: { name: "Regla Distribuidor", axis: "y1", color: "#f59e0b", values: [3750, 3750, 3900, 3900, 4125, 4125] },
+      // Eje Y2: Ventas netas ($)
+      sales_list: { name: "Ventas Lista", axis: "y2", color: "#818cf8", values: [180000, 210000, 240000, 290000, 310000, 363000] },
+      sales_mayorista: { name: "Ventas Mayorista", axis: "y2", color: "#2dd4bf", values: [85000, 110000, 140000, 160000, 175000, 168300] },
+      sales_distribuidor: { name: "Ventas Distribuidor", axis: "y2", color: "#fb923c", values: [45000, 52000, 68000, 85000, 92000, 74250] },
+    };
+
+    let activeSeries = new Set(Object.keys(seriesData));
+    let currentMode = "bar-line"; // "bar-line" o "line-line"
+
+    const fmtMoney = (v) => "$ " + Math.round(v).toLocaleString("es-CL");
+
+    // Elementos DOM
+    const svg = document.getElementById("chartSvg");
+    const container = document.getElementById("chartContainer");
+    const tooltip = document.getElementById("chartTooltip");
+    const tooltipPeriod = document.getElementById("tooltipPeriod");
+    const tooltipPrices = document.getElementById("tooltipPrices");
+    const tooltipSales = document.getElementById("tooltipSales");
+
+    function renderChart() {
+      svg.innerHTML = "";
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      const margin = { top: 30, right: 75, bottom: 35, left: 75 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      if (innerW <= 0 || innerH <= 0) return;
+
+      // Calcular escalas Y1 (Precios)
+      const y1Series = Object.entries(seriesData).filter(([k]) => activeSeries.has(k) && seriesData[k].axis === "y1");
+      const y1Values = y1Series.flatMap(([_, s]) => s.values);
+      const minY1 = y1Values.length ? Math.floor(Math.min(...y1Values) * 0.9 / 500) * 500 : 3000;
+      const maxY1 = y1Values.length ? Math.ceil(Math.max(...y1Values) * 1.1 / 500) * 500 : 6500;
+
+      // Calcular escalas Y2 (Ventas)
+      const y2Series = Object.entries(seriesData).filter(([k]) => activeSeries.has(k) && seriesData[k].axis === "y2");
+      const y2Values = y2Series.flatMap(([_, s]) => s.values);
+      const minY2 = 0;
+      const maxY2 = y2Values.length ? Math.ceil(Math.max(...y2Values) * 1.25 / 50000) * 50000 : 500000;
+
+      const scaleX = (i) => margin.left + (i + 0.5) * (innerW / periods.length);
+      const scaleY1 = (val) => margin.top + innerH - ((val - minY1) / (maxY1 - minY1)) * innerH;
+      const scaleY2 = (val) => margin.top + innerH - ((val - minY2) / (maxY2 - minY2)) * innerH;
+
+      // 1. Grid lines horizontales (basadas en Y1)
+      const steps = 5;
+      for (let i = 0; i <= steps; i++) {
+        const y = margin.top + (innerH / steps) * i;
+        const val1 = maxY1 - ((maxY1 - minY1) / steps) * i;
+        const val2 = maxY2 - ((maxY2 - minY2) / steps) * i;
+
+        // Línea
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", margin.left);
+        line.setAttribute("x2", width - margin.right);
+        line.setAttribute("y1", y);
+        line.setAttribute("y2", y);
+        line.setAttribute("class", "chart-grid-line");
+        svg.appendChild(line);
+
+        // Label Y1 (Izquierda)
+        const textY1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        textY1.setAttribute("x", margin.left - 10);
+        textY1.setAttribute("y", y + 4);
+        textY1.setAttribute("text-anchor", "end");
+        textY1.setAttribute("class", "chart-axis-text font-mono");
+        textY1.textContent = fmtMoney(val1);
+        svg.appendChild(textY1);
+
+        // Label Y2 (Derecha)
+        const textY2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        textY2.setAttribute("x", width - margin.right + 10);
+        textY2.setAttribute("y", y + 4);
+        textY2.setAttribute("text-anchor", "start");
+        textY2.setAttribute("class", "chart-axis-text font-mono");
+        textY2.textContent = fmtMoney(val2);
+        svg.appendChild(textY2);
+      }
+
+      // 2. Labels del Eje X
+      periodLabels.forEach((label, i) => {
+        const x = scaleX(i);
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x);
+        text.setAttribute("y", height - 10);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("class", "chart-axis-text");
+        text.textContent = label;
+        svg.appendChild(text);
+      });
+
+      // 3. Dibujar Columnas (si mode === "bar-line" y hay series Y2 activas)
+      if (currentMode === "bar-line" && y2Series.length > 0) {
+        const colGroupWidth = (innerW / periods.length) * 0.55;
+        const colWidth = colGroupWidth / y2Series.length;
+
+        periods.forEach((_, pIdx) => {
+          const groupCenterX = scaleX(pIdx);
+          const groupStartX = groupCenterX - colGroupWidth / 2;
+
+          y2Series.forEach(([k, s], sIdx) => {
+            const val = s.values[pIdx];
+            const colX = groupStartX + sIdx * colWidth;
+            const colY = scaleY2(val);
+            const colH = margin.top + innerH - colY;
+
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute("x", colX);
+            rect.setAttribute("y", colY);
+            rect.setAttribute("width", Math.max(2, colWidth - 2));
+            rect.setAttribute("height", Math.max(0, colH));
+            rect.setAttribute("fill", s.color);
+            rect.setAttribute("opacity", "0.75");
+            rect.setAttribute("rx", "2");
+            rect.setAttribute("class", "transition-all hover:opacity-100");
+            svg.appendChild(rect);
+          });
+        });
+      }
+
+      // 4. Dibujar Líneas para series Y2 si mode === "line-line"
+      if (currentMode === "line-line") {
+        y2Series.forEach(([k, s]) => {
+          const pathD = periods.map((_, pIdx) => {
+            const x = scaleX(pIdx);
+            const y = scaleY2(s.values[pIdx]);
+            return `${pIdx === 0 ? "M" : "L"} ${x} ${y}`;
+          }).join(" ");
+
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("d", pathD);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", s.color);
+          path.setAttribute("stroke-width", "2.5");
+          path.setAttribute("stroke-dasharray", "6 3");
+          svg.appendChild(path);
+
+          // Puntos
+          periods.forEach((_, pIdx) => {
+            const cx = scaleX(pIdx);
+            const cy = scaleY2(s.values[pIdx]);
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", cx);
+            circle.setAttribute("cy", cy);
+            circle.setAttribute("r", "4");
+            circle.setAttribute("fill", s.color);
+            circle.setAttribute("stroke", "#fff");
+            circle.setAttribute("stroke-width", "1.5");
+            svg.appendChild(circle);
+          });
+        });
+      }
+
+      // 5. Dibujar Líneas para series Y1 (Precios)
+      y1Series.forEach(([k, s]) => {
+        const pathD = periods.map((_, pIdx) => {
+          const x = scaleX(pIdx);
+          const y = scaleY1(s.values[pIdx]);
+          return `${pIdx === 0 ? "M" : "L"} ${x} ${y}`;
+        }).join(" ");
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pathD);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", s.color);
+        path.setAttribute("stroke-width", "3");
+        path.setAttribute("stroke-linecap", "round");
+        svg.appendChild(path);
+
+        // Puntos
+        periods.forEach((_, pIdx) => {
+          const cx = scaleX(pIdx);
+          const cy = scaleY1(s.values[pIdx]);
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("cx", cx);
+          circle.setAttribute("cy", cy);
+          circle.setAttribute("r", "4.5");
+          circle.setAttribute("fill", s.color);
+          circle.setAttribute("stroke", "#ffffff");
+          circle.setAttribute("stroke-width", "2");
+          svg.appendChild(circle);
+        });
+      });
+
+      // 6. Línea guía vertical interactiva (hover crosshair)
+      const guideLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      guideLine.setAttribute("y1", margin.top);
+      guideLine.setAttribute("y2", margin.top + innerH);
+      guideLine.setAttribute("stroke", "hsl(var(--foreground))");
+      guideLine.setAttribute("stroke-width", "1");
+      guideLine.setAttribute("stroke-opacity", "0.4");
+      guideLine.setAttribute("stroke-dasharray", "3 3");
+      guideLine.style.display = "none";
+      svg.appendChild(guideLine);
+
+      // Eventos de Mouse para Tooltip interactivo
+      container.onmousemove = (e) => {
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+
+        if (mouseX < margin.left || mouseX > width - margin.right) {
+          tooltip.style.display = "none";
+          guideLine.style.display = "none";
+          return;
+        }
+
+        // Encontrar período más cercano
+        let closestIdx = 0;
+        let minDiff = Infinity;
+        periods.forEach((_, idx) => {
+          const px = scaleX(idx);
+          const diff = Math.abs(px - mouseX);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestIdx = idx;
+          }
+        });
+
+        const targetX = scaleX(closestIdx);
+        guideLine.setAttribute("x1", targetX);
+        guideLine.setAttribute("x2", targetX);
+        guideLine.style.display = "block";
+
+        // Contenido del tooltip
+        tooltipPeriod.textContent = periodLabels[closestIdx];
+
+        tooltipPrices.innerHTML = y1Series.map(([k, s]) => `
+          <div class="flex items-center justify-between gap-3">
+            <span class="flex items-center gap-1.5" style="color: ${s.color}">
+              <span class="size-2 rounded-full" style="background-color: ${s.color}"></span>
+              ${s.name}:
+            </span>
+            <strong class="font-mono text-foreground">${fmtMoney(s.values[closestIdx])}</strong>
+          </div>
+        `).join("") || '<span class="text-muted-foreground italic">Sin series activas</span>';
+
+        tooltipSales.innerHTML = y2Series.map(([k, s]) => `
+          <div class="flex items-center justify-between gap-3">
+            <span class="flex items-center gap-1.5" style="color: ${s.color}">
+              <span class="size-2 rounded-xs" style="background-color: ${s.color}"></span>
+              ${s.name}:
+            </span>
+            <strong class="font-mono text-foreground">${fmtMoney(s.values[closestIdx])}</strong>
+          </div>
+        `).join("") || '<span class="text-muted-foreground italic">Sin series activas</span>';
+
+        tooltip.style.display = "block";
+        tooltip.style.opacity = "1";
+
+        // Posicionar tooltip
+        let leftPos = targetX + 15;
+        if (leftPos + 240 > width) {
+          leftPos = targetX - 250;
+        }
+        tooltip.style.left = `${leftPos}px`;
+        tooltip.style.top = `${margin.top + 20}px`;
+      };
+
+      container.onmouseleave = () => {
+        tooltip.style.display = "none";
+        guideLine.style.display = "none";
+      };
+    }
+
+    // Handlers de botones de serie
+    document.querySelectorAll(".series-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const seriesKey = btn.dataset.series;
+        if (activeSeries.has(seriesKey)) {
+          activeSeries.delete(seriesKey);
+          btn.classList.remove("active");
+          btn.style.opacity = "0.4";
+        } else {
+          activeSeries.add(seriesKey);
+          btn.classList.add("active");
+          btn.style.opacity = "1";
+        }
+        renderChart();
+      });
+    });
+
+    // Toggle de modo
+    const btnBarLine = document.getElementById("modeBarLine");
+    const btnLineLine = document.getElementById("modeLineLine");
+
+    btnBarLine.onclick = () => {
+      currentMode = "bar-line";
+      btnBarLine.className = "px-2.5 py-1 rounded-md font-medium transition-colors bg-card text-foreground shadow-xs";
+      btnLineLine.className = "px-2.5 py-1 rounded-md font-medium text-muted-foreground hover:text-foreground transition-colors";
+      renderChart();
+    };
+
+    btnLineLine.onclick = () => {
+      currentMode = "line-line";
+      btnLineLine.className = "px-2.5 py-1 rounded-md font-medium transition-colors bg-card text-foreground shadow-xs";
+      btnBarLine.className = "px-2.5 py-1 rounded-md font-medium text-muted-foreground hover:text-foreground transition-colors";
+      renderChart();
+    };
+
+    // Resetear series
+    document.getElementById("resetZoom").onclick = () => {
+      activeSeries = new Set(Object.keys(seriesData));
+      document.querySelectorAll(".series-btn").forEach((b) => {
+        b.classList.add("active");
+        b.style.opacity = "1";
+      });
+      renderChart();
+    };
+
+    // Toggle modo oscuro
+    const themeBtn = document.getElementById("themeToggle");
+    themeBtn.onclick = () => {
+      document.documentElement.classList.toggle("dark");
+      document.getElementById("themeIcon").textContent = document.documentElement.classList.contains("dark") ? "☀️" : "🌙";
+      renderChart();
+    };
+
+    // Render inicial y resize listener
+    window.addEventListener("resize", renderChart);
+    renderChart();
+  </script>
+</body>
+</html>

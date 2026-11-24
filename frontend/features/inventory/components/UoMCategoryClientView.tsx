@@ -1,6 +1,7 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
@@ -11,8 +12,7 @@ import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSear
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inventory/uomCategoryActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useUoMs, type UoMCategory } from "@/features/inventory/hooks/useUoMs"
 import { uomCategoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { uomCategoryEntity, uomCategoryViews } from "../entity-view/uomCategory.entity"
@@ -37,9 +37,10 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
         { defaultSort: uomCategoryViews.table.defaultSort },
     )
 
-    const panel = useEntityPanelRoute<UoMCategory>({ endpoint: '/inventory/uom-categories', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada categoría abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.uomcategory")
 
     const handleSave = async (category?: UoMCategory) => {
         if (category) {
@@ -70,7 +71,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
    })
 
     const actionsCtx: UoMCategoryActionsCtx = {
-        onEdit: (item) => openSelected(item.id),
+        onEdit: (item) => openEntity("inventory.uomcategory", item.id, item),
         onArchive: (item) => archiveConfirm.requestConfirm(item),
     }
 
@@ -100,7 +101,6 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(cat) => openSelected(cat.id)}
                 actions={uomCategoryActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -128,7 +128,6 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                         onOpenChange={(open) => {
                             if (!open) panel.close()
                         }}
-                        initialData={panel.isCreate ? undefined : (selectedFromUrl ?? undefined)}
                         onSuccess={handleSave}
                     />
                 )}

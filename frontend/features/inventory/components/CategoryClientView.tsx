@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 import React, { useMemo } from "react"
 
@@ -11,8 +11,8 @@ import { Collection, useCollectionViewMode, useEntityCollection } from "@/compon
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { categoryEntity, categoryViews } from "../entity-view/category.entity"
 import { CategoryDrawer } from "./CategoryDrawer"
@@ -36,9 +36,10 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         { defaultSort: categoryViews.table.defaultSort },
     )
 
-    const panel = useEntityPanelRoute<Category>({ endpoint: '/inventory/categories', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.category")
 
     const archiveConfirm = useConfirmAction<Category>(async (category) => {
         const isArchiving = category.is_active
@@ -62,7 +63,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
    })
 
     const actionsCtx: CategoryActionsCtx = {
-        onEdit: (id) => openSelected(id),
+        onEdit: (id) => openEntity("inventory.category", id),
         onArchive: (category) => archiveConfirm.requestConfirm(category),
     }
 
@@ -92,7 +93,6 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(category) => openSelected(category.id)}
                 actions={categoryActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -120,7 +120,6 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                         onSuccess={() => { void refetch() }}
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
-                        initialData={selectedFromUrl || undefined}
                         // mode is handled internally by CategoryDrawer via useDrawerMode
                     />
                 )}

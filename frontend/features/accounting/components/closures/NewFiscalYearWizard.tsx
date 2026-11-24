@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useServerDate } from '@/hooks/useServerDate';
-import { GenericWizard, LabeledContainer, Section, type WizardStep } from '@/components/shared';
+import { GenericWizard, LabeledContainer, Section, type WizardStep, fadeInClass } from '@/components/shared';
 
 interface NewFiscalYearWizardProps {
     isOpen: boolean;
@@ -69,7 +69,7 @@ export function NewFiscalYearWizard({
             component: (
                 <div className="space-y-6">
                     {hasOpenPeriods && (
-                        <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 flex gap-4 items-start animate-in fade-in slide-in-from-top-4">
+                        <div className={cn("p-4 rounded-md bg-destructive/10 border border-destructive/20 flex gap-4 items-start", fadeInClass({ from: "top", distance: 4 }))}>
                             <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                             <div className="space-y-1">
                                 <p className="text-xs font-bold text-destructive uppercase tracking-wider">Acción Bloqueada</p>

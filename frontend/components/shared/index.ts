@@ -34,6 +34,7 @@ export * from './ActionFoldButton';
 export * from './ToolbarCreateButton';
 export * from './ActionButtons'
 export * from './StepHeader';
+export * from './SummaryPanel';
 export * from './WizardStepsSidebar';
 export * from './WizardSummarySidebar';
 export * from './CollapsibleSection';
@@ -43,6 +44,7 @@ export * from './ActionDock';
 export * from './Metric';
 export * from './MetricStrip';
 export * from './ChartCard';
+export * from './ChartSection';
 export * from './ChartLegend';
 export * from './AnalyticsPanel';
 export * from './CardSkeleton';
@@ -100,6 +102,7 @@ export * from './SkeletonPresets';
 
 // Animations
 export * from './FadeIn';
+export * from './fade-in-class';
 
 // Generic Popover with search
 export { SearchablePopover } from './SearchablePopover';

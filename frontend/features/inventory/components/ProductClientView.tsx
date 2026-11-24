@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
@@ -9,7 +9,6 @@ import { ActionConfirmModal, AnalyticsPanelContent, type BulkAction } from '@/co
 import { Collection, GROUP_ROW_LIMIT, orderingParam, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId, type SortSpec } from "@/components/entity-view"
 import { toPage } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
-import type { ProductInitialData } from "@/types/forms"
 import { Plus, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import { Archive as ArchiveIcon } from "lucide-react"
@@ -25,8 +24,8 @@ import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -140,9 +139,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
-    const panel = useEntityPanelRoute<Product>({ endpoint: '/inventory/products', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.product")
 
     const handleArchive = async (product: Product, isConfirmed = false) => {
         const isArchiving = product.is_active
@@ -188,7 +188,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     }
 
     const actionsCtx: ProductActionsCtx = {
-        onEdit: (id) => openSelected(id),
+        onEdit: (id) => openEntity("inventory.product", id),
         onArchive: (product) => handleArchive(product),
     }
 
@@ -267,7 +267,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 selection="bulk"
                 view={activeView}
                 onViewChange={onViewChange}
-                onOpen={(product) => openSelected(product.id)}
                 actions={productActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>
@@ -296,7 +295,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     <ProductDrawer
                         open={open}
                         onOpenChange={(open) => { if (!open) panel.close() }}
-                        initialData={(selectedFromUrl || undefined) as ProductInitialData | undefined}
                         onSuccess={refetch}
                     />
                 )}

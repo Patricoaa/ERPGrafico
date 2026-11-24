@@ -1,7 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { AnalyticsPanelContent, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
@@ -16,12 +15,10 @@ import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/t
 import { useTreasuryMovementAnalytics } from "@/features/treasury/hooks/useTreasuryMovementAnalytics"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { toast } from "sonner"
-import type { TreasuryMovement } from "@/features/treasury/types"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 import { buildTreasuryMovementAnalyticsScreen } from "./treasuryMovementAnalyticsScreen"
 
 // Lazy load heavy components
-import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
@@ -65,7 +62,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     const [openModal, setOpenModal] = useState(false)
 
-    const panel = useEntityPanelRoute<TreasuryMovement>({ endpoint: '/treasury/movements', create: false })
+    // ADR-0152: `?selected` solo es enlace profundo; abrir un movimiento es `openEntity`.
+    useDeepLinkEntity("treasury.treasurymovement")
 
     // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
     useEffect(() => {
@@ -176,15 +174,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 </Collection.Analytics>
             </Collection.Root>
 
-            <EntityPanelTab label="treasury.treasurymovement" {...panel.tab}>
-                {(open) => panel.selectedId && (
-                    <CashMovementDrawer
-                        id={panel.selectedId}
-                        open={open}
-                        onOpenChange={(open) => { if (!open) panel.close() }}
-                    />
-                )}
-            </EntityPanelTab>
         </div>
     )
 }

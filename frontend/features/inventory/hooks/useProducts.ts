@@ -4,6 +4,7 @@ import { inventoryApi } from '../api/inventoryApi'
 import { useRealtime } from '@/features/realtime'
 import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
 import type { Page } from '@/lib/pagination'
+import type { ProductCapabilities } from '../analytics/productAnalyticsRegistry'
 import { BOMS_QUERY_KEY, PRODUCTS_KEYS, PRODUCTS_QUERY_KEY } from './queryKeys'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { staleTime } from '@/lib/query-config'
@@ -152,23 +153,15 @@ export function useProduct(id: number | null | undefined) {
 }
 
 /**
- * Fetch the insights bundle (price history, kardex, sales analysis,
- * production usage) for a product. The shape is consumer-defined via the
- * generic — pass your local `ProductInsights` interface as <T>.
- *
- * queryKey extiende PRODUCTS_KEYS.detail(id) → cualquier mutación del
- * producto invalida también este insights bundle (vía prefix match en
- * PRODUCTS_KEYS.all).
+ * Capabilities of a product (which analytics tabs/blocks apply). Lightweight: does not load the
+ * insights bundle, so the analytics modal can decide its tabs before any block fetches data.
  */
-export function useProductInsights<T = unknown>(id: number | null | undefined) {
-    const { data: insights, isLoading, isError, refetch } = useQuery<T | null>({
-        queryKey: id ? [...PRODUCTS_KEYS.detail(id), 'insights'] : ['products', 'insights', 'noop'],
-        queryFn: async () => {
-            if (!id) return null
-            return inventoryApi.getProductInsights<T>(id)
-        },
+export function useProductCapabilities(id: number | null | undefined) {
+    const { data, isLoading, isError } = useQuery<ProductCapabilities | null>({
+        queryKey: id ? [...PRODUCTS_KEYS.detail(id), 'capabilities'] : ['products', 'capabilities', 'noop'],
+        queryFn: async () => (id ? inventoryApi.getProductCapabilities(id) : null),
         staleTime: staleTime.stable,
         enabled: !!id,
     })
-    return { insights: insights ?? null, isLoading, isError, refetch }
+    return { capabilities: data ?? null, isLoading, isError }
 }

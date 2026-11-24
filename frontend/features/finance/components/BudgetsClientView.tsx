@@ -7,14 +7,11 @@ import { Wallet } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
-import { toast } from "sonner"
 import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 
 import { budgetActions, type BudgetActionsCtx } from "@/features/finance/budgetActions"
 import { budgetEntity, budgetViews } from "@/features/finance/entity-view/budget.entity"
 
-import { useSearchParams, usePathname } from "next/navigation"
 
 interface BudgetsClientViewProps {
     externalOpen?: boolean
@@ -22,23 +19,24 @@ interface BudgetsClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { useBudgets, type Budget } from "@/features/finance/hooks/useBudgets"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { EntityPanelTab } from "@/components/providers"
+import { useBudgets } from "@/features/finance/hooks/useBudgets"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useServerDate } from '@/hooks/useServerDate'
 
 export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAction }: BudgetsClientViewProps) {
     const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const { budgets, isLoading, isError, refetch, createBudget } = useBudgets()
     const { serverDate } = useServerDate()
     const { view, onViewChange } = useCollectionViewMode("accounting.budget")
 
-    // Crear (`?modal=new` / botón externo) y editar (`?selected`) son dos pestañas sobre la misma ruta.
-    const createPanel = useEntityPanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const editPanel = useEntityPanelRoute<Budget>({ endpoint: '/accounting/budgets', create: false })
+    // Crear (`?modal=new` / botón externo) es la pestaña de página; editar abre la pestaña del presupuesto.
+    const createPanel = useCreatePanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada presupuesto abre su editor en una pestaña propia; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("accounting.budget")
 
     const [newBudget, setNewBudget] = useState({
         name: "",
@@ -58,11 +56,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
     }
 
     const actionsCtx: BudgetActionsCtx = {
-        onEdit: (id) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('selected', String(id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onEdit: (id) => openEntity("accounting.budget", id),
         onViewExecution: (id) => router.push(`/finances/budgets/${id}`),
     }
 
@@ -149,19 +143,6 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                 )}
             </EntityPanelTab>
 
-            <EntityPanelTab label="accounting.budget" {...editPanel.tab}>
-                {(open) => editPanel.entity && (
-                    <BudgetEditor
-                        open={open}
-                        onOpenChange={(open) => { if (!open) editPanel.close() }}
-                        budget={editPanel.entity}
-                        onSave={() => {
-                            refetch() // Optional: refresh if metadata changes, mostly for consistency
-                            toast.success("Presupuesto actualizado")
-                        }}
-                    />
-                )}
-            </EntityPanelTab>
         </div>
     )
 }

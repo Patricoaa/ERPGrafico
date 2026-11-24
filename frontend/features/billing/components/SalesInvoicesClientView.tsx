@@ -45,7 +45,7 @@ export function SalesInvoicesClientView() {
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(inv) => sheet.toggle(inv.id)}
+                onOpen={(inv) => sheet.toggle(inv.id, inv)}
                 actions={(inv) => <DocumentRowActions id={inv.id} kind="invoice" onOpen={sheet.toggle} />}
                 view={view}
                 onViewChange={onViewChange}

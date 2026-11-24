@@ -3,9 +3,10 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { PrepressPanel } from "@/components/shared"
+import { PrepressPanel, fadeInClass } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Home } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export default function NotFound() {
     const { logo, company } = useBranding()
@@ -23,7 +24,7 @@ export default function NotFound() {
                     }}
                 />
             </div>
-            <div className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]">
+            <div className={cn("w-full max-w-sm relative z-10 mx-6", fadeInClass({ from: "bottom", distance: 3, duration: 600, ease: "premium" }))}>
                 <PrepressPanel className="surface-panel shadow-card p-8">
                     <div className="mb-8 flex flex-col items-center">
                         {logo ? (

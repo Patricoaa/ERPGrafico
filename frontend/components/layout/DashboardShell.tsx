@@ -14,7 +14,7 @@ import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import { PrepressPanel } from '@/components/shared'
+import { PrepressPanel, fadeInClass } from '@/components/shared'
 import { Menu } from "lucide-react"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
@@ -166,7 +166,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                         className="flex-1 flex flex-col overflow-hidden relative flush-panel"
                     >
                         <div
-                            className="w-full flex-1 flex flex-col min-h-0 animate-in fade-in ease-premium fill-mode-both motion-reduce:animate-none motion-reduce:opacity-100"
+                            className={cn("w-full flex-1 flex flex-col min-h-0", fadeInClass({ ease: "premium" }))}
                             style={{
                                 animationDuration: "0.35s",
                                 "--tw-enter-translate-y": "8px",

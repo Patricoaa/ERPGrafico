@@ -406,7 +406,7 @@ Para datos jerárquicos (tree), usar `getSubRows` en lugar de `renderSubComponen
 ---
 ## 10. Toolbar Border, Shadow & Radius Contract
 
-El toolbar del DataTable sigue una jerarquía visual consistente con el [design system](../10-architecture/design-system.md). Todos los elementos del toolbar deben respetar los siguientes niveles:
+El toolbar del DataTable sigue una jerarquía visual consistente con el [design system](../../DESIGN.md). Todos los elementos del toolbar deben respetar los siguientes niveles:
 
 ### 10.1 Border opacities
 

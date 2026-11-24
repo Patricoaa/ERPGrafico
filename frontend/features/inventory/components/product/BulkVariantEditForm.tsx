@@ -8,7 +8,7 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { TabBar, TabBarContent } from "@/components/shared"
+import { TabBar, TabBarContent, fadeInClass } from "@/components/shared"
 import { LabeledInput, LabeledSelect, SkeletonShell } from "@/components/shared"
 import { Factory, Copy, PlusCircle, DollarSign, Users } from "lucide-react"
 import { Banner, Chip } from "@/components/shared"
@@ -208,7 +208,7 @@ export function BulkVariantEditForm({
       document.body
     )}
     <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva">
-    <div className="surface-panel flex flex-col h-full shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className={cn("surface-panel flex flex-col h-full shadow-card overflow-hidden", fadeInClass({ from: "right", distance: 4, duration: 300 }))}>
       <div className="px-5 pt-4 pb-1 bg-muted/5">
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-3.5 w-3.5 text-primary" />

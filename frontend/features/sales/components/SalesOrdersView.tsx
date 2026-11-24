@@ -10,6 +10,7 @@ import {
     useCollectionViewMode,
     useEntityCollection,
     useServerPage,
+    type CollectionViewMode,
     type FieldId,
     type SortSpec,
 } from "@/components/entity-view"
@@ -29,10 +30,10 @@ interface SalesOrdersViewProps {
     selectedId?: number | null
 }
 
-/** Shared selection: the document sheet (?selected, ADR-0083) or, in POS, the host's own selection. */
+/** Shared selection: the document sheet (one tab per document, ADR-0152) or, in POS, the host's own selection. */
 interface SheetSelection {
     selectedId: number | null
-    toggle: (id: number) => void
+    toggle: (id: number, data?: unknown) => void
 }
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
@@ -47,7 +48,7 @@ export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOr
     const sheet = useDocumentSheetRoute(onSelectOrder ? null : (viewMode === "orders" ? "sales.saleorder" : "billing.invoice"))
     const selection: SheetSelection = onSelectOrder
         ? { selectedId: selectedId ?? null, toggle: (id) => onSelectOrder(selectedId === id ? null : id) }
-        : { selectedId: sheet.selectedId ?? null, toggle: (id) => sheet.toggle(id) }
+        : { selectedId: sheet.selectedId ?? null, toggle: (id, data) => sheet.toggle(id, data) }
 
     // One collection per mode, each with its own hook: the hidden mode no longer fetches.
     return viewMode === "orders"
@@ -55,13 +56,45 @@ export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOr
         : <SaleNoteCollection selection={selection} withActions={!onSelectOrder} />
 }
 
-function SaleOrderCollection({ selection, withActions }: { selection: SheetSelection; withActions: boolean }) {
+/**
+ * Vista (tabla / tarjetas / analítica) de la lista. En la página es estado de URL y preferencia guardada
+ * (`?view=`); embebida en el POS (`withActions` falso) es local al drawer: no toca la URL del POS ni la
+ * preferencia de la página de Ventas.
+ */
+interface ViewState { view: CollectionViewMode; onViewChange: (view: CollectionViewMode) => void }
+type CollectionProps = { selection: SheetSelection; withActions: boolean }
+
+function useLocalViewMode(initial: CollectionViewMode): ViewState {
+    const [view, onViewChange] = useState<CollectionViewMode>(initial)
+    return { view, onViewChange }
+}
+
+function SaleOrderCollection(props: CollectionProps) {
+    return props.withActions ? <UrlSaleOrderCollection {...props} /> : <LocalSaleOrderCollection {...props} />
+}
+function UrlSaleOrderCollection(props: CollectionProps) {
+    return <SaleOrderCollectionBody {...props} {...useCollectionViewMode("sales.saleorder")} />
+}
+function LocalSaleOrderCollection(props: CollectionProps) {
+    return <SaleOrderCollectionBody {...props} {...useLocalViewMode("card")} />
+}
+
+function SaleNoteCollection(props: CollectionProps) {
+    return props.withActions ? <UrlSaleNoteCollection {...props} /> : <LocalSaleNoteCollection {...props} />
+}
+function UrlSaleNoteCollection(props: CollectionProps) {
+    return <SaleNoteCollectionBody {...props} {...useCollectionViewMode("billing.invoice")} />
+}
+function LocalSaleNoteCollection(props: CollectionProps) {
+    return <SaleNoteCollectionBody {...props} {...useLocalViewMode("card")} />
+}
+
+function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
     const search = useUnifiedSearch(salesOrderUnifiedSearchDef)
     const groupBy = search.groupBy ? ORDER_GROUPS[search.groupBy] ?? null : null
     const [sort, setSort] = useState<SortSpec<FieldId<typeof saleOrderEntity.fields>> | null>(null)
     const filters = useMemo<SaleOrderFilters>(() => search.filters as SaleOrderFilters, [search.filters])
     const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
-    const { view, onViewChange } = useCollectionViewMode("sales.saleorder")
 
     const { page, orders, isLoading, isRefetching, isError, refetch } = useSalesOrders({
         filters: {
@@ -97,7 +130,7 @@ function SaleOrderCollection({ selection, withActions }: { selection: SheetSelec
                 collection={collection}
                 selection="panel"
                 selectedId={selection.selectedId}
-                onOpen={(order) => selection.toggle(order.id)}
+                onOpen={(order) => selection.toggle(order.id, order)}
                 actions={withActions ? (order) => <DocumentRowActions id={order.id} kind="sale-order" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}
@@ -137,12 +170,11 @@ function SaleOrderCollection({ selection, withActions }: { selection: SheetSelec
     )
 }
 
-function SaleNoteCollection({ selection, withActions }: { selection: SheetSelection; withActions: boolean }) {
+function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
     const search = useUnifiedSearch(salesNoteUnifiedSearchDef)
     const groupBy = search.groupBy ? NOTE_GROUPS[search.groupBy] ?? null : null
     const filters = search.filters as Record<string, string>
     const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
-    const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
     const { page, notes, isLoading, isRefetching, isError, refetch } = useSalesNotes({
         filters: {
@@ -168,7 +200,7 @@ function SaleNoteCollection({ selection, withActions }: { selection: SheetSelect
                 collection={collection}
                 selection="panel"
                 selectedId={selection.selectedId}
-                onOpen={(note) => selection.toggle(note.id)}
+                onOpen={(note) => selection.toggle(note.id, note)}
                 actions={withActions ? (note) => <DocumentRowActions id={note.id} kind="invoice" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}

@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPanelTab } from "@/components/providers"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React from "react"
@@ -13,8 +13,8 @@ import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inven
 import { usePricingRules, type PricingRule } from "@/features/inventory/hooks/usePricingRules"
 import { pricingRuleUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useEntityPanelRoute } from "@/hooks/useEntityPanelRoute"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { pricingRuleEntity, pricingRuleViews } from "../entity-view/pricingRule.entity"
 
 interface PricingRuleClientViewProps {
@@ -29,9 +29,10 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     const { view, onViewChange } = useCollectionViewMode("inventory.pricingrule")
     const collection = useEntityCollection(pricingRuleEntity, { rows: rules, isLoading, error: isError, refetch, isFiltered: search.isFiltered })
 
-    const panel = useEntityPanelRoute<PricingRule>({ endpoint: '/inventory/pricing-rules', external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
-    const selectedFromUrl = panel.entity
-    const { openSelected } = useEntityRouteActions()
+    const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    const { openEntity } = useGlobalModals()
+    // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
+    useDeepLinkEntity("inventory.pricingrule")
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -48,7 +49,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const actionsCtx: PricingRuleActionsCtx = {
-        onEdit: (item) => openSelected(item.id),
+        onEdit: (item) => openEntity("inventory.pricingrule", item.id, item),
         onDelete: (id) => handleDelete(id),
     }
 
@@ -57,7 +58,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
             <EntityPanelTab label="inventory.pricingrule" {...panel.tab}>
                 {(open) => (
                     <PricingRuleDrawer
-                        initialData={panel.isCreate ? undefined : (selectedFromUrl ?? undefined)}
                         onSuccess={() => { panel.close(); refetch() }}
                         open={open}
                         onOpenChange={(open: boolean) => {
@@ -71,7 +71,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(rule) => openSelected(rule.id)}
                 actions={pricingRuleActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>

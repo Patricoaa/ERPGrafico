@@ -3,6 +3,7 @@ import React from "react"
 import { type LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
+import { fadeInClass } from "./fade-in-class"
 
 export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' | 'pos' | 'bom' | 'treasury' | 'sale' | 'purchase'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
@@ -83,7 +84,7 @@ export function EmptyState({
     return (
         <div
             className={cn(
-                "flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-500",
+                cn("flex flex-col items-center justify-center text-center", fadeInClass({ zoom: true, duration: 500 })),
                 variant === 'full' ? "py-16 px-8" : "py-8 px-4",
                 className
             )}

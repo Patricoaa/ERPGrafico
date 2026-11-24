@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOrderSelector"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, ManufacturingContactField } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, ManufacturingContactField, fadeInClass } from "@/components/shared"
 import type { ManufacturingContact } from "@/components/shared"
 
 import { cn, formatPlainDate } from "@/lib/utils"
@@ -166,7 +166,7 @@ export function WorkOrderBasicInfo({
                                         />
 
                                         {watchedSaleLineId && (
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-3 bg-background rounded border animate-in fade-in slide-in-from-top-1">
+                                            <div className={cn("grid grid-cols-2 md:grid-cols-3 gap-4 p-3 bg-background rounded border", fadeInClass({ from: "top", distance: 1 }))}>
                                                 {(() => {
                                                     const l = saleLines.find(x => x.id?.toString() === watchedSaleLineId)
                                                     if (!l) return null

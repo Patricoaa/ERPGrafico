@@ -93,12 +93,6 @@ def test_used_in_production_false_with_inactive_bom(base):
     assert _caps(component)["used_in_production"] is False
 
 
-def test_insights_payload_includes_capabilities(base):
-    product = _product(base, "Resma")
-    insights = ProductSelector.get_insights(product)
-    assert insights["capabilities"]["segment"] == "STORABLE"
-
-
 def test_used_in_production_true_when_consumed_in_a_work_order_without_active_bom(base):
     from production.models import ProductionConsumption, WorkOrder
 
@@ -124,3 +118,32 @@ def test_used_in_production_considers_variant_consumption(base):
         warehouse=Warehouse.objects.create(name="B", code="B1"),
     )
     assert _caps(template)["used_in_production"] is True
+
+
+@pytest.fixture
+def api_client(db):
+    from django.contrib.auth import get_user_model
+    from rest_framework.test import APIClient
+
+    user = get_user_model().objects.create_superuser(username="capsuser", password="password")
+    client = APIClient()
+    client.force_authenticate(user=user)
+    return client
+
+
+def test_capabilities_endpoint_returns_selector_payload(base, api_client):
+    product = _product(base, "Resma", track_inventory=True)
+    response = api_client.get(f"/api/inventory/products/{product.id}/capabilities/")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["segment"] == "STORABLE"
+    assert body["tracks_stock"] is True
+    assert body == _caps(product)
+
+
+def test_capabilities_endpoint_requires_authentication(base):
+    from rest_framework.test import APIClient
+
+    product = _product(base, "Resma")
+    response = APIClient().get(f"/api/inventory/products/{product.id}/capabilities/")
+    assert response.status_code in (401, 403)

@@ -3,7 +3,7 @@
 import { Separator } from "@/components/ui/separator"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
-import { Chip } from "@/components/shared"
+import { Chip, fadeInClass } from "@/components/shared"
 import { translatePaymentMethod } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -54,7 +54,7 @@ export function OrderSummaryCard({
 
                         <div className="space-y-4">
                             {orderLines.map((line, idx) => (
-                                <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
+                                <div key={idx} className={cn("flex justify-between items-start gap-4", fadeInClass({ duration: 500 }))}>
                                     <div className="space-y-1.5 flex-1 min-w-0">
                                         <Tooltip>
                                             <TooltipTrigger asChild>

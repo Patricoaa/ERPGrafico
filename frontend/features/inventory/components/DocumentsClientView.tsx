@@ -62,7 +62,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
 
     const actionsCtx: InventoryDocumentActionsCtx = React.useMemo(() => ({
         onViewDetail: sheet.toggle,
-        onPrint: (doc) => sheet.toggle(doc.id),
+        onPrint: (doc) => sheet.toggle(doc.id, doc),
         onAnnul: handleAnnul,
     }), [sheet, handleAnnul])
 
@@ -80,7 +80,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                 collection={collection}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
-                onOpen={(doc) => sheet.toggle(doc.id)}
+                onOpen={(doc) => sheet.toggle(doc.id, doc)}
                 view={view}
                 onViewChange={onViewChange}
                 actions={documentActions.forCollection(actionsCtx)}

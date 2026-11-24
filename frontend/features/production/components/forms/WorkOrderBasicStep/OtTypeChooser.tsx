@@ -3,6 +3,8 @@ import { Plus, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { WorkOrderFormValues } from "@/types/forms"
 import { getDomainConceptTitle, getDomainConceptCode } from "@/lib/entity-registry"
+import { fadeInClass } from "@/components/shared"
+import { cn } from "@/lib/utils"
 
 interface OtTypeChooserProps {
     onChoose: (type: 'LINKED' | 'NONE', defaults: WorkOrderFormValues) => void
@@ -10,7 +12,7 @@ interface OtTypeChooserProps {
 
 export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
     return (
-        <div className="flex flex-col items-center justify-center space-y-6 py-12 max-w-lg mx-auto animate-in fade-in zoom-in duration-500">
+        <div className={cn("flex flex-col items-center justify-center space-y-6 py-12 max-w-lg mx-auto", fadeInClass({ zoom: true, duration: 500 }))}>
             <div className="text-center space-y-2 mb-4">
                 <h3 className="text-xl font-black uppercase tracking-widest text-foreground/80">Configuración de Flujo</h3>
                 <p className="text-2xs text-muted-foreground font-medium uppercase tracking-tight opacity-70">
