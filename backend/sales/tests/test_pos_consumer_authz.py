@@ -17,6 +17,10 @@ from django.test import override_settings
 
 from sales.consumers import POSDraftConsumer
 
+# Channels closes old DB connections on disconnect (channels.db.aclose_old_connections); if an
+# earlier test left one open on this thread that touches the DB, so allow it module-wide.
+pytestmark = pytest.mark.django_db
+
 CHANNEL_LAYERS_INMEMORY = {
     "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
 }

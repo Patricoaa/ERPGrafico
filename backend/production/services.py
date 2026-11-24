@@ -2282,9 +2282,11 @@ class WorkOrderService:
         stocks = {row["product_id"]: float(row["total"] or 0.0) for row in rows}
 
         manufacturable_ids = list(
+            # Same predicate as ProductionSelectorExt.get_stock_available's BOM branch, so every
+            # component that branch reads arrives prefetched (no per-material queries).
             material_qs.filter(
                 component__product_type=Product.Type.MANUFACTURABLE,
-                component__track_inventory=False,
+                component__requires_advanced_manufacturing=False,
             ).values_list("component_id", flat=True)
         )
         products_by_id = {}

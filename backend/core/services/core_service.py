@@ -4,10 +4,10 @@ from django.conf import settings
 class CoreService:
     @staticmethod
     def get_or_create_company_settings():
+        from core.cache import load_singleton
         from core.models import CompanySettings
 
-        obj, _ = CompanySettings.objects.get_or_create(pk=1, defaults={"name": "Mi Empresa"})
-        return obj
+        return load_singleton(CompanySettings, name="Mi Empresa")
 
     @staticmethod
     def get_user_preferences(user):
