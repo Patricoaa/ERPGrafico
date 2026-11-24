@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.153](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.152...v0.3.153) (2026-11-24)
+
+
+### 📚 Documentation
+
+* ADR-0151 y plan — el bruto es la autoridad única del precio de venta ([ac82db5](https://github.com/Patricoaa/ERPGrafico/commit/ac82db5225fe8925c67c228b89ddceb905970eb3))
+
+
+### ✨ Features
+
+* **accounting:** vat.py con aritmética de IVA centralizada y fixture de paridad (ADR-0151) ([71a63b8](https://github.com/Patricoaa/ERPGrafico/commit/71a63b84f22ab51a18604b6a598e0b7973dca6a8))
+* **frontend:** formularios de precio envían solo el bruto (ADR-0151) ([a0b8540](https://github.com/Patricoaa/ERPGrafico/commit/a0b8540cc1387021a30d64baabd2c37ab5095483))
+* **frontend:** lib/vat.ts espejo de accounting/vat.py con test de paridad (ADR-0151) ([1acce3e](https://github.com/Patricoaa/ERPGrafico/commit/1acce3e792d7860724d73fa983d6ba98a9d73b64))
+* **frontend:** tarjetas, selectores y POS muestran el bruto de la API sin convertir (ADR-0151) ([6e69e5f](https://github.com/Patricoaa/ERPGrafico/commit/6e69e5f35212027048417d8ca89684759a132410))
+* **frontend:** vat.ts admite decimals opcional para netos de compra (ADR-0151) ([8ed9629](https://github.com/Patricoaa/ERPGrafico/commit/8ed9629ab01726cb9d5c4e5a4df772dfe22a9486))
+* **inventory:** migración 0039 y comando audit_sale_prices re-derivan netos desde el bruto (ADR-0151) ([9a80000](https://github.com/Patricoaa/ERPGrafico/commit/9a8000036384222025d43f6442cf9fc98232deaa))
+* **inventory:** PricingRule y ProductUoMPrice derivan el neto solo del bruto (ADR-0151) ([36eb222](https://github.com/Patricoaa/ERPGrafico/commit/36eb2222de575a3e5aa10bdbbdf2704cfe5773c9))
+* **inventory:** Product deriva el neto solo del bruto y agrega price_surcharge_gross (ADR-0151) ([ff6bb7b](https://github.com/Patricoaa/ERPGrafico/commit/ff6bb7b4e6147c914ba721cbde47d414b8e1ab90))
+* **inventory:** serializers exponen el bruto como autoridad (price_surcharge_gross, min_variant_price_gross) (ADR-0151) ([5a5b9d6](https://github.com/Patricoaa/ERPGrafico/commit/5a5b9d6fd24d08377dc53c3931da1b3f019a542e))
+
+
+### ⚙️ Refactors
+
+* **frontend:** compras, producción y checkout usan vat.ts; edición masiva de variantes envía solo bruto (ADR-0151) ([ff71957](https://github.com/Patricoaa/ERPGrafico/commit/ff719572c1d12e0fcfdba0a232b470806e776e38))
+* **frontend:** IVA obligatorio en PricingUtils y totales del POS, sin 0.19/1.19 por defecto (ADR-0151) ([db26cdc](https://github.com/Patricoaa/ERPGrafico/commit/db26cdc4d23e9524b0f9271d6b7905c9f8d6666b))
+* **inventory:** migración 0039 autocontenida con test de paridad, tasa de IVA resuelta una vez por lista, docs ADR-0151 y mock de useVatRate corregidos ([8b23441](https://github.com/Patricoaa/ERPGrafico/commit/8b234418edfd8462e565d4d0119e2308bd36fae7))
+* **inventory:** PricingService y servicios de venta usan vat.py y variant_sale_price (ADR-0151) ([9a5c7a3](https://github.com/Patricoaa/ERPGrafico/commit/9a5c7a368564cf8ce1b9469715e8d47fea29d3a7))
+
+
+### 🐛 Bug Fixes
+
+* **inventory:** 0039 depende también de 0038_manufacturable_not_purchasable (una sola hoja) ([362c477](https://github.com/Patricoaa/ERPGrafico/commit/362c47746a40ffca5ea73fdc475ca3e0b7f932db))
+* **inventory:** bruto None explícito limpia también el neto; grossOf a nivel de módulo (ADR-0151) ([6fea252](https://github.com/Patricoaa/ERPGrafico/commit/6fea2529a86f259380f23e624309f0dc28153253))
+* **inventory:** el bloque de precios usa lib/vat.ts y la tasa configurada (guardia ADR-0151) ([6c73767](https://github.com/Patricoaa/ERPGrafico/commit/6c73767ba2691371dc09758b908dffc1ca4438c3)), closes [#275](https://github.com/Patricoaa/ERPGrafico/issues/275)
+* **inventory:** el listado de productos expone sale_price_gross; ADR-0151 aceptado y test end-to-end ([e634231](https://github.com/Patricoaa/ERPGrafico/commit/e6342311a537f9c6617ee660a065dafe8445aa56))
+* **inventory:** el listado expone modo de herencia, recargo y precio resuelto; el selector de variantes muestra el bruto cobrado (ADR-0151) ([cf68023](https://github.com/Patricoaa/ERPGrafico/commit/cf680237d48fba8f95081d68bda465ad6df7108b))
+* **inventory:** imports (ratchet Ruff) y helper de historial de precios escribe el bruto (ADR-0151) ([44065f4](https://github.com/Patricoaa/ERPGrafico/commit/44065f4b3a5ba9c0a83308098d24cdb6a68136d2))
+* **inventory:** limpiar el recargo por servicio también limpia el bruto (ADR-0151) ([dd2cec2](https://github.com/Patricoaa/ERPGrafico/commit/dd2cec2ba758249aa5567d3da4a60d05ec61c84d))
+* **inventory:** un bruto 0 explícito sin neto deja 0/0 en vez de re-derivar el neto viejo (ADR-0151) ([6856015](https://github.com/Patricoaa/ERPGrafico/commit/6856015a9d492006d57b2ed93903d497f213e856))
+* **inventory:** VariantSelectorModal usa precio resuelto y omite PricingUtils ([718a07d](https://github.com/Patricoaa/ERPGrafico/commit/718a07db5af29c414ccfd4de50ac807c21b3fe8a))
+
+
+### 🧪 Testing
+
+* **accounting:** guardia ci_gate contra aritmética de IVA fuera de vat.py y vat.ts (ADR-0151) ([7984c60](https://github.com/Patricoaa/ERPGrafico/commit/7984c60d78086d72c9b643d6ba04ec2df0aacf8f))
+* **inventory:** el conteo de lecturas en save() excluye el vector del índice de búsqueda ([9ff718e](https://github.com/Patricoaa/ERPGrafico/commit/9ff718e3cce046c1ab1a465635c1242c3c416bba))
+
 ### [0.3.152](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.151...v0.3.152) (2026-11-24)
 
 ### [0.3.151](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.150...v0.3.151) (2026-11-24)
