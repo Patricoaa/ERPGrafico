@@ -53,6 +53,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 | `hr` | `Employee` | Archivo | `is_active=False` para ex-empleados; excluye de liquidaciones masivas y de selectores. Sin hard delete (405). Ver [ADR-0154](../10-architecture/adr/0154-employee-archivo-is-active.md) |
 | `hr` | `AFP` | Archivo | `is_active` filtra selectores |
 | `hr` | `PayrollConcept` | Archivo | `is_active` filtra selectores; conceptos de sistema protegidos |
+| `hr` | `EmployeeMovement` | Anulación | Borrador eliminable; `POSTED` se anula con motivo (reversa el asiento de tesorería) solo si no está asignado a una liquidación. Reemplaza a `SalaryAdvance`. Ver [ADR-0156](../10-architecture/adr/0156-hr-employee-movements.md) |
 | `inventory` | `Product` | Archivo | `is_active=False`; las líneas históricas siguen referenciándolo |
 | `inventory` | `ProductCategory` | Archivo | |
 | `inventory` | `ProductAttribute` | Archivo | `is_active` filtra selectores |
