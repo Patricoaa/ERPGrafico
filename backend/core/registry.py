@@ -484,11 +484,20 @@ class UniversalRegistry:
         def _on_delete(sender, instance, **kwargs):
             cls.remove_from_index(instance)
 
+        # weak=False: the receivers are closures with no other reference. With the default weak
+        # reference they are garbage-collected and the index silently stops updating (it only
+        # survived under DEBUG, which keeps extra references alive).
         post_save.connect(
-            _on_save, sender=entity.model, dispatch_uid=f"search_index_save_{entity.label}"
+            _on_save,
+            sender=entity.model,
+            weak=False,
+            dispatch_uid=f"search_index_save_{entity.label}",
         )
         post_delete.connect(
-            _on_delete, sender=entity.model, dispatch_uid=f"search_index_delete_{entity.label}"
+            _on_delete,
+            sender=entity.model,
+            weak=False,
+            dispatch_uid=f"search_index_delete_{entity.label}",
         )
 
     @staticmethod

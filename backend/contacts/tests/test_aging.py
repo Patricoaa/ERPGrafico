@@ -4,7 +4,7 @@ eliminan el N+1 (Θ(C+O) round-trips → O(1) queries) sin cambiar la semántica
 de los buckets ni del payload.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone as dt_timezone
 from decimal import Decimal
 from unittest import mock
 
@@ -128,7 +128,7 @@ def test_portfolio_bounded_queries_and_values(aging_data, django_assert_max_num_
     customer.credit_limit = Decimal("10000")
     customer.save()
 
-    with mock.patch("django.utils.timezone.now", return_value=datetime(2026, 8, 14, 12, 0, 0)):
+    with mock.patch("django.utils.timezone.now", return_value=datetime(2026, 8, 14, 12, 0, 0, tzinfo=dt_timezone.utc)):
         with django_assert_max_num_queries(6):
             data = ContactSelector.get_credit_portfolio_data(is_blacklist=False)
 

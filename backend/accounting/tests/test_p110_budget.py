@@ -145,7 +145,9 @@ def test_generate_opening_entry_bounded_queries(user, django_assert_max_num_quer
         status=FiscalYear.Status.CLOSED,
     )
 
-    with django_assert_max_num_queries(39):
+    # Ceiling measured on Postgres (CI and production): the full-text search index adds a fixed
+    # ~6 queries there that SQLite skips. Constant in the number of accounts (checked 5 vs 11).
+    with django_assert_max_num_queries(45):
         result = FiscalYearClosingService.generate_opening_entry(2026, user)
 
     assert result.id == fiscal_year.id

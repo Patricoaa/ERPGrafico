@@ -24,10 +24,14 @@ def test_operator_cannot_modify_assignment_or_notification_rules():
     assert c.post("/api/workflow/notification-rules/", {}, format="json").status_code == 403
 
 
-def test_workflow_settings_current_get_open_write_guarded():
+def test_workflow_settings_current_read_and_write_guarded():
+    """ADR-0116 (settings singleton): GET needs view_*, writes need change_*."""
     user = make_user("w3")
     c = _client(user)
-    assert c.get("/api/workflow/settings/current/").status_code == 200
+    assert c.get("/api/workflow/settings/current/").status_code == 403
     assert c.patch("/api/workflow/settings/current/", {}, format="json").status_code == 403
+    reader = make_user("w5", "workflow.view_workflowsettings")
+    assert _client(reader).get("/api/workflow/settings/current/").status_code == 200
+    assert _client(reader).patch("/api/workflow/settings/current/", {}, format="json").status_code == 403
     editor = make_user("w4", "workflow.change_workflowsettings")
     assert _client(editor).patch("/api/workflow/settings/current/", {}, format="json").status_code == 200
