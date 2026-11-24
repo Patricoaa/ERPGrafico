@@ -1,0 +1,39 @@
+# Dependency updates. Every PR goes through the protected master: CI (Frontend + Backend,
+# with npm audit / pip-audit) must be green before it can merge.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for all minor/patch bumps; majors arrive one by one to review their changelog.
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      pip-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: monthly

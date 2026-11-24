@@ -3,78 +3,74 @@ layer: 40-quality
 doc: ci-cd
 status: active
 owner: platform-team
-last_review: 2026-11-06
+last_review: 2026-11-24
 ---
 
 # CI / CD
 
-> **Estado actual:** `CI Pipeline` está **deshabilitado manualmente** desde abril de 2026 y `master` **no tiene protección de rama**. Hoy nada bloquea un merge. Este documento describe lo que hace el pipeline cuando está activo; ver [Activar el gate](#activar-el-gate).
+> **Estado actual (2026-11-24):** `CI Pipeline` corre en cada PR y en cada push a `master`, y **todo su resultado bloquea**. `master` está protegida por un ruleset: solo se cambia por PR con los checks **Frontend** y **Backend** en verde.
 > **No existe entorno de producción ni staging.** El único entorno activo es el dev server (`pato@192.168.1.86`).
 
-## Pipeline actual (`.github/workflows/pipeline.yml`)
+## Pipeline (`.github/workflows/pipeline.yml`)
 
 ```
-[push/PR] → frontend job → backend job → security job
+[push/PR] → Frontend · Backend · Security Scan   (jobs en paralelo)
 ```
 
-Bloquean el job de backend `manage.py check`, las migraciones, el ratchet de Ruff y el gate `ci_gate`. El resto de la suite y varios pasos de lint y seguridad no bloquean.
-
-### Frontend job
+### Frontend job (Node 24)
 
 ```yaml
 - npm ci --legacy-peer-deps
+- npm audit --omit=dev --audit-level=high   # hard gate: dependencias de runtime high/critical
 - npm run lint -- --quiet   # hard gate: solo errores; los warnings los controlan los ratchets
-- npm run type-check    # hard gate
+- npm run type-check        # hard gate
 - npx playwright install --with-deps chromium   # stories de Storybook
-- npm run test -- --run --coverage
-- npm run build         # hard gate
+- npm run test -- --run --coverage   # hard gate (NODE_OPTIONS=--max-old-space-size=4096)
+- npm run build             # hard gate
 ```
 
-### Backend job
+### Backend job (Python 3.12, Postgres 15, Redis 7)
 
 ```yaml
-- pip install -r requirements.txt
+- pip install -r requirements.txt        # versiones fijadas (==)
+- pip install ruff==0.17.6 … pip-audit   # ruff fijado: el ratchet cuenta hallazgos
+- pip-audit                # hard gate: CVE en el entorno instalado (transitivas incluidas)
+- ruff check . --select F821   # hard gate: nombres indefinidos
+- ruff check .             # ratchet: falla si supera 338; bajar el número al corregirlos
 - python manage.py check
 - python manage.py makemigrations --check --dry-run
-- ruff check . --select F821   # hard gate: nombres indefinidos
-- ruff check .          # ratchet: falla si supera 342 errores; bajar el número al corregirlos
-- pytest -m ci_gate     # hard gate: invariantes y conteo de queries (ADR-0118)
-- pytest --cov=.        # non-blocking; fallos conocidos en testing.md
+- pytest -m ci_gate        # hard gate: invariantes y conteo de queries (ADR-0118)
+- pytest --cov=.           # hard gate: suite completa (ver testing.md, cuarentena)
 ```
 
 ### Security job
 
 ```yaml
-- bandit -r ./backend -ll
-- safety check
+- bandit -r ./backend -ll   -x ./backend/tmp   # informa medium/low
+- bandit -r ./backend -lll  -x ./backend/tmp   # hard gate: severidad high
 ```
+
+Un falso positivo se anota en la línea con `# nosec <ID>: <motivo>`; nunca se silencia el paso.
+
+## Dependencias
+
+- **Versiones fijadas.** `backend/requirements.txt` usa `==` para toda dependencia directa; `frontend/package-lock.json` fija el árbol de npm. `overrides` en `package.json` fuerza versiones parcheadas de transitivas (`rollup`, `handlebars`) mientras su paquete padre no las adopte.
+- **Dependabot** (`.github/dependabot.yml`): semanal para npm y pip (menores y parches agrupados en un PR; mayores de a una), mensual para GitHub Actions e imágenes Docker. Sus PR pasan por el mismo CI.
+- **Deuda conocida:** `@sentry/nextjs` 8 → 11 (tres mayores) queda pendiente; sus alertas restantes son moderadas.
 
 ## Branch strategy
 
-- `master` — sin protección de rama hoy. Objetivo: CI verde requerido para mergear.
-- Feature branches: `feat/…`, `fix/…`, `refactor/…`.
-- Objetivo para los PR: CI verde, 1 approval (2 si toca `20-contracts/`), sin comentarios sin resolver.
-
-## Activar el gate
-
-Son dos pasos manuales. Antes de exigir el check, confirmar que `Automated Versioning` puede seguir empujando a `master`, porque publica ahí sus commits de versión.
-
-1. Reactivar el pipeline: `gh workflow enable pipeline.yml`.
-2. Exigir el check de backend en `master`, desde *Settings → Branches* o con la API de protección de ramas.
-
-Mientras tanto, el gate se puede correr a mano:
-
-```bash
-cd backend && CACHE_BACKEND=locmem CHANNEL_BACKEND=locmem venv/bin/python -m pytest -m ci_gate -q
-```
+- `master` — ruleset «master: PR + CI verde»: PR obligatorio (0 aprobaciones), checks **Frontend** y **Backend**, sin force-push ni borrado. **Sin bypass para administradores.**
+- Feature branches: `feat/…`, `fix/…`, `refactor/…`, `chore/…`, `ci/…`.
+- Un commit de un PR **no** debe contener el literal de salto de CI de GitHub en su mensaje: GitHub no correría los checks y el PR no se podría mergear.
 
 ## Release flow
 
-El versionado es manual: `chore(release): X.Y.Z` con bump en `package.json` y tag git. Ver [versioning-policy.md](../90-governance/versioning-policy.md).
+`release.yml` corre en cada push a `master` y hace el bump con `standard-version` (commit `chore(release): vX.Y.Z` marcado para saltar CI + tag). Empuja con la deploy key `release-bot` (secret `RELEASE_DEPLOY_KEY`), la única exención del ruleset. Ver [versioning-policy.md](../90-governance/versioning-policy.md).
 
 ## Secrets en CI
 
-- GitHub Actions secrets para tokens.
+- GitHub Actions secrets para tokens (`RELEASE_DEPLOY_KEY`).
 - Nunca en logs (`::add-mask::` en generados).
 - Preferir OIDC de corta vida sobre API keys permanentes.
 
@@ -85,3 +81,5 @@ El versionado es manual: `chore(release): X.Y.Z` con bump en `package.json` y ta
 | dev server | n/a (Mutagen sync desde local) | n/a | synthetic (`setup_demo_data`) | **activo** |
 | staging | — | — | — | **no existe** |
 | prod | — | — | — | **no existe** |
+
+Tras desplegar código que toque el registro de búsqueda, correr `python manage.py rebuild_search_index --clear`.

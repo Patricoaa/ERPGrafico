@@ -125,9 +125,12 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
 
 ## Dependency security
 
-- **Frontend**: `npm audit` in CI; Renovate bot; pin exact versions.
-- **Backend**: `pip-audit` + Dependabot.
-- SBOM generated per release.
+- **Frontend**: `npm audit --omit=dev --audit-level=high` blocks CI; lockfile pins the tree; `overrides` force patched transitives.
+- **Backend**: `requirements.txt` pinned with `==`; `pip-audit` blocks CI on the installed environment.
+- **Code**: Bandit blocks CI on high severity (`# nosec <ID>: <reason>` for reviewed false positives).
+- **Updates**: Dependabot (`.github/dependabot.yml`), weekly for npm/pip. See [ci-cd.md](ci-cd.md).
+- **No `eval`/`exec` on user-editable input**: payroll formula conditions use an AST whitelist (`PayrollService._eval_condition`).
+- SBOM generated per release (pending).
 - Critical vuln → patch within 48h, high within 7 days.
 
 ## Logging (security-relevant)

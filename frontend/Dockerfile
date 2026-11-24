@@ -1,7 +1,7 @@
 # ── Stage 1: Instalar dependencias ─────────────────────────────────────
 # Solo package.json → capa de caché estable. Solo se re-ejecuta si
 # package.json o package-lock.json cambian.
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/root/.npm \
 # Arranque mínimo: solo node_modules copiados, código llega via bind-mount.
 # El named volume next_cache/.next/ preserva el caché de TurboPack entre
 # reinicios del stack — esto es lo que hace el arranque en ~5s.
-FROM node:20-alpine AS development
+FROM node:24-alpine AS development
 WORKDIR /app
 
 # Copiar dependencies instaladas desde la etapa deps
@@ -33,7 +33,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 CMD ["npm", "run", "dev"]
 
 # ── Stage 3: Builder (para producción) ─────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -47,7 +47,7 @@ RUN --mount=type=cache,target=/app/.next/cache \
     npm run build
 
 # ── Stage 4: Runner (para producción) ──────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app-standalone
 
 ENV NODE_ENV=production
