@@ -460,17 +460,16 @@ def _draft_boleta(tenv, total, at):
 
 
 def test_ambiguous_boleta_is_resolved_from_its_orphan_group(tenv):
-    """Dos boletas borrador y dos ventas TUU en efectivo iguales: el usuario une desde el huérfano."""
+    """Dos boletas borrador iguales y una sola venta TUU en efectivo: FIFO no aplica (1 venta,
+    2 cobros), el huérfano queda ambiguo y el usuario lo une a mano."""
     at = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=1)
     first = _draft_boleta(tenv, 5000, at)
     second = _draft_boleta(tenv, 5000, at + timedelta(minutes=3))
     cash = TerminalSale.PaymentType.CASH
     s1 = make_terminal_sale(tenv, 5000, at + timedelta(minutes=1), payment_type=cash, document_type=39)
-    make_terminal_sale(tenv, 5000, at + timedelta(minutes=4), payment_type=cash, document_type=39)
     run_fiscal_match()
     day = timezone.localdate(at)
     _rcv_boleta(day, 5000, 81001)
-    _rcv_boleta(day, 5000, 81002)
     run_fiscal_match()
     s1.refresh_from_db()
     orphan = s1.fiscal_match

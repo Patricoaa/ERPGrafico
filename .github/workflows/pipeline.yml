@@ -136,11 +136,10 @@ jobs:
       - name: Invariants and query-count gate (blocking, ADR-0118)
         run: pytest -m ci_gate -q
 
-      - name: Full test suite (non-blocking)
-        run: |
-          # Known failures are listed in docs/40-quality/testing.md. Non-blocking until
-          # they are resolved; do not add new failures.
-          pytest --cov=. --cov-report=xml || echo "Backend tests failing (non-blocking — tracked debt)"
+      - name: Full test suite (blocking)
+        # Blocking since the known-failure list reached 0 (docs/40-quality/testing.md).
+        # A red test is fixed or quarantined with a tracked reason, never silenced here.
+        run: pytest --cov=. --cov-report=xml
 
   security:
     name: Security Scan

@@ -4,11 +4,11 @@ from django.core.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
+from core.cache import load_singleton
 from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
 
 from .filters import SaleDeliveryFilter, SaleReturnFilter
@@ -42,7 +42,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        obj, _ = SalesSettings.objects.get_or_create(pk=1)
+        obj = load_singleton(SalesSettings)
         from .services import SalesSettingsService
 
         data = SalesSettingsService.get_or_update_current_settings(

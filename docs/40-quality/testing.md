@@ -91,17 +91,20 @@ it('shows empty state when no orders', () => {
 
 La marca `ci_gate` reúne los tests de invariantes y de conteo de queries (ADR-0118). Bloquean el CI y **no admiten tests en rojo**: `pytest -m ci_gate`.
 
-Estos tests fallan hoy, quedan fuera del gate y no deben aumentar. Requieren investigación propia. La suite local usa SQLite y el CI usa Postgres, por eso algunos fallan solo en uno de los dos (medido el 2026-11-06):
+Desde el 2026-11-24 la **suite completa también bloquea** el CI (Postgres, como producción). La lista de fallos conocidos llegó a 0; las causas que tenía eran:
 
-| Test | Síntoma |
-|------|---------|
-| `production/tests/test_p26_stock_context.py::test_manufacturable_uses_prefetched_context` | 6 queries donde se esperan 0 |
-| `workflow/tests/test_workflow_config_permissions.py::test_workflow_settings_current_get_open_write_guarded` | 403 donde se espera 200 |
-| `core/tests/test_permission_registry.py::test_post_migrate_sync_is_additive` | El grupo administrador no conserva el permiso de prueba |
-| `sales/tests/test_pos_consumer_authz.py::test_pos_session_with_view_draftcart_connects_successfully` | Falla en la suite completa y pasa aislado; parece depender del orden |
-| `accounting/tests/test_dte_settings.py::test_accounting_settings_updates_emit_and_receive_dte_lists` | Solo Postgres: falla en la suite completa y pasa aislado; parece depender del orden |
-| `core/tests/test_search_postgres.py::test_universal_search_runs_full_text_on_postgres` | Solo Postgres: la búsqueda de texto completo no devuelve resultados |
-| `contacts/tests/test_credit_ledger.py::test_credit_ledger_write_off_only_with_include_all`, `production/tests/test_notify_overdue_batched.py` (2) | Solo cuando el día local y el UTC difieren (de noche en Chile); parece mezcla de fechas locales y UTC |
+| Síntoma | Causa | Arreglo |
+|---|---|---|
+| POS «No hay cuenta contable configurada», `dte_settings` y `search_postgres` (solo Postgres, según el orden) | El singleton `AccountingSettings` se escribía por `pk=1` y se leía con `first()`: con secuencias de Postgres quedaban dos filas | `core.cache.load_singleton` para lectores y escritores |
+| `test_terminal_sync_tasks` (errores en el teardown) | `monkeypatch.setattr` sobre `celery_app.conf` no se puede deshacer si la clave no existía | `monkeypatch.setitem` |
+| `fiscal_match` boletas / estados | El tipo DTE descartaba al único candidato TUU | El tipo desempata, no filtra |
+| `test_credit_history_bounded_queries` | N+1 en `ContactSelector.get_credit_history` | Precarga de `SaleOrderSelector.get_read_queryset` + `preload_invoices` |
+| `test_p26_stock_context` | La precarga de fabricables no usaba el predicado del selector | Mismo predicado |
+| `test_search_postgres` (solo con `DEBUG=False`, como en CI y producción) | `UniversalRegistry` conectaba sus señales de indexado como closures con referencia débil: se recolectaban y el índice dejaba de actualizarse | `weak=False`; tras desplegar, `manage.py rebuild_search_index` |
+| `test_pos_consumer_authz` (según el orden) | Channels cierra conexiones viejas de BD al desconectar el WebSocket | `pytestmark = pytest.mark.django_db` |
+| `test_workflow_config_permissions`, `test_aging` | Tests desalineados con ADR-0116 y con las fechas locales | Tests actualizados |
+
+Un test que falle ahora se arregla en el mismo PR. Si de verdad necesita cuarentena, se marca con `@pytest.mark.xfail(strict=True, reason="<issue>")` y se registra aquí con su síntoma.
 
 ### Fixtures — factory_boy
 

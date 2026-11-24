@@ -41,13 +41,22 @@ def cached_singleton(
     if cached is not None:
         return cached
 
-    # Fetch from DB
-    instance = model_class.objects.first()
-    if instance is None:
-        # Auto-create if the model supports it (settings singletons)
-        instance = model_class.objects.create()
-
+    instance = load_singleton(model_class)
     cache.set(cache_key, instance, timeout=timeout)
+    return instance
+
+
+def load_singleton(model_class: Type[T], **defaults) -> T:
+    """The one row of a settings singleton, fresh from the DB (created on first use).
+
+    Readers (`cached_singleton`) and writers (settings endpoints, services) must resolve the
+    singleton the same way: a writer that looked up ``pk=1`` while readers took ``first()``
+    created a second row whenever the existing one had another pk (Postgres sequences, a
+    restored database), and readers kept the empty one.
+    """
+    instance = model_class.objects.order_by("pk").first()
+    if instance is None:
+        instance = model_class.objects.create(**defaults)
     return instance
 
 
