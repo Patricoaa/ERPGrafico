@@ -71,3 +71,9 @@ El `CHANGELOG.md` en la raíz del proyecto se actualiza **manualmente** con cada
     ```bash
     git tag vX.Y.Z && git push && git push --tags
     ```
+
+## Release automático y rama protegida
+
+`release.yml` corre en cada push a `master`: `standard-version` sube `frontend/package.json` y `backend/VERSION`, actualiza `CHANGELOG.md` y crea el commit `chore(release): vX.Y.Z [skip ci]` con su tag.
+
+`master` está protegida por un ruleset (solo por PR, con los checks **Frontend** y **Backend** en verde, sin force-push ni borrado). La única exención es la deploy key `release-bot`, guardada como secret `RELEASE_DEPLOY_KEY`: con ella el workflow empuja el commit de versión. El `[skip ci]` y el `paths-ignore` de `CHANGELOG.md` evitan que ese push dispare de nuevo el pipeline o el propio release.
