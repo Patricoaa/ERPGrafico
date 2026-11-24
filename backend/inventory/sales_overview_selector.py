@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum
+from django.utils import timezone
 
 from .models import Product
 from .pricing_selector import _lines, _period_start
@@ -158,7 +159,7 @@ class SalesOverviewSelector:
         from sales.models import SaleDeliveryLine, SaleReturnLine
 
         product_ids = _product_ids(product)
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
         lines = _lines(product_ids, params.date_from, date_to)
         totals = _totals(lines)
 
@@ -210,7 +211,7 @@ class SalesOverviewSelector:
                 "return_units": return_units,
                 "return_rate_pct": return_units / totals["units"] * 100 if totals["units"] else 0.0,
                 "last_sale_date": last_sale.isoformat() if last_sale else None,
-                "days_since_last_sale": (date.today() - last_sale).days if last_sale else None,
+                "days_since_last_sale": (timezone.localdate() - last_sale).days if last_sale else None,
                 "previous": previous,
             },
             "series": {"points": _points(lines, params.granularity), "previous_points": previous_points},

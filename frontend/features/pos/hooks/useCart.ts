@@ -1,3 +1,5 @@
+"use client"
+
 // useCart Hook
 // Manages cart operations with stock validation and pricing
 

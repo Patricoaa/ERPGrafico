@@ -7,11 +7,11 @@ vi.mock("@/features/settings", () => ({ useBillingSettingsQuery: () => ({ settin
 vi.mock("@/hooks/useServerDate", () => ({ useServerDate: () => ({ dateString: "2026-11-15" }) }))
 
 describe("Step2_DTE", () => {
-    it("la opción boleta avisa que con terminal integrado se registra como comprobante de pago (48)", () => {
+    it("la opción boleta avisa que con terminal integrado se emite automáticamente (ADR-0140)", () => {
         const dteData = { type: "BOLETA" } as CheckoutDTEData
         render(<Step2_DTE dteData={dteData} setDteData={vi.fn()} />)
         expect(
-            screen.getByText("Consumidor final. Si se cobra con terminal integrado se registra como Comprobante de Pago (48).")
+            screen.getByText("Consumidor final. Si se cobra con terminal integrado se emite automáticamente con folio SII o TUU.")
         ).toBeTruthy()
     })
 })

@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from django.utils import timezone
+
 from .models import Product
 from .pricing_selector import _period_start
 from .production_performance_selector import ProductionPerformanceSelector
@@ -149,7 +151,7 @@ class ProductionAnalysisSelector:
     @staticmethod
     def get_analysis(product: Product, params: ProductionAnalysisParams) -> dict:
         caps = ProductSelector.get_capabilities(product)
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
         product_ids = [product.id]
         if product.has_variants:
             product_ids += list(product.variants.values_list("id", flat=True))

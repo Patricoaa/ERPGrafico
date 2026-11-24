@@ -1,3 +1,5 @@
+"use client"
+
 import { useMemo } from "react"
 import { type FieldValues, type UseFormProps, useForm, type SubmitHandler, type SubmitErrorHandler, type UseFormReturn } from "react-hook-form"
 import { showWarningToast } from "@/lib/utils/toast-utils"

@@ -30,8 +30,8 @@ describe("partnerActionsFor", () => {
         expect(labels(base, "results")).toContain("Registrar retiro")
     })
     it("formalizar exceso solo con exceso > 0", () => {
-        expect(labels(base, "capital")).not.toContain("Formalizar exceso de capital")
-        expect(labels({ ...base, partner_excess_capital: "5" }, "capital")).toContain("Formalizar exceso de capital")
+        expect(labels(base, "capital")).not.toContain("Formalizar exceso")
+        expect(labels({ ...base, partner_excess_capital: "5" }, "capital")).toContain("Formalizar exceso")
     })
     it("baja es del menú; bloqueada queda visible, deshabilitada y con el motivo", () => {
         expect(labels(base, "menu")).toEqual(["Dar de baja"])
