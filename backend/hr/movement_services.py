@@ -4,7 +4,7 @@
 `hr.services` para los consumidores existentes.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date as date_type
 from decimal import Decimal
 
@@ -14,6 +14,8 @@ from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.db.models import Sum
 from django.utils.translation import gettext_lazy as _
+
+from accounting.models import AccountingSettings
 
 from . import loans
 from .models import EmployeeMovement, GlobalHRSettings, LoanInstallment, Payroll, PayrollAllocation
@@ -74,7 +76,10 @@ def _rebuild_pending(movement) -> None:
     movement.installments.filter(pk__in=[p.pk for p in pending]).delete()
     if capital > 0:
         specs = loans.reschedule(capital, _monthly_rate(movement), len(pending), (first.year, first.month), first.number)
-        LoanInstallment.objects.bulk_create(_specs_to_rows(movement, specs))
+        # Cada cuota nueva ocupa el lugar (número y período) de la cuota pendiente que reemplaza: puede haber
+        # cuotas asignadas entre medio y sus números no se reutilizan.
+        slots = [replace(spec, number=slot.number, year=slot.year, month=slot.month) for spec, slot in zip(specs, pending)]
+        LoanInstallment.objects.bulk_create(_specs_to_rows(movement, slots))
 
 
 def _next_free_installment(movement):
@@ -156,6 +161,11 @@ class EmployeeMovementService:
         from treasury.models import PaymentMethod, TreasuryAccount, TreasuryMovement
         from treasury.services import TreasuryService
 
+        settings = AccountingSettings.get_solo()
+        if movement.kind == EmployeeMovement.Kind.LOAN and not settings.account_prestamos_trabajadores:
+            raise ValidationError(_("Configure la cuenta Préstamos a Trabajadores antes de desembolsar un préstamo."))
+        if movement.kind == EmployeeMovement.Kind.ADVANCE and not settings.account_anticipos:
+            raise ValidationError(_("Configure la cuenta Anticipos de Remuneraciones antes de desembolsar un anticipo."))
         account = TreasuryAccount.objects.get(pk=treasury.treasury_account_id)
         method = PaymentMethod.objects.filter(pk=treasury.payment_method_id).first() if treasury.payment_method_id else None
         is_loan = movement.kind == EmployeeMovement.Kind.LOAN

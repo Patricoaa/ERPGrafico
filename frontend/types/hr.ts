@@ -181,6 +181,7 @@ export interface PayrollAllocation {
   id: number
   movement: number
   movement_display_id: string
+  payroll: number
   movement_date: string
   movement_status: EmployeeMovementStatus
   kind: EmployeeMovementKind

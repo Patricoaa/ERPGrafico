@@ -313,10 +313,10 @@ function PersonalTab({
         ...advances.map(a => ({
             id: `adv-${a.id}`,
             date: a.date,
-            type: 'ANTICIPO' as const,
-            typeLabel: 'Anticipo',
+            type: (a.kind === 'PAYMENT' ? 'SALARIO' : 'ANTICIPO') as 'SALARIO' | 'ANTICIPO',
+            typeLabel: a.kind_display,
             amount: a.amount,
-            payroll_display_id: null,
+            payroll_display_id: payrolls.find((p) => p.id === a.allocations[0]?.payroll)?.display_id ?? null,
             statusKey: a.status === 'CANCELLED' ? 'CANCELLED' : 'PAID'
         })),
         ...payments.map(p => ({

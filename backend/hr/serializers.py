@@ -267,7 +267,7 @@ class PayrollAllocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PayrollAllocation
         fields = [
-            "id", "movement", "movement_display_id", "movement_date", "movement_status", "kind", "kind_display",
+            "id", "movement", "payroll", "movement_display_id", "movement_date", "movement_status", "kind", "kind_display",
             "amount", "principal_part", "interest_part", "installment", "installment_number",
         ]
         read_only_fields = fields

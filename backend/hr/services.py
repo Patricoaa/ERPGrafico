@@ -752,6 +752,9 @@ def post_payroll(payroll):
                         credit=credit,
                     )
             total_allocated += alloc.amount
+        if total_allocated > payroll.net_salary:
+            # El líquido pudo bajar tras asignar (ítems editados, recálculo): no se contabiliza un pasivo negativo.
+            raise ValidationError(_("Las asignaciones (%(a)s) superan el sueldo líquido (%(n)s); ajústelas antes de contabilizar.") % {"a": total_allocated, "n": payroll.net_salary})
 
         # 7. Pasivo Sueldo Líquido Ajustado (CREDIT)
         rem_por_pagar = payroll.net_salary - total_allocated

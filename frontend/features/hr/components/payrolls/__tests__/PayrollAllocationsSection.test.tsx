@@ -14,7 +14,7 @@ vi.mock("../../../hooks/useEmployeeMovements", () => ({
 }))
 
 const allocation: PayrollAllocation = {
-    id: 7, movement: 3, movement_display_id: "MOV-3", movement_date: "2026-09-01", movement_status: "POSTED", kind: "ADVANCE",
+    id: 7, movement: 3, payroll: 9, movement_display_id: "MOV-3", movement_date: "2026-09-01", movement_status: "POSTED", kind: "ADVANCE",
     kind_display: "Anticipo", installment: null, installment_number: null, amount: "40000", principal_part: "40000", interest_part: "0",
 }
 

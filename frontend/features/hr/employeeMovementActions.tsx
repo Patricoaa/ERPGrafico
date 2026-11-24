@@ -13,7 +13,7 @@ export const employeeMovementActions = createEntityActions<
 >((item, ctx) => [
     { action: "edit", onClick: () => ctx.onEdit(item), visible: item.status === "DRAFT" },
     { action: "delete", onClick: () => ctx.onDelete(item), visible: item.status === "DRAFT" },
-    { action: "annul", onClick: () => ctx.onAnnul(item), visible: item.status === "POSTED" && item.kind !== "PAYMENT" && item.allocations.length === 0 },
+    { action: "annul", onClick: () => ctx.onAnnul(item), visible: item.status === "POSTED" && (item.kind === "PAYMENT" || item.allocations.length === 0) },
 ])
 
 export interface EmployeeMovementHistoryActionsCtx {

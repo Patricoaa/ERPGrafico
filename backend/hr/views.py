@@ -461,7 +461,7 @@ def _bad_request(error: ValidationError) -> Response:
     return Response({"detail": message}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EmployeeMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet):
+class EmployeeMovementViewSet(AuditHistory, EditPolicyMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     serializer_class = EmployeeMovementSerializer
     filter_backends = [DjangoFilterBackend]

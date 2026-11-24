@@ -21,7 +21,7 @@ class UserServiceExt:
                 res['payrolls'] = PayrollListSerializer(payrolls, many=True).data
                 from hr.selectors import employee_movements_for_list
 
-                movements = employee_movements_for_list().filter(employee=emp).exclude(kind=EmployeeMovement.Kind.PAYMENT)
+                movements = employee_movements_for_list().filter(employee=emp)
                 res['advances'] = EmployeeMovementSerializer(movements, many=True).data
                 payments = PayrollPayment.objects.filter(payroll__employee=emp).select_related('payroll', 'payroll__employee', 'payroll__employee__contact').order_by('-date')
                 res['payments'] = PayrollPaymentSerializer(payments, many=True).data

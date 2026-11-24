@@ -113,24 +113,17 @@ export function PayrollCard({
 
     const netSalary = parseFloat(payroll.net_salary || "0")
 
-    const isSalaryPaid = isSalaryPaidProp ?? (payroll as unknown as Record<string, unknown>).is_salary_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'SALARIO' && p.status === 'POSTED') ?? false
+    const isSalaryPaid = isSalaryPaidProp ?? (payroll as unknown as Record<string, unknown>).is_salary_paid as boolean ?? payroll.allocations?.some((a) => a.kind === 'PAYMENT' && a.movement_status === 'POSTED') ?? false
     const unifiedPayments = [
-        ...(payroll.allocations || []).filter(a => a.kind !== 'PAYMENT').map(a => ({
-            id: `adv-${a.id}`,
+        // Anticipos, cuotas y pagos de remuneración vigentes: todos son movimientos asignados (ADR-0156).
+        ...(payroll.allocations || []).filter(a => a.movement_status === 'POSTED' || a.movement_status === 'SETTLED').map(a => ({
+            id: `mov-${a.id}`,
             date: a.movement_date,
             type: a.kind_display,
             amount: parseFloat(a.amount),
             method: a.movement_display_id,
-            isAdvance: true
+            isAdvance: a.kind !== 'PAYMENT'
         })),
-        ...(payments || []).filter(p => p.payment_type === 'SALARIO' && p.status === 'POSTED').map(p => ({
-            id: `pay-${p.id}`,
-            date: p.date,
-            type: 'Pago Sueldo',
-            amount: parseFloat(p.amount),
-            method: p.notes || "Transferencia",
-            isAdvance: false
-        }))
     ].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
 
     const totalPaid = unifiedPayments.reduce((acc, p) => acc + p.amount, 0)

@@ -216,7 +216,6 @@ SEEDED_ROLES: dict[str, SeededRole] = {
             "hr.manage",
             "hr.payroll",
             "hr.employee_movements",
-    "hr.employee_movements",
         ],
         is_system=False,
     ),
