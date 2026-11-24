@@ -237,6 +237,7 @@ class TreasuryMovement(models.Model):
         SALARY = "SALARY", _("Sueldo")
         PREVIRED = "PREVIRED", _("Previred")
         ADVANCE = "ADVANCE", _("Anticipo")
+        LOAN = "LOAN", _("Préstamo a trabajador")
 
     payroll = models.ForeignKey(
         "hr.Payroll",

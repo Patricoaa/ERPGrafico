@@ -204,6 +204,7 @@ class Roles:
     RECUPERACION_INCOBRABLE = "Recuperación Incobrable"
     COMISION = "Comisión"
     ANTICIPO = "Anticipo"
+    PRESTAMO_TRABAJADOR = "Préstamo a Trabajador"
     INTERES = "Gasto Interés"
     SEGURO = "Gasto Seguro"
     PENALIZACION = "Penalización"

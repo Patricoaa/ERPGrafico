@@ -15,6 +15,7 @@ from django.utils.translation import gettext_lazy as _
 from accounting.glosa_builder import GlosaBuilder, Roles
 
 from .models import Employee, EmployeeConceptAmount, Payroll, SalaryAdvance
+from .movement_services import EmployeeMovementService, payroll_balance  # noqa: F401  (ADR-0156)
 
 
 class EmployeeService:
