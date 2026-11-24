@@ -19,6 +19,7 @@ export interface GlobalHRSettings {
   uf_current_value: string
   utm_current_value: string
   min_wage_value: string
+  loan_deduction_cap_percent: string
 }
 
 
@@ -144,7 +145,6 @@ export interface Payroll {
   journal_entry: number | null
   previred_journal_entry: number | null
   items?: PayrollItem[]
-  advances?: SalaryAdvance[]
   allocations?: PayrollAllocation[]
   balance?: string
   cap_warning?: string | null
@@ -161,27 +161,6 @@ export interface Payroll {
   updated_at: string
 }
 
-export type SalaryAdvanceStatus = 'DRAFT' | 'PAID' | 'DISCOUNTED' | 'CANCELLED'
-
-export interface SalaryAdvance {
-  id: number
-  employee: number
-  employee_name?: string
-  employee_display_id?: string
-  payroll: number | null
-  payroll_display_id?: string
-  amount: string
-  date: string
-  notes: string
-  status: SalaryAdvanceStatus
-  status_display?: string
-  is_editable?: boolean
-  journal_entry: number | null
-  payment_method_name?: string | null
-  created_at: string
-  updated_at: string
-}
-
 export type EmployeeMovementKind = 'PAYMENT' | 'ADVANCE' | 'LOAN'
 export type EmployeeMovementStatus = 'DRAFT' | 'POSTED' | 'SETTLED' | 'CANCELLED'
 export type LoanRatePeriod = 'MONTHLY' | 'ANNUAL'
@@ -192,23 +171,25 @@ export interface LoanInstallment {
   number: number
   year: number
   month: number
-  principal: number
-  interest: number
-  amount: number
+  principal: string | number
+  interest: string | number
+  amount: string | number
   status: LoanInstallmentStatus
 }
 
 export interface PayrollAllocation {
   id: number
   movement: number
-  movement_display_id?: string
-  movement_kind?: EmployeeMovementKind
-  payroll: number
-  payroll_display_id?: string
+  movement_display_id: string
+  movement_date: string
+  movement_status: EmployeeMovementStatus
+  kind: EmployeeMovementKind
+  kind_display: string
   installment: number | null
-  amount: number
-  principal_part: number
-  interest_part: number
+  installment_number: number | null
+  amount: string
+  principal_part: string
+  interest_part: string
 }
 
 /** Pago de remuneración, anticipo o préstamo con un empleado (ADR-0156). */

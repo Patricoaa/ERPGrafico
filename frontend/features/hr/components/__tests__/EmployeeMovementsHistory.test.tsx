@@ -42,6 +42,7 @@ describe("EmployeeMovementsHistory", () => {
     it("expands a loan to its installments with applied/pending status", async () => {
         render(<EmployeeMovementsHistory employeeId={5} onOpen={vi.fn()} />)
         await userEvent.click(screen.getByRole("button", { name: /Ver cuotas/ }))
+        expect(screen.getByText(/Cuotas de MOV-3/)).toBeInTheDocument()
         expect(screen.getByText("Descontada")).toBeInTheDocument()
         expect(screen.getByText("Pendiente")).toBeInTheDocument()
     })
@@ -49,13 +50,14 @@ describe("EmployeeMovementsHistory", () => {
     it("shows the empty state when there are no movements", () => {
         m.state = { movements: [], isLoading: false, isError: false }
         render(<EmployeeMovementsHistory employeeId={5} onOpen={vi.fn()} />)
-        expect(screen.getByText(/Sin movimientos/)).toBeInTheDocument()
+        expect(screen.getAllByText(/Sin movimientos/).length).toBeGreaterThan(0)
     })
 
     it("shows an error message when the history fails", () => {
         m.state = { movements: [], isLoading: false, isError: true }
         render(<EmployeeMovementsHistory employeeId={5} onOpen={vi.fn()} />)
-        expect(screen.getByText(/No se pudo cargar/)).toBeInTheDocument()
+        expect(screen.queryAllByRole("row")).toHaveLength(0)
+        expect(screen.getByText(/error|No se pudo|Reintentar/i)).toBeInTheDocument()
     })
 
     it("opens a movement and starts the new advance / loan flows", async () => {

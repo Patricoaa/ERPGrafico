@@ -316,8 +316,8 @@ function PersonalTab({
             type: 'ANTICIPO' as const,
             typeLabel: 'Anticipo',
             amount: a.amount,
-            payroll_display_id: a.payroll_display_id || null,
-            statusKey: a.status
+            payroll_display_id: null,
+            statusKey: a.status === 'CANCELLED' ? 'CANCELLED' : 'PAID'
         })),
         ...payments.map(p => ({
             id: `pay-${p.id}`,

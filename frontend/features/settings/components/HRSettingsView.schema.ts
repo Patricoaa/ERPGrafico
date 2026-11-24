@@ -4,6 +4,8 @@ export const globalSettingsSchema = z.object({
     uf_current_value: z.string(),
     utm_current_value: z.string(),
     min_wage_value: z.string(),
+    /** Tope legal de descuentos sobre haberes, en %; solo genera una advertencia (ADR-0156). */
+    loan_deduction_cap_percent: z.string().refine((v) => v !== "" && Number(v) >= 0 && Number(v) <= 100, "Debe estar entre 0 y 100"),
 })
 
 export const conceptSchema = z.object({

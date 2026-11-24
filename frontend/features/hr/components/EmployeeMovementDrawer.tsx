@@ -49,6 +49,20 @@ const PERIOD_OPTIONS = [
 const MONTH_OPTIONS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
     .map((label, i) => ({ value: String(i + 1), label }))
 
+/** Valores del formulario de un movimiento guardado (la tasa vuelve a porcentaje). */
+function movementToFormValues(data: EmployeeMovement): EmployeeMovementFormValues {
+    const base = { employee: String(data.employee), amount: String(data.amount), date: data.date, notes: data.notes || "" }
+    if (data.kind !== "LOAN") return { ...base, kind: "ADVANCE" }
+    return {
+        ...base, kind: "LOAN",
+        rate: String(Number(data.rate ?? 0) * 100),
+        rate_period: data.rate_period === "ANNUAL" ? "ANNUAL" : "MONTHLY",
+        installments_count: String(data.installments_count ?? ""),
+        first_installment_year: String(data.first_installment_year ?? ""),
+        first_installment_month: String(data.first_installment_month ?? ""),
+    }
+}
+
 /** La tasa se captura en porcentaje (1 = 1 %); el backend recibe el decimal. */
 const percentToDecimal = (percent: string) => String(Number((parseFloat(percent) / 100).toFixed(6)))
 
@@ -94,18 +108,7 @@ export function EmployeeMovementDrawer({ open, onOpenChange, movement, employees
         form,
         open,
         initialData: movement,
-        mapData: (data): EmployeeMovementFormValues => {
-            const base = { employee: String(data.employee), amount: String(data.amount), date: data.date, notes: data.notes || "" }
-            if (data.kind !== "LOAN") return { ...base, kind: "ADVANCE" }
-            return {
-                ...base, kind: "LOAN",
-                rate: String(Number(data.rate ?? 0) * 100),
-                rate_period: data.rate_period ?? "MONTHLY",
-                installments_count: String(data.installments_count ?? ""),
-                first_installment_year: String(data.first_installment_year ?? ""),
-                first_installment_month: String(data.first_installment_month ?? ""),
-            }
-        },
+        mapData: movementToFormValues,
         defaultValues: emptyValues,
     })
 
@@ -233,8 +236,8 @@ export function EmployeeMovementDrawer({ open, onOpenChange, movement, employees
                                 <ul className="space-y-1 text-sm">
                                     {movement.allocations.map((a) => (
                                         <li key={a.id} className="flex justify-between">
-                                            <span>{a.payroll_display_id ?? `#${a.payroll}`}</span>
-                                            <span className="tabular-nums">{formatCurrency(a.amount)}</span>
+                                            <span>{a.movement_display_id}</span>
+                                            <span className="tabular-nums">{formatCurrency(Number(a.amount))}</span>
                                         </li>
                                     ))}
                                 </ul>

@@ -131,6 +131,8 @@ export type InventorySettingsUpdatePayload = Partial<InventorySettings>
      account_remuneraciones_por_pagar: string | null
      account_previred_por_pagar: string | null
      account_anticipos: string | null
+     account_prestamos_trabajadores: string | null
+     account_intereses_prestamos: string | null
  }
 
  // Partner Equity Settings

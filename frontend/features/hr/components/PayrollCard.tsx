@@ -115,12 +115,12 @@ export function PayrollCard({
 
     const isSalaryPaid = isSalaryPaidProp ?? (payroll as unknown as Record<string, unknown>).is_salary_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'SALARIO' && p.status === 'POSTED') ?? false
     const unifiedPayments = [
-        ...(payroll.advances || []).map(a => ({
+        ...(payroll.allocations || []).filter(a => a.kind !== 'PAYMENT').map(a => ({
             id: `adv-${a.id}`,
-            date: a.date,
-            type: 'Anticipo',
+            date: a.movement_date,
+            type: a.kind_display,
             amount: parseFloat(a.amount),
-            method: a.payment_method_name || "Efectivo",
+            method: a.movement_display_id,
             isAdvance: true
         })),
         ...(payments || []).filter(p => p.payment_type === 'SALARIO' && p.status === 'POSTED').map(p => ({

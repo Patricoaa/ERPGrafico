@@ -41,6 +41,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
             uf_current_value: "0",
             utm_current_value: "0",
             min_wage_value: "0",
+            loan_deduction_cap_percent: "15",
         }
     })
 
@@ -51,6 +52,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 uf_current_value: settings.uf_current_value,
                 utm_current_value: settings.utm_current_value,
                 min_wage_value: settings.min_wage_value || "500000",
+                loan_deduction_cap_percent: settings.loan_deduction_cap_percent ?? "15",
             })
         }
     }, [settings, globalForm])
@@ -148,6 +150,21 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                                     label="Sueldo Mínimo ($)"
                                                     type="number"
                                                     className="font-mono"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                        <FormField
+                                            control={globalForm.control}
+                                            name="loan_deduction_cap_percent"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Tope de descuentos (% de haberes)"
+                                                    type="number"
+                                                    step="1"
+                                                    className="font-mono"
+                                                    hint="Sobre este porcentaje se advierte al asignar anticipos o cuotas."
                                                     error={fieldState.error?.message}
                                                     {...field}
                                                 />
