@@ -27,7 +27,7 @@ import {
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
 import {
     DocumentRelationsTab,
-    useDocumentRelations,
+    useDocumentRelations, relationsTotal,
     useInvalidateDocuments,
     type DocumentDomain,
 } from "@/features/documents"
@@ -120,7 +120,7 @@ export function BankStatementSheet({ id, open, onOpenChange, embedded = false, o
             content: <StatementDetailPanel statementId={statement.id} detailOnly />,
         },
         {
-            value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
+            value: "relations", label: "Relaciones", icon: Link2, badge: relationsTotal(relations),
             content: (
                 <DocumentRelationsTab
                     label={LABEL}

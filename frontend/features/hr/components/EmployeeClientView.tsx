@@ -3,21 +3,25 @@
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
-import React from "react"
-import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import React, { lazy, Suspense, useState } from "react"
+import { DatePicker, LabeledContainer, LoadingFallback, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { EmployeeDrawer, useEmployees } from "@/features/hr"
+import { parseDateOnly, toDateOnlyISO } from "@/lib/utils"
+import { useEmployeeMutations } from "../hooks/useEmployeeMutations"
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import type { Employee } from "@/types/hr"
 import { employeeUnifiedSearchDef } from "../unifiedSearchDef"
 import { employeeEntity, employeeViews } from "../entity-view/employee.entity"
+
+const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
 
 interface EmployeeClientViewProps {
     initialEmployees?: Employee[]
 }
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const EMPLOYEE_GROUPS: Record<string, FieldId<typeof employeeEntity.fields>> = { status: "status", contract_type: "contractType", department: "department" }
+const EMPLOYEE_GROUPS: Record<string, FieldId<typeof employeeEntity.fields>> = { is_active: "isActive", contract_type: "contractType", department: "department" }
 
 export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Empleado" href="/hr/employees?modal=new" />
@@ -36,8 +40,35 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
     // ADR-0152: cada empleado abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("hr.employee")
 
+    const { archiveEmployee } = useEmployeeMutations()
+    const [archiveTarget, setArchiveTarget] = useState<Employee | null>(null)
+
+    const [endDate, setEndDate] = useState("")
+    const isArchiving = archiveTarget?.is_active === true
+
+    const askArchive = (employee: Employee) => {
+        setEndDate(toDateOnlyISO(new Date()))
+        setArchiveTarget(employee)
+    }
+
+    const confirmArchive = async () => {
+        if (!archiveTarget) return
+        try {
+            await archiveEmployee({
+                id: archiveTarget.id,
+                is_active: !archiveTarget.is_active,
+                ...(archiveTarget.is_active ? { end_date: endDate } : {}),
+            })
+        } catch {
+            // El error lo reporta el hook
+        } finally {
+            setArchiveTarget(null)
+        }
+    }
+
     const actionsCtx: EmployeeActionsCtx = {
         onEdit: (id) => openEntity("hr.employee", id),
+        onArchive: askArchive,
     }
 
     return (
@@ -77,6 +108,40 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                     />
                 )}
             </EntityPanelTab>
+            <Suspense fallback={<LoadingFallback />}>
+                <ActionConfirmModal
+                    open={archiveTarget !== null}
+                    onOpenChange={(open: boolean) => { if (!open) setArchiveTarget(null) }}
+                    title={archiveTarget?.is_active ? "Archivar Empleado" : "Restaurar Empleado"}
+                    variant={archiveTarget?.is_active ? "warning" : "default"}
+                    onConfirm={confirmArchive}
+                    confirmText={isArchiving ? "Archivar" : "Restaurar"}
+                    disabled={isArchiving && !endDate}
+                    description={
+                        isArchiving ? (
+                            <div className="space-y-4">
+                                <p>
+                                    ¿Archivar la ficha de <strong>{archiveTarget?.contact_detail?.name}</strong>?
+                                    Dejará de recibir liquidaciones automáticas y de aparecer al crear anticipos o inasistencias.
+                                    Su historial se conserva y puede restaurarla más adelante.
+                                </p>
+                                <LabeledContainer label="Fecha de egreso" required>
+                                    <DatePicker
+                                        date={endDate ? parseDateOnly(endDate) : undefined}
+                                        onDateChange={(d) => setEndDate(d ? toDateOnlyISO(d) : "")}
+                                        className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                    />
+                                </LabeledContainer>
+                            </div>
+                        ) : (
+                            <p>
+                                ¿Restaurar la ficha de <strong>{archiveTarget?.contact_detail?.name}</strong>?
+                                Se limpiará su fecha de egreso{archiveTarget?.end_date ? ` (${archiveTarget.end_date})` : ""}.
+                            </p>
+                        )
+                    }
+                />
+            </Suspense>
         </div>
     )
 }

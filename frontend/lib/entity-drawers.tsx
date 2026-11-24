@@ -18,7 +18,7 @@ import type {
     PaymentInitialData,
     JournalEntryInitialData,
 } from "@/types/forms"
-import type { Employee, Absence, SalaryAdvance } from "@/types/hr"
+import type { Employee, Absence, EmployeeMovement, PayrollConcept } from "@/types/hr"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
 
 /**
@@ -240,9 +240,13 @@ const AbsenceDrawer = dynamic(
     { ssr: false, loading: () => skeleton("inasistencia") }
 )
 
-const AdvanceDrawer = dynamic(
-    () => import("@/features/hr").then((m) => m.AdvanceDrawer),
-    { ssr: false, loading: () => skeleton("anticipo") }
+const PayrollConceptDrawer = dynamic(
+    () => import("@/features/settings").then((m) => m.PayrollConceptDrawer),
+    { ssr: false, loading: () => skeleton("concepto") }
+)
+const EmployeeMovementDrawer = dynamic(
+    () => import("@/features/hr").then((m) => m.EmployeeMovementDrawer),
+    { ssr: false, loading: () => skeleton("movimiento") }
 )
 
 const DeviceDrawer = dynamic(
@@ -573,10 +577,14 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             {(record) => <AbsenceDrawer open={open} onOpenChange={onOpenChange} absence={record} onSaved={() => onSuccess?.()} />}
         </RecordDrawer>
     ),
-    // * requires full advance data — EntityBadge always provides it
-    "hr.salaryadvance": ({ id, open, onOpenChange, data, onSuccess }) => (
-        <RecordDrawer<SalaryAdvance> endpoint="/hr/advances" id={id} data={data} label="anticipo">
-            {(record) => <AdvanceDrawer open={open} onOpenChange={onOpenChange} advance={record} onSaved={() => onSuccess?.()} />}
+    // * requires full concept data — EntityBadge always provides it
+    "hr.payrollconcept": ({ open, onOpenChange, data, onSuccess }) => (
+        <PayrollConceptDrawer open={open} onOpenChange={onOpenChange} concept={(data as PayrollConcept | undefined) ?? null} onSuccess={() => onSuccess?.()} />
+    ),
+    // * requires full movement data — EntityBadge always provides it
+    "hr.employeemovement": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <RecordDrawer<EmployeeMovement> endpoint="/hr/employee-movements" id={id} data={data} label="movimiento">
+            {(record) => <EmployeeMovementDrawer open={open} onOpenChange={onOpenChange} movement={record} onSaved={() => onSuccess?.()} />}
         </RecordDrawer>
     ),
 

@@ -92,7 +92,6 @@ STATUS_EXEMPT = {
 # of truth. Key → field that implements the mechanism. Documented in
 # deletion-policy.md.
 ARCHIVO_EXEMPT = {
-    "Employee": "status",  # ACTIVE / INACTIVE
     "TaxPeriod": "status",  # OPEN / UNDER_REVIEW / CLOSED — no es archivable
     "Checkbook": "status",  # ACTIVE / CLOSED / EXHAUSTED — nunca se borra; preserva trazabilidad de folios
 }
@@ -458,6 +457,10 @@ class TestDeletionPolicyConsistency:
                 if acc is None:
                     return None
                 kwargs = {"name": "Test Concept", "category": "ALLOWANCE", "account": acc}
+            elif app == "hr" and model_name == "employee":
+                from contacts.models import Contact
+                contact = Contact.objects.create(name="Test Employee", tax_id="11111111-1")
+                kwargs = {"contact": contact, "base_salary": 500000}
             elif app == "accounting" and model_name == "account":
                 kwargs = {"code": "TSTACC", "name": "Test Account", "account_type": "ASSET"}
             elif app == "accounting" and model_name == "closingchecklisttemplate":

@@ -21,18 +21,22 @@ from .models import (
     Absence,
     Employee,
     EmployeeConceptAmount,
+    EmployeeMovement,
     GlobalHRSettings,
     Payroll,
+    PayrollAllocation,
     PayrollConcept,
     PayrollItem,
     PayrollPayment,
-    SalaryAdvance,
 )
+from .movement_services import EmployeeMovementService
 from .payroll_pdf import generate_payroll_pdf
+from .selectors import employee_movements_for_list
 from .serializers import (
     AbsenceSerializer,
     AFPSerializer,
     EmployeeConceptAmountSerializer,
+    EmployeeMovementSerializer,
     EmployeeSerializer,
     EmployeeWriteSerializer,
     GlobalHRSettingsSerializer,
@@ -42,7 +46,6 @@ from .serializers import (
     PayrollListSerializer,
     PayrollPaymentSerializer,
     PayrollWriteSerializer,
-    SalaryAdvanceSerializer,
 )
 from .services import PayrollPaymentService
 
@@ -156,12 +159,11 @@ class PayrollConceptViewSet(EditPolicyMixin, viewsets.ModelViewSet):
 
 
 class EmployeeFilter(django_filters.FilterSet):
-    status = django_filters.CharFilter(field_name="status")
     contact = django_filters.NumberFilter(field_name="contact__id")
 
     class Meta:
         model = Employee
-        fields = ["status", "contact"]
+        fields = ["contact"]
 
 
 class EmployeeViewSet(OptionalPaginationMixin, AuditHistory, viewsets.ModelViewSet):
@@ -178,6 +180,33 @@ class EmployeeViewSet(OptionalPaginationMixin, AuditHistory, viewsets.ModelViewS
         return EmployeeSerializer
     filterset_class = EmployeeFilter
     search_fields = ["contact__name", "contact__tax_id", "position"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action != "list":
+            return qs  # detalle/edición alcanzan fichas archivadas
+        is_active = self.request.query_params.get("is_active")
+        if is_active == "all":
+            return qs
+        if is_active == "false":
+            return qs.filter(is_active=False)
+        return qs.filter(is_active=True)
+
+    action_permissions = {"movements": "hr.view_employeemovement"}
+
+    @action(detail=True, methods=["get"])
+    def movements(self, request, pk=None):
+        """Historial unificado de pagos, anticipos y préstamos del empleado (ADR-0156)."""
+        queryset = employee_movements_for_list().filter(employee_id=self.get_object().pk)
+        page = self.paginate_queryset(queryset)
+        serializer = EmployeeMovementSerializer(page if page is not None else queryset, many=True)
+        return self.get_paginated_response(serializer.data) if page is not None else Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Hard delete not allowed for Employees. Use PATCH is_active=false to archive."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
 
 # --- Absence ---
@@ -224,7 +253,7 @@ class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
             Payroll.objects.select_related(
                 "employee", "employee__contact", "journal_entry", "previred_journal_entry"
             )
-            .prefetch_related("items", "items__concept", "advances", "payments")
+            .prefetch_related("items", "items__concept", "allocations__movement", "allocations__installment", "payments")
             .all()
         )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -303,7 +332,7 @@ class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
             payment = PayrollPaymentService.pay_salary_from_request(request, self.get_object())
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+        return Response(EmployeeMovementSerializer(payment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["post"])
     def generate_proforma(self, request):
@@ -375,56 +404,6 @@ class EmployeeConceptAmountViewSet(viewsets.ModelViewSet):
     filterset_fields = ["employee", "concept"]
 
 
-# --- Salary Advances ---
-
-
-class SalaryAdvanceFilter(django_filters.FilterSet):
-    employee = django_filters.NumberFilter(field_name="employee__id")
-    payroll = django_filters.NumberFilter(field_name="payroll__id")
-    payroll_isnull = django_filters.BooleanFilter(field_name="payroll", lookup_expr="isnull")
-    date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
-    date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
-    employee_name = django_filters.CharFilter(field_name="employee__contact__name", lookup_expr="icontains")
-
-    class Meta:
-        model = SalaryAdvance
-        fields = ["employee", "payroll", "payroll_isnull", "status", "date_from", "date_to", "employee_name"]
-
-
-class SalaryAdvanceViewSet(EditPolicyMixin, viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
-    queryset = SalaryAdvance.objects.select_related(
-        "employee", "employee__contact", "payroll",
-        "journal_entry__treasury_movement__payment_method_new",
-    ).all()
-    serializer_class = SalaryAdvanceSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = SalaryAdvanceFilter
-    action_permissions = {
-        "annul": "hr.annul_salaryadvance",
-    }
-
-    def perform_create(self, serializer):
-        from .services import SalaryAdvanceService
-
-        SalaryAdvanceService.create_advance_from_serializer(
-            serializer, self.request.data, self.request.user
-        )
-
-    @action(detail=True, methods=["post"])
-    def annul(self, request, pk=None):
-        from .services import SalaryAdvanceService
-
-        try:
-            advance = SalaryAdvanceService.annul_advance(
-                self.get_object(), reason=request.data.get("reason", ""), user=request.user
-            )
-        except ValidationError as e:
-            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
-            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(self.get_serializer(advance).data)
-
-
 # --- Payroll Payments ---
 
 
@@ -461,3 +440,97 @@ class PayrollPaymentViewSet(viewsets.ReadOnlyModelViewSet):
             msg = e.messages[0] if getattr(e, "messages", None) else str(e)
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.get_serializer(payment).data)
+
+
+# --- Employee movements (ADR-0156) ---
+
+
+class EmployeeMovementFilter(django_filters.FilterSet):
+    employee = django_filters.NumberFilter(field_name="employee__id")
+    payroll = django_filters.NumberFilter(field_name="allocations__payroll__id", distinct=True)
+    date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
+    date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
+    employee_name = django_filters.CharFilter(field_name="employee__contact__name", lookup_expr="icontains")
+
+    class Meta:
+        model = EmployeeMovement
+        fields = ["employee", "kind", "status", "payroll", "date_from", "date_to", "employee_name"]
+
+
+def _bad_request(error: ValidationError) -> Response:
+    message = error.messages[0] if getattr(error, "messages", None) else str(error)
+    return Response({"detail": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EmployeeMovementViewSet(AuditHistory, EditPolicyMixin, viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
+    serializer_class = EmployeeMovementSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = EmployeeMovementFilter
+    action_permissions = {
+        "annul": "hr.annul_employeemovement",
+        "allocate": "hr.change_employeemovement",
+        "deallocate": "hr.change_employeemovement",
+        "preview_schedule": "hr.add_employeemovement",
+    }
+
+    def get_queryset(self):
+        return employee_movements_for_list()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            movement = EmployeeMovementService.create_from_request(serializer.validated_data, request.data, request.user)
+        except ValidationError as e:
+            return _bad_request(e)
+        return Response(self.get_serializer(self.get_queryset().get(pk=movement.pk)).data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        EmployeeMovementService.sync_schedule(serializer.instance)
+
+    def _respond(self, movement_id):
+        return Response(self.get_serializer(self.get_queryset().get(pk=movement_id)).data)
+
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        try:
+            movement = EmployeeMovementService.annul(self.get_object(), reason=request.data.get("reason", ""), user=request.user)
+        except ValidationError as e:
+            return _bad_request(e)
+        return self._respond(movement.pk)
+
+    @action(detail=True, methods=["post"])
+    def allocate(self, request, pk=None):
+        if not request.user.has_perm("hr.change_payroll"):
+            return Response({"detail": "Requiere permiso para modificar liquidaciones."}, status=status.HTTP_403_FORBIDDEN)
+        movement = self.get_object()
+        try:
+            payroll = Payroll.objects.get(pk=request.data.get("payroll"))
+            EmployeeMovementService.allocate(movement, payroll, request.data.get("amount"))
+        except (Payroll.DoesNotExist, ValidationError) as e:
+            return _bad_request(e if isinstance(e, ValidationError) else ValidationError("Liquidación inválida."))
+        return self._respond(movement.pk)
+
+    @action(detail=True, methods=["post"])
+    def deallocate(self, request, pk=None):
+        movement = self.get_object()
+        try:
+            EmployeeMovementService.deallocate(movement.allocations.get(pk=request.data.get("allocation")))
+        except (PayrollAllocation.DoesNotExist, ValidationError) as e:
+            return _bad_request(e if isinstance(e, ValidationError) else ValidationError("Asignación inválida."))
+        return self._respond(movement.pk)
+
+    @action(detail=False, methods=["post"], url_path="preview-schedule")
+    def preview_schedule(self, request):
+        try:
+            rows = EmployeeMovementService.preview_schedule(
+                request.data["amount"], request.data["rate"], request.data["rate_period"],
+                int(request.data["installments"]), (int(request.data["first_year"]), int(request.data["first_month"])),
+            )
+        except ValidationError as e:
+            return _bad_request(e)
+        except (KeyError, ValueError, TypeError) as e:
+            return Response({"detail": f"Parámetros inválidos: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response([vars(r) for r in rows])

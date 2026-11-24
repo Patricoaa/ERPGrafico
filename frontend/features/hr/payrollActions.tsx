@@ -4,7 +4,7 @@ import type { Payroll } from '@/types/hr'
 
 export interface PayrollActionsCtx {
     onViewDetail: (id: number) => void
-    onRegisterAdvance: (payroll: Payroll) => void
+    onAssignDeductions: (payroll: Payroll) => void
     onPaySalary: (payroll: Payroll) => void
     onPayPrevired: (payroll: Payroll) => void
     onDeleteDraft: (id: number) => void
@@ -18,9 +18,9 @@ export const payrollActions = createEntityActions<
     {
         action: "detail",
         icon: Wallet,
-        label: "Registrar Anticipo",
+        label: "Asignar anticipos y préstamos",
         className: "text-primary hover:text-primary",
-        onClick: () => ctx.onRegisterAdvance(item),
+        onClick: () => ctx.onAssignDeductions(item),
         visible: item.status === 'DRAFT',
     },
     {

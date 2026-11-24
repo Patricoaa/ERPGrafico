@@ -12,7 +12,7 @@ export function useEmployees(filters?: FilterState, initialData?: Employee[]) {
         queryFn: (): Promise<Employee[]> => {
             const params: Record<string, string> = {}
             if (filters?.search) params.search = filters.search
-            if (filters?.status) params.status = filters.status
+            if (filters?.is_active) params.is_active = filters.is_active
             return getEmployees(Object.keys(params).length ? params : undefined)
         },
         staleTime: staleTime.standard,

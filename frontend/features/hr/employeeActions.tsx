@@ -3,6 +3,7 @@ import type { Employee } from '@/types/hr'
 
 export interface EmployeeActionsCtx {
     onEdit: (id: number) => void
+    onArchive: (employee: Employee) => void
 }
 
 export const employeeActions = createEntityActions<
@@ -10,4 +11,5 @@ export const employeeActions = createEntityActions<
     EmployeeActionsCtx
 >((item, ctx) => [
     { action: "edit", label: "Editar Empleado", onClick: () => ctx.onEdit(item.id) },
+    { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
 ])

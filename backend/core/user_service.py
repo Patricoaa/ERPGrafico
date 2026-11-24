@@ -1,13 +1,13 @@
 class UserServiceExt:
     @staticmethod
     def get_my_profile_data(user):
-        from hr.models import Employee, Payroll, PayrollPayment, SalaryAdvance
+        from hr.models import Employee, Payroll, PayrollPayment
         from hr.serializers import (
             ContactMiniSerializer,
+            EmployeeMovementSerializer,
             EmployeeSerializer,
             PayrollListSerializer,
             PayrollPaymentSerializer,
-            SalaryAdvanceSerializer,
         )
 
         from .serializers import UserSerializer
@@ -17,10 +17,12 @@ class UserServiceExt:
             emp = Employee.objects.filter(contact=user.contact).select_related('contact', 'afp').first()
             if emp:
                 res['employee'] = EmployeeSerializer(emp).data
-                payrolls = Payroll.objects.filter(employee=emp, status=Payroll.Status.POSTED).select_related('employee', 'employee__contact', 'journal_entry', 'previred_journal_entry').prefetch_related('items', 'items__concept', 'advances', 'payments').order_by('-period_year', '-period_month')
+                payrolls = Payroll.objects.filter(employee=emp, status=Payroll.Status.POSTED).select_related('employee', 'employee__contact', 'journal_entry', 'previred_journal_entry').prefetch_related('items', 'items__concept', 'allocations__movement', 'allocations__installment', 'payments').order_by('-period_year', '-period_month')
                 res['payrolls'] = PayrollListSerializer(payrolls, many=True).data
-                advances = SalaryAdvance.objects.filter(employee=emp).select_related('employee', 'employee__contact', 'payroll').order_by('-date')
-                res['advances'] = SalaryAdvanceSerializer(advances, many=True).data
+                from hr.selectors import employee_movements_for_list
+
+                movements = employee_movements_for_list().filter(employee=emp)
+                res['advances'] = EmployeeMovementSerializer(movements, many=True).data
                 payments = PayrollPayment.objects.filter(payroll__employee=emp).select_related('payroll', 'payroll__employee', 'payroll__employee__contact').order_by('-date')
                 res['payments'] = PayrollPaymentSerializer(payments, many=True).data
         return res

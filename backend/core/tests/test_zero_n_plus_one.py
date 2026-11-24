@@ -376,17 +376,17 @@ class TestHrNPlusOne:
             resp = api_client.get("/api/hr/payrolls/")
         assert resp.status_code == 200
 
-    def test_salary_advance_list(
+    def test_employee_movement_list(
         self, api_client, employee, django_assert_max_num_queries,
     ):
-        from hr.models import SalaryAdvance
+        from hr.models import EmployeeMovement
         for i in range(N):
-            SalaryAdvance.objects.create(
-                employee=employee, amount=Decimal("100000"),
-                date=date.today(),
+            EmployeeMovement.objects.create(
+                employee=employee, kind="ADVANCE", amount=Decimal("100000"),
+                date=date.today(), status="POSTED",
             )
-        with django_assert_max_num_queries(5):
-            resp = api_client.get("/api/hr/advances/")
+        with django_assert_max_num_queries(8):
+            resp = api_client.get("/api/hr/employee-movements/")
         assert resp.status_code == 200
 
 

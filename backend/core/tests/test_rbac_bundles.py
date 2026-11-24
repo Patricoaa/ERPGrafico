@@ -17,7 +17,7 @@ def test_bundles_keys_include_module_and_sensitive():
         "accounting.read", "accounting.operate", "accounting.manage",
     }
     expected_sensitive = {
-        "hr.payroll", "hr.salary_advances",
+        "hr.payroll", "hr.employee_movements",
         "treasury.payments", "treasury.credit_cards", "treasury.bank_loans",
         "contacts.profit_distribution",
         "core.security",
@@ -38,7 +38,7 @@ def test_bundle_sensitive_flag():
     for key in ("sales.read", "sales.operate", "sales.manage",
                 "hr.read", "hr.operate", "hr.manage"):
         assert BUNDLES[key]["sensitive"] is False, f"{key} should be sensitive=False"
-    for key in ("hr.payroll", "hr.salary_advances", "treasury.payments",
+    for key in ("hr.payroll", "hr.employee_movements", "treasury.payments",
                 "core.security", "tax.declarations"):
         assert BUNDLES[key]["sensitive"] is True, f"{key} should be sensitive=True"
 

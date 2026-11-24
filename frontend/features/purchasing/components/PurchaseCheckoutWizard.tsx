@@ -31,7 +31,7 @@ import {
     SkeletonShell,
 } from "@/components/shared"
 import { formatEntityDisplay } from '@/lib/entity-registry'
-import { DocumentRelationsTab, useDocumentRelations } from "@/features/documents"
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal } from "@/features/documents"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -574,7 +574,7 @@ export function PurchaseCheckoutWizard({
             value: 'relations',
             label: 'Relaciones',
             icon: Link2,
-            badge: relationsData?.relations.length,
+            badge: relationsTotal(relationsData),
             noPadding: true,
             hideLeftRail: true,
             hideRightRail: true,

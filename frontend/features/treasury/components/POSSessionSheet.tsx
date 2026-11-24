@@ -15,7 +15,7 @@ import {
     type DocumentSheetTab,
 } from "@/components/shared"
 import { useDrawerIdentity } from "@/features/_shared"
-import { DocumentRelationsTab, useDocumentRelations, type DocumentDomain } from "@/features/documents"
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal, type DocumentDomain } from "@/features/documents"
 import { GatedSessionCloseModal, useDownloadPOSReportPDF, usePOSSessionRealtime, POS_SESSIONS_QUERY_KEY, type POSSession as POSSessionModal } from "@/features/pos"
 import { usePOSSession } from "../hooks/usePOSSession"
 import { usePOSSessionOverview } from "../hooks/usePOSSessionDetail"
@@ -123,7 +123,7 @@ export function POSSessionSheet({ id, open, onOpenChange, embedded = false, onBa
             content: <ActivityTab sessionId={session.id} />,
         },
         {
-            value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
+            value: "relations", label: "Relaciones", icon: Link2, badge: relationsTotal(relations),
             content: (
                 <DocumentRelationsTab
                     label={LABEL}

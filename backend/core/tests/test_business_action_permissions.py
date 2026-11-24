@@ -53,7 +53,7 @@ WAVE_1 = [
     ("hr.views.PayrollViewSet", "post_payroll", "hr.post_payroll"),
     ("hr.views.PayrollViewSet", "pay_salary", "hr.pay_payroll"),
     ("hr.views.PayrollViewSet", "pay_previred", "hr.pay_payroll"),
-    ("hr.views.SalaryAdvanceViewSet", "annul", "hr.annul_salaryadvance"),
+    ("hr.views.EmployeeMovementViewSet", "annul", "hr.annul_employeemovement"),
     ("hr.views.PayrollPaymentViewSet", "annul", "hr.annul_payrollpayment"),
     # Producción
     ("production.views.WorkOrderViewSet", "annul", "production.annul_workorder"),

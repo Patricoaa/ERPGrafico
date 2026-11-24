@@ -200,20 +200,22 @@ Sequence: `MATERIAL_ASSIGNMENT` → `MATERIAL_APPROVAL` → `OUTSOURCING_ASSIGNM
 
 **Edit policy (ADR-0091):** `Payroll` editable/eliminable solo en `DRAFT` (`POSTED`: solo `notes`; `recalculate` rechazado). `PayrollItem` bloqueado si la liquidación no está en `DRAFT` (crear/editar/borrar). `PayrollPayment` (`POSTED` → `CANCELLED`): API de solo lectura; se crea solo vía `pay_salary`/`pay_previred` y queda bloqueado al tener asiento. Se corrige con `POST /hr/payroll-payments/{id}/annul/` (motivo obligatorio): reversa su movimiento y libera el saldo pendiente.
 
-## SalaryAdvance (Anticipo de Sueldo)
+## EmployeeMovement (Movimiento con el empleado: pago, anticipo o préstamo — ADR-0156)
 
 | Status | Intent | Transitions allowed to |
 |--------|--------|------------------------|
-| `DRAFT` | `info` | `PAID` (pago registrado en tesorería) |
-| `PAID` | `success` | `DISCOUNTED` (al contabilizar la liquidación vinculada), `CANCELLED` (vía `annul`) |
-| `DISCOUNTED` | `success` | — (terminal) |
+| `DRAFT` | `info` | `POSTED` (desembolso registrado en tesorería) |
+| `POSTED` | `success` | `SETTLED` (su capital queda totalmente descontado en liquidaciones contabilizadas), `CANCELLED` (vía `annul`) |
+| `SETTLED` | `success` | — (terminal) |
 | `CANCELLED` | `destructive` | — (terminal) |
 
-**Edit policy (ADR-0091, `SalaryAdvance.edit_policy`):** editable y eliminable solo en `DRAFT`. Desde `PAID` solo `notes` y el vínculo `payroll`. `status` y `journal_entry` read-only.
+`LoanInstallment`: `PENDING` → `APPLIED` (al contabilizar la liquidación a la que está asignada).
 
-**Payroll link:** solo un anticipo `PAID`; la liquidación de origen y la de destino deben estar en `DRAFT` y ser del mismo empleado; no se vincula al crear. `post_payroll` rechaza anticipos vinculados que no estén `PAID`.
+**Edit policy (ADR-0091, `EmployeeMovement.edit_policy`):** editable y eliminable solo en `DRAFT`; desde `POSTED` solo `notes`. `status` y `journal_entry` read-only. Un préstamo en `DRAFT` regenera su plan de cuotas al editar monto, tasa, plazo o primera cuota.
 
-**Annul (`POST /hr/advances/{id}/annul/`, motivo obligatorio):** solo `PAID` sin liquidación; anula el `TreasuryMovement` (asiento `REVERSAL`) y deja `CANCELLED`. Corregir un monto = anular + registrar uno nuevo.
+**Asignación a liquidación (`allocate` / `deallocate`):** solo movimientos `POSTED` de tipo `ADVANCE`/`LOAN`; la liquidación debe estar en `DRAFT` y ser del mismo empleado; Σ asignaciones ≤ líquido. En un préstamo la cuota se puede editar y se recalcula el resto. `post_payroll` rechaza asignaciones de movimientos que no estén `POSTED`/`SETTLED`.
+
+**Annul (`POST /hr/employee-movements/{id}/annul/`, motivo obligatorio):** solo `POSTED` sin asignaciones; anula el `TreasuryMovement` (asiento `REVERSAL`) y deja `CANCELLED`.
 
 ## BankStatement
 
@@ -492,13 +494,6 @@ statement esté en `OPEN` (no pagado, no anulado).
 
 
 **Edit policy (ADR-0091):** editable solo en `OPEN` sin asiento de cierre; en `CLOSING`/`CLOSED` solo `notes`. Cierre y reapertura van por sus acciones.
-## Employee
-
-| Status | Intent |
-|--------|--------|
-| `ACTIVE` | `primary` |
-| `INACTIVE` | `neutral` |
-
 ## NoteWorkflow (Billing Note Creation)
 
 | Stage | Intent | Next |

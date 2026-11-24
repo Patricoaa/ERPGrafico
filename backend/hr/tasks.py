@@ -43,7 +43,7 @@ def create_monthly_draft_payrolls(self):
         created_count = 0
         skipped_count = 0
 
-        employees = Employee.objects.filter(status=Employee.Status.ACTIVE).iterator(
+        employees = Employee.objects.filter(is_active=True).iterator(
             chunk_size=500
         )
         for chunk in chunked(employees, 500):

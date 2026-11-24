@@ -88,6 +88,7 @@ export const RELATED_ROLE_LABELS: Record<string, string> = {
     corrected_invoice: "Factura corregida",
     note: "Nota",
     payment: "Pago",
+    employee_movement: "Movimiento con empleado",
     work_order: "Orden de trabajo",
     stock_move: "Movimiento de stock",
     inventory_document: "Documento de inventario",
@@ -99,6 +100,11 @@ export const RELATED_ROLE_LABELS: Record<string, string> = {
     customer: "Cliente",
     supplier: "Proveedor",
     contact: "Contacto",
+    employee: "Empleado",
+    payroll: "Liquidación",
+    salary_advance: "Anticipo",
+    absence: "Inasistencia",
+    payroll_payment: "Pago de remuneración",
     // POS (vinculados al dominio origen cuando la venta viene de TPV)
     pos_session: "Sesión POS",
     pos_box: "Caja POS",
@@ -279,7 +285,7 @@ export function RelatedDocumentRow({ item, onOpen, actions, hidePartner, isSelf 
                 <div className="flex items-center pr-2 transition-colors group-hover:bg-muted/60">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm" className="size-control-xs shrink-0" aria-label={`Acciones de ${target.display_id}`}>
+                            <Button type="button" variant="ghost" size="icon-sm" className="size-control-xs shrink-0" aria-label={`Acciones de ${target.display_id}`}>
                                 <MoreHorizontal />
                             </Button>
                         </DropdownMenuTrigger>

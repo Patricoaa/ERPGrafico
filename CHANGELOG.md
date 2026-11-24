@@ -2,6 +2,74 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.151](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.150...v0.3.151) (2026-11-24)
+
+
+### 🧪 Testing
+
+* **documents:** hr.payroll pertenece al dominio hr ([3da125e](https://github.com/Patricoaa/ERPGrafico/commit/3da125e4f3ae307e39dfa3242f6c1f2a619e6d84))
+
+
+### 📚 Documentation
+
+* ADR-0155 dominio RRHH y ventana reciente en relaciones documentales ([cf62a28](https://github.com/Patricoaa/ERPGrafico/commit/cf62a2803e8ddca01ded977fa06508d9db4bcf48))
+* ADR-0156 movimientos con el empleado ([dd54e17](https://github.com/Patricoaa/ERPGrafico/commit/dd54e17a64bb3eedbc0e8b565a2a7955d3b154de))
+* diseño de movimientos con el empleado (pago, anticipo, préstamo) ([234a248](https://github.com/Patricoaa/ERPGrafico/commit/234a2487220a38e2001b5cdb6b55b94e8adc76e5))
+* **hr:** amplía diseño y plan a todos los drawers de entidades de RRHH ([ad45410](https://github.com/Patricoaa/ERPGrafico/commit/ad4541040c3ea4da1b8bc60d219fab0ed42cb39f))
+* **hr:** corrige referencias del plan ([3d71a09](https://github.com/Patricoaa/ERPGrafico/commit/3d71a09fcd0aeda2f62dafeadc6ab23fb76b9db8))
+* **hr:** diseño de la pestaña Relaciones de empleado, dominio RRHH y ventana reciente ([581092c](https://github.com/Patricoaa/ERPGrafico/commit/581092cc8102ff55dbb52e6987ccd72862102093))
+* **hr:** plan de implementación de la pestaña Relaciones de empleado ([4b2833e](https://github.com/Patricoaa/ERPGrafico/commit/4b2833e96ca7220ca454d22cdcd0781196ea6b72))
+* plan de implementación de movimientos con el empleado ([4ae9cc5](https://github.com/Patricoaa/ERPGrafico/commit/4ae9cc5c6c5e0c5660626804f461f9e678de1021))
+
+
+### ⚙️ Refactors
+
+* **hr:** conceptos de nómina con drawer registrado, política de vistas y buscador ([a787fe8](https://github.com/Patricoaa/ERPGrafico/commit/a787fe8a5578ec5f1371ee1cfaa20ec7cd4665cb))
+
+
+### 🐛 Bug Fixes
+
+* **documents:** botones de la pestaña de relaciones no envían el formulario, badges con total, precarga en RRHH ([43163d9](https://github.com/Patricoaa/ERPGrafico/commit/43163d9840c0969bee69471ff9abed2ab5ba7d34))
+* **hr:** hallazgos de la revisión final de movimientos con empleado ([f6f20d0](https://github.com/Patricoaa/ERPGrafico/commit/f6f20d01cc7b167ccbab11fba8ff9b8a7860b51e))
+* **hr:** layout de conceptos como el resto de client views ([0e5efd2](https://github.com/Patricoaa/ERPGrafico/commit/0e5efd2343afee14fdae8311ccb592ccf6ff7deb))
+* **hr:** minors diferidos de movimientos con empleado ([54b1469](https://github.com/Patricoaa/ERPGrafico/commit/54b1469f41d7c459fcf38275f53dcae2b22db905))
+* **hr:** normalizar respuesta plana de movimientos en useEmployeeMovementHistory ([bd0a593](https://github.com/Patricoaa/ERPGrafico/commit/bd0a5935a880d9b7f179fc428c7922549a03fe76))
+* **hr:** pendientes diferidos de movimientos con empleado ([d610bff](https://github.com/Patricoaa/ERPGrafico/commit/d610bff60e3aec49d03d56af83f73816c8a158c2))
+
+
+### 💅 Styling
+
+* **backend:** ordena imports, quita imports sin uso y renombra variables ambiguas (ratchet Ruff) ([ce027a4](https://github.com/Patricoaa/ERPGrafico/commit/ce027a4e195713283ac7e017d21be022c45ce502))
+
+
+### ✨ Features
+
+* **accounting:** la línea del asiento usa «Concepto» y el drawer deja el ciclo de vida ([3592355](https://github.com/Patricoaa/ERPGrafico/commit/35923557b2c7065037233f842f477723a7db21db))
+* **documents:** dominio RRHH y filtro window en el esquema y la API de relaciones ([cf771aa](https://github.com/Patricoaa/ERPGrafico/commit/cf771aa7d09cd9afb75792d91c74b9428876c487))
+* **documents:** la pestaña de relaciones pide la ventana reciente y ofrece «Ver más» ([a03dda0](https://github.com/Patricoaa/ERPGrafico/commit/a03dda03d5cdf6478e5a7096e20dfbc01e898463))
+* **documents:** ventana reciente (window=recent) con conteo de ocultos por área ([899ca28](https://github.com/Patricoaa/ERPGrafico/commit/899ca2898da4e10ece6e64bffaf2d7500b0ea1d5))
+* **hr:** API de movimientos, permisos y registros ([5bf944b](https://github.com/Patricoaa/ERPGrafico/commit/5bf944b8f97c7a92027c0b2214783257fcb0f943))
+* **hr:** asignaciones en liquidación y cuentas de préstamos en ajustes ([3ab4a6b](https://github.com/Patricoaa/ERPGrafico/commit/3ab4a6b97156a8ba4d67d5e0732bb15346d093e1))
+* **hr:** cálculo de préstamo (cuota fija, recálculo del resto) ([9b33092](https://github.com/Patricoaa/ERPGrafico/commit/9b330927e7d78bf8899354b7547c2f83c5e1dc07))
+* **hr:** contabilización y saldos de liquidación desde asignaciones ([adf578c](https://github.com/Patricoaa/ERPGrafico/commit/adf578c7deba1e74c995d9e13f1154ebece1c1e9))
+* **hr:** cuentas de préstamos/intereses y tope legal en ajustes ([1975551](https://github.com/Patricoaa/ERPGrafico/commit/19755519e24c9885cd203c9743f241f3eb6faf8e))
+* **hr:** dominio hr y proveedores de relaciones de empleado, liquidación, anticipo, inasistencia y pago ([676c615](https://github.com/Patricoaa/ERPGrafico/commit/676c615d7478e7f46fbec605f6afe94d95d7b24f))
+* **hr:** Employee pasa al patrón Archivo (is_active) con fecha de egreso ([73ee441](https://github.com/Patricoaa/ERPGrafico/commit/73ee441ba4ccd0e51562863cfa665fcc1963a854))
+* **hr:** historial de movimientos en la ficha del empleado ([59c05df](https://github.com/Patricoaa/ERPGrafico/commit/59c05dfa3a7dde3fa2361380f0d1efbd0a4c0c83))
+* **hr:** lista y drawer de movimientos con empleado ([b2e30a3](https://github.com/Patricoaa/ERPGrafico/commit/b2e30a3c517d23aeeaa8fa9c0c919bb0788ae2f6))
+* **hr:** migración de anticipos y pagos de sueldo a movimientos ([d070136](https://github.com/Patricoaa/ERPGrafico/commit/d070136a8b20648d84b80f286cdfc3e4bff2fa5c))
+* **hr:** modelos de movimientos, asignaciones y cuotas ([460b212](https://github.com/Patricoaa/ERPGrafico/commit/460b2126056e0b7c63d8d03300acc014c6f98926))
+* **hr:** pestaña Relaciones en la ficha de empleado ([b1623e6](https://github.com/Patricoaa/ERPGrafico/commit/b1623e68247347f0497954f075092e81074df168))
+* **hr:** pestaña Relaciones en los drawers de inasistencia y anticipo ([ef5efcb](https://github.com/Patricoaa/ERPGrafico/commit/ef5efcb023afec867cb7daac5264b2b0bfe0a6a7))
+* **hr:** retira SalaryAdvance y registra relaciones de movimientos ([6fc2679](https://github.com/Patricoaa/ERPGrafico/commit/6fc26798baf7b908bbaad18c268a04a622186571))
+* **hr:** servicio de movimientos, asignaciones y saldo de liquidación único ([2b1b0e6](https://github.com/Patricoaa/ERPGrafico/commit/2b1b0e6a917ce3297a9d21239f34ce26093aa385))
+* **hr:** tipos, API y hooks de movimientos ([ab1f57f](https://github.com/Patricoaa/ERPGrafico/commit/ab1f57f4ef3d9f28ab1c74687dcb6e39e9cefc54))
+
+
+### 🚀 Maintenance
+
+* **agents:** registra la skill ci-cd-and-automation en skills-lock.json ([c78a374](https://github.com/Patricoaa/ERPGrafico/commit/c78a374d1319d867dd0efc68d939a3cda7c684fe))
+
 ### [0.3.150](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.149...v0.3.150) (2026-11-24)
 
 

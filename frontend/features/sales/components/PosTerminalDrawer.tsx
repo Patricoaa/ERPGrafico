@@ -14,7 +14,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { Drawer, Banner, CancelButton, LabeledInput, LabeledSelect, FormFooter, DrawerLayout, FormSelectionGroup, SubmitButton, Section } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { EntitySidebar } from "@/features/comments"
-import { DocumentRelationsTab, useDocumentRelations, type DocumentDomain } from "@/features/documents"
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal, type DocumentDomain } from "@/features/documents"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 /** Etiqueta documental del modelo POSTerminal en el backend (relaciones con sus sesiones). */
@@ -380,7 +380,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                     value: "relations",
                                     label: "Relaciones",
                                     icon: Link2,
-                                    badge: relations?.relations.length,
+                                    badge: relationsTotal(relations),
                                     content: (
                                         <DocumentRelationsTab
                                             label={TERMINAL_RELATIONS_LABEL}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createEmployee, updateEmployee, deleteEmployee } from '../api/hrApi'
+import { createEmployee, updateEmployee, archiveEmployee } from '../api/hrApi'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
@@ -32,22 +32,22 @@ export function useEmployeeMutations() {
         },
     })
 
-    const removeEmployee = useMutation({
-        mutationFn: async (id: number) => await deleteEmployee(id),
-        onSuccess: () => {
+    const archive = useMutation({
+        mutationFn: async ({ id, is_active, end_date }: { id: number, is_active: boolean, end_date?: string }) => await archiveEmployee(id, is_active, end_date),
+        onSuccess: (_, vars) => {
             markLocalMutation()
-            toast.success('Empleado eliminado')
+            toast.success(vars.is_active ? 'Empleado restaurado' : 'Empleado archivado')
             invalidate()
         },
         onError: (e: Error) => {
-            toast.error(`Error al eliminar empleado: ${e.message}`)
+            toast.error(`No se pudo actualizar el empleado: ${e.message}`)
         }
     })
 
     return {
         saveEmployee: saveEmployee.mutateAsync,
         isSaving: saveEmployee.isPending,
-        deleteEmployee: removeEmployee.mutateAsync,
-        isDeleting: removeEmployee.isPending,
+        archiveEmployee: archive.mutateAsync,
+        isArchiving: archive.isPending,
     }
 }

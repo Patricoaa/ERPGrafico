@@ -79,7 +79,6 @@ TIMESTAMP_DEBT = {
     "hr.PayrollConcept",
     "hr.PayrollItem",
     "hr.PayrollPayment",
-    "hr.SalaryAdvance",
     "inventory.InventoryCount",
     "inventory.InventoryCountLine",
     "inventory.InventoryDocumentDetail",

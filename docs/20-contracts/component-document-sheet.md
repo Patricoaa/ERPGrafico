@@ -55,11 +55,12 @@ One **actions button in the Drawer header, next to close** (`headerActions`), wi
 
 ## 5. Relations tab — `DocumentRelationsTab`
 
-Props: `label`, `id`, `sectionActions?: Partial<Record<DocumentDomain, DocumentActionItem[]>>`, `rowActions?: (link) => DocumentActionItem[]`, `domain?`, `onDomainChange?`.
+Props: `label`, `id`, `sectionActions?: Partial<Record<DocumentDomain, DocumentActionItem[]>>`, `rowActions?: (link) => DocumentActionItem[]`, `domain?`, `onDomainChange?`, `window?: "recent" | "all"` (default `recent`, ADR-0155).
 
 - Groups `GET /api/core/documents/{label}/{id}/relations/` by `target.domain` (backend-declared, `document-relations.md`) in cycle order; each group: `SectionHeader` (count + sum of non-cancelled `amount`) + its actions.
+- Recent window (ADR-0155): the tab asks `window=recent`; an area with hidden links shows "N anteriores" and the tab offers **Ver más (N)**, which re-requests with `window=all` for the whole tab. Applies to every entity that uses the tab.
 - An area with actions is shown even when empty, with the action as empty state ("Sin documentos de tesorería · Registrar pago").
-- Areas: Origen, Facturación, Manufactura, Logística, Tesorería, Contabilidad, **Contactos**, Otros. The backend adds indirect links for the sheet: **journal entries of the related documents** (Contabilidad) and the **counterparties** (customer/supplier/contact) of the document and its related documents (Contactos, each once).
+- Areas: Origen, Facturación, Manufactura, Logística, Tesorería, Contabilidad, **RRHH** (ADR-0155), **Contactos**, Otros. The backend adds indirect links for the sheet: **journal entries of the related documents** (Contabilidad) and the **counterparties** (customer/supplier/contact) of the document and its related documents (Contactos, each once).
 - Rows: `RelatedDocumentRow` — **one line, the whole row is the link** to the entity's sheet (`openEntity`, stacked with "volver"; no sheet → canonical URL): entity icon (`getEntityIcon`, `ENTITY_REGISTRY`) · `display_id` · type/role · `DocumentRef.detail` **only for Contactos and Tesorería** (truncated; partner only when it differs from the sheet's own) · amount (relation amount, e.g. allocated, else `DocumentRef.amount`) · `StatusBadge`. Only what identifies the document; everything else is one click away in its sheet (full text in the row tooltip). Row actions "⋯" sit outside the link. `accessible=false` shows the row without link ("· sin acceso").
 - Group total = Σ non-cancelled amounts (not shown for Contactos).
 - States: shaped skeleton; inline error (does not break the sheet); global empty state; count of `unresolved` references.

@@ -19,7 +19,7 @@ import {
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bankstatement' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan' | 'payroll' | 'budget' | 'accounting_period'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'purchase_return' | 'inventory_document' | 'check' | 'terminal_batch' | 'profit_distribution' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bankstatement' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'employeemovement' | 'absence' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment' | 'group' | 'inventory_count' | 'bank_loan' | 'payroll' | 'budget' | 'accounting_period'
     className?: string
     title?: string
     /** Estado inicial de la sección. En rails de drawer (EntitySidebar) arranca cerrada. */
@@ -60,7 +60,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
     account: 'la cuenta contable',
     bank_journal: 'el libro de banco',
     employee: 'el empleado',
-    salaryadvance: 'el anticipo de sueldo',
+    employeemovement: 'el movimiento con el empleado',
     fiscal_year: 'el año fiscal',
     tax_period: 'el período de impuestos',
     f29_declaration: 'la declaración F29',

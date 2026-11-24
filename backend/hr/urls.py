@@ -5,13 +5,13 @@ from .views import (
     AbsenceViewSet,
     AFPViewSet,
     EmployeeConceptAmountViewSet,
+    EmployeeMovementViewSet,
     EmployeeViewSet,
     GlobalHRSettingsViewSet,
     PayrollConceptViewSet,
     PayrollItemViewSet,
     PayrollPaymentViewSet,
     PayrollViewSet,
-    SalaryAdvanceViewSet,
 )
 
 router = DefaultRouter()
@@ -24,7 +24,7 @@ router.register(
 )
 router.register(r"payrolls", PayrollViewSet, basename="payrolls")
 router.register(r"absences", AbsenceViewSet, basename="absences")
-router.register(r"advances", SalaryAdvanceViewSet, basename="advances")
+router.register(r"employee-movements", EmployeeMovementViewSet, basename="employee-movements")
 router.register(r"payroll-payments", PayrollPaymentViewSet, basename="payroll-payments")
 
 # Nested payroll items under /payrolls/{payroll_pk}/items/

@@ -7,7 +7,7 @@ const m = vi.hoisted(() => ({ record: null as unknown, isError: false, calls: []
 vi.mock("next/dynamic", () => ({
     // Cada drawer perezoso se sustituye por un stub que expone las props que importan.
     default: () => function DrawerStub(props: Record<string, unknown>) {
-        const record = props.employee ?? props.initialData ?? props.absence ?? props.advance ?? props.provider ?? props.device ?? props.bank ?? props.method
+        const record = props.employee ?? props.initialData ?? props.absence ?? props.movement ?? props.provider ?? props.device ?? props.bank ?? props.method
         return <div data-testid="drawer">{JSON.stringify({ record, mode: props.mode ?? null })}</div>
     },
 }))
@@ -29,7 +29,7 @@ describe("ENTITY_DRAWERS por registro (ADR-0152)", () => {
     it.each([
         ["hr.employee", "/hr/employees"],
         ["hr.absence", "/hr/absences"],
-        ["hr.salaryadvance", "/hr/advances"],
+        ["hr.employeemovement", "/hr/employee-movements"],
         ["core.user", "/core/users"],
         ["inventory.category", "/inventory/categories"],
         ["inventory.warehouse", "/inventory/warehouses"],

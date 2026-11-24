@@ -1,7 +1,34 @@
 "use client"
 
-import { defineEntity } from "@/components/entity-view"
+import { defineEntity, registerValueKind, type ValueRenderProps } from "@/components/entity-view"
+import { cn } from "@/lib/utils"
 import type { JournalEntry } from "../hooks/useJournalEntries"
+
+// ─── ledgerAccount: «código · nombre», a la izquierda en el Debe y a la derecha en el Haber ──────────
+
+export interface LedgerAccountValue { text: string; side: "debit" | "credit" }
+
+declare module "@/components/entity-view/core/value-kinds" {
+    interface ValueKinds {
+        ledgerAccount: { value: LedgerAccountValue | null; options: Record<never, never> }
+    }
+}
+
+function LedgerAccountCell({ value }: ValueRenderProps<"ledgerAccount">) {
+    if (!value) return null
+    return (
+        <span className={cn("block w-full truncate", value.side === "credit" ? "text-right" : "text-left")}>
+            {value.text}
+        </span>
+    )
+}
+
+registerValueKind("ledgerAccount", {
+    format: (v) => v?.text ?? "",
+    // La cuenta toma el ancho sobrante; Debe y Haber quedan al ancho de su contenido.
+    shrink: true,
+    render: LedgerAccountCell,
+})
 
 /** Journal Entry Line entity for use in JournalEntrySheet lines table. */
 export interface JournalEntryLine {
@@ -18,19 +45,21 @@ export interface JournalEntryLine {
 export const journalEntryLineEntity = defineEntity<JournalEntryLine>()((f) => ({
     title: "Líneas de Asiento",
     fields: {
-        account_code: f.text("account_code", { label: "Cuenta" }),
-        account_name: f.text("account_name", { label: "Nombre" }),
+        account: f.value(
+            "ledgerAccount",
+            (l) => ({ text: `${l.account_code} · ${l.account_name}`, side: l.credit > 0 && !(l.debit > 0) ? "credit" : "debit" }),
+            { label: "Cuenta" },
+        ),
+        debit: f.money((l) => l.debit > 0 ? l.debit : null, { label: "Debe", align: "start" }),
+        credit: f.money((l) => l.credit > 0 ? l.credit : null, { label: "Haber", align: "end" }),
         label: f.text("label", { label: "Concepto" }),
-        debit: f.money((l) => l.debit > 0 ? l.debit : null, { label: "Debe" }),
-        credit: f.money((l) => l.credit > 0 ? l.credit : null, { label: "Haber" }),
     },
 }))
 
 /** View for the JournalEntrySheet lines table (read-only, compact). */
 export const journalEntryLineSheetViews = journalEntryLineEntity.views({
     table: {
-        columns: ["account_code", "account_name", "label", "debit", "credit"],
-        primary: "account_code",
+        columns: ["account", "debit", "credit", "label"],
         footer: { sum: ["debit", "credit"] },
     },
 })
