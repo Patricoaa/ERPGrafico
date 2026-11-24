@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from django.db.models import ExpressionWrapper, F, FloatField, Sum, Value
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from .models import Product
 from .sales_impact_selector import (
@@ -176,7 +177,7 @@ class PricingSelector:
         product_ids = [product.id]
         if product.has_variants:
             product_ids += list(product.variants.values_list("id", flat=True))
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
         lines = _lines(product_ids, params.date_from, date_to)
 
         rows = list(

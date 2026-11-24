@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db.models import F, Sum
+from django.utils import timezone
 
 from .costs_selector import _receipts, _to_base_factory
 from .models import Product
@@ -117,7 +118,7 @@ class ProcurementSelector:
         product_ids = [product.id]
         if product.has_variants:
             product_ids += list(product.variants.values_list("id", flat=True))
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
         to_base = _to_base_factory()
         receipts = _receipts(product_ids, to_base)
         in_range = _between(receipts, params.date_from, date_to)
@@ -137,7 +138,7 @@ class ProcurementSelector:
                 **_totals(in_range),
                 "suppliers": len({r["supplier_id"] for r in in_range}),
                 "last_purchase_date": last.isoformat() if last else None,
-                "days_since_last_purchase": (date.today() - last).days if last else None,
+                "days_since_last_purchase": (timezone.localdate() - last).days if last else None,
                 "returned_units": _returned_units(product_ids, params.date_from, date_to),
                 "previous": previous,
             },
