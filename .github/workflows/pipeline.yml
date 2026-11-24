@@ -40,6 +40,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Test
+        # The type-aware no-unsafe census builds a full TS program inside one fork.
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run test -- --run --coverage
       
       - name: Build

@@ -1,3 +1,5 @@
+"use client"
+
 import { useMemo, useCallback } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { accountingApi } from '@/features/accounting'

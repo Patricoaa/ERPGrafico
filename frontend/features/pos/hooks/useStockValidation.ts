@@ -1,3 +1,5 @@
+"use client"
+
 // useStockValidation Hook
 // Real-time stock limit calculation and validation
 

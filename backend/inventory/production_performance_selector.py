@@ -46,7 +46,7 @@ class ProductionPerformanceSelector:
             product_ids += list(product.variants.values_list("id", flat=True))
         express = ProductSelector.get_capabilities(product)["express"]
 
-        date_to = date_to or date.today()
+        date_to = date_to or timezone.localdate()
         date_from = date_from or (date_to - timedelta(days=365))
 
         orders_qs = (

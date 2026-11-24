@@ -32,8 +32,9 @@ jobs:
       run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build
 
     - name: Wait for backend
+      # Migrations from an empty database take more than 5 minutes on a hosted runner: allow 15.
       run: |
-        for i in $(seq 1 60); do
+        for i in $(seq 1 180); do
           # Django answers 405 to GET on this route; nginx answers 502 until it is up.
           code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/api/token/ || true)
           [ "$code" = "405" ] && exit 0

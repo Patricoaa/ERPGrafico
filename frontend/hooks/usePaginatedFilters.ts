@@ -1,3 +1,5 @@
+"use client"
+
 import { useMemo } from "react"
 
 interface PaginatedFiltersResult<TFilters extends Record<string, unknown>> {

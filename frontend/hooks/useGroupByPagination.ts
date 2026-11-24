@@ -1,3 +1,5 @@
+"use client"
+
 import { useMemo, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 

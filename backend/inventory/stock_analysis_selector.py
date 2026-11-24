@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from django.db.models import F, Max, Min, Sum
+from django.utils import timezone
 
 from .costs_selector import _next_start
 from .models import ADJUSTMENT_VIRTUAL_NAMES, Product, Stock, StockMove
@@ -193,7 +194,7 @@ class StockAnalysisSelector:
         product_ids = [product.id]
         if product.has_variants:
             product_ids += list(product.variants.values_list("id", flat=True))
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
 
         start = _range_start(product_ids, params.date_from, date_to)
         on_hand_by_product = _on_hand(product_ids)
