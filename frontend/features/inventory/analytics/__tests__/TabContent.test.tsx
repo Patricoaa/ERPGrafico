@@ -2,6 +2,7 @@ import { render } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import type { ProductCapabilities } from "../productAnalyticsRegistry"
 
+vi.mock("@/hooks/useVatRate", () => ({ useVatRate: () => ({ rate: 19, multiplier: 1.19, isLoading: false }) }))
 vi.mock("../OverviewBlock", () => ({ OverviewBlock: () => <div data-marker="block-overview" /> }))
 vi.mock("../CostsBlock", () => ({ CostsBlock: () => <div data-marker="block-costs" /> }))
 vi.mock("../ProcurementBlock", () => ({ ProcurementBlock: () => <div data-marker="block-procurement" /> }))

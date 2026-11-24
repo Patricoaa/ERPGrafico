@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
     usePricing: vi.fn(),
 }))
 
+vi.mock("@/hooks/useVatRate", () => ({ useVatRate: () => ({ rate: 19, multiplier: 1.19, isLoading: false }) }))
 vi.mock("../../hooks/useProductPricing", () => ({
     useProductPricing: (id: number, params: unknown) => {
         state.usePricing(id, params)
