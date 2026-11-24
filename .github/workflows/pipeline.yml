@@ -15,7 +15,7 @@ jobs:
       run:
         working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -88,7 +88,7 @@ jobs:
       ALLOWED_HOSTS: "localhost,127.0.0.1"
       REDIS_URL: "redis://localhost:6379"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -155,7 +155,7 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       
       - name: Setup Python
         uses: actions/setup-python@v6
