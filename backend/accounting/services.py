@@ -1070,10 +1070,9 @@ class AccountingService:
 
     @staticmethod
     def get_or_create_current_settings():
-        try:
-            return AccountingSettings.objects.get(pk=1)
-        except AccountingSettings.DoesNotExist:
-            return AccountingSettings.objects.create()
+        from core.cache import load_singleton
+
+        return load_singleton(AccountingSettings)
 
     @staticmethod
     def validate_account_deletion(account):
