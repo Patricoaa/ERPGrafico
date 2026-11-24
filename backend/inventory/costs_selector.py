@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from core.prefix_registry import EntityPrefix, fmt_seq_num
 
@@ -213,7 +214,7 @@ class CostsSelector:
         product_ids = [product.id]
         if product.has_variants:
             product_ids += list(product.variants.values_list("id", flat=True))
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
         granularity = params.granularity
         mode = _mode(product)
 

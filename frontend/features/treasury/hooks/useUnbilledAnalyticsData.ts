@@ -1,3 +1,5 @@
+"use client"
+
 import { useMemo } from "react"
 import type { PendingChargeRow, UpcomingInstallment, UnbilledForecast } from "../types"
 import { assignChartColors } from "@/lib/chart-colors"

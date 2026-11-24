@@ -124,7 +124,7 @@ describe("PartnerCapitalPanel", () => {
         expect(run).toHaveBeenLastCalledWith({ type: "subscription", partnerId: 7 })
         await userEvent.click(screen.getByRole("button", { name: "Registrar aporte" }))
         expect(run).toHaveBeenLastCalledWith({ type: "contribution", partnerId: 7, amount: "1000" })
-        await userEvent.click(screen.getByRole("button", { name: "Formalizar exceso de capital" }))
+        await userEvent.click(screen.getByRole("button", { name: "Formalizar exceso" }))
         await userEvent.click(screen.getByRole("button", { name: "Distribuir utilidades retenidas" }))
         expect(run).toHaveBeenLastCalledWith({ type: "mobilize", partnerId: 7 })
         await userEvent.click(screen.getByRole("button", { name: "Pagar dividendos" }))
@@ -134,7 +134,7 @@ describe("PartnerCapitalPanel", () => {
     })
     it("sin exceso, utilidades ni dividendos esas líneas no ofrecen acción", () => {
         renderIn(<PartnerCapitalPanel partner={partner} run={vi.fn()} />)
-        expect(screen.queryByRole("button", { name: "Formalizar exceso de capital" })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: "Formalizar exceso" })).not.toBeInTheDocument()
         expect(screen.queryByRole("button", { name: "Distribuir utilidades retenidas" })).not.toBeInTheDocument()
         expect(screen.queryByRole("button", { name: "Pagar dividendos" })).not.toBeInTheDocument()
     })

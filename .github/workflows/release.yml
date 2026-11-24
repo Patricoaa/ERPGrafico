@@ -10,6 +10,7 @@ on:
       - 'frontend/package.json'
       - 'backend/VERSION'
       - 'docs/90-governance/versioning-policy.md'
+      - 'CHANGELOG.md'
 
 # One at a time: merges seconds apart used to race, and a rejected commit left its tag behind.
 concurrency:
@@ -29,7 +30,9 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }} # Latest commit: an earlier run may have added its version bump
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Push over SSH with the release deploy key: master is protected by a ruleset (PR +
+          # green CI) whose only bypass is deploy keys, so the version bump can still land.
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v5

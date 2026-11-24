@@ -1,3 +1,5 @@
+"use client"
+
 import { useMemo } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'

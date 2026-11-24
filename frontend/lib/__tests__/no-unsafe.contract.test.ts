@@ -47,7 +47,14 @@ const NO_UNSAFE_RULES = [
 let census: Map<string, number> = new Map()
 
 async function runCensus(): Promise<Map<string, number>> {
-    const eslint = new ESLint({ cache: true, cacheLocation: ".eslintcache" })
+    // Only the no-unsafe-* rules: the full rule set inside a vitest fork (plus coverage
+    // instrumentation) ran the worker out of heap in CI. Own cache file, so a filtered result
+    // can never be served to `npm run lint`.
+    const eslint = new ESLint({
+        cache: true,
+        cacheLocation: ".eslintcache-no-unsafe",
+        ruleFilter: ({ ruleId }) => NO_UNSAFE_RULES.includes(ruleId),
+    })
     const results = await eslint.lintFiles(["."])
     const perFile = new Map<string, number>()
     for (const r of results) {

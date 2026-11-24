@@ -1,3 +1,5 @@
+"use client"
+
 // useProducts Hook
 // Manages product data, search, filtering, and fetching
 

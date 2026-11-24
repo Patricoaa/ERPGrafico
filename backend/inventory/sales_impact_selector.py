@@ -31,6 +31,7 @@ from django.db.models.functions import (
     TruncWeek,
     TruncYear,
 )
+from django.utils import timezone
 
 from .models import PricingRule, Product
 
@@ -245,7 +246,7 @@ class SalesImpactSelector:
         if product.has_variants:
             product_ids += list(product.variants.values_list("id", flat=True))
 
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
         date_from = params.date_from or (date_to - timedelta(days=365))
 
         lines = SaleDeliveryLine.objects.filter(

@@ -90,7 +90,7 @@ class SubscriptionAnalysisSelector:
         product_ids = [product.id]
         if product.has_variants:
             product_ids += list(product.variants.values_list("id", flat=True))
-        date_to = params.date_to or date.today()
+        date_to = params.date_to or timezone.localdate()
         # Next payments are current state: always measured from today, not from date_to.
         as_of = timezone.localdate()
 
