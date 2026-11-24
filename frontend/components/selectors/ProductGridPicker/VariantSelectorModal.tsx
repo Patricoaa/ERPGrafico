@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Package, ChevronRight, Search } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/lib/pricing-utils'
 import { cn } from "@/lib/utils"
 import { BaseModal, Chip, DynamicIcon, EmptyState } from '@/components/shared'
 import { resolveMediaUrl } from '@/lib/media-url'
@@ -162,7 +161,7 @@ export function VariantSelectorModal({
                                 const limit = variantLimits[v.id]
                                 const disabled = isVariantDisabled(v)
                                 const photo = v.image || product.image
-                                const price = Number(v.effective_price ?? v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price))
+                                const price = Number(v.effective_price ?? v.sale_price_gross) || 0
 
                                 const stock = disabled ? (
                                     <Chip size="xs" intent="destructive">{v.has_active_bom ? "Sin insumos" : "Sin stock"}</Chip>
