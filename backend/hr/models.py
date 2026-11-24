@@ -588,6 +588,137 @@ class SalaryAdvance(models.Model):
         return f"Anticipo {self.employee} - ${self.amount} ({self.date})"
 
 
+class EmployeeMovement(models.Model):
+    """
+    Movimiento de dinero con el empleado (ADR-0156): pago de remuneración, anticipo o préstamo.
+    Anticipos y préstamos se asignan (total o parcialmente) a liquidaciones vía `PayrollAllocation`.
+    """
+
+    class Kind(models.TextChoices):
+        PAYMENT = "PAYMENT", _("Pago de Remuneración")
+        ADVANCE = "ADVANCE", _("Anticipo")
+        LOAN = "LOAN", _("Préstamo")
+
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Borrador")
+        POSTED = "POSTED", _("Contabilizado")
+        SETTLED = "SETTLED", _("Saldado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    class RatePeriod(models.TextChoices):
+        MONTHLY = "MONTHLY", _("Mensual")
+        ANNUAL = "ANNUAL", _("Anual")
+
+    employee = models.ForeignKey(
+        Employee, on_delete=models.PROTECT, related_name="movements", verbose_name=_("Empleado")
+    )
+    kind = models.CharField(_("Tipo"), max_length=10, choices=Kind.choices)
+    date = models.DateField(_("Fecha"))
+    amount = models.DecimalField(
+        _("Monto"), max_digits=14, decimal_places=0, validators=[MinValueValidator(Decimal("0.01"))]
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+    status = models.CharField(_("Estado"), max_length=10, choices=Status.choices, default=Status.DRAFT)
+    journal_entry = models.ForeignKey(
+        "accounting.JournalEntry",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="employee_movements",
+        verbose_name=_("Asiento Contable"),
+    )
+
+    # Solo préstamos
+    rate = models.DecimalField(_("Tasa"), max_digits=8, decimal_places=6, null=True, blank=True)
+    rate_period = models.CharField(_("Periodicidad de la tasa"), max_length=10, choices=RatePeriod.choices, null=True, blank=True)
+    installments_count = models.PositiveSmallIntegerField(_("Cuotas"), null=True, blank=True)
+    first_installment_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    first_installment_month = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    edit_policy = EditPolicy(
+        editable_statuses=frozenset({"DRAFT"}),
+        mutable_when_locked=frozenset({"notes"}),
+        deletable=True,
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        verbose_name = _("Movimiento con Empleado")
+        verbose_name_plural = _("Movimientos con Empleados")
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.employee} - ${self.amount} ({self.date})"
+
+    @property
+    def display_id(self):
+        from core.prefix_registry import EntityPrefix, fmt_seq_num
+        return f"{EntityPrefix.EMPLOYEE_MOVEMENT}-{fmt_seq_num(self.pk)}" if self.pk else ""
+
+    @property
+    def applied_principal(self) -> Decimal:
+        """Capital ya descontado: asignaciones a liquidaciones contabilizadas."""
+        total = self.allocations.filter(payroll__status="POSTED").aggregate(total=models.Sum("principal_part"))["total"]
+        return total or Decimal("0")
+
+    @property
+    def balance(self) -> Decimal:
+        if self.kind == self.Kind.PAYMENT:
+            return Decimal("0")
+        return self.amount - self.applied_principal
+
+
+class LoanInstallment(models.Model):
+    """Cuota del plan de un préstamo."""
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", _("Pendiente")
+        APPLIED = "APPLIED", _("Aplicada")
+
+    movement = models.ForeignKey(EmployeeMovement, on_delete=models.CASCADE, related_name="installments")
+    number = models.PositiveSmallIntegerField(_("N°"))
+    year = models.PositiveSmallIntegerField(_("Año"))
+    month = models.PositiveSmallIntegerField(_("Mes"))
+    principal = models.DecimalField(max_digits=14, decimal_places=0)
+    interest = models.DecimalField(max_digits=14, decimal_places=0)
+    amount = models.DecimalField(max_digits=14, decimal_places=0)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+
+    class Meta:
+        ordering = ["number"]
+        unique_together = ["movement", "number"]
+        verbose_name = _("Cuota de Préstamo")
+        verbose_name_plural = _("Cuotas de Préstamo")
+
+
+class PayrollAllocation(models.Model):
+    """Monto de un movimiento aplicado a una liquidación (descuento de anticipo/préstamo o pago)."""
+
+    movement = models.ForeignKey(EmployeeMovement, on_delete=models.CASCADE, related_name="allocations")
+    payroll = models.ForeignKey("Payroll", on_delete=models.CASCADE, related_name="allocations")
+    amount = models.DecimalField(max_digits=14, decimal_places=0)
+    principal_part = models.DecimalField(max_digits=14, decimal_places=0)
+    interest_part = models.DecimalField(max_digits=14, decimal_places=0, default=Decimal("0"))
+    installment = models.ForeignKey(
+        LoanInstallment, on_delete=models.SET_NULL, null=True, blank=True, related_name="allocations"
+    )
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = _("Asignación a Liquidación")
+        verbose_name_plural = _("Asignaciones a Liquidación")
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount=models.F("principal_part") + models.F("interest_part")),
+                name="hr_allocation_amount_is_sum_of_parts",
+            ),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="hr_allocation_amount_positive"),
+        ]
+
+
 class PayrollPayment(models.Model):
     """
     Registro del pago efectivo de remuneraciones o previred.
