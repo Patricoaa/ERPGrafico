@@ -19,6 +19,7 @@ class HrConfig(AppConfig):
                     ("post_payroll", "Puede contabilizar nómina"),
                     ("pay_payroll", "Puede pagar nómina/previred"),
                     ("annul_salaryadvance", "Puede anular anticipo de sueldo"),
+                    ("annul_employeemovement", "Puede anular movimientos con el empleado"),
                     ("annul_payrollpayment", "Puede anular pago de nómina"),
                 ],
             )

@@ -76,6 +76,13 @@ _SENSITIVE_PERM_SETS: dict[str, frozenset[str]] = {
         "hr.delete_salaryadvance",
         "hr.annul_salaryadvance",
     }),
+    "hr.employee_movements": frozenset({
+        "hr.view_employeemovement",
+        "hr.add_employeemovement",
+        "hr.change_employeemovement",
+        "hr.delete_employeemovement",
+        "hr.annul_employeemovement",
+    }),
     "treasury.payments": frozenset({
         "treasury.view_treasurymovement",
         "treasury.add_treasurymovement",
@@ -310,6 +317,12 @@ _SENSITIVE_BUNDLE_METADATA: dict[str, Bundle] = {
         key="hr.salary_advances",
         label="Anticipos de Sueldo",
         description="Gestión completa de anticipos de sueldo incluyendo anulación.",
+        sensitive=True,
+    ),
+    "hr.employee_movements": Bundle(
+        key="hr.employee_movements",
+        label="Movimientos con Empleados",
+        description="Pagos de remuneración, anticipos y préstamos a empleados, incluyendo asignación y anulación.",
         sensitive=True,
     ),
     "treasury.payments": Bundle(

@@ -11,6 +11,7 @@ from .models import (
     EmployeeConceptAmount,
     EmployeeMovement,
     GlobalHRSettings,
+    LoanInstallment,
     Payroll,
     PayrollConcept,
     PayrollAllocation,
@@ -273,21 +274,65 @@ class PayrollAllocationSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class LoanInstallmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoanInstallment
+        fields = ["id", "number", "year", "month", "principal", "interest", "amount", "status"]
+        read_only_fields = fields
+
+
 class EmployeeMovementSerializer(serializers.ModelSerializer):
-    """Serializador base de movimientos (la API completa se extiende en la tarea de API)."""
+    """Movimiento con el empleado: pago de remuneración, anticipo o préstamo (ADR-0156)."""
 
     display_id = serializers.CharField(read_only=True)
     employee_name = serializers.CharField(source="employee.contact.name", read_only=True)
+    employee_display_id = serializers.CharField(source="employee.display_id", read_only=True)
     kind_display = serializers.CharField(source="get_kind_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    installments = LoanInstallmentSerializer(many=True, read_only=True)
+    allocations = PayrollAllocationSerializer(many=True, read_only=True)
+    balance = serializers.SerializerMethodField()
+    payment_method_name = serializers.SerializerMethodField()
+    is_editable = IsEditableField()
 
     class Meta:
         model = EmployeeMovement
         fields = [
-            "id", "display_id", "employee", "employee_name", "kind", "kind_display", "date", "amount", "notes",
-            "status", "status_display", "journal_entry", "created_at", "updated_at",
+            "id", "display_id", "employee", "employee_name", "employee_display_id", "kind", "kind_display",
+            "date", "amount", "notes", "status", "status_display", "journal_entry", "is_editable",
+            "rate", "rate_period", "installments_count", "first_installment_year", "first_installment_month",
+            "installments", "allocations", "balance", "payment_method_name", "created_at", "updated_at",
         ]
-        read_only_fields = fields
+        read_only_fields = ["id", "status", "journal_entry", "created_at", "updated_at"]
+
+    def get_balance(self, obj):
+        if obj.kind == EmployeeMovement.Kind.PAYMENT:
+            return 0
+        applied = getattr(obj, "applied_annot", None)
+        return obj.amount - (applied if applied is not None else obj.applied_principal)
+
+    def get_payment_method_name(self, obj):
+        try:
+            treasury = obj.journal_entry.treasury_movement
+            return treasury.payment_method_new.name if treasury.payment_method_new else treasury.get_payment_method_display()
+        except Exception:
+            return None
+
+    def validate_employee(self, employee):
+        return _validate_assignable_employee(self, employee)
+
+    def validate(self, attrs):
+        if self.instance is not None:
+            return attrs
+        kind = attrs.get("kind")
+        if kind not in (EmployeeMovement.Kind.ADVANCE, EmployeeMovement.Kind.LOAN):
+            raise serializers.ValidationError({"kind": "Solo se crean anticipos y préstamos; el pago se registra desde la liquidación."})
+        if kind == EmployeeMovement.Kind.LOAN:
+            required = ("rate", "rate_period", "installments_count", "first_installment_year", "first_installment_month")
+            missing = {f: "Requerido para préstamos." for f in required if attrs.get(f) is None}
+            if missing:
+                raise serializers.ValidationError(missing)
+        return attrs
 
 
 class PayrollListSerializer(serializers.ModelSerializer):

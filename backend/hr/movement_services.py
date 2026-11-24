@@ -87,6 +87,41 @@ class EmployeeMovementService:
         return loans.build_schedule(int(amount), loans.monthly_rate(Decimal(rate), rate_period), installments, first)
 
     @staticmethod
+    def create_from_request(validated: dict, raw: dict, user) -> EmployeeMovement:
+        """Traduce el cuerpo validado de la API a `create` (términos de préstamo y datos de tesorería)."""
+        loan = None
+        if validated["kind"] == EmployeeMovement.Kind.LOAN:
+            loan = LoanTerms(
+                rate=validated["rate"], rate_period=validated["rate_period"], installments=validated["installments_count"],
+                first_year=validated["first_installment_year"], first_month=validated["first_installment_month"],
+            )
+        treasury = None
+        if raw.get("treasury_account_id"):
+            treasury = TreasuryPayload(
+                treasury_account_id=int(raw["treasury_account_id"]),
+                payment_method_id=raw.get("payment_method_new"),
+                payment_method_slug=raw.get("paymentMethod", ""),
+                transaction_number=raw.get("transaction_number"),
+            )
+        return EmployeeMovementService.create(
+            validated["employee"], validated["kind"], validated["date"], validated["amount"],
+            notes=validated.get("notes", ""), loan=loan, treasury=treasury, user=user,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def sync_schedule(movement) -> None:
+        """Regenera el plan de un préstamo en borrador tras editar monto, tasa, plazo o primera cuota."""
+        if movement.kind != EmployeeMovement.Kind.LOAN or movement.status != EmployeeMovement.Status.DRAFT:
+            return
+        movement.installments.all().delete()
+        specs = loans.build_schedule(
+            int(movement.amount), loans.monthly_rate(movement.rate, movement.rate_period), movement.installments_count,
+            (movement.first_installment_year, movement.first_installment_month),
+        )
+        LoanInstallment.objects.bulk_create(_specs_to_rows(movement, specs))
+
+    @staticmethod
     @transaction.atomic
     def create(employee, kind, date, amount, *, notes="", loan: LoanTerms | None = None,
                treasury: TreasuryPayload | None = None, user=None) -> EmployeeMovement:

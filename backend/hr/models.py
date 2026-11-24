@@ -588,7 +588,7 @@ class SalaryAdvance(models.Model):
         return f"Anticipo {self.employee} - ${self.amount} ({self.date})"
 
 
-class EmployeeMovement(models.Model):
+class EmployeeMovement(TimeStampedModel):
     """
     Movimiento de dinero con el empleado (ADR-0156): pago de remuneración, anticipo o préstamo.
     Anticipos y préstamos se asignan (total o parcialmente) a liquidaciones vía `PayrollAllocation`.
@@ -635,9 +635,6 @@ class EmployeeMovement(models.Model):
     first_installment_year = models.PositiveSmallIntegerField(null=True, blank=True)
     first_installment_month = models.PositiveSmallIntegerField(null=True, blank=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     edit_policy = EditPolicy(
         editable_statuses=frozenset({"DRAFT"}),
         mutable_when_locked=frozenset({"notes"}),
@@ -671,7 +668,7 @@ class EmployeeMovement(models.Model):
         return self.amount - self.applied_principal
 
 
-class LoanInstallment(models.Model):
+class LoanInstallment(TimeStampedModel):
     """Cuota del plan de un préstamo."""
 
     class Status(models.TextChoices):
@@ -694,7 +691,7 @@ class LoanInstallment(models.Model):
         verbose_name_plural = _("Cuotas de Préstamo")
 
 
-class PayrollAllocation(models.Model):
+class PayrollAllocation(TimeStampedModel):
     """Monto de un movimiento aplicado a una liquidación (descuento de anticipo/préstamo o pago)."""
 
     movement = models.ForeignKey(EmployeeMovement, on_delete=models.CASCADE, related_name="allocations")
