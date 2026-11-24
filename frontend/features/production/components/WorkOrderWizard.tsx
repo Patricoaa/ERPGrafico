@@ -19,6 +19,7 @@ import {
   DrawerLayout,
   type DocumentActionItem,
   Banner,
+  fadeInClass,
 } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { formatEntityDisplay, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
@@ -782,7 +783,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   key={viewingStepIndex}
                   className={cn(
                     'flex flex-col flex-1 min-h-0 overflow-y-auto space-y-6 pb-6',
-                    'animate-in fade-in slide-in-from-right-2 ease-premium duration-200 fill-mode-both',
+                    fadeInClass({ from: "right", duration: 200, ease: "premium" }),
                     // Lock creation steps (other than MFG_CONFIG which has its own summary)
                     // once the OT has been created — they become read-only history.
                     !isCreating && (

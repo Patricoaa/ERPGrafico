@@ -9,7 +9,7 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { TabBar, TabBarContent } from "@/components/shared"
+import { TabBar, TabBarContent, fadeInClass } from "@/components/shared"
 import { LabeledInput, LabeledSelect, ActionConfirmModal, SkeletonShell } from "@/components/shared"
 import { Factory, Barcode, Copy, CheckCircle2, PlusCircle, Pencil, Trash2, DollarSign } from "lucide-react"
 import { Banner, Chip } from "@/components/shared"
@@ -204,7 +204,7 @@ export function VariantQuickEditForm({
       document.body
     )}
     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando editor rápido de variante" className="flex-1 flex flex-col">
-    <div className="surface-panel flex flex-col h-full shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className={cn("surface-panel flex flex-col h-full shadow-card overflow-hidden", fadeInClass({ from: "right", distance: 4, duration: 300 }))}>
       <TabBar
           value={activeTab}
           onValueChange={setActiveTab}

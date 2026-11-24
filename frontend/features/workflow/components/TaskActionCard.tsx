@@ -7,7 +7,7 @@ import {CheckCircle2, Circle, User, Paperclip, MessageSquare, Download, AlertCir
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { LabeledInput, LabeledContainer, Chip } from "@/components/shared"
+import { LabeledInput, LabeledContainer, Chip, fadeInClass } from "@/components/shared"
 
 interface TaskActionCardProps {
     task: Task
@@ -112,7 +112,7 @@ export function TaskActionCard({
             {isPending && isExpanded && (
                 <div className="mt-2 ml-7">
                     {canComplete ? (
-                        <div className="bg-background p-3 rounded border border-warning/20 space-y-3 animate-in fade-in slide-in-from-top-1">
+                        <div className={cn("bg-background p-3 rounded border border-warning/20 space-y-3", fadeInClass({ from: "top", distance: 1 }))}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <LabeledInput
                                     label="Comentarios"

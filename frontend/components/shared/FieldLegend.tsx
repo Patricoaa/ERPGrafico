@@ -26,7 +26,7 @@ interface FieldLegendProps {
  * FieldLegend — Single source of truth for notched-field legends.
  *
  * Enforces the N2 contract (typography-scale.md):
- *   `text-2xs font-bold uppercase tracking-widest`
+ *   `text-3xs font-bold uppercase tracking-widest`
  *
  * Both LabeledInput and LabeledContainer delegate here so labels
  * can never drift.
@@ -92,14 +92,14 @@ export function FieldLegend({
  * and can't compose FieldLegend (e.g. LabeledContainer which needs
  * to wrap children differently).
  *
- * Contract: N2 label = `text-2xs font-bold uppercase tracking-widest`
+ * Contract: N2 label = `text-3xs font-bold uppercase tracking-widest`
  */
 export const fieldLegendClasses = (
     hasError?: boolean,
     disabled?: boolean,
     isFocused?: boolean
 ) =>
-    `px-1.5 text-2xs font-bold uppercase tracking-widest transition-colors duration-200 ${
+    `px-1.5 text-3xs font-bold uppercase tracking-widest transition-colors duration-200 ${
         hasError
             ? "text-destructive"
             : isFocused

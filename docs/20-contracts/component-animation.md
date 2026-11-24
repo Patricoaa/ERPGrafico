@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-animation
 status: active
 owner: frontend-team
-last_review: 2026-05-21
+last_review: 2026-11-24
 stability: stable
 ---
 
@@ -35,11 +35,11 @@ graph TD
 
 Se prohíbe, como PR Reject, en componentes de página/módulo:
 
-- `animate-in` / `animate-*` (utilidades Tailwind de entrada) en grids, tarjetas o contenido de página.
+- `animate-in` / `animate-out` escritos a mano en cualquier archivo fuera de `FadeIn.tsx` / `fade-in-class.ts` (y de `components/ui/`). El test `animate-in.contract.test.ts` lo hace cumplir sin allowlist desde ADR-0157.
 - `animationDelay` / `animationFillMode` inline y `@keyframes` propios en contenido de página.
 - Imports directos de `framer-motion` (regla 1, reafirmada).
 
-La entrada de contenido se entrega solo vía: (a) transición global del `DashboardShell` al cambiar pathname, o (b) `<FadeIn>` para sub-vistas del mismo pathname (delay vía prop `delay`, GPU-only y reduced-motion aware).
+La entrada de contenido se entrega solo vía: (a) transición global del `DashboardShell` al cambiar pathname, (b) `<FadeIn>` para sub-vistas del mismo pathname (delay vía prop `delay`, GPU-only y reduced-motion aware), o (c) la receta `fadeInClass()` para un elemento que no se puede envolver (§2.1).
 
 ### §1.2 Module Grids (ADR-0074 + ADR-0075)
 
@@ -114,6 +114,28 @@ function DashboardWidgets() {
 }
 ```
 
+### §2.1 Receta de clases: `fadeInClass()` (ADR-0157)
+
+Cuando el elemento animado no admite un wrapper —un mensaje de error bajo un campo, un chip que aparece, un `TooltipContent`, una clase condicional dentro de `cn()`, un overlay `fixed`— se usa la receta del mismo primitivo sobre su propio `className`. Vive en `components/shared/fade-in-class.ts`, **sin** `"use client"`, para que también la usen Server Components (`not-found`, skeletons de `loading.tsx`).
+
+```tsx
+import { fadeInClass } from "@/components/shared"
+
+<p role="alert" className={cn("text-3xs text-destructive", fadeInClass({ from: "top", distance: 1, duration: 200 }))}>…</p>
+```
+
+| Opción | Valores | Default |
+|---|---|---|
+| `from` | `"top" \| "bottom" \| "left" \| "right"` | sin desplazamiento |
+| `distance` | `1 \| 2 \| 3 \| 4 \| 8` (escala de spacing, sigue el dial `--k`) | `2` |
+| `zoom` | escala desde 95 % | `false` |
+| `fade` | opacidad desde 0 | `true` |
+| `duration` | `150 … 700` ms | 150 ms (librería) |
+| `delay` | `200` ms | — |
+| `ease` | `"premium" \| "spring"` | `ease` |
+
+Siempre añade `fill-mode-both` y `motion-reduce:animate-none motion-reduce:opacity-100`. Las clases salen de tablas literales (Tailwind solo genera lo que lee en el código): un valor nuevo se agrega a la tabla, nunca se interpola.
+
 ---
 
 ## 3. Criterios Técnicos y Optimización de Rendimiento
@@ -131,31 +153,6 @@ Para asegurar que las animaciones locales se rendericen a **60-120 FPS** sin cau
 
 ---
 
-## 4. Evaluación Módulo por Módulo y Plan de Acción
+## 4. Estado
 
-A continuación se realiza una auditoría completa del árbol de páginas del frontend de ERPGrafico para categorizarlas bajo este contrato y definir en cuáles se debe implementar `<FadeIn>` local.
-
-### Tabla General de Auditoría de Módulos
-
-| Módulo / Ruta | Tipo de Navegación | Criterio de Animación Local | Estado | Archivos Clave a Modificar |
-|---|---|---|---|---|
-| **Mi Perfil** (`/profile`) | Pestañas y Sub-pestañas vía Query Params | **Requerido**. Mantiene el mismo pathname pero alterna sub-vistas pesadas. | 🟢 Implementado (`<FadeIn>` en `ProfileView.tsx`) | Ninguno |
-| **Tablero** (`/`) | Ruta simple / Dashboards estáticos | **No Requerido**. El Shell maneja la entrada principal. | 🟢 Conforme | Ninguno |
-| **Contactos** (`/contacts`) | Lista unificada con hojas colapsables | **No Requerido**. Usa Skeletons + hojas laterales dinámicas. | 🟢 Conforme | Ninguno |
-| **Ventas** (`/sales`) | Pestañas múltiples (`orders`, `quotes`, `customers`) | **Requerido**. Cambia de sub-tablas pesadas sin cambiar de ruta. | 🔴 Pendiente | `app/(dashboard)/sales/page.tsx` o vistas de pestañas. |
-| **Compras** (`/purchasing`) | Pestañas múltiples (`orders`, `requisitions`) | **Requerido**. Evitará el salto seco entre tablas de compras. | 🔴 Pendiente | `app/(dashboard)/purchasing/page.tsx` |
-| **Inventario** (`/inventory`) | Pestañas múltiples (`products`, `adjustments`, `warehouses`) | **Requerido**. Dinamiza el cambio de fichas de bodega y productos. | 🔴 Pendiente | `app/(dashboard)/inventory/page.tsx` |
-| **Tesorería** (`/treasury`) | Pestañas de movimientos y cuentas | **Requerido**. Muy útil al cambiar entre cuentas de caja y transacciones. | 🔴 Pendiente | `app/(dashboard)/treasury/page.tsx` |
-| **Producción** (`/production`) | Wizard / Flujos secuenciales | **Requerido**. Para las transiciones entre fases del asistente de órdenes. | 🟡 Parcial | Componentes del Wizard de Producción. |
-| **Facturación** (`/billing`) | Vistas de tarjetas y listas rápidas | **Requerido** (al cambiar tipo de vista o de tipo de documento). | 🔴 Pendiente | `app/(dashboard)/billing/page.tsx` |
-| **Contabilidad** (`/accounting`) | Pestañas de libros, diarios y balances | **Requerido**. Suaviza el cambio entre el Libro Diario, Mayor y Balances. | 🔴 Pendiente | `app/(dashboard)/accounting/page.tsx` |
-
----
-
-## 5. Próximos Pasos de Implementación
-
-Para ejecutar la unificación estética módulo a módulo con el menor riesgo:
-
-1. **Refactorizar el módulo Perfil** — ✅ **Completado**: los `<motion.div>` manuales de `ProfileView.tsx` fueron reemplazados por `<FadeIn>` (sirvió de PoC del contrato).
-2. **Implementar en Ventas y Compras**: Identificar los archivos contenedores de pestañas y envolverlos en `<FadeIn>`.
-3. **Auditar Rendimiento**: Monitorear las métricas de rendimiento (FPS y renderizados acumulados) tras la migración de cada módulo.
+La auditoría módulo por módulo de mayo de 2026 quedó obsoleta: desde ADR-0079 los módulos navegan por rutas (`/inventory/products`, `/sales/orders`…), de modo que la entrada de cada vista la anima el `DashboardShell` y `<FadeIn>` queda para sub-vistas del mismo pathname (wizards, pestañas por query param, paneles de POS). En ADR-0157 las 104 animaciones inline restantes (73 archivos) migraron a `fadeInClass()` y el ratchet se cerró en 0.

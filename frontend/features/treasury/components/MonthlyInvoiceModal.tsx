@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { BaseModal, CancelButton, DocumentAttachmentDropzone, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
+import { BaseModal, CancelButton, DocumentAttachmentDropzone, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton, fadeInClass } from '@/components/shared'
 import { FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useMonthlyInvoice } from "@/features/treasury/hooks/useMonthlyInvoice"
 import { useSuppliers } from "@/features/treasury/hooks/useSuppliers"
+import { cn } from "@/lib/utils"
 
 interface MonthlyInvoiceModalProps {
     open: boolean
@@ -101,7 +102,7 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                 />
             }
         >
-            <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 py-2">
+            <div className={cn("space-y-8 py-2", fadeInClass({ zoom: true, duration: 500 }))}>
                 <div className="grid grid-cols-12 gap-3">
                     <div className="col-span-12 lg:col-span-6">
                         <LabeledSelect

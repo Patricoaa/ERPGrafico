@@ -39,7 +39,7 @@ Problemas verificados:
 ## References
 
 - Contract: [color-system.md](../../20-contracts/color-system.md) (§3.1 primary, §5 dark adaptation, §6 sidebar)
-- [design-system.md](../design-system.md) ("Primary identity")
+- [DESIGN.md](../../../DESIGN.md) principio 2 (antes `design-system.md`, retirado en ADR-0157)
 - [GOVERNANCE.md](../../90-governance/GOVERNANCE.md)
 - Implementation: `frontend/app/globals.css` (`:root` y `.dark`, `--primary-raw`)
 - Test: `frontend/lib/__tests__/color-system.contract.test.ts`

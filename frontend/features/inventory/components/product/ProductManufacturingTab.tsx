@@ -2,7 +2,7 @@
 "use client"
 
 import { type UoM, type Product } from "@/types/entities"
-import { ActionConfirmModal, Banner, FormLineItemsTable, LabeledContainer, LabeledSeparator, LabeledSwitch, FormSelectionGroup, Badge, Section } from '@/components/shared'
+import { ActionConfirmModal, Banner, FormLineItemsTable, LabeledContainer, LabeledSeparator, LabeledSwitch, FormSelectionGroup, Badge, Section, fadeInClass } from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
@@ -43,7 +43,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
     const productionMode = isExpress ? "express" : "advanced"
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className={cn("space-y-8", fadeInClass({ duration: 500 }))}>
             <div className="space-y-4">
                 <Section.Header spaced title="Ajustes de Producción" icon={Settings2} />
 
@@ -135,7 +135,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
 
                     <div
                         className={cn(
-                            "space-y-4 animate-in fade-in slide-in-from-top-2 duration-300",
+                            cn("space-y-4", fadeInClass({ from: "top", duration: 300 })),
                             !requiresAdvancedmfg && "hidden"
                         )}
                     >
@@ -172,7 +172,7 @@ export function ProductManufacturingTab({ form, initialData, disabled = false }:
             </div>
 
             {hasBom && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-600">
+                <div className={cn("space-y-4", fadeInClass({ from: "bottom", distance: 4, duration: 600 }))}>
                     <Section.Header spaced title="Lista de materiales (LdM)" icon={Layers} />
 
                     {/* Contextual note for templates with variants */}

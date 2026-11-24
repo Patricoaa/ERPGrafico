@@ -2,7 +2,8 @@
 
 import { type MouseEvent, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
-import { FieldLegend, fieldLegendClasses } from "./FieldLegend"
+import { FieldLegend } from "./FieldLegend"
+import { fadeInClass } from "./fade-in-class"
 
 interface LabeledContainerProps {
     /** Label text rendered inside the fieldset legend (notched border). */
@@ -104,7 +105,7 @@ export function LabeledContainer({
             {(error || hint) && (
                 <div className="px-1 pt-1 min-h-[1.25rem]">
                     {error ? (
-                        <div className="text-3xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className={cn("text-3xs font-medium text-destructive", fadeInClass({ from: "top", distance: 1, duration: 200 }))}>
                             {error}
                         </div>
                     ) : hint ? (

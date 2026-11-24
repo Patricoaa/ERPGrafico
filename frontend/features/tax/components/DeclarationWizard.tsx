@@ -13,6 +13,7 @@ import {
     type WizardStep,
     Section,
     type SectionChecklistItem,
+    fadeInClass,
 } from '@/components/shared'
 import {
     Calculator,
@@ -39,6 +40,7 @@ import { F29CloseStep } from "./wizard/F29CloseStep"
 import { useF29Close } from "../hooks/useF29Close"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { generateUuidV4 } from "@/lib/uuid"
+import { cn } from "@/lib/utils"
 
 interface DeclarationWizardProps {
     isOpen: boolean
@@ -601,7 +603,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                 }
             >
                 <div className="flex-1 min-h-0 overflow-y-auto p-5">
-                <div className="flex flex-col items-center justify-center py-10 text-center space-y-8 animate-in zoom-in-95 duration-500">
+                <div className={cn("flex flex-col items-center justify-center py-10 text-center space-y-8", fadeInClass({ zoom: true, fade: false, duration: 500 }))}>
                     <CheckCircle2 className="h-12 w-12 text-success" />
                     <div className="space-y-3">
                         <h3 className="text-3xl font-black uppercase tracking-tight">

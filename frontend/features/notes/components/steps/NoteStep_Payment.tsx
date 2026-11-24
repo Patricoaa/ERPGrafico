@@ -24,6 +24,8 @@ import { CheckCircle2 } from 'lucide-react'
 import { PaymentMethodSelector, type PaymentData } from '@/features/treasury'
 import { useEffect } from 'react'
 import type { NoteType, NoteWizardMode } from '@/features/notes'
+import { fadeInClass } from "@/components/shared"
+import { cn } from "@/lib/utils"
 
 interface NoteStep_PaymentProps {
     mode: NoteWizardMode
@@ -79,7 +81,7 @@ export function NotePaymentStep({
           }
 
     return (
-        <div className="w-full h-full flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className={cn("w-full h-full flex flex-col space-y-6", fadeInClass({ from: "bottom", distance: 4, duration: 500 }))}>
             <div className="flex flex-col gap-1">
                 <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3 text-xl">
                     <CheckCircle2 className="h-6 w-6 text-primary" />

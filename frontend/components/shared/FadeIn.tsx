@@ -11,6 +11,14 @@ export interface FadeInProps {
     yOffset?: number
 }
 
+/**
+ * FadeIn — the only motion primitive for entry animation (component-animation.md).
+ *
+ * Wraps its children in a block that fades in and rises `yOffset` px. Use it for sub-views
+ * that change without a pathname change (tabs, wizard steps). When the animated element
+ * cannot be wrapped (a tooltip, a conditional class, a portal), use `fadeInClass()`
+ * (`fade-in-class.ts`): same recipe, applied to the element's own className.
+ */
 export function FadeIn({
     children,
     className,

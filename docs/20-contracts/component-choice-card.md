@@ -28,7 +28,7 @@ Import: `import { ChoiceCard, ChoiceGroup, SelectableCard, CardSurface, CardRail
 └─────────────────────────┘   radio: rounded-sm (8px)
 ```
 
-**Radio**: la familia interactiva/seleccionable (ProductCard, ChoiceCard, ContactCard, MfgLineCard, PaymentMethodSelector) usa `rounded-sm` (8px) — excepción documentada en ADR-0094 y `design-system.md` §2. `selectableCardClass()` ya emite `rounded-sm`.
+**Radio**: la familia interactiva/seleccionable (ProductCard, ChoiceCard, ContactCard, MfgLineCard, PaymentMethodSelector) usa `rounded-sm` (8px) — excepción documentada en ADR-0094 y [geometry-surfaces.md §2](./geometry-surfaces.md). `selectableCardClass()` ya emite `rounded-sm`.
 
 ## Lenguaje de selección (`SelectableCard`)
 

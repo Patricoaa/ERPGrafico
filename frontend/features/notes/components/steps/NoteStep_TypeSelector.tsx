@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { NoteType } from '@/features/notes'
+import { fadeInClass } from "@/components/shared"
 
 interface NoteStep_TypeSelectorProps {
     noteType: NoteType
@@ -22,7 +23,7 @@ interface NoteStep_TypeSelectorProps {
 
 export function NoteStep_TypeSelector({ noteType, onNoteTypeChange }: NoteStep_TypeSelectorProps) {
     return (
-        <div className="w-full h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className={cn("w-full h-full flex flex-col space-y-8", fadeInClass({ from: "bottom", distance: 4, duration: 500 }))}>
             <div className="text-center space-y-2 mb-8">
                 <h2 className="text-2xl font-black tracking-tight">Tipo de Documento</h2>
                 <p className="text-muted-foreground">

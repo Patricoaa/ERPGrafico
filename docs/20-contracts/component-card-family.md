@@ -3,13 +3,13 @@ layer: 20-contracts
 doc: component-card-family
 status: active
 owner: frontend-team
-last_review: 2026-10-22
+last_review: 2026-11-24
 stability: beta
 ---
 
 # Familia de cards — roles, superficies y tokens
 
-Contrato único de las cards del sistema (ADR-0097). Sustituye el criterio disperso de ADR-0092…0096. El detalle de cada componente vive en su contrato: [component-choice-card.md](./component-choice-card.md), [component-card.md](./component-card.md) (`Card` de panel), [component-entity-view.md](./component-entity-view.md), [component-metric.md](./component-metric.md) (y [component-statcard.md](./component-statcard.md), deprecado).
+Contrato único de las cards del sistema (ADR-0097). Sustituye el criterio disperso de ADR-0092…0096. El detalle de cada componente vive en su contrato: [component-choice-card.md](./component-choice-card.md), [component-card.md](./component-card.md) (`Card` de panel), [component-entity-view.md](./component-entity-view.md), [component-metric.md](./component-metric.md) (`StatCard` fue eliminado, ADR-0149). Radios, superficies y utilidades de acento: [geometry-surfaces.md](./geometry-surfaces.md).
 
 Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/components/shared'`
 
@@ -24,6 +24,8 @@ Import: `import { CardSurface, CardLead, CardRail, cardAnatomy } from '@/compone
 | `panel` | ninguna | `Card` shadcn / `surface-panel` | secciones de Settings, filas de configuración, paneles de edición, Cart, errores, `ChartCard` |
 
 **Regla del ribbon CMYK:** se previsualiza al hover y queda fijo cuando la card está elegida (`choice`, y las cards de entity-view, que comparten el lenguaje del product grid: ribbon + anillo + marca CMYK en el checkbox). En `item` de otras superficies (bandeja, kanban) y en `nav` solo aparece seleccionada. Nunca en `panel`/`metric`.
+
+**Marca de "elegido" en cards elegibles** (`choice` y `item` de entity-view): cinta CMYK + `SelectionCheck` + anillo K100 (`border-primary ring-1`). `CmykRing` no se usa en cards; queda en `Checkbox variant="circle"` y en `FormSelectionGroup`.
 
 En formularios CRUD, `FormSelectionGroup` compone `CardSurface` en modo radio o checkbox y usa el disco `CmykRing` como indicador común; su encabezado suelto siempre tiene icono y no muestra el ribbon. `ChoiceCard`/`ChoiceGroup` conservan su propio lenguaje para wizards y checkout.
 

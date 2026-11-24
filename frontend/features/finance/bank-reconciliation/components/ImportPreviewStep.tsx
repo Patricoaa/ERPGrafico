@@ -3,9 +3,10 @@
 import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { CheckCircle2, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
-import { Banner, Section } from "@/components/shared"
+import { Banner, Section, fadeInClass } from "@/components/shared"
 import { Collection, useEntityCollection } from "@/components/entity-view"
 import { importWarningEntity, importWarningViews, type ImportWarning } from "../entity-view/importWarning.entity"
+import { cn } from "@/lib/utils"
 
 export interface DryRunWarning {
     line: number | null
@@ -60,7 +61,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
     const hasErrors = data.errors.length > 0
 
     return (
-        <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className={cn("px-4 pb-4 pt-2 space-y-6", fadeInClass({ from: "right", distance: 4, duration: 500 }))}>
             <Section.Header spaced title="Resumen de la Cartola" icon={FileText} />
 
             {data.is_duplicate && (

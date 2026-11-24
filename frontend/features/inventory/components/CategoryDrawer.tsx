@@ -8,7 +8,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { SubmitButton, CancelButton, Drawer, FormFooter, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch, SelectorTrigger, Section } from "@/components/shared"
+import { SubmitButton, CancelButton, Drawer, FormFooter, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch, SelectorTrigger, Section, fadeInClass } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -363,7 +363,7 @@ export function CategoryDrawer({
                             />
 
                             {form.watch("has_custom_accounting") && (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className={cn("space-y-4", fadeInClass({ from: "top", duration: 300 }))}>
                                     <FormField
                                         control={form.control}
                                         name="asset_account"

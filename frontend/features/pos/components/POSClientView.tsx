@@ -10,7 +10,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip, StepHeader } from '@/components/shared'
+import { ActionConfirmModal, PrintableReceipt, BaseModal, Chip, StepHeader, fadeInClass } from '@/components/shared'
 import type { ProductCategory } from '@/features/inventory'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
@@ -500,7 +500,7 @@ export function POSClientView() {
             detail={operatorName ? `Operador: ${operatorName}` : undefined}
             onWake={wakeScreen}
         />
-        <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-500 motion-reduce:animate-none">
+        <div className={cn("flex-1 flex flex-col overflow-hidden", fadeInClass({ duration: 500 }))}>
             <POSTopBar
                 title={currentSession?.terminal_name || "Punto de Venta"}
                 subtitle={currentSession ? sessionSubtitle : undefined}
@@ -518,7 +518,7 @@ export function POSClientView() {
                         }
 
                         return syncDrafts.length > 0 && (
-                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300 motion-reduce:animate-none max-w-[40vw] overflow-x-auto no-scrollbar">
+                            <div className={cn("hidden lg:flex items-center gap-1 mr-2 max-w-[40vw] overflow-x-auto no-scrollbar", fadeInClass({ zoom: true, duration: 300 }))}>
                                 {quickDrafts.map(d => {
                                     const lockInfo = getLockInfo(d.id)
                                     const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
@@ -649,8 +649,8 @@ export function POSClientView() {
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden p-3">
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
-                        <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
-                            <div className="flex-1 flex flex-col min-h-0 rounded-sm border border-border bg-card p-3">
+                        <div key="shop" className={cn("flex-1 flex flex-col min-h-0", fadeInClass({ from: "left", duration: 300, ease: "premium" }))}>
+                            <div className="surface-panel flex-1 flex flex-col min-h-0 p-3">
                                 <div className="pb-2">
                                     <StepHeader title="Productos" description="Busque o escanee los productos para agregarlos al carrito." icon={ShoppingBasket} />
                                 </div>
@@ -680,7 +680,7 @@ export function POSClientView() {
                             </div>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 rounded-sm border border-border bg-card overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both motion-reduce:animate-none">
+                        <div key={currentDraftId || 'checkout-new'} className={cn("surface-panel flex-1 flex flex-col min-h-0 overflow-hidden", fadeInClass({ from: "right", duration: 300, ease: "premium" }))}>
                             <SalesCheckoutWizardView
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}

@@ -12,9 +12,10 @@
 import { CheckCircle2, FileText } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { DataCell } from '@/components/shared'
+import { DataCell, fadeInClass } from '@/components/shared'
 import type { NoteLineItem, NoteType } from '@/features/notes'
 import type { RegistrationData } from '@/features/notes'
+import { cn } from "@/lib/utils"
 
 interface NoteStep_ReviewProps {
     noteType: NoteType
@@ -36,7 +37,7 @@ export function NoteReviewStep({
     const activeLines = lines.filter(l => l.noteQuantity > 0)
 
     return (
-        <div className="w-full h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className={cn("w-full h-full flex flex-col space-y-8", fadeInClass({ from: "bottom", distance: 4, duration: 500 }))}>
             <div className="text-center space-y-2 mb-8">
                 <CheckCircle2 className="h-8 w-8 text-muted-foreground mx-auto" />
                 <h2 className="text-2xl font-black tracking-tight">Confirmar Registro</h2>

@@ -6,13 +6,14 @@ import { ShoppingCart, FileText } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { ENTITY_DRAWERS, POSSessionDrawer } from "@/lib/entity-drawers"
 import { SalesOrdersView } from "@/features/sales"
-import { TabBar, Drawer, DrawerScope, SkeletonShell, DocumentHeaderSlotContext, DocumentBackAction, type DocumentHeaderSlots, type DrawerScopeValue } from "@/components/shared"
+import { TabBar, Drawer, DrawerScope, SkeletonShell, DocumentHeaderSlotContext, DocumentBackAction, type DocumentHeaderSlots, type DrawerScopeValue, fadeInClass } from "@/components/shared"
 import { EntityNavigationScope } from "@/components/providers/GlobalModalProvider"
 import { InvoiceSheet, NoteWizardTab, OrderSheet } from "@/features/orders"
 import { usePosDocumentStack, POS_NOTE_WIZARD_LABEL } from "../hooks/usePosDocumentStack"
 import { setPosOperatorHeaders } from "@/lib/pos-operator"
 import { useOperatorGate } from "../operator"
 import { overlayEntriesOf, paneEntryOf, type StackEntry } from "../utils/documentStack"
+import { cn } from "@/lib/utils"
 
 interface SalesOrdersDrawerProps {
     open: boolean
@@ -206,7 +207,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                                 { value: 'orders', label: 'Ventas', icon: ShoppingCart },
                                 { value: 'notes', label: 'Notas C/D', icon: FileText }
                             ]}
-                            className="w-auto animate-in fade-in duration-300"
+                            className={cn("w-auto", fadeInClass({ duration: 300 }))}
                         >
                             <div className="hidden" />
                         </TabBar>

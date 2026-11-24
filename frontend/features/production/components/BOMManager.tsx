@@ -8,7 +8,7 @@ import {
 
 import { BOMDrawer } from "./BOMDrawer"
 
-import { ActionConfirmModal, Banner, LabeledSelect } from '@/components/shared'
+import { ActionConfirmModal, Banner, LabeledSelect, fadeInClass } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { getDomainConceptCode, getDomainConceptLabel, getDomainConceptMessage, getDomainConceptTitle } from "@/lib/entity-registry"
 import { bomManagerActions, type BOMManagerActionsCtx } from './bomManagerActions'
@@ -107,7 +107,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
     if (!product?.id) {
         return (
-            <div className="p-12 text-center border-2 border-dashed rounded-md bg-muted/5 text-muted-foreground animate-in fade-in zoom-in-95 duration-500">
+            <div className={cn("p-12 text-center border-2 border-dashed rounded-md bg-muted/5 text-muted-foreground", fadeInClass({ zoom: true, duration: 500 }))}>
                 <Box className="h-10 w-10 mx-auto mb-4 opacity-30 text-primary" />
                 <h3 className="text-sm font-black uppercase text-primary tracking-widest leading-none mb-1">Producto no guardado</h3>
                 <p className="text-3xs font-medium uppercase tracking-tight">Guarde los cambios iniciales para gestionar su estructura técnica.</p>
@@ -153,7 +153,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         </div>
 
                         {product?.has_variants && (
-                            <div className="mt-6 bg-primary/5 p-5 rounded-md border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-500">
+                            <div className={cn("mt-6 bg-primary/5 p-5 rounded-md border border-primary/20", fadeInClass({ from: "top", duration: 500 }))}>
                                 <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
                                     <LabeledSelect
                                         label="Contexto de Manufactura"

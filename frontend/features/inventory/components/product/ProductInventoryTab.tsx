@@ -4,7 +4,7 @@ import { FormField } from "@/components/ui/form"
 import {Package, Warehouse} from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
-import { LabeledSwitch, MultiSelectTagInput, Section } from "@/components/shared"
+import { LabeledSwitch, MultiSelectTagInput, Section, fadeInClass } from "@/components/shared"
 import { UoMSelector, WarehouseSelector, AdvancedContactSelector } from "@/components/selectors"
 import { cn } from "@/lib/utils"
 import { frozenFieldsOf } from "@/lib/edit-policy"
@@ -41,7 +41,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
     const showControlSection = !isService && Boolean(trackInventory)
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-500">
+        <div className={cn("space-y-10", fadeInClass({ duration: 500 }))}>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10 items-start">
                 {/* Units Section */}
                 <div className={cn("col-span-1 space-y-4", !showControlSection ? "md:col-span-4" : "md:col-span-2")}>
@@ -150,7 +150,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                         />
                                     )}
 
-                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-400">
+                                    <div className={cn("space-y-4", fadeInClass({ from: "top", duration: 400 }))}>
                                         <FormField
                                             control={form.control}
                                             name="receiving_warehouse"
