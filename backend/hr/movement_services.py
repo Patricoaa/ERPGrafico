@@ -10,6 +10,8 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.db.models import Sum
 from django.utils.translation import gettext_lazy as _
 
@@ -207,10 +209,7 @@ class EmployeeMovementService:
         movement = lock_document(allocation.movement)
         if allocation.payroll.status != Payroll.Status.DRAFT:
             raise ValidationError(_("La liquidación está contabilizada; no se pueden cambiar sus asignaciones."))
-        had_installment = allocation.installment_id is not None
-        allocation.delete()
-        if had_installment:
-            _rebuild_pending(movement)
+        allocation.delete()  # el post_delete reconstruye las cuotas pendientes
 
     @staticmethod
     @transaction.atomic
@@ -308,3 +307,13 @@ class EmployeeMovementService:
             movement=movement, payroll=payroll, amount=payment_amount, principal_part=payment_amount, interest_part=0
         )
         return movement
+
+
+@receiver(post_delete, sender=PayrollAllocation)
+def rebuild_installments_after_allocation_removed(sender, instance, **kwargs):
+    """Al quitar una asignación (o borrar su liquidación borrador) la cuota vuelve al plan recalculado."""
+    if not instance.installment_id:
+        return
+    movement = EmployeeMovement.objects.filter(pk=instance.movement_id, status__in=_ACTIVE).first()
+    if movement is not None:
+        _rebuild_pending(movement)

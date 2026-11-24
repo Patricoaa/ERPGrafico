@@ -7,6 +7,8 @@ class HrConfig(AppConfig):
     verbose_name = "Recursos Humanos"
 
     def ready(self):
+        from . import movement_services  # noqa: F401  (registra señales de cuotas, ADR-0156)
+
         try:
             from core.permissions import PermissionRegistry
 

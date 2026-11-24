@@ -206,6 +206,7 @@ class Roles:
     ANTICIPO = "Anticipo"
     PRESTAMO_TRABAJADOR = "Préstamo a Trabajador"
     INTERES = "Gasto Interés"
+    INTERES_GANADO = "Interés Ganado"
     SEGURO = "Gasto Seguro"
     PENALIZACION = "Penalización"
     BANCO = "Banco"

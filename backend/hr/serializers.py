@@ -9,9 +9,11 @@ from .models import (
     Absence,
     Employee,
     EmployeeConceptAmount,
+    EmployeeMovement,
     GlobalHRSettings,
     Payroll,
     PayrollConcept,
+    PayrollAllocation,
     PayrollItem,
     PayrollPayment,
     SalaryAdvance,
@@ -254,6 +256,40 @@ class PayrollItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
+class PayrollAllocationSerializer(serializers.ModelSerializer):
+    kind = serializers.CharField(source="movement.kind", read_only=True)
+    kind_display = serializers.CharField(source="movement.get_kind_display", read_only=True)
+    movement_display_id = serializers.CharField(source="movement.display_id", read_only=True)
+    movement_date = serializers.DateField(source="movement.date", read_only=True)
+    movement_status = serializers.CharField(source="movement.status", read_only=True)
+    installment_number = serializers.IntegerField(source="installment.number", read_only=True, default=None)
+
+    class Meta:
+        model = PayrollAllocation
+        fields = [
+            "id", "movement", "movement_display_id", "movement_date", "movement_status", "kind", "kind_display",
+            "amount", "principal_part", "interest_part", "installment", "installment_number",
+        ]
+        read_only_fields = fields
+
+
+class EmployeeMovementSerializer(serializers.ModelSerializer):
+    """Serializador base de movimientos (la API completa se extiende en la tarea de API)."""
+
+    display_id = serializers.CharField(read_only=True)
+    employee_name = serializers.CharField(source="employee.contact.name", read_only=True)
+    kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = EmployeeMovement
+        fields = [
+            "id", "display_id", "employee", "employee_name", "kind", "kind_display", "date", "amount", "notes",
+            "status", "status_display", "journal_entry", "created_at", "updated_at",
+        ]
+        read_only_fields = fields
+
+
 class PayrollListSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source="employee.contact.name", read_only=True)
     employee_display_id = serializers.CharField(source="employee.display_id", read_only=True)
@@ -293,7 +329,8 @@ class PayrollListSerializer(serializers.ModelSerializer):
         ) or 0
 
     def get_advances_total(self, obj):
-        return sum(a.amount for a in obj.advances.all()) or 0
+        """Descuentos de anticipo/préstamo asignados a la liquidación (ADR-0156)."""
+        return sum(a.amount for a in obj.allocations.all() if a.movement.kind != "PAYMENT" and a.movement.status in ("POSTED", "SETTLED")) or 0
 
     def get_previred_paid_amount(self, obj):
         from .models import PayrollPayment
@@ -305,12 +342,10 @@ class PayrollListSerializer(serializers.ModelSerializer):
         ) or 0
 
     def get_remuneration_paid_amount(self, obj):
-        from .models import PayrollPayment
         return sum(
-            p.amount
-            for p in obj.payments.all()
-            if p.payment_type == PayrollPayment.PaymentType.SALARIO
-            and p.status == PayrollPayment.Status.POSTED
+            a.amount
+            for a in obj.allocations.all()
+            if a.movement.kind == "PAYMENT" and a.movement.status == "POSTED"
         ) or 0
 
     def get_total_previred(self, obj):
@@ -463,8 +498,18 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
     period_label = serializers.CharField(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     items = PayrollItemSerializer(many=True, read_only=True)
-    advances = SalaryAdvanceSerializer(many=True, read_only=True)
+    allocations = PayrollAllocationSerializer(many=True, read_only=True)
+    balance = serializers.SerializerMethodField()
+    cap_warning = serializers.SerializerMethodField()
     is_editable = IsEditableField()
+
+    def get_balance(self, obj):
+        from .movement_services import payroll_balance
+        return payroll_balance(obj)
+
+    def get_cap_warning(self, obj):
+        from .movement_services import EmployeeMovementService
+        return EmployeeMovementService.cap_warning(obj)
 
     class Meta:
         model = Payroll
@@ -490,7 +535,9 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             "journal_entry",
             "previred_journal_entry",
             "items",
-            "advances",
+            "allocations",
+            "balance",
+            "cap_warning",
             "notes",
             "created_at",
             "updated_at",
@@ -578,7 +625,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
 
     # We will filter the items directly in the SerializerMethodField
     items = PayrollItemSerializer(many=True, read_only=True)
-    advances = SalaryAdvanceSerializer(many=True, read_only=True)
+    allocations = PayrollAllocationSerializer(many=True, read_only=True)
     payments = PayrollPaymentSerializer(many=True, read_only=True)
     employee_detail = EmployeeSerializer(source="employee", read_only=True)
     is_salary_paid = serializers.SerializerMethodField()
@@ -609,7 +656,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
             "is_salary_paid",
             "is_previred_paid",
             "items",
-            "advances",
+            "allocations",
             "payments",
             "notes",
             "created_at",
@@ -629,14 +676,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
         return ret
 
     def get_is_salary_paid(self, obj):
-        try:
-            return any(
-                p.payment_type == PayrollPayment.PaymentType.SALARIO.value
-                and p.status == PayrollPayment.Status.POSTED
-                for p in obj.payments.all()
-            )
-        except Exception:
-            return False
+        return any(a.movement.kind == "PAYMENT" and a.movement.status == "POSTED" for a in obj.allocations.all())
 
     def get_is_previred_paid(self, obj):
         try:

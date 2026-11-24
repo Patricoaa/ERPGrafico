@@ -32,6 +32,7 @@ from .serializers import (
     AbsenceSerializer,
     AFPSerializer,
     EmployeeConceptAmountSerializer,
+    EmployeeMovementSerializer,
     EmployeeSerializer,
     EmployeeWriteSerializer,
     GlobalHRSettingsSerializer,
@@ -239,7 +240,7 @@ class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
             Payroll.objects.select_related(
                 "employee", "employee__contact", "journal_entry", "previred_journal_entry"
             )
-            .prefetch_related("items", "items__concept", "advances", "payments")
+            .prefetch_related("items", "items__concept", "allocations__movement", "allocations__installment", "payments")
             .all()
         )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -318,7 +319,7 @@ class PayrollViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistory):
             payment = PayrollPaymentService.pay_salary_from_request(request, self.get_object())
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+        return Response(EmployeeMovementSerializer(payment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["post"])
     def generate_proforma(self, request):

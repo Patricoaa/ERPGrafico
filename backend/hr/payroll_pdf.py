@@ -179,40 +179,31 @@ def generate_payroll_pdf(payroll) -> BytesIO:
 
     # Payment history
     unified_payments = []
-    for adv in payroll.advances.all():
+    for alloc in payroll.allocations.select_related("movement", "movement__journal_entry").filter(
+        movement__status__in=["POSTED", "SETTLED"]
+    ):
+        movement = alloc.movement
+        is_payment = movement.kind == "PAYMENT"
         method_name = "Efectivo"
-        if adv.journal_entry:
+        if movement.journal_entry:
             try:
-                movement = adv.journal_entry.treasury_movement
+                treasury = movement.journal_entry.treasury_movement
                 method_name = (
-                    movement.payment_method_new.name
-                    if movement.payment_method_new
-                    else movement.get_payment_method_display()
+                    treasury.payment_method_new.name
+                    if treasury.payment_method_new
+                    else treasury.get_payment_method_display()
                 )
             except Exception:
                 pass
+        if is_payment:
+            method_name = movement.notes or "Transferencia"
         unified_payments.append(
             {
-                "date": str(adv.date),
-                "type": "Anticipo",
-                "amount": adv.amount,
+                "date": str(movement.date),
+                "type": "Pago Sueldo" if is_payment else movement.get_kind_display(),
+                "amount": alloc.amount,
                 "method": method_name,
-                "is_advance": True,
-            }
-        )
-
-    for pay in PayrollPayment.objects.filter(
-        payroll=payroll,
-        payment_type=PayrollPayment.PaymentType.SALARIO,
-        status=PayrollPayment.Status.POSTED,
-    ):
-        unified_payments.append(
-            {
-                "date": str(pay.date),
-                "type": "Pago Sueldo",
-                "amount": pay.amount,
-                "method": pay.notes or "Transferencia",
-                "is_advance": False,
+                "is_advance": not is_payment,
             }
         )
 
