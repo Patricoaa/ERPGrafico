@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagination
 from core.api.permissions import require_perms
+from core.cache import load_singleton
 from core.edit_policy import annotate_edit_usage, assert_editable
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
@@ -61,12 +62,12 @@ class GlobalHRSettingsViewSet(viewsets.ViewSet):
         return [require_perms(f"hr.{perm}_globalhrsettings")()]
 
     def retrieve(self, request, pk=None):
-        obj, _ = GlobalHRSettings.objects.get_or_create(pk=1)
+        obj = load_singleton(GlobalHRSettings)
         serializer = GlobalHRSettingsSerializer(obj)
         return Response(serializer.data)
 
     def partial_update(self, request, pk=None):
-        obj, _ = GlobalHRSettings.objects.get_or_create(pk=1)
+        obj = load_singleton(GlobalHRSettings)
         serializer = GlobalHRSettingsSerializer(obj, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -77,7 +78,7 @@ class GlobalHRSettingsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["get", "patch", "put"])
     def current(self, request):
-        obj, _ = GlobalHRSettings.objects.get_or_create(pk=1)
+        obj = load_singleton(GlobalHRSettings)
         if request.method in ["PATCH", "PUT"]:
             serializer = GlobalHRSettingsSerializer(
                 obj, data=request.data, partial=(request.method == "PATCH")

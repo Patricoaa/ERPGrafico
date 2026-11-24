@@ -631,17 +631,17 @@ class ContactSelector:
 
     @staticmethod
     def get_credit_history(contact):
-        from sales.models import SaleOrder
+        from sales.selectors import SaleOrderSelector
         from sales.serializers import SaleOrderSerializer
 
-        history = (
-            SaleOrder.objects.filter(
-                customer=contact, credit_assignment_origin__isnull=False
-            )
+        # Same preload as the sale-order list/retrieve endpoints: everything SaleOrderSerializer reads.
+        history = list(
+            SaleOrderSelector.get_read_queryset()
+            .filter(customer=contact, credit_assignment_origin__isnull=False)
             .order_by("-date", "-created_at")
-            .select_related("pos_session", "credit_approval_task")
-            .prefetch_related("payments", "invoices", "lines", "deliveries", "work_orders")
         )
+        SaleOrderSelector.preload_reserved_stock(history)
+        SaleOrderSelector.preload_invoices(history)
         return SaleOrderSerializer(history, many=True).data
 
     @staticmethod

@@ -22,6 +22,7 @@ from tax.fiscal_match.candidates import (
     payment_compatible,
     stamp_groups,
     terminals_by_device,
+    tuu_type_fits,
 )
 from tax.models import FiscalMatch
 from treasury.models import TerminalSale, TreasuryMovement
@@ -210,12 +211,17 @@ def _candidates(
     out: dict[int, set[int]] = {}
     for s in sales:
         key = _clp(s.sale_amount)
-        out[s.id] = {
-            m.id
+        compatible = [
+            m
             for m in (by_amount.get(key, ()) if key is not None else ())
             if abs(m.created_at - s.transaction_at) <= window
             and payment_compatible(s, m, terminals)
-        }
+        ]
+        # The DTE type TUU reports breaks ties (a 39 and a 48 of the same amount are not
+        # ambiguous), but it never discards the only candidate: a card boleta 41 that TUU
+        # filed as 48 must still link, so the group shows the type DIFF instead of PENDING.
+        fitting = [m for m in compatible if tuu_type_fits(s, m.invoice.sii_code)]
+        out[s.id] = {m.id for m in (fitting or compatible)}
     return out
 
 
