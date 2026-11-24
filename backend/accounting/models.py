@@ -1223,6 +1223,24 @@ class AccountingSettings(TimeStampedModel):
         verbose_name=_("Cuenta Anticipos de Remuneraciones"),
         help_text=_("Cuenta de activo para registrar adelantos a trabajadores."),
     )
+    account_prestamos_trabajadores = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="settings_hr_prestamos",
+        verbose_name=_("Cuenta Préstamos a Trabajadores"),
+        help_text=_("Cuenta de activo para el capital de préstamos entregados a trabajadores."),
+    )
+    account_intereses_prestamos = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="settings_hr_intereses",
+        verbose_name=_("Cuenta Intereses de Préstamos"),
+        help_text=_("Cuenta de ingreso financiero para los intereses cobrados al descontar cuotas."),
+    )
 
     # Inventory Config
     inventory_valuation_method = models.CharField(

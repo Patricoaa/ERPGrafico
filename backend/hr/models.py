@@ -38,6 +38,14 @@ class GlobalHRSettings(TimeStampedModel):
         default=Decimal("500000.00"),
         help_text=_("Valor del sueldo mínimo legal para el período."),
     )
+    loan_deduction_cap_percent = models.DecimalField(
+        _("Tope de descuentos por anticipos y préstamos (%)"),
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("15"),
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))],
+        help_text=_("Porcentaje de la remuneración total sobre el cual se advierte al asignar descuentos."),
+    )
 
     class Meta:
         verbose_name = _("Parámetros Globales RRHH")
