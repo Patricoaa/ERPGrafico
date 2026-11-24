@@ -11,10 +11,11 @@ import * as z from "zod"
 import {
     postPayroll, generateProformaPayroll, deletePayroll,
     createPayrollItem, updatePayrollItem, deletePayrollItem, payPrevired, paySalary,
-    updateAdvance, getPendingAdvancesForEmployee, annulPayrollPayment,
+    annulPayrollPayment,
 } from '@/features/hr/api/hrApi'
 import { PaymentModal } from "@/features/treasury"
-import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
+import type { PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
+import { PayrollAllocationsSection } from "./PayrollAllocationsSection"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -142,13 +143,12 @@ export function PayrollDetailView({
 
     const isPosted = payroll?.status === 'POSTED'
     const activePayments = payments.filter((p: PayrollPayment) => p.status === 'POSTED')
-    const salaroPaid = activePayments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
     const previredPaid = activePayments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
 
     const netSalary = parseFloat(payroll?.net_salary || "0")
-    const totalAdvances = payroll?.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
-    const totalSalaryPaid = activePayments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
-    const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
+    // Saldo a pagar: líquido menos anticipos, cuotas y pagos ya contabilizados (fuente única en el backend, ADR-0156).
+    const pendingSalary = Math.max(0, payroll?.balance !== undefined ? parseFloat(payroll.balance) : netSalary)
+    const salaroPaid = isPosted && pendingSalary <= 0
     const totalPrevired = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR').reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount || "0"), 0) || 0
     const pendingPrevired = Math.max(0, totalPrevired - activePayments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0))
 
@@ -381,12 +381,13 @@ export function PayrollDetailView({
                     )}
 
                     {viewMode === 'admin' && (
-                        <AdvancesSection
+                        <PayrollAllocationsSection
                             payrollId={payrollId}
                             employeeId={payroll.employee}
-                            advances={payroll.advances ?? []}
+                            allocations={payroll.allocations ?? []}
+                            capWarning={payroll.cap_warning}
                             isPosted={isPosted}
-                            onChanged={fetchPayroll}
+                            onChanged={() => { fetchPayroll(); onUpdate?.() }}
                         />
                     )}
                 </div>
@@ -504,138 +505,6 @@ function PaymentsSection({ payments, onChanged }: { payments: PayrollPayment[], 
                     }
                 }}
             />
-        </>
-    )
-}
-
-function AdvancesSection({ payrollId, employeeId, advances, isPosted, onChanged }: {
-    payrollId: number
-    employeeId: number
-    advances: SalaryAdvance[]
-    isPosted: boolean
-    onChanged: () => void
-}) {
-    const [linkOpen, setLinkOpen] = useState(false)
-    const [pending, setPending] = useState<SalaryAdvance[]>([])
-    const [loadingPending, setLoadingPending] = useState(false)
-    const [linking, setLinking] = useState<number | null>(null)
-    const [unlinking, setUnlinking] = useState<number | null>(null)
-
-    const openLinkModal = async () => {
-        setLinkOpen(true)
-        setLoadingPending(true)
-        try {
-            const results = await getPendingAdvancesForEmployee(employeeId)
-            setPending(results)
-        } catch (e) {
-            showApiError(e, "Error al cargar anticipos pendientes")
-        } finally {
-            setLoadingPending(false)
-        }
-    }
-
-    const handleLink = async (advanceId: number) => {
-        setLinking(advanceId)
-        try {
-            await updateAdvance(advanceId, { payroll: payrollId } as Partial<SalaryAdvance>)
-            onChanged()
-            setLinkOpen(false)
-        } catch (e) {
-            showApiError(e, "Error al vincular anticipo")
-        } finally {
-            setLinking(null)
-        }
-    }
-
-    const handleUnlink = async (advanceId: number) => {
-        setUnlinking(advanceId)
-        try {
-            await updateAdvance(advanceId, { payroll: null } as Partial<SalaryAdvance>)
-            onChanged()
-        } catch (e) {
-            showApiError(e, "Error al desvincular anticipo")
-        } finally {
-            setUnlinking(null)
-        }
-    }
-
-    return (
-        <>
-            <Section
-                className="mt-6"
-                title="Anticipos vinculados"
-                count={advances.length}
-                isEmpty={advances.length === 0}
-                emptyTitle="Sin anticipos vinculados."
-                actions={!isPosted ? (
-                    <Section.Action text="Vincular anticipo" icon={Link2} variant="outline" onClick={openLinkModal} />
-                ) : undefined}
-            >
-                {advances.map(adv => (
-                    <Section.Row
-                        key={adv.id}
-                        title={adv.date}
-                        value={<MoneyDisplay amount={adv.amount} />}
-                        actions={
-                            <>
-                                <StatusBadge status={adv.status} size="sm" variant="badge" />
-                                {!isPosted && adv.status === "PAID" && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                                        onClick={() => handleUnlink(adv.id)}
-                                        disabled={unlinking === adv.id}
-                                        aria-label="Desvincular"
-                                    >
-                                        <X className="h-3.5 w-3.5" />
-                                    </Button>
-                                )}
-                            </>
-                        }
-                    />
-                ))}
-            </Section>
-
-            <BaseModal
-                open={linkOpen}
-                onOpenChange={setLinkOpen}
-                icon={Link2}
-                title="Vincular anticipo"
-                description="Anticipos pendientes del empleado sin liquidación asignada"
-                footer={
-                    <FormFooter actions={<CancelButton onClick={() => setLinkOpen(false)} />} />
-                }
-            >
-                <div className="px-6 pb-4 pt-2 min-h-[80px]">
-                    {loadingPending ? (
-                        <div className="flex items-center justify-center py-8">
-                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : pending.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-4">No hay anticipos pendientes para este empleado.</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {pending.map(adv => (
-                                <div key={adv.id} className="flex items-center justify-between border rounded-sm px-3 py-2 text-sm">
-                                    <div className="flex flex-col">
-                                        <MoneyDisplay amount={adv.amount} className="font-medium text-sm" />
-                                        <span className="text-xs text-muted-foreground">{adv.date}</span>
-                                    </div>
-                                    <SubmitButton
-                                        size="sm"
-                                        className="h-control-xs text-xs rounded-sm"
-                                        onClick={() => handleLink(adv.id)}
-                                        loading={linking === adv.id}
-                                    >
-                                        Vincular
-                                    </SubmitButton>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </BaseModal>
         </>
     )
 }

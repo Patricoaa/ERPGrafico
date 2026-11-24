@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from contacts.models import Contact
@@ -8,13 +9,40 @@ from .models import (
     Absence,
     Employee,
     EmployeeConceptAmount,
+    EmployeeMovement,
     GlobalHRSettings,
+    LoanInstallment,
     Payroll,
+    PayrollAllocation,
     PayrollConcept,
     PayrollItem,
     PayrollPayment,
-    SalaryAdvance,
 )
+
+
+def _validate_assignable_employee(serializer, employee):
+    """Empleados archivados no reciben nuevos anticipos ni inasistencias (ADR-0154)."""
+    current = getattr(serializer.instance, "employee_id", None)
+    if not employee.is_active and employee.pk != current:
+        raise serializers.ValidationError(
+            "El empleado está archivado; restáuralo para registrar movimientos nuevos."
+        )
+    return employee
+
+
+_LOAN_TERM_FIELDS = ("rate", "installments_count", "first_installment_month")
+
+
+def _validate_loan_terms(terms: dict) -> None:
+    errors = {}
+    if terms["rate"] is not None and terms["rate"] < 0:
+        errors["rate"] = "La tasa no puede ser negativa."
+    if terms["installments_count"] is not None and terms["installments_count"] < 1:
+        errors["installments_count"] = "El préstamo requiere al menos una cuota."
+    if terms["first_installment_month"] is not None and not 1 <= terms["first_installment_month"] <= 12:
+        errors["first_installment_month"] = "El mes debe estar entre 1 y 12."
+    if errors:
+        raise serializers.ValidationError(errors)
 
 
 class GlobalHRSettingsSerializer(serializers.ModelSerializer):
@@ -78,7 +106,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
     contact_detail = ContactMiniSerializer(source="contact", read_only=True)
     afp_detail = AFPSerializer(source="afp", read_only=True)
     display_id = serializers.CharField(read_only=True)
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
     salud_type_display = serializers.CharField(source="get_salud_type_display", read_only=True)
     contract_type_display = serializers.CharField(
         source="get_contract_type_display", read_only=True
@@ -100,8 +127,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "position",
             "department",
             "start_date",
-            "status",
-            "status_display",
+            "end_date",
+            "is_active",
             "contract_type",
             "contract_type_display",
             "base_salary",
@@ -147,7 +174,8 @@ class EmployeeWriteSerializer(serializers.ModelSerializer):
             "position",
             "department",
             "start_date",
-            "status",
+            "end_date",
+            "is_active",
             "contract_type",
             "base_salary",
             "afp",
@@ -164,6 +192,27 @@ class EmployeeWriteSerializer(serializers.ModelSerializer):
             "concept_amounts",
         ]
         read_only_fields = ["id", "code"]
+
+    def validate(self, attrs):
+        """`end_date` e `is_active` van juntos: archivar fija el egreso, restaurar lo limpia."""
+        instance = self.instance
+        is_active = attrs.get("is_active", instance.is_active if instance else True)
+        if is_active:
+            if attrs.get("end_date") is not None:
+                raise serializers.ValidationError(
+                    {"end_date": "Un empleado activo no puede tener fecha de egreso."}
+                )
+            attrs["end_date"] = None
+            return attrs
+        end_date = attrs.get("end_date") or (instance.end_date if instance else None)
+        end_date = end_date or timezone.localdate()
+        start_date = attrs.get("start_date", instance.start_date if instance else None)
+        if start_date and end_date < start_date:
+            raise serializers.ValidationError(
+                {"end_date": "La fecha de egreso no puede ser anterior a la de ingreso."}
+            )
+        attrs["end_date"] = end_date
+        return attrs
 
     def create(self, validated_data):
         from .services import EmployeeService
@@ -197,6 +246,9 @@ class AbsenceSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
+    def validate_employee(self, employee):
+        return _validate_assignable_employee(self, employee)
+
 
 # --- Payroll ---
 
@@ -217,6 +269,90 @@ class PayrollItemSerializer(serializers.ModelSerializer):
             "is_previred",
         ]
         read_only_fields = ["id"]
+
+
+class PayrollAllocationSerializer(serializers.ModelSerializer):
+    kind = serializers.CharField(source="movement.kind", read_only=True)
+    kind_display = serializers.CharField(source="movement.get_kind_display", read_only=True)
+    movement_display_id = serializers.CharField(source="movement.display_id", read_only=True)
+    movement_date = serializers.DateField(source="movement.date", read_only=True)
+    movement_status = serializers.CharField(source="movement.status", read_only=True)
+    installment_number = serializers.IntegerField(source="installment.number", read_only=True, default=None)
+
+    class Meta:
+        model = PayrollAllocation
+        fields = [
+            "id", "movement", "payroll", "movement_display_id", "movement_date", "movement_status", "kind", "kind_display",
+            "amount", "principal_part", "interest_part", "installment", "installment_number",
+        ]
+        read_only_fields = fields
+
+
+class LoanInstallmentSerializer(serializers.ModelSerializer):
+    is_allocated = serializers.SerializerMethodField()
+
+    def get_is_allocated(self, obj):
+        return bool(obj.allocations.all())
+
+    class Meta:
+        model = LoanInstallment
+        fields = ["id", "number", "year", "month", "principal", "interest", "amount", "status", "is_allocated"]
+        read_only_fields = fields
+
+
+class EmployeeMovementSerializer(serializers.ModelSerializer):
+    """Movimiento con el empleado: pago de remuneración, anticipo o préstamo (ADR-0156)."""
+
+    display_id = serializers.CharField(read_only=True)
+    employee_name = serializers.CharField(source="employee.contact.name", read_only=True)
+    employee_display_id = serializers.CharField(source="employee.display_id", read_only=True)
+    kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    installments = LoanInstallmentSerializer(many=True, read_only=True)
+    allocations = PayrollAllocationSerializer(many=True, read_only=True)
+    balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    free_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    payment_method_name = serializers.SerializerMethodField()
+    is_editable = IsEditableField()
+
+    class Meta:
+        model = EmployeeMovement
+        fields = [
+            "id", "display_id", "employee", "employee_name", "employee_display_id", "kind", "kind_display",
+            "date", "amount", "notes", "status", "status_display", "journal_entry", "is_editable",
+            "rate", "rate_period", "installments_count", "first_installment_year", "first_installment_month",
+            "installments", "allocations", "balance", "free_balance", "payment_method_name", "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "status", "journal_entry", "created_at", "updated_at"]
+
+    def get_payment_method_name(self, obj):
+        try:
+            treasury = obj.journal_entry.treasury_movement
+            return treasury.payment_method_new.name if treasury.payment_method_new else treasury.get_payment_method_display()
+        except Exception:
+            return None
+
+    def validate_employee(self, employee):
+        return _validate_assignable_employee(self, employee)
+
+    def validate(self, attrs):
+        if self.instance is not None:
+            if "kind" in attrs and attrs["kind"] != self.instance.kind:
+                raise serializers.ValidationError({"kind": "El tipo de un movimiento no se puede cambiar."})
+            if self.instance.kind == EmployeeMovement.Kind.LOAN:
+                merged = {f: attrs.get(f, getattr(self.instance, f)) for f in _LOAN_TERM_FIELDS}
+                _validate_loan_terms(merged)
+            return attrs
+        kind = attrs.get("kind")
+        if kind not in (EmployeeMovement.Kind.ADVANCE, EmployeeMovement.Kind.LOAN):
+            raise serializers.ValidationError({"kind": "Solo se crean anticipos y préstamos; el pago se registra desde la liquidación."})
+        if kind == EmployeeMovement.Kind.LOAN:
+            required = ("rate", "rate_period", "installments_count", "first_installment_year", "first_installment_month")
+            missing = {f: "Requerido para préstamos." for f in required if attrs.get(f) is None}
+            if missing:
+                raise serializers.ValidationError(missing)
+            _validate_loan_terms({f: attrs[f] for f in _LOAN_TERM_FIELDS})
+        return attrs
 
 
 class PayrollListSerializer(serializers.ModelSerializer):
@@ -258,7 +394,8 @@ class PayrollListSerializer(serializers.ModelSerializer):
         ) or 0
 
     def get_advances_total(self, obj):
-        return sum(a.amount for a in obj.advances.all()) or 0
+        """Descuentos de anticipo/préstamo asignados a la liquidación (ADR-0156)."""
+        return sum(a.amount for a in obj.allocations.all() if a.movement.kind != "PAYMENT" and a.movement.status in ("POSTED", "SETTLED")) or 0
 
     def get_previred_paid_amount(self, obj):
         from .models import PayrollPayment
@@ -270,12 +407,10 @@ class PayrollListSerializer(serializers.ModelSerializer):
         ) or 0
 
     def get_remuneration_paid_amount(self, obj):
-        from .models import PayrollPayment
         return sum(
-            p.amount
-            for p in obj.payments.all()
-            if p.payment_type == PayrollPayment.PaymentType.SALARIO
-            and p.status == PayrollPayment.Status.POSTED
+            a.amount
+            for a in obj.allocations.all()
+            if a.movement.kind == "PAYMENT" and a.movement.status == "POSTED"
         ) or 0
 
     def get_total_previred(self, obj):
@@ -348,85 +483,24 @@ class PayrollListSerializer(serializers.ModelSerializer):
         ]
 
 
-class SalaryAdvanceSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source="employee.contact.name", read_only=True)
-    employee_display_id = serializers.CharField(source="employee.display_id", read_only=True)
-    payroll_display_id = serializers.CharField(source="payroll.display_id", read_only=True)
-    payment_method_name = serializers.SerializerMethodField()
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
-    is_editable = IsEditableField()
-
-    class Meta:
-        model = SalaryAdvance
-        fields = [
-            "id",
-            "employee",
-            "employee_name",
-            "employee_display_id",
-            "payroll",
-            "payroll_display_id",
-            "amount",
-            "date",
-            "notes",
-            "status",
-            "status_display",
-            "is_editable",
-            "journal_entry",
-            "payment_method_name",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "status", "journal_entry", "created_at", "updated_at"]
-
-    def validate(self, attrs):
-        if "payroll" not in attrs:
-            return attrs
-        target = attrs["payroll"]
-        if self.instance is None:
-            if target is not None:
-                raise serializers.ValidationError(
-                    {"payroll": "El anticipo se vincula desde la liquidación, no al crearlo."}
-                )
-            return attrs
-        current = self.instance.payroll
-        if target == current:
-            return attrs
-        if self.instance.status != SalaryAdvance.Status.PAID:
-            raise serializers.ValidationError(
-                {"payroll": "Solo un anticipo pagado y no descontado puede vincularse o desvincularse."}
-            )
-        for payroll in (current, target):
-            if payroll is not None and payroll.status != Payroll.Status.DRAFT:
-                raise serializers.ValidationError(
-                    {"payroll": "La liquidación está contabilizada; no se pueden cambiar sus anticipos."}
-                )
-        if target is not None and target.employee_id != self.instance.employee_id:
-            raise serializers.ValidationError(
-                {"payroll": "La liquidación pertenece a otro empleado."}
-            )
-        return attrs
-
-    def get_payment_method_name(self, obj):
-        if obj.journal_entry:
-            # Try to get the treasury movement associated with this journal entry
-            try:
-                movement = obj.journal_entry.treasury_movement
-                if movement.payment_method_new:
-                    return movement.payment_method_new.name
-                return movement.get_payment_method_display()
-            except Exception:
-                pass
-        return None
-
-
 class PayrollDetailSerializer(serializers.ModelSerializer):
     employee_detail = EmployeeSerializer(source="employee", read_only=True)
     display_id = serializers.CharField(read_only=True)
     period_label = serializers.CharField(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     items = PayrollItemSerializer(many=True, read_only=True)
-    advances = SalaryAdvanceSerializer(many=True, read_only=True)
+    allocations = PayrollAllocationSerializer(many=True, read_only=True)
+    balance = serializers.SerializerMethodField()
+    cap_warning = serializers.SerializerMethodField()
     is_editable = IsEditableField()
+
+    def get_balance(self, obj):
+        from .movement_services import payroll_balance
+        return payroll_balance(obj)
+
+    def get_cap_warning(self, obj):
+        from .movement_services import EmployeeMovementService
+        return EmployeeMovementService.cap_warning(obj)  # una sola liquidación por request (detalle)
 
     class Meta:
         model = Payroll
@@ -452,7 +526,9 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             "journal_entry",
             "previred_journal_entry",
             "items",
-            "advances",
+            "allocations",
+            "balance",
+            "cap_warning",
             "notes",
             "created_at",
             "updated_at",
@@ -540,7 +616,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
 
     # We will filter the items directly in the SerializerMethodField
     items = PayrollItemSerializer(many=True, read_only=True)
-    advances = SalaryAdvanceSerializer(many=True, read_only=True)
+    allocations = PayrollAllocationSerializer(many=True, read_only=True)
     payments = PayrollPaymentSerializer(many=True, read_only=True)
     employee_detail = EmployeeSerializer(source="employee", read_only=True)
     is_salary_paid = serializers.SerializerMethodField()
@@ -571,7 +647,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
             "is_salary_paid",
             "is_previred_paid",
             "items",
-            "advances",
+            "allocations",
             "payments",
             "notes",
             "created_at",
@@ -591,14 +667,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
         return ret
 
     def get_is_salary_paid(self, obj):
-        try:
-            return any(
-                p.payment_type == PayrollPayment.PaymentType.SALARIO.value
-                and p.status == PayrollPayment.Status.POSTED
-                for p in obj.payments.all()
-            )
-        except Exception:
-            return False
+        return any(a.movement.kind == "PAYMENT" and a.movement.status == "POSTED" for a in obj.allocations.all())
 
     def get_is_previred_paid(self, obj):
         try:

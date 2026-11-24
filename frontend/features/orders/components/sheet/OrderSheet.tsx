@@ -20,7 +20,7 @@ import { PrintableLayout, useDrawerIdentity, usePrintableDrawer } from "@/featur
 import {
     DocumentRelationsTab,
     resolveRegistryActions,
-    useDocumentRelations,
+    useDocumentRelations, relationsTotal,
     useInvalidateDocuments,
     type DocumentDomain,
     type ResolvedDocumentAction,
@@ -187,7 +187,7 @@ export function OrderSheet({ id, kind, open, onOpenChange, embedded = false, pos
             ),
         },
         {
-            value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
+            value: "relations", label: "Relaciones", icon: Link2, badge: relationsTotal(relations),
             content: (
                 <DocumentRelationsTab
                     label={label}

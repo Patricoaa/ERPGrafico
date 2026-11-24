@@ -654,16 +654,16 @@ const REGISTRY = {
     detailUrlPattern: '/hr/payrolls/{id}',
     viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
-  'hr.salaryadvance': {
-    label: 'hr.salaryadvance',
-    title: 'Anticipo de Sueldo',
-    titlePlural: 'Anticipos de Sueldo',
+  'hr.employeemovement': {
+    label: 'hr.employeemovement',
+    title: 'Movimiento con Empleado',
+    titlePlural: 'Movimientos con Empleados',
     icon: HandCoins,
     iconName: 'HandCoins',
-    description: 'Adelanto de sueldo al empleado',
-    shortTemplate: 'ANT-{id}',
-    listUrl: '/hr/advances',
-    detailUrlPattern: '/d/hr.salaryadvance/{id}',
+    description: 'Pago de remuneración, anticipo o préstamo al empleado',
+    shortTemplate: 'MOV-{id}',
+    listUrl: '/hr/movements',
+    detailUrlPattern: '/d/hr.employeemovement/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'workflow.task': {
@@ -1050,15 +1050,15 @@ const REGISTRY = {
   // ── HR (missing entities) ──────────────────────────────────────────────
   'hr.payrollconcept': {
     label: 'hr.payrollconcept',
-    title: 'Concepto de Liquidación',
-    titlePlural: 'Conceptos de Liquidación',
+    title: 'Concepto de Nómina',
+    titlePlural: 'Conceptos de Nómina',
     icon: ClipboardList,
     iconName: 'ClipboardList',
     description: 'Ítem configurable de liquidación',
     shortTemplate: 'CON-LIQ-{id}',
-    listUrl: '/hr/payrolls',
+    listUrl: '/hr/settings/concepts',
     detailUrlPattern: '/hr/settings/concepts',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
 
   // ── Inventory (missing entities) ───────────────────────────────────────

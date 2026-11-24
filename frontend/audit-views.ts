@@ -12,7 +12,7 @@ const files = [
   "features/hr/components/AbsenceClientView.tsx",
   "features/hr/components/EmployeeClientView.tsx",
   "features/hr/components/PayrollClientView.tsx",
-  "features/hr/components/SalaryAdvanceClientView.tsx",
+  "features/hr/components/EmployeeMovementClientView.tsx",
   "features/inventory/components/AttributesClientView.tsx",
   "features/inventory/components/CategoryClientView.tsx",
   "features/inventory/components/DocumentsClientView.tsx",

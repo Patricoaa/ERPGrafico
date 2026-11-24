@@ -252,7 +252,7 @@ def afp(db):
 def employee(db, contact, afp):
     from hr.models import Employee
     return Employee.objects.create(
-        contact=contact, afp=afp, status="ACTIVE",
+        contact=contact, afp=afp, is_active=True,
         contract_type="INDEFINIDO",
     )
 

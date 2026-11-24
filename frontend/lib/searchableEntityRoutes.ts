@@ -80,7 +80,7 @@ export const searchableEntityRoutes: Record<string, string> = {
     // HR
     'hr.employee':       '/hr/employees',
     'hr.absence':        '/hr/absences',
-    'hr.salaryadvance':  '/hr/advances',
+    'hr.employeemovement':  '/hr/movements',
     // payrollconcept: tab en /hr/settings/concepts (ADR-0022 DRAWER_ENTITIES)
 
     // Production

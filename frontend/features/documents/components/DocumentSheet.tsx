@@ -18,6 +18,7 @@ import {
 import { EntitySidebar } from "@/features/comments"
 import { useDrawerIdentity } from "@/features/_shared"
 import { useDocumentRelations } from "../hooks/useDocumentRelations"
+import { relationsTotal } from "../utils/relationsTotal"
 import type { DocumentDomain, DocumentLink } from "../types"
 import { DocumentRelationsTab } from "./DocumentRelationsTab"
 
@@ -103,7 +104,7 @@ export function DocumentSheet({
         },
         ...extraTabs,
         {
-            value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
+            value: "relations", label: "Relaciones", icon: Link2, badge: relationsTotal(relations),
             content: (
                 <DocumentRelationsTab
                     label={label}

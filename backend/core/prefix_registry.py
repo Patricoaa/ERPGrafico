@@ -79,6 +79,7 @@ class EntityPrefix(StrEnum):
     PAYROLL = "LIQ"
     ABSENCE = "AUS"
     SALARY_ADVANCE = "ANT"
+    EMPLOYEE_MOVEMENT = "MOV"
     PAYROLL_CONCEPT = "CON-LIQ"
 
     # ── Contacts ───────────────────────────────────────────────────────

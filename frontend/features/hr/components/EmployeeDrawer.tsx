@@ -10,9 +10,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
-import { SubmitButton, CancelButton, DrawerLayout, fadeInClass } from "@/components/shared"
-import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
+import { SubmitButton, CancelButton, DrawerLayout, fadeInClass, type DrawerLayoutTab } from "@/components/shared"
+import { UserCog, CalendarCheck2, Plus, ShieldCheck, Link2, HandCoins } from "lucide-react"
 import { EntitySidebar } from "@/features/comments"
+import { useGlobalModals } from "@/components/providers"
+import { useEmployeeMovementHistory } from "../hooks/useEmployeeMovementHistory"
+import { EmployeeMovementsHistory } from "./EmployeeMovementsHistory"
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal } from "@/features/documents"
 
 import {
     Form, FormField
@@ -31,7 +35,6 @@ export const employeeSchema = z.object({
     department: z.string().optional(),
     start_date: z.string().optional(),
     base_salary: z.string().min(1, "Sueldo base requerido"),
-    status: z.enum(["ACTIVE", "INACTIVE"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un estado de ficha"),
     contract_type: z.enum(["INDEFINIDO", "PLAZO_FIJO"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un tipo de contrato"),
     afp: z.string().min(1, "Institución Previsional requerida"),
     salud_type: z.enum(["FONASA", "ISAPRE"]).or(z.literal("")).refine((v): boolean => v !== "", "Selecciona un sistema de salud"),
@@ -77,6 +80,17 @@ const parseLocalDate = (dateStr?: string) => {
     return new Date(year, month - 1, day)
 }
 
+/**
+ * Bloquea las pestañas de formulario en vista/guardado sin deshabilitar «Relaciones» ni «Movimientos»:
+ * `DrawerLayout.contentDisabled` envolvería todas las pestañas en un fieldset deshabilitado
+ * y las filas de relaciones dejarían de ser clicables.
+ */
+function lockFormTabs(tabs: DrawerLayoutTab[], locked: boolean): DrawerLayoutTab[] {
+    return tabs.map((tab) => tab.value === "relations" || tab.value === "movements"
+        ? tab
+        : { ...tab, content: <fieldset disabled={locked} className="contents">{tab.content}</fieldset> })
+}
+
 export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: modeProp }: EmployeeDrawerProps) {
     const { saveEmployee, isSaving: saving } = useEmployeeMutations()
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -85,6 +99,11 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
     const { dateString } = useServerDate()
 
     const [activeTab, setActiveTab] = useState("contratacion")
+    // Misma ventana que pide la pestaña → una sola petición compartida (ADR-0155).
+    const { data: relations } = useDocumentRelations("hr.employee", employee?.id ?? null, { window: "recent" })
+    const { movements } = useEmployeeMovementHistory(employee?.id ?? null)
+    const { openEntity } = useGlobalModals()
+    const pendingMovements = movements.filter((mv) => Number(mv.balance) > 0).length
 
     const form = useForm<EmployeeFormValues>({
         resolver: zodResolver(employeeSchema),
@@ -94,7 +113,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: "",
             start_date: "",
             base_salary: "0",
-            status: "",
             contract_type: "",
             afp: "",
             salud_type: "",
@@ -128,7 +146,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: "",
             start_date: dateString,
             base_salary: "0",
-            status: "" as const,
             contract_type: "" as const,
             afp: "",
             salud_type: "" as const,
@@ -149,7 +166,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
             department: emp.department || "",
             start_date: (emp.start_date || "").split("T")[0] || "",
             base_salary: String(emp.base_salary),
-            status: emp.status,
             contract_type: emp.contract_type,
             afp: emp.afp ? String(emp.afp) : "",
             salud_type: emp.salud_type,
@@ -201,7 +217,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
         const errors = form.formState.errors
         const tabErrors: { [key: string]: boolean } = {}
 
-        const contratacionFields: (keyof EmployeeFormValues)[] = ['contact', 'position', 'department', 'start_date', 'base_salary', 'status', 'contract_type']
+        const contratacionFields: (keyof EmployeeFormValues)[] = ['contact', 'position', 'department', 'start_date', 'base_salary', 'contract_type']
         contratacionFields.forEach(field => {
             if (errors[field]) tabErrors['contratacion'] = true
         })
@@ -288,7 +304,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                                 <DrawerLayout
-                                    contentDisabled={isView || saving}
                                     activeTab={activeTab}
                                     onTabChange={setActiveTab}
                                     rightRail={employee?.id ? (
@@ -296,7 +311,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                     ) : undefined}
                                     rightRailCollapsible
                                     rightRailStorageKey="erpgrafico.drawer.sidebar.employee"
-                                    tabs={[
+                                    tabs={lockFormTabs([
                                         {
                                             value: "contratacion",
                                             label: "Contratación",
@@ -383,21 +398,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                         className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
                                                                     />
                                                                 </LabeledContainer>
-                                                            )} />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <FormField control={form.control} name="status" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Estado Ficha"
-                                                                    required
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={[
-                                                                        { value: "ACTIVE", label: "Activo" },
-                                                                        { value: "INACTIVE", label: "Inactivo" }
-                                                                    ]}
-                                                                />
                                                             )} />
                                                         </div>
                                                     </div>
@@ -607,7 +607,20 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                 </div>
                                             ),
                                         },
-                                    ]}
+                                        ...(employee?.id ? [{
+                                            value: "movements",
+                                            label: "Movimientos",
+                                            icon: HandCoins,
+                                            badge: pendingMovements || undefined,
+                                            content: <EmployeeMovementsHistory employeeId={employee.id} onOpen={(mv) => openEntity("hr.employeemovement", mv.id, mv)} />,
+                                        }, {
+                                            value: "relations",
+                                            label: "Relaciones",
+                                            icon: Link2,
+                                            badge: relationsTotal(relations),
+                                            content: <DocumentRelationsTab label="hr.employee" id={employee.id} sectionActions={{}} rowActions={() => []} />,
+                                        }] : []),
+                                    ], isView || saving)}
                                 />
                         </form>
                     </Form>

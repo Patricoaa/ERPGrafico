@@ -256,7 +256,8 @@ def test_document_domains_follow_cycle_order():
         "inventory.stockmove": "logistics",
         "treasury.treasurymovement": "treasury",
         "accounting.journalentry": "accounting",
-        "hr.payroll": "other",
+        "hr.payroll": "hr",
+        "hr.employee": "hr",
     }
     for label, domain in expected.items():
         assert DocumentTypeRegistry.domain(label) == domain, label

@@ -558,6 +558,8 @@ const RRHH_DEFAULTS: HRSettingsFormValues = {
     account_remuneraciones_por_pagar: null,
     account_previred_por_pagar: null,
     account_anticipos: null,
+    account_prestamos_trabajadores: null,
+    account_intereses_prestamos: null,
 }
 
 function RRHHForm() {
@@ -606,7 +608,9 @@ function RRHHForm() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <AccountField form={form} name="account_remuneraciones_por_pagar" label="Remuneraciones por Pagar (Líquido)" accountType="LIABILITY" />
                                     <AccountField form={form} name="account_previred_por_pagar" label="Obligaciones Previred (Pasivo)" accountType="LIABILITY" />
-                                    <div className="md:col-span-2"><AccountField form={form} name="account_anticipos" label="Anticipos de Remuneraciones (Activo)" accountType="ASSET" /></div>
+                                    <AccountField form={form} name="account_anticipos" label="Anticipos de Remuneraciones (Activo)" accountType="ASSET" />
+                                    <AccountField form={form} name="account_prestamos_trabajadores" label="Préstamos a Trabajadores (Activo)" accountType="ASSET" />
+                                    <div className="md:col-span-2"><AccountField form={form} name="account_intereses_prestamos" label="Intereses de Préstamos (Ingreso)" accountType="INCOME" /></div>
                                 </div>
                             </CardContent>
                         </Card>

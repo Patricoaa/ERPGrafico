@@ -26,6 +26,7 @@ interface GlobalHRSettings {
     uf_current_value: string
     utm_current_value: string
     min_wage_value: string
+    loan_deduction_cap_percent: string
 }
 
 export function useHrSettings() {

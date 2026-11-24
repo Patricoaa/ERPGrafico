@@ -1,4 +1,4 @@
-import type { ContactMini, Employee, Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
+import type { ContactMini, Employee, EmployeeMovement, Payroll, PayrollPayment } from "@/types/hr"
 import type { AppGroup } from "@/types/entities"
 
 export interface ProfileUser {
@@ -20,7 +20,7 @@ export interface MyProfile {
   contact_detail: ContactMini | null
   employee: Employee | null
   payrolls: Payroll[]
-  advances: SalaryAdvance[]
+  advances: EmployeeMovement[]
   payments: PayrollPayment[]
 }
 

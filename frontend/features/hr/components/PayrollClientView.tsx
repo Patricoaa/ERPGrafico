@@ -5,7 +5,7 @@ import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useState, useMemo, useCallback } from "react"
 import { toast } from "sonner"
-import { CreatePayrollDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
+import { CreatePayrollDrawer, deletePayroll, paySalary, payPrevired, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { AnalyticsPanelContent, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from '@/components/shared'
 import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
@@ -74,7 +74,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     useDeepLinkEntity("hr.payroll")
 
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
-    const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
+    const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | null>(null)
 
     const openDetail = (id: number) => openEntity("hr.payroll", id)
 
@@ -88,16 +88,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
             } else if (paymentMode === 'PREVIRED') {
                 await payPrevired(selectedPayroll.id, data)
                 toast.success("Pago Previred registrado")
-            } else if (paymentMode === 'ADVANCE') {
-                await createAdvance({
-                    employee: selectedPayroll.employee,
-                    payroll: selectedPayroll.id,
-                    amount: data.amount as string,
-                    date: (data.documentDate as string) || dateString,
-                    notes: "Anticipo de sueldo",
-                    ...data
-                })
-                toast.success("Anticipo registrado")
             }
             setPaymentMode(null)
             setSelectedPayroll(null)
@@ -109,7 +99,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
 
     const actionsCtx: PayrollActionsCtx = {
         onViewDetail: openDetail,
-        onRegisterAdvance: (p) => { setSelectedPayroll(p); setPaymentMode('ADVANCE') },
+        onAssignDeductions: (p) => openDetail(p.id),
         onPaySalary: (p) => { setSelectedPayroll(p); setPaymentMode('SALARY') },
         onPayPrevired: (p) => { setSelectedPayroll(p); setPaymentMode('PREVIRED') },
         onDeleteDraft: async (id) => {
@@ -172,18 +162,15 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 isPurchase={true}
                 title={
                     paymentMode === 'SALARY' ? `Pagar Remuneración: ${selectedPayroll?.employee_name}` :
-                        paymentMode === 'PREVIRED' ? `Pagar Previred: ${selectedPayroll?.employee_name}` :
-                            `Registrar Anticipo: ${selectedPayroll?.employee_name}`
+                        `Pagar Previred: ${selectedPayroll?.employee_name}`
                 }
                 total={
                     paymentMode === 'SALARY' ? (selectedPayroll ? (Number(selectedPayroll.net_salary) - Number(selectedPayroll.advances_total || 0)) : 0) :
-                        paymentMode === 'PREVIRED' ? Number(selectedPayroll?.total_previred || 0) :
-                            Number(selectedPayroll?.net_salary || 0)
+                        Number(selectedPayroll?.total_previred || 0)
                 }
                 pendingAmount={
                     paymentMode === 'SALARY' ? (selectedPayroll ? (Number(selectedPayroll.net_salary) - Number(selectedPayroll.advances_total || 0)) : 0) :
-                        paymentMode === 'PREVIRED' ? Number(selectedPayroll?.total_previred || 0) :
-                            Number(selectedPayroll?.net_salary || 0)
+                        Number(selectedPayroll?.total_previred || 0)
                 }
                 onConfirm={handleConfirmPayment}
             />

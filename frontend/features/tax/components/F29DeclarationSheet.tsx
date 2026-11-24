@@ -19,7 +19,7 @@ import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/featur
 import {
     DocumentRelationsTab,
     resolveRegistryActions,
-    useDocumentRelations,
+    useDocumentRelations, relationsTotal,
     useInvalidateDocuments,
     type DocumentDomain,
     type DocumentLink,
@@ -97,7 +97,7 @@ export function F29DeclarationSheet({ id, open, onOpenChange, embedded = false, 
     const tabs: DocumentSheetTab[] = declaration ? [
         { value: "summary", label: "Resumen", icon: FileText, content: <F29SummaryTab declaration={declaration} /> },
         {
-            value: "relations", label: "Relaciones", icon: Link2, badge: relations?.relations.length,
+            value: "relations", label: "Relaciones", icon: Link2, badge: relationsTotal(relations),
             content: (
                 <DocumentRelationsTab
                     label={LABEL}

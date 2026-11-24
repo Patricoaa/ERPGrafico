@@ -7,6 +7,8 @@ class HrConfig(AppConfig):
     verbose_name = "Recursos Humanos"
 
     def ready(self):
+        from . import movement_services  # noqa: F401  (registra señales de cuotas, ADR-0156)
+
         try:
             from core.permissions import PermissionRegistry
 
@@ -16,7 +18,7 @@ class HrConfig(AppConfig):
                     ("view_dashboard_hr", "Can view HR dashboard"),
                     ("post_payroll", "Puede contabilizar nómina"),
                     ("pay_payroll", "Puede pagar nómina/previred"),
-                    ("annul_salaryadvance", "Puede anular anticipo de sueldo"),
+                    ("annul_employeemovement", "Puede anular movimientos con el empleado"),
                     ("annul_payrollpayment", "Puede anular pago de nómina"),
                 ],
             )
@@ -26,7 +28,7 @@ class HrConfig(AppConfig):
         try:
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
-            from hr.models import Absence, Employee, Payroll, PayrollConcept, SalaryAdvance
+            from hr.models import Absence, Employee, EmployeeMovement, Payroll, PayrollConcept
 
             UniversalRegistry.register(
                 SearchableEntity(
@@ -79,19 +81,19 @@ class HrConfig(AppConfig):
             )
             UniversalRegistry.register(
                 SearchableEntity(
-                    model=SalaryAdvance,
-                    label="hr.salaryadvance",
-                    title_singular="Anticipo de Sueldo",
-                    title_plural="Anticipos de Sueldo",
+                    model=EmployeeMovement,
+                    label="hr.employeemovement",
+                    title_singular="Movimiento con Empleado",
+                    title_plural="Movimientos con Empleados",
                     icon="hand-coins",
                     search_fields=("employee__contact__name", "notes"),
-                    short_display_template=f"{EntityPrefix.SALARY_ADVANCE}-{{id}}",
-                    display_template=f"{EntityPrefix.SALARY_ADVANCE}-{{id}} · {{employee.contact.name}}",
-                    subtitle_template="{date}",
+                    short_display_template=f"{EntityPrefix.EMPLOYEE_MOVEMENT}-{{id}}",
+                    display_template=f"{EntityPrefix.EMPLOYEE_MOVEMENT}-{{id}} · {{employee.contact.name}}",
+                    subtitle_template="{kind} · {date}",
                     extra_info_template="{amount}",
-                    list_url="/hr/advances",
-                    detail_url_pattern="/hr/advances/{id}",
-                    permission="hr.view_salaryadvance",
+                    list_url="/hr/movements",
+                    detail_url_pattern="/hr/movements/{id}",
+                    permission="hr.view_employeemovement",
                 )
             )
             UniversalRegistry.register(

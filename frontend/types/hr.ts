@@ -1,6 +1,5 @@
 // HR TypeScript types
 
-export type EmployeeStatus = 'ACTIVE' | 'INACTIVE'
 export type PayrollStatus = 'DRAFT' | 'POSTED'
 export type ContractType = 'INDEFINIDO' | 'PLAZO_FIJO'
 export type SaludType = 'FONASA' | 'ISAPRE'
@@ -20,6 +19,7 @@ export interface GlobalHRSettings {
   uf_current_value: string
   utm_current_value: string
   min_wage_value: string
+  loan_deduction_cap_percent: string
 }
 
 
@@ -75,8 +75,7 @@ export interface Employee {
   department: string
   start_date: string | null
   end_date: string | null
-  status: EmployeeStatus
-  status_display: string
+  is_active: boolean
   contract_type: ContractType
   contract_type_display: string
   base_salary: string
@@ -146,7 +145,9 @@ export interface Payroll {
   journal_entry: number | null
   previred_journal_entry: number | null
   items?: PayrollItem[]
-  advances?: SalaryAdvance[]
+  allocations?: PayrollAllocation[]
+  balance?: string
+  cap_warning?: string | null
   payments?: PayrollPayment[]
   remuneration_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
   legal_deductions_worker?: string
@@ -160,25 +161,86 @@ export interface Payroll {
   updated_at: string
 }
 
-export type SalaryAdvanceStatus = 'DRAFT' | 'PAID' | 'DISCOUNTED' | 'CANCELLED'
+export type EmployeeMovementKind = 'PAYMENT' | 'ADVANCE' | 'LOAN'
+export type EmployeeMovementStatus = 'DRAFT' | 'POSTED' | 'SETTLED' | 'CANCELLED'
+export type LoanRatePeriod = 'MONTHLY' | 'ANNUAL'
+export type LoanInstallmentStatus = 'PENDING' | 'APPLIED'
 
-export interface SalaryAdvance {
+export interface LoanInstallment {
   id: number
+  number: number
+  year: number
+  month: number
+  principal: string | number
+  interest: string | number
+  amount: string | number
+  status: LoanInstallmentStatus
+  is_allocated: boolean
+}
+
+export interface PayrollAllocation {
+  id: number
+  movement: number
+  movement_display_id: string
+  payroll: number
+  movement_date: string
+  movement_status: EmployeeMovementStatus
+  kind: EmployeeMovementKind
+  kind_display: string
+  installment: number | null
+  installment_number: number | null
+  amount: string
+  principal_part: string
+  interest_part: string
+}
+
+/** Pago de remuneración, anticipo o préstamo con un empleado (ADR-0156). */
+export interface EmployeeMovement {
+  id: number
+  display_id: string
   employee: number
   employee_name?: string
   employee_display_id?: string
-  payroll: number | null
-  payroll_display_id?: string
-  amount: string
+  kind: EmployeeMovementKind
+  kind_display: string
   date: string
+  amount: string
   notes: string
-  status: SalaryAdvanceStatus
-  status_display?: string
-  is_editable?: boolean
+  status: EmployeeMovementStatus
+  status_display: string
   journal_entry: number | null
+  is_editable?: boolean
+  rate: string | null
+  rate_period: LoanRatePeriod | null
+  installments_count: number | null
+  first_installment_year: number | null
+  first_installment_month: number | null
+  installments: LoanInstallment[]
+  allocations: PayrollAllocation[]
+  /** Capital aún no descontado en una liquidación contabilizada. */
+  balance: number | string
+  free_balance: number | string
   payment_method_name?: string | null
   created_at: string
   updated_at: string
+}
+
+export interface LoanSchedulePreviewRequest {
+  amount: number
+  rate: string
+  rate_period: LoanRatePeriod
+  installments: number
+  first_year: number
+  first_month: number
+}
+
+export interface LoanSchedulePreviewRow {
+  number: number
+  year: number
+  month: number
+  principal: number
+  interest: number
+  amount: number
 }
 
 export type PaymentType = 'SALARIO' | 'PREVIRED'

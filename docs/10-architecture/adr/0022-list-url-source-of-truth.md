@@ -73,7 +73,7 @@ contra `searchableEntityRoutes`), pero su detalle es un drawer: no existe
 `[id]/page.tsx`. Se omiten solo del invariante de detalle (T-79). Actuales:
 `production.bom`, `treasury.check`, `treasury.paymentmethod`,
 `treasury.treasurymovement`, `treasury.treasuryaccount`, `hr.absence`,
-`hr.salaryadvance`, `sales.saledelivery`, `sales.salereturn`,
+`hr.employeemovement`, `sales.saledelivery`, `sales.salereturn`,
 `purchasing.purchasereceipt`, `purchasing.purchasereturn`,
 `inventory.inventorydocument`.
 

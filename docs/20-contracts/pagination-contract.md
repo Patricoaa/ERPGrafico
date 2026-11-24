@@ -443,7 +443,7 @@ Lista completa de viewsets clasificados durante la auditoría 2026-06-25. Los ma
 | billing | `InvoiceViewSet`, `CreditNoteViewSet`, `DebitNoteViewSet` |
 | treasury | `MovementViewSet`, `CheckViewSet`, `LoanViewSet`, `LoanInstallmentViewSet`, `CreditLineViewSet`, `CardStatementViewSet` |
 | contacts | `CustomerViewSet`, `SupplierViewSet` |
-| hr | `PayrollViewSet`, `PayrollItemViewSet`, `AbsenceViewSet`, `SalaryAdvanceViewSet` |
+| hr | `PayrollViewSet`, `PayrollItemViewSet`, `AbsenceViewSet`, `EmployeeMovementViewSet` |
 | production | `WorkOrderViewSet`, `BOMViewSet`, `ProductionOrderViewSet` |
 | pos | `SessionViewSet`, `DraftViewSet` |
 | finance | `BankStatementViewSet`, `ReconciliationViewSet` |

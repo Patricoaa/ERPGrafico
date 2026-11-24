@@ -313,11 +313,11 @@ function PersonalTab({
         ...advances.map(a => ({
             id: `adv-${a.id}`,
             date: a.date,
-            type: 'ANTICIPO' as const,
-            typeLabel: 'Anticipo',
+            type: (a.kind === 'PAYMENT' ? 'SALARIO' : 'ANTICIPO') as 'SALARIO' | 'ANTICIPO',
+            typeLabel: a.kind_display,
             amount: a.amount,
-            payroll_display_id: a.payroll_display_id || null,
-            statusKey: a.status
+            payroll_display_id: payrolls.find((p) => p.id === a.allocations[0]?.payroll)?.display_id ?? null,
+            statusKey: a.status === 'CANCELLED' ? 'CANCELLED' : 'PAID'
         })),
         ...payments.map(p => ({
             id: `pay-${p.id}`,
@@ -386,7 +386,7 @@ function PersonalTab({
                             as="h2"
                             title="Ficha de Personal"
                             description={employee.display_id}
-                            actions={<StatusBadge status={employee.status} label={employee.status_display} />}
+                            actions={<StatusBadge status={employee.is_active ? "ACTIVE" : "INACTIVE"} label={employee.is_active ? "Activo" : "Archivado"} />}
                         />
                         <Section title="Datos personales">
                             <Section.Row variant="stat" plain title="Nombre" value={contact?.name || "—"} />

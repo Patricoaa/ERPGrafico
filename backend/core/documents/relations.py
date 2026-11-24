@@ -6,18 +6,27 @@ proveedores por tipo (ADR-0080). Los proveedores viven en `<app>/relations.py`
 
 from __future__ import annotations
 
+import calendar
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from typing import Any, ClassVar
 
 from django.db import models
+from django.utils import timezone
 
 from .refs import build_ref, get_document, missing_ref, partner_of
 from .types import DocumentTypeRegistry
 
 SEMANTICS = ("derivation", "fulfillment", "settlement", "posting", "correction", "reference", "association")
 DIRECTIONS = ("outgoing", "incoming")
+
+# Ventana reciente (ADR-0155): un área con más de RELATIONS_MIN_VISIBLE vínculos solo conserva los de
+# los últimos RELATIONS_RECENT_MONTHS meses (mínimo RELATIONS_MIN_VISIBLE visibles).
+RELATIONS_RECENT_MONTHS = 12
+RELATIONS_MIN_VISIBLE = 10
+WINDOWS = ("recent", "all")
 
 
 @dataclass(frozen=True)
@@ -43,6 +52,43 @@ class Link:
 Provider = Callable[[models.Model], Iterable[Link]]
 
 
+def _months_ago(today: date, months: int) -> date:
+    index = today.year * 12 + today.month - 1 - months
+    year, month = divmod(index, 12)
+    return date(year, month + 1, min(today.day, calendar.monthrange(year, month + 1)[1]))
+
+
+def apply_window(links: list[dict], today: date) -> tuple[list[dict], dict[str, int]]:
+    """Recorta cada área grande a lo reciente; devuelve (visibles en su orden, ocultos por área).
+
+    Nunca oculta `is_dependency` ni vínculos sin fecha; si lo reciente no llega a
+    RELATIONS_MIN_VISIBLE se completa con los más recientes del resto.
+    """
+    cutoff = _months_ago(today, RELATIONS_RECENT_MONTHS).isoformat()
+    by_domain: dict[str, list[int]] = {}
+    for index, link in enumerate(links):
+        by_domain.setdefault(link["target"]["domain"], []).append(index)
+
+    dropped: set[int] = set()
+    hidden: dict[str, int] = {}
+    for domain, indexes in by_domain.items():
+        if len(indexes) <= RELATIONS_MIN_VISIBLE:
+            continue
+
+        def day(i: int) -> str | None:
+            value = links[i]["target"]["date"]
+            return value[:10] if value else None
+
+        keep = {i for i in indexes if links[i]["is_dependency"] or day(i) is None or day(i) >= cutoff}
+        rest = sorted((i for i in indexes if i not in keep), key=day, reverse=True)
+        keep.update(rest[: max(0, RELATIONS_MIN_VISIBLE - len(keep))])
+        domain_dropped = [i for i in indexes if i not in keep]
+        if domain_dropped:
+            dropped.update(domain_dropped)
+            hidden[domain] = len(domain_dropped)
+    return [link for i, link in enumerate(links) if i not in dropped], hidden
+
+
 class DocumentRelationService:
     _providers: ClassVar[dict[str, list[Provider]]] = {}
 
@@ -59,7 +105,10 @@ class DocumentRelationService:
         return label in cls._providers
 
     @classmethod
-    def relations(cls, label: str, pk: Any, user, semantic: str | None = None, direction: str | None = None) -> dict | None:
+    def relations(
+        cls, label: str, pk: Any, user, semantic: str | None = None, direction: str | None = None,
+        window: str = "all",
+    ) -> dict | None:
         obj = get_document(label, pk)
         if obj is None:
             return None
@@ -99,7 +148,13 @@ class DocumentRelationService:
                 add(link)
         for link in cls._indirect_links(label, obj, list(targets)):
             add(link)
-        return {"document": build_ref(obj, user, label), "relations": links, "unresolved": unresolved}
+        hidden: dict[str, int] = {}
+        if window == "recent":
+            links, hidden = apply_window(links, timezone.localdate())
+        return {
+            "document": build_ref(obj, user, label), "relations": links, "unresolved": unresolved,
+            "window": window, "hidden": hidden,
+        }
 
     @staticmethod
     def _indirect_links(label: str, obj: models.Model, targets: list[tuple[str, models.Model]]) -> Iterable[Link]:

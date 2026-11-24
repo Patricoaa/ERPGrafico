@@ -4,6 +4,8 @@ export * from './CompanySettingsView';
 export * from './DebugSettingsView';
 export * from './GroupsClientView';
 export * from './HRSettingsView';
+export * from './PayrollConceptClientView';
+export * from './PayrollConceptDrawer';
 export * from './RcvSettingsView';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';

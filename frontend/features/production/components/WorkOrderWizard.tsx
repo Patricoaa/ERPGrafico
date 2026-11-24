@@ -28,7 +28,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useOnEntityStackClose } from '@/hooks/useOnEntityStackClose'
-import { DocumentRelationsTab, useDocumentRelations } from '@/features/documents'
+import { DocumentRelationsTab, useDocumentRelations, relationsTotal } from '@/features/documents'
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow'
 
@@ -981,7 +981,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               value: 'relations',
               label: 'Relaciones',
               icon: Link2,
-              badge: relationsData?.relations.length,
+              badge: relationsTotal(relationsData),
               noPadding: true,
               className: 'mt-0 px-6 pt-4 pb-8',
               content: <DocumentRelationsTab label="production.workorder" id={order.id} />,
