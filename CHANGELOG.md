@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.150](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.149...v0.3.150) (2026-11-24)
+
+
+### 🐛 Bug Fixes
+
+* **backend:** suite completa en verde en Postgres y bloqueante en CI ([168289d](https://github.com/Patricoaa/ERPGrafico/commit/168289daa2108d56f3f9beb628ac42ce7cbcf832))
+* **core:** señales del índice de búsqueda con referencia fuerte; test WS con acceso a BD ([92ab407](https://github.com/Patricoaa/ERPGrafico/commit/92ab407a997375d2483009952deccfbea7a5f0ba))
+
 ### [0.3.149](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.148...v0.3.149) (2026-11-24)
 
 ### [0.3.148](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.147...v0.3.148) (2026-11-24)

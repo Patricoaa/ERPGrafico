@@ -44,7 +44,9 @@ def _keyed_provider():
 def _eager_without_propagation(settings, monkeypatch):
     # conftest propaga excepciones en modo eager; los reintentos eager lo requieren apagado.
     settings.CELERY_TASK_EAGER_PROPAGATES = False
-    monkeypatch.setattr(celery_app.conf, "task_eager_propagates", False)
+    # Item access, not setattr: Celery 5.7's Settings no longer exposes unset keys as attributes.
+    monkeypatch.setitem(celery_app.conf, "task_always_eager", True)
+    monkeypatch.setitem(celery_app.conf, "task_eager_propagates", False)
 
 
 @pytest.fixture

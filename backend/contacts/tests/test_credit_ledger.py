@@ -196,15 +196,17 @@ def test_partner_statement_summary_and_bounded_queries(
 @pytest.mark.django_db
 def test_credit_history_bounded_queries(db, django_assert_max_num_queries):
     customer = Contact.objects.create(name="Historial", tax_id="77.777.777-7")
-    SaleOrder.objects.create(
-        customer=customer,
-        date=date(2026, 5, 1),
-        total=Decimal("300"),
-        status=SaleOrder.Status.CONFIRMED,
-        credit_assignment_origin=SaleOrder.CreditOrigin.MANUAL,
-    )
+    # Two rows under the same ceiling: the query count must not grow with the orders (ADR-0118).
+    for day in (1, 2):
+        SaleOrder.objects.create(
+            customer=customer,
+            date=date(2026, 5, day),
+            total=Decimal("300"),
+            status=SaleOrder.Status.CONFIRMED,
+            credit_assignment_origin=SaleOrder.CreditOrigin.MANUAL,
+        )
     with django_assert_max_num_queries(10):
         history = ContactSelector.get_credit_history(customer)
 
-    assert len(history) == 1
+    assert len(history) == 2
     assert history[0]["credit_assignment_origin"] == "MANUAL"

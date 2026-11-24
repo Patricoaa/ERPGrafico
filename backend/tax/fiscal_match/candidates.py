@@ -139,8 +139,6 @@ def payment_type_fits(sale: TerminalSale, movement: TreasuryMovement) -> bool:
 def payment_compatible(
     sale: TerminalSale, m: TreasuryMovement, terminals: dict[int, set[int]]
 ) -> bool:
-    if not tuu_type_fits(sale, m.invoice.sii_code):
-        return False
     if sale.payment_type == TerminalSale.PaymentType.CASH:
         if m.payment_method != "CASH" or not cash_sale_fits(sale, m.invoice.sii_code):
             return False
