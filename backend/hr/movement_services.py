@@ -10,9 +10,9 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-from django.db.models import Sum
 from django.utils.translation import gettext_lazy as _
 
 from accounting.models import AccountingSettings
@@ -40,10 +40,18 @@ class TreasuryPayload:
     transaction_number: str | None = None
 
 
+def _allocations(payroll):
+    """Asignaciones con su movimiento: lo precargado si existe, o una sola consulta con join."""
+    if "allocations" in getattr(payroll, "_prefetched_objects_cache", {}):
+        return payroll.allocations.all()
+    return payroll.allocations.select_related("movement")
+
+
 def payroll_balance(payroll) -> Decimal:
     """Saldo a pagar = líquido − descuentos asignados (anticipo/préstamo) − pagos de remuneración vigentes."""
-    allocated = payroll.allocations.filter(movement__status__in=_ACTIVE).aggregate(total=Sum("amount"))["total"]
-    return payroll.net_salary - (allocated or Decimal("0"))
+    # Sobre `allocations.all()` (con `movement` precargado): sin consultas por liquidación.
+    allocated = sum((a.amount for a in _allocations(payroll) if a.movement.status in _ACTIVE), Decimal("0"))
+    return payroll.net_salary - allocated
 
 
 def _committed_principal(movement) -> Decimal:
@@ -271,7 +279,7 @@ class EmployeeMovementService:
     def deallocate(allocation) -> None:
         from core.services.document import lock_document
 
-        movement = lock_document(allocation.movement)
+        lock_document(allocation.movement)
         payroll = lock_document(allocation.payroll)
         if payroll.status != Payroll.Status.DRAFT:
             raise ValidationError(_("La liquidación está contabilizada; no se pueden cambiar sus asignaciones."))
@@ -299,12 +307,14 @@ class EmployeeMovementService:
         return movement
 
     @staticmethod
-    def cap_warning(payroll) -> str | None:
-        configured = GlobalHRSettings.objects.filter(pk=1).first()  # un GET no escribe: sin fila rige el valor por defecto
-        cap = configured.loan_deduction_cap_percent if configured else GlobalHRSettings._meta.get_field("loan_deduction_cap_percent").default
-        deductions = payroll.allocations.exclude(movement__kind=EmployeeMovement.Kind.PAYMENT).aggregate(
-            total=Sum("amount")
-        )["total"] or Decimal("0")
+    def cap_warning(payroll, cap: Decimal | None = None) -> str | None:
+        """Alerta si anticipos y cuotas superan el tope; `cap` evita releer la configuración por cada liquidación."""
+        if cap is None:
+            configured = GlobalHRSettings.objects.filter(pk=1).first()  # un GET no escribe: sin fila rige el valor por defecto
+            cap = configured.loan_deduction_cap_percent if configured else GlobalHRSettings._meta.get_field("loan_deduction_cap_percent").default
+        deductions = sum(
+            (a.amount for a in _allocations(payroll) if a.movement.kind != EmployeeMovement.Kind.PAYMENT), Decimal("0")
+        )
         if payroll.total_haberes and deductions > payroll.total_haberes * cap / Decimal("100"):
             return str(_("Los descuentos por anticipos y préstamos superan el %(cap)s %% de la remuneración total.") % {"cap": cap.normalize()})
         return None

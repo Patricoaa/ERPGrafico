@@ -1,3 +1,4 @@
+# ruff: noqa: F811 — los fixtures se importan de otros módulos de test
 """Hallazgos de la revisión final de la rama de movimientos (ADR-0156)."""
 
 import importlib
@@ -9,12 +10,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
 
-from accounting.models import Account, AccountType
 from core.models import GroupProfile
 from hr.models import EmployeeMovement, PayrollItem
 from hr.movement_services import EmployeeMovementService, TreasuryPayload
 from hr.services import post_payroll
-from hr.tests.test_employee_movement_service import _loan, _payroll as svc_payroll, cash, employee, hr_accounts  # noqa: F401
+from hr.tests.test_employee_movement_service import _loan, cash, employee, hr_accounts  # noqa: F401
+from hr.tests.test_employee_movement_service import _payroll as svc_payroll
 from hr.tests.test_post_payroll_allocations import _movement, _payroll, world  # noqa: F401
 
 pytestmark = pytest.mark.django_db

@@ -1,3 +1,4 @@
+# ruff: noqa: F811 — los fixtures se importan de otros módulos de test
 """Minors diferidos de la revisión final de movimientos (ADR-0156)."""
 
 from datetime import date
@@ -5,7 +6,6 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
@@ -13,7 +13,8 @@ from rest_framework.test import APIClient
 from hr import loans
 from hr.models import EmployeeMovement
 from hr.movement_services import EmployeeMovementService
-from hr.tests.test_employee_movement_service import _loan, _payroll as svc_payroll, _posted, employee  # noqa: F401
+from hr.tests.test_employee_movement_service import _loan, _posted, employee  # noqa: F401
+from hr.tests.test_employee_movement_service import _payroll as svc_payroll
 
 pytestmark = pytest.mark.django_db
 BASE = "/api/hr/employee-movements/"
@@ -150,3 +151,52 @@ def test_allocate_requires_payroll_change_permission(employee):  # noqa: F811
     movement = _posted(employee)
     response = c.post(f"{BASE}{movement.pk}/allocate/", {"payroll": svc_payroll(employee).pk, "amount": "1000"}, format="json")
     assert response.status_code == 403
+
+
+# -- comentarios/adjuntos al migrar anticipos ------------------------------------------
+
+
+def test_repoint_generic_relations_moves_comments_and_attachments():
+    import importlib
+
+    from django.apps import apps
+    from django.contrib.contenttypes.models import ContentType
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from core.models import Attachment
+    from workflow.models import Comment
+
+    migration = importlib.import_module("hr.migrations.0018_migrate_advances_and_salary_payments")
+    old = ContentType.objects.get_or_create(app_label="hr", model="salaryadvance")[0]
+    user = get_user_model().objects.create_user(username="commenter", password="x")
+    comment = Comment.objects.create(content_type=old, object_id=7, user=user, text="hola")
+    other = Comment.objects.create(content_type=old, object_id=8, user=user, text="otro")
+    attachment = Attachment.objects.create(content_type=old, object_id=7, original_filename="a.pdf", file=SimpleUploadedFile("a.pdf", b"%PDF-1.4"), user=user)
+
+    migration.repoint_generic_relations(apps, "salaryadvance", 7, "employeemovement", 42)
+
+    new = ContentType.objects.get(app_label="hr", model="employeemovement")
+    for row in (comment, attachment):
+        row.refresh_from_db()
+        assert (row.content_type_id, row.object_id) == (new.id, 42)
+    other.refresh_from_db()
+    assert (other.content_type_id, other.object_id) == (old.id, 8)
+
+
+# -- saldo y alerta de la liquidación sin consultas por fila ----------------------------
+
+
+def test_payroll_detail_query_count_is_constant(client, employee):  # noqa: F811
+
+    payroll = svc_payroll(employee)
+    EmployeeMovementService.allocate(_posted(employee, amount=50000), payroll, 20000)
+
+    def count():
+        with CaptureQueriesContext(connection) as ctx:
+            assert client.get(f"/api/hr/payrolls/{payroll.pk}/").status_code == 200
+        return len(ctx)
+
+    baseline = count()
+    for _ in range(3):
+        EmployeeMovementService.allocate(_posted(employee, amount=50000), payroll, 10000)
+    assert count() == baseline

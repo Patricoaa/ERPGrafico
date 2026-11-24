@@ -28,7 +28,9 @@ from .models import (
     PayrollItem,
     PayrollPayment,
 )
+from .movement_services import EmployeeMovementService
 from .payroll_pdf import generate_payroll_pdf
+from .selectors import employee_movements_for_list
 from .serializers import (
     AbsenceSerializer,
     AFPSerializer,
@@ -44,8 +46,6 @@ from .serializers import (
     PayrollPaymentSerializer,
     PayrollWriteSerializer,
 )
-from .movement_services import EmployeeMovementService
-from .selectors import employee_movements_for_list
 from .services import PayrollPaymentService
 
 # --- Global Settings (singleton) ---

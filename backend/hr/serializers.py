@@ -13,8 +13,8 @@ from .models import (
     GlobalHRSettings,
     LoanInstallment,
     Payroll,
-    PayrollConcept,
     PayrollAllocation,
+    PayrollConcept,
     PayrollItem,
     PayrollPayment,
 )
@@ -500,7 +500,7 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
 
     def get_cap_warning(self, obj):
         from .movement_services import EmployeeMovementService
-        return EmployeeMovementService.cap_warning(obj)
+        return EmployeeMovementService.cap_warning(obj)  # una sola liquidación por request (detalle)
 
     class Meta:
         model = Payroll
