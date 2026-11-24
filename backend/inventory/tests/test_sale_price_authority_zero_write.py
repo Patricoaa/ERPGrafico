@@ -1,12 +1,12 @@
 """ADR-0151: un bruto 0 explícito (sin neto) es autoritativo: deja 0/0, no re-deriva el neto viejo."""
 from decimal import Decimal
 
-from inventory.models import PricingRule, Product, ProductUoMPrice
+import pytest
+
+from inventory.models import PricingRule, ProductUoMPrice
 from inventory.services import ProductService, net_write_to_gross
 from inventory.tests.test_sale_price_authority import _make, base  # noqa: F401
 from inventory.tests.test_sale_price_authority_rules import api, product  # noqa: F401
-
-import pytest
 
 pytestmark = pytest.mark.django_db
 ZERO = Decimal("0")

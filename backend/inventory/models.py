@@ -1054,7 +1054,6 @@ class Product(models.Model):
         Calculates the total cost of materials from the active BOM.
         Returns Decimal('0.00') if no active BOM or no lines.
         """
-        from decimal import Decimal
 
         from inventory.services import UoMService
         from production.models import BillOfMaterials
@@ -1207,7 +1206,6 @@ class Product(models.Model):
         if not exclude_draft_id and hasattr(self, "annotated_qty_reserved"):
             return self.annotated_qty_reserved
 
-        from decimal import Decimal
 
         from production.models import WorkOrder, WorkOrderMaterial
         from sales.models import DraftCart, SaleLine, SaleOrder

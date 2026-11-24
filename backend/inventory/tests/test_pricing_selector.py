@@ -111,11 +111,15 @@ def _at(day: date) -> datetime:
 
 
 def _price_history(env, *changes):
-    """Fija el historial de ``sale_price``: creación el 2025-12-01 y luego ``(fecha, precio)`` por cambio."""
+    """Fija el historial de ``sale_price``: creación el 2025-12-01 y luego ``(fecha, neto)`` por cambio.
+
+    ADR-0151: el bruto es la autoridad y el neto se deriva al guardar, así que el cambio se
+    escribe como bruto (neto × 1,19); el historial registra el neto resultante.
+    """
     product = env["product"]
     product.history.update(history_date=_at(date(2025, 12, 1)))
     for day, price in changes:
-        product.sale_price = Decimal(price)
+        product.sale_price_gross = Decimal(price) * Decimal("1.19")
         product.save()
         product.history.order_by("-history_id").filter(pk=product.history.latest("history_id").pk).update(history_date=_at(day))
     product.refresh_from_db()

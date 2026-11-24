@@ -4,7 +4,14 @@ import pytest
 from django.core.management import call_command
 
 from accounting.vat import net_from_gross
-from inventory.models import PricingRule, Product, ProductCategory, ProductUoMPrice, UoM, UoMCategory
+from inventory.models import (
+    PricingRule,
+    Product,
+    ProductCategory,
+    ProductUoMPrice,
+    UoM,
+    UoMCategory,
+)
 from inventory.price_rederivation import rederive_sale_prices
 
 M = Decimal("1.19")
