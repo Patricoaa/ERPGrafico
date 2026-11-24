@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { frozenFieldsOf } from "@/lib/edit-policy"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type * as z from "zod"
@@ -11,22 +10,19 @@ import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Settings2 } from "lucide-react"
 
-import { ActionConfirmModal, SubmitButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from "@/components/shared"
+import { ActionConfirmModal, SubmitButton, AutoSaveStatusBadge, BaseModal, FadeIn, LabeledInput, SkeletonShell, ToolbarCreateButton } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useHrSettings } from '@/features/hr'
 import type {
-    AFP,
-    PayrollConcept
+    AFP
 } from "@/types/hr"
 
-import { FormulaBuilder } from "@/features/hr"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { PayrollConceptClientView } from './PayrollConceptClientView'
 
-import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
+import { globalSettingsSchema, afpSchema, type GlobalHRFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
 export function HRSettingsView({ activeTab = "global" }: { activeTab?: string }) {
     const { settings, afps, isLoading, updateSettings, createAfp, updateAfp, deleteAfp, refetch } = useHrSettings()
@@ -167,17 +163,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
                             </div>
                         </Form>
-                    </div>
-                )}
-
-                {/* --- Tab: Conceptos --- */}
-                {activeTab === "concepts" && (
-                    <div className="flex flex-col flex-1 min-h-0 space-y-6 m-0 p-0 border-0 outline-none mt-6">
-                        <div className="px-1">
-                            <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
-                            <p className="text-3xs uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
-                        </div>
-                        <PayrollConceptClientView />
                     </div>
                 )}
 
