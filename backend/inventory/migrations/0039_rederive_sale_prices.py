@@ -94,6 +94,7 @@ def rederive(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("inventory", "0038_product_price_surcharge_gross"),
+        ("inventory", "0038_manufacturable_not_purchasable"),
         ("accounting", "0052_rcvimport_contacts_created_count"),
     ]
 
