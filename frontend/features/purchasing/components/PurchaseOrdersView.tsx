@@ -21,6 +21,7 @@ import { purchaseNoteEntity, purchaseNoteViews } from "../entity-view/purchaseNo
 import { EMPTY_PURCHASING_ANALYTICS, usePurchaseOrderAnalytics } from "../hooks/usePurchaseOrderAnalytics"
 import { usePurchasingNotes, usePurchasingOrders } from "../hooks/usePurchasing"
 import { usePurchaseNoteGroups } from "../hooks/usePurchaseNoteGroups"
+import { usePurchaseOrderGroups } from "../hooks/usePurchaseOrderGroups"
 import { buildPurchaseAnalyticsScreen } from "./purchaseOrderAnalyticsScreen"
 
 interface PurchaseOrdersViewProps {
@@ -41,17 +42,22 @@ export function PurchaseOrdersView({ viewMode, createAction }: PurchaseOrdersVie
 function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactNode }) {
     const sheet = useDocumentSheetRoute("purchasing.purchaseorder")
     const query = useCollectionQuery(purchaseOrderEntity)
-    const { groupBy, params } = query
+    const { groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("purchasing.purchaseorder")
 
-    const { page, orders, isLoading, isRefetching, isError, refetch } = usePurchasingOrders({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = usePurchaseOrderGroups({ groupKey, params })
+    const list = usePurchasingOrders({
         filters: {
             ...params,
             page: groupBy ? 1 : pageState.pageIndex + 1,
             page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
         },
+        enabled: groupKey === null,
     })
+    const { page, orders } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     // Figures over the filtered list (or everything, «Analizar sin filtros»), fetched only while the modal is open.
     const analyticsUi = useCollectionAnalytics("financiero")
@@ -76,6 +82,7 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             sorting: query.sorting,
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

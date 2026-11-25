@@ -144,6 +144,15 @@ export const purchasingApi = {
         return toPage<PurchaseOrderAPI>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     },
 
+    /** Groups of the filtered order list (ADR-0158 §7): count, total and the params of each group's rows. */
+    getOrderGroups: async (filters: OrderFilters, groupBy: string): Promise<ServerGroup[]> => {
+        const params = orderListParams(filters)
+        params.append('group_by', groupBy)
+        if (filters.ordering) params.append('ordering', filters.ordering)
+        const { data } = await api.get<unknown>('/purchasing/orders/groups/', { params })
+        return toServerGroups(data)
+    },
+
     /** Analytics over the whole filtered order list (same filters as `getOrders`, no paging). */
     getOrderAnalytics: async (filters: OrderFilters | undefined, granularity: string): Promise<PurchaseOrderAnalyticsResponse> => {
         const params = orderListParams(filters)

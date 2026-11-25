@@ -16,12 +16,35 @@ interface WorkOrderFilters {
     due_date_after?: string
     due_date_before?: string
     my_tasks?: boolean
+    current_stage?: string
     page?: number
     page_size?: number
     [key: string]: string | number | boolean | undefined
 }
 
-export function useWorkOrders(filters?: WorkOrderFilters, initialData?: Page<WorkOrder>) {
+/** List params of `/production/orders/` (no paging): shared by the rows and their groups (ADR-0158 §7). */
+export function workOrderListParams(filters: Omit<WorkOrderFilters, 'page' | 'page_size'>): URLSearchParams {
+    const params = new URLSearchParams()
+    if (filters.status) params.append('status', String(filters.status))
+    if (filters.current_stage) params.append('current_stage', String(filters.current_stage))
+    if (filters.search) params.append('search', String(filters.search))
+    if (filters.date_from) params.append('due_date_after', String(filters.date_from))
+    if (filters.date_to) params.append('due_date_before', String(filters.date_to))
+    if (filters.due_date_after) params.append('due_date_after', String(filters.due_date_after))
+    if (filters.due_date_before) params.append('due_date_before', String(filters.due_date_before))
+    if (filters.my_tasks) params.append('my_tasks', 'true')
+    return params
+}
+
+export async function fetchWorkOrders(filters: WorkOrderFilters, page: number, pageSize: number): Promise<Page<WorkOrder>> {
+    const params = workOrderListParams(filters)
+    params.append('page', String(page))
+    params.append('page_size', String(pageSize))
+    const res = await api.get('/production/orders/', { params })
+    return toPage<WorkOrder>(res.data, page, pageSize)
+}
+
+export function useWorkOrders(filters?: WorkOrderFilters, initialData?: Page<WorkOrder>, enabled = true) {
     const queryClient = useQueryClient()
 
     const { page = 1, page_size = 50, my_tasks, ...restFilters } = filters || {}
@@ -29,21 +52,9 @@ export function useWorkOrders(filters?: WorkOrderFilters, initialData?: Page<Wor
 
     const query = useQuery({
         queryKey: [WORK_ORDERS_LIST_KEY, activeFilters],
-        queryFn: async (): Promise<Page<WorkOrder>> => {
-            const params = new URLSearchParams()
-            params.append('page', String(page))
-            params.append('page_size', String(page_size))
-            if (restFilters?.status) params.append('status', String(restFilters.status))
-            if (restFilters?.search) params.append('search', String(restFilters.search))
-            if (restFilters?.date_from) params.append('due_date_after', String(restFilters.date_from))
-            if (restFilters?.date_to) params.append('due_date_before', String(restFilters.date_to))
-            if (restFilters?.due_date_after) params.append('due_date_after', String(restFilters.due_date_after))
-            if (restFilters?.due_date_before) params.append('due_date_before', String(restFilters.due_date_before))
-            if (my_tasks) params.append('my_tasks', 'true')
-            const res = await api.get('/production/orders/', { params })
-            return toPage<WorkOrder>(res.data, page, page_size)
-        },
+        queryFn: () => fetchWorkOrders({ ...restFilters, my_tasks }, page, page_size),
         staleTime: staleTime.standard,
+        enabled,
         initialData,
         placeholderData: (prev) => prev,
     })

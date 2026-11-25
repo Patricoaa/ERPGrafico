@@ -15,6 +15,7 @@ import { WorkOrderWizard } from "./WorkOrderWizard"
 import { WorkOrderKanban } from "./WorkOrderKanban"
 import { WorkOrderTimeline } from "./WorkOrderTimeline"
 import { useWorkOrders } from "../hooks/useWorkOrders"
+import { useWorkOrderGroups } from "../hooks/useWorkOrderGroups"
 import { useWorkOrderListActions } from "../hooks/useWorkOrderListActions"
 import { FadeIn, ToolbarCreateButton } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -41,13 +42,20 @@ export function WorkOrdersClientView({ initialOrders }: WorkOrdersClientViewProp
     const pathname = usePathname()
 
     const query = useCollectionQuery(workOrderEntity)
-    const { search, groupBy, params } = query
+    const { search, groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
-    const { page, orders, isLoading, isRefetching, refetch: refetchOrders } = useWorkOrders({
+    // Grouping by status or stage groups the whole result on the server (`groups/`, ADR-0158 §7).
+    const grouped = useWorkOrderGroups({ groupKey, params })
+    const list = useWorkOrders({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined)
+    }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined, groupKey === null)
+    const { page, orders } = list
+    const isLoading = groupKey ? grouped.isLoading : list.isLoading
+    const isRefetching = groupKey ? grouped.isRefetching : list.isRefetching
+    // Actions refresh whichever is on screen.
+    const refetchOrders = groupKey ? grouped.refetch : list.refetch
 
     const { annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
@@ -107,6 +115,7 @@ export function WorkOrdersClientView({ initialOrders }: WorkOrdersClientViewProp
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

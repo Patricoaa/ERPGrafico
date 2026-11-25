@@ -80,11 +80,11 @@ export const workOrderEntity = defineEntity<WorkOrder>()((f) => ({
         status: f.value(
             "workOrderStatus",
             (w) => ({ status: w.status, label: null, isOverdue: isWorkOrderOverdue(w) }),
-            { label: "Estado" },
+            { label: "Estado", groupKey: "status" },
         ),
         currentStage: f.text(
             (w) => translateProductionStage(w.current_stage),
-            { label: "Etapa" },
+            { label: "Etapa", groupKey: "current_stage" },
         ),
         customer: f.text((w) => w.sale_customer_name ?? "", { label: "Cliente" }),
         quantityLabel: f.text(quantityLabel, { label: "Cantidad" }),

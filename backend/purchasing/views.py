@@ -95,7 +95,7 @@ class PurchaseOrderFilterSet(FilterSet):
         return filter_by_payment_status(queryset.exclude(status="CANCELLED"), value)
 
 
-class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseOrderSelector.get_base_queryset()
     pagination_class = StandardResultsSetPagination
@@ -107,6 +107,13 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelV
     # has no Meta.ordering and an unordered queryset pages unstably).
     ordering_fields = ["id", "number", "date", "supplier__name", "receipt_date", "total"]
     ordering = ["-date", "-id"]
+    # ADR-0158 §7: groups/ (each group lists its rows with the existing filters).
+    group_fields = {
+        "date": GroupField("date", param=("date_after", "date_before")),
+        "status": GroupField("status"),
+        "receiving": GroupField("receiving_status", param="receiving_status"),
+    }
+    group_aggregates = {"total": "total"}
     action_permissions = {
         "confirm": "purchasing.confirm_purchaseorder",
         "cancel": "purchasing.cancel_purchaseorder",

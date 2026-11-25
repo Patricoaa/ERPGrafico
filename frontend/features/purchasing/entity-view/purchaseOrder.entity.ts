@@ -21,12 +21,13 @@ export const purchaseOrderEntity = defineEntity<PurchaseOrderAPI>()((f) => ({
     fields: {
         folio: f.code((o) => o.display_id ?? o.number, { label: "Folio", orderBy: "number" }),
         supplier: f.contact((o) => ({ id: typeof o.supplier === "number" ? o.supplier : o.supplier.id, name: o.supplier_name }), { label: "Proveedor", orderBy: "supplier__name" }),
-        date: f.value("ledgerDate", (o) => ({ date: o.date, createdAt: o.created_at }), { label: "Fecha", orderBy: "date" }),
+        date: f.value("ledgerDate", (o) => ({ date: o.date, createdAt: o.created_at }), { label: "Fecha", orderBy: "date", groupKey: "date" }),
         expected: f.date("receipt_date", { label: "Entrega esperada", orderBy: "receipt_date" }),
         warehouse: f.text("warehouse_name", { label: "Almacén", tone: "secondary" }),
-        receiving: f.status((o) => RECEIVING[o.receiving_status], { label: "Recepción" }),
+        receiving: f.status((o) => RECEIVING[o.receiving_status], { label: "Recepción", groupKey: "receiving" }),
         hub: f.hubStatus((o) => o, {
             label: "Estado",
+            groupKey: "status",
             entity: "purchasing.purchaseorder",
             caption: (o) =>
                 isOrderCompleted(o)
@@ -58,7 +59,7 @@ export const purchaseOrderEntity = defineEntity<PurchaseOrderAPI>()((f) => ({
             total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
         },
         sort: { fields: ["date", "folio", "supplier", "expected", "total"], default: "-date" },
-        groupBy: { fields: ["date", "hub", "receiving"] },
+        groupBy: { fields: ["date", "hub", "receiving"], aggregate: { total: "sum" } },
         views: [
             { id: "all", label: "Todas" },
             { id: "to-receive", label: "Por recibir", filters: { origin_status: "ACTIVE", receiving_status: "PENDING" } },

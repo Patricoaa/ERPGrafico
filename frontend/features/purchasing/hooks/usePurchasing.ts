@@ -10,7 +10,7 @@ import { staleTime } from '@/lib/query-config'
 
 export { PURCHASING_KEYS }
 
-export function usePurchasingOrders({ filters }: { filters?: OrderFilters } = {}) {
+export function usePurchasingOrders({ filters, enabled = true }: { filters?: OrderFilters; enabled?: boolean } = {}) {
     const { isAuthenticated } = useAuth()
 
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
@@ -20,7 +20,7 @@ export function usePurchasingOrders({ filters }: { filters?: OrderFilters } = {}
         queryKey: [...PURCHASING_KEYS.orders(), activeFilters],
         queryFn: () => purchasingApi.getOrders(activeFilters),
         staleTime: staleTime.standard,
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && enabled,
         placeholderData: (prev) => prev,
     })
 
