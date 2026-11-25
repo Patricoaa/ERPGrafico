@@ -57,7 +57,35 @@ export const statementEntity = defineEntity<BankStatement>()((f) => ({
             { label: "Estado" },
         ),
     },
+    // ADR-0158 §3: el servidor acota por banco o cuenta; texto y estado filtran en el navegador.
+    query: {
+        search: { placeholder: "Buscar cartola…" },
+        filters: {
+            bank: { label: "Banco", control: "single", options: "remote" },
+            treasury_account: { field: "account", control: "single", options: "remote" },
+            state: {
+                field: "state",
+                control: "single",
+                options: [
+                    { value: "DRAFT", label: "Borrador" },
+                    { value: "CONFIRMED", label: "Confirmado" },
+                    { value: "CANCELLED", label: "Anulado" },
+                ],
+            },
+        },
+        sort: { fields: ["date", "displayId", "account", "openingBalance", "closingBalance", "state"], default: "-date" },
+        groupBy: { fields: ["account", "state"] },
+    },
 }))
+
+/** Dentro de un banco: la misma lista sin el filtro de banco. */
+export const bankStatementQueryEntity = {
+    fields: statementEntity.fields,
+    query: {
+        ...statementEntity.query,
+        filters: Object.fromEntries(Object.entries(statementEntity.query?.filters ?? {}).filter(([id]) => id !== "bank")),
+    },
+}
 
 export const statementViews = statementEntity.views({
     table: {
