@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
 import { ActionConfirmModal, AnalyticsPanelContent, type BulkAction } from '@/components/shared'
-import { Collection, GROUP_ROW_LIMIT, useCollectionAnalytics, orderingParam, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId, type SortSpec } from "@/components/entity-view"
+import { Collection, GROUP_ROW_LIMIT, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { toPage } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import { Plus, AlertTriangle } from "lucide-react"
@@ -25,9 +25,6 @@ import { type Product, type Restriction, type ProductFilters } from "@/features/
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 interface ProductClientViewProps {
     externalOpen?: boolean
@@ -47,28 +44,18 @@ export interface InitialProductPage {
 
 const DEFAULT_PAGE: { pageIndex: number; pageSize: number } = { pageIndex: 0, pageSize: DEFAULT_PRODUCT_LIST_QUERY.page_size }
 
-/** Search group keys → entity field ids (grouping uses the same formatted text as the cell). */
-const PRODUCT_GROUPS: Record<string, FieldId<typeof productEntity.fields>> = { product_type: "type", category_name: "category" }
 
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialPage }: ProductClientViewProps) {
     const { categories: categoryOptions } = useCategories()
-    const config: UnifiedSearchConfig = useMemo(() => ({
-        ...productUnifiedSearchDef,
-        filters: [
-            ...(productUnifiedSearchDef.filters ?? []),
-            {
-                type: 'single',
-                key: 'category',
-                label: 'Categoría',
-                serverParam: 'category',
-                options: (categoryOptions ?? []).map(c => ({ label: c.name, value: String(c.id) })),
-            },
-        ],
+    const filterOptions = useMemo(() => ({
+        category: (categoryOptions ?? []).map(c => ({ label: c.name, value: String(c.id) })),
     }), [categoryOptions])
 
-    const search = useUnifiedSearch(config)
+    const query = useCollectionQuery(productEntity, { filterOptions })
+    const { search, groupBy } = query
     const filters = useMemo<ProductFilters>(() => {
-        const raw = { ...search.filters } as Record<string, string>
+        const raw: Record<string, string> = { ...query.params }
+        delete raw.ordering
 
         // Parse availability multi-select into can_be_sold / can_be_purchased
         const availability = raw['availability']
@@ -87,26 +74,26 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             parent_template__isnull: true,
             ...raw as Partial<ProductFilters>,
         }
-    }, [search.filters])
+    }, [query.params])
 
-    const groupBy = search.groupBy ? PRODUCT_GROUPS[search.groupBy] ?? null : null
     const isGrouping = groupBy !== null
-    const [sort, setSort] = useState<SortSpec<FieldId<typeof productEntity.fields>> | null>(null)
     // A new filter, sort or grouping starts again at the first page.
-    const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
+    const [pageState, setPageState] = useServerPage([query.params, groupBy], DEFAULT_PAGE)
     // Server order by default (no sort): the header only claims an order the server applied.
     const { view, onViewChange } = useCollectionViewMode("inventory.product")
     // ?analytics=<tab> opens the analytics modal; old ?view=resumen|ventas|… tab links still work.
     const analyticsUi = useCollectionAnalytics("resumen", { legacyViewTabs: ["resumen", "ventas", "compras", "existencias"] })
     const [selectedStockProduct, setSelectedStockProduct] = useState<StockReportItem | null>(null)
 
+    // ADR-0158 §5.7: the analytics follow the list's filters unless the scope is "all".
+    const scoped = useMemo<ProductFilters>(() => (analyticsUi.scope === "all" ? {} : filters), [analyticsUi.scope, filters])
     const analyticsFilters = {
-        search: filters.search,
-        category: filters.category,
-        product_type: filters.product_type,
-        can_be_sold: filters.can_be_sold,
-        can_be_purchased: filters.can_be_purchased,
-        is_active: filters.is_active,
+        search: scoped.search,
+        category: scoped.category,
+        product_type: scoped.product_type,
+        can_be_sold: scoped.can_be_sold,
+        can_be_purchased: scoped.can_be_purchased,
+        is_active: scoped.is_active,
     }
     // Figures over the whole filtered catalog, fetched only while the analytics view is open.
     const analyticsEnabled = analyticsUi.open
@@ -116,7 +103,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
     // Grouping loads one bounded page (GROUP_ROW_LIMIT); the collection warns when it is truncated.
     const { page, products, isLoading, isRefetching, isError, refetch, updateProduct } = useProducts({
-        filters: { ...filters, ordering: orderingParam(productEntity, sort) },
+        filters: { ...filters, ordering: query.params.ordering },
         page: isGrouping ? 1 : pageState.pageIndex + 1,
         page_size: isGrouping ? GROUP_ROW_LIMIT : pageState.pageSize,
         // Only reused by the hook while the query is still the default one it was rendered for.
@@ -230,10 +217,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 stockReport: (
                     <StockReport
                         externalFilters={{
-                            search: filters.search,
-                            category: filters.category !== undefined ? String(filters.category) : undefined,
-                            product_type: filters.product_type,
-                            is_active: filters.is_active !== undefined ? String(filters.is_active) : undefined,
+                            search: scoped.search,
+                            category: scoped.category !== undefined ? String(scoped.category) : undefined,
+                            product_type: scoped.product_type,
+                            is_active: scoped.is_active !== undefined ? String(scoped.is_active) : undefined,
                         }}
                         onSelectProduct={setSelectedStockProduct}
                         selectedProduct={selectedStockProduct}
@@ -241,7 +228,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 ),
             },
         ),
-        [analyticsUi.tab, analyticsUi.onTabChange, resumenData, ventasData, comprasData, filters],
+        [analyticsUi.tab, analyticsUi.onTabChange, resumenData, ventasData, comprasData, scoped],
     )
 
     const collection = useEntityCollection(
@@ -249,7 +236,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         { rows: products, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
         {
             pagination: isGrouping ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
-            sorting: { mode: "server", state: sort, onChange: setSort },
+            sorting: query.sorting,
             groupBy,
         },
     )
@@ -262,15 +249,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 view={view}
                 onViewChange={onViewChange}
                 analytics={analyticsUi}
+                query={query}
                 actions={productActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={config}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar producto..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={productViews.table}
                     card={productViews.card}

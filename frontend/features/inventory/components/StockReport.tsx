@@ -2,13 +2,11 @@
 
 import { useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Collection, useEntityCollection } from "@/components/entity-view"
-import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import type { MultiSelectOption } from '@/types/unified-search'
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 import { useCategories, useWarehouses } from '@/features/inventory'
-import { stockReportUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { stockReportEntity, stockReportViews, type StockReportItem } from "@/features/inventory/entity-view/stockReport.entity"
 import { ProductAnalyticsModal } from "./ProductAnalyticsModal"
 
@@ -39,7 +37,9 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
         warehouse: warehouses.map((w) => ({ label: w.name, value: String(w.id) })),
     }), [categories, warehouses])
 
-    const search = useUnifiedSearch(stockReportUnifiedSearchDef, filterOptions)
+    // Embedded in the product analytics, the URL belongs to the product list: its query state is ignored.
+    const query = useCollectionQuery(stockReportEntity, { filterOptions, sorting: "client" })
+    const { search } = query
     const handleReset = useCallback(() => { search.clearAll() }, [search])
 
     const urlProductId = embedded ? null : searchParams.get('product_id')
@@ -122,7 +122,7 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
     const collection = useEntityCollection(
         stockReportEntity,
         { rows: isLoading ? [] : filteredReport },
-        { pagination: { mode: "client", pageSize: 50 } },
+        { pagination: { mode: "client", pageSize: 50 }, sorting: embedded ? undefined : query.sorting },
     )
 
     // Embedded: if parent drives drill-down, render nothing here
@@ -135,27 +135,12 @@ export function StockReport({ externalFilters, onSelectProduct, selectedProduct 
             <div className="flex-1 flex flex-col min-h-0">
                 <Collection.Root
                     collection={collection}
+                    query={embedded ? undefined : query}
                     onOpen={(item) => handleSelectProduct(item)}
                     actions={stockReportActions.forCollection(stockReportActionsCtx)}
                 >
                     {!embedded && (
-                        <Collection.Toolbar>
-                            <UnifiedSearchBar
-                                config={stockReportUnifiedSearchDef}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
-                                filterOptions={search.filterOptions}
-                                placeholder="Buscar por producto o SKU..."
-                            />
-                        </Collection.Toolbar>
+                        <Collection.Toolbar />
                     )}
                     <Collection.View
                         table={stockReportViews.table}

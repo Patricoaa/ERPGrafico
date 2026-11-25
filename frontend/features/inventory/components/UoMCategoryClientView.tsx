@@ -8,13 +8,12 @@ import React, { useMemo } from "react"
 
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inventory/uomCategoryActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useUoMs, type UoMCategory } from "@/features/inventory/hooks/useUoMs"
-import { uomCategoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { uomCategoryEntity, uomCategoryViews } from "../entity-view/uomCategory.entity"
 import { UoMCategoryDrawer } from "./UoMCategoryDrawer"
 
@@ -26,7 +25,8 @@ interface UoMCategoryClientViewProps {
 
 export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryClientViewProps) {
     const { categories, isCategoriesLoading, isCategoriesError, refetchCategories, archiveUoMCategory } = useUoMs()
-    const search = useUnifiedSearch(uomCategoryUnifiedSearchDef)
+    const query = useCollectionQuery(uomCategoryEntity, { sorting: "client" })
+    const { search } = query
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("inventory.uomcategory")
     const rows = useMemo(() => filterFn(categories), [filterFn, categories])
@@ -34,7 +34,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
     const collection = useEntityCollection(
         uomCategoryEntity,
         { rows, isLoading: isCategoriesLoading, error: isCategoriesError && categories.length === 0, refetch: refetchCategories, isFiltered: search.isFiltered },
-        { defaultSort: uomCategoryViews.table.defaultSort },
+        { sorting: query.sorting },
     )
 
     const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
@@ -98,18 +98,13 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
                 actions={uomCategoryActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={uomCategoryUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar categoría..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={uomCategoryViews.table}
                     card={uomCategoryViews.card}

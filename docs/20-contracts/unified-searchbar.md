@@ -489,7 +489,7 @@ Ver `features/*/unifiedSearchDef.ts` para la lista completa. Cada feature tiene 
 | Sales | migrado a `entity.query` ([component-collection-toolbar.md](./component-collection-toolbar.md)) |
 | Billing | `features/billing/unifiedSearchDef.ts` |
 | Purchasing | migrado a `entity.query` |
-| Inventory | `features/inventory/unifiedSearchDef.ts` |
+| Inventory | migrado a `entity.query` (el detalle de conteo usa una definición local) |
 | Treasury | `features/treasury/unifiedSearchDef.ts` |
 | Accounting | `features/accounting/unifiedSearchDef.ts` |
 | HR | `features/hr/unifiedSearchDef.ts` |

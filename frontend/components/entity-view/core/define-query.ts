@@ -63,8 +63,11 @@ export type QueryFilter<Id extends string> = Labeled<Id> &
           }
     )
 
-/** A field-scoped search ("Cliente: …") with its own server param and optional suggestions. */
-export type SearchScope<Id extends string> = Labeled<Id> & { param: string; suggestionsUrl?: string }
+/**
+ * A field-scoped search ("Cliente: …") with its own server param and optional suggestions. `clientKey`:
+ * row keys it matches when the screen filters in the browser (`search.filterFn`); default the param.
+ */
+export type SearchScope<Id extends string> = Labeled<Id> & { param: string; suggestionsUrl?: string; clientKey?: string | readonly string[] }
 
 export type GroupAggregate = "sum" | "avg" | "count"
 
@@ -212,6 +215,7 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
         label: labelOf(entity, scope),
         serverParam: scope.param,
         suggestionsUrl: scope.suggestionsUrl,
+        clientKey: typeof scope.clientKey === "string" || scope.clientKey === undefined ? scope.clientKey : [...scope.clientKey],
     }))
 
     const groupFields = (spec.groupBy?.fields ?? []).map((id) => ({ id, label: labelOf(entity, { field: id }) }))

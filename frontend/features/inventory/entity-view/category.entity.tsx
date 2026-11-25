@@ -55,10 +55,17 @@ export const categoryEntity = defineEntity<Category>()((f) => ({
         productCount: f.number("product_count", { label: "Productos" }),
         isActive: f.status((c) => (c.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: rows filter (`search.filterFn`) and sort in the browser.
+    query: {
+        search: { placeholder: "Buscar categoría…", scopes: [{ field: "name", param: "name", clientKey: ["name", "parent_name"] }] },
+        filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
+        sort: { fields: ["name", "prefix", "parentName", "productCount", "isActive"], default: "name" },
+        groupBy: { fields: ["parentName"] },
+    },
 }))
 
 export const categoryViews = categoryEntity.views({
-    table: { columns: ["icon", "prefix", "name", "parentName", "isActive"], primary: "name", defaultSort: "name" },
+    table: { columns: ["icon", "prefix", "name", "parentName", "isActive"], primary: "name" },
     card: {
         title: "name",
         subtitle: ["parentName"],

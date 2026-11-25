@@ -3,14 +3,13 @@
 import { useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useState, useCallback } from "react"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, LabeledSelect, LabeledInput } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { LabeledSelect, LabeledInput } from '@/components/shared'
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { inventoryCountEntity, inventoryCountViews } from "../entity-view/inventoryCount.entity"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useInventoryCounts, useInventoryCountMutations } from "../hooks/useInventoryCounts"
 import { useWarehouses } from "../hooks/useWarehouses"
-import { inventoryCountUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
@@ -31,12 +30,13 @@ type NewCountFormData = z.infer<typeof newCountSchema>
 
 export function InventoryCountClientView() {
     const [showNewDialog, setShowNewDialog] = useState(false)
-    const search = useUnifiedSearch(inventoryCountUnifiedSearchDef)
+    const query = useCollectionQuery(inventoryCountEntity)
+    const { search } = query
 
-    const [pageState, setPageState] = useServerPage([search.filters], { pageIndex: 0, pageSize: 50 })
+    const [pageState, setPageState] = useServerPage([query.params], { pageIndex: 0, pageSize: 50 })
     const { view, onViewChange } = useCollectionViewMode("inventory.inventorycount")
     const { counts, totalCount, isLoading: isLoadingCounts, isRefetching: isRefetchingCounts, isError: isCountsError, refetch: refetchCounts } = useInventoryCounts({
-        ...search.filters,
+        ...query.params,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
@@ -85,12 +85,11 @@ export function InventoryCountClientView() {
         <div className="flex-1 min-h-0 overflow-y-auto p-4">
             <Collection.Root
                 collection={countsCollection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={inventoryCountUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar conteos..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={inventoryCountViews.table}
                     card={inventoryCountViews.card}

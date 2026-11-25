@@ -56,10 +56,17 @@ export const attributeEntity = defineEntity<Attribute>()((f) => ({
         values: f.value("attributeValues", (a) => a, { label: "Valores", sortable: false }),
         isActive: f.status((a) => (a.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar atributo…" },
+        filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
+        sort: { fields: ["name", "code", "valueType", "isActive"], default: "name" },
+        groupBy: { fields: ["valueType"] },
+    },
 }))
 
 export const attributeViews = attributeEntity.views({
-    table: { columns: ["name", "values", "isActive"], defaultSort: "name" },
+    table: { columns: ["name", "values", "isActive"] },
     card: {
         code: "code",
         title: "name",

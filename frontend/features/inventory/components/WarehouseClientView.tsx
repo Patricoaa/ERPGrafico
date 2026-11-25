@@ -6,14 +6,13 @@ import React, { useMemo } from "react"
 
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
-import { warehouseUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { warehouseEntity, warehouseViews } from "../entity-view/warehouse.entity"
 import { WarehouseDrawer } from "./WarehouseDrawer"
 
@@ -25,7 +24,8 @@ interface WarehouseClientViewProps {
 
 export function WarehouseClientView({ externalOpen, onExternalOpenChange, createAction }: WarehouseClientViewProps) {
     const { warehouses, isLoading, isError, refetch, archiveWarehouse } = useWarehouses()
-    const search = useUnifiedSearch(warehouseUnifiedSearchDef)
+    const query = useCollectionQuery(warehouseEntity, { sorting: "client" })
+    const { search } = query
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("inventory.warehouse")
     const rows = useMemo(() => filterFn(warehouses), [filterFn, warehouses])
@@ -33,7 +33,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     const collection = useEntityCollection(
         warehouseEntity,
         { rows, isLoading, error: isError && warehouses.length === 0, refetch, isFiltered: search.isFiltered },
-        { defaultSort: warehouseViews.table.defaultSort },
+        { sorting: query.sorting },
     )
 
     const archiveConfirm = useConfirmAction<Warehouse>(async (warehouse) => {
@@ -91,18 +91,13 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
                 actions={warehouseActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={warehouseUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar almacén..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={warehouseViews.table}
                     card={warehouseViews.card}

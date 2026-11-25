@@ -107,6 +107,28 @@ export const stockMoveEntity = defineEntity<StockMove>()((f) => ({
             { label: "Cantidad" },
         ),
     },
+    // ADR-0158 §3. No `sort`: the moves endpoint has no server ordering.
+    query: {
+        search: {
+            placeholder: "Buscar movimientos…",
+            scopes: [{ field: "productName", param: "product_name" }],
+        },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            direction: {
+                label: "Tipo de movimiento",
+                control: "single",
+                options: [
+                    { value: "IN", label: "Entrada" },
+                    { value: "OUT", label: "Salida" },
+                    { value: "TRANSFER", label: "Transferencia" },
+                    { value: "ADJUSTMENT", label: "Ajuste" },
+                    { value: "OTHER", label: "Otros" },
+                ],
+            },
+        },
+        groupBy: { fields: ["date", "productName"] },
+    },
 }))
 
 export const stockMoveViews = stockMoveEntity.views({

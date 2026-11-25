@@ -6,12 +6,11 @@ import { showApiError } from "@/lib/errors"
 import React from "react"
 
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { PricingRuleDrawer } from "@/features/sales"
 import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inventory/pricingRuleActions"
 import { usePricingRules, type PricingRule } from "@/features/inventory/hooks/usePricingRules"
-import { pricingRuleUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
@@ -24,10 +23,11 @@ interface PricingRuleClientViewProps {
 }
 
 export function PricingRuleClientView({ externalOpen, onExternalOpenChange, createAction }: PricingRuleClientViewProps) {
-    const search = useUnifiedSearch(pricingRuleUnifiedSearchDef)
+    const query = useCollectionQuery(pricingRuleEntity, { sorting: "client" })
+    const { search } = query
     const { rules, isLoading, isError, refetch, deletePricingRule } = usePricingRules(search.filters)
     const { view, onViewChange } = useCollectionViewMode("inventory.pricingrule")
-    const collection = useEntityCollection(pricingRuleEntity, { rows: rules, isLoading, error: isError, refetch, isFiltered: search.isFiltered })
+    const collection = useEntityCollection(pricingRuleEntity, { rows: rules, isLoading, error: isError, refetch, isFiltered: search.isFiltered }, { sorting: query.sorting, groupBy: query.groupBy, pagination: query.groupBy ? { mode: "none" } : { mode: "client" } })
 
     const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
@@ -69,17 +69,12 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
 
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 actions={pricingRuleActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={pricingRuleUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar reglas de precio..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={pricingRuleViews.table}
                     card={pricingRuleViews.card}

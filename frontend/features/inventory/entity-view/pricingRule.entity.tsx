@@ -79,6 +79,13 @@ export const pricingRuleEntity = defineEntity<PricingRule>()((f) => ({
         validity: f.text(validity, { label: "Vigencia", align: "center", sortable: false }),
         priority: f.number("priority", { label: "Prioridad", align: "center" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar reglas de precio…" },
+        filters: { active: { field: "active", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Inactivo" }] } },
+        sort: { fields: ["priority", "code", "name", "type", "active", "condition", "uom"] },
+        groupBy: { fields: ["type", "active"] },
+    },
 }))
 
 export const pricingRuleViews = pricingRuleEntity.views({

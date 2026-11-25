@@ -4,15 +4,14 @@ import { useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useState, useMemo, useEffect } from "react"
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
-import { Collection, useCollectionAnalytics, useEntityCollection } from "@/components/entity-view"
+import { Collection, GROUP_ROW_LIMIT, useCollectionAnalytics, useCollectionQuery, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { useStockMoveAnalytics } from "@/features/inventory/hooks/useStockMoveAnalytics"
-import { UnifiedSearchBar, useUnifiedSearch, Metric, MetricStrip, AnalyticsPanelContent } from "@/components/shared"
+import { Metric, MetricStrip, AnalyticsPanelContent } from "@/components/shared"
 import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
 import { TrendingUp, Package, Warehouse, ArrowDownLeft, ArrowUpRight } from "lucide-react"
 import { formatMoney, formatQuantity } from "@/lib/money"
-import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { toast } from "sonner"
 import React from "react"
 
@@ -21,19 +20,20 @@ interface MovementClientViewProps {
 }
 
 export function MovementClientView({ createAction }: MovementClientViewProps) {
-    const search = useUnifiedSearch(stockMoveUnifiedSearchDef)
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const { page, moves, totalCount, isLoading } = useStockMoves({
-        ...search.filters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+    const query = useCollectionQuery(stockMoveEntity)
+    const { search, groupBy, params } = query
+    const [pageState, setPageState] = useServerPage([params, groupBy], { pageIndex: 0, pageSize: 50 })
+    const { moves, totalCount, isLoading } = useStockMoves({
+        ...params,
+        page: groupBy ? 1 : pageState.pageIndex + 1,
+        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     })
 
     useEffect(() => {
-        if (search.groupBy !== null && totalCount > 200) {
+        if (groupBy && totalCount > GROUP_ROW_LIMIT) {
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
-    }, [search.groupBy, totalCount])
+    }, [groupBy, totalCount])
 
     // Cada movimiento abre su detalle en una pestaña propia (ADR-0152); `?selected&action=view` es enlace profundo.
     const { openEntity } = useGlobalModals()
@@ -46,12 +46,14 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
     const analyticsUi = useCollectionAnalytics("flujo")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
+    // ADR-0158 §5.7: the analytics follow the list's filters unless the scope is "all".
+    const scoped = analyticsUi.scope === "all" ? {} : params
     const analyticsData = useStockMoveAnalytics({
         months: 12,
         granularity,
-        product_name: search.filters.product_name ?? null,
-        date_from: search.filters.date_from ?? null,
-        date_to: search.filters.date_to ?? null,
+        product_name: scoped.product_name ?? null,
+        date_from: scoped.date_from ?? null,
+        date_to: scoped.date_to ?? null,
     })
 
     const analyticsScreen = useMemo<AnalyticsPanelContentProps>(() => {
@@ -229,11 +231,8 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         stockMoveEntity,
         { rows: isLoading ? [] : moves as StockMove[], rowCount: totalCount },
         {
-            pagination: {
-                mode: "server",
-                state: pageState,
-                onChange: setPageState,
-            },
+            pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
+            groupBy,
         },
     )
 
@@ -241,27 +240,13 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 flex flex-col min-h-0">
                 <Collection.Root
-                analytics={analyticsUi}
+                    analytics={analyticsUi}
                     collection={collection}
+                    query={query}
                     onOpen={(move: StockMove) => openEntity("inventory.stockmove", move.id, move)}
                     actions={stockMoveActions.forCollection(actionsCtx)}
                 >
-                    <Collection.Toolbar action={createAction}>
-                        <UnifiedSearchBar
-                            config={stockMoveUnifiedSearchDef}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                            placeholder="Buscar movimientos..."
-                        />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar action={createAction} />
                     <Collection.View
                         table={stockMoveViews.table}
                         card={stockMoveViews.card}

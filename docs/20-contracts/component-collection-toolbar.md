@@ -37,6 +37,9 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 > Las notas de compra siguen con `purchaseInvoiceUnifiedSearchDef` de billing y migran con esa app.
 >
 > - modo cliente (3d-2): sesiones POS, terminales POS y suscripciones.
+> - oleada 3d-3 (inventario): productos, movimientos, documentos y conteos (servidor); unidades, categorías de UdM, categorías, atributos, bodegas, reglas de precio y reporte de existencias (cliente).
+>
+> El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
 
 ---
 
@@ -174,6 +177,8 @@ Preferencias por entidad que **no van en la URL**: densidad y columnas (visibili
 - Las claves siguen en `?ordering=`, pero `params` no lleva `ordering`.
 - `sorting` usa el modo `query` de `useEntityCollection`: ordena las filas cargadas por todas las claves, y solo las columnas declaradas son ordenables.
 - Filtros y búsqueda funcionan igual. La pantalla los envía al servidor (`params`) o filtra en el cliente (`search.filters` o `search.filterFn`).
+- Con `search.filterFn`, cada `scope` busca en las claves de fila de `clientKey` (por defecto, su `param`): `{ label: "Nombre / Código", param: "name", clientKey: ["name", "code", "address"] }`.
+- Los filtros `options: "remote"` reciben sus opciones en `useCollectionQuery(entity, { filterOptions: { category: [...] } })`.
 
 En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa columna lleva `aria-sort`. Las secundarias se ven y se cambian en `SortMenu`.
 

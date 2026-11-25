@@ -42,6 +42,20 @@ export const stockReportEntity = defineEntity<StockReportItem>()((f) => ({
             { label: "Valorización" },
         ),
     },
+    // ADR-0158 §3, client mode: the report loads every product; filters and sorting run in the browser.
+    query: {
+        search: { placeholder: "Buscar por producto o SKU…" },
+        filters: {
+            category: { label: "Categoría", control: "single", options: "remote" },
+            // The only server filter: the report is computed per warehouse.
+            warehouse: { label: "Bodega", control: "single", param: "warehouse_id", options: "remote" },
+            stock_qty: { field: "stockQty", control: "range", paramFrom: "stock_qty_from", paramTo: "stock_qty_to" },
+            qty_available: { field: "qtyAvailable", control: "range", paramFrom: "qty_available_from", paramTo: "qty_available_to" },
+            qty_reserved: { field: "qtyReserved", control: "range", paramFrom: "qty_reserved_from", paramTo: "qty_reserved_to" },
+            total_value: { field: "totalValue", control: "range", paramFrom: "total_value_from", paramTo: "total_value_to" },
+        },
+        sort: { fields: ["name", "stockQty", "qtyReserved", "qtyAvailable", "totalValue"] },
+    },
 }))
 
 export const stockReportViews = stockReportEntity.views({

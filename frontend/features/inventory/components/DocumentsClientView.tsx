@@ -1,9 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback } from "react"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
-import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
 import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
 import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
 import type { InventoryDocument } from "../types"
@@ -17,18 +15,16 @@ interface DocumentsClientViewProps {
     createAction?: React.ReactNode
 }
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const DOCUMENT_GROUPS: Record<string, FieldId<typeof inventoryDocumentEntity.fields>> = { date: "date", document_type: "documentType", status: "status" }
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
 export function DocumentsClientView({ documentTypeFilter, createAction }: DocumentsClientViewProps) {
-    const search = useUnifiedSearch(documentUnifiedSearchDef)
+    const query = useCollectionQuery(inventoryDocumentEntity)
+    const { search, groupBy } = query
+    // A route per document type fixes it (the "Tipo" filter then has no effect there).
     const allFilters = React.useMemo(() => ({
-        ...search.filters,
+        ...query.params,
         ...(documentTypeFilter ? { document_type: documentTypeFilter } : {})
-    }), [search.filters, documentTypeFilter])
-
-    const groupBy = search.groupBy ? DOCUMENT_GROUPS[search.groupBy] ?? null : null
+    }), [query.params, documentTypeFilter])
     const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("inventory.inventorydocument")
 
@@ -84,10 +80,9 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                 view={view}
                 onViewChange={onViewChange}
                 actions={documentActions.forCollection(actionsCtx)}
+                query={query}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={documentUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar documentos..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={table}
                     card={inventoryDocumentViews.card}

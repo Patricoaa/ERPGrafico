@@ -18,6 +18,18 @@ export const inventoryCountEntity = defineEntity<InventoryCount>()((f) => ({
             : null
         ), { label: "Diferencias" }),
     },
+    // ADR-0158 §3. No `sort`: the counts endpoint has no server ordering.
+    query: {
+        search: { placeholder: "Buscar por almacén o notas…" },
+        filters: {
+            status: { field: "status", control: "single", options: [{ value: "DRAFT", label: "Borrador" }, { value: "IN_PROGRESS", label: "En progreso" }, { value: "APPLIED", label: "Aplicado" }, { value: "CANCELLED", label: "Cancelado" }] },
+        },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "in-progress", label: "En progreso", filters: { status: "IN_PROGRESS" } },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+        ],
+    },
 }))
 
 export const inventoryCountViews = inventoryCountEntity.views({
