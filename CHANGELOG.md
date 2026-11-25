@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.156](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.155...v0.3.156) (2026-11-25)
+
+
+### ✨ Features
+
+* **hr:** liquidación como ficha documental con edición en línea ([4fa74a2](https://github.com/Patricoaa/ERPGrafico/commit/4fa74a2a74ceb324abce46ee649e7e1df6bc7c2b))
+* **hr:** pagos en la liquidación contabilizada y estados de movimientos unificados ([7fed45a](https://github.com/Patricoaa/ERPGrafico/commit/7fed45acb13ae79f21ba8d60fb61232569602b87))
+
+
+### 🐛 Bug Fixes
+
+* **hr:** el perfil del empleado descuenta anticipos y pagos en su liquidación ([6839699](https://github.com/Patricoaa/ERPGrafico/commit/68396990a4d9509fab5aedb16551cb68eb7b2467))
+
 ### [0.3.155](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.154...v0.3.155) (2026-11-25)
 
 
