@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.173](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.172...v0.3.173) (2026-11-25)
+
+
+### ✨ Features
+
+* **entity-view:** etapa 3a de ADR-0158 — entity.query y useCollectionQuery ([ecedc31](https://github.com/Patricoaa/ERPGrafico/commit/ecedc317e456413e80d092fa8c36fe2361578518))
+
+
+### 📚 Documentation
+
+* **contracts:** barra de colección — ajustes de la etapa 3a ([3bcd00e](https://github.com/Patricoaa/ERPGrafico/commit/3bcd00e5b8fa9315f7f29212db7ad6316a8b51fe))
+
 ### [0.3.172](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.171...v0.3.172) (2026-11-25)
 
 
