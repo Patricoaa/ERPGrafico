@@ -13,7 +13,7 @@ from core.api.pagination import StandardResultsSetPagination
 from core.api.permissions import require_perms
 from core.mixins import AuditHistoryMixin
 
-from .models import ActionLog, BackgroundJob, CompanySettings, User
+from .models import ActionLog, CompanySettings, User
 from .serializers import (
     ActionLogSerializer,
     BackgroundJobSerializer,
@@ -31,13 +31,6 @@ from .services import (
     GroupService,
     UserService,
 )
-
-
-class BackgroundJobViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
-    queryset = BackgroundJob.objects.all()
-    serializer_class = BackgroundJobSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -126,9 +119,16 @@ class MyProfilePayrollPreviewView(APIView):
 
         from hr.models import Payroll
         from hr.serializers import EmployeePayrollPreviewSerializer
-        if not request.user.contact_id: raise PermissionDenied('User is not linked to an employee contact')
-        try: p = Payroll.objects.select_related('employee', 'employee__contact').prefetch_related('items', 'items__concept', 'allocations__movement', 'allocations__installment', 'payments').get(id=payroll_id, employee__contact_id=request.user.contact_id, status=Payroll.Status.POSTED)
-        except Payroll.DoesNotExist: raise NotFound('Payroll not found')
+        if not request.user.contact_id:
+            raise PermissionDenied('User is not linked to an employee contact')
+        try:
+            p = (
+                Payroll.objects.select_related('employee', 'employee__contact')
+                .prefetch_related('items', 'items__concept', 'allocations__movement', 'allocations__installment', 'payments')
+                .get(id=payroll_id, employee__contact_id=request.user.contact_id, status=Payroll.Status.POSTED)
+            )
+        except Payroll.DoesNotExist:
+            raise NotFound('Payroll not found')
         return Response(EmployeePayrollPreviewSerializer(p).data)
 
 
@@ -141,8 +141,10 @@ class ChangePasswordView(APIView):
         from rest_framework.exceptions import ValidationError
 
         from .user_service import UserServiceExt
-        try: return Response(UserServiceExt.change_password_from_request(request))
-        except ValidationError as e: return Response({'detail': str(e)}, status=400)
+        try:
+            return Response(UserServiceExt.change_password_from_request(request))
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=400)
 
 
 class UserPreferenceView(APIView):
@@ -192,6 +194,7 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def perform_create(self, serializer):
         from django.db import transaction
+
         from core.rbac.services import RoleService
         actor = self.request.user
         new_groups = list(serializer.validated_data.get("groups") or [])
@@ -205,6 +208,7 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def perform_update(self, serializer):
         from rest_framework.exceptions import PermissionDenied
+
         from core.rbac.services import RoleService
         actor = self.request.user
         instance = self.get_object()
@@ -223,7 +227,6 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         is_before = instance.is_active
         is_after = serializer.validated_data.get("is_active", is_before)
         if is_before and not is_after:
-            from .services import UserService
             UserService.deactivate(user=instance, deactivated_by=actor, request=self.request)
             self.request._rbac_sod_warnings = []
             return

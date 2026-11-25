@@ -130,9 +130,9 @@ jobs:
         run: |
           out=$(ruff check . 2>&1 || true)
           count=$(echo "$out" | grep -oE 'Found [0-9]+ error' | grep -oE '[0-9]+' || echo 0)
-          echo "Ruff findings: ${count} (baseline 338)"
+          echo "Ruff findings: ${count} (baseline 329)"
           echo "$out" | grep -vE 'Found [0-9]+ error' | tail -40 || true
-          if [ "${count:-0}" -gt 338 ]; then
+          if [ "${count:-0}" -gt 329 ]; then
             echo "::error::New Ruff findings introduced. Run 'cd backend && ruff check . --fix' locally."
             exit 1
           fi
