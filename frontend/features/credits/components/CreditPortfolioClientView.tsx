@@ -7,10 +7,8 @@ import { useCallback, useMemo, useState } from "react"
 import { type CreditContact, type CreditHistoryEntry, writeOffDebt } from '@/features/credits/api/creditsApi'
 import CreditAssignmentModal from "./CreditAssignmentModal"
 import { ActionConfirmModal, MoneyDisplay } from '@/components/shared'
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { portfolioActions, type PortfolioActionsCtx } from "../portfolioActions"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { ShieldAlert } from "lucide-react"
@@ -66,69 +64,24 @@ export function CreditPortfolioClientView({
         }
     }, [writeOffContact, refetch])
 
-    const contactConfig: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'Cliente / RUT', serverParam: 'search', clientKey: ['name', 'tax_id'] },
-        ],
-        filters: [
-            { key: 'risk_level', label: 'Riesgo', type: 'single', serverParam: 'risk_level', options: [
-                { label: 'Bajo', value: 'LOW' },
-                { label: 'Medio', value: 'MEDIUM' },
-                { label: 'Alto', value: 'HIGH' },
-                { label: 'Crítico', value: 'CRITICAL' },
-            ]},
-        ],
-        groupBy: [
-            { key: 'credit_risk_level', label: 'Riesgo', field: 'credit_risk_level' },
-        ],
-    }), [])
-    const contactSearch = useUnifiedSearch(contactConfig)
-
-    const historyConfig: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'Cliente / Folio', serverParam: 'search', clientKey: ['customer_name', 'number', 'display_id'] },
-        ],
-        filters: [
-            { key: 'origin', label: 'Origen', type: 'single', serverParam: 'origin', options: [
-                { label: 'Manual', value: 'MANUAL' },
-                { label: 'Venta', value: 'SALE' },
-                { label: 'Ajuste', value: 'ADJUSTMENT' },
-                { label: 'Reversión', value: 'REVERSAL' },
-            ]},
-        ],
-        groupBy: [
-            { key: 'origin', label: 'Origen', field: 'origin' },
-        ],
-    }), [])
-    const historySearch = useUnifiedSearch(historyConfig)
-
-    const contacts = useMemo(
-        () => {
-            let result = rawContacts
-            if (contactSearch.filters.risk_level) result = result.filter(c => c.credit_risk_level === contactSearch.filters.risk_level)
-            return contactSearch.filterFn(result)
-        },
-        [rawContacts, contactSearch.filterFn, contactSearch.filters.risk_level],
-    )
-    const history = useMemo(
-        () => {
-            let result = rawHistory ?? EMPTY_HISTORY
-            if (historySearch.filters.origin) result = result.filter(h => h.credit_assignment_origin === historySearch.filters.origin)
-            return historySearch.filterFn(result)
-        },
-        [rawHistory, historySearch.filterFn, historySearch.filters.origin],
-    )
+    // Una barra por pestaña; solo una está montada, pero ambas leen la URL (como antes).
+    const contactQuery = useCollectionQuery(creditContactEntity, { sorting: "client" })
+    const historyQuery = useCollectionQuery(creditHistoryEntryEntity, { sorting: "client" })
+    const filterContacts = contactQuery.search.filterFn
+    const filterHistory = historyQuery.search.filterFn
+    const contacts = useMemo(() => filterContacts(rawContacts), [filterContacts, rawContacts])
+    const history = useMemo(() => filterHistory(rawHistory ?? EMPTY_HISTORY), [filterHistory, rawHistory])
 
     const portfolioCollection = useEntityCollection(
         creditContactEntity,
-        { rows: isLoading ? [] : contacts },
-        { pagination: { mode: "none" } },
+        { rows: isLoading ? [] : contacts, isFiltered: contactQuery.search.isFiltered },
+        { pagination: { mode: "none" }, sorting: contactQuery.sorting, groupBy: contactQuery.groupBy },
     )
 
     const historyCollection = useEntityCollection(
         creditHistoryEntryEntity,
-        { rows: loadingHistory ? [] : history },
-        { pagination: { mode: "none" } },
+        { rows: loadingHistory ? [] : history, isFiltered: historyQuery.search.isFiltered },
+        { pagination: { mode: "none" }, sorting: historyQuery.sorting, groupBy: historyQuery.groupBy },
     )
 
     const handleModalSuccess = useCallback(async () => {
@@ -186,55 +139,28 @@ export function CreditPortfolioClientView({
                 <div className="flex-1 flex flex-col min-h-0">
                     <Collection.Root
                         collection={portfolioCollection}
+                        query={contactQuery}
                         actions={portfolioActions.forCollection(portfolioCtx)}
                         onOpen={(contact) => setLedgerContact(contact)}
                     >
-                        <Collection.Toolbar action={createAction}>
-                            <UnifiedSearchBar
-                                config={contactConfig}
-                                chips={contactSearch.chips}
-                                isFiltered={contactSearch.isFiltered}
-                                inputValue={contactSearch.inputValue}
-                                onInputChange={contactSearch.setInputValue}
-                                onApply={contactSearch.applyFilter}
-                                onRemove={contactSearch.removeFilter}
-                                onClearAll={contactSearch.clearAll}
-                                groupBy={contactSearch.groupBy}
-                                onGroupBySelect={contactSearch.setGroupBy}
-                                paramValues={contactSearch.paramValues}
-                                placeholder="Cliente o RUT..."
-                            />
-                        </Collection.Toolbar>
+                        <Collection.Toolbar action={createAction} />
                         <Collection.View
                             table={portfolioViews.table}
                             emptyTitle="Sin clientes con crédito"
                             emptyDescription="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
+                            onResetFilters={contactQuery.search.clearAll}
                         />
                     </Collection.Root>
                 </div>
             ) : (
                 <div className="mt-2 flex-1 flex flex-col min-h-0">
-                    <Collection.Root collection={historyCollection}>
-                        <Collection.Toolbar>
-                            <UnifiedSearchBar
-                                config={historyConfig}
-                                chips={historySearch.chips}
-                                isFiltered={historySearch.isFiltered}
-                                inputValue={historySearch.inputValue}
-                                onInputChange={historySearch.setInputValue}
-                                onApply={historySearch.applyFilter}
-                                onRemove={historySearch.removeFilter}
-                                onClearAll={historySearch.clearAll}
-                                groupBy={historySearch.groupBy}
-                                onGroupBySelect={historySearch.setGroupBy}
-                                paramValues={historySearch.paramValues}
-                                placeholder="Cliente o folio..."
-                            />
-                        </Collection.Toolbar>
+                    <Collection.Root collection={historyCollection} query={historyQuery}>
+                        <Collection.Toolbar />
                         <Collection.View
                             table={creditHistoryEntryViews.table}
                             emptyTitle="Sin historial"
                             emptyDescription="No hay asignaciones de crédito registradas."
+                            onResetFilters={historyQuery.search.clearAll}
                         />
                     </Collection.Root>
                 </div>
