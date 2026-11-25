@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.176](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.175...v0.3.176) (2026-11-25)
+
+
+### 🧪 Testing
+
+* **contacts:** el mock de entity-view expone useCollectionQuery ([9af4c1c](https://github.com/Patricoaa/ERPGrafico/commit/9af4c1c6ff242506cc4cb52aa5b100a16bc333ef))
+
+
+### ✨ Features
+
+* **accounting:** oleada 3d-6 de ADR-0158 — contabilidad en la barra de comandos ([5df0153](https://github.com/Patricoaa/ERPGrafico/commit/5df0153c7e2475aa418ba6d06c4e9bbe85b10965))
+* **billing:** resto de ADR-0158 — facturas de venta y compra y notas de compra en la barra de comandos ([21fb49d](https://github.com/Patricoaa/ERPGrafico/commit/21fb49d0b06c449b3d13923ecf62d817e869d0e3))
+* **contacts:** resto de ADR-0158 — contactos en la barra de comandos ([68a790f](https://github.com/Patricoaa/ERPGrafico/commit/68a790fa1837d7988180b98fc6a9c0afc6a86ded))
+* **credits:** resto de ADR-0158 — cartera, historial y lista negra en la barra de comandos ([5659c84](https://github.com/Patricoaa/ERPGrafico/commit/5659c847979ce9c4ac99f539ad4c8dc8f7bb86bf))
+* **entity-view:** oleada 3d-2 de ADR-0158 — modo cliente de useCollectionQuery ([83536f3](https://github.com/Patricoaa/ERPGrafico/commit/83536f3d6f3fb6ef94116c42630695fb9e42338c))
+* **finance:** resto de ADR-0158 — cartolas en la barra de comandos ([a75bee0](https://github.com/Patricoaa/ERPGrafico/commit/a75bee0dd3c104a6a509d828be1452d563cd509e))
+* **hr:** resto de ADR-0158 — RR.HH. en la barra de comandos ([160d859](https://github.com/Patricoaa/ERPGrafico/commit/160d8596d41a49c5d67b0c28e064dac1938772bd))
+* **inventory:** oleada 3d-3 de ADR-0158 — inventario en la barra de comandos ([8a9879b](https://github.com/Patricoaa/ERPGrafico/commit/8a9879b0a5f127d50ea8b3319b8967fe106ae412))
+* **partners:** resto de ADR-0158 — socios y distribuciones en la barra de comandos ([073593b](https://github.com/Patricoaa/ERPGrafico/commit/073593b18006b2d2cb7ee7913f1cd26e32340302))
+* **production:** resto de ADR-0158 — producción en la barra de comandos ([1862701](https://github.com/Patricoaa/ERPGrafico/commit/1862701c5f4f548a13f3a20241fb8b3e87366fa7))
+* **sales,purchasing:** oleada 3d-1 de ADR-0158 — ventas y compras en la barra de comandos ([1b37b98](https://github.com/Patricoaa/ERPGrafico/commit/1b37b985f4f22c40a19d5124be8de5c3b5def8df))
+* **settings:** resto de ADR-0158 — configuración en la barra de comandos ([90344bc](https://github.com/Patricoaa/ERPGrafico/commit/90344bc0f20b31379648e4f933b219172f2f97b4))
+* **tax:** resto de ADR-0158 — cuadre y declaraciones en la barra de comandos ([49805e1](https://github.com/Patricoaa/ERPGrafico/commit/49805e184a563bdd04137b48ec2fde9222094934))
+* **treasury:** oleada 3d-4 de ADR-0158 — tesorería en la barra de comandos (parte 1) ([47cfb5b](https://github.com/Patricoaa/ERPGrafico/commit/47cfb5b692b86b8663594c4727c5a824c5698900))
+* **treasury:** oleada 3d-5 de ADR-0158 — tesorería en la barra de comandos (parte 2) ([0c01d1d](https://github.com/Patricoaa/ERPGrafico/commit/0c01d1d1eb147b75066e753cc34d7e469b81e24d))
+
+
+### 🚀 Maintenance
+
+* **treasury:** quita isAggregate sin uso tras la oleada 3d-5 ([bd3dded](https://github.com/Patricoaa/ERPGrafico/commit/bd3dded5c47ac9f13bd4eaf9c622bae674cf8247))
+
+
+### 📚 Documentation
+
+* **collection-toolbar:** etapa 3 de ADR-0158 completa ([1979699](https://github.com/Patricoaa/ERPGrafico/commit/1979699f3cb55dc78733af6d8ac12a315266e433))
+
 ### [0.3.175](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.174...v0.3.175) (2026-11-25)
 
 
