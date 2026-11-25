@@ -26,7 +26,7 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }} # Latest commit: an earlier run may have added its version bump
@@ -35,7 +35,7 @@ jobs:
           ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
 

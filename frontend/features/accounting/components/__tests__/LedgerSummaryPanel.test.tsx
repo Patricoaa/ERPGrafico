@@ -27,11 +27,10 @@ describe("LedgerSummaryPanel", () => {
         expect(container.querySelector(".lucide-scale")).toBeInTheDocument()
     })
 
-    it("keeps labels legible: text-foreground, never the fixed ink", () => {
+    it("keeps labels legible: never the fixed ink", () => {
         render(<LedgerSummaryPanel {...PROPS} />)
         for (const label of ["Saldo Inicial", "Cargos (Debe)", "Abonos (Haber)", "Saldo Final"]) {
             const el = screen.getByText(label)
-            expect(el.className).toContain("text-foreground")
             expect(el.className).not.toMatch(/text-(cyan|magenta|yellow)/)
         }
     })

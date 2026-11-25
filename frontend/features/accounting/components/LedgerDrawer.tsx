@@ -22,10 +22,8 @@ import { ledgerMovementActions, type LedgerMovementActionsCtx } from './ledgerMo
 import { ledgerMovementEntity, ledgerMovementDrawerViews } from "@/features/accounting"
 
 /**
- * Libro Mayor. The Debe/Haber/Saldo summary keeps the CMYK ink metaphor
- * (cyan/magenta/yellow) as an explicit carve-out documented in ADR-0071 and
- * `color-system.md` §4.6/§8: the ink lives on border/tint/icon, while label
- * text uses `text-foreground` to meet WCAG contrast (see LedgerSummaryPanel).
+ * Libro Mayor. The Debe/Haber/Saldo summary uses MetricStrip (ADR-0149)
+ * with dedicated cue icons for Debe, Haber, and Saldo Final (see LedgerSummaryPanel).
  */
 interface LedgerDrawerProps {
     accountId: number

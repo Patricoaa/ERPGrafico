@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.165](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.164...v0.3.165) (2026-11-25)
+
+
+### ⚙️ Refactors
+
+* **frontend:** migrate ledger and legacy statcards to Metric and MetricStrip ([504b5ab](https://github.com/Patricoaa/ERPGrafico/commit/504b5aba86c3df45a9abb70fb28aa718f3f359b6))
+
+### [0.3.164](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.163...v0.3.164) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** Dependabot ignora mayores de react-table, Django, pandas y numpy ([5c63ad2](https://github.com/Patricoaa/ERPGrafico/commit/5c63ad22c2374d8be2baab49d3d1f3ed5860b1ce)), closes [#311](https://github.com/Patricoaa/ERPGrafico/issues/311)
+
+### [0.3.163](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.162...v0.3.163) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump actions-rust-lang/setup-rust-toolchain from 1 to 2 ([84e9f02](https://github.com/Patricoaa/ERPGrafico/commit/84e9f02525918503758a338053d926320da950cb))
+* **deps:** bump actions/setup-node from 5 to 7 ([337ebed](https://github.com/Patricoaa/ERPGrafico/commit/337ebedd6e0e01c8e89824e82345613f924d359f))
+
+### [0.3.162](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.161...v0.3.162) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump actions/checkout from 5 to 7 ([eca9470](https://github.com/Patricoaa/ERPGrafico/commit/eca9470be5bde07bbf9e223e6f852b829c9f894d))
+* **deps:** bump actions/setup-python from 6 to 7 ([21515e2](https://github.com/Patricoaa/ERPGrafico/commit/21515e2b9f8324d136246e8430c20210dcae06c1))
+
+### [0.3.161](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.160...v0.3.161) (2026-11-25)
+
 ### [0.3.160](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.159...v0.3.160) (2026-11-25)
 
 
