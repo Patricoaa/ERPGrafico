@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.157](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.156...v0.3.157) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **core:** corrige los 9 hallazgos de Ruff en core/views.py ([c12d5be](https://github.com/Patricoaa/ERPGrafico/commit/c12d5be0ff9d28178e494d11810f01613bbd8c44))
+
 ### [0.3.156](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.155...v0.3.156) (2026-11-25)
 
 
