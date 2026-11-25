@@ -14,9 +14,11 @@ export { PURCHASE_INVOICES_KEYS, PURCHASE_INVOICES_QUERY_KEY }
 
 interface UsePurchaseInvoicesProps {
     filters?: Omit<InvoiceFilters, 'mode'>
+    /** `false` while the list is grouped on the server (ADR-0158 §7). */
+    enabled?: boolean
 }
 
-export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) {
+export function usePurchaseInvoices({ filters, enabled = true }: UsePurchaseInvoicesProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
     const { isAuthenticated } = useAuth()
@@ -25,7 +27,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         queryKey: PURCHASE_INVOICES_KEYS.list(filters),
         queryFn: () => billingApi.getInvoices({ ...filters, mode: 'purchase' }),
         staleTime: staleTime.standard,
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && enabled,
         placeholderData: (prev) => prev,
     })
 

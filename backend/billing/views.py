@@ -8,7 +8,8 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.services.grouping import GroupField
 
 from .invoice_from_lines import InvoiceFromLinesService
 from .models import Invoice
@@ -51,11 +52,20 @@ class InvoiceFilterSet(django_filters.FilterSet):
         }
 
 
-class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = InvoiceSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = InvoiceFilterSet
+    # ADR-0158 §7: groups/ (the selector orders the list by -date; the groups follow it).
+    ordering = ["-date", "-id"]
+    group_fields = {
+        "date": GroupField("date", param=("date_from", "date_to")),
+        "status": GroupField("status"),
+        "dte_type": GroupField("dte_type"),
+        "contact": GroupField("contact", label="contact__name"),
+    }
+    group_aggregates = {"total": "total"}
     search_fields = [
         "contact__name",
         "contact__tax_id",

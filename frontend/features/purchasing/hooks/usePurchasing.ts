@@ -43,7 +43,7 @@ export function useRefreshPurchaseOrders() {
     return () => invalidateCrossFeature(queryClient, [PURCHASING_KEYS.orders()])
 }
 
-export function usePurchasingNotes({ filters, page = 1, page_size = 50 }: { filters?: Record<string, string>; page?: number; page_size?: number } = {}) {
+export function usePurchasingNotes({ filters, page = 1, page_size = 50, enabled = true }: { filters?: Record<string, string>; page?: number; page_size?: number; enabled?: boolean } = {}) {
     const { isAuthenticated } = useAuth()
     const activeFilters = { filters, page, page_size }
 
@@ -51,7 +51,7 @@ export function usePurchasingNotes({ filters, page = 1, page_size = 50 }: { filt
         queryKey: PURCHASING_KEYS.notes(activeFilters),
         queryFn: () => purchasingApi.getNotes(activeFilters),
         staleTime: staleTime.standard,
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && enabled,
         placeholderData: (prev) => prev,
     })
 

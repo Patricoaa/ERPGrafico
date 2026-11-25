@@ -15,14 +15,14 @@ export const saleNoteEntity = defineEntity<SaleNote>()((f) => ({
     fields: {
         dteType: f.text("dte_type_display", { label: "Documento" }),
         folio: f.code((n) => n.display_id ?? n.number ?? null, { label: "Número" }),
-        date: f.date("date", { label: "Fecha" }),
+        date: f.date("date", { label: "Fecha", groupKey: "date" }),
         // The serializer sends `partner_id` + `partner_name` (sale order customer, or the note's contact).
         // Without an id the name is still shown (as plain text), as the former list did.
         customer: f.contact((n) => {
             const name = n.partner_name || n.customer_name
             return name ? { id: n.partner_id ?? 0, name } : null
-        }, { label: "Cliente" }),
-        hub: f.hubStatus((n) => n, { label: "Estado", entity: "billing.invoice", caption: (n) => ({ status: n.status, label: n.status_display }) }),
+        }, { label: "Cliente", groupKey: "contact" }),
+        hub: f.hubStatus((n) => n, { label: "Estado", groupKey: "status", entity: "billing.invoice", caption: (n) => ({ status: n.status, label: n.status_display }) }),
         total: f.money(signed, { label: "Total" }),
     },
     // ADR-0158 §3. No `sort`: the invoices endpoint has no server ordering yet.
@@ -30,13 +30,13 @@ export const saleNoteEntity = defineEntity<SaleNote>()((f) => ({
         search: {
             placeholder: "Buscar notas…",
             scopes: [
-                { field: "customer", param: "customer_name", suggestionsUrl: "sales/orders/filter-suggestions/" },
+                { field: "customer", param: "partner_name", suggestionsUrl: "sales/orders/filter-suggestions/" },
                 { field: "folio", param: "number" },
             ],
         },
         filters: {
-            date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
-            status: { field: "hub", control: "multi", options: [{ value: "DRAFT", label: "Borrador (folio pendiente)" }, { value: "POSTED", label: "Emitido" }, { value: "CANCELLED", label: "Anulado" }] },
+            date: { field: "date", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            status: { field: "hub", control: "multi", param: "status__in", options: [{ value: "DRAFT", label: "Borrador (folio pendiente)" }, { value: "POSTED", label: "Emitido" }, { value: "CANCELLED", label: "Anulado" }] },
             payment_status: { label: "Pago", control: "single", options: [{ value: "UNPAID", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "PAID", label: "Pagado" }] },
             total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
         },

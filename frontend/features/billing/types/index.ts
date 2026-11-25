@@ -58,6 +58,8 @@ export interface InvoiceFilters {
     status?: string
     payment_status?: string
     dte_type?: string
+    /** Contact id (server grouping by contact, ADR-0158 §7). */
+    contact?: string
     mode?: 'sale' | 'purchase'
     date_from?: string
     date_to?: string
