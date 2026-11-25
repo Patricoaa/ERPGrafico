@@ -25,10 +25,17 @@ export interface PayrollTotals {
     pending: number
 }
 
-/** Cifras guardadas. El saldo viene del backend (líquido − anticipos, cuotas y pagos; ADR-0156). */
+/**
+ * Cifras guardadas. El saldo viene del backend (`payroll_balance`: líquido − anticipos, cuotas y
+ * pagos vigentes; ADR-0156); si un endpoint no lo trae, se calcula igual desde las asignaciones.
+ */
 export function payrollTotals(payroll: Payroll): PayrollTotals {
     const net = num(payroll.net_salary)
-    const pending = Math.max(0, payroll.balance !== undefined ? num(payroll.balance) : net)
+    const allocated = (payroll.allocations ?? [])
+        .filter((a) => a.movement_status === "POSTED" || a.movement_status === "SETTLED")
+        .reduce((s, a) => s + num(a.amount), 0)
+    const balance = payroll.balance !== undefined ? num(payroll.balance) : net - allocated
+    const pending = Math.max(0, balance)
     return {
         haberes: num(payroll.total_haberes),
         descuentos: num(payroll.total_descuentos),

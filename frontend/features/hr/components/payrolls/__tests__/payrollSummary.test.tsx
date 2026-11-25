@@ -43,8 +43,13 @@ describe("payrollTotals", () => {
         expect(payrollTotals(payroll())).toMatchObject({ net: 500000, pending: 100000, paid: 400000 })
     })
 
-    it("treats a missing balance as nothing paid and never goes negative", () => {
-        expect(payrollTotals(payroll({ balance: undefined }))).toMatchObject({ pending: 500000, paid: 0 })
+    it("computes the balance from live allocations when the endpoint does not send it (employee profile)", () => {
+        // MOV-1 anticipo 40.000 + MOV-2 pago 40.000 vigentes; MOV-3 anulado no cuenta.
+        expect(payrollTotals(payroll({ balance: undefined }))).toMatchObject({ pending: 420000, paid: 80000 })
+        expect(payrollTotals(payroll({ balance: undefined, allocations: [] }))).toMatchObject({ pending: 500000, paid: 0 })
+    })
+
+    it("never goes negative", () => {
         expect(payrollTotals(payroll({ balance: "-10" }))).toMatchObject({ pending: 0, paid: 500000 })
     })
 })
