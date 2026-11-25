@@ -98,14 +98,14 @@ async function applySentry(config: NextConfig): Promise<NextConfig> {
     return config;
   }
   try {
-    const { withSentryConfig } = await import("@sentry/nextjs");
+    const { withSentryConfig } = await import("@sentry/nextjs/config");
     return withSentryConfig(config, {
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
       authToken: process.env.SENTRY_AUTH_TOKEN,
       silent: true,
       widenClientFileUpload: true,
-      disableLogger: true,
+      bundleSizeOptimizations: { excludeDebugStatements: true },
     });
   } catch {
     return config;

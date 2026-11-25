@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.168](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.167...v0.3.168) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps-dev:** bump the npm-minor-patch group across 1 directory with 4 updates ([2dc9e48](https://github.com/Patricoaa/ERPGrafico/commit/2dc9e48b472b72b3e5bce0e30d84022054f894bc))
+
+### [0.3.167](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.166...v0.3.167) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** lote frontend — minor/patch (46), react-day-picker 10, @sentry/nextjs 11 ([e073800](https://github.com/Patricoaa/ERPGrafico/commit/e07380063aeae31b9ea477e96eb70a929458a88b)), closes [#300](https://github.com/Patricoaa/ERPGrafico/issues/300) [#305](https://github.com/Patricoaa/ERPGrafico/issues/305) [#304](https://github.com/Patricoaa/ERPGrafico/issues/304) [#301](https://github.com/Patricoaa/ERPGrafico/issues/301) [#300](https://github.com/Patricoaa/ERPGrafico/issues/300) [#305](https://github.com/Patricoaa/ERPGrafico/issues/305) [#304](https://github.com/Patricoaa/ERPGrafico/issues/304)
+
+
+### 🧪 Testing
+
+* **inventory:** ToggleGroup de selección única es radiogroup con Radix nuevo ([e28e84d](https://github.com/Patricoaa/ERPGrafico/commit/e28e84d5474b64bec0cda5f823c4133d24bfdc04))
+
+### [0.3.166](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.165...v0.3.166) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump pandas in /backend in the pip-minor-patch group ([942c2e1](https://github.com/Patricoaa/ERPGrafico/commit/942c2e13627376b72871cfc783c1ee625cf18772))
+
+### [0.3.165](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.164...v0.3.165) (2026-11-25)
+
+
+### ⚙️ Refactors
+
+* **frontend:** migrate ledger and legacy statcards to Metric and MetricStrip ([504b5ab](https://github.com/Patricoaa/ERPGrafico/commit/504b5aba86c3df45a9abb70fb28aa718f3f359b6))
+
+### [0.3.164](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.163...v0.3.164) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** Dependabot ignora mayores de react-table, Django, pandas y numpy ([5c63ad2](https://github.com/Patricoaa/ERPGrafico/commit/5c63ad22c2374d8be2baab49d3d1f3ed5860b1ce)), closes [#311](https://github.com/Patricoaa/ERPGrafico/issues/311)
+
 ### [0.3.163](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.162...v0.3.163) (2026-11-25)
 
 

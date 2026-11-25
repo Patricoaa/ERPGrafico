@@ -7,7 +7,7 @@ const OPTIONS = [{ value: 30, label: "30 d" }, { value: 90, label: "90 d" }, { v
 describe("ViewControl", () => {
     it("names the group with its label and marks the active option", () => {
         render(<ViewControl label="Stock inmóvil desde" value={90} options={OPTIONS} onChange={vi.fn()} />)
-        expect(screen.getByRole("group", { name: "Stock inmóvil desde" })).toBeInTheDocument()
+        expect(screen.getByRole("radiogroup", { name: "Stock inmóvil desde" })).toBeInTheDocument()
         expect(screen.getByRole("radio", { name: "90 d" })).toHaveAttribute("data-state", "on")
     })
 

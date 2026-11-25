@@ -95,7 +95,7 @@ function Calendar({
           "select-none font-medium text-sm hidden", // Hide default label since we use dropdowns directly
           defaultClassNames.caption_label
         ),
-        table: "w-full border-collapse",
+        month_grid: "w-full border-collapse",
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
           "text-muted-foreground rounded-md flex-1 font-normal text-xs select-none",

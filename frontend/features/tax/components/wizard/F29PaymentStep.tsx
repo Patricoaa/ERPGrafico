@@ -7,7 +7,7 @@ import { Calendar, CreditCard, History, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, Banner, Chip } from "@/components/shared"
+import { ActionConfirmModal, Banner, Chip, Metric, MetricStrip } from "@/components/shared"
 import { PaymentModal } from "@/features/treasury"
 import { useServerDate } from "@/hooks/useServerDate"
 import { formatCurrency } from "@/lib/money"
@@ -64,25 +64,22 @@ export function F29PaymentStep({ declaration, onChanged }: F29PaymentStepProps) 
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-md bg-muted/30 border border-border/50">
-                    <div className="text-3xs uppercase font-bold text-muted-foreground tracking-wider mb-1">Impuesto Determinado</div>
-                    <div className="text-xl font-bold font-mono">{formatCurrency(declaration.vat_to_pay)}</div>
-                </div>
-                <div className="p-4 rounded-md bg-success/5 border border-success/10">
-                    <div className="text-3xs uppercase font-bold text-success-text tracking-wider mb-1">Total Pagado</div>
-                    <div className="text-xl font-bold text-success-text font-mono">{formatCurrency(declaration.total_paid)}</div>
-                </div>
-                <div className={cn(
-                    "p-4 rounded-md border",
-                    isFullyPaid ? "bg-success/10 border-success/20" : "bg-primary/5 border-primary/10",
-                )}>
-                    <div className="text-3xs uppercase font-bold text-muted-foreground tracking-wider mb-1">Saldo Pendiente</div>
-                    <div className={cn("text-xl font-bold font-mono", isFullyPaid ? "text-success-text" : "text-primary")}>
-                        {formatCurrency(Math.max(0, pendingAmount))}
-                    </div>
-                </div>
-            </div>
+            <MetricStrip label="Resumen de pago de impuestos">
+                <Metric
+                    label="Impuesto Determinado"
+                    value={formatCurrency(declaration.vat_to_pay)}
+                />
+                <Metric
+                    label="Total Pagado"
+                    tone="success"
+                    value={formatCurrency(declaration.total_paid)}
+                />
+                <Metric
+                    label="Saldo Pendiente"
+                    tone={isFullyPaid ? "success" : "neutral"}
+                    value={formatCurrency(Math.max(0, pendingAmount))}
+                />
+            </MetricStrip>
 
             {isFullyPaid ? (
                 <Banner tone="success">Esta declaración ha sido pagada en su totalidad.</Banner>

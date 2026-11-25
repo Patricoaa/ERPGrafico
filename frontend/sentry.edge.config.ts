@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { SENTRY_DATA_COLLECTION } from "./sentry.data-collection";
 
 const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -8,6 +9,6 @@ if (dsn) {
     environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV,
     release: process.env.NEXT_PUBLIC_GIT_HASH,
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.05),
-    sendDefaultPii: false,
+    dataCollection: SENTRY_DATA_COLLECTION,
   });
 }

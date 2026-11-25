@@ -139,7 +139,7 @@ describe("ProductAnalyticsModal", () => {
 
     it("puts the period control in the rail with Histórico as the last option", () => {
         open(1)
-        const groups = screen.getAllByRole("group", { name: "Período" })
+        const groups = screen.getAllByRole("radiogroup", { name: "Período" })
         expect(groups).toHaveLength(2) // rail slot (sm+) and compact copy (< sm)
         const labels = within(groups[0]).getAllByRole("radio").map(r => r.textContent)
         expect(labels).toEqual(["1 m", "3 m", "6 m", "12 m", "24 m", "Histórico"])

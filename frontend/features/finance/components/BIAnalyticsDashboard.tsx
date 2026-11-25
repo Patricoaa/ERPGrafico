@@ -244,12 +244,11 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     className="h-full"
                 >
                     <div className="space-y-4 flex-1">
-                        <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cuentas por Pagar (Facturas Pendientes)</span>
-                            <span className="text-2xl font-bold text-liability mt-1">
-                                <MoneyDisplay amount={billing.ap_total} />
-                            </span>
-                        </div>
+                        <Metric
+                            label="Cuentas por Pagar (Facturas Pendientes)"
+                            value={<MoneyDisplay amount={billing.ap_total} />}
+                            tone="destructive"
+                        />
 
                         <div>
                             <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Top 3 Proveedores</span>
@@ -317,19 +316,16 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     className="h-full"
                 >
                     <div className="space-y-4 flex-1">
-                        <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Monto Pendiente</span>
-                            <span className="text-2xl font-bold text-primary mt-1">
-                                <MoneyDisplay amount={billing.ar_total} />
-                            </span>
-                        </div>
-                        
-                        <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Facturado en el Período</span>
-                            <span className="text-2xl font-bold mt-1">
-                                <MoneyDisplay amount={sales.invoiced_period} />
-                            </span>
-                        </div>
+                        <Metric
+                            label="Monto Pendiente"
+                            value={<MoneyDisplay amount={billing.ar_total} />}
+                            tone="info"
+                        />
+                        <Metric
+                            label="Facturado en el Período"
+                            value={<MoneyDisplay amount={sales.invoiced_period} />}
+                            tone="neutral"
+                        />
                     </div>
                 </ChartCard>
             </div>
