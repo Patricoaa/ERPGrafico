@@ -88,9 +88,10 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
   label: "sales.saleorder",
   fields: { /* … */ },
   query: {
-    search:  { fields: ["number", "customer", "items"] },             // param "search"
+    // El texto libre va siempre en `search` (los campos que busca los decide el backend).
+    search:  { scopes: [{ field: "customer", param: "customer_name", suggestionsUrl: "sales/orders/filter-suggestions/" }] },
     filters: {
-      status:   { field: "status", control: "multi", counts: true },
+      status:   { field: "status", control: "multi", options: [{ value: "CONFIRMED", label: "Confirmada" }, { value: "IN_PRODUCTION", label: "En producción" }], counts: true },
       customer: { field: "customer", control: "multi", options: "remote" },
       date:     { field: "date", control: "date" },
       total:    { field: "total", control: "range" },
@@ -138,7 +139,9 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
 ### 3.4 Vistas
 
 - **Solo predefinidas en código.** No hay vistas de usuario.
-- **Contenido de una vista:** `filters`, más `ordering` y `group_by` opcionales. La primera vista es la de defecto.
+- **Contenido de una vista:** `filters`, más `ordering` (ids de campo, `["-date"]`) y `groupBy` opcionales. La primera vista es la de defecto: si la URL llega sin filtros, sus filtros se escriben al cargar.
+- **Claves de `filters`:** el id de un filtro de un solo parámetro (`status: ["DRAFT", "CONFIRMED"]`) o, para rangos y fechas, el parámetro crudo (`total_gte: "500000"`).
+- **Cambiar de pestaña** reemplaza búsqueda, filtros, orden y grupo por los de la vista, en una sola escritura de la URL.
 - **`count: true`:** la pestaña muestra su total (§7.2).
 - **«Restablecer»:** si el estado difiere del de la vista activa, junto a las pestañas aparece «Restablecer», que vuelve a la definición.
 
@@ -149,7 +152,7 @@ Es un único dueño del estado, construido sobre `nuqs`. Cualquier cambio de fil
 | Param | Contenido |
 |---|---|
 | `v` | id de vista |
-| `search` (o `query.search.param`) | texto libre |
+| `search` | texto libre (parámetro fijo) |
 | `<param>` por filtro | §3.1 |
 | `ordering` | `-date,-total` |
 | `group_by` | id del campo |
@@ -158,7 +161,9 @@ Es un único dueño del estado, construido sobre `nuqs`. Cualquier cambio de fil
 
 Preferencias por entidad que **no van en la URL**: densidad y columnas (visibilidad, orden, fijadas). Se guardan junto a la preferencia de `useViewMode`.
 
-**Adaptador:** `fromUnifiedSearchDef(def)` convierte un `unifiedSearchDef` existente a `query`, para migrar la vista antes que su definición.
+**Adaptador:** `useCollectionQuery(entity, { searchDef })` usa un `unifiedSearchDef` existente (vía `fromUnifiedSearchDef(def)`) en lugar de `entity.query`, para migrar la vista antes que su definición. Con el adaptador no hay orden múltiple, vistas ni agregados.
+
+**Lo que entrega el hook:** `search` (lo que consume `UnifiedSearchBar`), `sort` / `setSort`, `ordering` (DRF, con desempate por `id`), `sorting` (listo para `useEntityCollection`), `groupBy` / `setGroupBy` (solo campos declarados), `views` / `activeView` / `setView` / `isDirty` / `resetView` y `params` (búsqueda + filtros + `ordering`, sin `group_by`) para la petición.
 
 ## 5. Piezas
 
@@ -181,7 +186,7 @@ Preferencias por entidad que **no van en la URL**: densidad y columnas (visibili
 
 Filas de `[arrastre] [campo ▾] [↑|↓] [×]`, más «Agregar orden secundario» (hasta 3) y «Restablecer».
 
-El menú del **encabezado de columna** usa el mismo estado: ordenar ↑/↓, «Filtrar por…» (abre `FilterMenu` en ese filtro), agrupar, fijar y ocultar.
+El menú del **encabezado de columna** usa el mismo estado. Ordenar desde el encabezado reemplaza la **primera** clave y conserva las secundarias. Opciones: ordenar ↑/↓, «Filtrar por…» (abre `FilterMenu` en ese filtro), agrupar, fijar y ocultar.
 
 ### 5.4 `GroupMenu` (E3)
 
