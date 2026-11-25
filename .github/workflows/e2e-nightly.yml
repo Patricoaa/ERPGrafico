@@ -67,7 +67,7 @@ jobs:
       if: failure()
       run: docker compose logs --tail=100 backend frontend
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: always()
       with:
         name: playwright-report
