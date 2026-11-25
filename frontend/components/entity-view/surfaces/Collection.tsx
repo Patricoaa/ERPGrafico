@@ -366,7 +366,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
             {showTabs && <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} count={count} />}
             <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
                 <div className="min-w-56 flex-1">
-                    <UnifiedSearchBar config={compiled.search} {...bindUnifiedSearch(search)} filterOptions={search.filterOptions} menu={false} appliedFilters={false} />
+                    <UnifiedSearchBar config={compiled.search} {...bindUnifiedSearch(search)} filterOptions={search.filterOptions} placeholder={compiled.placeholder} menu={false} appliedFilters={false} />
                 </div>
                 <FilterMenu filters={filters} values={search.paramValues} filterOptions={search.filterOptions} applyMany={search.applyMany} />
                 <SortMenu fields={compiled.sortFields} sort={query.sort} defaultSort={compiled.defaultSort} onChange={query.setSort} />

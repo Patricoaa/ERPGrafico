@@ -1,7 +1,11 @@
-import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
+import type { AnalyticsPanelContentProps, ChartDrillDown, Granularity } from "@/components/shared"
 import { assignChartColors } from "@/lib/chart-colors"
 import { BarChart3, Box, Building2, Package, Receipt, RefreshCcw, Wrench } from "lucide-react"
 import type { PurchasingAnalyticsData } from "../hooks/usePurchaseOrderAnalytics"
+
+/** Drill-down (ADR-0158 §11): a click filters the order list by that supplier or product (`purchaseOrderEntity.query`). */
+const SUPPLIER_DRILL: ChartDrillDown = { param: "supplier_name" }
+const PRODUCT_DRILL: ChartDrillDown = { param: "product_name" }
 
 export interface PurchaseAnalyticsUi {
     activeTab: string
@@ -209,6 +213,7 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                                     data: analyticsData.topSuppliers,
                                                     keys: ["total"],
                                                     indexBy: "supplier",
+                                                    drillDown: SUPPLIER_DRILL,
                                                     valueFormat: "~s",
                                                     lineOverlay: {
                                                         dataKey: "orderCount",
@@ -232,6 +237,7 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                                     data: analyticsData.topProductsByVolume,
                                                     keys: ["total"],
                                                     indexBy: "product",
+                                                    drillDown: PRODUCT_DRILL,
                                                     valueFormat: "$,.0f",
                                                 },
                                             }
@@ -287,6 +293,7 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                                     data: analyticsData.storableData.topProducts,
                                                     keys: ["total"],
                                                     indexBy: "product",
+                                                    drillDown: PRODUCT_DRILL,
                                                     valueFormat: "$,.0f",
                                                 },
                                             }
@@ -379,6 +386,7 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                                     data: analyticsData.serviceData.topProducts,
                                                     keys: ["total"],
                                                     indexBy: "product",
+                                                    drillDown: PRODUCT_DRILL,
                                                     valueFormat: "$,.0f",
                                                 },
                                             }
@@ -471,6 +479,7 @@ export function buildPurchaseAnalyticsScreen(analyticsData: PurchasingAnalyticsD
                                                     data: analyticsData.subscriptionData.topProducts,
                                                     keys: ["total"],
                                                     indexBy: "product",
+                                                    drillDown: PRODUCT_DRILL,
                                                     valueFormat: "$,.0f",
                                                 },
                                             }

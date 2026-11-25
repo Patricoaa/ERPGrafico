@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { AnalyticsPanelContent, EmptyState, SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from '@/components/shared'
+import { AnalyticsPanelContent, EmptyState, SkeletonShell, type Granularity } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
     Collection,
@@ -12,13 +12,11 @@ import {
     useEntityCollection,
     useServerPage,
     type CollectionViewMode,
-    type FieldId,
 } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSalesNotes, useSalesOrders } from "@/features/sales"
 import { AlertTriangle } from "lucide-react"
-import { salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { saleOrderEntity, saleOrderViews } from "../entity-view/saleOrder.entity"
 import { saleNoteEntity, saleNoteViews } from "../entity-view/saleNote.entity"
@@ -38,8 +36,6 @@ interface SheetSelection {
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const NOTE_GROUPS: Record<string, FieldId<typeof saleNoteEntity.fields>> = { date: "date", customer: "customer", status: "hub" }
 
 export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOrdersViewProps) {
     // ?selected abre la ficha documental en la pila (ADR-0083): OV en "orders", factura/nota
@@ -171,14 +167,13 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
 }
 
 function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
-    const search = useUnifiedSearch(salesNoteUnifiedSearchDef)
-    const groupBy = search.groupBy ? NOTE_GROUPS[search.groupBy] ?? null : null
-    const filters = search.filters as Record<string, string>
-    const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
+    const query = useCollectionQuery(saleNoteEntity)
+    const { groupBy, params } = query
+    const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
 
     const { page, notes, isLoading, isRefetching, isError, refetch } = useSalesNotes({
         filters: {
-            ...filters,
+            ...params,
             page: groupBy ? 1 : pageState.pageIndex + 1,
             page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
         },
@@ -186,7 +181,7 @@ function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: 
 
     const collection = useEntityCollection(
         saleNoteEntity,
-        { rows: notes, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows: notes, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: query.search.isFiltered },
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             // No `sorting`: with server pagination the core disables sorting (invoices have no server ordering yet).
@@ -204,20 +199,15 @@ function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: 
                 actions={withActions ? (note) => <DocumentRowActions id={note.id} kind="invoice" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}
+                query={query}
             >
-                <Collection.Toolbar>
-                    <UnifiedSearchBar
-                        config={salesNoteUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar notas..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={saleNoteViews.table}
                     card={saleNoteViews.card}
                     emptyTitle="Aún no hay notas"
                     emptyDescription="Las notas de crédito y débito asociadas a tus ventas aparecerán aquí."
-                    onResetFilters={search.clearAll}
+                    onResetFilters={query.search.clearAll}
                 />
             </Collection.Root>
         </div>

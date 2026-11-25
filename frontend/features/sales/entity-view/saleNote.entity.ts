@@ -25,6 +25,28 @@ export const saleNoteEntity = defineEntity<SaleNote>()((f) => ({
         hub: f.hubStatus((n) => n, { label: "Estado", entity: "billing.invoice", caption: (n) => ({ status: n.status, label: n.status_display }) }),
         total: f.money(signed, { label: "Total" }),
     },
+    // ADR-0158 §3. No `sort`: the invoices endpoint has no server ordering yet.
+    query: {
+        search: {
+            placeholder: "Buscar notas…",
+            scopes: [
+                { field: "customer", param: "customer_name", suggestionsUrl: "sales/orders/filter-suggestions/" },
+                { field: "folio", param: "number" },
+            ],
+        },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
+            status: { field: "hub", control: "multi", options: [{ value: "DRAFT", label: "Borrador (folio pendiente)" }, { value: "POSTED", label: "Emitido" }, { value: "CANCELLED", label: "Anulado" }] },
+            payment_status: { label: "Pago", control: "single", options: [{ value: "UNPAID", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "PAID", label: "Pagado" }] },
+            total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
+        },
+        groupBy: { fields: ["date", "customer", "hub"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "unpaid", label: "Por cobrar", filters: { status: "POSTED", payment_status: "UNPAID" } },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+        ],
+    },
 }))
 
 export const saleNoteViews = saleNoteEntity.views({

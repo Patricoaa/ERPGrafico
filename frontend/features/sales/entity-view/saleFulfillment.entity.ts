@@ -52,6 +52,29 @@ export const saleFulfillmentEntity = defineEntity<SaleFulfillment>()((f) => ({
         }), { label: "Estado" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
+    // ADR-0158 §3. No `sort`: two endpoints merged in the client (newest first), so a server key
+    // would only reorder each page before the merge.
+    query: {
+        search: {
+            placeholder: "Buscar despachos y devoluciones…",
+            scopes: [
+                { label: "Orden de Venta", param: "sale_order_number" },
+                { field: "customer", param: "customer_name" },
+            ],
+        },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
+            fulfillment_type: { field: "type", control: "multi", options: [{ value: "DELIVERY", label: "Despacho" }, { value: "RETURN", label: "Devolución" }] },
+            status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
+        },
+        groupBy: { fields: ["date", "customer", "status", "type"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "deliveries", label: "Despachos", filters: { fulfillment_type: "DELIVERY" } },
+            { id: "returns", label: "Devoluciones", filters: { fulfillment_type: "RETURN" } },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+        ],
+    },
 }))
 
 export const saleFulfillmentViews = saleFulfillmentEntity.views({

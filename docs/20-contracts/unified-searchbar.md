@@ -486,9 +486,9 @@ Ver `features/*/unifiedSearchDef.ts` para la lista completa. Cada feature tiene 
 | Feature | Archivo |
 |---------|---------|
 | Contacts | `features/contacts/unifiedSearchDef.ts` |
-| Sales | `features/sales/unifiedSearchDef.ts` |
+| Sales | migrado a `entity.query` ([component-collection-toolbar.md](./component-collection-toolbar.md)); sesiones y terminales POS siguen en `features/pos/unifiedSearchDef.ts` |
 | Billing | `features/billing/unifiedSearchDef.ts` |
-| Purchasing | `features/purchasing/unifiedSearchDef.ts` |
+| Purchasing | migrado a `entity.query`, salvo suscripciones (`features/purchasing/unifiedSearchDef.ts`) |
 | Inventory | `features/inventory/unifiedSearchDef.ts` |
 | Treasury | `features/treasury/unifiedSearchDef.ts` |
 | Accounting | `features/accounting/unifiedSearchDef.ts` |

@@ -30,7 +30,13 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 >
 > Hasta migrar, las pantallas siguen declarando `unifiedSearchDef.ts` y montando `UnifiedSearchBar` ([unified-searchbar.md](./unified-searchbar.md)). Una pantalla usa un sistema o el otro, nunca los dos.
 >
-> **Migradas a la barra de comandos:** órdenes de venta (`saleOrderEntity.query`, piloto de la etapa 3c). Las demás llegan por oleadas (3d).
+> **Migradas a la barra de comandos:**
+> - órdenes de venta (`saleOrderEntity.query`, piloto de la etapa 3c);
+> - oleada 3d-1 (ventas y compras): notas de venta, guías de despacho, devoluciones de venta, despachos y devoluciones, órdenes de compra, recepciones, devoluciones de compra y recepciones y devoluciones.
+>
+> Las notas de compra siguen con `purchaseInvoiceUnifiedSearchDef` de billing y migran con esa app.
+>
+> Las listas con orden y paginación en el cliente (sesiones y terminales POS, suscripciones, …) esperan un modo cliente de `useCollectionQuery`.
 
 ---
 
@@ -166,6 +172,8 @@ Preferencias por entidad que **no van en la URL**: densidad y columnas (visibili
 **Adaptador:** `useCollectionQuery(entity, { searchDef })` usa un `unifiedSearchDef` existente (vía `fromUnifiedSearchDef(def)`) en lugar de `entity.query`, para migrar la vista antes que su definición. Con el adaptador no hay orden múltiple, vistas ni agregados.
 
 **Montaje:** la pantalla pasa el resultado del hook a `<Collection.Root query={query}>`. Con `query`, `Collection.Toolbar` deja de ser la barra antigua y compone `ViewTabs` → fila de comandos (`Search`, `FilterMenu`, `SortMenu`, `GroupMenu`, `DisplayMenu`, `children`, analítica, `ExportMenu`, `action`) → `AppliedFilters`. `ExportMenu` recibe `query.params` salvo que se pase `exportFilters`. El buscador es `UnifiedSearchBar` con `menu={false}` (sin chevrón ni menú propio, solo sugerencias) y `appliedFilters={false}` (la barra dibuja la fila). `useUnifiedSearch` expone `applyMany(values)`, que escribe varios parámetros en una sola actualización y resetea el cursor.
+
+**Placeholder:** `query.search.placeholder` («Buscar guías de despacho…») es también el nombre accesible del buscador. Por defecto: «Buscar…».
 
 **Lo que entrega el hook:** `search` (lo que consume `UnifiedSearchBar`), `sort` / `setSort`, `ordering` (DRF, con desempate por `id`), `sorting` (listo para `useEntityCollection`), `groupBy` / `setGroupBy` (solo campos declarados), `views` / `activeView` / `setView` / `isDirty` / `resetView` y `params` (búsqueda + filtros + `ordering`, sin `group_by`) para la petición.
 

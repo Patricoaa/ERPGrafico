@@ -81,8 +81,11 @@ export interface QueryView {
 }
 
 export interface QuerySpec<Id extends string> {
-    /** Free-text search goes to the `search` param; `scopes` add field-scoped searches. */
-    search?: { scopes?: readonly SearchScope<Id>[] }
+    /**
+     * Free-text search goes to the `search` param; `scopes` add field-scoped searches. `placeholder` is
+     * also the box's accessible name ("Buscar guías de despacho…"). Default "Buscar…".
+     */
+    search?: { scopes?: readonly SearchScope<Id>[]; placeholder?: string }
     filters?: Readonly<Record<string, QueryFilter<Id>>>
     /** Sortable fields; each needs an `orderBy` server key. Up to 3 keys at once. */
     sort?: { fields: readonly Id[]; default?: SortSpec<Id> }
@@ -104,6 +107,8 @@ export interface CompiledSortField {
 export interface CompiledQuery {
     /** Search + filters + grouping in the runtime model of `useUnifiedSearch` (the controls are shared). */
     search: UnifiedSearchConfig
+    /** Search box placeholder and accessible name. */
+    placeholder: string
     sortFields: readonly CompiledSortField[]
     defaultSort: readonly string[]
     groupFields: readonly { id: string; label: string }[]
@@ -211,6 +216,7 @@ export function compileQuery(entity: QueryEntity): CompiledQuery {
 
     return {
         search: { searchFields, filters, dateFilters, groupBy },
+        placeholder: spec.search?.placeholder ?? "Buscar…",
         sortFields,
         defaultSort: spec.sort?.default ? [spec.sort.default] : [],
         groupFields,
@@ -235,6 +241,7 @@ export function fromUnifiedSearchDef(def: UnifiedSearchConfig): CompiledQuery {
     }
     return {
         search: def,
+        placeholder: "Buscar…",
         sortFields: [],
         defaultSort: [],
         groupFields: (def.groupBy ?? []).map((g) => ({ id: g.field, label: g.label })),

@@ -37,6 +37,26 @@ export const saleDeliveryEntity = defineEntity<SaleDelivery>()((f) => ({
         }), { label: "Estado" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
+    // ADR-0158 §3. Params match the backend FilterSet.
+    query: {
+        search: {
+            placeholder: "Buscar guías de despacho…",
+            scopes: [
+                { label: "Orden de Venta", param: "sale_order_number" },
+                { field: "customer", param: "customer_name" },
+            ],
+        },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
+            status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
+        },
+        sort: { fields: ["folio", "customer", "date", "cost"], default: "-date" },
+        groupBy: { fields: ["date", "customer", "status"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+        ],
+    },
 }))
 
 export const saleDeliveryViews = saleDeliveryEntity.views({
