@@ -5,20 +5,17 @@ import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import React from "react"
 import { ActionConfirmModal } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { BOMDrawer, useAllBOMs, useDeleteBomMutation } from "@/features/production"
 import { bomActions, type BOMActionsCtx } from "./bomActions"
 import { bomEntity, bomViews } from "../entity-view/bom.entity"
 
-import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { getDomainConceptTitle, getDomainConceptCode, getDomainConceptMessage } from "@/lib/entity-registry"
-import { bomUnifiedSearchDef } from "@/features/production"
 
 import type { BOM } from "@/features/production/types"
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const BOM_GROUPS: Record<string, FieldId<typeof bomEntity.fields>> = { active: "active" }
 
 interface BOMClientViewProps {
     initialBoms?: BOM[]
@@ -34,16 +31,16 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
 
     const { deleteBom } = useDeleteBomMutation()
 
-    const search = useUnifiedSearch(bomUnifiedSearchDef)
-    const allFilters = { ...search.filters }
+    const query = useCollectionQuery(bomEntity, { sorting: "client" })
+    const { search, groupBy } = query
+    const allFilters = { ...query.params }
     const { boms, isLoading: loading, isRefetching, isError, refetch: refetchBoms } = useAllBOMs(allFilters, initialBoms)
-    const groupBy = search.groupBy ? BOM_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode("production.bom")
     const collection = useEntityCollection(
         bomEntity,
         { rows: boms, isLoading: loading, isRefetching, error: isError, refetch: refetchBoms, isFiltered: search.isFiltered },
         // Groups span the whole list, not one page.
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy, sorting: query.sorting },
     )
 
 
@@ -67,13 +64,12 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 actions={bomActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={bomUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar por producto..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={bomViews.table}
                     card={bomViews.card}
