@@ -59,7 +59,7 @@ GET  /api/{module}/{entity}/export/?format={pdf|xlsx|csv}&...filters
 | Parámetro | Tipo | Notas |
 |-----------|------|-------|
 | `format` | enum | `pdf`, `xlsx`, `csv` — required |
-| `...filters` | string | Mismos filtros que la lista regular del entity — reutiliza el filterset |
+| `...filters` | string | Mismos filtros que la lista regular del entity — reutiliza el filterset. Desde la barra de colección (ADR-0158), `ExportMenu` envía la consulta actual: filtros, búsqueda, `ordering` y las columnas visibles (`columns=a,b,c`, opcional) |
 | `Idempotency-Key` (header) | string | **Solo** en async (POST asíncrono opcional, ver abajo). Sync GET no lo necesita |
 
 **Respuestas:**
