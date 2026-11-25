@@ -51,6 +51,7 @@ last_review: 2026-06-19
 | “which component”, “component decision”, “what to use” | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
 | “component API”, “prop signature”, “StatusBadge usage” | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
 | “tabla de entidad”, “card de entidad”, “columnas”, “lista embebida”, “tipo de valor”, “value kind”, “defineEntity”, “entity-view”, “Collection”, “EditableCollection”, “dar de alta la presentación de una entidad” | [component-entity-view.md](20-contracts/component-entity-view.md) | 20 |
+| “barra de búsqueda”, “filtros”, “ordenar”, “agrupar”, “vistas predefinidas”, “toolbar de colección”, “analítica en modal”, “exportar lista”, “`entity.query`”, “facetas” | [component-collection-toolbar.md](20-contracts/component-collection-toolbar.md) | 20 |
 | “field type”, “DataCell assignment”, “text vs secondary”, “cómo asignar tipo de campo”, “createEntityFields”, “\*Fields.ts”, “FieldType” (sistema congelado) | [component-fields.md](20-contracts/component-fields.md) | 20 |
 | “Drawer API”, “drawer contract”, “BaseDrawer”, “cómo usar Drawer”, “tamaño de drawer”, “formDrawerWidth” | [component-drawer.md](20-contracts/component-drawer.md) | 20 |
 | “selector component”, “entity search”, “combobox”, “AccountSelector” | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
