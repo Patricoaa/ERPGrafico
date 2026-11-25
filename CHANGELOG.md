@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.174](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.173...v0.3.174) (2026-11-25)
+
+
+### ✨ Features
+
+* **entity-view:** etapa 3b de ADR-0158 — barra de comandos ([55ca5df](https://github.com/Patricoaa/ERPGrafico/commit/55ca5dfd5dca2067c143348b35dfc7a871560509))
+
 ### [0.3.173](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.172...v0.3.173) (2026-11-25)
 
 
