@@ -284,6 +284,25 @@ export const auditLogEntity = defineEntity<AuditLog>()((f) => ({
         }), { ...fixed, label: "Acción" }),
         description: f.text("description", { ...fixed, label: "Descripción" }),
     },
+    // ADR-0158 §3: la lista carga todo y filtra en el navegador.
+    query: {
+        search: false,
+        filters: {
+            category: {
+                field: "category",
+                control: "multi",
+                options: [
+                    { value: "business", label: "Negocio" },
+                    { value: "security", label: "Seguridad" },
+                    { value: "technical", label: "Técnico" },
+                    { value: "config", label: "Config" },
+                ],
+            },
+            entity_label: { field: "entity", control: "multi", options: "remote" },
+            source: { label: "Origen", control: "multi", options: [{ value: "action_log", label: "Sistema" }, { value: "history", label: "Datos" }] },
+        },
+        groupBy: { fields: ["category", "entity"] },
+    },
 }))
 
 export const auditLogViews = auditLogEntity.views({

@@ -30,6 +30,8 @@ export const userEntity = defineEntity<AppUser>()((f) => ({
         isActive: f.status((u) => (u.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Inactivo" }), { label: "Estado" }),
         contact: f.contact((u) => (u.contact ? { id: u.contact, name: fullName(u) || u.username } : null), { label: "Contacto", sortable: false }),
     },
+    // ADR-0158 §3. Sin `sort`: el endpoint de usuarios no ordena.
+    query: { search: { placeholder: "Buscar usuario por nombre, email o username…" } },
 }))
 
 export const userViews = userEntity.views({

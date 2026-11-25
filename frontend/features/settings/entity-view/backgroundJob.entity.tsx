@@ -149,6 +149,29 @@ export const backgroundJobEntity = defineEntity<BackgroundJobRow>()((f) => ({
         createdAt: f.value("jobTimestamp", (r) => r.created_at, { ...fixed, label: "Iniciado" }),
         actions: f.value("jobActions", (r) => ({ status: r.status, resultFileUrl: r.result_file_url, errorMessage: r.error_message }), { ...fixed, label: "" }),
     },
+    // ADR-0158 §3: la lista carga todo y filtra en el navegador.
+    query: {
+        search: { placeholder: "Buscar por título, tipo o error…" },
+        filters: {
+            status: {
+                field: "status",
+                control: "single",
+                options: [
+                    { value: "PENDING", label: "Pendientes" },
+                    { value: "PROCESSING", label: "Procesando" },
+                    { value: "COMPLETED", label: "Completados" },
+                    { value: "FAILED", label: "Fallidos" },
+                    { value: "CANCELLED", label: "Cancelados" },
+                ],
+            },
+            job_type: { label: "Tipo de proceso", control: "single", options: [{ value: "IMPORT", label: "Importación" }, { value: "EXPORT", label: "Exportación" }, { value: "REPORT", label: "Reporte Pesado" }] },
+        },
+        groupBy: { fields: ["status", "jobType"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "failed", label: "Fallidos", filters: { status: "FAILED" } },
+        ],
+    },
 }))
 
 export const backgroundJobViews = backgroundJobEntity.views({

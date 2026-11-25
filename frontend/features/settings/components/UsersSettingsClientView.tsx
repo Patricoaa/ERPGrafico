@@ -3,12 +3,11 @@
 import { useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useMemo, useState } from "react"
-import { FadeIn, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { FadeIn, ToolbarCreateButton } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { UserDrawer, useUsers } from "@/features/users"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
-import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { userEntity, userViews } from "../entity-view/user.entity"
 import { userActions, type UserActionsCtx } from "./userActions"
 
@@ -19,18 +18,13 @@ interface UsersSettingsClientViewProps {
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewProps) {
-    const config: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'Nombre / Email / Usuario', serverParam: 'search' },
-        ],
-        filters: [],
-    }), [])
-    const search = useUnifiedSearch(config)
+    const query = useCollectionQuery(userEntity)
+    const { search } = query
     const isFiltered = search.isFiltered
     // A new filter starts again at the first page.
-    const [pageState, setPageState] = useServerPage([search.filters], DEFAULT_PAGE)
+    const [pageState, setPageState] = useServerPage([query.params], DEFAULT_PAGE)
     const { page, users, isLoading, isRefetching, isError, refetch } = useUsers({
-        ...search.filters,
+        ...query.params,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     } as Parameters<typeof useUsers>[0])
@@ -73,17 +67,12 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                     <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
                         <Collection.Root
                             collection={collection}
+                            query={query}
                             view={view}
                             onViewChange={onViewChange}
                             actions={userActions.forCollection(actionsCtx)}
                         >
-                            <Collection.Toolbar action={usersCreateAction}>
-                                <UnifiedSearchBar
-                                    config={config}
-                                    {...bindUnifiedSearch(search)}
-                                    placeholder="Buscar usuario por nombre, email o username..."
-                                />
-                            </Collection.Toolbar>
+                            <Collection.Toolbar action={usersCreateAction} />
                             <Collection.View
                                 table={userViews.table}
                                 card={userViews.card}

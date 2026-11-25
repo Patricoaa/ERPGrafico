@@ -3,27 +3,27 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { EntityPanelTab } from "@/components/providers"
-import { ActionConfirmModal, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal, ToolbarCreateButton } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useHrSettings } from "@/features/hr"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import type { PayrollConcept } from "@/types/hr"
 import { payrollConceptEntity, payrollConceptViews } from "../entity-view/payrollConcept.entity"
-import { payrollConceptUnifiedSearchDef } from "../unifiedSearchDef"
 import { payrollConceptActions, type PayrollConceptActionsCtx } from "./payrollConceptActions"
 import { PayrollConceptDrawer } from "./PayrollConceptDrawer"
 
 /** Catálogo de conceptos de nómina (/hr/settings/concepts): tabla/tarjetas, buscador y drawer de mantenimiento. */
 export function PayrollConceptClientView() {
     const { concepts, isLoading, refetch, deleteConcept } = useHrSettings()
-    const search = useUnifiedSearch(payrollConceptUnifiedSearchDef)
+    const query = useCollectionQuery(payrollConceptEntity, { sorting: "client" })
+    const { search, groupBy } = query
     const { filterFn } = search
     const rows = useMemo(() => filterFn(concepts), [filterFn, concepts])
     const { view, onViewChange } = useCollectionViewMode("hr.payrollconcept")
     const collection = useEntityCollection(
         payrollConceptEntity,
         { rows, isLoading, refetch, isFiltered: search.isFiltered },
-        { pagination: { mode: "none" }, defaultSort: payrollConceptViews.table.defaultSort },
+        { pagination: { mode: "none" }, sorting: query.sorting, groupBy },
     )
     const [editing, setEditing] = useState<PayrollConcept | null>(null)
     const [creating, setCreating] = useState(false)
@@ -47,15 +47,14 @@ export function PayrollConceptClientView() {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 label="Conceptos de nómina"
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={(concept) => setEditing(concept)}
                 actions={payrollConceptActions.forCollection(ctx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={payrollConceptUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar concepto..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={payrollConceptViews.table}
                     card={payrollConceptViews.card}

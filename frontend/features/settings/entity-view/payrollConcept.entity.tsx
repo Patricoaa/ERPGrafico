@@ -55,6 +55,12 @@ export const payrollConceptEntity = defineEntity<PayrollConcept>()((f) => ({
         formulaType: f.text("formula_type_display", { label: "Lógica / Fórmula" }),
         accountCode: f.text("account_code", { label: "Cuenta Contable" }),
     },
+    // ADR-0158 §3: la lista carga todo y filtra en el navegador.
+    query: {
+        search: { placeholder: "Buscar concepto…" },
+        sort: { fields: ["name", "category", "formulaType", "accountCode"], default: "name" },
+        groupBy: { fields: ["category", "formulaType"] },
+    },
 }))
 
 export const payrollConceptViews = payrollConceptEntity.views({
