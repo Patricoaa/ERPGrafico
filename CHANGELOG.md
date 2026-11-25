@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.166](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.165...v0.3.166) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump pandas in /backend in the pip-minor-patch group ([942c2e1](https://github.com/Patricoaa/ERPGrafico/commit/942c2e13627376b72871cfc783c1ee625cf18772))
+
 ### [0.3.165](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.164...v0.3.165) (2026-11-25)
 
 
