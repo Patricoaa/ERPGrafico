@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.169](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.168...v0.3.169) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** Node 24 → 26 en la imagen del frontend y en CI ([4d30e0a](https://github.com/Patricoaa/ERPGrafico/commit/4d30e0a81142e3eabc0a8cf20f7de69ca6dd88ef)), closes [#296](https://github.com/Patricoaa/ERPGrafico/issues/296)
+
+
+### 🧪 Testing
+
+* **frontend:** desactiva el localStorage nativo de Node en los workers de vitest ([6251b1f](https://github.com/Patricoaa/ERPGrafico/commit/6251b1f4127c7cebecc28f23fc03dcd77272ff80))
+
 ### [0.3.168](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.167...v0.3.168) (2026-11-25)
 
 
