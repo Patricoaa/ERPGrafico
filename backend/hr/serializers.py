@@ -619,6 +619,8 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
     allocations = PayrollAllocationSerializer(many=True, read_only=True)
     payments = PayrollPaymentSerializer(many=True, read_only=True)
     employee_detail = EmployeeSerializer(source="employee", read_only=True)
+    # Saldo por pagar con la misma regla que la ficha de administración (ADR-0156).
+    balance = serializers.SerializerMethodField()
     is_salary_paid = serializers.SerializerMethodField()
     is_previred_paid = serializers.SerializerMethodField()
 
@@ -644,6 +646,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
             "total_haberes",
             "total_descuentos",
             "net_salary",
+            "balance",
             "is_salary_paid",
             "is_previred_paid",
             "items",
@@ -665,6 +668,10 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
                 != PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR.value
             ]
         return ret
+
+    def get_balance(self, obj):
+        from .movement_services import payroll_balance
+        return payroll_balance(obj)
 
     def get_is_salary_paid(self, obj):
         return any(a.movement.kind == "PAYMENT" and a.movement.status == "POSTED" for a in obj.allocations.all())

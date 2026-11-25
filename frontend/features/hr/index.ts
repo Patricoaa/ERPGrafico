@@ -1,12 +1,12 @@
 export type { AbsenceDrawerProps, AbsenceFormValues, EmployeeMovementDrawerProps, CreatePayrollDrawerProps, CreatePayrollValues, EmployeeDrawerProps, EmployeeFormValues } from './components'
-export { AbsenceClientView, AbsenceDrawer, EmployeeMovementDrawer, CreatePayrollDrawer, EmployeeClientView, EmployeeDrawer, FormulaBuilder, PayrollCard, PayrollClientView, PayrollDetailView, PayrollDetailDrawer, EmployeeMovementClientView, absenceSchema, employeeSchema } from './components'
+export { AbsenceClientView, AbsenceDrawer, EmployeeMovementDrawer, CreatePayrollDrawer, EmployeeClientView, EmployeeDrawer, FormulaBuilder, PayrollClientView, PayrollDetailView, PayrollDetailDrawer, EmployeeMovementClientView, absenceSchema, employeeSchema } from './components'
 export type { EmployeeActionsCtx } from './employeeActions'
 export { employeeActions } from './employeeActions'
 export type { AbsenceActionsCtx } from './absenceActions'
 export { absenceActions } from './absenceActions'
 export type { EmployeeMovementActionsCtx } from './employeeMovementActions'
 export { employeeMovementActions } from './employeeMovementActions'
-export { createAFP, createAbsence, createEmployee, createEmployeeMovement, createPayroll, createPayrollConcept, createPayrollItem, deleteAFP, deleteAbsence, archiveEmployee, deletePayroll, deletePayrollConcept, deletePayrollItem, generateProformaPayroll, getAFPs, getAbsences, getEmployee, getEmployees, getGlobalHRSettings, getPayroll, getPayrollConcepts, getPayrollPayments, getPayrolls, payPrevired, paySalary, postPayroll, recalculatePayroll, triggerDraftPayrolls, updateAFP, updateAbsence, updateEmployee, updateGlobalHRSettings, updatePayroll, updatePayrollConcept, updatePayrollItem } from './api/hrApi'
+export { createAFP, createAbsence, createEmployee, createEmployeeMovement, createPayroll, createPayrollConcept, createPayrollItem, deleteAFP, deleteAbsence, archiveEmployee, deletePayroll, deletePayrollConcept, deletePayrollItem, downloadPayrollPdf, generateProformaPayroll, getAFPs, getAbsences, getEmployee, getEmployees, getGlobalHRSettings, getPayroll, getPayrollConcepts, getPayrollPayments, getPayrolls, payPrevired, paySalary, postPayroll, recalculatePayroll, triggerDraftPayrolls, updateAFP, updateAbsence, updateEmployee, updateGlobalHRSettings, updatePayroll, updatePayrollConcept, updatePayrollItem } from './api/hrApi'
 export {
   usePayrolls,
   usePayrollDetail,

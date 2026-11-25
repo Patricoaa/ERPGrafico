@@ -99,6 +99,7 @@ export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
                 {slots.subtitle && subtitle !== undefined && createPortal(subtitle, slots.subtitle)}
                 {slots.actions && headerActions && createPortal(headerActions, slots.actions)}
                 <DocumentSheetBody {...props} />
+                {footer && <div className="shrink-0 border-t px-6 py-3">{footer}</div>}
             </div>
         )
     }
@@ -115,6 +116,7 @@ export function DocumentDrawerShell(props: DocumentDrawerShellProps) {
                     {headerActions && <div className="ml-auto flex items-center gap-1">{headerActions}</div>}
                 </div>
                 <DocumentSheetBody {...props} />
+                {footer && <div className="shrink-0 border-t px-6 py-3">{footer}</div>}
             </div>
         )
     }

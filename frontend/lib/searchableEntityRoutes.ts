@@ -15,7 +15,7 @@
  *   - /treasury/reconciliation/[id]     → Vista de reconciliación (UI propia)
  *   - /treasury/reconciliation/[id]/workbench → Mesa de Conciliación (UI compleja)
  *   - /finances/budgets/[id]            → BudgetDetailView (UI propia preexistente)
- *   - /hr/payrolls/[id]                 → PayrollDetailView (UI propia preexistente)
+ *   - /hr/payrolls/[id]                 → PayrollDetailView (ficha documental incrustada)
  *   - /d/billing.invoice/[id]       → Resolvedor ADR-0080 (redirige a la lista según lado:
  *                                    venta → /sales/dtes?selected · compra → drawer)
  *

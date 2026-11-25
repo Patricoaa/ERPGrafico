@@ -127,7 +127,7 @@ class MyProfilePayrollPreviewView(APIView):
         from hr.models import Payroll
         from hr.serializers import EmployeePayrollPreviewSerializer
         if not request.user.contact_id: raise PermissionDenied('User is not linked to an employee contact')
-        try: p = Payroll.objects.select_related('employee', 'employee__contact').prefetch_related('items', 'items__concept').get(id=payroll_id, employee__contact_id=request.user.contact_id, status=Payroll.Status.POSTED)
+        try: p = Payroll.objects.select_related('employee', 'employee__contact').prefetch_related('items', 'items__concept', 'allocations__movement', 'allocations__installment', 'payments').get(id=payroll_id, employee__contact_id=request.user.contact_id, status=Payroll.Status.POSTED)
         except Payroll.DoesNotExist: raise NotFound('Payroll not found')
         return Response(EmployeePayrollPreviewSerializer(p).data)
 
