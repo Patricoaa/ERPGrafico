@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { AnalyticsPanelContent, EmptyState, SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from "@/components/shared"
+import { AnalyticsPanelContent, EmptyState, SkeletonShell, type Granularity } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import {
     Collection,
@@ -11,7 +11,6 @@ import {
     useCollectionViewMode,
     useEntityCollection,
     useServerPage,
-    type FieldId,
 } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
@@ -21,7 +20,6 @@ import { purchaseOrderEntity, purchaseOrderViews } from "../entity-view/purchase
 import { purchaseNoteEntity, purchaseNoteViews } from "../entity-view/purchaseNote.entity"
 import { EMPTY_PURCHASING_ANALYTICS, usePurchaseOrderAnalytics } from "../hooks/usePurchaseOrderAnalytics"
 import { usePurchasingNotes, usePurchasingOrders } from "../hooks/usePurchasing"
-import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing"
 import { buildPurchaseAnalyticsScreen } from "./purchaseOrderAnalyticsScreen"
 
 interface PurchaseOrdersViewProps {
@@ -32,7 +30,6 @@ interface PurchaseOrdersViewProps {
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const NOTE_GROUPS: Record<string, FieldId<typeof purchaseNoteEntity.fields>> = { date: "date", status: "hub" }
 
 /** Purchase orders or their credit/debit notes (ADR-0087 lote 2c); ?selected opens the document sheet (ADR-0083). */
 export function PurchaseOrdersView({ viewMode, createAction }: PurchaseOrdersViewProps) {
@@ -126,9 +123,9 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
 
 function PurchaseNoteCollection() {
     const sheet = useDocumentSheetRoute("billing.invoice")
-    const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
-    const groupBy = search.groupBy ? NOTE_GROUPS[search.groupBy] ?? null : null
-    const filters = search.filters as Record<string, string>
+    const query = useCollectionQuery(purchaseNoteEntity)
+    const { search, groupBy } = query
+    const filters = query.params
     const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
@@ -152,6 +149,7 @@ function PurchaseNoteCollection() {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
                 onOpen={(note) => sheet.toggle(note.id, note)}
@@ -159,13 +157,7 @@ function PurchaseNoteCollection() {
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar>
-                    <UnifiedSearchBar
-                        config={purchaseInvoiceUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar notas..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={purchaseNoteViews.table}
                     card={purchaseNoteViews.card}

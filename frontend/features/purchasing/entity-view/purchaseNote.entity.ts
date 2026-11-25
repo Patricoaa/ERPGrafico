@@ -16,6 +16,18 @@ export const purchaseNoteEntity = defineEntity<Invoice>()((f) => ({
         hub: f.hubStatus((i) => i, { label: "Estado", entity: "billing.invoice", caption: (i) => ({ status: i.status, label: i.status_display }) }),
         total: f.money(signed, { label: "Total" }),
     },
+    // ADR-0158 §3. Free text goes to `search` (contact name / RUT). No `sort`: the invoices endpoint has no
+    // server ordering.
+    query: {
+        search: { placeholder: "Buscar notas por proveedor o RUT…", scopes: [{ field: "folio", param: "number" }] },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            status: { label: "Estado", control: "single", options: [{ value: "DRAFT", label: "Borrador (folio pendiente)" }, { value: "POSTED", label: "Emitido" }, { value: "CANCELLED", label: "Anulado" }] },
+            payment_status: { label: "Pago", control: "single", options: [{ value: "UNPAID", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "PAID", label: "Pagado" }] },
+            total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
+        },
+        groupBy: { fields: ["date", "hub"] },
+    },
 }))
 
 export const purchaseNoteViews = purchaseNoteEntity.views({

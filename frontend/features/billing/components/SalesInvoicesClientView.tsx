@@ -1,28 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { Collection, GROUP_ROW_LIMIT, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId } from "@/components/entity-view"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type InvoiceFilters } from "@/features/billing/types"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
-import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { salesInvoiceEntity, salesInvoiceViews } from "../entity-view/salesInvoice.entity"
-
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const INVOICE_GROUPS: Record<string, FieldId<typeof salesInvoiceEntity.fields>> = { date: "date", status: "hub", dte_type: "dteType" }
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 export function SalesInvoicesClientView() {
-    const search = useUnifiedSearch(invoiceUnifiedSearchDef)
+    const query = useCollectionQuery(salesInvoiceEntity)
+    const { search, groupBy } = query
     // ?selected abre la ficha documental de la factura (ADR-0083)
     const sheet = useDocumentSheetRoute("billing.invoice")
-    const groupBy = search.groupBy ? INVOICE_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
-    const filters = { ...search.filters, mode: 'sale' } as InvoiceFilters
+    const filters = { ...query.params, mode: 'sale' } as InvoiceFilters
     const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
 
     const { page, invoices, isLoading, isRefetching, isError, refetch } = useInvoices({
@@ -43,6 +38,7 @@ export function SalesInvoicesClientView() {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
                 onOpen={(inv) => sheet.toggle(inv.id, inv)}
@@ -50,9 +46,7 @@ export function SalesInvoicesClientView() {
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar>
-                    <UnifiedSearchBar config={invoiceUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar facturas..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={salesInvoiceViews.table}
                     card={salesInvoiceViews.card}
