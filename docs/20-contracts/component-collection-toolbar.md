@@ -25,7 +25,7 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 > - **E1** fila de filtros aplicados y exportación en menú;
 > - **E2** analítica en modal;
 > - **E3** `entity.query` y la barra de comandos;
-> - **E4** endpoints `groups/` y `facets/`;
+> - **E4** endpoints `groups/` (hecho, piloto en órdenes de venta) y `facets/`;
 > - **E5** limpieza.
 >
 > Hasta migrar, las pantallas siguen declarando `unifiedSearchDef.ts` y montando `UnifiedSearchBar` ([unified-searchbar.md](./unified-searchbar.md)). Una pantalla usa un sistema o el otro, nunca los dos.
@@ -271,13 +271,16 @@ Los dos endpoints usan **el mismo `FilterSet` y el mismo queryset de lectura** q
 ### 7.1 `GET <lista>/groups/?group_by=<campo>&<filtros>&ordering=…`
 
 ```json
-[{ "key": "IN_PRODUCTION", "label": "En producción", "count": 26, "aggregates": { "total": "4215600.00" } }]
+[{ "key": "IN_PRODUCTION", "label": "En producción", "count": 26, "aggregates": { "total": "4215600" }, "params": { "status": "IN_PRODUCTION" } }]
 ```
 
-- **Consulta:** una sola, `values(campo).annotate(count=Count("pk"), …)`.
-- **Etiqueta:** sale de los `choices` o de la FK, resuelta en la misma consulta.
-- **Orden:** por la dirección de `ordering` si el campo agrupado figura en él; si no, por `label`.
-- **Filas de cada grupo:** el listado normal con `<campo>=<key>` y su propia paginación. La UI pide los grupos abiertos con «Mostrar más».
+- **Declaración:** `GroupedListMixin` en el `ViewSet` con `group_fields = {nombre: GroupField(campo, label=…, param=…, null_param=…)}` y `group_aggregates = {id_de_campo: ruta_orm}` (suma). En la entidad, el campo declara `groupKey: "<nombre>"`; sin él, una lista paginada en servidor agrupa solo la página cargada (transitorio hasta E5).
+- **Consulta:** una sola, `values(campo[, etiqueta]).annotate(count=Count("pk"), sum…)` sobre un subquery de los pk filtrados: las búsquedas que cruzan líneas no inflan las sumas.
+- **Etiqueta:** la ruta `label` (FK) o los `choices`; para valores simples (fechas, números) es `null` y el cliente formatea `key` (las fechas como fecha).
+- **Subtotales:** `aggregates` se indexa por el id del campo de la entidad y se formatea como su columna, con la escala del campo del modelo.
+- **Orden:** por la dirección de `ordering` si el campo agrupado (o su etiqueta) figura en él; si no, por `label`. El grupo sin valor va al final.
+- **Filas de cada grupo:** el listado normal con los `params` del grupo y su propia paginación (`useServerGroups`). Se abren los 3 primeros; el resto carga al desplegarlo, y cada uno tiene «Mostrar más». Un grupo sin `params` (sin valor y sin `null_param`) muestra su conteo pero no se despliega.
+- **Piloto:** órdenes de venta (fecha, cliente, estado de la orden, canal; subtotal del total).
 
 ### 7.2 `GET <lista>/facets/?fields=status,customer&views=open,to-invoice&<filtros>`
 
