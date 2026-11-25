@@ -26,6 +26,9 @@ export default defineConfig({
       extends: true,
       test: {
         environment: 'jsdom',
+        // Node ≥ 25 expone su propio `localStorage` global (sin `--localstorage-file` queda
+        // indefinido) y tapa el de jsdom: los tests que lo usan fallan. Se desactiva en los workers.
+        execArgv: ['--no-experimental-webstorage'],
         setupFiles: ['./vitest.setup.ts'],
         // A full run shares the CPU with the repo-wide contract scans (type-aware eslint,
         // TS AST): integration renders that take <1 s alone went past the 5 s default.
