@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.165](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.164...v0.3.165) (2026-11-25)
+
+
+### ⚙️ Refactors
+
+* **frontend:** migrate ledger and legacy statcards to Metric and MetricStrip ([504b5ab](https://github.com/Patricoaa/ERPGrafico/commit/504b5aba86c3df45a9abb70fb28aa718f3f359b6))
+
 ### [0.3.164](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.163...v0.3.164) (2026-11-25)
 
 
