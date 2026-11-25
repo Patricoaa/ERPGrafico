@@ -7,6 +7,7 @@ import {
     Collection,
     GROUP_ROW_LIMIT,
     orderingParam,
+    useCollectionAnalytics,
     useCollectionViewMode,
     useEntityCollection,
     useServerPage,
@@ -105,13 +106,13 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
         },
     })
 
-    // Figures over the whole filtered list, fetched only while the analytics view is open.
-    const [activeTab, setActiveTab] = useState("resumen")
+    // Figures over the whole filtered list, fetched only while the analytics modal is open.
+    const analyticsUi = useCollectionAnalytics("resumen")
     const [granularity, setGranularity] = useState<Granularity>("month")
-    const { analytics, isLoading: isLoadingAnalytics, isError: isAnalyticsError, refetch: refetchAnalytics } = useSaleOrderAnalytics({ filters, granularity, enabled: view === "analytics" })
+    const { analytics, isLoading: isLoadingAnalytics, isError: isAnalyticsError, refetch: refetchAnalytics } = useSaleOrderAnalytics({ filters, granularity, enabled: analyticsUi.open })
     const analyticsScreen = useMemo(
-        () => buildSalesAnalyticsScreen(analytics ?? EMPTY_SALES_ANALYTICS, { activeTab, onTabChange: setActiveTab, granularity, onGranularityChange: setGranularity }),
-        [analytics, activeTab, granularity],
+        () => buildSalesAnalyticsScreen(analytics ?? EMPTY_SALES_ANALYTICS, { activeTab: analyticsUi.tab, onTabChange: analyticsUi.onTabChange, granularity, onGranularityChange: setGranularity }),
+        [analytics, analyticsUi.tab, analyticsUi.onTabChange, granularity],
     )
 
     const collection = useEntityCollection(
@@ -134,6 +135,8 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
                 actions={withActions ? (order) => <DocumentRowActions id={order.id} kind="sale-order" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
             >
                 <Collection.Toolbar>
                     <UnifiedSearchBar

@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { CreatePayrollDrawer, deletePayroll, paySalary, payPrevired, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { AnalyticsPanelContent, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
@@ -37,11 +37,11 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     const { view, onViewChange } = useCollectionViewMode("hr.payroll")
 
     const [granularity, setGranularity] = useState<Granularity>("month")
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("resumen")
+    const analyticsUi = useCollectionAnalytics("resumen")
     const analyticsData = usePayrollAnalyticsData(payrolls, granularity)
     const analyticsScreen = useMemo(
-        () => buildPayrollAnalyticsScreen(analyticsData, { activeTab: analyticsActiveTab, onTabChange: setAnalyticsActiveTab, granularity, onGranularityChange: setGranularity }),
-        [analyticsData, analyticsActiveTab, granularity],
+        () => buildPayrollAnalyticsScreen(analyticsData, { activeTab: analyticsUi.tab, onTabChange: analyticsUi.onTabChange, granularity, onGranularityChange: setGranularity }),
+        [analyticsData, analyticsUi.tab, analyticsUi.onTabChange, granularity],
     )
 
     const handleGenerateDrafts = useCallback(async () => {
@@ -134,6 +134,8 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
             </EntityPanelTab>
 
             <Collection.Root
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}

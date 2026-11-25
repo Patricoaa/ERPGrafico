@@ -30,7 +30,7 @@ interface WorkOrdersClientViewProps {
 
 /** Maps useViewMode string to CollectionViewMode (unknown values fall back to "table"). */
 function toCollectionView(v: string): CollectionViewMode {
-    if (v === "card" || v === "analytics" || v === "kanban" || v === "timeline") return v
+    if (v === "card" || v === "kanban" || v === "timeline") return v
     return "table"
 }
 

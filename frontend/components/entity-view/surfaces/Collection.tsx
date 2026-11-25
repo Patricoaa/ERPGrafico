@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, Download, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
-import { BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
+import { BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -37,8 +37,11 @@ import { useSavedRowFlash } from "./useSavedRowFlash"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
-/** `kanban` / `timeline` are rendered by the page itself (like `analytics`): `Collection.View` yields to it. */
-export type CollectionViewMode = "table" | "card" | "analytics" | "kanban" | "timeline"
+/**
+ * Layouts of the collection. `kanban` / `timeline` are rendered by the page itself: `Collection.View` yields to it.
+ * Analytics is not a layout: `Collection.Analytics` opens in a modal (ADR-0158 §11).
+ */
+export type CollectionViewMode = "table" | "card" | "kanban" | "timeline"
 export type SelectionMode = "none" | "bulk" | "panel"
 
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
@@ -54,8 +57,10 @@ interface CollectionContextValue<T> {
     view: CollectionViewMode
     setView: (view: CollectionViewMode) => void
     label: string
-    /** The Root has a `Collection.Analytics` child: the toolbar offers the analytics view. */
+    /** The Root has a `Collection.Analytics` child: the toolbar offers the analytics button. */
     hasAnalytics: boolean
+    analyticsOpen: boolean
+    setAnalyticsOpen: (open: boolean) => void
     /** Row just saved from a workspace tab (ADR-0101): highlighted briefly so the change is visible. */
     flashId: string | null
 }
@@ -102,20 +107,30 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
     /** Controlled view, e.g. from `useCollectionViewMode` (`?view=` in the URL). Uncontrolled when omitted. */
     view?: CollectionViewMode
     onViewChange?: (view: CollectionViewMode) => void
+    /** Controlled analytics modal, e.g. from `useCollectionAnalytics` (`?analytics=` in the URL). Uncontrolled when omitted. */
+    analyticsOpen?: boolean
+    onAnalyticsOpenChange?: (open: boolean) => void
     /** Accessible name. Defaults to the entity label resolved by the provider. */
     label?: string
 }
 
-function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, label }: CollectionRootProps<T, F>) {
+function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, analyticsOpen: controlledAnalyticsOpen, onAnalyticsOpenChange, label }: CollectionRootProps<T, F>) {
     const opener = useEntityOpener()
     // The enclosing `Section` / `Section.Scope` header shows this collection's total (ADR-0137).
     useRegisterRecordCount(collection.status === "loading" ? null : collection.total)
     const [localView, setLocalView] = React.useState<CollectionViewMode>(defaultView)
-    // Known at render time (no registration effect, no first-render flicker). Without an analytics
-    // child, a stored "analytics" view (e.g. ?view=analytics on a list that has none) falls back to the table.
+    // Known at render time (no registration effect, no first-render flicker).
     const hasAnalytics = React.Children.toArray(children).some((child) => React.isValidElement(child) && child.type === Analytics)
-    const requestedView = controlledView ?? localView
-    const view = requestedView === "analytics" && !hasAnalytics ? "table" : requestedView
+    const view = controlledView ?? localView
+    const [localAnalyticsOpen, setLocalAnalyticsOpen] = React.useState(false)
+    const analyticsOpen = hasAnalytics && (controlledAnalyticsOpen ?? localAnalyticsOpen)
+    const setAnalyticsOpen = React.useCallback(
+        (next: boolean) => {
+            if (controlledAnalyticsOpen === undefined) setLocalAnalyticsOpen(next)
+            onAnalyticsOpenChange?.(next)
+        },
+        [controlledAnalyticsOpen, onAnalyticsOpenChange],
+    )
     const setView = React.useCallback(
         (next: CollectionViewMode) => {
             if (controlledView === undefined) setLocalView(next)
@@ -149,6 +164,8 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         view,
         setView,
         hasAnalytics,
+        analyticsOpen,
+        setAnalyticsOpen,
         flashId,
         label: label ?? (entity.label !== undefined ? opener?.labelOf(entity.label) : undefined) ?? entityName(entity),
     }
@@ -176,7 +193,6 @@ export interface CollectionToolbarProps {
 const VIEW_BUTTONS = {
     table: { icon: Rows3, label: "Vista tabla" },
     card: { icon: LayoutGrid, label: "Vista tarjetas" },
-    analytics: { icon: BarChart3, label: "Analítica" },
     kanban: { icon: Kanban, label: "Vista kanban" },
     timeline: { icon: CalendarRange, label: "Vista cronograma" },
 } as const
@@ -185,7 +201,6 @@ const POLICY_TO_MODE: Record<ViewPolicy["availableViews"][number], CollectionVie
     list: "table",
     card: "card",
     grid: "card",
-    analytics: "analytics",
     kanban: "kanban",
     timeline: "timeline",
 }
@@ -201,8 +216,7 @@ function Toolbar({ children, action, views, exportFilters = {} }: CollectionTool
     const ctx = useCollectionContext<unknown>()
     const allowed = views ?? policyModes(ctx.collection.entity.label)
     const exportSpec = ctx.collection.entity.export
-    // The analytics view is offered only while a `Collection.Analytics` is mounted.
-    const modes = ctx.hasAnalytics && !allowed.includes("analytics") ? [...allowed, "analytics" as const] : allowed
+    const modes = allowed
     const resultCount = ctx.collection.status === "loading" ? null : ctx.collection.total
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
@@ -214,6 +228,11 @@ function Toolbar({ children, action, views, exportFilters = {} }: CollectionTool
                 )}
                 {action}
             </div>
+            {ctx.hasAnalytics && (
+                <Button variant="ghost" size="icon-sm" aria-label="Analítica" title="Analítica" aria-haspopup="dialog" aria-expanded={ctx.analyticsOpen} onClick={() => ctx.setAnalyticsOpen(true)}>
+                    <BarChart3 className="size-4" aria-hidden />
+                </Button>
+            )}
             {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters} count={resultCount} />}
             {modes.length > 1 && (
                 <div className="flex items-center gap-1" role="group" aria-label="Vista">
@@ -342,8 +361,8 @@ function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription,
     const ctx = useCollectionContext<T>()
     const { status, truncated, total, table: model, paging, isFiltered } = ctx.collection
     const resolved = useResolvedSurface(surfaceOptions, paging)
-    // `Collection.Analytics` renders the analytics view itself.
-    if (ctx.view === "analytics" || ctx.view === "kanban" || ctx.view === "timeline") return null
+    // The page renders kanban / timeline itself.
+    if (ctx.view === "kanban" || ctx.view === "timeline") return null
     const showsCards = ctx.view === "card" && !!card
     if (status === "error" || status === "empty") {
         // Embedded empty state: the bare header row. Errors, filtered-empty and an empty state with an action keep their message.
@@ -432,14 +451,26 @@ function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
 // ─── Analytics ───────────────────────────────────────────────────────────────
 
 /**
- * Analytics view of the collection (Gate D lote 2). As a direct child of `Root` it adds an "Analítica" view to the
- * toolbar's view switch; while that view is active its children replace the table/cards. The content
- * (tabs, Metrics, feature hooks) belongs to the feature, e.g. `<AnalyticsPanelContent … />`.
+ * Analytics of the collection (ADR-0158 §11). As a direct child of `Root` it adds an analytics button to the
+ * toolbar; its children open in a large modal over the table, which keeps its scroll and selection. The content
+ * (tabs, Metrics, feature hooks) belongs to the feature, e.g. `<AnalyticsPanelContent … />`. Fetch the
+ * analytics only while the modal is open (`useCollectionAnalytics().open`).
  */
 function Analytics({ children }: { children: React.ReactNode }) {
     const ctx = useCollectionContext<unknown>()
-    if (ctx.view !== "analytics") return null
-    return <div className="flex h-full min-h-0 flex-1 flex-col">{children}</div>
+    return (
+        <BaseModal
+            open={ctx.analyticsOpen}
+            onOpenChange={ctx.setAnalyticsOpen}
+            icon={BarChart3}
+            title={`Analítica · ${ctx.label}`}
+            size="xl"
+            hideScrollArea
+            contentClassName="overflow-hidden"
+        >
+            <div className="flex h-[80vh] min-h-0 flex-col overflow-hidden">{children}</div>
+        </BaseModal>
+    )
 }
 
 // ─── Table ───────────────────────────────────────────────────────────────────

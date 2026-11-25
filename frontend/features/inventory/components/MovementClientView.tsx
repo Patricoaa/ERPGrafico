@@ -4,7 +4,7 @@ import { useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useState, useMemo, useEffect } from "react"
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useEntityCollection } from "@/components/entity-view"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { useStockMoveAnalytics } from "@/features/inventory/hooks/useStockMoveAnalytics"
@@ -43,7 +43,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         onViewDetails: (id) => openEntity("inventory.stockmove", id),
     }
 
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("flujo")
+    const analyticsUi = useCollectionAnalytics("flujo")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const analyticsData = useStockMoveAnalytics({
@@ -68,8 +68,8 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
 
         return {
             entityName: "Kardex",
-            activeTab: analyticsActiveTab,
-            onTabChange: setAnalyticsActiveTab,
+            activeTab: analyticsUi.tab,
+            onTabChange: analyticsUi.onTabChange,
             granularity,
             onGranularityChange: setGranularity,
             tabs: [
@@ -223,7 +223,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                     },
                 ],
         }
-    }, [analyticsActiveTab, granularity, analyticsData])
+    }, [analyticsUi.tab, analyticsUi.onTabChange, granularity, analyticsData])
 
     const collection = useEntityCollection(
         stockMoveEntity,
@@ -241,6 +241,8 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 flex flex-col min-h-0">
                 <Collection.Root
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
                     collection={collection}
                     onOpen={(move: StockMove) => openEntity("inventory.stockmove", move.id, move)}
                     actions={stockMoveActions.forCollection(actionsCtx)}

@@ -11,7 +11,7 @@ import {
     Metric, MetricStrip, bindUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
-import { Collection, useEntityCollection, type FieldId } from '@/components/entity-view'
+import { Collection, useCollectionAnalytics, useEntityCollection, type FieldId } from '@/components/entity-view'
 import { creditCardStatementEntity, creditCardStatementViews } from '../entity-view/creditCardStatement.entity'
 import { useCardStatements } from '../hooks/useCardStatements'
 import { useCardAccounts } from '../hooks/useCardAccounts'
@@ -105,7 +105,7 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
         ? selectedCardId
         : (bankId ? (creditCardAccounts[0]?.id ?? null) : null)
 
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("rendimiento")
+    const analyticsUi = useCollectionAnalytics("rendimiento")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const params: Record<string, string> = {}
@@ -163,6 +163,8 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
                 collection={collection}
                 actions={statementActions.forCollection(actionsCtx)}
                 onOpen={(stmt: CreditCardStatement) => openStatement(stmt.id, "detail")}
@@ -185,8 +187,8 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
                 <Collection.Analytics>
                     <AnalyticsPanelContent
                         entityName="Gestión TC"
-                        activeTab={analyticsActiveTab}
-                        onTabChange={setAnalyticsActiveTab}
+                        activeTab={analyticsUi.tab}
+                        onTabChange={analyticsUi.onTabChange}
                         granularity={granularity}
                         onGranularityChange={setGranularity}
                         tabs={[
