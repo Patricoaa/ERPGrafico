@@ -32,6 +32,8 @@ export interface RelatedDocumentTarget {
     display_id: string
     title: string
     status: string | null
+    /** Etiqueta del estado según el modelo del backend (`get_status_display`); prevalece sobre el mapa global. */
+    status_display?: string | null
     date: string | null
     partner_name: string | null
     accessible: boolean
@@ -253,7 +255,7 @@ export function RelatedDocumentRow({ item, onOpen, actions, hidePartner, isSelf 
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
-                        {target.status && <StatusBadge status={target.status} variant="badge" />}
+                        {target.status && <StatusBadge status={target.status} label={target.status_display ?? undefined} variant="badge" />}
                     </div>
                 </div>
             </li>
@@ -271,14 +273,14 @@ export function RelatedDocumentRow({ item, onOpen, actions, hidePartner, isSelf 
                 >
                     {rowContent}
                     <div className="flex shrink-0 items-center gap-2">
-                        {target.status && <StatusBadge status={target.status} variant="badge" />}
+                        {target.status && <StatusBadge status={target.status} label={target.status_display ?? undefined} variant="badge" />}
                         {!hasActions && <ChevronRight className="h-4 w-4 text-muted-foreground/30" />}
                     </div>
                 </button>
             ) : (
                 <div className="flex flex-1 min-w-0 items-center gap-3 px-3 py-2.5" title="Sin permiso para ver este documento">
                     {rowContent}
-                    {target.status && <StatusBadge status={target.status} variant="badge" className="shrink-0" />}
+                    {target.status && <StatusBadge status={target.status} label={target.status_display ?? undefined} variant="badge" className="shrink-0" />}
                 </div>
             )}
             {hasActions && (

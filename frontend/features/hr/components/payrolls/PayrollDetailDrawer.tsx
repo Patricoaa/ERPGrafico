@@ -238,6 +238,7 @@ export function PayrollDetailDrawer({ payrollId, open, onOpenChange, onUpdate, e
                 error={isError ? new Error("No se pudo cargar la liquidación.") : undefined}
                 loadingLabel="Cargando liquidación"
                 status={payroll?.status ?? null}
+                statusLabel={payroll?.status_display}
                 primaryAction={primaryAction}
                 actions={actions}
                 onPrint={payroll ? () => void downloadPayrollPdf(payroll.id, `${payroll.display_id}.pdf`).catch((e: unknown) => showApiError(e, "No se pudo descargar el PDF")) : undefined}

@@ -1,6 +1,7 @@
 import { defineEditable, defineEntity } from "@/components/entity-view"
 import { formatCurrency } from "@/lib/money"
-import type { Payroll, PayrollAllocation, PayrollConcept, PayrollItem } from "@/types/hr"
+import type { EmployeeMovementStatus, Payroll, PayrollAllocation, PayrollConcept, PayrollItem } from "@/types/hr"
+import { employeeMovementStatus } from "../employeeMovementStatus"
 
 const HABER = new Set(["HABER_IMPONIBLE", "HABER_NO_IMPONIBLE"])
 const DESCUENTO = new Set(["DESCUENTO_LEGAL_TRABAJADOR", "OTRO_DESCUENTO"])
@@ -109,6 +110,9 @@ export interface PayrollAdvanceRow {
     assigned: number
     /** Tope del descuento: saldo libre del movimiento más lo ya asignado. */
     max: number
+    /** Fecha efectiva del movimiento (solo asignaciones guardadas). */
+    date?: string
+    status?: EmployeeMovementStatus
 }
 
 export function payrollAdvanceFromAllocation(a: PayrollAllocation): PayrollAdvanceRow {
@@ -123,6 +127,8 @@ export function payrollAdvanceFromAllocation(a: PayrollAllocation): PayrollAdvan
         amount: num(a.amount),
         assigned: num(a.amount),
         max: num(a.amount),
+        date: a.movement_date,
+        status: a.movement_status,
     }
 }
 
@@ -133,19 +139,32 @@ export function payrollAdvances(payroll: Payroll): PayrollAdvanceRow[] {
         .map(payrollAdvanceFromAllocation)
 }
 
+/**
+ * Liquidación contabilizada: anticipos, cuotas y también los pagos de remuneración, por fecha
+ * efectiva del movimiento. Los anulados no cuentan (ni en la tabla ni en el saldo).
+ */
+export function payrollSettlements(payroll: Payroll): PayrollAdvanceRow[] {
+    return (payroll.allocations ?? [])
+        .filter(a => a.movement_status !== "CANCELLED")
+        .map(payrollAdvanceFromAllocation)
+        .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))
+}
+
 export const payrollAdvanceEntity = defineEntity<PayrollAdvanceRow>()((f) => ({
     title: "Anticipos y préstamos",
     rowId: (r) => r.key,
     fields: {
         movement: f.code("displayId", { label: "Movimiento", sortable: false }),
         kind: f.text("kindDisplay", { label: "Tipo", tone: "secondary", sortable: false }),
+        date: f.date((r) => r.date ?? null, { label: "Fecha", sortable: false }),
         detail: f.text("detail", { label: "Detalle", tone: "secondary", sortable: false }),
-        amount: f.money("amount", { label: "Descuento", sortable: false }),
+        amount: f.money("amount", { label: "Monto", sortable: false }),
+        status: f.status((r) => (r.status ? employeeMovementStatus(r.status) : null), { label: "Estado", sortable: false }),
     },
 }))
 
 export const payrollAdvanceViews = payrollAdvanceEntity.views({
-    table: { columns: ["movement", "kind", "detail", "amount"], footer: { sum: ["amount"] } },
+    table: { columns: ["movement", "kind", "date", "detail", "status", "amount"], footer: { sum: ["amount"] } },
 })
 
 export const payrollAdvanceEditable = defineEditable(payrollAdvanceEntity, {

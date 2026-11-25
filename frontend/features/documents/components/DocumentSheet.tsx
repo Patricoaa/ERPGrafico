@@ -47,6 +47,8 @@ export interface DocumentSheetProps {
     title?: string
     /** Estado del documento (StatusBadge en la cabecera) para fichas sin franja de ciclo. */
     status?: string | null
+    /** Etiqueta del estado según el modelo (`status_display`); sin ella, la del mapa global. */
+    statusLabel?: string | null
     /** Contexto en una fila (≤4 campos imprescindibles, alineados a la izquierda). */
     context: DocumentField[]
     /** Secciones propias del tipo bajo el contexto (líneas, partidas, detalle…). */
@@ -77,7 +79,7 @@ export interface DocumentSheetProps {
  * usan su propia composición con el mismo shell.
  */
 export function DocumentSheet({
-    label, open, onOpenChange, document, isLoading, error, loadingLabel, title, status,
+    label, open, onOpenChange, document, isLoading, error, loadingLabel, title, status, statusLabel,
     context, sections = [], lifecycle, primaryAction, actions = [], onPrint,
     sectionActions, rowActions, extraTabs = [], auditType, embedded = false, drawerSize, footer,
 }: DocumentSheetProps) {
@@ -135,7 +137,7 @@ export function DocumentSheet({
             icon={identity.icon}
             headerActions={document ? (
                 <>
-                    {status && <StatusBadge status={status} variant="badge" />}
+                    {status && <StatusBadge status={status} label={statusLabel ?? undefined} variant="badge" />}
                     {hasMenu && <DocumentActionsMenu primary={primaryAction} actions={actions} onPrint={onPrint} />}
                 </>
             ) : undefined}

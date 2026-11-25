@@ -8,7 +8,7 @@ import type { DocumentSheetSection } from "@/features/documents"
 import { formatCurrency } from "@/lib/money"
 import type { Payroll } from "@/types/hr"
 import {
-    payrollAdvanceEntity, payrollAdvanceViews, payrollAdvances, payrollLineEntity, payrollLineViews, payrollLines,
+    payrollAdvanceEntity, payrollAdvanceViews, payrollAdvances, payrollLineEntity, payrollLineViews, payrollLines, payrollSettlements,
     type PayrollLineRow,
 } from "../../entity-view/payrollItem.entity"
 
@@ -116,12 +116,12 @@ function LinesTable({ payroll }: { payroll: Payroll }) {
     )
 }
 
-function AdvancesTable({ payroll }: { payroll: Payroll }) {
-    const rows = useMemo(() => payrollAdvances(payroll), [payroll])
+function SettlementsTable({ payroll }: { payroll: Payroll }) {
+    const rows = useMemo(() => payrollSettlements(payroll), [payroll])
     const collection = useEntityCollection(payrollAdvanceEntity, { rows }, { pagination: { mode: "none" } })
     return (
-        <Collection.Root collection={collection} label="Anticipos y préstamos">
-            <Collection.View table={payrollAdvanceViews.table} emptyTitle="Sin anticipos ni préstamos descontados" />
+        <Collection.Root collection={collection} label="Anticipos, préstamos y pagos">
+            <Collection.View table={payrollAdvanceViews.table} emptyTitle="Sin anticipos, préstamos ni pagos" />
         </Collection.Root>
     )
 }
@@ -134,11 +134,11 @@ export function usePayrollSections(payroll: Payroll | null): DocumentSheetSectio
             { content: <PayrollOverviewStrip payroll={payroll} /> },
             { title: "Haberes y descuentos", icon: ListOrdered, content: <LinesTable payroll={payroll} /> },
             {
-                title: "Anticipos y préstamos",
+                title: "Anticipos, préstamos y pagos",
                 icon: HandCoins,
                 content: (
                     <div className="space-y-8">
-                        <AdvancesTable payroll={payroll} />
+                        <SettlementsTable payroll={payroll} />
                         <PayrollTotalsBox totals={payrollTotals(payroll)} />
                     </div>
                 ),

@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 import type { Payroll, PayrollAllocation, PayrollItem } from "@/types/hr"
-import { payrollAdvances, payrollLines } from "../../../entity-view/payrollItem.entity"
+import { payrollAdvances, payrollLines, payrollSettlements } from "../../../entity-view/payrollItem.entity"
 import { livePayrollTotals, payrollTotals, usePayrollSections } from "../payrollSummary"
 
 const item = (id: number, category: string, name: string, amount: string): PayrollItem => ({
@@ -68,6 +68,20 @@ describe("payroll rows", () => {
     it("keeps only live advances and loans (salary payments live in Pagos)", () => {
         expect(payrollAdvances(payroll()).map(a => a.displayId)).toEqual(["MOV-1"])
     })
+
+    it("adds salary payments once posted, by effective date, without cancelled movements", () => {
+        const p = payroll({
+            allocations: [
+                allocation({ id: 1, movement_display_id: "MOV-1", movement_date: "2026-09-15" }),
+                allocation({ id: 2, movement_display_id: "MOV-2", kind: "PAYMENT", kind_display: "Pago de remuneración", movement_date: "2026-09-05", movement_status: "SETTLED" }),
+                allocation({ id: 3, movement_display_id: "MOV-3", movement_status: "CANCELLED" }),
+            ],
+        })
+        expect(payrollSettlements(p).map(a => [a.displayId, a.date, a.status])).toEqual([
+            ["MOV-2", "2026-09-05", "SETTLED"],
+            ["MOV-1", "2026-09-15", "POSTED"],
+        ])
+    })
 })
 
 describe("usePayrollSections (read only)", () => {
@@ -77,8 +91,12 @@ describe("usePayrollSections (read only)", () => {
         expect(within(lines).getByText("Sueldo base")).toBeInTheDocument()
         expect(within(lines).getByText("AFP")).toBeInTheDocument()
         expect(screen.queryByText("Seguro de cesantía empleador")).not.toBeInTheDocument()
-        const advances = screen.getByRole("region", { name: "Anticipos y préstamos" })
+        const advances = screen.getByRole("region", { name: "Anticipos, préstamos y pagos" })
         expect(within(advances).getByText("MOV-1")).toBeInTheDocument()
+        expect(within(advances).getByText("MOV-2")).toBeInTheDocument()
+        // Estados con la etiqueta del modelo, no la del mapa global («Publicado»).
+        expect(within(advances).getAllByText("Contabilizado").length).toBeGreaterThan(0)
+        expect(within(advances).queryByText("Publicado")).not.toBeInTheDocument()
         expect(within(advances).getByText("Saldo por pagar")).toBeInTheDocument()
         expect(screen.getByRole("group", { name: "Resumen de la liquidación" })).toHaveTextContent("Ana")
     })

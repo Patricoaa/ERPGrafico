@@ -60,7 +60,7 @@ export function DocumentResolverView({ label, id }: DocumentResolverViewProps) {
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">{ref.title}</span>
                     <span className="font-medium">{ref.display_id}</span>
-                    {ref.status && <StatusBadge status={ref.status} variant="badge" />}
+                    {ref.status && <StatusBadge status={ref.status} label={ref.status_display ?? undefined} variant="badge" />}
                 </div>
                 {ref.partner_name && <p className="text-sm text-muted-foreground">{ref.partner_name}</p>}
                 {canOpen ? (

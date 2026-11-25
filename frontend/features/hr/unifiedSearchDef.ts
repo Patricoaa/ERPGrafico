@@ -1,5 +1,6 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { EMPLOYEE_MOVEMENT_STATUS_OPTIONS } from './employeeMovementStatus'
 
 export const employeeUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -127,12 +128,7 @@ export const employeeMovementUnifiedSearchDef: UnifiedSearchConfig = {
       key: 'status',
       label: 'Estado',
       serverParam: 'status',
-      options: [
-        { label: 'Borrador', value: 'DRAFT' },
-        { label: 'Vigente', value: 'POSTED' },
-        { label: 'Saldado', value: 'SETTLED' },
-        { label: 'Anulado', value: 'CANCELLED' },
-      ],
+      options: EMPLOYEE_MOVEMENT_STATUS_OPTIONS,
     },
     {
       type: 'single',

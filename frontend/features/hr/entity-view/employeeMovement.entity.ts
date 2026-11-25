@@ -1,5 +1,6 @@
 import { defineEntity } from "@/components/entity-view"
 import type { EmployeeMovement } from "@/types/hr"
+import { employeeMovementStatus } from "../employeeMovementStatus"
 
 /** Pago de remuneración, anticipo o préstamo con un empleado (ADR-0156). */
 export const employeeMovementEntity = defineEntity<EmployeeMovement>()((f) => ({
@@ -11,7 +12,7 @@ export const employeeMovementEntity = defineEntity<EmployeeMovement>()((f) => ({
         date: f.date("date", { label: "Fecha" }),
         amount: f.money("amount", { label: "Monto" }),
         balance: f.money("balance", { label: "Saldo" }),
-        status: f.status((m) => ({ status: m.status, label: m.status_display }), { label: "Estado" }),
+        status: f.status((m) => employeeMovementStatus(m.status, m.status_display), { label: "Estado" }),
     },
 }))
 
