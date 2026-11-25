@@ -30,7 +30,6 @@ export function EmployeePayrollModal({ payrollId, open, onOpenChange, employee }
                     payrollId={payrollId}
                     viewMode="employee"
                     employee={employee}
-                    isSheet
                 />
             )}
         </BaseModal>

@@ -180,7 +180,6 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
     "features/finance/components/BudgetVarianceTable.tsx",
     "features/finance/components/CashFlowTable.tsx",
-    "features/hr/components/PayrollCard.tsx",
     "features/inventory/components/product/ProductManufacturingTab.tsx",
     "features/inventory/components/product/ProductPricingTab.tsx",
     "features/inventory/components/product/ProductVariantsTab.tsx",

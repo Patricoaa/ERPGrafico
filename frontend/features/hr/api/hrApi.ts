@@ -139,6 +139,19 @@ export async function deletePayroll(id: number): Promise<void> {
   await api.delete(`/hr/payrolls/${id}/`)
 }
 
+/** Descarga el PDF de la liquidación (WeasyPrint, backend). */
+export async function downloadPayrollPdf(payrollId: number, filename?: string): Promise<void> {
+  const res = await api.get<Blob>(`/hr/payrolls/${payrollId}/download_pdf/`, { responseType: 'blob' })
+  const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || `Liquidacion_${payrollId}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export async function postPayroll(id: number): Promise<Payroll> {
   const res = await api.post(`/hr/payrolls/${id}/post_payroll/`)
   return res.data

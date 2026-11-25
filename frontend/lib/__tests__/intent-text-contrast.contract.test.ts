@@ -31,7 +31,6 @@ const SUCCESS_ICON_ALLOWLIST = [
     "features/finance/bank-reconciliation/components/AutoMatchProgressModal.tsx",
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
     "features/finance/components/AccountingEquationCard.tsx",
-    "features/hr/components/PayrollCard.tsx",
     "features/inventory/components/product/VariantQuickEditForm.tsx",
     "features/partners/components/MassPaymentWizard.tsx",
     "features/tax/components/DeclarationWizard.tsx",

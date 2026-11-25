@@ -25,8 +25,11 @@ import { DocumentRelationsTab } from "./DocumentRelationsTab"
 type AuditEntityType = Parameters<typeof EntitySidebar>[0]["entityType"]
 
 export interface DocumentSheetSection {
-    title: string
-    icon: LucideIcon
+    /** Sin título, la sección no lleva cabecera (p. ej. una fila de `MetricStrip` al inicio). */
+    title?: string
+    icon?: LucideIcon
+    /** Acciones de la sección (p. ej. «Agregar»), a la derecha de su cabecera. */
+    actions?: ReactNode
     content: ReactNode
 }
 
@@ -62,6 +65,8 @@ export interface DocumentSheetProps {
     embedded?: boolean
     /** Tamaño inicial del drawer. Por defecto `formDrawerWidth("master", true)` (90%). Pasar "100%" para pantalla completa. */
     drawerSize?: string
+    /** Pie fijo del drawer con las acciones principales del estado actual (p. ej. borradores editables). */
+    footer?: ReactNode
 }
 
 /**
@@ -74,7 +79,7 @@ export interface DocumentSheetProps {
 export function DocumentSheet({
     label, open, onOpenChange, document, isLoading, error, loadingLabel, title, status,
     context, sections = [], lifecycle, primaryAction, actions = [], onPrint,
-    sectionActions, rowActions, extraTabs = [], auditType, embedded = false, drawerSize,
+    sectionActions, rowActions, extraTabs = [], auditType, embedded = false, drawerSize, footer,
 }: DocumentSheetProps) {
     const displayId = title ?? document?.display_id ?? undefined
     const identity = useDrawerIdentity(label, "view", document, displayId ? { overrideTitle: displayId } : undefined)
@@ -93,9 +98,9 @@ export function DocumentSheet({
             content: (
                 <div className="space-y-8">
                     {context.length > 0 && <section aria-label="Contexto"><DocumentFieldGrid fields={context} /></section>}
-                    {sections.map((section) => (
-                        <section key={section.title} className="space-y-4">
-                            <Section.Header spaced title={section.title} icon={section.icon} />
+                    {sections.map((section, index) => (
+                        <section key={section.title ?? index} className="space-y-4" aria-label={section.title}>
+                            {section.title && <Section.Header spaced title={section.title} icon={section.icon} actions={section.actions} />}
                             {section.content}
                         </section>
                     ))}
@@ -149,6 +154,7 @@ export function DocumentSheet({
             onTabChange={setTab}
             sidebar={document && auditType && !embedded ? <EntitySidebar entityType={auditType} entityId={document.id} /> : undefined}
             drawerSize={drawerSize}
+            footer={document ? footer : undefined}
         />
     )
 }

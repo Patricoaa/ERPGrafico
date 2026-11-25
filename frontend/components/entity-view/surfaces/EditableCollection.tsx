@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { SelectionRing, StatusBadge } from "@/components/shared"
@@ -33,6 +34,12 @@ export interface EditableCollectionProps<T, F extends FieldMap<T>, I extends Rec
     /** Accessible name of the table. */
     label: string
     disabled?: boolean
+    /** Trailing per-row actions (e.g. remove a line added by the user). Rendered in a final unlabeled column. */
+    rowActions?: (row: T) => React.ReactNode
+    /** Add-a-line action rendered at the bottom of the table (same strip as `FormLineItemsTable`). */
+    addAction?: { label: string; onClick: () => void; disabled?: boolean }
+    /** Text of the single row shown when there are no rows. Default "Sin líneas". */
+    emptyText?: string
 }
 
 export function EditableCollection<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>({
@@ -43,6 +50,9 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
     errors = {},
     label,
     disabled,
+    rowActions,
+    addAction,
+    emptyText = "Sin líneas",
 }: EditableCollectionProps<T, F, I>) {
     const inputNames = Object.keys(def.inputs) as (keyof I & string)[]
     const processed = processedInputs(def)
@@ -131,9 +141,20 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                 )
                             })}
                             {hasStatus && <th scope="col" className={cn("px-(--table-header-px) py-(--table-header-py)", HEADER_TEXT)}>Estado</th>}
+                            {rowActions && <th scope="col" className="w-10 px-(--table-header-px) py-(--table-header-py)"><span className="sr-only">Acciones</span></th>}
                         </tr>
                     </thead>
                     <tbody>
+                        {rows.length === 0 && (
+                            <tr className="border-b border-border/40">
+                                <td
+                                    colSpan={def.context.length + inputNames.length + (hasSelect ? 1 : 0) + (hasStatus ? 1 : 0) + (rowActions ? 1 : 0)}
+                                    className={cn(CELL, "text-center text-xs text-muted-foreground")}
+                                >
+                                    {emptyText}
+                                </td>
+                            </tr>
+                        )}
                         {rows.map((row) => {
                             const key = String(def.rowKey(row))
                             const eligible = eligibility.get(key) ?? { ok: true }
@@ -227,6 +248,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                         )
                                     })}
                                     {hasStatus && <RowStatusCell def={def} row={row} values={byKey.get(key)?.values ?? {}} isActive={rowActive} />}
+                                    {rowActions && <td className={cn(CELL, "align-middle text-right whitespace-nowrap")}>{rowActions(row)}</td>}
                                 </tr>
                             )
                         })}
@@ -255,10 +277,26 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                     return <td key={name} className={cn(CELL, "text-right text-xs font-semibold tabular-nums")} aria-live="polite">{text}</td>
                                 })}
                                 {hasStatus && <td />}
+                                {rowActions && <td />}
                             </tr>
                         </tfoot>
                     )}
                 </table>
+                {addAction && (
+                    <div className="flex items-center border-t px-2 py-1.5">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-control-xs px-2 text-3xs font-medium uppercase tracking-widest text-primary hover:bg-primary/5"
+                            onClick={addAction.onClick}
+                            disabled={disabled || addAction.disabled}
+                        >
+                            <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                            {addAction.label}
+                        </Button>
+                    </div>
+                )}
             </div>
         </div>
     )
