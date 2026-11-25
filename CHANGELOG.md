@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.160](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.159...v0.3.160) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump framer-motion from 12.38.0 to 14.14.0 in /frontend ([f773eb5](https://github.com/Patricoaa/ERPGrafico/commit/f773eb585dc97f8d13dfa2c71263cb84cef381f8))
+* **deps:** bump rust in /backend ([112e1fe](https://github.com/Patricoaa/ERPGrafico/commit/112e1fec6747e2d206a7a531d8f29f809e2c1ed2))
+
 ### [0.3.159](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.158...v0.3.159) (2026-11-25)
 
 
