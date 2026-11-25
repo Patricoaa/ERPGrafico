@@ -114,6 +114,8 @@ export interface UseUnifiedSearchReturn {
   applyFilter: (param: string, value: string) => Promise<void>
   removeFilter: (param: string) => Promise<void>
   clearAll: () => Promise<void>
+  /** Clears every search/filter/group param and writes `values` in one URL update (predefined views, ADR-0158 §9). */
+  replaceAll: (values: Record<string, string | null>) => Promise<void>
   inputValue: string
   setInputValue: (val: string) => void
   filterFn: <T>(data: T[]) => T[]

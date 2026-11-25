@@ -2,6 +2,7 @@ import type { ComponentType } from "react"
 import type { LucideIcon } from "lucide-react"
 import type { EntityLabel } from "@/lib/entity-registry"
 import { getValueKind, type Align, type KindOptions, type KindValue, type ValueKind } from "./value-kinds"
+import type { QuerySpec } from "./define-query"
 
 // ─── Accessors & row-aware options ───────────────────────────────────────────
 
@@ -270,6 +271,8 @@ export type EntitySpec<T, F extends FieldMap<T>> = EntityIdentity & {
     /** Facet dimensions for filters, independent from visible columns. */
     facets?: Record<string, (row: T) => string | null | undefined>
     export?: ExportSpec<Record<string, unknown>>
+    /** Search, filters, sorting, grouping and predefined views (ADR-0158 §3). Read by `useCollectionQuery`. */
+    query?: QuerySpec<FieldId<F>>
     /** Stable row id. Defaults to `row.id`. */
     rowId?: (row: T) => string | number
     /**
