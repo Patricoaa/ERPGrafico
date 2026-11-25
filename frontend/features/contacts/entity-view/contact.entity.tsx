@@ -112,6 +112,32 @@ export const contactEntity = defineEntity<Contact>()((f) => ({
         ),
         isActive: f.status((c) => (c.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar por nombre, RUT o email…" },
+        filters: {
+            role: {
+                label: "Rol",
+                control: "single",
+                options: [
+                    { value: "CUSTOMER", label: "Cliente" },
+                    { value: "SUPPLIER", label: "Proveedor" },
+                    { value: "RELATED", label: "Relacionado" },
+                    { value: "PARTNER", label: "Socio" },
+                    { value: "EMPLOYEE", label: "Empleado" },
+                    { value: "USER", label: "Usuario Sistema" },
+                ],
+            },
+            is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] },
+        },
+        sort: { fields: ["name", "taxId", "displayId", "email", "phone", "contactType", "riskLevel", "isActive"], default: "name" },
+        groupBy: { fields: ["contactType", "riskLevel"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "customers", label: "Clientes", filters: { role: "CUSTOMER" } },
+            { id: "suppliers", label: "Proveedores", filters: { role: "SUPPLIER" } },
+        ],
+    },
 }))
 
 export const contactViews = contactEntity.views({
