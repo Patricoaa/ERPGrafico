@@ -481,19 +481,23 @@ Los valores persisten en la URL y soportan deeplinks y navegación con historial
 
 ## Tabla de decisión por ruta (estado actual)
 
-Ver `features/*/unifiedSearchDef.ts` para la lista completa. Cada feature tiene su propio archivo de configuración.
+Las listas de página usan `entity.query` ([ADR-0158](../10-architecture/adr/0158-barra-de-coleccion-unificada.md)). `UnifiedSearchBar` queda para listas embebidas y el panel de conciliación.
 
 | Feature | Archivo |
 |---------|---------|
-| Contacts | `features/contacts/unifiedSearchDef.ts` |
+| Contacts | migrado a `entity.query` |
 | Sales | migrado a `entity.query` ([component-collection-toolbar.md](./component-collection-toolbar.md)) |
-| Billing | `features/billing/unifiedSearchDef.ts` |
+| Billing | migrado a `entity.query` |
 | Purchasing | migrado a `entity.query` |
 | Inventory | migrado a `entity.query` (el detalle de conteo usa una definición local) |
 | Treasury | migrado a `entity.query` (la actividad de sesión POS usa una definición local) |
 | Accounting | migrado a `entity.query` (el libro mayor usa una definición local) |
-| HR | `features/hr/unifiedSearchDef.ts` |
-| Production | `features/production/unifiedSearchDef.ts` |
+| HR | migrado a `entity.query` |
+| Production | migrado a `entity.query` |
 | POS | migrado a `entity.query` (sesiones y terminales, modo cliente) |
-| Settings | `features/settings/unifiedSearchDef.ts` |
-| Bank Reconciliation | `features/finance/bank-reconciliation/unifiedSearchDef.ts` |
+| Tax | migrado a `entity.query` (cuadre fiscal y declaraciones) |
+| Credits | migrado a `entity.query` |
+| Partners | migrado a `entity.query` (las tablas de la ficha del socio usan `usePartnerTableSearch`) |
+| Finance | el mayor de cuenta, el detalle de cartola y el modal de mapeo usan definiciones locales |
+| Settings | migrado a `entity.query` (incluye tareas y auditoría) |
+| Bank Reconciliation | cartolas migradas a `entity.query`; el panel de conciliación conserva `features/finance/bank-reconciliation/unifiedSearchDef.ts` |
