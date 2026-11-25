@@ -221,7 +221,7 @@ Contrato: [component-entity-view.md](../20-contracts/component-entity-view.md). 
    - Si ningún tipo encaja y lo usa una sola entidad o feature, crea una **extensión** en tu feature (contrato §3: aumentación + registro + constructor) y expórtala por tu barrel.
    - Para un dato visual de dominio dentro de la card, usa `body: { kind: "custom", component }`.
    - **Nunca** JSX inline, casts ni formateo manual: la regla ESLint y el test de contrato lo bloquean.
-3. **Vista** `features/[name]/components/[Name]Collection.tsx`: el hook de la feature (invariante #5) → `useEntityCollection(entity, { rows, isLoading, isRefetching, error, refetch, rowCount })` → `<Collection.Root>` + `<Collection.Toolbar>` (búsqueda y filtros como hijos) + `<Collection.View table card />`. Documentos y movimientos paginan **en servidor** (`pagination: { mode: "server", … }` + `rowCount`).
+3. **Vista** `features/[name]/components/[Name]Collection.tsx`: el hook de la feature (invariante #5) → `useEntityCollection(entity, { rows, isLoading, isRefetching, error, refetch, rowCount })` → `<Collection.Root>` + `<Collection.Toolbar>` (búsqueda y filtros como hijos hasta la etapa 3 de ADR-0158; desde ahí se declaran en `query` de la entidad y la barra se arma sola: [component-collection-toolbar.md](../20-contracts/component-collection-toolbar.md)) + `<Collection.View table card />`. Documentos y movimientos paginan **en servidor** (`pagination: { mode: "server", … }` + `rowCount`).
 4. **Casos especiales**:
    - tabla editable de wizard o modal → `defineEditable` + `EditableCollection`, con `editableSchema` en `schema.ts` (invariante #9);
    - pantalla con modos → `CollectionModes`;

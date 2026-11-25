@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.171](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.170...v0.3.171) (2026-11-25)
+
+
+### ✨ Features
+
+* **search:** etapa 1 de ADR-0158 — fila de filtros aplicados y exportar en menú ([3cc5074](https://github.com/Patricoaa/ERPGrafico/commit/3cc50746033e3e78825ec6bb22fce596827e4414))
+
+### [0.3.170](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.169...v0.3.170) (2026-11-25)
+
+
+### 📚 Documentation
+
+* **adr:** 0158 barra de colección unificada ([d312461](https://github.com/Patricoaa/ERPGrafico/commit/d3124618544c7f7b3660582e8d14474c8a1b8093))
+* **contracts:** etapa 0 de ADR-0158 — contrato de barra de colección ([1d9ffca](https://github.com/Patricoaa/ERPGrafico/commit/1d9ffcae3b89b8dc215286bf50332896568b1682))
+
 ### [0.3.169](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.168...v0.3.169) (2026-11-25)
 
 

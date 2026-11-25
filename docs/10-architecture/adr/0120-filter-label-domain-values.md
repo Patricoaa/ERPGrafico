@@ -24,7 +24,7 @@ Los filtros (`unifiedSearchDef`) y las columnas (`defineEntity`) se declaran por
 
 **Regla G-2 — Valores de dominio:** los `value` de las opciones de un filtro DEBEN ser valores del dominio (enumeraciones del modelo o constantes de la capa de servicio), nunca tokens de la capa de presentación (`neutral`, `success`, `destructive`, `active`, nombres de colores o de estilos).
 
-### Hoja de ruta arquitectónica (propuesta, pendiente de ADR propio)
+### Hoja de ruta arquitectónica (implementada por [ADR-0158](0158-barra-de-coleccion-unificada.md))
 
 La solución estructural es co-locar el filtro dentro del campo de `defineEntity`:
 
