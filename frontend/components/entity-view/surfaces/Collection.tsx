@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
-import { BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, SelectionDock, SelectionRing, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, Download, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
+import { BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
 import { ENTITY_REGISTRY, getEntityIcon, type ViewPolicy } from "@/lib/entity-registry"
@@ -21,6 +22,7 @@ import {
     type Entity,
     type EntityIdentity,
     type EntitySpec,
+    type ExportFormat,
     type FieldDef,
     type FieldMap,
     type TableLayout,
@@ -201,13 +203,18 @@ function Toolbar({ children, action, views, exportFilters = {} }: CollectionTool
     const exportSpec = ctx.collection.entity.export
     // The analytics view is offered only while a `Collection.Analytics` is mounted.
     const modes = ctx.hasAnalytics && !allowed.includes("analytics") ? [...allowed, "analytics" as const] : allowed
+    const resultCount = ctx.collection.status === "loading" ? null : ctx.collection.total
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                {children && <div className="min-w-56 flex-1">{children}</div>}
+                {children && (
+                    <div className="min-w-56 flex-1">
+                        <ResultCountProvider count={resultCount}>{children}</ResultCountProvider>
+                    </div>
+                )}
                 {action}
             </div>
-            {exportSpec && <ExportButtons spec={exportSpec} filters={exportFilters} />}
+            {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters} count={resultCount} />}
             {modes.length > 1 && (
                 <div className="flex items-center gap-1" role="group" aria-label="Vista">
                     {modes.map((mode) => {
@@ -224,17 +231,33 @@ function Toolbar({ children, action, views, exportFilters = {} }: CollectionTool
     )
 }
 
-/** Separate component so the feature export hook is always called unconditionally. */
-function ExportButtons({ spec, filters }: { spec: NonNullable<Entity<unknown, FieldMap<unknown>>["export"]>; filters: Record<string, unknown> }) {
+const EXPORT_LABELS: Record<ExportFormat, string> = { xlsx: "Excel (.xlsx)", csv: "CSV", pdf: "PDF" }
+
+/**
+ * Export as one icon menu (ADR-0158, collection-toolbar §5.6). Separate component so the feature
+ * export hook is always called unconditionally.
+ */
+function ExportMenu({ spec, filters, count }: { spec: NonNullable<Entity<unknown, FieldMap<unknown>>["export"]>; filters: Record<string, unknown>; count: number | null }) {
     const { run, isPending } = spec.useExport()
     return (
-        <div className="flex items-center gap-1" role="group" aria-label="Exportar">
-            {spec.formats.map((format) => (
-                <Button key={format} variant="outline" size="sm" disabled={isPending} onClick={() => run(format, filters)}>
-                    {format.toUpperCase()}
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" aria-label="Exportar" title="Exportar" disabled={isPending}>
+                    <Download className="size-4" aria-hidden />
                 </Button>
-            ))}
-        </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    {count === null ? "Exportar" : `Exportar ${formatResultCount(count)}`}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {spec.formats.map((format) => (
+                    <DropdownMenuItem key={format} onSelect={() => run(format, filters)}>
+                        {EXPORT_LABELS[format]}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }
 

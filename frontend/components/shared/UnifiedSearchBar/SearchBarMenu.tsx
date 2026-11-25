@@ -26,9 +26,7 @@ interface SearchBarMenuProps {
   onApply: (param: string, value: string) => Promise<void>
   onRemove: (param: string) => Promise<void>
   onGroupBySelect: (key: string | null) => Promise<void>
-  viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
   currentView?: string
-  onViewChange?: (view: string) => void
 }
 
 export function SearchBarMenu({
@@ -41,9 +39,7 @@ export function SearchBarMenu({
   onApply,
   onRemove,
   onGroupBySelect,
-  viewOptions,
   currentView,
-  onViewChange,
 }: SearchBarMenuProps) {
   const table = useSegmentationTable()
 
@@ -68,7 +64,7 @@ export function SearchBarMenu({
   const showColumnToggle = (currentView === 'list' || !currentView) && !isAnalyticsView
   const activeSortableColumns = isAnalyticsView ? [] : sortableColumns
 
-  const hasDisplaySection = (viewOptions?.length ?? 0) > 1 || activeSortableColumns.length > 0 || (showColumnToggle && hideableColumns.length > 0)
+  const hasDisplaySection = activeSortableColumns.length > 0 || (showColumnToggle && hideableColumns.length > 0)
   const hasGroupBySection = !isAnalyticsView && hasGroupBy
 
   const hasAnyContent = hasFilters || hasGroupBySection || hasDisplaySection
@@ -113,13 +109,10 @@ export function SearchBarMenu({
         </div>
       )}
 
-      {/* Column 3: Visualización (vista, sort, columnas) */}
+      {/* Column 3: Visualización (orden, columnas). El layout vive en Collection.Toolbar (ADR-0158). */}
       {hasDisplaySection && (
         <div>
           <DisplaySection
-            viewOptions={viewOptions}
-            currentView={currentView}
-            onViewChange={onViewChange}
             sortableColumns={activeSortableColumns}
             hideableColumns={hideableColumns}
             showColumnToggle={showColumnToggle}
