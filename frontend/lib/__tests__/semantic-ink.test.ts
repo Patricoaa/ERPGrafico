@@ -27,14 +27,11 @@ const INK_UTILITY =
 
 /**
  * Layer 1 inks (cyan/magenta/yellow) are reserved for categorical identity.
- * The ledger summary keeps them as a bounded carve-out (ADR-0071, §4.6): ink on
- * border/tint/icon, labels on `text-foreground`.
  */
 const INK_ALLOWLIST = [
     "components/shared/Badge.tsx",
     "components/shared/DataTableCells.tsx",
     "components/shared/TabBar.tsx",
-    "features/accounting/components/LedgerSummaryPanel.tsx",
     "features/pos/components/Cart.tsx",
     "features/pos/components/POSApprovalCard.tsx",
 ] as const
@@ -77,17 +74,13 @@ describe("Layer 1 ink usage (semantic surfaces)", () => {
         }
     })
 
-    it("ledger carve-out keeps ink off label text", () => {
+    it("ledger summary uses no raw ink utilities (migrated to MetricStrip)", () => {
         const src = readFileSync(
             join(FRONTEND_ROOT, "features/accounting/components/LedgerSummaryPanel.tsx"),
             "utf8",
         )
-        const inkTextUses = src.match(/\btext-(?:cyan|magenta|yellow)\b/g) ?? []
-        // One ink-colored icon per inked figure (cyan, magenta, yellow) — never a label.
-        expect(inkTextUses).toHaveLength(3)
-        for (const label of ["Cargos (Debe)", "Abonos (Haber)", "Saldo Final"]) {
-            expect(src).toContain(`text-foreground">${label}</p>`)
-        }
+        const inkUses = src.match(INK_UTILITY) ?? []
+        expect(inkUses).toHaveLength(0)
     })
 
     it("carve-out is documented and gets an ADR", () => {

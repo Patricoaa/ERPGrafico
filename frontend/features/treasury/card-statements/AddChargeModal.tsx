@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { showApiError } from '@/lib/errors'
-import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect } from '@/components/shared'
+import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect, Metric } from '@/components/shared'
 import { toast } from 'sonner'
 import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
@@ -100,12 +100,10 @@ export function AddChargeModal({
             <form id="add-charge-form" onSubmit={form.handleSubmit(handleSubmit)}>
                 <div className="space-y-4">
                     {numericAmount > 0 && (
-                        <div className="rounded-md border bg-muted/20 p-3">
-                            <div className="text-xs text-muted-foreground">Monto</div>
-                            <div className="text-xl font-bold">
-                                <MoneyDisplay amount={numericAmount} currency={currency} />
-                            </div>
-                        </div>
+                        <Metric
+                            label="Monto"
+                            value={<MoneyDisplay amount={numericAmount} currency={currency} />}
+                        />
                     )}
                     <LabeledInput
                         label="Monto"
