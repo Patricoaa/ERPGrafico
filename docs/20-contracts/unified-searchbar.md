@@ -182,7 +182,7 @@ interface UseUnifiedSearchReturn {
 - Usa `nuqs` para sincronizar todos los filtros con query params en la URL.
 - `applyFilter` / `removeFilter` siempre resetean `cursor` (paginación) a `null`.
 - El param `selected` se preserva a través de `clearAll()`.
-- Los chips multi-select muestran "N seleccionados" cuando hay más de un valor.
+- Los chips multi-select muestran las etiquetas con 1 o 2 valores (`Estado: Confirmada, En producción`) y "N seleccionados" con más de 2.
 
 ---
 
@@ -205,9 +205,7 @@ interface UnifiedSearchBarProps {
   placeholder?: string
   className?: string
   prefix?: React.ReactNode
-  viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
   currentView?: string
-  onViewChange?: (view: string) => void
   toolbarActions?: React.ReactNode
 }
 ```
@@ -215,9 +213,13 @@ interface UnifiedSearchBarProps {
 | Prop | Propósito |
 |------|-----------|
 | `filterOptions` | Opciones dinámicas para filtros `multi` resueltas en runtime (las fijas vienen del `config.filters`) |
-| `viewOptions` | Selector de vista (cards/table) renderizado en el menú; array de `{ label, value, icon }` |
-| `currentView` | Vista activa actual (sync con `viewOptions`) |
-| `onViewChange` | Callback al cambiar de vista |
+| `currentView` | Vista activa. Con `analytics` el menú oculta orden y columnas (hasta la etapa 2 de ADR-0158) |
+| `onClearAll` | Lo usa «Limpiar todo» de la fila de filtros aplicados |
+
+> **Etapa 1 de ADR-0158:**
+> - Se retiraron `viewOptions` y `onViewChange`: el layout solo se elige en `Collection.Toolbar` (o en el selector propio de `DataTableToolbar`), y el menú ya no tiene sección «Vista».
+> - Los chips se muestran en la fila **`AppliedFilters`**, bajo el campo y no dentro del input. La fila crece en líneas y termina con «Limpiar todo» y el conteo «N resultados».
+> - El conteo lo entrega `Collection.Toolbar` por contexto (`ResultCountProvider`). Fuera de una `Collection` no aparece.
 | `toolbarActions` | Slot para acciones extra del toolbar (right side del searchbar) |
 
 ### prefix — Controles inline
@@ -256,7 +258,7 @@ El skin del buscador sigue el lenguaje de `entity-view` / `Collection` (ADR-0087
 
 ### Chips (badges de filtro activo)
 
-Los chips del buscador son **badges de filtro**, no el componente `Chip` (que mantiene `rounded-sm` por `component-chip.md`). Forma pill:
+Se renderizan en `AppliedFilters` (`<ul aria-label="Filtros aplicados">`, un `<li>` por chip, con `flex-wrap`), no dentro del input. Los chips del buscador son **badges de filtro**, no el componente `Chip` (que mantiene `rounded-sm` por `component-chip.md`). Forma pill:
 
 | Variante | Token |
 |----------|-------|

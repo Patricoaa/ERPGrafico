@@ -169,12 +169,14 @@ export function useUnifiedSearch(
           const opt = opts.find(o => o.value === value)
           valueLabel = opt?.label ?? value
         } else if (paramDef.source === 'multi') {
+          // Up to two values read in full; more collapse to a count (collection-toolbar §5.2).
           const parts = value.split(',').filter(Boolean)
-          if (parts.length === 1) {
+          if (parts.length <= 2) {
             const filterDef = config.filters?.find(f => f.type === 'multi' && f.serverParam === param) as MultiSelectFilterDef | undefined
-            const opt = filterDef?.options.find(o => o.value === parts[0])
-            valueLabel = opt?.label ?? parts[0]
-          } else if (parts.length > 1) {
+            const dynamicOpts = filterDef?.dynamic && filterOptions ? filterOptions[filterDef.key] : undefined
+            const opts = dynamicOpts ?? (filterDef?.options ?? [])
+            valueLabel = parts.map(part => opts.find(o => o.value === part)?.label ?? part).join(', ')
+          } else {
             valueLabel = `${parts.length} seleccionados`
           }
         }

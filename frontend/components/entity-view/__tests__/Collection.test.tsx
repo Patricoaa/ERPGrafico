@@ -8,7 +8,7 @@ import {
     useEntityCollection,
     type CollectionSource,
 } from "@/components/entity-view"
-import { EmbeddedSurfaceProvider, Section } from "@/components/shared"
+import { EmbeddedSurfaceProvider, Section, useResultCount } from "@/components/shared"
 import type { CollectionOptions, CollectionSurfaceOptions } from "@/components/entity-view"
 
 interface Uom {
@@ -283,5 +283,50 @@ describe("Embedded header and record count", () => {
         render(<Scoped data={rows} count="manual" />)
         expect(screen.getByText("manual")).toBeInTheDocument()
         expect(screen.queryByText("2 registros")).not.toBeInTheDocument()
+    })
+})
+
+// ADR-0158 stage 1: export as one icon menu and the result count for the search bar.
+describe("Collection.Toolbar export menu and result count", () => {
+    const run = vi.fn()
+    const exportable = defineEntity<Uom>()((f) => ({
+        label: "inventory.uom",
+        fields: { name: f.text("name", { label: "Nombre" }) },
+        export: { formats: ["xlsx", "csv"], useExport: () => ({ run, isPending: false }) },
+    }))
+    const exportViews = exportable.views({ table: { columns: ["name"] } })
+
+    function CountProbe() {
+        const count = useResultCount()
+        return <output>{count === null ? "sin total" : `total ${count}`}</output>
+    }
+
+    function ExportHarness({ source }: { source: CollectionSource<Uom> }) {
+        const collection = useEntityCollection(exportable, source)
+        return (
+            <Collection.Root collection={collection} label="Unidades de medida">
+                <Collection.Toolbar exportFilters={{ search: "kilo" }}>
+                    <CountProbe />
+                </Collection.Toolbar>
+                <Collection.View table={exportViews.table} />
+            </Collection.Root>
+        )
+    }
+
+    it("exports the current filters from a single icon menu", async () => {
+        const user = userEvent.setup()
+        render(<ExportHarness source={{ rows }} />)
+        expect(screen.queryByRole("button", { name: "XLSX" })).toBeNull()
+        await user.click(screen.getByRole("button", { name: "Exportar" }))
+        expect(screen.getByText("Exportar 2 resultados")).toBeInTheDocument()
+        await user.click(screen.getByRole("menuitem", { name: "CSV" }))
+        expect(run).toHaveBeenCalledWith("csv", { search: "kilo" })
+    })
+
+    it("publishes the collection total to the search slot, null while loading", () => {
+        const { rerender } = render(<ExportHarness source={{ rows: undefined, isLoading: true }} />)
+        expect(screen.getByText("sin total")).toBeInTheDocument()
+        rerender(<ExportHarness source={{ rows }} />)
+        expect(screen.getByText("total 2")).toBeInTheDocument()
     })
 })

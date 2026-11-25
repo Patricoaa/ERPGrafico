@@ -1,71 +1,18 @@
 'use client'
 
-import { ArrowUp, ArrowDown, ArrowUpDown, List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, Columns3 } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowUpDown, Columns3 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { translateColumnId } from '../DataTableColumnToggle'
 import type { Column } from '@tanstack/react-table'
-import type { LucideIcon } from 'lucide-react'
 import { SectionHeader } from './SectionHeader'
 
-const VIEW_ICON_MAP: Record<string, LucideIcon> = {
-  list: List,
-  card: LayoutDashboard,
-  grid: LayoutGrid,
-  kanban: Kanban,
-  timeline: CalendarDays,
-}
-
 interface DisplaySectionProps {
-  viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
-  currentView?: string
-  onViewChange?: (view: string) => void
   sortableColumns: Column<unknown>[]
   hideableColumns: Column<unknown>[]
   showColumnToggle?: boolean
-}
-
-function ViewModeSection({
-  viewOptions,
-  currentView,
-  onViewChange,
-}: {
-  viewOptions: NonNullable<DisplaySectionProps['viewOptions']>
-  currentView?: string
-  onViewChange?: (view: string) => void
-}) {
-  return (
-    <div>
-      <SectionHeader icon={LayoutDashboard} label="Vista" />
-      <ScrollArea className="max-h-[80vh]">
-        <div className="grid grid-cols-3 gap-1 p-1.5">
-          {viewOptions.map((option) => {
-            const Icon = VIEW_ICON_MAP[option.value] ?? option.icon
-            const isActive = currentView === option.value
-            return (
-              <Button
-                key={option.value}
-                variant="ghost"
-                size="sm"
-                onClick={() => onViewChange?.(option.value)}
-                className={cn(
-                  "w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm min-w-0 transition-colors",
-                  isActive
-                    ? "bg-primary/5 text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Icon className="size-3.5 shrink-0" />
-                <span className="truncate">{option.label}</span>
-              </Button>
-            )
-          })}
-        </div>
-      </ScrollArea>
-    </div>
-  )
 }
 
 function SortSection({ columns }: { columns: Column<unknown>[] }) {
@@ -149,35 +96,17 @@ const COLUMN_BLOCKLIST = new Set([
 ])
 
 export function DisplaySection({
-  viewOptions,
-  currentView,
-  onViewChange,
   sortableColumns,
   hideableColumns,
   showColumnToggle = true,
 }: DisplaySectionProps) {
-  const hasViewOptions = (viewOptions?.length ?? 0) > 1
   const hasSortOptions = sortableColumns.length > 0
   const hasColumnToggle = showColumnToggle && hideableColumns.length > 0
 
-  if (!hasViewOptions && !hasSortOptions && !hasColumnToggle) return null
+  if (!hasSortOptions && !hasColumnToggle) return null
 
   return (
     <div>
-      {hasViewOptions && viewOptions && (
-        <div>
-          <ViewModeSection
-            viewOptions={viewOptions}
-            currentView={currentView}
-            onViewChange={onViewChange}
-          />
-        </div>
-      )}
-
-      {hasViewOptions && (hasSortOptions || hasColumnToggle) && (
-        <div className="border-t border-border/50" />
-      )}
-
       {hasSortOptions && (
         <div>
           <SortSection columns={sortableColumns} />
