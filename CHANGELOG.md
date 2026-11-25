@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.158](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.157...v0.3.158) (2026-11-25)
+
+
+### 📚 Documentation
+
+* **dev-server:** CPU sin SSE4.2/AVX obliga a Next 16.1.1 en el contenedor; ignora frontend/AGENTS.md ([9b5c722](https://github.com/Patricoaa/ERPGrafico/commit/9b5c722dcf19e628c8cd6d751a1f34247165b6de))
+
 ### [0.3.157](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.156...v0.3.157) (2026-11-25)
 
 
