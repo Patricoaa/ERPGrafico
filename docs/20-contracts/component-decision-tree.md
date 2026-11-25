@@ -89,6 +89,12 @@ pantallas aún no migradas, sin props ni consumidores nuevos ([component-datatab
 [component-fields.md](./component-fields.md)). Las tablas `<table>` hechas a mano en features están prohibidas
 (ratchet en `lib/__tests__/entity-view.contract.test.ts`).
 
+**Buscar, filtrar, ordenar, agrupar, vista, exportar o analítica de una colección (ADR-0158).** No se arma
+una barra a mano. Se declara `query` en la entidad y `Collection.Toolbar` compone la barra de comandos (ícono + valor).
+La analítica va en `Collection.Analytics`, que se abre en un modal. Contrato:
+**[component-collection-toolbar.md](./component-collection-toolbar.md)**. No se usan `FacetedFilter`,
+`DataTableToolbar`, `DataTableColumnToggle` ni `AnalyticsPanel` (Drawer) en código nuevo.
+
 **¿Cómo renderizo un campo de una entidad (texto, código, fecha, dinero, flujo, referencia…)?** →
 Elegir el **tipo de valor** (`f.text`, `f.code`, `f.date`, `f.money`, `f.flow`, `f.quantity`,
 `f.status`, `f.hubStatus`, `f.contact`, `f.tags`, `f.progress`…) en la definición de entidad. Una

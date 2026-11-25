@@ -140,6 +140,8 @@ All recorded in `component-entity-view.md`; each approved at its Gate D (`docs/5
 
 ## Consequences
 
+> **Enmienda (2026-11-25, [ADR-0158](0158-barra-de-coleccion-unificada.md)):** `Collection.Analytics` deja de ser un modo de vista (`analytics` sale de `CollectionViewMode` y `viewPolicy`) y se abre en un modal. `defineEntity` gana la sección `query`, y `Collection.Toolbar` arma la barra de colección desde ella.
+
 ### Positive
 - The common case needs no custom code: about 29 pass-through `renderCard` and 43 placement overrides disappear.
 - Specific needs live in the owning feature, with full typing.

@@ -18,6 +18,7 @@ depends_on:
   - document-relations.md
   - export-formats.md
   - pagination-contract.md
+  - component-collection-toolbar.md
 ---
 
 # Contrato: entity-view — presentación de colecciones de una entidad
@@ -139,11 +140,11 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 | Componente | Props |
 |---|---|
 | `Collection.Root` | `collection`, `children`, `actions?: (row, surface: "table" \| "card") => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?`, `view?` + `onViewChange?` (vista controlada), `label?` |
-| `Collection.Toolbar` | `children?` (búsqueda `UnifiedSearchBar`), `action?` (acción primaria, p. ej. crear; en pantallas angostas baja bajo la búsqueda en vez de taparla — lote 2c), `views?`, `exportFilters?` |
+| `Collection.Toolbar` | Arma la barra de colección ([component-collection-toolbar.md](./component-collection-toolbar.md), ADR-0158) desde `entity.query`. Hasta la etapa 3: `children?` (búsqueda `UnifiedSearchBar`). Siempre: `action?` (acción primaria, p. ej. crear; en pantallas angostas baja bajo la búsqueda en vez de taparla — lote 2c), `views?`, `exportFilters?` |
 | `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`, `emptyAction?` (p. ej. crear), `onResetFilters?` ("Limpiar filtros" en el vacío filtrado), más `variant?`, `frame?`, `empty?`, `pager?`, `maxHeight?` (§6.1a): elige la superficie activa |
 | `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista. Con `groupBy` pintan un `<tbody>` por grupo con su cabecera `th scope="rowgroup"` (tabla) o una sección con encabezado (cards) |
 | `Collection.BulkBar` | `actions: BulkAction<T>[]`: el mismo tipo y la misma barra (`SelectionDock`) que el sistema antiguo; aparece con la selección (`selection="bulk"`) |
-| `Collection.Analytics` | `children`: añade la vista "Analítica" al selector de la barra (modo `analytics`, `?view=analytics`). Mientras está activa, su contenido reemplaza la tabla o las cards. El contenido es de la feature (p. ej. `AnalyticsPanelContent`) |
+| `Collection.Analytics` | `children`: el contenido de la feature (p. ej. `AnalyticsPanelContent`). Hasta la etapa 2 de ADR-0158 es el modo `analytics` (`?view=analytics`), que reemplaza la tabla. Desde la etapa 2 se monta en `AnalyticsModal`, que se abre con el botón de la barra (`?analytics=<pestaña>`), hereda el alcance filtrado y acepta drill-down ([component-collection-toolbar.md §5.7](./component-collection-toolbar.md#57-analítica-en-modal-e2)) |
 
 #### 6.1a Variante embebida (ADR-0137)
 
@@ -335,10 +336,10 @@ Reglas de la pantalla:
 
 - **Selección:** la columna `select` a mano, `renderCard` y `AutoEntityCard` desaparecen; las da `selection`.
 - **Error con filtro en cliente:** si la vista filtra las filas antes de pasarlas (`filterFn`, filtros locales), pasa `error: isError && datos.length === 0` con los datos **sin filtrar**: con datos en caché, un refresco fallido más un filtro sin coincidencias debe leerse "sin resultados", no "error".
-- **Agrupación:** un mapa a nivel de módulo `const X_GROUPS: Record<string, FieldId<typeof xEntity.fields>>` traduce la clave de la búsqueda al campo.
+- **Agrupación:** hasta la etapa 3 de ADR-0158, un mapa a nivel de módulo `const X_GROUPS: Record<string, FieldId<typeof xEntity.fields>>` traduce la clave de la búsqueda al campo. Desde la etapa 4, las colecciones con servidor agrupan con `groups/` y se retira `GROUP_ROW_LIMIT` ([component-collection-toolbar.md §7.1](./component-collection-toolbar.md#71-get-listagroupsgroup_bycampofiltrosordering)).
 - **Analítica:**
   - el armado vive en `components/<entidad>AnalyticsScreen.ts`, sin JSX: `buildXAnalyticsScreen(data, ui): AnalyticsPanelContentProps`;
-  - las consultas se piden solo con la vista abierta (`enabled: view === "analytics"`);
+  - las consultas se piden solo con la analítica abierta (`enabled: view === "analytics"`; desde la etapa 2 de ADR-0158, `enabled: analyticsOpen`);
   - se monta en `Collection.Analytics`.
 - **Extensiones:** un kind usado por una sola entidad vive en su `.entity.tsx` (p. ej. `productPrice`). Uno usado desde otras features exporta un builder sin imports en tiempo de ejecución como primera exportación del barrel de la feature (p. ej. `docRef`).
 - **Un archivo no puede mezclar ambos sistemas.** El eslint `entity-view/no-legacy-presentation` (`eslint-rules/entity-view-guards.mjs`) prohíbe que un archivo importe `@/components/entity-view` y a la vez `DataTableView`/`AutoEntityCard`/`<DataTable>`/`createEntityFields`/`toColumns()` — aunque la parte legacy esté deliberadamente diferida a otra oleada (p. ej. una celda editable que espera a la oleada E). Si la pantalla mezcla una lista ya migrable con una pieza que no, se separa en dos archivos: el padre (entity-view) y un componente propio para la pieza legacy (que entra a `LEGACY_CONSUMERS`), comunicados por props simples (id/open/onOpenChange), nunca por estado compartido a través de un contexto o barrel que obligue a importar ambos sistemas en el mismo archivo.

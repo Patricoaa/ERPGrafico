@@ -138,6 +138,10 @@ def test_create_foo_validation(client, user):
 
 Minimum: 1 happy path, 1 auth-missing, 1 validation-fail, 1 permission-denied.
 
+### 9b. Lista agrupable o con conteos (barra de colección)
+
+Si la entidad del frontend declara `query.groupBy` o `counts: true` (ADR-0158), agrega al ViewSet de la lista el mixin de `core` (`GroupedListMixin` / `FacetedListMixin`) en lugar de escribir las acciones a mano. Los agregados van en el selector y el test de conteo de consultas es obligatorio ([zero-n-plus-one-policy.md](../90-governance/zero-n-plus-one-policy.md), Regla 8). Las formas de respuesta están en [component-collection-toolbar.md §7](../20-contracts/component-collection-toolbar.md#7-backend-e4).
+
 ### 10. Update contract doc
 
 Edit `20-contracts/api-contracts.md` — add resource under its app section with request/response shapes.

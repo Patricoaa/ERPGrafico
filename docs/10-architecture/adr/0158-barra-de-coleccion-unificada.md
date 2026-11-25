@@ -1,7 +1,7 @@
 ---
 id: 0158
 title: Barra de colección unificada — consulta declarada en `defineEntity`, una barra de comandos para todas las entidades, agrupación en servidor y analítica en modal
-status: Proposed
+status: Accepted
 date: 2026-11-25
 author: frontend-team
 ---
@@ -183,7 +183,7 @@ Es un botón de ícono con los formatos de `entity.export`. Exporta la consulta 
 
 | Etapa | Contenido | Toca páginas |
 |---|---|---|
-| 0 | Este ADR + contrato nuevo `component-collection-toolbar.md` | no |
+| 0 | Este ADR + contrato nuevo [`component-collection-toolbar.md`](../../20-contracts/component-collection-toolbar.md) | no |
 | 1 | `AppliedFilters` con «Limpiar todo» y conteo dentro de `UnifiedSearchBar` (sin chips en el input), vista fuera de `SearchBarMenu`, `ExportMenu` | no (~78 pantallas lo reciben solas) |
 | 2 | `AnalyticsModal` dentro de `Collection.Analytics`; retiro del modo `analytics` y compatibilidad de `?view=analytics` | 9 vistas + `entity-registry` (`viewPolicy`) |
 | 3 | `entity.query` + `useCollectionQuery` + adaptador `fromUnifiedSearchDef(def)`, para que una vista migre sin reescribir su definición. Barra de comandos (`FilterMenu`, `SortMenu`, `GroupMenu`, `DisplayMenu`, `ViewTabs`) | por oleadas, por app |

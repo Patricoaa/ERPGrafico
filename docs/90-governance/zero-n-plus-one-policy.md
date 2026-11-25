@@ -191,6 +191,21 @@ def get_lines(self, obj):
 
 ---
 
+## Regla 8 — Grupos y facetas de una lista: una consulta por dimensión (MUST)
+
+Los endpoints `<lista>/groups/` y `<lista>/facets/` de la barra de colección (ADR-0158, [component-collection-toolbar.md §7](../20-contracts/component-collection-toolbar.md#7-backend-e4)) usan el **mismo `FilterSet` y el mismo queryset** que el listado y agregan en la base de datos:
+
+```python
+# selectors.py
+def status_groups(qs):
+    return qs.values("status").annotate(count=Count("pk"), total=Sum("total")).order_by("status")
+```
+
+- `groups/` hace **una** consulta. `facets/` hace una por campo o vista pedidos. Ninguno itera filas en Python.
+- Ambos llevan un test `ci_gate` (Regla 5) que compara el conteo de consultas con 1 y con N filas.
+
+---
+
 ## Antipatrones conocidos y su corrección
 
 | Antipatrón | Dónde aparece hoy | Corrección |
