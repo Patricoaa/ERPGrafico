@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.175](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.174...v0.3.175) (2026-11-25)
+
+
+### ✨ Features
+
+* **sales:** etapa 3c de ADR-0158 — piloto en órdenes de venta y analítica con alcance ([d14e87a](https://github.com/Patricoaa/ERPGrafico/commit/d14e87a7c6db97e15e0449b8efc818b61cfa80ab))
+
 ### [0.3.174](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.173...v0.3.174) (2026-11-25)
 
 
