@@ -141,7 +141,7 @@ describe("SalesImpactBlock", () => {
         expect(granularity()).toBe("month")
         rerender(<SalesImpactBlock productId={7} period="all" />)
         expect(granularity()).toBe("year")
-        expect(screen.queryByRole("group", { name: "Por" })).not.toBeInTheDocument()
+        expect(screen.queryByRole("radiogroup", { name: "Por" })).not.toBeInTheDocument()
     })
 
     it("delivers the metric and grouping controls to the rail view zone", () => {
@@ -152,8 +152,8 @@ describe("SalesImpactBlock", () => {
             </RailControlsProvider>,
         )
         const slot = within(screen.getByRole("group", { name: "Controles de vista" }))
-        expect(slot.getByRole("group", { name: "Métrica" })).toBeInTheDocument()
-        expect(slot.getByRole("group", { name: "Agrupar por" })).toBeInTheDocument()
-        expect(within(screen.getByTestId("block")).queryByRole("group", { name: "Métrica" })).not.toBeInTheDocument()
+        expect(slot.getByRole("radiogroup", { name: "Métrica" })).toBeInTheDocument()
+        expect(slot.getByRole("radiogroup", { name: "Agrupar por" })).toBeInTheDocument()
+        expect(within(screen.getByTestId("block")).queryByRole("radiogroup", { name: "Métrica" })).not.toBeInTheDocument()
     })
 })
