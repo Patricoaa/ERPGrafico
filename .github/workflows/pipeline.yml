@@ -41,6 +41,8 @@ jobs:
         run: npm run type-check
 
       - name: Install Chromium for Storybook tests
+        # Sin tope, un cuelgue de la descarga deja el job 6 h hasta el límite de GitHub.
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
 
       - name: Test
