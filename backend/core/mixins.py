@@ -139,3 +139,29 @@ class TotalsCalculationMixin:
             raise NotImplementedError(f"{self.__class__.__name__} debe definir 'totals_strategy'.")
 
         return self.totals_strategy().compute(self, commit=commit)
+
+
+class GroupedListMixin:
+    """
+    `GET <list>/groups/?group_by=<name>&<list filters>` (ADR-0158 §7): the groups of the filtered list,
+    each with its count, sums and the params that list its rows. Declare `group_fields`
+    (`{name: GroupField}`) and, optionally, `group_aggregates` (`{name: orm_path}`, summed).
+
+    It reuses the list's `filter_queryset(get_queryset())`, so the groups always match the rows.
+    """
+
+    group_fields: dict = {}
+    group_aggregates: dict = {}
+
+    @action(detail=False, methods=["get"], url_path="groups")
+    def groups(self, request, *args, **kwargs):
+        from core.services.grouping import list_groups
+
+        queryset = self.filter_queryset(self.get_queryset())
+        return Response(list_groups(
+            queryset,
+            request.query_params.get("group_by"),
+            self.group_fields,
+            self.group_aggregates,
+            request.query_params.get("ordering"),
+        ))

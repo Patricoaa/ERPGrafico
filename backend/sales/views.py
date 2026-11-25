@@ -9,7 +9,8 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.cache import load_singleton
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.services.grouping import GroupField
 
 from .filters import SaleDeliveryFilter, SaleReturnFilter
 from .models import SaleOrder, SaleReturn, SalesSettings
@@ -73,6 +74,11 @@ class SaleOrderFilterSet(django_filters.FilterSet):
     payment_status = django_filters.CharFilter(method="filter_payment_status")
     production_status = django_filters.CharFilter(method="filter_production_status")
     pos_session = django_filters.NumberFilter(field_name="pos_session_id")
+    # Rows of one group (ADR-0158 §7, `groups/` returns these params).
+    date = django_filters.DateFilter(field_name="date")
+    customer = django_filters.NumberFilter(field_name="customer_id")
+    status = django_filters.CharFilter(field_name="status")
+    channel = django_filters.CharFilter(field_name="channel")
 
     class Meta:
         model = SaleOrder
@@ -90,6 +96,10 @@ class SaleOrderFilterSet(django_filters.FilterSet):
             "payment_status",
             "production_status",
             "pos_session",
+            "date",
+            "customer",
+            "status",
+            "channel",
         ]
 
     def filter_product_name(self, queryset, name, value):
@@ -157,7 +167,7 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         return result.distinct()
 
 
-class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -196,6 +206,14 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewS
     # Server ordering of the list (ADR-0087 lote 2b): `?ordering=<key>,id`. Without it, the
     # selector's "-date,-id" order is kept.
     ordering_fields = ["id", "number", "date", "customer__name", "total"]
+    # Server grouping (ADR-0158 §7): `groups/?group_by=<name>`.
+    group_fields = {
+        "date": GroupField("date"),
+        "customer": GroupField("customer", label="customer__name"),
+        "status": GroupField("status"),
+        "channel": GroupField("channel"),
+    }
+    group_aggregates = {"total": "total"}
 
     @action(detail=False, methods=["get"], url_path="analytics")
     def analytics(self, request):
