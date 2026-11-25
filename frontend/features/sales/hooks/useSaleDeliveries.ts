@@ -6,13 +6,14 @@ import type { SaleFulfillment } from '../entity-view/saleFulfillment.entity'
 import { SALES_KEYS } from './queryKeys'
 import { staleTime } from '@/lib/query-config'
 
-export function useSaleDeliveries(filters?: Record<string, unknown>) {
+export function useSaleDeliveries(filters?: Record<string, unknown>, enabled = true) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
     const query = useQuery({
         queryKey: SALES_KEYS.deliveries({ page, page_size: pageSize, ...filters }),
         queryFn: () => salesApi.getDeliveriesPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
+        enabled,
     })
 
     return {
@@ -46,13 +47,14 @@ export function useSaleReturn(id: number | null, enabled = true) {
 }
 
 /** Paginated list of sale returns (ADR-0090: "Devoluciones" is its own document list). */
-export function useSaleReturns(filters?: Record<string, unknown>) {
+export function useSaleReturns(filters?: Record<string, unknown>, enabled = true) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
     const query = useQuery({
         queryKey: SALES_KEYS.returns({ page, page_size: pageSize, ...filters }),
         queryFn: () => salesApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
+        enabled,
     })
 
     return {

@@ -1,3 +1,4 @@
+import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import api from '@/lib/api'
 import type {
     PurchaseOrderAPI,
@@ -100,6 +101,22 @@ interface PartialReceivePayload {
         quantity: number
         unit_cost: number
     }>
+}
+
+/** List filters forwarded by `getReceiptsPaginated` and its groups (customer / supplier id: server grouping). */
+const RECEIPT_FILTERS = ['status', 'date_after', 'date_before', 'supplier_name', 'supplier_id', 'purchase_order_number', 'warehouse_id', 'search', 'note_type', 'ordering'] as const
+
+/** List filters forwarded by `getReturnsPaginated` and its groups (customer / supplier id: server grouping). */
+const RETURN_FILTERS = ['status', 'date_after', 'date_before', 'supplier_name', 'supplier_id', 'purchase_order_number', 'warehouse_id', 'search', 'ordering'] as const
+
+/** Appends the truthy `keys` of `filters` (plus page / page_size) as list params. */
+function listParams(filters: Record<string, unknown> | undefined, keys: readonly string[]): URLSearchParams {
+    const params = new URLSearchParams()
+    for (const key of ['page', 'page_size', ...keys]) {
+        const value = filters?.[key]
+        if (value) params.append(key, String(value))
+    }
+    return params
 }
 
 export const purchasingApi = {
@@ -226,21 +243,18 @@ export const purchasingApi = {
         return res.data.results
     },
 
+    /** Receipts grouped on the server (ADR-0158 §7): every group of the filtered list. */
+    getReceiptGroups: async (filters: Record<string, unknown>, groupBy: string): Promise<ServerGroup[]> => {
+        const params = listParams(filters, RECEIPT_FILTERS)
+        params.append('group_by', groupBy)
+        const res = await api.get<unknown>('/purchasing/receipts/groups/', { params })
+        return toServerGroups(res.data)
+    },
+
     getReceiptsPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {
-        const params = new URLSearchParams()
+        const params = listParams(filters, RECEIPT_FILTERS)
         const page = Number(filters?.page ?? 1)
         const page_size = Number(filters?.page_size ?? 50)
-        if (filters?.page) params.append('page', String(filters.page))
-        if (filters?.page_size) params.append('page_size', String(filters.page_size))
-        if (filters?.status) params.append('status', String(filters.status))
-        if (filters?.date_after) params.append('date_after', String(filters.date_after))
-        if (filters?.date_before) params.append('date_before', String(filters.date_before))
-        if (filters?.supplier_name) params.append('supplier_name', String(filters.supplier_name))
-        if (filters?.purchase_order_number) params.append('purchase_order_number', String(filters.purchase_order_number))
-        if (filters?.warehouse_id) params.append('warehouse_id', String(filters.warehouse_id))
-        if (filters?.search) params.append('search', String(filters.search))
-        if (filters?.note_type) params.append('note_type', String(filters.note_type))
-        if (filters?.ordering) params.append('ordering', String(filters.ordering))
         const res = await api.get('/purchasing/receipts/', { params })
         return toPage<Record<string, unknown>>(res.data, page, page_size)
     },
@@ -267,20 +281,18 @@ export const purchasingApi = {
      * Fetch purchase returns (paginated, standalone list) — ADR-0090.
      * `filters` match `PurchaseReturnFilter` (status, date_after/before, supplier_name, purchase_order_number, warehouse_id).
      */
+    /** Purchase returns grouped on the server (ADR-0158 §7): every group of the filtered list. */
+    getReturnGroups: async (filters: Record<string, unknown>, groupBy: string): Promise<ServerGroup[]> => {
+        const params = listParams(filters, RETURN_FILTERS)
+        params.append('group_by', groupBy)
+        const res = await api.get<unknown>('/purchasing/returns/groups/', { params })
+        return toServerGroups(res.data)
+    },
+
     getReturnsPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {
-        const params = new URLSearchParams()
+        const params = listParams(filters, RETURN_FILTERS)
         const page = Number(filters?.page ?? 1)
         const page_size = Number(filters?.page_size ?? 50)
-        if (filters?.page) params.append('page', String(filters.page))
-        if (filters?.page_size) params.append('page_size', String(filters.page_size))
-        if (filters?.status) params.append('status', String(filters.status))
-        if (filters?.date_after) params.append('date_after', String(filters.date_after))
-        if (filters?.date_before) params.append('date_before', String(filters.date_before))
-        if (filters?.supplier_name) params.append('supplier_name', String(filters.supplier_name))
-        if (filters?.purchase_order_number) params.append('purchase_order_number', String(filters.purchase_order_number))
-        if (filters?.warehouse_id) params.append('warehouse_id', String(filters.warehouse_id))
-        if (filters?.search) params.append('search', String(filters.search))
-        if (filters?.ordering) params.append('ordering', String(filters.ordering))
         const res = await api.get('/purchasing/returns/', { params })
         return toPage<Record<string, unknown>>(res.data, page, page_size)
     },

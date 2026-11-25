@@ -28,15 +28,15 @@ export const purchaseReturnEntity = defineEntity<PurchaseReturn>()((f) => ({
     label: "purchasing.purchasereturn",
     fields: {
         folio: f.code((r) => r.display_id ?? r.number, { label: "Folio", orderBy: "number" }),
-        supplier: f.contact((r) => (r.supplier_name ? { id: r.supplier_id ?? 0, name: r.supplier_name } : null), { label: "Proveedor", orderBy: "purchase_order__supplier__name" }),
+        supplier: f.contact((r) => (r.supplier_name ? { id: r.supplier_id ?? 0, name: r.supplier_name } : null), { label: "Proveedor", orderBy: "purchase_order__supplier__name", groupKey: "supplier" }),
         order: docRef(f, (r) => r.purchase_order_document ? { label: r.purchase_order_document.label, id: r.purchase_order_document.id, display: r.purchase_order_document.display_id, url: r.purchase_order_document.url } : null, { label: "Orden de Compra", sortable: false }),
-        date: f.date("date", { label: "Fecha", orderBy: "date" }),
+        date: f.date("date", { label: "Fecha", orderBy: "date", groupKey: "date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
         status: f.status((r) => ({
             status: r.status,
             label: r.status_display,
             intent: r.status === "CONFIRMED" ? "destructive" : r.status === "CANCELLED" ? "destructive" : "info",
-        }), { label: "Estado" }),
+        }), { label: "Estado", groupKey: "status" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
     // ADR-0158 §3. Params match the backend FilterSet.
@@ -53,7 +53,7 @@ export const purchaseReturnEntity = defineEntity<PurchaseReturn>()((f) => ({
             status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
         },
         sort: { fields: ["folio", "supplier", "date", "cost"], default: "-date" },
-        groupBy: { fields: ["date", "supplier", "status"] },
+        groupBy: { fields: ["date", "supplier", "status"], aggregate: { cost: "sum" } },
         views: [
             { id: "all", label: "Todas" },
             { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },

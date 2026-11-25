@@ -430,7 +430,7 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, v
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     serializer_class = SaleDeliverySerializer
     # ADR-0090: la lista de entregas es una vista documental propia (orden por columna).
@@ -449,6 +449,13 @@ class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelVi
         "sale_order__customer__name",
     ]
     ordering = ["-delivery_date", "-id"]
+    # ADR-0158 §7: groups/ for the server grouping (each group lists its rows with existing filters).
+    group_fields = {
+        "date": GroupField("delivery_date", param=("date_after", "date_before")),
+        "customer": GroupField("sale_order__customer", label="sale_order__customer__name", param="customer_id"),
+        "status": GroupField("status"),
+    }
+    group_aggregates = {"cost": "total_cost"}
     action_permissions = {
         "annul": "sales.annul_saledelivery",
     }
@@ -469,7 +476,7 @@ class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelVi
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = (
         SaleReturn.objects.select_related("sale_order__customer", "warehouse")
@@ -483,6 +490,13 @@ class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelView
     search_fields = ["number", "sale_order__customer__name", "sale_order__number"]
     ordering_fields = ["number", "date", "total_cost", "status", "sale_order__customer__name"]
     ordering = ["-date", "-id"]
+    # ADR-0158 §7: groups/ for the server grouping (each group lists its rows with existing filters).
+    group_fields = {
+        "date": GroupField("date", param=("date_after", "date_before")),
+        "customer": GroupField("sale_order__customer", label="sale_order__customer__name", param="customer_id"),
+        "status": GroupField("status"),
+    }
+    group_aggregates = {"cost": "total_cost"}
     action_permissions = {
         "annul": "sales.annul_salereturn",
     }

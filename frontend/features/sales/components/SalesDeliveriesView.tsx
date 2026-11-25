@@ -4,6 +4,7 @@ import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode,
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { saleDeliveryEntity, saleDeliveryViews } from "../entity-view/saleDelivery.entity"
 import { useSaleDeliveries } from "../hooks/useSaleDeliveries"
+import { useSaleDeliveryGroups } from "../hooks/useSaleLogisticsGroups"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
@@ -14,23 +15,28 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 export function SalesDeliveriesView() {
     const sheet = useDocumentSheetRoute("sales.saledelivery")
     const query = useCollectionQuery(saleDeliveryEntity)
-    const { groupBy, params } = query
+    const { groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("sales.saledelivery")
 
-    const { page, deliveries, isLoading, isFetching, isError, refetch } = useSaleDeliveries({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useSaleDeliveryGroups({ groupKey, params })
+    const list = useSaleDeliveries({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    })
+    }, groupKey === null)
+    const { page, deliveries } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : { ...list, isRefetching: list.isFetching }
 
     const collection = useEntityCollection(
         saleDeliveryEntity,
-        { rows: deliveries, rowCount: page?.count, isLoading, isRefetching: isFetching, error: isError, refetch, isFiltered: query.search.isFiltered },
+        { rows: deliveries, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: query.search.isFiltered },
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             sorting: query.sorting,
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 
