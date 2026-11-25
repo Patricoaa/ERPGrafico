@@ -54,6 +54,10 @@ export const taxPeriodEntity = defineEntity<TaxPeriod>()((f) => ({
             return null
         }, { label: "Estado Pago" }),
     },
+    // ADR-0158 §3: la lista carga todos los períodos y filtra en el navegador (mes o año).
+    query: {
+        search: { placeholder: "Buscar período…", scopes: [{ field: "period", param: "month_display", clientKey: ["month_display", "year"] }] },
+    },
 }))
 
 export const taxPeriodViews = taxPeriodEntity.views({

@@ -31,14 +31,12 @@ vi.mock("@/components/entity-view", () => ({
     }),
     useCollectionViewMode: () => ({ view: "card", onViewChange: vi.fn() }),
     useEntityCollection: () => ({}),
+    useCollectionQuery: () => ({ search: { filterFn: (x: unknown[]) => x, isFiltered: false, clearAll: vi.fn() } }),
 }))
 vi.mock("@/components/shared", () => ({
     Metric: ({ label }: { label: string }) => <div>{label}</div>,
     MetricStrip: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     SkeletonShell: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    UnifiedSearchBar: () => null,
-    bindUnifiedSearch: () => ({}),
-    useUnifiedSearch: () => ({ filterFn: (x: unknown[]) => x, isFiltered: false, clearAll: vi.fn() }),
     createEntityActions: () => ({ forCollection: () => ({}) }),
 }))
 vi.mock("../../entity-view/taxPeriod.entity", () => ({ taxPeriodEntity: {}, taxPeriodViews: {} }))

@@ -2,6 +2,7 @@ import { defineEntity, formatMoneyValue } from "@/components/entity-view"
 import { fiscalMatchStatusValue } from "@/lib/fiscal-match"
 import type { FiscalMatchListItem } from "../types/fiscalMatch"
 import { fiscalMatchPart, type FiscalMatchPartValue } from "./fiscalMatchPart.kind"
+import { DIRECTION_OPTIONS, FISCAL_MATCH_DTE_OPTIONS } from "../fiscalMatchFilters"
 
 /** Nombre corto del tipo de documento, como en la página: «Boleta 39», «Factura 33». */
 const DTE_SHORT: Record<number, string> = {
@@ -61,6 +62,17 @@ export const fiscalMatchEntity = defineEntity<FiscalMatchListItem>()((f) => ({
         rcv: fiscalMatchPart(f, rcvPart, { ...fixed, label: "RCV (SII)" }),
         issueDate: f.date("issue_date", { ...fixed, label: "Fecha" }),
         status: f.status((r) => fiscalMatchStatusValue(r.status, r.status_display), { ...fixed, label: "Estado" }),
+    },
+    // ADR-0158 §3. Sin `direction` ni `status` en la URL valen ventas y «necesita atención»
+    // (`withDefaultFilters`); las opciones de estado llevan los conteos (`filterOptions`).
+    query: {
+        search: { placeholder: "Buscar por folio, RUT o monto…" },
+        filters: {
+            direction: { field: "direction", control: "single", options: DIRECTION_OPTIONS },
+            status: { field: "status", control: "single", options: "remote" },
+            dte_type: { label: "Tipo de documento", control: "single", options: FISCAL_MATCH_DTE_OPTIONS },
+            issue_date: { field: "issueDate", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+        },
     },
 }))
 

@@ -11,7 +11,7 @@ import { es } from "date-fns/locale"
 import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 
 import { useServerDate } from "@/hooks/useServerDate"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
 import { taxPeriodEntity, taxPeriodViews } from '../entity-view/taxPeriod.entity'
 
@@ -19,8 +19,7 @@ import { type TaxPeriod } from "../types"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { Metric, MetricStrip, SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import { Metric, MetricStrip, SkeletonShell } from "@/components/shared"
 import { useTaxPeriods } from "../hooks/useTaxQueries"
 
 interface TaxDeclarationsClientViewProps {
@@ -48,12 +47,8 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
 
     const { serverDate } = useServerDate()
 
-    const config: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'month_display', label: 'Período', serverParam: 'month_display', clientKey: ['month_display', 'year'] },
-        ],
-    }), [])
-    const search = useUnifiedSearch(config)
+    const query = useCollectionQuery(taxPeriodEntity, { sorting: "client" })
+    const { search } = query
     const filteredPeriods = useMemo(() => search.filterFn(periods), [search.filterFn, periods])
 
     const latestPeriod = periods.length > 0 ? periods[0] : null
@@ -103,14 +98,13 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
             <div className="flex-1 min-h-0 flex flex-col">
                 <Collection.Root
                     collection={collection}
+                    query={query}
                     view={view}
                     onViewChange={onViewChange}
                     onOpen={(period) => { if (period.status === 'OPEN') handleOpenWizard(period) }}
                     actions={taxDeclarationActions.forCollection(taxDeclarationActionsCtx)}
                 >
-                    <Collection.Toolbar action={createAction}>
-                        <UnifiedSearchBar config={config} {...bindUnifiedSearch(search)} placeholder="Buscar período..." />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar action={createAction} />
                     <Collection.View
                         table={taxPeriodViews.table}
                         card={taxPeriodViews.card}
