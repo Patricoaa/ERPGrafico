@@ -220,5 +220,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0155](0155-hr-relations-window.md) | Dominio documental `hr` (RRHH) y ventana reciente `window=recent\|all` en relaciones: default `all`, la pestaña pide `recent` con «Ver más»; pestaña Relaciones en los drawers de RRHH | Accepted |
 | [0156](0156-hr-employee-movements.md) | Anticipos, pagos de remuneración y préstamos se unifican en `EmployeeMovement` asignable (total o parcial) a liquidaciones; préstamos con cuota fija e interés mensual/anual; saldo único `payroll_balance`; `SalaryAdvance` se retira | Accepted |
 | [0157](0157-design-system-doc-consolidation.md) | Consolidación del design system: `DESIGN.md` única entrada (retira `design-system.md`, nace `geometry-surfaces.md`), contratos alineados al código, receta `fadeInClass()` y ratchets de diseño en 0 | Accepted |
+| [0158](0158-barra-de-coleccion-unificada.md) | Barra de colección unificada: consulta declarada en `defineEntity.query`, una barra de comandos (ícono + valor) para todas las entidades, solo vistas predefinidas, agrupación y facetas en servidor, analítica en modal; reemplaza `unified-searchbar.md` | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
