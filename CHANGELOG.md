@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.171](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.170...v0.3.171) (2026-11-25)
+
+
+### ✨ Features
+
+* **search:** etapa 1 de ADR-0158 — fila de filtros aplicados y exportar en menú ([3cc5074](https://github.com/Patricoaa/ERPGrafico/commit/3cc50746033e3e78825ec6bb22fce596827e4414))
+
 ### [0.3.170](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.169...v0.3.170) (2026-11-25)
 
 
