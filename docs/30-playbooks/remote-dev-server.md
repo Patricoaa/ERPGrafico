@@ -196,6 +196,7 @@ Nota de red: `.env.dev` del servidor usa `ALLOWED_HOSTS=...,192.168.1.86` y
 | La interfaz no refleja cambios | el sync está caído (ver §3) | verificar/reactivar Mutagen; si no, avisar al usuario |
 | La UI local no carga | acceso por ruta equivocada | usar `http://192.168.1.86` (o port-forward SSH) |
 | `git: not a repository` en el servidor | el espejo no tiene `.git` (por diseño) | usar git solo en local |
+| `frontend` se reinicia en bucle tras «Creating turbopack project», sin error; el kernel registra `trap invalid opcode in next-swc…node` | La CPU del servidor no soporta el binario nativo de Next ≥ 16.4 (ver §10) | reinstalar Next 16.1.1 en el volumen (§10) |
 | `Memory cgroup out of memory: Killed process ... (next-server)` | Turbopack supera el techo de memoria del contenedor en sesiones largas (ver §8) | `docker compose restart frontend`; revisar §8 |
 
 ---
@@ -258,3 +259,23 @@ También desde la UI: Configuración → Depuración (solo superusuario y con he
 - Las APIs externas (TUU, SimpleAPI) devuelven fechas reales.
 - Con el reloj habilitado, `SIMPLE_JWT["LEEWAY"]` es de 366 días, así que las sesiones sobreviven a los cambios de hora. Si aun así aparece un 401, volver a iniciar sesión.
 - Los `auto_now_add` siguen el reloj falso mientras está activo.
+
+---
+
+## 10. CPU antigua: Next 16.1.1 fijado solo en el servidor
+
+**Hardware:** el servidor tiene un AMD A4-3300 (2011, x86-64 v1: **sin SSE4.2 ni AVX**). El binario nativo de SWC/Turbopack de Next **≥ 16.4** (al menos 16.4.1–16.4.6) usa instrucciones que esa CPU no tiene: el proceso muere en silencio después de `Creating turbopack project` y `journalctl -k` muestra `traps: tokio-rt-worker … trap invalid opcode … in next-swc.linux-x64-musl.node`.
+
+**Decisión (2026-11-24):** el repo usa Next 16.4.6 (16.4.1 es el mínimo con los parches de RCE críticos: GHSA-673q-mjm6-r5xr, GHSA-2464-fhr4-w9xw). **Solo el contenedor del servidor** corre Next 16.1.1, instalado en el volumen `erpgrafico_frontend_node_modules` con `--no-save` (no toca `package.json` ni el lockfile). Ese Next 16.1.1 tiene las vulnerabilidades críticas abiertas: el servidor **no debe exponerse fuera de la LAN/tailnet**.
+
+**Se pierde** al recrear el volumen (`docker volume rm …`, `docker compose down -v`) o al correr `npm ci`/`npm install` en el contenedor. Para restaurarlo:
+
+```bash
+cd ~/ERPGrafico
+docker compose run --rm --no-deps -T frontend sh -c \
+  "npm install --no-save --legacy-peer-deps --no-audit --no-fund next@16.1.1 @next/swc-linux-x64-musl@16.1.1"
+docker compose up -d frontend
+```
+
+**Alternativas probadas:** `next dev --webpack` con `NEXT_TEST_WASM=1` funciona en esta CPU (bindings WASM) pero la primera compilación de cada ruta tarda ~4 min; modo híbrido (`docker-compose.hybrid.yml`, frontend en la máquina local). La solución de fondo es una CPU x86-64-v2 o superior.
+
