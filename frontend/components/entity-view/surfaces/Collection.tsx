@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, Download, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
-import { AppliedFilters, BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, UnifiedSearchBar, bindUnifiedSearch, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
+import { AnalyticsDrillDownProvider, AppliedFilters, BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, UnifiedSearchBar, bindUnifiedSearch, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type AnalyticsDrillDownFilter, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -36,6 +36,7 @@ import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
 import { useSavedRowFlash } from "./useSavedRowFlash"
 import type { CollectionQuery } from "./useCollectionQuery"
+import type { AnalyticsScope } from "./useCollectionAnalytics"
 import { FilterMenu, type MenuFilter } from "./toolbar/FilterMenu"
 import { DisplayMenu, GroupMenu, SortMenu, ViewTabs } from "./toolbar/QueryMenus"
 
@@ -65,6 +66,8 @@ interface CollectionContextValue<T> {
     hasAnalytics: boolean
     analyticsOpen: boolean
     setAnalyticsOpen: (open: boolean) => void
+    /** Scope of the analytics modal, when the screen lets the user switch it («Analizar sin filtros»). */
+    analyticsScope: { value: AnalyticsScope; onChange: (scope: AnalyticsScope) => void } | null
     /** Query state when the entity declares `query` (ADR-0158 stage 3): the toolbar renders the command bar. */
     query: CollectionQuery<string> | null
     /** Columns of the mounted table layout (registered by the table surface) and the ones the user hid. */
@@ -119,7 +122,7 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
     view?: CollectionViewMode
     onViewChange?: (view: CollectionViewMode) => void
     /** Controlled analytics modal: pass `useCollectionAnalytics(...)` (`?analytics=` in the URL). Uncontrolled when omitted. */
-    analytics?: { open: boolean; onOpenChange: (open: boolean) => void }
+    analytics?: { open: boolean; onOpenChange: (open: boolean) => void; scope?: AnalyticsScope; onScopeChange?: (scope: AnalyticsScope) => void }
     /** `useCollectionQuery(entity)`: `Collection.Toolbar` then builds the command bar from it (ADR-0158 §1). */
     query?: CollectionQuery<FieldId<F>>
     /** Accessible name. Defaults to the entity label resolved by the provider. */
@@ -182,6 +185,7 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         hasAnalytics,
         analyticsOpen,
         setAnalyticsOpen,
+        analyticsScope: controlledAnalytics?.scope !== undefined && controlledAnalytics.onScopeChange ? { value: controlledAnalytics.scope, onChange: controlledAnalytics.onScopeChange } : null,
         query: query ? eraseQuery(query) : null,
         tableColumns,
         registerTableColumns,
@@ -597,6 +601,17 @@ function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
  */
 function Analytics({ children }: { children: React.ReactNode }) {
     const ctx = useCollectionContext<unknown>()
+    const { query, setAnalyticsOpen } = ctx
+    // Drill-down (ADR-0158 §11): the clicked category becomes a collection filter and the modal closes.
+    // Both writes go through nuqs, so they land as one URL update.
+    const onDrillDown = React.useCallback(
+        (filter: AnalyticsDrillDownFilter) => {
+            if (!query) return
+            void query.search.applyMany({ [filter.param]: filter.value })
+            setAnalyticsOpen(false)
+        },
+        [query, setAnalyticsOpen],
+    )
     return (
         <BaseModal
             open={ctx.analyticsOpen}
@@ -607,8 +622,45 @@ function Analytics({ children }: { children: React.ReactNode }) {
             hideScrollArea
             contentClassName="overflow-hidden"
         >
-            <div className="flex h-[80vh] min-h-0 flex-col overflow-hidden">{children}</div>
+            <div className="flex h-[80vh] min-h-0 flex-col gap-3 overflow-hidden">
+                {query && <AnalyticsScopeStrip query={query} />}
+                {query ? <AnalyticsDrillDownProvider onDrillDown={onDrillDown}>{children}</AnalyticsDrillDownProvider> : children}
+            </div>
         </BaseModal>
+    )
+}
+
+/**
+ * «Analizando N <entidad> con la vista X» + the applied filters, read-only (ADR-0158 §11). The modal
+ * inherits the list's query; «Analizar sin filtros» widens it inside the modal only.
+ */
+function AnalyticsScopeStrip({ query }: { query: CollectionQuery<string> }) {
+    const ctx = useCollectionContext<unknown>()
+    const scope = ctx.analyticsScope
+    const all = scope?.value === "all"
+    const chips = query.search.chips.filter((chip) => chip.variant !== "group")
+    const total = ctx.collection.status === "loading" ? null : ctx.collection.total
+    // The view is named only while the state matches it; once filters drift, the chips tell the scope.
+    const view = query.views.length > 1 && !query.isDirty ? query.activeView : null
+    return (
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-border/50 bg-muted/40 px-3 py-2 text-xs">
+            <p aria-live="polite" className="text-muted-foreground">
+                {all ? (
+                    <>Analizando <strong className="font-semibold text-foreground">todos los registros</strong>, sin filtros</>
+                ) : (
+                    <>
+                        Analizando <strong className="font-mono font-semibold tabular-nums text-foreground">{total === null ? "…" : formatResultCount(total)}</strong>
+                        {view && <> con la vista <strong className="font-semibold text-foreground">{view.label}</strong></>}
+                    </>
+                )}
+            </p>
+            {!all && <AppliedFilters chips={chips} />}
+            {scope && (chips.length > 0 || all) && (
+                <Button variant="link" size="sm" className="ml-auto h-auto p-0 text-xs" onClick={() => scope.onChange(all ? "query" : "all")}>
+                    {all ? "Usar los filtros de la lista" : "Analizar sin filtros"}
+                </Button>
+            )}
+        </div>
     )
 }
 

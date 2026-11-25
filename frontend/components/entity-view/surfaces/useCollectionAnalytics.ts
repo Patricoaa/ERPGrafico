@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { parseAsString, useQueryState } from "nuqs"
 
-const PARAM = "analytics"
+/** What the analytics modal measures: the collection's current query, or everything (ADR-0158 §11). */
+export type AnalyticsScope = "query" | "all"
 
 export interface CollectionAnalyticsState {
     /** The analytics modal is open (`?analytics=<tab>` in the URL). */
@@ -12,6 +13,9 @@ export interface CollectionAnalyticsState {
     /** Active analytics tab; the default while closed. */
     tab: string
     onTabChange: (tab: string) => void
+    /** «Analizar sin filtros» switches to `"all"` inside the modal only; closing goes back to `"query"`. */
+    scope: AnalyticsScope
+    onScopeChange: (scope: AnalyticsScope) => void
 }
 
 export interface UseCollectionAnalyticsOptions {
@@ -22,45 +26,41 @@ export interface UseCollectionAnalyticsOptions {
     legacyViewTabs?: readonly string[]
 }
 
+const analyticsParam = parseAsString.withOptions({ history: "push", scroll: false })
+
 /**
  * Analytics modal state in the URL (ADR-0158 §11, collection-toolbar §5.7): `?analytics=<tab>` opens
- * the modal on that tab, so it can be shared. Pass `open` / `onOpenChange` to `Collection.Root` and
- * `tab` / `onTabChange` to the feature's analytics screen; fetch analytics only while `open`.
+ * the modal on that tab, so it can be shared. Pass the result to `Collection.Root analytics` and
+ * `tab` / `onTabChange` to the feature's analytics screen; fetch analytics only while `open`, with the
+ * list filters unless `scope` is `"all"`.
  *
+ * Written through nuqs like the collection query, so a drill-down (filter + close) is one URL update.
  * Compatibility: `?view=analytics` (the former analytics view) is rewritten to `?analytics=<defaultTab>`.
  */
 export function useCollectionAnalytics(defaultTab: string, { legacyViewTabs = [] }: UseCollectionAnalyticsOptions = {}): CollectionAnalyticsState {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
+    const [param, setParam] = useQueryState("analytics", analyticsParam)
+    const [legacyView, setLegacyView] = useQueryState("view", parseAsString)
+    const [scope, setScope] = React.useState<AnalyticsScope>("query")
 
-    const param = searchParams.get(PARAM)
-    const legacyView = searchParams.get("view")
     const legacyTab = legacyView === "analytics" ? defaultTab : legacyView !== null && legacyViewTabs.includes(legacyView) ? legacyView : null
 
-    const write = React.useCallback(
-        (next: string | null, mode: "push" | "replace") => {
-            const params = new URLSearchParams(searchParams.toString())
-            if (next === null) params.delete(PARAM)
-            else params.set(PARAM, next)
-            if (legacyTab !== null) params.delete("view")
-            const query = params.toString()
-            const href = query ? `${pathname}?${query}` : pathname
-            if (mode === "push") router.push(href, { scroll: false })
-            else router.replace(href, { scroll: false })
-        },
-        [searchParams, pathname, router, legacyTab],
-    )
-
     React.useEffect(() => {
-        if (legacyTab !== null && param === null) write(legacyTab, "replace")
-    }, [legacyTab, param, write])
+        if (legacyTab === null || param !== null) return
+        void setLegacyView(null, { history: "replace" })
+        void setParam(legacyTab, { history: "replace" })
+    }, [legacyTab, param, setLegacyView, setParam])
 
     const open = param !== null || legacyTab !== null
     const tab = param || legacyTab || defaultTab
 
-    const onOpenChange = React.useCallback((next: boolean) => write(next ? tab : null, "push"), [write, tab])
-    const onTabChange = React.useCallback((next: string) => write(next, "replace"), [write])
+    const onOpenChange = React.useCallback(
+        (next: boolean) => {
+            if (!next) setScope("query")
+            void setParam(next ? tab : null)
+        },
+        [setParam, tab],
+    )
+    const onTabChange = React.useCallback((next: string) => void setParam(next, { history: "replace" }), [setParam])
 
-    return { open, onOpenChange, tab, onTabChange }
+    return { open, onOpenChange, tab, onTabChange, scope, onScopeChange: setScope }
 }

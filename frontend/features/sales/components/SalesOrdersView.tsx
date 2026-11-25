@@ -6,20 +6,19 @@ import { Button } from "@/components/ui/button"
 import {
     Collection,
     GROUP_ROW_LIMIT,
-    orderingParam,
     useCollectionAnalytics,
+    useCollectionQuery,
     useCollectionViewMode,
     useEntityCollection,
     useServerPage,
     type CollectionViewMode,
     type FieldId,
-    type SortSpec,
 } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSalesNotes, useSalesOrders } from "@/features/sales"
 import { AlertTriangle } from "lucide-react"
-import { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
+import { salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { saleOrderEntity, saleOrderViews } from "../entity-view/saleOrder.entity"
 import { saleNoteEntity, saleNoteViews } from "../entity-view/saleNote.entity"
@@ -40,7 +39,6 @@ interface SheetSelection {
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const ORDER_GROUPS: Record<string, FieldId<typeof saleOrderEntity.fields>> = { date: "date", customer: "customer", status: "hub", channel: "channel" }
 const NOTE_GROUPS: Record<string, FieldId<typeof saleNoteEntity.fields>> = { date: "date", customer: "customer", status: "hub" }
 
 export function SalesOrdersView({ viewMode, onSelectOrder, selectedId }: SalesOrdersViewProps) {
@@ -90,26 +88,31 @@ function LocalSaleNoteCollection(props: CollectionProps) {
     return <SaleNoteCollectionBody {...props} {...useLocalViewMode("card")} />
 }
 
+/** Pilot of the command bar (ADR-0158 stage 3c): search, filters, sort, grouping and views come from `saleOrderEntity.query`. */
 function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
-    const search = useUnifiedSearch(salesOrderUnifiedSearchDef)
-    const groupBy = search.groupBy ? ORDER_GROUPS[search.groupBy] ?? null : null
-    const [sort, setSort] = useState<SortSpec<FieldId<typeof saleOrderEntity.fields>> | null>(null)
-    const filters = useMemo<SaleOrderFilters>(() => search.filters as SaleOrderFilters, [search.filters])
-    const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
+    const query = useCollectionQuery(saleOrderEntity)
+    const { groupBy, params } = query
+    const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
 
     const { page, orders, isLoading, isRefetching, isError, refetch } = useSalesOrders({
         filters: {
-            ...filters,
-            ordering: orderingParam(saleOrderEntity, sort),
+            ...params,
             page: groupBy ? 1 : pageState.pageIndex + 1,
             page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
         },
     })
 
-    // Figures over the whole filtered list, fetched only while the analytics modal is open.
+    // Figures over the filtered list (or everything, «Analizar sin filtros»), fetched only while the modal is open.
     const analyticsUi = useCollectionAnalytics("resumen")
+    const analyticsFilters = useMemo<SaleOrderFilters | undefined>(() => {
+        if (analyticsUi.scope === "all") return undefined
+        // Sorting does not change the figures: leave it out so a sort does not refetch.
+        const filters: SaleOrderFilters = { ...params }
+        delete filters.ordering
+        return filters
+    }, [params, analyticsUi.scope])
     const [granularity, setGranularity] = useState<Granularity>("month")
-    const { analytics, isLoading: isLoadingAnalytics, isError: isAnalyticsError, refetch: refetchAnalytics } = useSaleOrderAnalytics({ filters, granularity, enabled: analyticsUi.open })
+    const { analytics, isLoading: isLoadingAnalytics, isError: isAnalyticsError, refetch: refetchAnalytics } = useSaleOrderAnalytics({ filters: analyticsFilters, granularity, enabled: analyticsUi.open })
     const analyticsScreen = useMemo(
         () => buildSalesAnalyticsScreen(analytics ?? EMPTY_SALES_ANALYTICS, { activeTab: analyticsUi.tab, onTabChange: analyticsUi.onTabChange, granularity, onGranularityChange: setGranularity }),
         [analytics, analyticsUi.tab, analyticsUi.onTabChange, granularity],
@@ -117,10 +120,10 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
 
     const collection = useEntityCollection(
         saleOrderEntity,
-        { rows: orders, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows: orders, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: query.search.isFiltered },
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
-            sorting: { mode: "server", state: sort, onChange: setSort },
+            sorting: query.sorting,
             groupBy,
         },
     )
@@ -136,20 +139,15 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
                 view={view}
                 onViewChange={onViewChange}
                 analytics={analyticsUi}
+                query={query}
             >
-                <Collection.Toolbar>
-                    <UnifiedSearchBar
-                        config={salesOrderUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar órdenes..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={saleOrderViews.table}
                     card={saleOrderViews.card}
                     emptyTitle="Aún no hay órdenes de venta"
                     emptyDescription="Crea una orden de venta o regístrala desde el punto de venta."
-                    onResetFilters={search.clearAll}
+                    onResetFilters={query.search.clearAll}
                 />
                 <Collection.Analytics>
                     {isAnalyticsError ? (

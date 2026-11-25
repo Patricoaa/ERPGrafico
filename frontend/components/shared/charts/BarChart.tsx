@@ -40,6 +40,8 @@ export interface BarChartProps {
     margin?: { top: number; right: number; bottom: number; left: number }
     /** Accessible name for screen readers. Falls back to an auto-generated summary. */
     ariaLabel?: string
+    /** Bar click (analytics drill-down). */
+    onClick?: (datum: { indexValue: string | number }) => void
     [key: string]: unknown
 }
 

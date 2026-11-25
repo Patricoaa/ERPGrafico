@@ -4,6 +4,8 @@ import React from "react"
 import type { BarChartConfig, LineChartConfig, PieChartConfig, RadarChartConfig, FunnelChartConfig, ChartConfig } from "./types"
 import { PieChart, BarChart, LineChart, RadarChart, FunnelChart } from "../charts"
 import { formatCompactSpanish } from "@/lib/utils/number"
+import { cn } from "@/lib/utils"
+import { useAnalyticsDrillDown } from "./drill-down"
 import {
     barDefaults,
     cardBarDefaults,
@@ -29,6 +31,7 @@ const defaultLegend = {
 }
 
 function BarChartRenderer(props: BarChartConfig) {
+    const drill = useAnalyticsDrillDown(props.drillDown)
     const isCard = props.preset === "card"
     const isCompact = props.compact
 
@@ -100,8 +103,9 @@ function BarChartRenderer(props: BarChartConfig) {
                 : []
 
     return (
-        <div className="flex-1 min-h-0 w-full relative">
+        <div className={cn("flex-1 min-h-0 w-full relative", drill && "[&_rect]:cursor-pointer")}>
             <BarChart
+                onClick={drill ? (d) => drill(d.indexValue) : undefined}
                 data={props.data}
                 keys={props.keys}
                 indexBy={props.indexBy}
@@ -187,6 +191,7 @@ function LineChartRenderer(props: LineChartConfig) {
 }
 
 function PieChartRenderer(props: PieChartConfig) {
+    const drill = useAnalyticsDrillDown(props.drillDown)
     const isCard = props.preset === "card"
     const isCompact = props.compact
 
@@ -201,8 +206,9 @@ function PieChartRenderer(props: PieChartConfig) {
         : (props.showLegend ?? true)
 
     return (
-        <div className="flex-1 min-h-0 w-full relative">
+        <div className={cn("flex-1 min-h-0 w-full relative", drill && "[&_path]:cursor-pointer")}>
             <PieChart
+                onClick={drill ? (d) => drill(d.id) : undefined}
                 data={props.data}
                 innerRadius={isCard ? cardPieDefaults.innerRadius : props.innerRadius}
                 enableArcLinkLabels={isCard ? cardPieDefaults.enableArcLinkLabels : props.enableArcLinkLabels}

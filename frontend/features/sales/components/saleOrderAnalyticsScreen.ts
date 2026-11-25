@@ -1,4 +1,4 @@
-import type { AnalyticsPanelContentProps, Granularity, MetricDelta } from "@/components/shared"
+import type { AnalyticsPanelContentProps, ChartDrillDown, Granularity, MetricDelta } from "@/components/shared"
 import { assignChartColors } from "@/lib/chart-colors"
 import { formatMoney, formatQuantity } from "@/lib/money"
 import { getDomainConceptTitle } from "@/lib/entity-registry"
@@ -7,6 +7,14 @@ import type { SalesAnalyticsData, TrendData } from "../hooks/useSalesAnalyticsDa
 
 /** Server trend (already a formatted %) → the change shown on a `Metric`: up is good, down is bad. */
 const trendToDelta = (t: TrendData): MetricDelta => ({ text: t.value, direction: t.direction, tone: t.direction === "up" ? "success" : "destructive" })
+
+/**
+ * Drill-down (ADR-0158 §11): a click filters the list. Params are the sale order query's (`saleOrderEntity.query`);
+ * the server sends display labels, mapped back to filter values here. Channel has no list filter: not drillable.
+ */
+const DELIVERY_STATUS_DRILL: ChartDrillDown = { param: "delivery_status", values: { Pendiente: "PENDING", Parcial: "PARTIAL", Entregado: "DELIVERED" } }
+/** "Pendiente" here is every order not yet delivered (pending or partial). */
+const PENDING_DELIVERY_DRILL: ChartDrillDown = { param: "delivery_status", values: { Entregado: "DELIVERED", Pendiente: "PENDING,PARTIAL" } }
 
 export interface SalesAnalyticsUi {
     activeTab: string
@@ -156,7 +164,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                     },
                                     {
                                         id: "delivery-status-channel",
-                                        content: { type: "chart-card", config: { title: "Estado de Despachos", subtitle: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: deliveryDist, valueFormat: "number", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Estado de Despachos", subtitle: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: deliveryDist, valueFormat: "number", compact: true, drillDown: PENDING_DELIVERY_DRILL } } },
                                     },
                                 ],
                             },
@@ -173,7 +181,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "top-customers",
-                                        content: { type: "chart-card", config: { title: "Top Clientes por Volumen", subtitle: "Clientes con mayor facturación acumulada", chart: { type: "bar-chart", preset: "card", data: analyticsData.topCustomers, keys: ["total"], indexBy: "customer", valueFormat: "$,.0f" } } },
+                                        content: { type: "chart-card", config: { title: "Top Clientes por Volumen", subtitle: "Clientes con mayor facturación acumulada", chart: { type: "bar-chart", preset: "card", data: analyticsData.topCustomers, keys: ["total"], indexBy: "customer", valueFormat: "$,.0f", drillDown: { param: "customer_name" } } } },
                                     },
                                 ],
                             },
@@ -183,7 +191,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "customer-dist",
-                                        content: { type: "chart-card", config: { title: "Concentración por Cliente", subtitle: "Distribución del volumen entre clientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.customerDistribution, valueFormat: "currency", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Concentración por Cliente", subtitle: "Distribución del volumen entre clientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.customerDistribution, valueFormat: "currency", compact: true, drillDown: { param: "customer_name" } } } },
                                     },
                                 ],
                             },
@@ -200,7 +208,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "top-products",
-                                        content: { type: "chart-card", config: { title: "Top Productos por Volumen", subtitle: "Productos con mayor facturación", chart: { type: "bar-chart", preset: "card", data: analyticsData.topProducts, keys: ["total"], indexBy: "product", valueFormat: "$,.0f" } } },
+                                        content: { type: "chart-card", config: { title: "Top Productos por Volumen", subtitle: "Productos con mayor facturación", chart: { type: "bar-chart", preset: "card", data: analyticsData.topProducts, keys: ["total"], indexBy: "product", valueFormat: "$,.0f", drillDown: { param: "product_name" } } } },
                                     },
                                 ],
                             },
@@ -237,7 +245,7 @@ export function buildSalesAnalyticsScreen(analyticsData: SalesAnalyticsData, ui:
                                 sections: [
                                     {
                                         id: "dispatch-status",
-                                        content: { type: "chart-card", config: { title: "Estado de Despachos", subtitle: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.deliveryStatusDistribution, valueFormat: "number", compact: true } } },
+                                        content: { type: "chart-card", config: { title: "Estado de Despachos", subtitle: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.deliveryStatusDistribution, valueFormat: "number", compact: true, drillDown: DELIVERY_STATUS_DRILL } } },
                                     },
                                 ],
                             },
