@@ -141,6 +141,18 @@ export function useUnifiedSearch(
     await setParamValues(nulled)
   }, [paramDefs, setCursor, setParamValues])
 
+  const replaceAll = useCallback(async (values: Record<string, string | null>) => {
+    await setCursor(null)
+    const next: Record<string, string | null> = {}
+    for (const def of paramDefs) {
+      if (!PRESERVED_PARAMS.has(def.param)) next[def.param] = null
+    }
+    for (const [param, value] of Object.entries(values)) {
+      if (param in next) next[param] = value
+    }
+    await setParamValues(next)
+  }, [paramDefs, setCursor, setParamValues])
+
   const filters: Record<string, string> = useMemo(
     () => Object.fromEntries(
       Object.entries(paramValues).filter(([, v]) => v !== null)
@@ -302,6 +314,7 @@ export function useUnifiedSearch(
     applyFilter,
     removeFilter,
     clearAll,
+    replaceAll,
     inputValue,
     setInputValue,
     filterFn,
