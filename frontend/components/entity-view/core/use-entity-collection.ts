@@ -16,8 +16,10 @@ import {
     type Table,
 } from "@tanstack/react-table"
 import { groupItems } from "@/lib/group-utils"
+import type { ServerGroupState } from "@/lib/server-groups"
 import { EMPTY } from "./formatters"
-import { resolveField, rowIdOf, sortValueOf, type Entity, type FieldId, type FieldMap, type SortSpec } from "./define-entity"
+import { resolveField, rowIdOf, sortValueOf, type Entity, type FieldDef, type FieldId, type FieldMap, type SortSpec } from "./define-entity"
+import { getValueKind, type ValueKind } from "./value-kinds"
 
 /** Data handed over by the feature hook (invariant #5: queries live in features/*\/hooks). */
 export interface CollectionSource<T> {
@@ -52,7 +54,7 @@ export type CollectionSorting<Id extends string> =
     | { mode: "server"; state: SortSpec<Id> | null; onChange: (next: SortSpec<Id> | null) => void }
     | { mode: "query"; state: readonly SortSpec<Id>[]; onChange: (next: SortSpec<Id> | null) => void; fields: readonly Id[] }
 
-export interface CollectionOptions<Id extends string> {
+export interface CollectionOptions<Id extends string, T = never> {
     pagination?: CollectionPagination
     sorting?: CollectionSorting<Id>
     defaultSort?: SortSpec<Id>
@@ -62,6 +64,11 @@ export interface CollectionOptions<Id extends string> {
      * (Gate D lote 2: `GROUP_ROW_LIMIT`) and pass `rowCount` so the surfaces can warn when it is truncated.
      */
     groupBy?: Id | null
+    /**
+     * Server grouping (ADR-0158 §7, `useServerGroups`): the groups of the whole result with their
+     * loaded rows. Replaces `source.rows`; `groupBy` still names the field (labels, "Sin …").
+     */
+    serverGroups?: readonly ServerGroupState<T>[] | null
 }
 
 /** Uniform row cap while grouping (Gate D lote 2): beyond it the surfaces show a "refine the filter" notice. */
@@ -71,6 +78,17 @@ export interface CollectionGroup<T> {
     key: string
     label: string
     rows: Row<T>[]
+    /** Server grouping: rows of the whole result in this group (the loaded `rows` may be fewer). */
+    count?: number
+    /** Server grouping: formatted subtotals ("$ 4.215.600"). */
+    summary?: string
+    /** Server grouping: collapsible groups load their rows when opened. */
+    open?: boolean
+    isLoading?: boolean
+    isError?: boolean
+    hasMore?: boolean
+    onToggle?: () => void
+    onMore?: () => void
 }
 
 /** How the collection is paged: drives the footer each surface renders (`pages` paginator vs "Mostrar más"). */
@@ -115,6 +133,35 @@ function toSorting<Id extends string>(spec: SortSpec<Id> | readonly SortSpec<Id>
 
 const EMPTY_ROWS: never[] = []
 
+/** A server value formatted by the field's kind, with its constant options (no row to resolve the others). */
+function formatStatic<T>(def: FieldDef<T, ValueKind>, value: unknown): string {
+    const options: Record<string, unknown> = {}
+    for (const [key, raw] of Object.entries(def.options as Record<string, unknown>)) if (typeof raw !== "function") options[key] = raw
+    const spec = getValueKind(def.kind) as { format: (v: unknown, o: Record<string, unknown>) => string }
+    return spec.format(value, options)
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+/** A server group key without label: dates read as dates whatever the column kind; the rest by the field kind. */
+function formatGroupKey<T>(def: FieldDef<T, ValueKind>, key: string): string {
+    if (ISO_DATE.test(key)) return getValueKind("date").format(key, {})
+    try {
+        return formatStatic(def, key) || key
+    } catch {
+        return key
+    }
+}
+
+/** Server subtotals (`aggregates`, keyed by field id) formatted like their columns. */
+function summarize<T>(fields: Readonly<Record<string, FieldDef<T, ValueKind>>>, aggregates: Record<string, string>): string | undefined {
+    const parts = Object.entries(aggregates).map(([id, value]) => {
+        const def = fields[id]
+        return def ? formatStatic(def, Number(value)) : value
+    })
+    return parts.length > 0 ? parts.join(" · ") : undefined
+}
+
 const NO_SERVER_SORT = { mode: "server" as const, state: null, onChange: () => undefined }
 
 /**
@@ -125,7 +172,7 @@ const NO_SERVER_SORT = { mode: "server" as const, state: null, onChange: () => u
 export function useEntityCollection<T, F extends FieldMap<T>>(
     entity: Entity<T, F>,
     source: CollectionSource<T>,
-    options: CollectionOptions<FieldId<F>> = {},
+    options: CollectionOptions<FieldId<F>, NoInfer<T>> = {},
 ): EntityCollection<T, F> {
     const pagination = options.pagination ?? { mode: "client" }
     // Default: local sorting, except with server pagination, where reordering one page would misrepresent
@@ -135,7 +182,9 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     const serverSorting = sortingOption.mode === "server"
     const sortDisabled = sortingOption === NO_SERVER_SORT
     const queryFields = sortingOption.mode === "query" ? sortingOption.fields : null
-    const rows = (source.rows ?? EMPTY_ROWS) as T[]
+    const serverGroups = options.serverGroups ?? null
+    const serverRows = React.useMemo(() => serverGroups?.flatMap((g) => (g.open ? g.rows : [])) ?? null, [serverGroups])
+    const rows = (serverRows ?? source.rows ?? EMPTY_ROWS) as T[]
 
     const columns = React.useMemo<ColumnDef<T>[]>(
         () =>
@@ -238,7 +287,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     // Rows win over a failed background refetch: cached data stays visible (legacy DataTableView parity).
     const status: CollectionStatus = source.isLoading
         ? "loading"
-        : rows.length > 0
+        : rows.length > 0 || (serverGroups?.length ?? 0) > 0
             ? "ready"
             : source.error
                 ? "error"
@@ -250,6 +299,22 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     const groups = React.useMemo<CollectionGroup<T>[] | null>(() => {
         if (!groupBy) return null
         const def = entity.fields[groupBy]
+        if (serverGroups) {
+            const byOriginal = new Map(pageRows.map((row) => [row.original, row]))
+            return serverGroups.map((group) => ({
+                key: group.id,
+                label: group.label ?? (group.key === null ? `Sin ${def.label.toLowerCase()}` : formatGroupKey(def, group.key)),
+                rows: group.rows.flatMap((original) => byOriginal.get(original) ?? []),
+                count: group.count,
+                summary: summarize(entity.fields, group.aggregates),
+                open: group.open,
+                isLoading: group.isLoading,
+                isError: group.isError,
+                hasMore: group.hasMore,
+                onToggle: group.params ? group.toggle : undefined,
+                onMore: group.showMore,
+            }))
+        }
         // Same grouping helper as the legacy grouped views: sorted keys, missing values in a last "Sin …" group.
         return groupItems(pageRows, groupBy, {
             sort: "asc",
@@ -257,18 +322,18 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
             parseValue: (text) => (text === EMPTY ? null : String(text)),
             defaultLabel: `Sin ${def.label.toLowerCase()}`,
         }).map((group) => ({ key: group.key, label: group.label, rows: group.items }))
-    }, [groupBy, entity, pageRows])
+    }, [groupBy, entity, pageRows, serverGroups])
 
     return {
         entity,
         table,
         groups,
-        truncated: !!groupBy && source.rowCount !== undefined && source.rowCount > rows.length,
+        truncated: !!groupBy && !serverGroups && source.rowCount !== undefined && source.rowCount > rows.length,
         status,
         isRefetching: !!source.isRefetching,
         // `rowCount` is the server total whenever the page passes it (server pages, or one bounded page while grouping).
         // A tree counts every row, not only its roots.
-        total: source.rowCount ?? (tree ? table.getCoreRowModel().flatRows.length : rows.length),
+        total: serverGroups ? serverGroups.reduce((sum, g) => sum + g.count, 0) : source.rowCount ?? (tree ? table.getCoreRowModel().flatRows.length : rows.length),
         paginated: pagination.mode !== "none",
         paging: pagination.mode,
         moreStep,

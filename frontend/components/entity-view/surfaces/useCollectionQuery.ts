@@ -32,6 +32,11 @@ export interface CollectionQuery<Id extends string> {
     /** Ready for `useEntityCollection(…, { sorting })`: the table header drives the first key. */
     sorting: Extract<CollectionSorting<Id>, { mode: "server" } | { mode: "query" }>
     groupBy: Id | null
+    /**
+     * Server grouping key of `groupBy` (`groups/?group_by=`, ADR-0158 §7), or `null`: the field has no
+     * `groupKey`, or the screen loads every row (`sorting: "client"`) and groups in the browser.
+     */
+    groupKey: string | null
     setGroupBy: (next: Id | null) => void
     views: readonly QueryView[]
     activeView: QueryView | null
@@ -96,6 +101,7 @@ export function useCollectionQuery<F extends QueryEntity["fields"]>(
     const groupIds = React.useMemo(() => new Set(compiled.groupFields.map((g) => g.id)), [compiled])
     const groupBy = search.groupBy !== null && groupIds.has(search.groupBy) ? (search.groupBy as Id) : null
     const setGroupBy = React.useCallback((next: Id | null) => void search.setGroupBy(next), [search])
+    const groupKey = sortingMode === "client" || groupBy === null ? null : compiled.groupFields.find((g) => g.id === groupBy)?.groupKey ?? null
 
     const views = compiled.views
     const activeView = views.find((v) => v.id === viewId) ?? views[0] ?? null
@@ -149,5 +155,5 @@ export function useCollectionQuery<F extends QueryEntity["fields"]>(
         return out
     }, [search.filters, ordering])
 
-    return { compiled, search, sort, setSort, ordering, sorting, groupBy, setGroupBy, views, activeView, setView, isDirty, resetView, params }
+    return { compiled, search, sort, setSort, ordering, sorting, groupBy, groupKey, setGroupBy, views, activeView, setView, isDirty, resetView, params }
 }

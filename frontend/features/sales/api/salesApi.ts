@@ -1,3 +1,4 @@
+import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import api from '@/lib/api'
 import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
 import type { SaleNoteFilters } from '../hooks/useSalesOrders'
@@ -22,6 +23,10 @@ function orderListParams(filters?: SaleOrderFilters): URLSearchParams {
     if (filters?.production_status) params.append('production_status', filters.production_status)
     if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
     if (filters?.search) params.append('search', filters.search)
+    for (const key of ['date', 'customer', 'status', 'channel'] as const) {
+        const value = filters?.[key]
+        if (value) params.append(key, value)
+    }
     return params
 }
 
@@ -59,6 +64,15 @@ export const salesApi = {
     /**
      * Fetch all sales orders
      */
+    /** Groups of the filtered order list (ADR-0158 §7): count, total and the params of each group's rows. */
+    getOrderGroups: async (filters: SaleOrderFilters, groupBy: string): Promise<ServerGroup[]> => {
+        const params = orderListParams(filters)
+        params.append('group_by', groupBy)
+        if (filters.ordering) params.append('ordering', filters.ordering)
+        const { data } = await api.get<unknown>('/sales/orders/groups/', { params })
+        return toServerGroups(data)
+    },
+
     getOrders: async (filters?: SaleOrderFilters): Promise<Page<SaleOrder>> => {
         const params = orderListParams(filters)
         if (filters?.page) params.append('page', String(filters.page))

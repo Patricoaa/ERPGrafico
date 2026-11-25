@@ -114,6 +114,11 @@ export interface SaleOrderFilters extends PageParams {
     payment_status?: string
     production_status?: string
     pos_session?: number
+    /** Rows of one server group (ADR-0158 §7): exact date, customer pk, status, channel. */
+    date?: string
+    customer?: string
+    status?: string
+    channel?: string
     /** DRF ordering (`orderingParam` of the sale order entity, ADR-0087 lote 2b). */
     ordering?: string
 }

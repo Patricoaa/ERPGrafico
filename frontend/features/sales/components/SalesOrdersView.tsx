@@ -15,7 +15,7 @@ import {
 } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
-import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSalesNotes, useSalesOrders } from "@/features/sales"
+import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSaleOrderGroups, useSalesNotes, useSalesOrders } from "@/features/sales"
 import { AlertTriangle } from "lucide-react"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { saleOrderEntity, saleOrderViews } from "../entity-view/saleOrder.entity"
@@ -87,16 +87,21 @@ function LocalSaleNoteCollection(props: CollectionProps) {
 /** Pilot of the command bar (ADR-0158 stage 3c): search, filters, sort, grouping and views come from `saleOrderEntity.query`. */
 function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
     const query = useCollectionQuery(saleOrderEntity)
-    const { groupBy, params } = query
+    const { groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
 
-    const { page, orders, isLoading, isRefetching, isError, refetch } = useSalesOrders({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useSaleOrderGroups({ groupKey, params })
+    const list = useSalesOrders({
         filters: {
             ...params,
             page: groupBy ? 1 : pageState.pageIndex + 1,
             page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
         },
+        enabled: groupKey === null,
     })
+    const { page, orders } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     // Figures over the filtered list (or everything, «Analizar sin filtros»), fetched only while the modal is open.
     const analyticsUi = useCollectionAnalytics("resumen")
@@ -121,6 +126,7 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             sorting: query.sorting,
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

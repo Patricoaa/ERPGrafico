@@ -28,6 +28,11 @@ export interface FieldMeta {
      * sorting only fields that declare it are sortable: the page alone is never reordered.
      */
     orderBy?: string
+    /**
+     * Server grouping key (`groups/?group_by=`, must be in the viewset's `group_fields`, ADR-0158 §7).
+     * With it, a server-paginated list groups the whole result instead of the loaded page.
+     */
+    groupKey?: string
 }
 
 export type FieldDef<T, K extends ValueKind = ValueKind> = FieldMeta & {
@@ -39,9 +44,9 @@ export type FieldDef<T, K extends ValueKind = ValueKind> = FieldMeta & {
 type FieldInput<T, K extends ValueKind> = FieldMeta & RowAware<KindOptions<K>, T>
 
 function splitMeta<T, K extends ValueKind>(input: FieldInput<T, K>): { meta: FieldMeta; options: RowAware<KindOptions<K>, T> } {
-    const { label, header, sortable, align, orderBy, ...options } = input
+    const { label, header, sortable, align, orderBy, groupKey, ...options } = input
     // `options` is exactly the RowAware part of the input; TS cannot narrow a generic Omit back to it.
-    return { meta: { label, header, sortable, align, orderBy }, options: options as unknown as RowAware<KindOptions<K>, T> }
+    return { meta: { label, header, sortable, align, orderBy, groupKey }, options: options as unknown as RowAware<KindOptions<K>, T> }
 }
 
 /** Builders bound to the row type `T`. `value()` reaches any registered kind, including feature extensions. */
