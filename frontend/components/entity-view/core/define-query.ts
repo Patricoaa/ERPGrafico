@@ -118,7 +118,8 @@ export interface CompiledQuery {
     searchBox: boolean
     sortFields: readonly CompiledSortField[]
     defaultSort: readonly string[]
-    groupFields: readonly { id: string; label: string }[]
+    /** `groupKey`: server grouping key (`groups/`); `null` groups the loaded rows in the browser. */
+    groupFields: readonly { id: string; label: string; groupKey: string | null }[]
     aggregate: Readonly<Record<string, GroupAggregate>>
     views: readonly QueryView[]
     /** Filter id → URL params it owns (one, or from/to), for views and dirty checks. */
@@ -137,7 +138,7 @@ const ALL_PRESETS: readonly DatePreset[] = ["today", "this_week", "this_month", 
 
 /** What compiling reads from an entity: field labels / server keys and its `query`. */
 export interface QueryEntity {
-    fields: Readonly<Record<string, { label: string; orderBy?: string }>>
+    fields: Readonly<Record<string, { label: string; orderBy?: string; groupKey?: string }>>
     query?: QuerySpec<string>
 }
 
@@ -223,7 +224,7 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
         clientKey: typeof scope.clientKey === "string" || scope.clientKey === undefined ? scope.clientKey : [...scope.clientKey],
     }))
 
-    const groupFields = (spec.groupBy?.fields ?? []).map((id) => ({ id, label: labelOf(entity, { field: id }) }))
+    const groupFields = (spec.groupBy?.fields ?? []).map((id) => ({ id, label: labelOf(entity, { field: id }), groupKey: entity.fields[id]?.groupKey ?? null }))
     const groupBy: GroupByOptionDef[] = groupFields.map((g) => ({ key: g.id, label: g.label, field: g.id }))
 
     const sortFields = (spec.sort?.fields ?? []).map((id) => {
@@ -266,7 +267,7 @@ export function fromUnifiedSearchDef(def: UnifiedSearchConfig): CompiledQuery {
         searchBox: true,
         sortFields: [],
         defaultSort: [],
-        groupFields: (def.groupBy ?? []).map((g) => ({ id: g.field, label: g.label })),
+        groupFields: (def.groupBy ?? []).map((g) => ({ id: g.field, label: g.label, groupKey: null })),
         aggregate: {},
         views: [],
         filterParams,

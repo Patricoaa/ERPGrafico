@@ -30,7 +30,7 @@ import {
 } from "../core/define-entity"
 import { toNumber } from "../core/formatters"
 import { getValueKind, type Align, type Surface, type ValueKind } from "../core/value-kinds"
-import type { CollectionPaging, EntityCollection } from "../core/use-entity-collection"
+import type { CollectionGroup, CollectionPaging, EntityCollection } from "../core/use-entity-collection"
 import type { Row, Table as TanstackTable } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
@@ -895,10 +895,11 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                         <tbody key={group.key}>
                             <tr className="border-b bg-muted/30">
                                 <th scope="rowgroup" colSpan={colSpan} className={cn("px-(--table-cell-px) py-1.5 text-left", HEADER_TEXT)}>
-                                    {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
+                                    <GroupHeading group={group} />
                                 </th>
                             </tr>
-                            {group.rows.map(renderRow)}
+                            {group.open !== false && group.rows.map(renderRow)}
+                            {group.open !== false && <GroupFooter group={group} as="row" colSpan={colSpan} />}
                         </tbody>
                     ))}
                     {sums.length > 0 && status === "ready" && (
@@ -926,6 +927,55 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                 </div>
             )}
         </div>
+    )
+}
+
+/**
+ * Group header: label, count and subtotal. A server group (ADR-0158 §7) folds and shows the count
+ * of the whole result, not only the loaded rows.
+ */
+function GroupHeading<T>({ group }: { group: CollectionGroup<T> }) {
+    const count = group.count ?? group.rows.length
+    const text = (
+        <>
+            {group.label} <span className="font-normal tabular-nums">({count})</span>
+            {group.summary && <span className="ml-2 font-semibold tabular-nums normal-case tracking-normal text-foreground">{group.summary}</span>}
+        </>
+    )
+    if (!group.onToggle) return text
+    const Icon = group.open ? ChevronDown : ChevronRight
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            className={cn("h-control-xs gap-1 px-1 -ml-1", HEADER_TEXT)}
+            aria-expanded={group.open}
+            onClick={group.onToggle}
+        >
+            <Icon className="size-3.5 shrink-0" aria-hidden />
+            {text}
+        </Button>
+    )
+}
+
+/** Under an open server group: its loading / error state and «Mostrar más». */
+function GroupFooter<T>({ group, as, colSpan }: { group: CollectionGroup<T>; as: "row" | "block"; colSpan?: number }) {
+    let content: React.ReactNode = null
+    if (group.isLoading) content = <Skeleton className="h-3 w-32" aria-label={`Cargando ${group.label}`} />
+    else if (group.isError) content = <span className="text-xs text-destructive">No se pudieron cargar las filas de este grupo</span>
+    else if (group.hasMore && group.onMore) {
+        content = (
+            <Button variant="ghost" size="sm" className="h-control-xs text-xs" onClick={group.onMore}>
+                Mostrar más ({group.rows.length} de {group.count ?? group.rows.length})
+            </Button>
+        )
+    }
+    if (!content) return null
+    if (as === "block") return <div className="px-1">{content}</div>
+    return (
+        <tr>
+            <td colSpan={colSpan} className={cn(CELL, "py-1")}>{content}</td>
+        </tr>
     )
 }
 
@@ -1241,9 +1291,10 @@ function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: Car
                     groups.map((group) => (
                         <section key={group.key} aria-label={group.label} className="flex flex-col gap-2">
                             <h3 className={cn("px-1", HEADER_TEXT)}>
-                                {group.label} <span className="font-normal tabular-nums">({group.rows.length})</span>
+                                <GroupHeading group={group} />
                             </h3>
-                            <ul className={gridClass}>{group.rows.map(renderCard)}</ul>
+                            {group.open !== false && group.rows.length > 0 && <ul className={gridClass}>{group.rows.map(renderCard)}</ul>}
+                            {group.open !== false && <GroupFooter group={group} as="block" />}
                         </section>
                     ))
                 ) : (

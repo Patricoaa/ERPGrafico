@@ -24,7 +24,7 @@ class GroupField:
 
     - `field`: ORM path whose value is the group key (`"status"`, `"customer"`, `"date"`).
     - `label`: ORM path of the group's label, for relations (`"customer__name"`). Without it the
-      label comes from the field's `choices`, or is the value itself.
+      label comes from the field's `choices`, or is `null` (the client formats the key).
     - `param`: list filter that selects one group's rows (`?<param>=<key>`); default the group name.
     - `null_param`: list filter that selects the rows without a value (`?<null_param>=true`). Without
       it, the "no value" group has no `params` and its rows cannot be listed.
@@ -106,10 +106,8 @@ def list_groups(
     for row in rows:
         value = row[spec.field]
         key = _key(value)
-        if spec.label:
-            label = row[spec.label]
-        else:
-            label = choices.get(value, key)
+        # Plain values (dates, numbers) have no label: the client formats the key with the field kind.
+        label = row[spec.label] if spec.label else choices.get(value)
         if key is not None:
             params: dict[str, str] | None = {param: key}
         elif spec.null_param:

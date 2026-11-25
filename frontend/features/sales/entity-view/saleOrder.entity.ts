@@ -8,16 +8,17 @@ import type { SaleOrder } from "../types"
 
 /**
  * Sale order (ADR-0087 lote 2b). One status vocabulary for table and card: the readable stage
- * plus the hub axes. `orderBy` marks the columns the server can sort as displayed.
+ * plus the hub axes. `orderBy` marks the columns the server can sort as displayed; `groupKey` the ones it
+ * groups (by the order status for «Estado»: the hub status is composite).
  */
 export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
     label: "sales.saleorder",
     fields: {
         folio: f.code((o) => o.display_id ?? o.number, { label: "Folio", orderBy: "number" }),
-        customer: f.contact((o) => ({ id: o.customer, name: o.customer_name }), { label: "Cliente", orderBy: "customer__name" }),
-        date: f.value("ledgerDate", (o) => ({ date: o.date, createdAt: o.created_at }), { label: "Fecha", orderBy: "date" }),
-        hub: f.hubStatus((o) => o, { label: "Estado", entity: "sales.saleorder", caption: orderStageSummary }),
-        channel: f.tags((o) => (o.channel_display ? [o.channel_display] : []), { label: "Canal" }),
+        customer: f.contact((o) => ({ id: o.customer, name: o.customer_name }), { label: "Cliente", orderBy: "customer__name", groupKey: "customer" }),
+        date: f.value("ledgerDate", (o) => ({ date: o.date, createdAt: o.created_at }), { label: "Fecha", orderBy: "date", groupKey: "date" }),
+        hub: f.hubStatus((o) => o, { label: "Estado", entity: "sales.saleorder", caption: orderStageSummary, groupKey: "status" }),
+        channel: f.tags((o) => (o.channel_display ? [o.channel_display] : []), { label: "Canal", groupKey: "channel" }),
         lines: f.number((o) => o.lines?.length ?? 0, { label: "Líneas" }),
         total: f.money("total", { label: "Total", orderBy: "total" }),
         pending: f.money("pending_amount", { label: "Pendiente" }),
@@ -42,7 +43,8 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
             total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
         },
         sort: { fields: ["date", "folio", "customer", "total"], default: "-date" },
-        groupBy: { fields: ["date", "customer", "hub", "channel"] },
+        // Grouped on the server (`groups/`): every field declares its `groupKey`; the subtotal is the total.
+        groupBy: { fields: ["date", "customer", "hub", "channel"], aggregate: { total: "sum" } },
         views: [
             { id: "all", label: "Todas" },
             { id: "to-deliver", label: "Por despachar", filters: { origin_status: "ACTIVE", delivery_status: ["PENDING", "PARTIAL"] } },

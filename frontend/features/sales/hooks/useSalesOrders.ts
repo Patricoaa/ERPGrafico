@@ -12,7 +12,8 @@ import { getDomainConceptTitle } from '@/lib/entity-registry'
 
 export { SALES_KEYS }
 
-export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {}) {
+/** `enabled: false` while the list groups on the server (`useSaleOrderGroups` loads the rows per group). */
+export function useSalesOrders({ filters, enabled = true }: { filters?: SaleOrderFilters; enabled?: boolean } = {}) {
     const queryClient = useQueryClient()
     const invalidateSales = () => invalidateCrossFeature(queryClient, [SALES_KEYS.all])
     const { markLocalMutation } = useRealtime()
@@ -23,6 +24,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
     const query = useQuery({
         queryKey: SALES_KEYS.orders(activeFilters),
         queryFn: () => salesApi.getOrders(activeFilters),
+        enabled,
         staleTime: staleTime.standard, // 2 min
         placeholderData: (prev) => prev,
     })

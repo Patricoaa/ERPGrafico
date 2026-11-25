@@ -100,7 +100,7 @@ describe("compileQuery (ADR-0158 §3)", () => {
         const adapted = fromUnifiedSearchDef(def)
         expect(adapted.search).toBe(def)
         expect(adapted.filterParams).toEqual({ total: ["total_min", "total_max"], created: ["date_after", "date_before"] })
-        expect(adapted.groupFields).toEqual([{ id: "status", label: "Estado" }])
+        expect(adapted.groupFields).toEqual([{ id: "status", label: "Estado", groupKey: null }])
         expect(adapted.views).toEqual([])
     })
 })
