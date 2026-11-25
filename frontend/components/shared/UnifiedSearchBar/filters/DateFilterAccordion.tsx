@@ -145,7 +145,7 @@ export function DateFilterAccordion({ def, activeParams, onApply, onRemove }: Da
                     root: "w-full",
                     months: "flex flex-row gap-4 w-full",
                     month: "w-full space-y-2",
-                    table: "w-full border-collapse space-y-1",
+                    month_grid: "w-full border-collapse space-y-1",
                     day: "relative flex aspect-square size-auto w-full min-w-0 flex-col gap-1 text-[min(4cqw,0.85rem)] font-normal leading-none items-center justify-center",
                     weekday: "text-muted-foreground rounded-md flex-1 font-normal text-[min(4cqw,0.85rem)] text-center",
                     caption_label: "text-[min(5cqw,0.9rem)] font-medium",
