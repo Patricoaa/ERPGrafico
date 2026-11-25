@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.159](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.158...v0.3.159) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump actions/upload-artifact from 6 to 7 ([2d38d8b](https://github.com/Patricoaa/ERPGrafico/commit/2d38d8b3839ba2216b24777abe70d4e328a97740))
+
 ### [0.3.158](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.157...v0.3.158) (2026-11-25)
 
 
