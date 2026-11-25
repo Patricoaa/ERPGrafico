@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.168](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.167...v0.3.168) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps-dev:** bump the npm-minor-patch group across 1 directory with 4 updates ([2dc9e48](https://github.com/Patricoaa/ERPGrafico/commit/2dc9e48b472b72b3e5bce0e30d84022054f894bc))
+
 ### [0.3.167](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.166...v0.3.167) (2026-11-25)
 
 
