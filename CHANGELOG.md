@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.155](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.154...v0.3.155) (2026-11-25)
+
+
+### ✨ Features
+
+* **frontend:** Onest y JetBrains Mono autoalojadas con next/font/local ([104a0df](https://github.com/Patricoaa/ERPGrafico/commit/104a0dfa5fb49bd5e5d05d9e1ef9c66794211d3d))
+
 ### [0.3.154](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.153...v0.3.154) (2026-11-24)
 
 ### [0.3.153](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.152...v0.3.153) (2026-11-24)
