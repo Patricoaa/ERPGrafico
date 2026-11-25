@@ -1,6 +1,6 @@
 import { defineEntity, type StatusValue } from "@/components/entity-view"
 import type { BadgeIntent } from "@/lib/badge-resolvers"
-import { RCV_MONTH_NAMES } from "../unifiedSearchDef"
+import { RCV_MONTH_NAMES, RCV_MONTH_OPTIONS, rcvYearOptions } from "../rcvPeriods"
 import type {
     RcvAttemptOutcome,
     RcvDirection,
@@ -85,6 +85,21 @@ export const rcvImportEntity = defineEntity<RcvImport>()((f) => ({
         apiKey: f.code((i) => i.masked_key ?? "", { ...fixed, label: "API key" }),
         duration: f.text((i) => formatRcvDuration(i.started_at, i.finished_at), { ...fixed, label: "Duración" }),
         detail: f.text((i) => rcvImportDetail(i), { ...fixed, label: "Detalle", truncate: true }),
+    },
+    // ADR-0158 §3. No text search nor `sort`: the imports endpoint has neither.
+    query: {
+        search: false,
+        filters: {
+            direction: { field: "direction", control: "single", options: [{ value: "PURCHASES", label: "Compras" }, { value: "SALES", label: "Ventas" }] },
+            status: { field: "status", control: "single", options: [{ value: "QUEUED", label: "En cola" }, { value: "RUNNING", label: "En curso" }, { value: "SUCCESS", label: "Exitosa" }, { value: "FAILED", label: "Fallida" }] },
+            trigger: { field: "trigger", control: "single", options: [{ value: "SCHEDULED", label: "Automática" }, { value: "MANUAL", label: "Manual" }] },
+            year: { label: "Año", control: "single", options: rcvYearOptions() },
+            month: { label: "Mes", control: "single", options: RCV_MONTH_OPTIONS },
+        },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "failed", label: "Fallidas", filters: { status: "FAILED" } },
+        ],
     },
 }))
 

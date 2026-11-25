@@ -20,9 +20,16 @@ export const uomEntity = defineEntity<UoM>()((f) => ({
         // Row-aware option: 0.001 g must not render as "0,00".
         ratio: f.number("ratio", { label: "Ratio", decimals: (u) => (Number(u.ratio) % 1 === 0 ? 0 : 3) }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar unidad…" },
+        filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
+        sort: { fields: ["name", "abbreviation", "category", "type", "isActive", "ratio"], default: "name" },
+        groupBy: { fields: ["category", "type"] },
+    },
 }))
 
 export const uomViews = uomEntity.views({
-    table: { columns: ["name", "abbreviation", "category", "type", "isActive", "ratio"], defaultSort: "name" },
+    table: { columns: ["name", "abbreviation", "category", "type", "isActive", "ratio"] },
     card: { rail: { status: (u) => (u.is_active ? "active" : "inactive"), icon: Ruler }, title: "name", subtitle: ["abbreviation", "category"], trailing: ["type", "isActive"] },
 })

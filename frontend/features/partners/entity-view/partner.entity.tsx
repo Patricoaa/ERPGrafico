@@ -78,6 +78,18 @@ export const partnerEntity = defineEntity<Partner>()((f) => ({
         dividendsPayable: f.value("partnerBalance", "partner_dividends_payable_balance", { label: "D. por Pagar", tone: "warning", dashIfZero: true }),
         netEquity: f.money("partner_net_equity", { label: "Patrimonio" }),
     },
+    // ADR-0158 §3: la lista carga todos los socios y filtra en el navegador. Los interruptores no son
+    // claves de la fila: la vista los aplica sobre los saldos.
+    query: {
+        search: { placeholder: "Buscar socio por nombre o ID fiscal…" },
+        filters: {
+            has_pending_capital: { label: "Con capital pendiente", control: "toggle" },
+            has_earnings: { label: "Con utilidades", control: "toggle" },
+            has_dividends: { label: "Con dividendos por pagar", control: "toggle" },
+            has_withdrawals: { label: "Con retiros provisorios", control: "toggle" },
+        },
+        sort: { fields: ["name", "equityPercentage", "totalContributions", "totalPaidIn", "pendingCapital", "provisionalWithdrawals", "earningsBalance", "dividendsPayable", "netEquity"], default: "name" },
+    },
 }))
 
 export const partnerViews = partnerEntity.views({

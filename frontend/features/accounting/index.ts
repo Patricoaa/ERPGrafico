@@ -3,7 +3,6 @@ export { AccountingClosuresClientView, AccountsClientView, AccountRecordDrawer, 
 export { ledgerMovementActions, type LedgerMovementActionsCtx } from './components/ledgerMovementActions'
 export type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerMovement } from './types'
 export { IS_CATEGORIES, CF_CATEGORIES, BS_CATEGORIES } from './types'
-export { accountUnifiedSearchDef, fiscalYearUnifiedSearchDef, journalEntryUnifiedSearchDef, rcvDocumentUnifiedSearchDef, rcvImportUnifiedSearchDef, rcvSaleUnifiedSearchDef } from './unifiedSearchDef'
 export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/useAccountingSettings'
 export { useFiscalYears } from './hooks/useFiscalYears'
 export { useAccountMutations } from './hooks/useAccountMutations'

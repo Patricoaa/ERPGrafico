@@ -7,10 +7,10 @@ import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import {
     ToolbarCreateButton,
-    UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, StaleDataBanner,
+    StaleDataBanner,
 } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from '@/components/entity-view'
-import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from '@/components/entity-view'
+import type { MultiSelectOption } from '@/types/unified-search'
 import { useLoans } from '../hooks/useLoans'
 import { useBanks } from '../hooks/useMasterData'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
@@ -20,7 +20,6 @@ import { bankLoanEntity, bankLoanViews } from '../entity-view/bankLoan.entity'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const LOAN_GROUPS: Record<string, FieldId<typeof bankLoanEntity.fields>> = { status: 'status' }
 
 export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
     const searchParams = useSearchParams()
@@ -29,60 +28,41 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     const bankId = bankIdProp ?? (searchParams.get("bank") ? Number(searchParams.get("bank")) : undefined)
     const { banks } = useBanks()
     const filterOptions: Record<string, MultiSelectOption[]> = useMemo(
-        () => ({ bank: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })) }),
+        () => ({ lender: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })) }),
         [banks],
     )
 
-    const config: UnifiedSearchConfig = useMemo(() => {
-        const filters: NonNullable<UnifiedSearchConfig['filters']> = [
-            { key: 'loan_status', label: 'Estado', type: 'single', serverParam: 'loan_status', options: [
-                { label: 'Activos', value: 'active' },
-                { label: 'Finalizados', value: 'completed' },
-            ]},
-        ]
-        if (!bankId) {
-            filters.unshift({ key: 'bank', label: 'Banco', type: 'single', serverParam: 'lender', dynamic: true })
-        }
-        return {
-            searchFields: [
-                { key: 'search', label: 'ID / N° Préstamo / Banco', serverParam: 'search', clientKey: ['display_id', 'loan_number', 'lender_name'] },
-            ],
-            filters,
-            groupBy: [
-                { key: 'status', label: 'Estado', field: 'status' },
-            ],
-        }
-    }, [bankId])
-    const search = useUnifiedSearch(config, filterOptions)
+    // Within one bank its filter has no effect: the lender is fixed below.
+    const query = useCollectionQuery(bankLoanEntity, { filterOptions, sorting: 'client' })
+    const { search, groupBy } = query
+    const { filters } = search
 
     const queryParams = useMemo(() => {
         const params: Record<string, string> = {}
+        if (filters.lender) params.lender = filters.lender
         if (bankId) params.lender = String(bankId)
-        if (search.filters.lender) params.lender = search.filters.lender
         return Object.keys(params).length > 0 ? params : undefined
-    }, [bankId, search.filters.lender])
+    }, [bankId, filters.lender])
 
     const { data: loans = [], isLoading, isError, refetch } = useLoans(queryParams)
 
     const isFiltered = search.isFiltered
+    // Filtered here: `loan_status` groups row statuses, which `search.filterFn` cannot express.
     const filteredLoans = useMemo(() => {
-        const statusFilter = search.filters.loan_status ?? "active"
-        let result = loans
-        if (statusFilter === "completed") {
-            result = loans.filter(l => l.status === "PAID" || l.status === "DEFAULTED")
-        } else {
-            result = loans.filter(l => l.status === "ACTIVE")
-        }
-        return search.filterFn(result)
-    }, [loans, search.filterFn, search.filters.loan_status])
+        const completed = filters.loan_status === "completed"
+        const text = filters.search?.toLowerCase()
+        return loans.filter((l) =>
+            (completed ? l.status === "PAID" || l.status === "DEFAULTED" : l.status === "ACTIVE") &&
+            (!text || [l.display_id, l.loan_number, l.lender_name].some((v) => String(v ?? "").toLowerCase().includes(text))),
+        )
+    }, [loans, filters.loan_status, filters.search])
 
-    const groupBy = search.groupBy ? LOAN_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode('treasury.bankloan')
     // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         bankLoanEntity,
         { rows: filteredLoans, isLoading, error: isError && loans.length === 0, refetch, isFiltered },
-        { pagination: groupBy ? { mode: 'none' } : { mode: 'client' }, groupBy },
+        { pagination: groupBy ? { mode: 'none' } : { mode: 'client' }, groupBy, sorting: query.sorting },
     )
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
@@ -128,18 +108,12 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
             {isError && loans.length > 0 && <StaleDataBanner className="mx-4 mt-2" />}
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 actions={loanActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={registerAction}>
-                    <UnifiedSearchBar
-                        config={config}
-                        {...bindUnifiedSearch(search)}
-                        filterOptions={search.filterOptions}
-                        placeholder="Buscar por ID, N° préstamo o banco..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={registerAction} />
                 <Collection.View
                     table={bankLoanViews.table}
                     card={bankLoanViews.card}

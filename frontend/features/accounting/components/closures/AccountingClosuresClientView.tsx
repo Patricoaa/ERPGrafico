@@ -12,13 +12,12 @@ import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChec
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedFiscalYearPreview } from '../../hooks/useSelectedFiscalYearPreview';
-import { EmptyState, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared';
-import { Collection, useEntityCollection } from '@/components/entity-view';
+import { EmptyState, ToolbarCreateButton } from '@/components/shared';
+import { Collection, useCollectionQuery, useEntityCollection } from '@/components/entity-view';
 import { closureEntity, closureViews } from '../../entity-view/closure.entity';
 import { buildClosureTree } from '../../utils/closureTree';
 import { useReopenConfirm } from '../../hooks/useReopenConfirm';
 import { closureActions, type ClosureActionsCtx } from './closureActions';
-import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
 
 interface AccountingClosuresClientViewProps {
     externalOpen?: boolean;
@@ -181,7 +180,8 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         }
     }, [pendingClosePeriodId, closePeriod])
 
-    const search = useUnifiedSearch(fiscalYearUnifiedSearchDef)
+    const query = useCollectionQuery(closureEntity, { sorting: 'client' })
+    const { search } = query
 
     const filteredGrouped = useMemo(() => {
         let result = groupedData
@@ -195,7 +195,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         closureEntity,
         // A running action (close, reopen, declare…) marks the table busy, as the former view did.
         { rows: closureRows, isRefetching: actionLoadingYr || actionLoadingPeriod || isLoadingTaxAction, isFiltered: search.isFiltered },
-        { pagination: { mode: 'client', pageSize: 10 } },
+        { pagination: { mode: 'client', pageSize: 10 }, sorting: query.sorting },
     )
 
     // Reopen confirmations (they lived in each month card): one per period type, for the whole tree.
@@ -239,10 +239,8 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <Collection.Root collection={collection} actions={closureActions.forCollection(actionsCtx)}>
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={fiscalYearUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar ejercicio..." />
-                </Collection.Toolbar>
+            <Collection.Root collection={collection} query={query} actions={closureActions.forCollection(actionsCtx)}>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View table={closureViews.table} onResetFilters={search.clearAll} />
             </Collection.Root>
             {reopenPeriodDialog}

@@ -8,10 +8,8 @@ import { BaseModal, FormFooter, CancelButton, SubmitButton } from "@/components/
 import { Plus } from "lucide-react"
 
 import { useTerminalBatches } from "@/features/treasury"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { SkeletonShell } from "@/components/shared"
-import { terminalBatchUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { terminalBatchEntity, terminalBatchViews } from "../entity-view/terminalBatch.entity"
 
 // Lazy load feature components
@@ -19,7 +17,6 @@ const LazyTerminalBatchSelectionModal = lazy(() => import("./TerminalBatchSelect
 const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const TERMINAL_BATCH_GROUPS: Record<string, FieldId<typeof terminalBatchEntity.fields>> = { date: "salesDate", status: "status" }
 
 interface TerminalBatchesClientViewProps {
     createAction?: React.ReactNode
@@ -30,8 +27,9 @@ export function TerminalBatchesClientView({
 }: TerminalBatchesClientViewProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const search = useUnifiedSearch(terminalBatchUnifiedSearchDef)
-    const { batches, isLoading, isRefetching, isError, refetch } = useTerminalBatches(search.filters)
+    const query = useCollectionQuery(terminalBatchEntity, { sorting: "client" })
+    const { search, groupBy } = query
+    const { batches, isLoading, isRefetching, isError, refetch } = useTerminalBatches(query.params)
     const filteredBatches = search.filterFn(batches)
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalbatch")
     const batchPanel = useCreatePanelRoute({ actions: [], createValue: 'batch' })
@@ -43,27 +41,25 @@ export function TerminalBatchesClientView({
         router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
     }, [router, searchParams])
 
-    const groupBy = search.groupBy ? TERMINAL_BATCH_GROUPS[search.groupBy] ?? null : null
 
     // Client-filtered (search.filterFn): gate `error` on the unfiltered length, so a filter that
     // matches nothing reads as "no results", not "error".
     const collection = useEntityCollection(
         terminalBatchEntity,
         { rows: filteredBatches, isLoading, isRefetching, error: isError && batches.length === 0, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy, sorting: query.sorting },
     )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={handleOpenBatch}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={terminalBatchUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar liquidación..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={terminalBatchViews.table}
                     card={terminalBatchViews.card}

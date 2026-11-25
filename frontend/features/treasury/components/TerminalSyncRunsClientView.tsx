@@ -2,13 +2,12 @@
 
 import { useMemo, useState } from "react"
 import { RefreshCw } from "lucide-react"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { Can } from "@/components/auth"
-import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useTerminalSyncRuns } from "../hooks/useTerminalSync"
 import { useTerminalProviders } from "../hooks/useTerminalProviders"
-import { terminalSyncRunUnifiedSearchDef } from "../unifiedSearchDef"
 import { terminalSyncRunEntity, terminalSyncRunViews } from "../entity-view/terminalSyncRun.entity"
 import type { TerminalSyncRunFilters, TerminalSyncRunStatus, TerminalSyncTrigger } from "../types"
 import { TerminalSyncModal } from "./TerminalSyncModal"
@@ -43,8 +42,9 @@ export function TerminalSyncRunsClientView() {
         () => providers.filter((p) => p.provider_type === "TUU").map((p) => ({ label: p.name, value: String(p.id) })),
         [providers],
     )
-    const search = useUnifiedSearch(terminalSyncRunUnifiedSearchDef, { provider: providerOptions })
-    const filters = useMemo(() => toRunFilters(search.filters), [search.filters])
+    const query = useCollectionQuery(terminalSyncRunEntity, { filterOptions: { provider: providerOptions } })
+    const { search } = query
+    const filters = useMemo(() => toRunFilters(query.params), [query.params])
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalsyncrun")
     // ADR-0152: cada registro abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
     useDeepLinkEntity("treasury.terminalsyncrun")
@@ -73,17 +73,11 @@ export function TerminalSyncRunsClientView() {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar action={syncAction}>
-                    <UnifiedSearchBar
-                        config={terminalSyncRunUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        filterOptions={{ provider: providerOptions }}
-                        placeholder="Filtrar importaciones..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={syncAction} />
                 <Collection.View
                     table={terminalSyncRunViews.table}
                     card={terminalSyncRunViews.card}

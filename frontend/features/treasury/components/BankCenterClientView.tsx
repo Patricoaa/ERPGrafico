@@ -3,11 +3,10 @@
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { bankActions, type BankActionsCtx } from './bankActions'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { bankUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
+import { ActionConfirmModal } from "@/components/shared"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank } from "@/features/treasury/types"
@@ -25,7 +24,8 @@ interface BankCenterClientViewProps {
 export function BankCenterClientView({ externalOpen, onOpenChange, createAction }: BankCenterClientViewProps) {
     const { banks, isLoading, isError, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
-    const search = useUnifiedSearch(bankUnifiedSearchDef)
+    const query = useCollectionQuery(bankEntity, { sorting: "client" })
+    const { search } = query
     const [wizardOpen, setWizardOpen] = useState(false)
     const { openEntity } = useGlobalModals()
     const router = useRouter()
@@ -80,21 +80,20 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
     const collection = useEntityCollection(
         bankEntity,
         { rows, isLoading, error: isError && banks.length === 0, refetch, isFiltered: search.isFiltered },
-        { defaultSort: bankViews.table.defaultSort },
+        { sorting: query.sorting },
     )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={(bank) => router.push(`/treasury/bank-center/${bank.id}/overview`)}
                 actions={bankActions.forCollection(bankActionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={bankUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar banco..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={bankViews.table}
                     card={bankViews.card}

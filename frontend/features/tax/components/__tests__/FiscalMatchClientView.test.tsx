@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react"
+import { render as rtlRender, screen, within } from "@testing-library/react"
+import { NuqsTestingAdapter } from "nuqs/adapters/testing"
 import userEvent from "@testing-library/user-event"
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -7,8 +8,6 @@ import type { FiscalMatchCounts, FiscalMatchFilters, FiscalMatchListItem } from 
 const m = vi.hoisted(() => ({
     filters: {} as Record<string, string>,
     filterOptions: undefined as Record<string, { label: string; value: string }[]> | undefined,
-    applyFilter: vi.fn(),
-    removeFilter: vi.fn(),
     groups: [] as unknown[],
     listLoading: false,
     listError: false,
@@ -24,22 +23,14 @@ const m = vi.hoisted(() => ({
     selectedId: null as number | null,
 }))
 
-vi.mock("@/components/shared", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@/components/shared")>()
+vi.mock("@/components/entity-view", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/components/entity-view")>()
     return {
         ...actual,
-        UnifiedSearchBar: () => null,
-        useUnifiedSearch: (_config: unknown, filterOptions?: Record<string, { label: string; value: string }[]>) => {
-            m.filterOptions = filterOptions
-            return {
-                filters: m.filters,
-                isFiltered: Object.keys(m.filters).length > 0,
-                applyFilter: m.applyFilter,
-                removeFilter: m.removeFilter,
-                clearAll: vi.fn(),
-            }
+        useCollectionQuery: (...args: Parameters<typeof actual.useCollectionQuery>) => {
+            m.filterOptions = args[1]?.filterOptions
+            return actual.useCollectionQuery(...args)
         },
-        bindUnifiedSearch: () => ({}),
     }
 })
 vi.mock("../../hooks/useFiscalMatches", () => ({
@@ -128,8 +119,6 @@ beforeEach(() => {
     m.query = "status=attention"
     m.replace.mockReset()
     m.filterOptions = undefined
-    m.applyFilter.mockReset()
-    m.removeFilter.mockReset()
     m.groups = [base, orphan]
     m.listLoading = false
     m.listError = false
@@ -142,6 +131,10 @@ beforeEach(() => {
     m.push.mockReset()
     m.selectedId = null
 })
+
+/** La barra de comandos lee los filtros de la URL (nuqs): `m.filters` hace de URL. */
+const render = (ui: React.ReactElement) =>
+    rtlRender(ui, { wrapper: ({ children }) => <NuqsTestingAdapter searchParams={new URLSearchParams(m.filters)}>{children}</NuqsTestingAdapter> })
 
 describe("FiscalMatchClientView", () => {
     it("muestra los conteos dentro del buscador y abre en necesita atención", () => {

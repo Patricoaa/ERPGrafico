@@ -145,20 +145,21 @@ export function usePurchaseReturns(filters?: Record<string, unknown>) {
 export function usePurchaseFulfillment(filters?: Record<string, unknown>) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
-    const typeFilter = filters?.fulfillment_type as string | undefined
+    // Multi-select: "RECEIPT", "RETURN" or both ("RECEIPT,RETURN").
+    const types = typeof filters?.fulfillment_type === 'string' ? filters.fulfillment_type.split(',') : null
 
     const receiptsQuery = useQuery({
         queryKey: PURCHASING_KEYS.receipts({ page, page_size: pageSize, ...filters }),
         queryFn: () => purchasingApi.getReceiptsPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
-        enabled: !typeFilter || typeFilter === 'RECEIPT',
+        enabled: !types || types.includes('RECEIPT'),
     })
 
     const returnsQuery = useQuery({
         queryKey: [...PURCHASING_KEYS.all, 'returns', { page, page_size: pageSize, ...filters }],
         queryFn: () => purchasingApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
-        enabled: !typeFilter || typeFilter === 'RETURN',
+        enabled: !types || types.includes('RETURN'),
     })
 
     const isLoading = receiptsQuery.isLoading || returnsQuery.isLoading

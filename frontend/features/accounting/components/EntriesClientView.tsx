@@ -6,15 +6,13 @@ import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useEffect } from "react"
 
 import { JournalEntryDrawer } from "./JournalEntryDrawer"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryRowActions'
 
 import { useJournalEntries, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry, type JournalEntry } from "../hooks/useJournalEntries"
 import { journalEntryEntity, journalEntryViews } from "../entity-view/journalEntry.entity"
 import { useAccountingAccounts } from "../hooks/useAccounts"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { journalEntryUnifiedSearchDef } from "../unifiedSearchDef"
 import { toast } from "sonner"
 import type { JournalEntryInitialData } from '@/types/forms'
 
@@ -24,18 +22,16 @@ interface EntriesClientViewProps {
     createAction?: React.ReactNode
 }
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const ENTRY_GROUPS: Record<string, FieldId<typeof journalEntryEntity.fields>> = { status: "status", is_manual: "origin" }
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 export function EntriesClientView({ externalOpen, onExternalOpenChange, createAction }: EntriesClientViewProps) {
-    const search = useUnifiedSearch(journalEntryUnifiedSearchDef)
-    const groupBy = search.groupBy ? ENTRY_GROUPS[search.groupBy] ?? null : null
-    const [pageState, setPageState] = useServerPage([search.filters, groupBy], DEFAULT_PAGE)
+    const query = useCollectionQuery(journalEntryEntity)
+    const { search, groupBy, params } = query
+    const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("accounting.journalentry")
 
     const { page, entries, isLoading, isRefetching, isError, refetch } = useJournalEntries({
-        ...search.filters,
+        ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     } as unknown as Parameters<typeof useJournalEntries>[0])
@@ -103,13 +99,12 @@ export function EntriesClientView({ externalOpen, onExternalOpenChange, createAc
             <div className="pt-2 flex-1 min-h-0 flex flex-col">
                 <Collection.Root
                     collection={collection}
+                    query={query}
                     view={view}
                     onViewChange={onViewChange}
                     actions={journalEntryActions.forCollection(journalEntryActionsCtx)}
                 >
-                    <Collection.Toolbar action={createAction}>
-                        <UnifiedSearchBar config={journalEntryUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar asientos..." />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar action={createAction} />
                     <Collection.View
                         table={journalEntryViews.table}
                         card={journalEntryViews.card}

@@ -7,13 +7,12 @@ import React, { useCallback, useMemo } from "react"
 import { Archive, ArchiveRestore } from "lucide-react"
 
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
-import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { attributeEntity, attributeViews } from "../entity-view/attribute.entity"
 import { attributeActions, type AttributeActionsCtx } from "./attributeActions"
 import { AttributeValuesProvider } from "./AttributeValuesSummary"
@@ -26,7 +25,8 @@ interface AttributesClientViewProps {
 }
 
 export function AttributesClientView({ externalOpen, onExternalOpenChange, createAction }: AttributesClientViewProps) {
-    const search = useUnifiedSearch(attributeUnifiedSearchDef)
+    const query = useCollectionQuery(attributeEntity, { sorting: "client" })
+    const { search } = query
     const {
         attributes,
         isLoading,
@@ -39,7 +39,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
     const collection = useEntityCollection(
         attributeEntity,
         { rows: attributes, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
-        { defaultSort: attributeViews.table.defaultSort },
+        { sorting: query.sorting, groupBy: query.groupBy, pagination: query.groupBy ? { mode: "none" } : { mode: "client" } },
     )
 
     const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
@@ -113,18 +113,13 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
             >
                 <Collection.Root
                     collection={collection}
+                    query={query}
                     selection="bulk"
                     view={view}
                     onViewChange={onViewChange}
                     actions={attributeActions.forCollection(attributeActionsCtx)}
                 >
-                    <Collection.Toolbar action={createAction}>
-                        <UnifiedSearchBar
-                            config={attributeUnifiedSearchDef}
-                            {...bindUnifiedSearch(search)}
-                            placeholder="Buscar atributo..."
-                        />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar action={createAction} />
                     <Collection.View
                         table={attributeViews.table}
                         card={attributeViews.card}

@@ -145,6 +145,36 @@ export const productEntity = defineEntity<Product>()((f) => ({
         }, { label: "Precio c/IVA", sortable: false }), // shown gross or dynamic; the server can only sort by the net sale_price
         availabilityLine: f.value("productAvailability", availabilityForCard, { label: "Disponibilidad", sortable: false }),
     },
+    // ADR-0158 §3. No default sort: the server order (the header only claims an order the server applied).
+    query: {
+        search: { placeholder: "Buscar por nombre o SKU…", scopes: [{ label: "Nombre / SKU", param: "search", suggestionsUrl: "inventory/products/filter-suggestions/" }] },
+        filters: {
+            product_type: {
+                field: "type",
+                control: "single",
+                options: [
+                    { value: "STORABLE", label: "Almacenable" },
+                    { value: "CONSUMABLE", label: "Consumible" },
+                    { value: "SERVICE", label: "Servicio" },
+                    { value: "MANUFACTURABLE", label: "Fabricable" },
+                    { value: "SUBSCRIPTION", label: "Suscripción" },
+                ],
+            },
+            category: { field: "category", control: "single", options: "remote" },
+            has_variants: { label: "Variantes", control: "single", options: [{ value: "true", label: "Con variantes" }, { value: "false", label: "Sin variantes" }] },
+            // Translated by the screen into `can_be_sold` / `can_be_purchased`.
+            availability: { label: "Disponible para", control: "multi", options: [{ value: "sale", label: "Venta" }, { value: "purchase", label: "Compra" }] },
+            is_active: { label: "Estado", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] },
+        },
+        sort: { fields: ["name", "internalCode", "sku", "category", "type", "stock"] },
+        groupBy: { fields: ["type", "category"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "for-sale", label: "Para venta", filters: { availability: ["sale"] } },
+            { id: "for-purchase", label: "Para compra", filters: { availability: ["purchase"] } },
+            { id: "archived", label: "Archivados", filters: { is_active: "false" } },
+        ],
+    },
 }))
 
 export const productViews = productEntity.views({

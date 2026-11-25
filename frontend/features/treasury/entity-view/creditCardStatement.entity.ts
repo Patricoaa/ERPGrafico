@@ -26,6 +26,18 @@ export const creditCardStatementEntity = defineEntity<CreditCardStatement>()((f)
         paymentAccountName: f.text("payment_account_name", { label: "Cuenta de pago" }),
         notes: f.text("notes", { label: "Notas" }),
     },
+    // ADR-0158 §3, client mode. `bank` / `card` take their options from the screen; without a card the list
+    // shows every card (or, inside one bank, its first card).
+    query: {
+        search: { placeholder: "Buscar por folio o monto…" },
+        filters: {
+            bank: { label: "Banco", control: "single", options: "remote" },
+            card: { field: "cardAccountName", control: "single", options: "remote" },
+            cutoff_date: { field: "cutOffDate", control: "date", paramFrom: "cutoff_from", paramTo: "cutoff_to" },
+        },
+        sort: { fields: ["cutOffDate", "displayId", "cardAccountName", "billedAmount", "dueDate", "status"], default: "-cutOffDate" },
+        groupBy: { fields: ["status", "period", "cardAccountName"] },
+    },
 }))
 
 export const creditCardStatementViews = creditCardStatementEntity.views({

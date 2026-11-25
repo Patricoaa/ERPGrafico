@@ -15,22 +15,17 @@ import {
     PageHeaderButton,
     Metric,
     MetricStrip,
-    UnifiedSearchBar,
-    bindUnifiedSearch,
-    useUnifiedSearch,
     type BulkAction,
 } from "@/components/shared"
 import { formatMoney } from '@/lib/money'
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { ProductDrawer, ArchivingRestrictionsModal, useProducts, type Restriction } from "@/features/inventory"
 import { SubscriptionHistoryModal } from "./SubscriptionHistoryModal"
 import { subscriptionActions, type SubscriptionActionsCtx } from "../subscriptionActions"
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "../hooks/useSubscriptions"
-import { subscriptionUnifiedSearchDef } from "../unifiedSearchDef"
 import { subscriptionEntity, subscriptionViews } from "../entity-view/subscription.entity"
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const SUBSCRIPTION_GROUPS: Record<string, FieldId<typeof subscriptionEntity.fields>> = { status: "status", recurrence_period: "period" }
 
 // Subscription type imported from useSubscriptions hook
 
@@ -49,15 +44,15 @@ interface SubscriptionsClientViewProps {
 }
 
 export function SubscriptionsClientView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsClientViewProps) {
-    const search = useUnifiedSearch(subscriptionUnifiedSearchDef)
-    const { subscriptions, isLoading: loading, isError, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(search.filters)
-    const groupBy = search.groupBy ? SUBSCRIPTION_GROUPS[search.groupBy] ?? null : null
+    const query = useCollectionQuery(subscriptionEntity, { sorting: "client" })
+    const { subscriptions, isLoading: loading, isError, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(query.params)
+    const { groupBy } = query
     const { view, onViewChange } = useCollectionViewMode("inventory.subscription")
     const collection = useEntityCollection(
         subscriptionEntity,
-        { rows: subscriptions, isLoading: loading, error: isError, refetch: fetchSubscriptions, isFiltered: search.isFiltered },
+        { rows: subscriptions, isLoading: loading, error: isError, refetch: fetchSubscriptions, isFiltered: query.search.isFiltered },
         // Groups span the whole list, not one page.
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, sorting: query.sorting, groupBy },
     )
     const { data: stats } = useSubscriptionStats<Stats>()
     const { updateProduct } = useProducts()
@@ -262,21 +257,16 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 view={view}
                 onViewChange={onViewChange}
                 actions={subscriptionActions.forCollection(actionsCtx)}
+                query={query}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={subscriptionUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar suscripciones..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={subscriptionViews.table}
                     card={subscriptionViews.card}
                     emptyTitle="Aún no hay suscripciones"
                     emptyDescription="Crea una suscripción para gestionar cobros o pagos recurrentes."
                     emptyAction={createAction}
-                    onResetFilters={search.clearAll}
+                    onResetFilters={query.search.clearAll}
                 />
                 <Collection.BulkBar actions={bulkActions} />
             </Collection.Root>

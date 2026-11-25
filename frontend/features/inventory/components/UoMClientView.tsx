@@ -7,14 +7,13 @@ import React, { useMemo } from "react"
 
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
-import { uomUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { uomEntity, uomViews } from "../entity-view/uom.entity"
 import { UoMDrawer } from "./UoMDrawer"
 
@@ -25,14 +24,15 @@ interface UoMClientViewProps {
 }
 
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
-    const search = useUnifiedSearch(uomUnifiedSearchDef)
+    const query = useCollectionQuery(uomEntity, { sorting: "client" })
+    const { search } = query
     const { uoms, isLoading, isError, refetch, archiveUoM } = useUoMs(search.filters)
     const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
     const { openEntity } = useGlobalModals()
     // ADR-0152: cada registro abre su propia pestaña; `?selected` solo es enlace profundo.
     useDeepLinkEntity("inventory.uom")
     const { view, onViewChange } = useCollectionViewMode("inventory.uom")
-    const collection = useEntityCollection(uomEntity, { rows: uoms, isLoading, error: isError, refetch, isFiltered: search.isFiltered }, { defaultSort: uomViews.table.defaultSort })
+    const collection = useEntityCollection(uomEntity, { rows: uoms, isLoading, error: isError, refetch, isFiltered: search.isFiltered }, { sorting: query.sorting, groupBy: query.groupBy, pagination: query.groupBy ? { mode: "none" } : { mode: "client" } })
 
     const archiveConfirm = useConfirmAction<UoM>(async (uom) => {
         const isArchiving = uom.is_active
@@ -81,19 +81,14 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
                 // Edit through the UoM modal (?selected, ADR-0020), not the drawer registry.
                 actions={uomActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={uomUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar unidad..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={uomViews.table}
                     card={uomViews.card}

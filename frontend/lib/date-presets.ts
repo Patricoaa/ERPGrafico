@@ -1,4 +1,4 @@
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format } from 'date-fns'
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format, subDays } from 'date-fns'
 
 const fmt = (d: Date) => format(d, 'yyyy-MM-dd')
 
@@ -28,6 +28,12 @@ export function thisYear() {
 }
 
 /** The five period presets of a search date filter, sent as `from`/`to` server params. */
+/** The last 7 days ending today (local). */
+export function lastSevenDays() {
+  const now = new Date()
+  return { from: format(subDays(now, 6), 'yyyy-MM-dd'), to: format(now, 'yyyy-MM-dd') }
+}
+
 export function periodPresets(serverParamFrom: string, serverParamTo: string) {
   return [
     { label: 'Hoy', serverParamFrom, serverParamTo, getValue: today },

@@ -59,6 +59,13 @@ export const bomEntity = defineEntity<BOM>()((f) => ({
         totalCost: f.money("total_cost", { label: "Costo por u. de rendimiento" }),
         active: f.status((b) => (b.active ? { status: "active", label: "Activa" } : { status: "inactive", label: "Inactiva" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar por producto o nombre…" },
+        filters: { active: { field: "active", control: "single", options: [{ value: "true", label: "Activa" }, { value: "false", label: "Inactiva" }] } },
+        sort: { fields: ["product", "name", "linesCount", "totalCost", "active"] },
+        groupBy: { fields: ["active", "product"] },
+    },
 }))
 
 export const bomViews = bomEntity.views({

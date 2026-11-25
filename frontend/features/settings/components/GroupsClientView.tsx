@@ -2,10 +2,9 @@
 
 import { EntityPanelTab } from "@/components/providers"
 import { useEffect, useMemo, useState } from "react"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { GroupDrawer, RoleCompositionEditor } from "@/features/users"
-import { groupUnifiedSearchDef } from "@/features/settings/unifiedSearchDef"
 import { useGroups } from "../hooks"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Group } from "../api/types"
@@ -22,7 +21,8 @@ interface GroupsClientViewProps {
 
 export function GroupsClientView({ externalOpen, onExternalOpenChange, createAction }: GroupsClientViewProps) {
     const { groups, loading, isError, refetch, fetchGroups, deleteGroup } = useGroups()
-    const search = useUnifiedSearch(groupUnifiedSearchDef)
+    const query = useCollectionQuery(groupEntity, { sorting: "client" })
+    const { search } = query
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("settings.group")
     const rows = useMemo(() => filterFn(groups), [filterFn, groups])
@@ -30,7 +30,7 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
     const collection = useEntityCollection(
         groupEntity,
         { rows, isLoading: loading, error: isError && groups.length === 0, refetch, isFiltered: search.isFiltered },
-        { defaultSort: groupViews.table.defaultSort },
+        { sorting: query.sorting },
     )
     const { can } = useAuth()
     const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -68,19 +68,14 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 // Edit in the local drawer (no ?selected route for groups).
                 onOpen={(group) => groupActionsCtx.onEdit(group)}
                 actions={groupActions.forCollection(groupActionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={groupUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar grupo..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={groupViews.table}
                     card={groupViews.card}

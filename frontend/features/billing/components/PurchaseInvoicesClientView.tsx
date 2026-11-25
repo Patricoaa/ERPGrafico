@@ -1,17 +1,12 @@
 "use client"
 
 import React from "react"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, GROUP_ROW_LIMIT, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId } from "@/components/entity-view"
-import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
+import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { type InvoiceFilters } from "@/features/billing/types"
 import { purchaseInvoiceEntity, purchaseInvoiceViews } from "../entity-view/purchaseInvoice.entity"
-
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const INVOICE_GROUPS: Record<string, FieldId<typeof purchaseInvoiceEntity.fields>> = { date: "date", status: "hub" }
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
@@ -20,14 +15,14 @@ interface Props {
 }
 
 export function PurchaseInvoicesClientView({ createAction }: Props) {
-    const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
+    const query = useCollectionQuery(purchaseInvoiceEntity)
+    const { search, groupBy } = query
 
     // ?selected abre la ficha documental de la factura de compra (ADR-0083)
     const sheet = useDocumentSheetRoute("billing.invoice")
-    const groupBy = search.groupBy ? INVOICE_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
-    const filters = { ...search.filters } as InvoiceFilters
+    const filters = { ...query.params } as InvoiceFilters
     const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
 
     const { page, invoices: documents, isLoading, isRefetching, isError, refetch: fetchDocuments } = usePurchaseInvoices({
@@ -48,6 +43,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
                 onOpen={(doc) => sheet.toggle(doc.id, doc)}
@@ -55,9 +51,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                 onViewChange={onViewChange}
                 actions={(inv) => <DocumentRowActions id={inv.id} kind="invoice" onOpen={sheet.toggle} />}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={purchaseInvoiceUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar facturas de compra..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={purchaseInvoiceViews.table}
                     card={purchaseInvoiceViews.card}

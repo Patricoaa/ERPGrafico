@@ -2,7 +2,7 @@
 
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import { ActionConfirmModal } from '@/components/shared'
@@ -16,11 +16,9 @@ import { WorkOrderKanban } from "./WorkOrderKanban"
 import { WorkOrderTimeline } from "./WorkOrderTimeline"
 import { useWorkOrders } from "../hooks/useWorkOrders"
 import { useWorkOrderListActions } from "../hooks/useWorkOrderListActions"
-import { FadeIn, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { FadeIn, ToolbarCreateButton } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { workOrderUnifiedSearchDef } from "../unifiedSearchDef"
-import { toast } from "sonner"
-import { Collection, useEntityCollection, type CollectionViewMode } from "@/components/entity-view"
+import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useEntityCollection, useServerPage, type CollectionViewMode } from "@/components/entity-view"
 import { workOrderEntity, workOrderViews } from "../entity-view/workOrder.entity"
 import type { WorkOrder, WizardMode } from "../types"
 
@@ -34,31 +32,22 @@ function toCollectionView(v: string): CollectionViewMode {
     return "table"
 }
 
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
+
 export function WorkOrdersClientView({ initialOrders }: WorkOrdersClientViewProps) {
     const { currentView, handleViewChange } = useViewMode("production.workorder")
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
 
-    const search = useUnifiedSearch(workOrderUnifiedSearchDef)
-    const allFilters = { ...search.filters }
-    const isGrouping = search.groupBy !== null
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const query = useCollectionQuery(workOrderEntity)
+    const { search, groupBy, params } = query
+    const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { page, orders, isLoading, isRefetching, refetch: refetchOrders } = useWorkOrders({
-        ...allFilters,
-        page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 5000 : pageState.pageSize,
+        ...params,
+        page: groupBy ? 1 : pageState.pageIndex + 1,
+        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined)
-
-    const totalCount = page?.count ?? 0
-    const isOverLimit = isGrouping && totalCount > 5000
-    const effectiveGrouping = isGrouping && !isOverLimit
-
-    useEffect(() => {
-        if (isOverLimit) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [isOverLimit, totalCount])
 
     const { annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
@@ -106,21 +95,17 @@ export function WorkOrdersClientView({ initialOrders }: WorkOrdersClientViewProp
         onAnnul: handleCancel,
     }
 
-    const groupBy = null // WorkOrder groupBy uses search.groupBy for data fetch, not entity-view groupBy
-
     const collection = useEntityCollection(
         workOrderEntity,
         {
             rows: orders as WorkOrder[],
-            rowCount: totalCount,
+            rowCount: page?.count ?? 0,
             isLoading,
             isRefetching,
             isFiltered: search.isFiltered,
         },
         {
-            pagination: effectiveGrouping
-                ? { mode: "none" }
-                : { mode: "server", state: pageState, onChange: setPageState },
+            pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             groupBy,
         },
     )
@@ -145,28 +130,14 @@ export function WorkOrdersClientView({ initialOrders }: WorkOrdersClientViewProp
                 <FadeIn key={currentView} className="h-full">
                     <Collection.Root
                         collection={collection}
+                        query={query}
                         selection="bulk"
                         view={collectionView}
                         onViewChange={(v) => handleViewChange(v === "table" ? "list" : v)}
                         onOpen={(order: WorkOrder) => handleManage(order.id)}
                         actions={workOrderActions.forCollection(workOrderActionsCtx)}
                     >
-                        <Collection.Toolbar action={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}>
-                            <UnifiedSearchBar
-                                config={workOrderUnifiedSearchDef}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
-                                placeholder="Buscar OTs..."
-                            />
-                        </Collection.Toolbar>
+                        <Collection.Toolbar action={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />} />
 
                         {!isCustomView && (
                             <Collection.View

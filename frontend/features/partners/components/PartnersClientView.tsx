@@ -9,57 +9,14 @@ import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 
 import { usePartners, netEquityPercentages } from "@/features/contacts"
 import { useOnOpen } from "../hooks"
-import {
-    AnalyticsPanelContent,
-    UnifiedSearchBar,
-    bindUnifiedSearch,
-    useUnifiedSearch,
-} from "@/components/shared"
-import type { UnifiedSearchConfig } from "@/components/shared"
-import { Collection, useCollectionAnalytics, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { AnalyticsPanelContent } from "@/components/shared"
+import { Collection, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { usePartnerAnalyticsData } from "../hooks/usePartnerAnalyticsData"
 import { usePartnerEvolutionData } from "../hooks/usePartnerEvolutionData"
 import type { Granularity } from "@/lib/analytics-helpers"
 import { partnerEntity, partnerViews } from "../entity-view/partner.entity"
 import { buildPartnerAnalyticsScreen } from "./partnerAnalyticsScreen"
 import { usePartnerActions } from "./PartnerActionModal"
-
-const partnerUnifiedSearchDef: UnifiedSearchConfig = {
-    searchFields: [
-        {
-            key: 'name',
-            label: 'Nombre / ID Fiscal',
-            serverParam: 'search',
-            clientKey: ['name', 'tax_id'],
-        },
-    ],
-    filters: [
-        {
-            type: 'toggle',
-            key: 'has_pending_capital',
-            label: 'Con Capital Pendiente',
-            serverParam: 'has_pending_capital',
-        },
-        {
-            type: 'toggle',
-            key: 'has_earnings',
-            label: 'Con Utilidades',
-            serverParam: 'has_earnings',
-        },
-        {
-            type: 'toggle',
-            key: 'has_dividends',
-            label: 'Con Dividendos por Pagar',
-            serverParam: 'has_dividends',
-        },
-        {
-            type: 'toggle',
-            key: 'has_withdrawals',
-            label: 'Con Retiros Provisorios',
-            serverParam: 'has_withdrawals',
-        },
-    ],
-}
 
 interface PartnersClientViewProps {
     initialAddPartnerOpen?: boolean
@@ -70,7 +27,9 @@ export function PartnersClientView({
     initialAddPartnerOpen = false,
     createAction
 }: PartnersClientViewProps) {
-    const search = useUnifiedSearch(partnerUnifiedSearchDef)
+    const query = useCollectionQuery(partnerEntity, { sorting: "client" })
+    const { search, params } = query
+    const { filterFn } = search
     const { partners = [], isLoading, isFetching, refetch, error } = usePartners()
     const { view, onViewChange } = useCollectionViewMode("contacts.partner")
     const analyticsUi = useCollectionAnalytics("composicion")
@@ -113,21 +72,21 @@ export function PartnersClientView({
     )
 
     const filteredPartners = useMemo(() => {
-        let result = search.filterFn(partners)
-        if (search.filters.has_pending_capital) {
+        let result = filterFn(partners)
+        if (params.has_pending_capital) {
             result = result.filter(p => parseFloat(p.partner_pending_capital) > 0)
         }
-        if (search.filters.has_earnings) {
+        if (params.has_earnings) {
             result = result.filter(p => parseFloat(p.partner_earnings_balance) > 0)
         }
-        if (search.filters.has_dividends) {
+        if (params.has_dividends) {
             result = result.filter(p => parseFloat(p.partner_dividends_payable_balance) > 0)
         }
-        if (search.filters.has_withdrawals) {
+        if (params.has_withdrawals) {
             result = result.filter(p => parseFloat(p.partner_provisional_withdrawals_balance) > 0)
         }
         return result
-    }, [partners, search])
+    }, [partners, filterFn, params])
 
     const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
 
@@ -161,21 +120,20 @@ export function PartnersClientView({
         // empties the *filtered* rows while the *unfiltered* list still has data — without it, that
         // combination would read as "error" instead of "no results for this filter".
         { rows: partnersWithPct, isLoading, isRefetching: isFetching, error: !!error && partners.length === 0, refetch, isFiltered: search.isFiltered },
-        { pagination: { mode: "client", pageSize: 20 } },
+        { pagination: { mode: "client", pageSize: 20 }, sorting: query.sorting },
     )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 analytics={analyticsUi}
+                query={query}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={(partner) => openEntity("contacts.partner", partner.id, partner)}
             >
-                <Collection.Toolbar action={partnerActionButtons}>
-                    <UnifiedSearchBar config={partnerUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar socio por nombre o ID fiscal..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={partnerActionButtons} />
                 <Collection.View
                     table={partnerViews.table}
                     card={partnerViews.card}

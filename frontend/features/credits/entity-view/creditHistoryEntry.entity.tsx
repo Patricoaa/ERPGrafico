@@ -48,6 +48,24 @@ export const creditHistoryEntryEntity = defineEntity<CreditHistoryEntry>()((f) =
             { label: "Origen" },
         ),
     },
+    // ADR-0158 §3: el historial carga todo y filtra en el navegador (id del filtro = clave de la fila).
+    query: {
+        search: { placeholder: "Cliente o folio…" },
+        filters: {
+            credit_assignment_origin: {
+                field: "origin",
+                control: "single",
+                options: [
+                    { value: "MANUAL", label: "Manual" },
+                    { value: "SALE", label: "Venta" },
+                    { value: "ADJUSTMENT", label: "Ajuste" },
+                    { value: "REVERSAL", label: "Reversión" },
+                ],
+            },
+        },
+        sort: { fields: ["date", "customerName", "effectiveTotal"], default: "-date" },
+        groupBy: { fields: ["origin"] },
+    },
 }))
 
 export const creditHistoryEntryViews = creditHistoryEntryEntity.views({

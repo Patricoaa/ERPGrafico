@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from "react"
 import { Download } from "lucide-react"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { Can } from "@/components/auth"
-import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useRcvDocuments } from "../../hooks/useRcvDocuments"
-import { rcvDocumentEntity, rcvPurchaseViews, rcvSaleViews } from "../../entity-view/rcvDocument.entity"
+import { rcvDocumentEntity, rcvPurchaseViews, rcvSaleQueryEntity, rcvSaleViews } from "../../entity-view/rcvDocument.entity"
 import { isFiscalMatchStatus } from "@/lib/fiscal-match"
-import { rcvDocumentUnifiedSearchDef, rcvSaleUnifiedSearchDef } from "../../unifiedSearchDef"
 import type { RcvDirection, RcvDocumentFilters } from "../../types"
 import { RcvImportModal } from "./RcvImportModal"
 
@@ -42,12 +41,12 @@ function toRcvFilters(direction: RcvDirection, params: Record<string, string>): 
 export function RcvDocumentsClientView({ direction }: { direction: RcvDirection }) {
     const [importOpen, setImportOpen] = useState(false)
     const purchases = direction === "PURCHASES"
-    const searchDef = purchases ? rcvDocumentUnifiedSearchDef : rcvSaleUnifiedSearchDef
     const views = purchases ? rcvPurchaseViews : rcvSaleViews
 
-    const search = useUnifiedSearch(searchDef)
+    const query = useCollectionQuery(purchases ? rcvDocumentEntity : rcvSaleQueryEntity)
+    const { search } = query
     // No default period: the tab lists every imported document until the user filters.
-    const filters = useMemo(() => toRcvFilters(direction, search.filters), [direction, search.filters])
+    const filters = useMemo(() => toRcvFilters(direction, query.params), [direction, query.params])
     const { view, onViewChange } = useCollectionViewMode("accounting.rcvdocument")
     // ADR-0152: cada documento abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
     useDeepLinkEntity("accounting.rcvdocument")
@@ -77,16 +76,11 @@ export function RcvDocumentsClientView({ direction }: { direction: RcvDirection 
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar action={importAction}>
-                    <UnifiedSearchBar
-                        config={searchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder={purchases ? "Buscar por proveedor, RUT o folio..." : "Buscar por cliente, RUT o folio..."}
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={importAction} />
                 <Collection.View
                     table={views.table}
                     card={views.card}

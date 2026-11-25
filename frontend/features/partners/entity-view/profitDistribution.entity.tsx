@@ -160,6 +160,26 @@ export const profitDistributionEntity = defineEntity<ProfitDistribution>()((f) =
         actaDate:   f.value("profitDistDate", (r) => r.resolution_date ?? null, { ...fixed, label: "Fecha" }),
         netResult:  f.value("profitDistResult", (r) => ({ amount: r.net_result, status: r.status }), { ...fixed, label: "Resultado Neto" }),
     },
+    // ADR-0158 §3: la lista carga todas las distribuciones y filtra en el navegador (estado = clave de la fila).
+    query: {
+        search: { placeholder: "Buscar por año, folio de resolución o acta…" },
+        filters: {
+            status: {
+                field: "status",
+                control: "multi",
+                options: [
+                    { value: "DRAFT", label: "Borrador" },
+                    { value: "APPROVED", label: "Aprobada" },
+                    { value: "EXECUTED", label: "Ejecutada" },
+                    { value: "CANCELLED", label: "Anulada" },
+                ],
+            },
+        },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "pending", label: "Por ejecutar", filters: { status: ["DRAFT", "APPROVED"] } },
+        ],
+    },
 }))
 
 export const profitDistributionViews = profitDistributionEntity.views({

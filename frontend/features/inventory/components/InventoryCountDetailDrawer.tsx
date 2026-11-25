@@ -6,10 +6,15 @@ import { Collection, useEntityCollection } from "@/components/entity-view"
 import { inventoryCountLineEntity, inventoryCountLineViews, type AugmentedCountLine } from "../entity-view/inventoryCountLine.entity"
 import { ClipboardCheck, Check, Equal } from "lucide-react"
 import { useInventoryCount, useInventoryCountMutations } from "../hooks/useInventoryCounts"
-import { inventoryCountLineSearchDef } from "@/features/inventory/unifiedSearchDef"
+import type { UnifiedSearchConfig } from "@/types/unified-search"
 import type { InventoryCountLine } from "../types"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
+
+/** Search over the count's lines, in the browser (an embedded list: no command bar, ADR-0158 §2). */
+const inventoryCountLineSearchDef: UnifiedSearchConfig = {
+    searchFields: [{ key: "search", label: "Producto / Código / SKU", serverParam: "search", clientKey: ["product_name", "product_code", "product_internal_code"] }],
+}
 
 interface InventoryCountDetailDrawerProps {
     countId: number | null

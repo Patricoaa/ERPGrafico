@@ -1,18 +1,16 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { AnalyticsPanelContent, EmptyState, SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from "@/components/shared"
+import { AnalyticsPanelContent, EmptyState, SkeletonShell, type Granularity } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import {
     Collection,
     GROUP_ROW_LIMIT,
-    orderingParam,
     useCollectionAnalytics,
+    useCollectionQuery,
     useCollectionViewMode,
     useEntityCollection,
     useServerPage,
-    type FieldId,
-    type SortSpec,
 } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
@@ -22,8 +20,6 @@ import { purchaseOrderEntity, purchaseOrderViews } from "../entity-view/purchase
 import { purchaseNoteEntity, purchaseNoteViews } from "../entity-view/purchaseNote.entity"
 import { EMPTY_PURCHASING_ANALYTICS, usePurchaseOrderAnalytics } from "../hooks/usePurchaseOrderAnalytics"
 import { usePurchasingNotes, usePurchasingOrders } from "../hooks/usePurchasing"
-import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing"
-import { purchaseOrderUnifiedSearchDef } from "../unifiedSearchDef"
 import { buildPurchaseAnalyticsScreen } from "./purchaseOrderAnalyticsScreen"
 
 interface PurchaseOrdersViewProps {
@@ -34,8 +30,6 @@ interface PurchaseOrdersViewProps {
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const ORDER_GROUPS: Record<string, FieldId<typeof purchaseOrderEntity.fields>> = { date: "date", status: "hub", receiving_status: "receiving" }
-const NOTE_GROUPS: Record<string, FieldId<typeof purchaseNoteEntity.fields>> = { date: "date", status: "hub" }
 
 /** Purchase orders or their credit/debit notes (ADR-0087 lote 2c); ?selected opens the document sheet (ADR-0083). */
 export function PurchaseOrdersView({ viewMode, createAction }: PurchaseOrdersViewProps) {
@@ -45,26 +39,30 @@ export function PurchaseOrdersView({ viewMode, createAction }: PurchaseOrdersVie
 
 function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactNode }) {
     const sheet = useDocumentSheetRoute("purchasing.purchaseorder")
-    const search = useUnifiedSearch(purchaseOrderUnifiedSearchDef)
-    const groupBy = search.groupBy ? ORDER_GROUPS[search.groupBy] ?? null : null
-    const [sort, setSort] = useState<SortSpec<FieldId<typeof purchaseOrderEntity.fields>> | null>(null)
-    const filters = search.filters as OrderFilters
-    const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
+    const query = useCollectionQuery(purchaseOrderEntity)
+    const { groupBy, params } = query
+    const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("purchasing.purchaseorder")
 
     const { page, orders, isLoading, isRefetching, isError, refetch } = usePurchasingOrders({
         filters: {
-            ...filters,
-            ordering: orderingParam(purchaseOrderEntity, sort),
+            ...params,
             page: groupBy ? 1 : pageState.pageIndex + 1,
             page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
         },
     })
 
-    // Figures over the whole filtered list, fetched only while the analytics modal is open.
+    // Figures over the filtered list (or everything, «Analizar sin filtros»), fetched only while the modal is open.
     const analyticsUi = useCollectionAnalytics("financiero")
+    const analyticsFilters = useMemo<OrderFilters | undefined>(() => {
+        if (analyticsUi.scope === "all") return undefined
+        // Sorting does not change the figures: leave it out so a sort does not refetch.
+        const filters: OrderFilters = { ...params }
+        delete filters.ordering
+        return filters
+    }, [params, analyticsUi.scope])
     const [granularity, setGranularity] = useState<Granularity>("month")
-    const { analytics, isLoading: isLoadingAnalytics, isError: isAnalyticsError, refetch: refetchAnalytics } = usePurchaseOrderAnalytics({ filters, granularity, enabled: analyticsUi.open })
+    const { analytics, isLoading: isLoadingAnalytics, isError: isAnalyticsError, refetch: refetchAnalytics } = usePurchaseOrderAnalytics({ filters: analyticsFilters, granularity, enabled: analyticsUi.open })
     const analyticsScreen = useMemo(
         () => buildPurchaseAnalyticsScreen(analytics ?? EMPTY_PURCHASING_ANALYTICS, { activeTab: analyticsUi.tab, onTabChange: analyticsUi.onTabChange, granularity, onGranularityChange: setGranularity }),
         [analytics, analyticsUi.tab, analyticsUi.onTabChange, granularity],
@@ -72,10 +70,10 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
 
     const collection = useEntityCollection(
         purchaseOrderEntity,
-        { rows: orders, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows: orders, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: query.search.isFiltered },
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
-            sorting: { mode: "server", state: sort, onChange: setSort },
+            sorting: query.sorting,
             groupBy,
         },
     )
@@ -91,21 +89,16 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
                 view={view}
                 onViewChange={onViewChange}
                 analytics={analyticsUi}
+                query={query}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={purchaseOrderUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar por proveedor..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={purchaseOrderViews.table}
                     card={purchaseOrderViews.card}
                     emptyTitle="Aún no hay órdenes de compra"
                     emptyDescription="Crea una orden de compra para registrar tus adquisiciones a proveedores."
                     emptyAction={createAction}
-                    onResetFilters={search.clearAll}
+                    onResetFilters={query.search.clearAll}
                 />
                 <Collection.Analytics>
                     {isAnalyticsError ? (
@@ -130,9 +123,9 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
 
 function PurchaseNoteCollection() {
     const sheet = useDocumentSheetRoute("billing.invoice")
-    const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
-    const groupBy = search.groupBy ? NOTE_GROUPS[search.groupBy] ?? null : null
-    const filters = search.filters as Record<string, string>
+    const query = useCollectionQuery(purchaseNoteEntity)
+    const { search, groupBy } = query
+    const filters = query.params
     const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("billing.invoice")
 
@@ -156,6 +149,7 @@ function PurchaseNoteCollection() {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="panel"
                 selectedId={sheet.selectedId ?? null}
                 onOpen={(note) => sheet.toggle(note.id, note)}
@@ -163,13 +157,7 @@ function PurchaseNoteCollection() {
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar>
-                    <UnifiedSearchBar
-                        config={purchaseInvoiceUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar notas..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={purchaseNoteViews.table}
                     card={purchaseNoteViews.card}

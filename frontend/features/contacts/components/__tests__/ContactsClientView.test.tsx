@@ -27,15 +27,11 @@ vi.mock("@/hooks/useCreatePanelRoute", () => ({
 vi.mock("@/features/contacts", () => ({
     useContacts: () => ({ contacts: [ana], isLoading: false, isRefetching: false, isError: false, refetch: vi.fn(), archiveContact: vi.fn() }),
 }))
-vi.mock("@/features/contacts/unifiedSearchDef", () => ({ contactsUnifiedSearchDef: {} }))
 vi.mock("../../entity-view/contact.entity", () => ({ contactEntity: { fields: {} }, contactViews: { table: { defaultSort: undefined }, card: {} } }))
 vi.mock("../ContactDrawer", () => ({ default: () => null }))
 vi.mock("@/components/shared/ActionConfirmModal", () => ({ ActionConfirmModal: () => null }))
 vi.mock("@/components/shared", () => ({
     LoadingFallback: () => null,
-    UnifiedSearchBar: () => null,
-    bindUnifiedSearch: () => ({}),
-    useUnifiedSearch: () => ({ filters: {}, groupBy: null, isFiltered: false, clearAll: vi.fn() }),
 }))
 vi.mock("@/components/entity-view", () => {
     const Root = ({ children, actions: _actions, ...rest }: { children: ReactNode; actions: unknown } & Record<string, unknown>) => {
@@ -44,6 +40,7 @@ vi.mock("@/components/entity-view", () => {
     }
     return {
         Collection: Object.assign(Root, { Root, Toolbar: () => null, View: () => null }),
+        useCollectionQuery: () => ({ params: {}, groupBy: null, sorting: undefined, search: { isFiltered: false, clearAll: vi.fn() } }),
         useCollectionViewMode: () => ({ view: "table", onViewChange: vi.fn() }),
         useEntityCollection: () => ({}),
     }

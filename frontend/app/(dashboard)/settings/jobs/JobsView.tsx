@@ -3,40 +3,29 @@
 import { useMemo } from "react"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-    UnifiedSearchBar,
-    useUnifiedSearch,
-    StaleDataBanner,
-} from "@/components/shared"
-import { useBackgroundJobs, type BackgroundJob, jobUnifiedSearchDef, backgroundJobEntity, backgroundJobViews, type BackgroundJobRow } from "@/features/settings"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { StaleDataBanner } from "@/components/shared"
+import { useBackgroundJobs, backgroundJobEntity, backgroundJobViews, type BackgroundJobRow } from "@/features/settings"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 
 export default function JobsView() {
     const { jobs, isLoading, isError, refetch } = useBackgroundJobs()
 
-    const search = useUnifiedSearch(jobUnifiedSearchDef)
-
-    const filteredJobs = useMemo(() => {
-        let result = search.filterFn(jobs) as BackgroundJob[]
-        if (search.filters.status) {
-            result = result.filter(j => j.status === search.filters.status)
-        }
-        if (search.filters.job_type) {
-            result = result.filter(j => j.job_type === search.filters.job_type)
-        }
-        return result
-    }, [jobs, search])
+    const query = useCollectionQuery(backgroundJobEntity, { sorting: "client" })
+    const { search, groupBy } = query
+    // Filtra en el navegador: texto libre sobre todas las columnas, estado y tipo por clave de la fila.
+    const { filterFn } = search
+    const filteredJobs = useMemo(() => filterFn(jobs), [filterFn, jobs])
 
     const collection = useEntityCollection(
         backgroundJobEntity,
-        { rows: filteredJobs as BackgroundJobRow[], isLoading },
-        { pagination: { mode: "none" } }
+        { rows: filteredJobs as BackgroundJobRow[], isLoading, isFiltered: search.isFiltered },
+        { pagination: { mode: "none" }, groupBy }
     )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4 mt-2" />}
-            <Collection.Root collection={collection} label="Tareas en segundo plano">
+            <Collection.Root collection={collection} query={query} label="Tareas en segundo plano">
                 <Collection.Toolbar
                     views={["table", "card"]}
                     action={
@@ -45,22 +34,7 @@ export default function JobsView() {
                             Actualizar
                         </Button>
                     }
-                >
-                    <UnifiedSearchBar
-                        config={jobUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar por título, tipo o error..."
-                    />
-                </Collection.Toolbar>
+                />
                 <Collection.View
                     table={backgroundJobViews.table}
                     card={backgroundJobViews.card}

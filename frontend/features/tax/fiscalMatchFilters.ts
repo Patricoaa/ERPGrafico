@@ -1,6 +1,5 @@
 import { formatNumber } from '@/components/entity-view'
-import type { MultiSelectOption, UnifiedSearchConfig } from '@/types/unified-search'
-import { periodPresets } from '@/lib/date-presets'
+import type { MultiSelectOption } from '@/types/unified-search'
 import { FISCAL_MATCH_STATUS_LABELS, type FiscalMatchStatus } from '@/lib/fiscal-match'
 import type { FiscalMatchCounts, FiscalMatchDirection, FiscalMatchFilters } from './types/fiscalMatch'
 
@@ -41,53 +40,24 @@ export function fiscalMatchStatusOptions(counts: FiscalMatchCounts): MultiSelect
   ]
 }
 
-/**
- * Filtros de la página Cuadre. Sin `direction` ni `status` en la URL valen los por defecto
- * (ventas, necesita atención); «Todos» (`status=all`) quita el filtro de estado.
- */
-export const fiscalMatchUnifiedSearchDef: UnifiedSearchConfig = {
-  searchFields: [{ key: 'search', label: 'Folio / RUT / Monto', serverParam: 'search' }],
-  filters: [
-    {
-      type: 'single',
-      key: 'direction',
-      label: 'Dirección',
-      serverParam: 'direction',
-      options: DIRECTION_OPTIONS,
-    },
-    {
-      type: 'single',
-      key: 'status',
-      label: 'Estado',
-      serverParam: 'status',
-      dynamic: true,
-      options: [
-        { label: 'Necesita atención', value: STATUS_ATTENTION },
-        ...FISCAL_MATCH_STATUSES.map((value) => ({ label: FISCAL_MATCH_STATUS_LABELS[value], value })),
-        { label: 'Todos', value: STATUS_ALL },
-      ],
-    },
-    {
-      type: 'single',
-      key: 'dte_type',
-      label: 'Tipo de documento',
-      serverParam: 'dte_type',
-      options: [
-        { label: '33 · Factura Electrónica', value: '33' },
-        { label: '34 · Factura Exenta', value: '34' },
-        { label: '39 · Boleta Electrónica', value: '39' },
-        { label: '41 · Boleta Exenta', value: '41' },
-        { label: '46 · Factura de Compra', value: '46' },
-        { label: '48 · Comprobante de pago electrónico', value: '48' },
-        { label: '56 · Nota de Débito', value: '56' },
-        { label: '61 · Nota de Crédito', value: '61' },
-      ],
-    },
-  ],
-  dateFilters: [
-    { type: 'date', key: 'issue_date', label: 'Fecha', options: periodPresets('date_from', 'date_to') },
-  ],
-}
+/** Opciones del filtro de estado mientras cargan los conteos. */
+export const FISCAL_MATCH_STATUS_OPTIONS: MultiSelectOption[] = [
+  { label: 'Necesita atención', value: STATUS_ATTENTION },
+  ...FISCAL_MATCH_STATUSES.map((value) => ({ label: FISCAL_MATCH_STATUS_LABELS[value], value })),
+  { label: 'Todos', value: STATUS_ALL },
+]
+
+/** Tipos de DTE que cruza el cuadre. */
+export const FISCAL_MATCH_DTE_OPTIONS = [
+  { label: '33 · Factura Electrónica', value: '33' },
+  { label: '34 · Factura Exenta', value: '34' },
+  { label: '39 · Boleta Electrónica', value: '39' },
+  { label: '41 · Boleta Exenta', value: '41' },
+  { label: '46 · Factura de Compra', value: '46' },
+  { label: '48 · Comprobante de pago electrónico', value: '48' },
+  { label: '56 · Nota de Débito', value: '56' },
+  { label: '61 · Nota de Crédito', value: '61' },
+]
 
 const isStatus = (v: string | undefined): v is FiscalMatchStatus =>
   !!v && (FISCAL_MATCH_STATUSES as readonly string[]).includes(v)

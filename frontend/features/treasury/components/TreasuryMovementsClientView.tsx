@@ -1,11 +1,10 @@
 "use client"
 
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
-import { AnalyticsPanelContent, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
+import { AnalyticsPanelContent } from '@/components/shared'
 import type { Granularity } from "@/components/shared"
-import { Collection, useCollectionAnalytics, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -13,7 +12,8 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { useTreasuryMovementAnalytics } from "@/features/treasury/hooks/useTreasuryMovementAnalytics"
-import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
+import { useBanks } from "@/features/treasury/hooks/useMasterData"
+import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
 import { toast } from "sonner"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 import { buildTreasuryMovementAnalyticsScreen } from "./treasuryMovementAnalyticsScreen"
@@ -21,8 +21,6 @@ import { buildTreasuryMovementAnalyticsScreen } from "./treasuryMovementAnalytic
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const MOVEMENT_GROUPS: Record<string, FieldId<typeof treasuryMovementEntity.fields>> = { date: "date", movement_type: "movementType", payment_method: "paymentMethod" }
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
 interface TreasuryMovementsClientViewProps {
@@ -32,22 +30,23 @@ interface TreasuryMovementsClientViewProps {
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
-    const search = useUnifiedSearch(treasuryMovementsUnifiedSearchDef)
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
 
-    const treasuryAccountFromUrl = searchParams.get('treasury_account')
-    const isAccountFiltered = Boolean(treasuryAccountFromUrl)
-    const allFilters = {
-        ...search.filters,
-        ...(treasuryAccountFromUrl ? { treasury_account: treasuryAccountFromUrl } : {}),
-    }
-    const groupBy = search.groupBy ? MOVEMENT_GROUPS[search.groupBy] ?? null : null
-    const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
+    // `?treasury_account=` (links from an account's ficha) is a regular filter chip with the account's name.
+    const { accounts } = useTreasuryAccounts()
+    const { banks } = useBanks()
+    const filterOptions = useMemo(() => ({
+        treasury_account: accounts.map((a) => ({ label: a.name, value: String(a.id) })),
+        bank: banks.map((b) => ({ label: b.name, value: String(b.id) })),
+    }), [accounts, banks])
+    const query = useCollectionQuery(treasuryMovementEntity, { filterOptions })
+    const { search, groupBy, params } = query
+    const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("treasury.treasurymovement")
     const { movements, totalCount, isLoading, isRefetching, isError, refetch } = useTreasuryMovements({
-        ...(allFilters as TreasuryMovementFilters),
+        ...(params as TreasuryMovementFilters),
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
     })
@@ -77,32 +76,23 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         openEntity("treasury.treasurymovement", id)
     }, [openEntity])
 
-    const handleClearAccountFilter = React.useCallback(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('treasury_account')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [searchParams, pathname, router])
-
-    const handleReset = React.useCallback(() => {
-        search.clearAll()
-        handleClearAccountFilter()
-    }, [search.clearAll, handleClearAccountFilter])
-
     const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
     const analyticsUi = useCollectionAnalytics("flujo")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
+    // ADR-0158 §5.7: the analytics follow the list's filters unless the scope is "all".
+    const scoped: Record<string, string | undefined> = analyticsUi.scope === "all" ? {} : params
     const analyticsData = useTreasuryMovementAnalytics({
         months: 12,
         granularity,
-        treasury_account: treasuryAccountFromUrl,
-        movement_type: search.filters.movement_type ?? null,
-        payment_method: search.filters.payment_method ?? null,
-        amount_min: search.filters.amount_min ?? null,
-        amount_max: search.filters.amount_max ?? null,
-        date_from: search.filters.date_from ?? null,
-        date_to: search.filters.date_to ?? null,
+        treasury_account: scoped.treasury_account ?? null,
+        movement_type: scoped.movement_type ?? null,
+        payment_method: scoped.payment_method ?? null,
+        amount_min: scoped.amount_min ?? null,
+        amount_max: scoped.amount_max ?? null,
+        date_from: scoped.date_from ?? null,
+        date_to: scoped.date_to ?? null,
     })
 
     const analyticsScreen = useMemo(
@@ -112,7 +102,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     const collection = useEntityCollection(
         treasuryMovementEntity,
-        { rows: movements, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered || isAccountFiltered },
+        { rows: movements, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
         { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
     )
 
@@ -137,38 +127,20 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             <Collection.Root
                 analytics={analyticsUi}
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={(m) => handleViewDetails(m.id)}
                 actions={treasuryMovementActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={treasuryMovementsUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        isFiltered={search.isFiltered || isAccountFiltered}
-                        placeholder="Buscar movimiento..."
-                        prefix={isAccountFiltered ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-3xs font-bold uppercase tracking-wider font-mono shrink-0">
-                                Cta. #{treasuryAccountFromUrl}
-                                <Button
-                                     variant="ghost"
-                                     onClick={handleClearAccountFilter}
-                                     className="ml-0.5 hover:text-info/80 h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none text-current"
-                                 >
-                                     ×
-                                 </Button>
-                            </span>
-                        ) : undefined}
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={treasuryMovementViews.table}
                     card={treasuryMovementViews.card}
                     emptyTitle="Aún no hay movimientos de caja"
                     emptyDescription="Los ingresos y egresos de fondos que registres aparecerán aquí."
                     emptyAction={createAction}
-                    onResetFilters={handleReset}
+                    onResetFilters={search.clearAll}
                 />
                 <Collection.Analytics>
                     <AnalyticsPanelContent {...analyticsScreen} />

@@ -59,6 +59,20 @@ export const terminalSyncRunEntity = defineEntity<TerminalSyncRun>()((f) => ({
         duration: f.text((r) => formatTerminalSyncDuration(r.started_at, r.finished_at), { ...fixed, label: "Duración" }),
         error: f.text((r) => terminalSyncRunDetail(r), { ...fixed, label: "Detalle", truncate: true }),
     },
+    // ADR-0158 §3. No `sort`: the sync runs endpoint has no server ordering. `provider` options come from the screen.
+    query: {
+        // The endpoint has no text search.
+        search: false,
+        filters: {
+            provider: { field: "provider", control: "single", options: "remote" },
+            status: { field: "status", control: "single", options: [{ value: "RUNNING", label: "En curso" }, { value: "SUCCESS", label: "Exitosa" }, { value: "PARTIAL", label: "Parcial" }, { value: "FAILED", label: "Fallida" }] },
+            trigger: { field: "trigger", control: "single", options: [{ value: "SCHEDULED", label: "Automática" }, { value: "MANUAL", label: "Manual" }] },
+        },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "failed", label: "Fallidas", filters: { status: "FAILED" } },
+        ],
+    },
 }))
 
 export const terminalSyncRunViews = terminalSyncRunEntity.views({

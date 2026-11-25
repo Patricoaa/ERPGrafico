@@ -2,21 +2,16 @@
 
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import React from "react"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
-import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const MOVEMENT_GROUPS: Record<string, FieldId<typeof treasuryMovementEntity.fields>> = { date: "date", movement_type: "movementType", payment_method: "paymentMethod" }
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
 interface BankMovementsClientViewProps {
@@ -31,26 +26,14 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         () => ({ bank: banks.map((bank) => ({ label: bank.name, value: String(bank.id) })) }),
         [banks],
     )
-    const config = React.useMemo<UnifiedSearchConfig>(() => {
-        const filters = [...(treasuryMovementsUnifiedSearchDef.filters ?? [])]
-        if (!bankId) {
-            filters.unshift({
-                type: 'single',
-                key: 'bank',
-                label: 'Banco',
-                serverParam: 'bank',
-                dynamic: true,
-            })
-        }
-        return { ...treasuryMovementsUnifiedSearchDef, filters }
-    }, [bankId])
-    const search = useUnifiedSearch(config, filterOptions)
+    // Within one bank its filter has no effect: the bank is fixed below.
+    const query = useCollectionQuery(treasuryMovementEntity, { filterOptions })
+    const { search, groupBy, params } = query
 
     const allFilters: TreasuryMovementFilters = {
-        ...search.filters,
+        ...params,
         ...(bankId ? { bank: bankId } : { bank_only: true }),
     }
-    const groupBy = search.groupBy ? MOVEMENT_GROUPS[search.groupBy] ?? null : null
     const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("treasury.treasurymovement")
     const { movements, totalCount, isLoading, isRefetching, isError, refetch } = useTreasuryMovements({
@@ -81,19 +64,13 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={(m) => handleViewDetails(m.id)}
                 actions={treasuryMovementActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar>
-                    <UnifiedSearchBar
-                        config={config}
-                        {...bindUnifiedSearch(search)}
-                        filterOptions={search.filterOptions}
-                        placeholder="Buscar movimiento..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={treasuryMovementViews.table}
                     card={treasuryMovementViews.card}

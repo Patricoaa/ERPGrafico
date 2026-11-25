@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from "react"
 import { RefreshCw } from "lucide-react"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { Can } from "@/components/auth"
-import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { isFiscalMatchStatus } from "@/lib/fiscal-match"
 import { useTerminalSales } from "../hooks/useTerminalSales"
 import { useTerminalProviders } from "../hooks/useTerminalProviders"
-import { terminalSaleUnifiedSearchDef } from "../unifiedSearchDef"
 import { terminalSaleEntity, terminalSaleViews } from "../entity-view/terminalSale.entity"
 import type { TerminalSalePaymentType, TerminalSaleStatus, TerminalSalesSummaryFilters } from "../types"
 import { TerminalSyncModal } from "./TerminalSyncModal"
@@ -47,9 +46,10 @@ export function TerminalSalesClientView() {
         () => providers.filter((p) => p.provider_type === "TUU").map((p) => ({ label: p.name, value: String(p.id) })),
         [providers],
     )
-    const search = useUnifiedSearch(terminalSaleUnifiedSearchDef, { provider: providerOptions })
+    const query = useCollectionQuery(terminalSaleEntity, { filterOptions: { provider: providerOptions } })
+    const { search } = query
     // No default period: the tab lists every synced sale until the user filters.
-    const filters = useMemo(() => toSalesFilters(search.filters), [search.filters])
+    const filters = useMemo(() => toSalesFilters(query.params), [query.params])
     const { view, onViewChange } = useCollectionViewMode("treasury.terminalsale")
     // ADR-0152: cada registro abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
     useDeepLinkEntity("treasury.terminalsale")
@@ -78,17 +78,11 @@ export function TerminalSalesClientView() {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar action={syncAction}>
-                    <UnifiedSearchBar
-                        config={terminalSaleUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        filterOptions={{ provider: providerOptions }}
-                        placeholder="Filtrar ventas..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={syncAction} />
                 <Collection.View
                     table={terminalSaleViews.table}
                     card={terminalSaleViews.card}

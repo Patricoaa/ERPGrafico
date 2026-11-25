@@ -31,6 +31,51 @@ export const treasuryMovementEntity = defineEntity<TreasuryMovement>()((f) => ({
             showIcon: false,
         }),
     },
+    // ADR-0158 §3. No `sort`: the movements endpoint has no server ordering.
+    // `treasury_account` / `bank` take their options from the screen (`filterOptions`).
+    query: {
+        search: { placeholder: "Buscar por contacto o referencia…", scopes: [{ field: "folio", param: "display_id" }] },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            movement_type: {
+                field: "movementType",
+                control: "single",
+                options: [
+                    { value: "INBOUND", label: "Depósito" },
+                    { value: "OUTBOUND", label: "Retiro" },
+                    { value: "TRANSFER", label: "Traspaso" },
+                    { value: "ADJUSTMENT", label: "Ajuste" },
+                ],
+            },
+            payment_method: {
+                field: "paymentMethod",
+                control: "single",
+                options: [
+                    { value: "CASH", label: "Efectivo" },
+                    { value: "CARD_TERMINAL", label: "Tarjeta (terminal de cobro)" },
+                    { value: "CARD", label: "Tarjeta (Manual)" },
+                    { value: "TRANSFER", label: "Transferencia" },
+                    { value: "CHECK", label: "Cheque" },
+                    { value: "DEBIT_CARD", label: "Tarjeta Débito Empresa" },
+                    { value: "CREDIT_CARD", label: "Tarjeta Crédito Empresa" },
+                    { value: "CREDIT", label: "Crédito" },
+                    { value: "WRITE_OFF", label: "Castigo de Deuda" },
+                    { value: "CREDIT_BALANCE", label: "Saldo a Favor" },
+                    { value: "OTHER", label: "Otro" },
+                ],
+            },
+            amount: { field: "amount", control: "range", paramFrom: "amount_min", paramTo: "amount_max" },
+            treasury_account: { label: "Cuenta", control: "single", options: "remote" },
+            bank: { label: "Banco", control: "single", options: "remote" },
+        },
+        groupBy: { fields: ["date", "movementType", "paymentMethod"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "inbound", label: "Depósitos", filters: { movement_type: "INBOUND" } },
+            { id: "outbound", label: "Retiros", filters: { movement_type: "OUTBOUND" } },
+            { id: "transfers", label: "Traspasos", filters: { movement_type: "TRANSFER" } },
+        ],
+    },
 }))
 
 export const treasuryMovementViews = treasuryMovementEntity.views({

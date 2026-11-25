@@ -88,6 +88,23 @@ export const unbilledChargeEntity = defineEntity<UnbilledItemRow>()((f) => ({
         ),
         reference: f.text("reference", { label: "Referencia" }),
     },
+    // ADR-0158 §3, client mode. `bank` / `card` take their options from the screen; without a card the list
+    // shows every card (or, inside one bank, its first card). The views set the `scope` of the request.
+    query: {
+        search: { placeholder: "Buscar por contacto, OC o monto…" },
+        filters: {
+            bank: { label: "Banco", control: "single", options: "remote" },
+            card: { label: "Tarjeta", control: "single", options: "remote" },
+            charge_date: { field: "date", control: "date", paramFrom: "charge_date_from", paramTo: "charge_date_to" },
+            scope: { label: "Alcance", control: "single", options: [{ value: "month", label: "Cargos del mes" }, { value: "all", label: "Todos los cargos" }] },
+        },
+        sort: { fields: ["date", "amount", "chargeType", "reference"], default: "date" },
+        groupBy: { fields: ["chargeType"] },
+        views: [
+            { id: "month", label: "Cargos del mes", filters: { scope: "month" } },
+            { id: "all", label: "Todos los cargos", filters: { scope: "all" } },
+        ],
+    },
 }))
 
 export const unbilledChargeViews = unbilledChargeEntity.views({

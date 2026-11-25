@@ -70,20 +70,21 @@ export function useSaleReturns(filters?: Record<string, unknown>) {
 export function useSaleFulfillment(filters?: Record<string, unknown>) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
-    const typeFilter = filters?.fulfillment_type as string | undefined
+    // Multi-select: "DELIVERY", "RETURN" or both ("DELIVERY,RETURN").
+    const types = typeof filters?.fulfillment_type === 'string' ? filters.fulfillment_type.split(',') : null
 
     const deliveriesQuery = useQuery({
         queryKey: SALES_KEYS.deliveries({ page, page_size: pageSize, ...filters }),
         queryFn: () => salesApi.getDeliveriesPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
-        enabled: !typeFilter || typeFilter === 'DELIVERY',
+        enabled: !types || types.includes('DELIVERY'),
     })
 
     const returnsQuery = useQuery({
         queryKey: SALES_KEYS.returns({ page, page_size: pageSize, ...filters }),
         queryFn: () => salesApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
-        enabled: !typeFilter || typeFilter === 'RETURN',
+        enabled: !types || types.includes('RETURN'),
     })
 
     const isLoading = deliveriesQuery.isLoading || returnsQuery.isLoading

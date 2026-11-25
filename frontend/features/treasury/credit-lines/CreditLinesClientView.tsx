@@ -4,10 +4,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import {
     ActionConfirmModal,
     ToolbarCreateButton,
-    UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, StaleDataBanner,
+    StaleDataBanner,
 } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from '@/components/entity-view'
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from '@/components/entity-view'
 import { useCreditLines, useCreditLineMutations } from '../hooks/useCreditLines'
 import { creditLineEntity, creditLineViews } from '../entity-view/creditLine.entity'
 import { CreditLineDrawer } from './CreditLineDrawer'
@@ -22,7 +21,6 @@ interface Props {
 }
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const CREDIT_LINE_GROUPS: Record<string, FieldId<typeof creditLineEntity.fields>> = { status: 'status' }
 
 export function CreditLinesClientView({ bankId }: Props) {
     const { data: creditLines, isLoading, isError, refetch } = useCreditLines({ bank_id: bankId })
@@ -31,24 +29,16 @@ export function CreditLinesClientView({ bankId }: Props) {
     const [editingLine, setEditingLine] = useState<CreditLine | null>(null)
     const [bankCheckingAccounts, setBankCheckingAccounts] = useState<TreasuryAccount[]>([])
 
-    const config: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'Código / Cuenta / Límite', serverParam: 'search', clientKey: ['code', 'account_name', 'credit_limit'] },
-        ],
-        groupBy: [
-            { key: 'status', label: 'Estado', field: 'status' },
-        ],
-    }), [])
-    const search = useUnifiedSearch(config)
+    const query = useCollectionQuery(creditLineEntity, { sorting: 'client' })
+    const { search, groupBy } = query
     const { filterFn } = search
     const filteredData = useMemo(() => filterFn(creditLines ?? []), [filterFn, creditLines])
-    const groupBy = search.groupBy ? CREDIT_LINE_GROUPS[search.groupBy] ?? null : null
     const { view, onViewChange } = useCollectionViewMode('treasury.creditline')
     // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         creditLineEntity,
         { rows: filteredData, isLoading, error: isError && (creditLines ?? []).length === 0, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: 'none' } : { mode: 'client' }, groupBy },
+        { pagination: groupBy ? { mode: 'none' } : { mode: 'client' }, groupBy, sorting: query.sorting },
     )
 
     useEffect(() => {
@@ -76,14 +66,13 @@ export function CreditLinesClientView({ bankId }: Props) {
             {isError && (creditLines?.length ?? 0) > 0 && <StaleDataBanner className="mx-4 mt-2" />}
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 onOpen={(line) => actionsCtx.onEdit(line)}
                 actions={creditLineActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={config} {...bindUnifiedSearch(search)} placeholder="Buscar por código, cuenta o límite..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={creditLineViews.table}
                     card={creditLineViews.card}

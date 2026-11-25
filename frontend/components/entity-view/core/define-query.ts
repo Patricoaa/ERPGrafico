@@ -1,4 +1,4 @@
-import { thisMonth, thisQuarter, thisWeek, thisYear, today } from "@/lib/date-presets"
+import { lastSevenDays, thisMonth, thisQuarter, thisWeek, thisYear, today } from "@/lib/date-presets"
 import type {
     DateFilterDef,
     DropdownFilterDef,
@@ -22,7 +22,7 @@ export interface FilterOption {
  */
 type Labeled<Id extends string> = { field: Id; label?: never } | { field?: undefined; label: string }
 
-export type DatePreset = "today" | "this_week" | "this_month" | "this_quarter" | "this_year"
+export type DatePreset = "today" | "last_7_days" | "this_week" | "this_month" | "this_quarter" | "this_year"
 
 export type QueryFilter<Id extends string> = Labeled<Id> &
     (
@@ -63,8 +63,11 @@ export type QueryFilter<Id extends string> = Labeled<Id> &
           }
     )
 
-/** A field-scoped search ("Cliente: …") with its own server param and optional suggestions. */
-export type SearchScope<Id extends string> = Labeled<Id> & { param: string; suggestionsUrl?: string }
+/**
+ * A field-scoped search ("Cliente: …") with its own server param and optional suggestions. `clientKey`:
+ * row keys it matches when the screen filters in the browser (`search.filterFn`); default the param.
+ */
+export type SearchScope<Id extends string> = Labeled<Id> & { param: string; suggestionsUrl?: string; clientKey?: string | readonly string[] }
 
 export type GroupAggregate = "sum" | "avg" | "count"
 
@@ -81,8 +84,12 @@ export interface QueryView {
 }
 
 export interface QuerySpec<Id extends string> {
-    /** Free-text search goes to the `search` param; `scopes` add field-scoped searches. */
-    search?: { scopes?: readonly SearchScope<Id>[] }
+    /**
+     * Free-text search goes to the `search` param; `scopes` add field-scoped searches. `placeholder` is
+     * also the box's accessible name ("Buscar guías de despacho…"). Default "Buscar…". `false`: the
+     * endpoint has no text search, so the toolbar shows no search box.
+     */
+    search?: { scopes?: readonly SearchScope<Id>[]; placeholder?: string } | false
     filters?: Readonly<Record<string, QueryFilter<Id>>>
     /** Sortable fields; each needs an `orderBy` server key. Up to 3 keys at once. */
     sort?: { fields: readonly Id[]; default?: SortSpec<Id> }
@@ -98,12 +105,17 @@ export const MAX_SORT_KEYS = 3
 export interface CompiledSortField {
     id: string
     label: string
-    orderBy: string
+    /** DRF key. `null` in client mode: the loaded rows are sorted in the browser. */
+    orderBy: string | null
 }
 
 export interface CompiledQuery {
     /** Search + filters + grouping in the runtime model of `useUnifiedSearch` (the controls are shared). */
     search: UnifiedSearchConfig
+    /** Search box placeholder and accessible name. */
+    placeholder: string
+    /** Whether the toolbar shows a search box (`query.search: false` hides it). */
+    searchBox: boolean
     sortFields: readonly CompiledSortField[]
     defaultSort: readonly string[]
     groupFields: readonly { id: string; label: string }[]
@@ -115,6 +127,7 @@ export interface CompiledQuery {
 
 const PRESET_DEFS: Record<DatePreset, { label: string; getValue: () => { from: string; to: string } }> = {
     today: { label: "Hoy", getValue: today },
+    last_7_days: { label: "Últimos 7 días", getValue: lastSevenDays },
     this_week: { label: "Esta semana", getValue: thisWeek },
     this_month: { label: "Este mes", getValue: thisMonth },
     this_quarter: { label: "Este trimestre", getValue: thisQuarter },
@@ -140,11 +153,19 @@ function labelOf(entity: QueryEntity, item: { field?: string; label?: string }):
 const toOptions = (options: readonly FilterOption[] | "remote"): MultiSelectOption[] =>
     options === "remote" ? [] : options.map((o) => ({ value: o.value, label: o.label }))
 
+export interface CompileQueryOptions {
+    /**
+     * `server` (default): sort fields need an `orderBy` key and become DRF `ordering`. `client`: the list
+     * loads every row and sorts them in the browser, so any field can sort and nothing is sent.
+     */
+    sorting?: "server" | "client"
+}
+
 /**
  * Compiles `entity.query` (ADR-0158 §3). Labels come from the fields (G-1); params get their
  * defaults; date presets become the shared date-filter options. Pure: memoize per entity.
  */
-export function compileQuery(entity: QueryEntity): CompiledQuery {
+export function compileQuery(entity: QueryEntity, { sorting = "server" }: CompileQueryOptions = {}): CompiledQuery {
     const spec = entity.query ?? {}
     const filters: DropdownFilterDef[] = []
     const dateFilters: DateFilterDef[] = []
@@ -193,11 +214,13 @@ export function compileQuery(entity: QueryEntity): CompiledQuery {
         }
     }
 
-    const searchFields: TextFieldDef[] = (spec.search?.scopes ?? []).map((scope) => ({
+    const searchSpec = spec.search === false ? undefined : spec.search
+    const searchFields: TextFieldDef[] = (searchSpec?.scopes ?? []).map((scope) => ({
         key: scope.param,
         label: labelOf(entity, scope),
         serverParam: scope.param,
         suggestionsUrl: scope.suggestionsUrl,
+        clientKey: typeof scope.clientKey === "string" || scope.clientKey === undefined ? scope.clientKey : [...scope.clientKey],
     }))
 
     const groupFields = (spec.groupBy?.fields ?? []).map((id) => ({ id, label: labelOf(entity, { field: id }) }))
@@ -205,12 +228,16 @@ export function compileQuery(entity: QueryEntity): CompiledQuery {
 
     const sortFields = (spec.sort?.fields ?? []).map((id) => {
         const def = entity.fields[id]
-        if (!def?.orderBy) throw new Error(`entity-view: query.sort incluye "${id}", que no declara orderBy`)
+        if (!def) throw new Error(`entity-view: query.sort incluye "${id}", que no existe`)
+        if (sorting === "client") return { id, label: def.label, orderBy: null }
+        if (!def.orderBy) throw new Error(`entity-view: query.sort incluye "${id}", que no declara orderBy`)
         return { id, label: def.label, orderBy: def.orderBy }
     })
 
     return {
         search: { searchFields, filters, dateFilters, groupBy },
+        placeholder: searchSpec?.placeholder ?? "Buscar…",
+        searchBox: spec.search !== false,
         sortFields,
         defaultSort: spec.sort?.default ? [spec.sort.default] : [],
         groupFields,
@@ -235,6 +262,8 @@ export function fromUnifiedSearchDef(def: UnifiedSearchConfig): CompiledQuery {
     }
     return {
         search: def,
+        placeholder: "Buscar…",
+        searchBox: true,
         sortFields: [],
         defaultSort: [],
         groupFields: (def.groupBy ?? []).map((g) => ({ id: g.field, label: g.label })),
@@ -254,7 +283,7 @@ export function orderingFor(compiled: CompiledQuery, sort: readonly string[]): s
         const desc = spec.startsWith("-")
         const id = desc ? spec.slice(1) : spec
         const field = compiled.sortFields.find((f) => f.id === id)
-        if (field) keys.push(`${desc ? "-" : ""}${field.orderBy}`)
+        if (field?.orderBy) keys.push(`${desc ? "-" : ""}${field.orderBy}`)
     }
     if (keys.length === 0) return undefined
     if (!keys.some((k) => k.replace(/^-/, "") === "id")) keys.push(keys[0].startsWith("-") ? "-id" : "id")

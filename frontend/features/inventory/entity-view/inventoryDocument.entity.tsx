@@ -65,6 +65,32 @@ export const inventoryDocumentEntity = defineEntity<InventoryDocument>()((f) => 
         reference: f.value("inventoryDocRef", (d) => d, { label: "Referencia" }),
         status: f.status((d) => ({ status: d.status, label: d.status_display }), { label: "Estado" }),
     },
+    // ADR-0158 §3. No `sort`: the documents endpoint has no server ordering.
+    query: {
+        search: { placeholder: "Buscar por folio, referencia o contacto…" },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            document_type: {
+                field: "documentType",
+                control: "single",
+                options: [
+                    { value: "RECEIPT", label: "Recepción Manual" },
+                    { value: "DELIVERY", label: "Entrega Manual" },
+                    { value: "TRANSFER", label: "Transferencia" },
+                    { value: "ADJUSTMENT", label: "Ajuste" },
+                    { value: "PRODUCTION", label: "Producción Manual" },
+                    { value: "PARTNER_CONTRIBUTION", label: "Aporte de Socio" },
+                    { value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" },
+                ],
+            },
+            status: { field: "status", control: "single", options: [{ value: "DRAFT", label: "Borrador" }, { value: "APPROVED", label: "Aprobado" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
+        },
+        groupBy: { fields: ["date", "documentType", "status"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+        ],
+    },
 }))
 
 export const inventoryDocumentViews = inventoryDocumentEntity.views({

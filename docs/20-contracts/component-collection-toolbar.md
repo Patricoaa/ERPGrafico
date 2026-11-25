@@ -30,7 +30,23 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 >
 > Hasta migrar, las pantallas siguen declarando `unifiedSearchDef.ts` y montando `UnifiedSearchBar` ([unified-searchbar.md](./unified-searchbar.md)). Una pantalla usa un sistema o el otro, nunca los dos.
 >
-> **Migradas a la barra de comandos:** órdenes de venta (`saleOrderEntity.query`, piloto de la etapa 3c). Las demás llegan por oleadas (3d).
+> **Migradas a la barra de comandos:**
+> - órdenes de venta (`saleOrderEntity.query`, piloto de la etapa 3c);
+> - oleada 3d-1 (ventas y compras): notas de venta, guías de despacho, devoluciones de venta, despachos y devoluciones, órdenes de compra, recepciones, devoluciones de compra y recepciones y devoluciones.
+>
+> Las notas de compra siguen con `purchaseInvoiceUnifiedSearchDef` de billing y migran con esa app.
+>
+> - modo cliente (3d-2): sesiones POS, terminales POS y suscripciones.
+> - oleada 3d-3 (inventario): productos, movimientos, documentos y conteos (servidor); unidades, categorías de UdM, categorías, atributos, bodegas, reglas de precio y reporte de existencias (cliente).
+>
+> - oleada 3d-4 (tesorería, primera parte): movimientos de tesorería y bancarios, ventas y sincronizaciones de terminal (servidor); bancos, métodos de pago, cuentas, liquidaciones, proveedores y terminales de cobro (cliente).
+> - oleada 3d-5 (tesorería, segunda parte): estados de cuenta y cargos no facturados de tarjetas, líneas de crédito, cheques y préstamos (cliente). Préstamos y cargos no facturados cargan en su primera vista (activos; cargos del mes).
+> - oleada 3d-6 (contabilidad): asientos, documentos e importaciones RCV (servidor); plan de cuentas y cierres (cliente, árboles). Las ventas del RCV usan `rcvSaleQueryEntity`, que deriva de `rcvDocumentEntity` sin acuse ni estado: `useCollectionQuery` solo necesita `fields` y `query`.
+> - resto (etapa 3 completa): facturas de venta y compra, notas de compra, órdenes de trabajo, usuarios y cuadre fiscal (servidor); contactos, RR.HH. (empleados, ausencias, movimientos, liquidaciones), listas de materiales, declaraciones, grupos, conceptos de nómina, tareas, auditoría, cartera, historial y lista negra de crédito, socios, distribuciones y cartolas (cliente). El cuadre fiscal sigue escribiendo sus filtros por defecto en la URL y pasa los conteos por `filterOptions`; las cartolas usan `bankStatementQueryEntity` (sin filtro de banco) dentro de un banco.
+>
+> En modo cliente, `search.filterFn` aplica el texto libre sobre todas las columnas primitivas y cada filtro `single`/`multi` comparando **la clave de la fila igual al parámetro**. Si el filtro no es una clave de la fila, o nómbralo como ella (`credit_risk_level`, `treasury_account`), o fíltralo a mano: si no, vacía la lista. Los `toggle` no los aplica.
+>
+> El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. Igual la actividad de una sesión POS, el libro mayor de una cuenta (contabilidad y finanzas), el detalle de una cartola y las tablas de la ficha del socio (`usePartnerTableSearch`, con parámetros prefijados). Quedan fuera por no ser una `Collection`: el panel de conciliación bancaria y el modal de mapeo de cuentas (sobre `DataTable`, congelado). El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
 
 ---
 
@@ -163,9 +179,25 @@ Es un único dueño del estado, construido sobre `nuqs`. Cualquier cambio de fil
 
 Preferencias por entidad que **no van en la URL**: densidad y columnas (visibilidad, orden, fijadas). Desde E3 se guarda la visibilidad en `localStorage` con la clave `entity-view:hidden-columns:<label>` (si la entidad no tiene `label`, se usa `title`). La instantánea del servidor es «nada oculto», así que la hidratación coincide y la preferencia se aplica justo después. Densidad, orden y fijado quedan para una etapa posterior.
 
+**Modo cliente:** `useCollectionQuery(entity, { sorting: "client" })` es para listas que cargan todas sus filas y las ordenan en el navegador.
+- Los campos de `query.sort` no necesitan `orderBy`.
+- Las claves siguen en `?ordering=`, pero `params` no lleva `ordering`.
+- `sorting` usa el modo `query` de `useEntityCollection`: ordena las filas cargadas por todas las claves, y solo las columnas declaradas son ordenables.
+- Filtros y búsqueda funcionan igual. La pantalla los envía al servidor (`params`) o filtra en el cliente (`search.filters` o `search.filterFn`).
+- Con `search.filterFn`, cada `scope` busca en las claves de fila de `clientKey` (por defecto, su `param`): `{ label: "Nombre / Código", param: "name", clientKey: ["name", "code", "address"] }`.
+- Los filtros `options: "remote"` reciben sus opciones en `useCollectionQuery(entity, { filterOptions: { category: [...] } })`.
+
+En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa columna lleva `aria-sort`. Las secundarias se ven y se cambian en `SortMenu`.
+
 **Adaptador:** `useCollectionQuery(entity, { searchDef })` usa un `unifiedSearchDef` existente (vía `fromUnifiedSearchDef(def)`) en lugar de `entity.query`, para migrar la vista antes que su definición. Con el adaptador no hay orden múltiple, vistas ni agregados.
 
 **Montaje:** la pantalla pasa el resultado del hook a `<Collection.Root query={query}>`. Con `query`, `Collection.Toolbar` deja de ser la barra antigua y compone `ViewTabs` → fila de comandos (`Search`, `FilterMenu`, `SortMenu`, `GroupMenu`, `DisplayMenu`, `children`, analítica, `ExportMenu`, `action`) → `AppliedFilters`. `ExportMenu` recibe `query.params` salvo que se pase `exportFilters`. El buscador es `UnifiedSearchBar` con `menu={false}` (sin chevrón ni menú propio, solo sugerencias) y `appliedFilters={false}` (la barra dibuja la fila). `useUnifiedSearch` expone `applyMany(values)`, que escribe varios parámetros en una sola actualización y resetea el cursor.
+
+**Placeholder:** `query.search.placeholder` («Buscar guías de despacho…») es también el nombre accesible del buscador. Por defecto: «Buscar…».
+
+**Sin buscador:** `query.search: false` cuando el endpoint no tiene búsqueda de texto (ventas y sincronizaciones de terminal). La barra no muestra un buscador que no haría nada; los filtros siguen igual.
+
+**Presets de fecha:** por defecto `today`, `this_week`, `this_month`, `this_quarter` y `this_year`. `last_7_days` («Últimos 7 días») se pide en `presets`.
 
 **Lo que entrega el hook:** `search` (lo que consume `UnifiedSearchBar`), `sort` / `setSort`, `ordering` (DRF, con desempate por `id`), `sorting` (listo para `useEntityCollection`), `groupBy` / `setGroupBy` (solo campos declarados), `views` / `activeView` / `setView` / `isDirty` / `resetView` y `params` (búsqueda + filtros + `ordering`, sin `group_by`) para la petición.
 

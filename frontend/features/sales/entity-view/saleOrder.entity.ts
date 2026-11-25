@@ -25,6 +25,7 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
     // Search, filters, sort, grouping and views (ADR-0158 §3). Params match `SaleOrderFilterSet`.
     query: {
         search: {
+            placeholder: "Buscar órdenes…",
             scopes: [
                 { field: "customer", param: "customer_name", suggestionsUrl: "sales/orders/filter-suggestions/" },
                 { field: "folio", param: "number" },

@@ -6,11 +6,10 @@ import React, { useMemo } from "react"
 
 import { Archive, ArchiveRestore } from "lucide-react"
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type BulkAction } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal, type BulkAction } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
-import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -25,7 +24,8 @@ interface CategoryClientViewProps {
 
 export function CategoryClientView({ externalOpen, onExternalOpenChange, createAction }: CategoryClientViewProps) {
     const { categories, isLoading, isRefetching, isError, refetch, archiveCategory } = useCategories()
-    const search = useUnifiedSearch(categoryUnifiedSearchDef)
+    const query = useCollectionQuery(categoryEntity, { sorting: "client" })
+    const { search } = query
     const { filterFn } = search
     const { view, onViewChange } = useCollectionViewMode("inventory.category")
     const rows = useMemo(() => filterFn(categories), [filterFn, categories])
@@ -33,7 +33,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     const collection = useEntityCollection(
         categoryEntity,
         { rows, isLoading, isRefetching, error: isError && categories.length === 0, refetch, isFiltered: search.isFiltered },
-        { defaultSort: categoryViews.table.defaultSort },
+        { sorting: query.sorting, groupBy: query.groupBy, pagination: query.groupBy ? { mode: "none" } : { mode: "client" } },
     )
 
     const panel = useCreatePanelRoute({ resolved: false, external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
@@ -90,18 +90,13 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
                 actions={categoryActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={categoryUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar categoría..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={categoryViews.table}
                     card={categoryViews.card}

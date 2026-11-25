@@ -15,7 +15,7 @@ const UOMS: UoM[] = [
 
 /** The whole page body of UoMClientView in the new system (2 files, no custom code). */
 function UoMCollection({ source, defaultView }: { source: CollectionSource<UoM>; defaultView?: "table" | "card" }) {
-    const collection = useEntityCollection(uomEntity, source, { defaultSort: uomViews.table.defaultSort })
+    const collection = useEntityCollection(uomEntity, source, { defaultSort: "name" })
     return (
         <Collection.Root collection={collection} selection="bulk" defaultView={defaultView}>
             <Collection.Toolbar />

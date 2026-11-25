@@ -32,9 +32,6 @@ vi.mock("../../entity-view/partner.entity", () => ({ partnerEntity: {}, partnerV
 vi.mock("../PartnerActionModal", () => ({ usePartnerActions: () => ({ run: m.run, host: null }) }))
 vi.mock("@/components/shared", () => ({
     AnalyticsPanelContent: () => null,
-    UnifiedSearchBar: () => null,
-    bindUnifiedSearch: () => ({}),
-    useUnifiedSearch: () => ({ filterFn: (rows: unknown[]) => rows, filters: {}, isFiltered: false, clearAll: vi.fn() }),
 }))
 vi.mock("@/components/entity-view", () => {
     const Root = ({ children, onOpen, ...rest }: { children: ReactNode; onOpen: (p: { id: number }) => void } & Record<string, unknown>) => {
@@ -55,6 +52,7 @@ vi.mock("@/components/entity-view", () => {
         useCollectionViewMode: () => ({ view: "table", onViewChange: vi.fn() }),
         useCollectionAnalytics: (tab: string) => ({ open: false, onOpenChange: vi.fn(), tab, onTabChange: vi.fn() }),
         useEntityCollection: () => ({}),
+        useCollectionQuery: () => ({ params: {}, sorting: undefined, search: { filterFn: (rows: unknown[]) => rows, isFiltered: false, clearAll: vi.fn() } }),
     }
 })
 

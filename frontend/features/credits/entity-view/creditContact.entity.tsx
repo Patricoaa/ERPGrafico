@@ -87,6 +87,25 @@ export const creditContactEntity = defineEntity<CreditContact>()((f) => ({
         ),
         lastEvaluated: f.date("credit_last_evaluated", { label: "Bloqueado desde", time: true }),
     },
+    // ADR-0158 §3: cartera y lista negra cargan todo y filtran en el navegador. El id del filtro es
+    // la clave de la fila (`filterFn` compara contra ella).
+    query: {
+        search: { placeholder: "Cliente o RUT…" },
+        filters: {
+            credit_risk_level: {
+                field: "riskLevel",
+                control: "single",
+                options: [
+                    { value: "LOW", label: "Bajo" },
+                    { value: "MEDIUM", label: "Medio" },
+                    { value: "HIGH", label: "Alto" },
+                    { value: "CRITICAL", label: "Crítico" },
+                ],
+            },
+        },
+        sort: { fields: ["name", "riskLevel", "limit", "balanceUsed", "currentAging", "overdueAging"] },
+        groupBy: { fields: ["riskLevel"] },
+    },
 }))
 
 export const portfolioViews = creditContactEntity.views({

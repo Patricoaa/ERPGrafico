@@ -5,14 +5,8 @@ import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { Collection, useEntityCollection, useServerPage } from "@/components/entity-view"
-import {
-    Banner,
-    Skeleton,
-    UnifiedSearchBar,
-    bindUnifiedSearch,
-    useUnifiedSearch,
-} from "@/components/shared"
+import { Collection, useCollectionQuery, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Banner, Skeleton } from "@/components/shared"
 import { EntityPanelTab } from "@/components/providers"
 import { Button } from "@/components/ui/button"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
@@ -20,13 +14,13 @@ import { FISCAL_MATCH_PAGE_SIZE } from "../api/fiscalMatchApi"
 import { useFiscalMatchCounts, useFiscalMatches } from "../hooks/useFiscalMatches"
 import { fiscalMatchEntity, fiscalMatchViews } from "../entity-view/fiscalMatch.entity"
 import {
+    FISCAL_MATCH_STATUS_OPTIONS,
     STATUS_ATTENTION,
     fiscalMatchStatusOptions,
-    fiscalMatchUnifiedSearchDef,
     selectedStatus,
     toFiscalMatchFilters,
     withDefaultFilters,
-} from "../unifiedSearchDef"
+} from "../fiscalMatchFilters"
 import { FiscalMatchDrawer } from "./FiscalMatchDrawer"
 
 const GROUP_LABEL = "tax.fiscalmatch"
@@ -35,7 +29,7 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: FISCAL_MATCH_PAGE_SIZE }
 /**
  * Cuadre por grupo (ADR-0141): cada fila une el documento ERP, sus pagos TUU y su registro RCV.
  * Sin meses ni recálculos: el motor corre solo cada 10 minutos. Todos los filtros (dirección,
- * estado con conteos, tipo y fecha) viven dentro del unified search y la tabla usa todo el alto.
+ * estado con conteos, tipo y fecha) viven en la barra de comandos (ADR-0158) y la tabla usa todo el alto.
  */
 export function FiscalMatchClientView() {
     const router = useRouter()
@@ -71,11 +65,12 @@ export function FiscalMatchClientView() {
     }, [rawParams])
     const counts = useFiscalMatchCounts(countFilters)
     const statusOptions = useMemo(
-        () => (counts.counts ? { status: fiscalMatchStatusOptions(counts.counts) } : undefined),
+        () => ({ status: counts.counts ? fiscalMatchStatusOptions(counts.counts) : FISCAL_MATCH_STATUS_OPTIONS }),
         [counts.counts],
     )
-    const search = useUnifiedSearch(fiscalMatchUnifiedSearchDef, statusOptions)
-    const filters = useMemo(() => toFiscalMatchFilters(search.filters), [search.filters])
+    const collectionQuery = useCollectionQuery(fiscalMatchEntity, { filterOptions: statusOptions })
+    const { search } = collectionQuery
+    const filters = useMemo(() => toFiscalMatchFilters(collectionQuery.params), [collectionQuery.params])
 
     const [pageState, setPageState] = useServerPage([filters], DEFAULT_PAGE)
     const { page, groups, isLoading, isRefetching, isError, refetch } = useFiscalMatches(filters, pageState.pageIndex + 1)
@@ -84,7 +79,7 @@ export function FiscalMatchClientView() {
         { rows: groups, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
         { pagination: { mode: "server", state: pageState, onChange: setPageState } },
     )
-    const attention = selectedStatus(search.filters) === STATUS_ATTENTION
+    const attention = selectedStatus(collectionQuery.params) === STATUS_ATTENTION
 
     return (
         <>
@@ -93,19 +88,13 @@ export function FiscalMatchClientView() {
                 {counts.counts && !counts.counts.start_date && <StartDateBanner />}
                 <Collection.Root
                     collection={collection}
+                    query={collectionQuery}
                     label="Cuadre"
                     selection="panel"
                     selectedId={panel.selectedId}
                     onOpen={(group) => openGroup(group.id)}
                 >
-                    <Collection.Toolbar>
-                        <UnifiedSearchBar
-                            config={fiscalMatchUnifiedSearchDef}
-                            {...bindUnifiedSearch(search)}
-                            filterOptions={statusOptions}
-                            placeholder="Buscar por folio, RUT o monto..."
-                        />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar />
                     <Collection.View
                         table={fiscalMatchViews.table}
                         card={fiscalMatchViews.card}

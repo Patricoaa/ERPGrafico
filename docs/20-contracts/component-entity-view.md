@@ -114,7 +114,7 @@ Reglas:
 | `options` | Valores |
 |---|---|
 | `pagination` | `{ mode: "client", pageSize? }` (defecto, 20) · `{ mode: "more", step? }` («Mostrar más», solo cliente, `step` 10; ADR-0137) · `{ mode: "server", state, onChange }` · `{ mode: "none" }` |
-| `sorting` | `{ mode: "local" }` (defecto con paginación cliente o sin paginar: ordena las filas cargadas con la clave semántica del kind) · `{ mode: "server", state: SortSpec \| null, onChange }`. Con paginación en servidor y sin `sorting`, **ninguna cabecera se puede ordenar** |
+| `sorting` | `{ mode: "local" }` (defecto con paginación cliente o sin paginar: ordena las filas cargadas con la clave semántica del kind) · `{ mode: "server", state: SortSpec \| null, onChange }` · `{ mode: "query", state: SortSpec[], onChange, fields }`: ordena las filas cargadas por varias claves controladas. Es el modo cliente de `useCollectionQuery` ([component-collection-toolbar.md](./component-collection-toolbar.md) §4); solo `fields` son ordenables. Con paginación en servidor y sin `sorting`, **ninguna cabecera se puede ordenar** |
 | `defaultSort` | `"id"` o `"-id"` (ids tipados; solo en orden local) |
 | `groupBy` | id de campo o `null`: agrupa las filas cargadas por el texto formateado del campo |
 
@@ -330,7 +330,7 @@ Se migra **con el comportamiento de hoy** (paridad). Las mejoras se registran y 
 | Patrón | Referencia | Piezas |
 |---|---|---|
 | Maestro con datos en cliente | `features/inventory/components/UoMClientView.tsx` | `useEntityCollection(entity, { rows, isLoading, error, refetch, isFiltered })` · `Collection.Root selection="bulk" onOpen actions={xActions.forCollection(ctx)}` · `Collection.Toolbar action` + `UnifiedSearchBar {...bindUnifiedSearch(search)}` · `Collection.View table card empty*` · `Collection.BulkBar` |
-| Documento con servidor | `features/purchasing/components/PurchaseOrdersView.tsx` | lo anterior + `useServerPage`, `sorting: { mode: "server" }` con `orderingParam`, `selection="panel"` con `useDocumentSheetRoute`, `groupBy` con `GROUP_ROW_LIMIT` |
+| Documento con servidor | `features/purchasing/components/PurchaseOrdersView.tsx` | lo anterior + `useCollectionQuery(entity)` (búsqueda, filtros, `ordering`, `groupBy` y vistas desde `entity.query`), `useServerPage([params, groupBy])`, `<Collection.Root query>`, `selection="panel"` con `useDocumentSheetRoute`, `groupBy` con `GROUP_ROW_LIMIT` |
 
 Reglas de la pantalla:
 

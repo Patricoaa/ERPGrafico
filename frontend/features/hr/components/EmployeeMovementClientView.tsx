@@ -5,10 +5,9 @@ import React, { useMemo, useState } from "react"
 
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
-import { ActionConfirmModal, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal, ToolbarCreateButton } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { PaymentModal } from "@/features/treasury"
-import { employeeMovementUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import type { EmployeeMovement } from "@/types/hr"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
@@ -25,8 +24,9 @@ interface EmployeeMovementClientViewProps {
 
 export function EmployeeMovementClientView({ initialMovements }: EmployeeMovementClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo movimiento" href="/hr/movements?modal=new" />
-    const search = useUnifiedSearch(employeeMovementUnifiedSearchDef)
-    const { movements, isLoading: loading, isRefetching, isError, refetch } = useEmployeeMovements(search.filters, initialMovements)
+    const query = useCollectionQuery(employeeMovementEntity, { sorting: "client" })
+    const { search } = query
+    const { movements, isLoading: loading, isRefetching, isError, refetch } = useEmployeeMovements(query.params, initialMovements)
     const { filterFn } = search
     const rows = useMemo(() => filterFn(movements), [filterFn, movements])
     const { view, onViewChange } = useCollectionViewMode("hr.employeemovement")
@@ -34,7 +34,7 @@ export function EmployeeMovementClientView({ initialMovements }: EmployeeMovemen
     const collection = useEntityCollection(
         employeeMovementEntity,
         { rows, isLoading: loading, isRefetching, error: isError && movements.length === 0, refetch, isFiltered: search.isFiltered },
-        { pagination: { mode: "client", pageSize: 20 }, defaultSort: employeeMovementViews.table.defaultSort },
+        { pagination: { mode: "client", pageSize: 20 }, sorting: query.sorting },
     )
     const { employees } = useEmployees()
 
@@ -60,17 +60,12 @@ export function EmployeeMovementClientView({ initialMovements }: EmployeeMovemen
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 actions={employeeMovementActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={employeeMovementUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar movimiento..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={employeeMovementViews.table}
                     card={employeeMovementViews.card}

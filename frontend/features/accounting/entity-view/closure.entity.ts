@@ -43,6 +43,13 @@ export const closureEntity = defineEntity<ClosureRow>()((f) => ({
         ),
         closedAt: f.text(closedInfo, { label: "Cierre del ejercicio", tone: "secondary", sortable: false }),
     },
+    // ADR-0158 §3, client mode: filters run in the browser; the tree keeps its year order (no sort).
+    query: {
+        search: { placeholder: "Buscar ejercicio…", scopes: [{ label: "Ejercicio", param: "year", clientKey: "year" }] },
+        filters: {
+            status: { field: "status", control: "single", options: [{ value: "OPEN", label: "Abierto" }, { value: "CLOSING", label: "En Cierre" }, { value: "CLOSED", label: "Cerrado" }] },
+        },
+    },
 }))
 
 export const closureViews = closureEntity.views({

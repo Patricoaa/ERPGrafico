@@ -9,6 +9,11 @@ export const groupEntity = defineEntity<Group>()((f) => ({
         name: f.text("name", { label: "Nombre del Grupo" }),
         userCount: f.number("user_count", { label: "Miembros" }),
     },
+    // ADR-0158 §3: la lista carga todo y filtra en el navegador.
+    query: {
+        search: { placeholder: "Buscar grupo…" },
+        sort: { fields: ["name", "userCount"], default: "name" },
+    },
 }))
 
 export const groupViews = groupEntity.views({

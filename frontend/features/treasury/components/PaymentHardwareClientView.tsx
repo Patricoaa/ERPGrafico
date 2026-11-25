@@ -3,9 +3,8 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import type { UnifiedSearchConfig } from "@/types/unified-search"
+import { ActionConfirmModal } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
@@ -42,37 +41,15 @@ export function PaymentHardwareClientView({
         }
     }, [externalActiveTab])
 
-    const deviceConfig: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'Nombre', serverParam: 'search' },
-        ],
-    }), [])
-    const deviceSearch = useUnifiedSearch(deviceConfig)
-    const deviceFilters = { ...deviceSearch.filters }
-
-    const providerConfig: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'name', label: 'Nombre', serverParam: 'name', clientKey: ['name'] },
-        ],
-    }), [])
-    const providerSearch = useUnifiedSearch(providerConfig)
-    const { providers, isLoading: isLoadingProviders, error: providersError, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
-    const { devices, isLoading: isLoadingDevices, error: devicesError, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
-    const { filterFn: providerFilterFn } = providerSearch
-    const providerRows = useMemo(() => providerFilterFn(providers), [providerFilterFn, providers])
-    const providerView = useCollectionViewMode("treasury.terminalprovider")
-    const deviceView = useCollectionViewMode("treasury.terminaldevice")
-    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
-    const providerCollection = useEntityCollection(
-        terminalProviderEntity,
-        { rows: providerRows, isLoading: isLoadingProviders, error: providersError && providers.length === 0, refetch: refetchProviders, isFiltered: providerSearch.isFiltered },
-        { pagination: { mode: "client", pageSize: 20 }, defaultSort: terminalProviderViews.table.defaultSort },
-    )
-    const deviceCollection = useEntityCollection(
-        terminalDeviceEntity,
-        { rows: devices, isLoading: isLoadingDevices, error: devicesError, refetch: refetchDevices, isFiltered: deviceSearch.isFiltered },
-        { pagination: { mode: "client", pageSize: 20 }, defaultSort: terminalDeviceViews.table.defaultSort },
-    )
+    // Same query keys as the tab below (its `search.filters` is just `?search=`), so these share its cache.
+    const deviceSearchText = searchParams.get("search")
+    const deviceFilters = useMemo(() => {
+        const out: Record<string, string> = {}
+        if (deviceSearchText) out.search = deviceSearchText
+        return out
+    }, [deviceSearchText])
+    const { providers, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
+    const { refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
 
     const providerPanel = useCreatePanelRoute({ selectedParam: 'selected-provider', createValue: 'new-provider', resolved: false })
     const devicePanel = useCreatePanelRoute({ selectedParam: 'selected-device', createValue: 'new-device', resolved: false })
@@ -135,43 +112,9 @@ export function PaymentHardwareClientView({
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             {activeTab === "providers" ? (
-                <Collection.Root
-                    collection={providerCollection}
-                    view={providerView.view}
-                    onViewChange={providerView.onViewChange}
-                    actions={providerActions.forCollection(providerActionsCtx)}
-                >
-                    <Collection.Toolbar action={providerCreateAction}>
-                        <UnifiedSearchBar config={providerConfig} {...bindUnifiedSearch(providerSearch)} placeholder="Buscar proveedor..." />
-                    </Collection.Toolbar>
-                    <Collection.View
-                        table={terminalProviderViews.table}
-                        card={terminalProviderViews.card}
-                        emptyTitle="Aún no hay proveedores de terminal de cobro"
-                        emptyDescription="Configura un proveedor (TUU, Transbank, etc.) para registrar sus terminales de cobro."
-                        emptyAction={providerCreateAction}
-                        onResetFilters={providerSearch.clearAll}
-                    />
-                </Collection.Root>
+                <ProviderCollection actionsCtx={providerActionsCtx} createAction={providerCreateAction} />
             ) : (
-                <Collection.Root
-                    collection={deviceCollection}
-                    view={deviceView.view}
-                    onViewChange={deviceView.onViewChange}
-                    actions={deviceActions.forCollection(deviceActionsCtx)}
-                >
-                    <Collection.Toolbar action={deviceCreateAction}>
-                        <UnifiedSearchBar config={deviceConfig} {...bindUnifiedSearch(deviceSearch)} placeholder="Buscar terminal de cobro..." />
-                    </Collection.Toolbar>
-                    <Collection.View
-                        table={terminalDeviceViews.table}
-                        card={terminalDeviceViews.card}
-                        emptyTitle="Aún no hay terminales de cobro"
-                        emptyDescription="Registra terminales de cobro para conciliar sus transacciones."
-                        emptyAction={deviceCreateAction}
-                        onResetFilters={deviceSearch.clearAll}
-                    />
-                </Collection.Root>
+                <DeviceCollection actionsCtx={deviceActionsCtx} createAction={deviceCreateAction} />
             )}
 
             {/* Dialogs */}
@@ -221,3 +164,56 @@ export function PaymentHardwareClientView({
 }
 
 export default PaymentHardwareClientView
+
+/** One tab at a time: each owns its command bar state in the URL (ADR-0158). */
+function ProviderCollection({ actionsCtx, createAction }: { actionsCtx: ProviderActionsCtx; createAction: React.ReactNode }) {
+    const query = useCollectionQuery(terminalProviderEntity, { sorting: "client" })
+    const { search } = query
+    const { providers, isLoading, error, refetch } = useTerminalProviders()
+    const rows = useMemo(() => search.filterFn(providers), [search, providers])
+    const { view, onViewChange } = useCollectionViewMode("treasury.terminalprovider")
+    // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
+    const collection = useEntityCollection(
+        terminalProviderEntity,
+        { rows, isLoading, error: error && providers.length === 0, refetch, isFiltered: search.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 }, sorting: query.sorting },
+    )
+    return (
+        <Collection.Root collection={collection} query={query} view={view} onViewChange={onViewChange} actions={providerActions.forCollection(actionsCtx)}>
+            <Collection.Toolbar action={createAction} />
+            <Collection.View
+                table={terminalProviderViews.table}
+                card={terminalProviderViews.card}
+                emptyTitle="Aún no hay proveedores de terminal de cobro"
+                emptyDescription="Configura un proveedor (TUU, Transbank, etc.) para registrar sus terminales de cobro."
+                emptyAction={createAction}
+                onResetFilters={search.clearAll}
+            />
+        </Collection.Root>
+    )
+}
+
+function DeviceCollection({ actionsCtx, createAction }: { actionsCtx: DeviceActionsCtx; createAction: React.ReactNode }) {
+    const query = useCollectionQuery(terminalDeviceEntity, { sorting: "client" })
+    const { search, groupBy } = query
+    const { devices, isLoading, error, refetch } = useTerminalDevices(search.filters)
+    const { view, onViewChange } = useCollectionViewMode("treasury.terminaldevice")
+    const collection = useEntityCollection(
+        terminalDeviceEntity,
+        { rows: devices, isLoading, error, refetch, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, sorting: query.sorting, groupBy },
+    )
+    return (
+        <Collection.Root collection={collection} query={query} view={view} onViewChange={onViewChange} actions={deviceActions.forCollection(actionsCtx)}>
+            <Collection.Toolbar action={createAction} />
+            <Collection.View
+                table={terminalDeviceViews.table}
+                card={terminalDeviceViews.card}
+                emptyTitle="Aún no hay terminales de cobro"
+                emptyDescription="Registra terminales de cobro para conciliar sus transacciones."
+                emptyAction={createAction}
+                onResetFilters={search.clearAll}
+            />
+        </Collection.Root>
+    )
+}

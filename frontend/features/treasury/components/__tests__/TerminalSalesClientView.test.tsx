@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render as rtlRender, screen } from "@testing-library/react"
+import { NuqsTestingAdapter } from "nuqs/adapters/testing"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
 import { EntityViewProvider } from "@/components/providers/EntityOpenerContext"
@@ -8,7 +9,6 @@ const m = vi.hoisted(() => ({
     sales: [] as unknown[],
     useTerminalSales: vi.fn(),
     filters: {} as Record<string, string>,
-    applyFilter: vi.fn(() => Promise.resolve()),
     push: vi.fn(),
     deepLink: vi.fn(),
     open: vi.fn(),
@@ -24,21 +24,6 @@ vi.mock("@/hooks/useDeepLinkEntity", () => ({ useDeepLinkEntity: (label: string)
 vi.mock("@/components/auth", () => ({
     Can: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
-vi.mock("@/components/shared", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@/components/shared")>()
-    return {
-        ...actual,
-        UnifiedSearchBar: () => null,
-        useUnifiedSearch: () => ({
-            filters: m.filters,
-            filterFn: (x: unknown[]) => x,
-            isFiltered: Object.keys(m.filters).length > 0,
-            applyFilter: m.applyFilter,
-            clearAll: vi.fn(),
-        }),
-        bindUnifiedSearch: () => ({}),
-    }
-})
 vi.mock("../../hooks/useTerminalSales", () => ({
     useTerminalSales: (filters: unknown) => {
         m.useTerminalSales(filters)
@@ -53,6 +38,9 @@ vi.mock("../../hooks/useTerminalProviders", () => ({ useTerminalProviders: () =>
 vi.mock("../../hooks/useTerminalSync", () => ({ useStartTerminalSync: () => ({ startSync: vi.fn(), isStarting: false }) }))
 
 import { TerminalSalesClientView } from "../TerminalSalesClientView"
+
+/** The URL query string is `m.filters` (ADR-0158: the view reads its filters through nuqs). */
+const render = (ui: React.ReactElement) => rtlRender(<NuqsTestingAdapter searchParams={new URLSearchParams(m.filters)}>{ui}</NuqsTestingAdapter>)
 
 const sale: TerminalSale = {
     id: 1, provider: 1, provider_name: "TUU Local", device: null, device_name: null, serial_number: "SN1",
@@ -71,7 +59,6 @@ describe("TerminalSalesClientView", () => {
         m.sales = []
         m.filters = {}
         m.useTerminalSales.mockClear()
-        m.applyFilter.mockClear()
         m.push.mockClear()
         m.deepLink.mockClear()
         m.open.mockClear()
@@ -79,15 +66,12 @@ describe("TerminalSalesClientView", () => {
 
     it("sin filtros en la URL lista todas las ventas: no inyecta un período por defecto", () => {
         render(<TerminalSalesClientView />)
-        expect(m.applyFilter).not.toHaveBeenCalled()
-        expect(m.useTerminalSales).toHaveBeenCalledTimes(1)
         expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining({ date_from: undefined, date_to: undefined, page: 1 }))
     })
 
     it("con período en la URL consulta ese rango", () => {
         m.filters = { ...PERIOD }
         render(<TerminalSalesClientView />)
-        expect(m.applyFilter).not.toHaveBeenCalled()
         expect(m.useTerminalSales).toHaveBeenCalledWith(expect.objectContaining(PERIOD))
     })
 

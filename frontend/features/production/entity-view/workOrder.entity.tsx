@@ -90,6 +90,30 @@ export const workOrderEntity = defineEntity<WorkOrder>()((f) => ({
         quantityLabel: f.text(quantityLabel, { label: "Cantidad" }),
         dueDate: f.date("due_date", { label: "Fecha Entrega" }),
     },
+    // ADR-0158 §3. No `sort`: the work orders endpoint has no server ordering.
+    query: {
+        search: { placeholder: "Buscar por descripción o folio…" },
+        filters: {
+            status: {
+                field: "status",
+                control: "single",
+                options: [
+                    { value: "DRAFT", label: "Borrador" },
+                    { value: "IN_PROGRESS", label: "En Proceso" },
+                    { value: "FINISHED", label: "Terminada" },
+                    { value: "CANCELLED", label: "Anulada" },
+                ],
+            },
+            my_tasks: { label: "Mis OTs", control: "toggle" },
+            due_date: { field: "dueDate", control: "date" },
+        },
+        groupBy: { fields: ["status", "currentStage", "customer"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "in_progress", label: "En proceso", filters: { status: "IN_PROGRESS" } },
+            { id: "mine", label: "Mis OTs", filters: { my_tasks: "true" } },
+        ],
+    },
 }))
 
 export const workOrderViews = workOrderEntity.views({
