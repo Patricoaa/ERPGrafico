@@ -28,7 +28,9 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 > - **E4** endpoints `groups/` y `facets/`;
 > - **E5** limpieza.
 >
-> Hasta E3, las pantallas siguen declarando `unifiedSearchDef.ts` y montando `UnifiedSearchBar` ([unified-searchbar.md](./unified-searchbar.md)). Una pantalla usa un sistema o el otro, nunca los dos.
+> Hasta migrar, las pantallas siguen declarando `unifiedSearchDef.ts` y montando `UnifiedSearchBar` ([unified-searchbar.md](./unified-searchbar.md)). Una pantalla usa un sistema o el otro, nunca los dos.
+>
+> **Migradas a la barra de comandos:** órdenes de venta (`saleOrderEntity.query`, piloto de la etapa 3c). Las demás llegan por oleadas (3d).
 
 ---
 
@@ -184,6 +186,7 @@ Preferencias por entidad que **no van en la URL**: densidad y columnas (visibili
 - **Distribución:** la fila crece en líneas (prohibido el scroll horizontal) y termina con «Limpiar todo».
 - **Atajos:** Backspace en `Search` vacío quita el último chip.
 - **Conteo:** el de resultados va a la derecha de `ViewTabs` o, sin pestañas, al final de `AppliedFilters` (`"38 resultados"`).
+- **Solo lectura:** sin `onClearAll`, la fila no tiene botones de quitar ni «Limpiar todo». La usa la franja de alcance de la analítica (§5.7).
 
 ### 5.3 `SortMenu` (E3)
 
@@ -212,8 +215,9 @@ El **encabezado de columna** usa el mismo estado: ordenar desde él reemplaza la
 
 - **No es un layout.** `"analytics"` no existe en `CollectionViewMode` ni en `ViewPolicy.availableViews`.
 - **Montaje:** `Collection.Analytics` monta sus hijos dentro de `AnalyticsModal` (`BaseModal` grande con pantalla completa; hoja completa en el teléfono). El botón de la barra lo abre y escribe `?analytics=<pestaña>`. Cerrarlo borra el parámetro.
-- **Alcance:** el modal recibe la consulta actual y la muestra en una franja: «Analizando N <entidad> con la vista X», más los chips de solo lectura. «Analizar sin filtros» cambia el alcance solo dentro del modal.
-- **Drill-down:** `AnalyticsPanelContent` acepta `onDrillDown(filter: { param, value })`. La barra aplica el filtro y cierra el modal.
+- **Alcance (E3, con `query`):** el modal muestra una franja: «Analizando N resultados con la vista X», más los chips de solo lectura. La vista se nombra solo mientras el estado coincide con ella. «Analizar sin filtros» cambia el alcance solo dentro del modal: `useCollectionAnalytics` expone `scope` (`"query"` | `"all"`) y `onScopeChange`, y la pantalla pide la analítica sin filtros cuando `scope === "all"`. Cerrar el modal vuelve a `"query"`.
+- **Drill-down (E3, con `query`):** un gráfico de barras o de torta declara `drillDown: { param, values? }` en su config (`ChartDrillDown`). Un clic envía la categoría (el `id` de la porción o el valor de `indexBy`), traducida por `values` si se declara; una categoría sin traducción no es clicable. `Collection.Analytics` provee el destino (`AnalyticsDrillDownProvider`): aplica `{ [param]: value }` a la colección y cierra el modal en una sola actualización de URL. Fuera de una colección, `AnalyticsPanelContent` acepta `onDrillDown(filter)`. `param` debe ser un parámetro que la consulta de la colección conozca. El clic es una mejora de puntero: el mismo filtro está en `FilterMenu`.
+- **URL:** `useCollectionAnalytics` escribe con nuqs, igual que la consulta. Abrir y cerrar crean una entrada de historial y cambiar de pestaña la reemplaza.
 - **Consultas:** se piden solo con el modal abierto (`enabled: analyticsOpen`).
 - **Compatibilidad:** `?view=analytics` se reescribe a `?analytics=` con `router.replace`.
 

@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing"
-import { Collection, defineEntity, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
+import { Collection, defineEntity, useCollectionAnalytics, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
+import { Button } from "@/components/ui/button"
+import { useAnalyticsDrillDown } from "@/components/shared"
 
 interface Note {
     id: number
@@ -41,13 +43,30 @@ const rows: Note[] = [
     { id: 2, number: "NV-2037", customer: "Colegio San Andrés", status: "DRAFT", total: "1214400" },
 ]
 
+const STATUS_DRILL = { param: "status", values: { Borradores: "DRAFT" } }
+
+/** Stands in for a drillable chart: a click on the "Borradores" category. */
+function DrillProbe({ scope }: { scope: string }) {
+    const drill = useAnalyticsDrillDown(STATUS_DRILL)
+    return (
+        <>
+            <p>Alcance: {scope}</p>
+            <Button onClick={() => drill?.("Borradores")}>Segmento Borradores</Button>
+        </>
+    )
+}
+
 function Screen() {
     const query = useCollectionQuery(noteEntity)
+    const analytics = useCollectionAnalytics("resumen")
     const collection = useEntityCollection(noteEntity, { rows, rowCount: 2 }, { pagination: { mode: "none" }, sorting: query.sorting, groupBy: query.groupBy })
     return (
-        <Collection.Root collection={collection} query={query} label="Notas de venta">
-            <Collection.Toolbar action={<button type="button">Nueva nota</button>} />
+        <Collection.Root collection={collection} query={query} analytics={analytics} label="Notas de venta">
+            <Collection.Toolbar action={<Button>Nueva nota</Button>} />
             <Collection.View table={noteViews.table} />
+            <Collection.Analytics>
+                <DrillProbe scope={analytics.scope} />
+            </Collection.Analytics>
         </Collection.Root>
     )
 }
@@ -140,5 +159,44 @@ describe("Collection command bar (ADR-0158 stage 3b)", () => {
         await user.click(within(screen.getByRole("list", { name: "Filtros aplicados" })).getByRole("button", { name: "Quitar Estado: Borrador" }))
         await user.click(await screen.findByRole("button", { name: "Restablecer" }))
         await waitFor(() => expect(url().get("status")).toBe("DRAFT"))
+    })
+})
+
+describe("Analytics modal scope and drill-down (ADR-0158 stage 3c)", () => {
+    it("states what it analyses, with the list's filters read-only", async () => {
+        setup("v=drafts&status=DRAFT&analytics=resumen")
+        const dialog = await screen.findByRole("dialog")
+        expect(within(dialog).getByText(/Analizando/)).toHaveTextContent("Analizando 2 resultados con la vista Borradores")
+        const chips = within(dialog).getByRole("list", { name: "Filtros aplicados" })
+        expect(chips).toHaveTextContent("Estado: Borrador")
+        expect(within(chips).queryByRole("button")).toBeNull()
+        expect(within(dialog).queryByRole("button", { name: "Limpiar todo" })).toBeNull()
+    })
+
+    it("does not name a view the filters no longer match", async () => {
+        setup("status=DRAFT&analytics=resumen")
+        const dialog = await screen.findByRole("dialog")
+        expect(within(dialog).getByText(/Analizando/)).toHaveTextContent(/^Analizando 2 resultados$/)
+    })
+
+    it("«Analizar sin filtros» widens the scope inside the modal only", async () => {
+        const { user, url } = setup("status=DRAFT&analytics=resumen")
+        const dialog = await screen.findByRole("dialog")
+        await user.click(within(dialog).getByRole("button", { name: "Analizar sin filtros" }))
+        expect(within(dialog).getByText("Alcance: all")).toBeInTheDocument()
+        expect(within(dialog).getByText(/Analizando/)).toHaveTextContent("Analizando todos los registros, sin filtros")
+        expect(url().get("status")).toBe("DRAFT")
+        await user.click(within(dialog).getByRole("button", { name: "Usar los filtros de la lista" }))
+        expect(within(dialog).getByText("Alcance: query")).toBeInTheDocument()
+    })
+
+    it("a drill-down applies the clicked category as a filter and closes the modal in one URL update", async () => {
+        const { user, url } = setup("analytics=resumen")
+        const dialog = await screen.findByRole("dialog")
+        await user.click(within(dialog).getByRole("button", { name: "Segmento Borradores" }))
+        await waitFor(() => expect(url().get("status")).toBe("DRAFT"))
+        expect(url().has("analytics")).toBe(false)
+        await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+        expect(within(screen.getByRole("list", { name: "Filtros aplicados" })).getByRole("button", { name: "Quitar Estado: Borrador" })).toBeInTheDocument()
     })
 })

@@ -5,6 +5,7 @@ export type { AnalyticsPanelContentProps } from "./types"
 export { AnalyticsChart } from "./AnalyticsChart"
 export { AnalyticsLayout } from "./AnalyticsLayout"
 export { GranularityControl } from "./GranularityControl"
+export { AnalyticsDrillDownProvider, useAnalyticsDrillDown } from "./drill-down"
 
 
 export { SummaryTable } from "./shared-utils"
@@ -22,4 +23,6 @@ export type {
     LineChartConfig,
     PieChartConfig,
     Granularity,
+    AnalyticsDrillDownFilter,
+    ChartDrillDown,
 } from "./types"

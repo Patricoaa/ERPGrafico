@@ -7,6 +7,7 @@ import { AnalyticsLayout } from "./AnalyticsLayout"
 import type { AnalyticsPanelProps, AnalyticsTab, AnalyticsPanelContentProps } from "./types"
 import { cn } from "@/lib/utils"
 import { GranularityControl } from "./GranularityControl"
+import { AnalyticsDrillDownProvider } from "./drill-down"
 
 export interface AnalyticsTabBarProps {
     tabs: AnalyticsTab[]
@@ -49,13 +50,14 @@ export function AnalyticsPanelContent({
     onTabChange,
     granularity,
     onGranularityChange,
+    onDrillDown,
 }: AnalyticsPanelContentProps) {
     const [internalTab, setInternalTab] = useState(tabs[0]?.value ?? "")
 
     const currentTab = activeTabProp ?? internalTab
     const handleTabChange = onTabChange ?? setInternalTab
 
-    return (
+    const content = (
         <div className="flex-1 flex flex-row gap-4 w-full h-full min-h-0 overflow-hidden bg-transparent">
             <div className="w-14 shrink-0 sm:w-56">
                 <RailNav
@@ -85,6 +87,8 @@ export function AnalyticsPanelContent({
             </div>
         </div>
     )
+    // Inside `Collection.Analytics` a provider is already set; an explicit handler wins.
+    return onDrillDown ? <AnalyticsDrillDownProvider onDrillDown={onDrillDown}>{content}</AnalyticsDrillDownProvider> : content
 }
 
 export function AnalyticsPanel({

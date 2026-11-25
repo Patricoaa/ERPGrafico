@@ -22,7 +22,8 @@ const CHIP_TONE: Record<UnifiedChip['variant'], string> = {
 
 interface AppliedFiltersProps {
   chips: UnifiedChip[]
-  onClearAll: () => void
+  /** Omitted: the row is read-only (no remove buttons, no «Limpiar todo»), e.g. the analytics scope strip. */
+  onClearAll?: () => void
   /** Collection total; shown at the end of the row ("38 resultados"). `null` = unknown. */
   resultCount?: number | null
   className?: string
@@ -35,6 +36,7 @@ interface AppliedFiltersProps {
  */
 export function AppliedFilters({ chips, onClearAll, resultCount = null, className }: AppliedFiltersProps) {
   if (chips.length === 0) return null
+  const editable = onClearAll !== undefined
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
@@ -45,33 +47,38 @@ export function AppliedFilters({ chips, onClearAll, resultCount = null, classNam
             <li
               key={chip.id}
               className={cn(
-                'inline-flex h-5 max-w-[240px] items-center gap-1 rounded-full pl-2 pr-0.5 text-2xs font-medium whitespace-nowrap',
+                'inline-flex h-5 max-w-[240px] items-center gap-1 rounded-full pl-2 text-2xs font-medium whitespace-nowrap',
+                editable ? 'pr-0.5' : 'pr-2',
                 CHIP_TONE[chip.variant],
               )}
             >
               <span className="truncate" title={label}>{label}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Quitar ${label}`}
-                onClick={chip.onRemove}
-                className="size-4 shrink-0 rounded-full p-0 hover:bg-foreground/10"
-              >
-                <X className="size-2.5" aria-hidden />
-              </Button>
+              {editable && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Quitar ${label}`}
+                  onClick={chip.onRemove}
+                  className="size-4 shrink-0 rounded-full p-0 hover:bg-foreground/10"
+                >
+                  <X className="size-2.5" aria-hidden />
+                </Button>
+              )}
             </li>
           )
         })}
       </ul>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onClearAll}
-        className="h-5 px-1.5 text-2xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-      >
-        Limpiar todo
-      </Button>
+      {editable && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClearAll}
+          className="h-5 px-1.5 text-2xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Limpiar todo
+        </Button>
+      )}
 
       {resultCount !== null && (
         <span aria-live="polite" className="ml-auto font-mono text-2xs tabular-nums text-muted-foreground">

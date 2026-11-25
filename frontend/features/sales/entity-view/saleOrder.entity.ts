@@ -22,6 +22,34 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
         total: f.money("total", { label: "Total", orderBy: "total" }),
         pending: f.money("pending_amount", { label: "Pendiente" }),
     },
+    // Search, filters, sort, grouping and views (ADR-0158 §3). Params match `SaleOrderFilterSet`.
+    query: {
+        search: {
+            scopes: [
+                { field: "customer", param: "customer_name", suggestionsUrl: "sales/orders/filter-suggestions/" },
+                { field: "folio", param: "number" },
+                { label: "Producto", param: "product_name" },
+            ],
+        },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
+            origin_status: { label: "Origen", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "ACTIVE", label: "Completado" }, { value: "CANCELLED", label: "Anulado" }] },
+            delivery_status: { label: "Despacho", control: "multi", options: [{ value: "PENDING", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "DELIVERED", label: "Entregado" }] },
+            production_status: { label: "Producción", control: "multi", options: [{ value: "none", label: "Sin OT" }, { value: "in_progress", label: "En proceso" }, { value: "finished", label: "Terminada" }] },
+            billing_status: { label: "Facturación", control: "multi", options: [{ value: "INVOICED", label: "Facturado" }, { value: "PENDING", label: "No facturado" }] },
+            payment_status: { label: "Pago", control: "multi", options: [{ value: "UNPAID", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "PAID", label: "Pagado" }] },
+            total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
+        },
+        sort: { fields: ["date", "folio", "customer", "total"], default: "-date" },
+        groupBy: { fields: ["date", "customer", "hub", "channel"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "to-deliver", label: "Por despachar", filters: { origin_status: "ACTIVE", delivery_status: ["PENDING", "PARTIAL"] } },
+            { id: "to-invoice", label: "Por facturar", filters: { origin_status: "ACTIVE", billing_status: "PENDING" } },
+            { id: "to-collect", label: "Por cobrar", filters: { origin_status: "ACTIVE", payment_status: ["UNPAID", "PARTIAL"] } },
+            { id: "drafts", label: "Borradores", filters: { origin_status: "DRAFT" } },
+        ],
+    },
 }))
 
 export const saleOrderViews = saleOrderEntity.views({

@@ -44,6 +44,7 @@ const NON_FILTER_PARAMS = new Set(["search", "group_by"])
 function viewParams(compiled: CompiledQuery, view: QueryView | null): Record<string, string> {
     const out: Record<string, string> = {}
     for (const [key, value] of Object.entries(view?.filters ?? {})) {
+        if (value === undefined) continue
         const params = compiled.filterParams[key]
         const param = params && params.length === 1 ? params[0] : key
         out[param] = typeof value === "string" ? value : value.join(",")

@@ -71,8 +71,8 @@ export type GroupAggregate = "sum" | "avg" | "count"
 export interface QueryView {
     id: string
     label: string
-    /** Filter values by filter id; a list for `multi`. */
-    filters?: Readonly<Record<string, string | readonly string[]>>
+    /** Filter values by filter id; a list for `multi`. (`undefined` keys are ignored: inferred object literals carry them.) */
+    filters?: Readonly<Record<string, string | readonly string[] | undefined>>
     /** Field ids, DRF style: `["-date"]`. */
     ordering?: readonly string[]
     groupBy?: string

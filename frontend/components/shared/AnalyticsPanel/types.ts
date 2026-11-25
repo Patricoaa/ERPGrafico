@@ -20,6 +20,25 @@ export interface ChartCardSectionConfig extends Omit<ChartCardProps, "children" 
     chart: ChartConfig
 }
 
+// ── Drill-down (ADR-0158 §11) ──
+
+/** The filter a click on a bar or a slice applies to the collection. */
+export interface AnalyticsDrillDownFilter {
+    /** Server / URL param of a filter or search scope the collection knows (`customer_name`). */
+    param: string
+    value: string
+}
+
+/**
+ * Makes a bar or pie chart drillable: a click applies `param` to the collection. The value is the
+ * clicked category (pie `id`, bar `indexBy` value), translated through `values` when the chart shows
+ * labels ("Entregado" → `DELIVERED`). With `values`, an unmapped category is not clickable.
+ */
+export interface ChartDrillDown {
+    param: string
+    values?: Readonly<Record<string, string>>
+}
+
 // ── Chart configs (discriminated by type, no `any`) ──
 
 export interface BarChartConfig {
@@ -37,6 +56,7 @@ export interface BarChartConfig {
     axisBottomLegend?: string
     axisLeftLegend?: string
     compact?: boolean
+    drillDown?: ChartDrillDown
 }
 
 export interface LineChartConfig {
@@ -63,6 +83,7 @@ export interface PieChartConfig {
     arcLabel?: (d: { id: string; value: number }) => string
     valueFormat?: "currency" | "number"
     centerLabel?: { value: string | number; label?: string }
+    drillDown?: ChartDrillDown
 }
 
 export interface RadarChartConfig {
@@ -136,6 +157,8 @@ export interface AnalyticsPanelContentProps {
     onTabChange?: (value: string) => void
     granularity?: Granularity
     onGranularityChange?: (value: Granularity) => void
+    /** Drillable charts call this. Inside `Collection.Analytics` it is provided: the filter is applied and the modal closes. */
+    onDrillDown?: (filter: AnalyticsDrillDownFilter) => void
 }
 
 export type AnalyticsPanelConfig = {

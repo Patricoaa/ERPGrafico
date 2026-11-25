@@ -54,6 +54,8 @@ export interface PieChartProps {
     activeId?: string | number
     /** Accessible name for screen readers. Falls back to an auto-generated summary. */
     ariaLabel?: string
+    /** Slice click (analytics drill-down). */
+    onClick?: (datum: { id: string | number }) => void
 }
 
 function getArcTextColor(d: { color: string }): string {
