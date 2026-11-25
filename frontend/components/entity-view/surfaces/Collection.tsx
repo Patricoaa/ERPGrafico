@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, Download, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
-import { BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
+import { AppliedFilters, BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, UnifiedSearchBar, bindUnifiedSearch, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -24,6 +24,7 @@ import {
     type EntitySpec,
     type ExportFormat,
     type FieldDef,
+    type FieldId,
     type FieldMap,
     type TableLayout,
 } from "../core/define-entity"
@@ -34,6 +35,9 @@ import type { Row, Table as TanstackTable } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
 import { useSavedRowFlash } from "./useSavedRowFlash"
+import type { CollectionQuery } from "./useCollectionQuery"
+import { FilterMenu, type MenuFilter } from "./toolbar/FilterMenu"
+import { DisplayMenu, GroupMenu, SortMenu, ViewTabs } from "./toolbar/QueryMenus"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -61,6 +65,13 @@ interface CollectionContextValue<T> {
     hasAnalytics: boolean
     analyticsOpen: boolean
     setAnalyticsOpen: (open: boolean) => void
+    /** Query state when the entity declares `query` (ADR-0158 stage 3): the toolbar renders the command bar. */
+    query: CollectionQuery<string> | null
+    /** Columns of the mounted table layout (registered by the table surface) and the ones the user hid. */
+    tableColumns: { ids: readonly string[]; primary: string } | null
+    registerTableColumns: (columns: { ids: readonly string[]; primary: string } | null) => void
+    hiddenColumns: ReadonlySet<string>
+    setColumnVisible: (id: string, visible: boolean) => void
     /** Row just saved from a workspace tab (ADR-0101): highlighted briefly so the change is visible. */
     flashId: string | null
 }
@@ -107,14 +118,15 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
     /** Controlled view, e.g. from `useCollectionViewMode` (`?view=` in the URL). Uncontrolled when omitted. */
     view?: CollectionViewMode
     onViewChange?: (view: CollectionViewMode) => void
-    /** Controlled analytics modal, e.g. from `useCollectionAnalytics` (`?analytics=` in the URL). Uncontrolled when omitted. */
-    analyticsOpen?: boolean
-    onAnalyticsOpenChange?: (open: boolean) => void
+    /** Controlled analytics modal: pass `useCollectionAnalytics(...)` (`?analytics=` in the URL). Uncontrolled when omitted. */
+    analytics?: { open: boolean; onOpenChange: (open: boolean) => void }
+    /** `useCollectionQuery(entity)`: `Collection.Toolbar` then builds the command bar from it (ADR-0158 §1). */
+    query?: CollectionQuery<FieldId<F>>
     /** Accessible name. Defaults to the entity label resolved by the provider. */
     label?: string
 }
 
-function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, analyticsOpen: controlledAnalyticsOpen, onAnalyticsOpenChange, label }: CollectionRootProps<T, F>) {
+function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, analytics: controlledAnalytics, query, label }: CollectionRootProps<T, F>) {
     const opener = useEntityOpener()
     // The enclosing `Section` / `Section.Scope` header shows this collection's total (ADR-0137).
     useRegisterRecordCount(collection.status === "loading" ? null : collection.total)
@@ -123,13 +135,15 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
     const hasAnalytics = React.Children.toArray(children).some((child) => React.isValidElement(child) && child.type === Analytics)
     const view = controlledView ?? localView
     const [localAnalyticsOpen, setLocalAnalyticsOpen] = React.useState(false)
-    const analyticsOpen = hasAnalytics && (controlledAnalyticsOpen ?? localAnalyticsOpen)
+    const analyticsOpen = hasAnalytics && (controlledAnalytics?.open ?? localAnalyticsOpen)
+    const onAnalyticsOpenChange = controlledAnalytics?.onOpenChange
+    const isAnalyticsControlled = controlledAnalytics !== undefined
     const setAnalyticsOpen = React.useCallback(
         (next: boolean) => {
-            if (controlledAnalyticsOpen === undefined) setLocalAnalyticsOpen(next)
+            if (!isAnalyticsControlled) setLocalAnalyticsOpen(next)
             onAnalyticsOpenChange?.(next)
         },
-        [controlledAnalyticsOpen, onAnalyticsOpenChange],
+        [isAnalyticsControlled, onAnalyticsOpenChange],
     )
     const setView = React.useCallback(
         (next: CollectionViewMode) => {
@@ -139,6 +153,8 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         [controlledView, onViewChange],
     )
     const entity = collection.entity
+    const [tableColumns, registerTableColumns] = React.useState<{ ids: readonly string[]; primary: string } | null>(null)
+    const [hiddenColumns, setColumnVisible] = useHiddenColumns(entity.label ?? entity.title)
     const flashId = useSavedRowFlash(entity.label, collection.table.getCoreRowModel().flatRows.map((row) => row.id))
     const rootRef = React.useRef<HTMLDivElement>(null)
     React.useEffect(() => {
@@ -166,6 +182,11 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         hasAnalytics,
         analyticsOpen,
         setAnalyticsOpen,
+        query: query ? eraseQuery(query) : null,
+        tableColumns,
+        registerTableColumns,
+        hiddenColumns,
+        setColumnVisible,
         flashId,
         label: label ?? (entity.label !== undefined ? opener?.labelOf(entity.label) : undefined) ?? entityName(entity),
     }
@@ -175,6 +196,65 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
             <div ref={rootRef} className="flex h-full flex-1 flex-col gap-2 min-h-0">{children}</div>
         </CollectionContext.Provider>
     )
+}
+
+/** The context stores one query type for every entity; ids were checked where the query was built. */
+function eraseQuery<Id extends string>(query: CollectionQuery<Id>): CollectionQuery<string> {
+    return query as CollectionQuery<string>
+}
+
+const HIDDEN_COLUMNS_KEY = "entity-view:hidden-columns:"
+const hiddenColumnListeners = new Set<() => void>()
+
+function readStored(key: string | null): string {
+    if (!key) return "[]"
+    try {
+        return window.localStorage.getItem(key) ?? "[]"
+    } catch {
+        return "[]"
+    }
+}
+
+function subscribeHiddenColumns(listener: () => void): () => void {
+    hiddenColumnListeners.add(listener)
+    window.addEventListener("storage", listener)
+    return () => {
+        hiddenColumnListeners.delete(listener)
+        window.removeEventListener("storage", listener)
+    }
+}
+
+/**
+ * Columns the user hid, per entity, kept in this browser (ADR-0158 §4: not in the URL). The server
+ * snapshot is "nothing hidden", so hydration matches and the stored choice applies right after.
+ */
+function useHiddenColumns(label: string | undefined): [ReadonlySet<string>, (id: string, visible: boolean) => void] {
+    const key = label ? HIDDEN_COLUMNS_KEY + label : null
+    const raw = React.useSyncExternalStore(subscribeHiddenColumns, () => readStored(key), () => "[]")
+    const hidden = React.useMemo<ReadonlySet<string>>(() => {
+        try {
+            const parsed: unknown = JSON.parse(raw)
+            return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [])
+        } catch {
+            return new Set()
+        }
+    }, [raw])
+    const setVisible = React.useCallback(
+        (id: string, visible: boolean) => {
+            const next = new Set(hidden)
+            if (visible) next.delete(id)
+            else next.add(id)
+            if (!key) return
+            try {
+                window.localStorage.setItem(key, JSON.stringify([...next]))
+            } catch {
+                // Storage unavailable: the choice is not kept.
+            }
+            hiddenColumnListeners.forEach((listener) => listener())
+        },
+        [hidden, key],
+    )
+    return [hidden, setVisible]
 }
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
@@ -191,10 +271,10 @@ export interface CollectionToolbarProps {
 }
 
 const VIEW_BUTTONS = {
-    table: { icon: Rows3, label: "Vista tabla" },
-    card: { icon: LayoutGrid, label: "Vista tarjetas" },
-    kanban: { icon: Kanban, label: "Vista kanban" },
-    timeline: { icon: CalendarRange, label: "Vista cronograma" },
+    table: { icon: Rows3, label: "Vista tabla", short: "Tabla" },
+    card: { icon: LayoutGrid, label: "Vista tarjetas", short: "Tarjetas" },
+    kanban: { icon: Kanban, label: "Vista kanban", short: "Kanban" },
+    timeline: { icon: CalendarRange, label: "Vista cronograma", short: "Cronograma" },
 } as const
 
 const POLICY_TO_MODE: Record<ViewPolicy["availableViews"][number], CollectionViewMode> = {
@@ -212,12 +292,13 @@ function policyModes(label: string | undefined): readonly CollectionViewMode[] {
     return [...new Set(available.map((view) => POLICY_TO_MODE[view]))]
 }
 
-function Toolbar({ children, action, views, exportFilters = {} }: CollectionToolbarProps) {
+function Toolbar({ children, action, views, exportFilters }: CollectionToolbarProps) {
     const ctx = useCollectionContext<unknown>()
     const allowed = views ?? policyModes(ctx.collection.entity.label)
     const exportSpec = ctx.collection.entity.export
     const modes = allowed
     const resultCount = ctx.collection.status === "loading" ? null : ctx.collection.total
+    if (ctx.query) return <CommandToolbar query={ctx.query} modes={modes} action={action} exportFilters={exportFilters} resultCount={resultCount}>{children}</CommandToolbar>
     return (
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -233,7 +314,7 @@ function Toolbar({ children, action, views, exportFilters = {} }: CollectionTool
                     <BarChart3 className="size-4" aria-hidden />
                 </Button>
             )}
-            {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters} count={resultCount} />}
+            {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters ?? {}} count={resultCount} />}
             {modes.length > 1 && (
                 <div className="flex items-center gap-1" role="group" aria-label="Vista">
                     {modes.map((mode) => {
@@ -246,6 +327,64 @@ function Toolbar({ children, action, views, exportFilters = {} }: CollectionTool
                     })}
                 </div>
             )}
+        </div>
+    )
+}
+
+interface CommandToolbarProps {
+    query: CollectionQuery<string>
+    modes: readonly CollectionViewMode[]
+    action?: React.ReactNode
+    exportFilters?: Record<string, unknown>
+    resultCount: number | null
+    children?: React.ReactNode
+}
+
+/**
+ * Command bar (ADR-0158 §1–2): view tabs, search, one icon+value button per tool, analytics, export
+ * and the primary action, then the applied-filters row. Built from `useCollectionQuery`.
+ */
+function CommandToolbar({ query, modes, action, exportFilters, resultCount, children }: CommandToolbarProps) {
+    const ctx = useCollectionContext<unknown>()
+    const { compiled, search } = query
+    const exportSpec = ctx.collection.entity.export
+    const filters: MenuFilter[] = [
+        ...(compiled.search.filters ?? []).filter((f): f is Exclude<typeof f, { type: "custom" }> => f.type !== "custom"),
+        ...(compiled.search.dateFilters ?? []),
+    ]
+    const count = resultCount === null ? null : formatResultCount(resultCount)
+    const showTabs = query.views.length > 1
+    const columns = ctx.view === "table" && ctx.tableColumns
+        ? ctx.tableColumns.ids.map((id) => ({ id, label: fieldById(ctx.collection.entity, id).label, visible: !ctx.hiddenColumns.has(id), locked: id === ctx.tableColumns?.primary }))
+        : []
+    return (
+        <div className="flex flex-col gap-2">
+            {showTabs && <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} count={count} />}
+            <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
+                <div className="min-w-56 flex-1">
+                    <UnifiedSearchBar config={compiled.search} {...bindUnifiedSearch(search)} filterOptions={search.filterOptions} menu={false} appliedFilters={false} />
+                </div>
+                <FilterMenu filters={filters} values={search.paramValues} filterOptions={search.filterOptions} applyMany={search.applyMany} />
+                <SortMenu fields={compiled.sortFields} sort={query.sort} defaultSort={compiled.defaultSort} onChange={query.setSort} />
+                <GroupMenu fields={compiled.groupFields} value={query.groupBy} onChange={query.setGroupBy} />
+                <DisplayMenu
+                    layouts={modes.map((mode) => ({ value: mode, label: VIEW_BUTTONS[mode].short, icon: VIEW_BUTTONS[mode].icon }))}
+                    layout={ctx.view}
+                    onLayoutChange={(next) => ctx.setView(next as CollectionViewMode)}
+                    columns={columns}
+                    onColumnToggle={ctx.setColumnVisible}
+                />
+                {children}
+                {(ctx.hasAnalytics || exportSpec) && <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />}
+                {ctx.hasAnalytics && (
+                    <Button variant="ghost" size="icon-sm" aria-label="Analítica" title="Analítica" aria-haspopup="dialog" aria-expanded={ctx.analyticsOpen} onClick={() => ctx.setAnalyticsOpen(true)}>
+                        <BarChart3 className="size-4" aria-hidden />
+                    </Button>
+                )}
+                {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters ?? query.params} count={resultCount} />}
+                {action}
+            </div>
+            <AppliedFilters chips={search.chips} onClearAll={() => void search.clearAll()} resultCount={showTabs ? null : resultCount} />
         </div>
     )
 }
@@ -541,17 +680,23 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
     const { embedded, frame, pager, maxHeight, stickyHeader } = useResolvedSurface(surfaceOptions, paging)
     const entity = ctx.collection.entity
     const primary = layout.primary ?? layout.columns[0]
+    const { registerTableColumns, hiddenColumns } = ctx
+    React.useEffect(() => {
+        registerTableColumns({ ids: layout.columns, primary })
+        return () => registerTableColumns(null)
+    }, [registerTableColumns, layout.columns, primary])
+    const visibleColumns = React.useMemo(() => layout.columns.filter((id) => id === primary || !hiddenColumns.has(id)), [layout.columns, primary, hiddenColumns])
     const rows = table.getRowModel().rows
     const isBulk = ctx.selection === "bulk"
     const hasActions = !!ctx.actions
     const sums = layout.footer?.sum ?? []
     // Columns resolved once and shared by header, skeleton, body and footer.
     const cols = React.useMemo(
-        () => layout.columns.map((id) => {
+        () => visibleColumns.map((id) => {
             const def = fieldById(entity, id)
             return { id, def, align: alignOf(def), shrink: !!getValueKind(def.kind).shrink }
         }),
-        [layout.columns, entity],
+        [visibleColumns, entity],
     )
     const isTree = !!entity.tree
     // A tree sums its roots only: parents already carry their children's totals, and the footer must not

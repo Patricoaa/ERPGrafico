@@ -134,8 +134,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
             </EntityPanelTab>
 
             <Collection.Root
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}

@@ -163,8 +163,7 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
                 collection={collection}
                 actions={statementActions.forCollection(actionsCtx)}
                 onOpen={(stmt: CreditCardStatement) => openStatement(stmt.id, "detail")}

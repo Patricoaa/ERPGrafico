@@ -167,8 +167,7 @@ export function PartnersClientView({
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}

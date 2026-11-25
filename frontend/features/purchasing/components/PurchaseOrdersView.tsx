@@ -90,8 +90,7 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
                 actions={(order) => <DocumentRowActions id={order.id} kind="purchase-order" onOpen={sheet.toggle} />}
                 view={view}
                 onViewChange={onViewChange}
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
             >
                 <Collection.Toolbar action={createAction}>
                     <UnifiedSearchBar

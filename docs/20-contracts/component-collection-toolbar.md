@@ -159,9 +159,11 @@ Es un único dueño del estado, construido sobre `nuqs`. Cualquier cambio de fil
 | `view` | layout: `table` (`list`), `card`, `kanban`, `timeline` |
 | `analytics` | pestaña abierta del modal |
 
-Preferencias por entidad que **no van en la URL**: densidad y columnas (visibilidad, orden, fijadas). Se guardan junto a la preferencia de `useViewMode`.
+Preferencias por entidad que **no van en la URL**: densidad y columnas (visibilidad, orden, fijadas). Desde E3 se guarda la visibilidad en `localStorage` con la clave `entity-view:hidden-columns:<label>` (si la entidad no tiene `label`, se usa `title`). La instantánea del servidor es «nada oculto», así que la hidratación coincide y la preferencia se aplica justo después. Densidad, orden y fijado quedan para una etapa posterior.
 
 **Adaptador:** `useCollectionQuery(entity, { searchDef })` usa un `unifiedSearchDef` existente (vía `fromUnifiedSearchDef(def)`) en lugar de `entity.query`, para migrar la vista antes que su definición. Con el adaptador no hay orden múltiple, vistas ni agregados.
+
+**Montaje:** la pantalla pasa el resultado del hook a `<Collection.Root query={query}>`. Con `query`, `Collection.Toolbar` deja de ser la barra antigua y compone `ViewTabs` → fila de comandos (`Search`, `FilterMenu`, `SortMenu`, `GroupMenu`, `DisplayMenu`, `children`, analítica, `ExportMenu`, `action`) → `AppliedFilters`. `ExportMenu` recibe `query.params` salvo que se pase `exportFilters`. El buscador es `UnifiedSearchBar` con `menu={false}` (sin chevrón ni menú propio, solo sugerencias) y `appliedFilters={false}` (la barra dibuja la fila). `useUnifiedSearch` expone `applyMany(values)`, que escribe varios parámetros en una sola actualización y resetea el cursor.
 
 **Lo que entrega el hook:** `search` (lo que consume `UnifiedSearchBar`), `sort` / `setSort`, `ordering` (DRF, con desempate por `id`), `sorting` (listo para `useEntityCollection`), `groupBy` / `setGroupBy` (solo campos declarados), `views` / `activeView` / `setView` / `isDirty` / `resetView` y `params` (búsqueda + filtros + `ordering`, sin `group_by`) para la petición.
 
@@ -170,7 +172,8 @@ Preferencias por entidad que **no van en la URL**: densidad y columnas (visibili
 ### 5.1 `FilterMenu` (E3)
 
 - **Popover de dos paneles.** El panel izquierdo lista los filtros: tiene búsqueda y muestra en negrita cuántos valores elegidos tiene cada filtro. El derecho muestra los valores del filtro elegido, con los controles de `UnifiedSearchBar/filters/*`.
-- **Pie del panel derecho:** «Quitar» y el botón «Aplicar · N resultados» para `multi` y `range`.
+- **Pie del panel derecho:** «Quitar» y «Aplicar» para `multi` y `range` (el conteo «Aplicar · N resultados» llega con `facets/`, E4).
+- **Controles por tipo:** `multi` con borrador de casillas y búsqueda si hay más de 8 opciones; `single` y presets de `date` como radios; `toggle`; `range` y `date` con dos campos («desde» / «hasta»). Los filtros `custom` del adaptador no aparecen en el menú.
 - **Al cerrar con cambios sin aplicar:** se aplican. `Esc` descarta.
 
 ### 5.2 `AppliedFilters` (E1)
@@ -184,21 +187,21 @@ Preferencias por entidad que **no van en la URL**: densidad y columnas (visibili
 
 ### 5.3 `SortMenu` (E3)
 
-Filas de `[arrastre] [campo ▾] [↑|↓] [×]`, más «Agregar orden secundario» (hasta 3) y «Restablecer».
+Filas de `[n] [campo ▾] [↑|↓] [subir] [×]`, más «Agregar orden secundario» (hasta 3) y «Restablecer». En E3 se reordena con «subir», no con arrastre. El botón muestra `Folio ↓ +1` y se anuncia «Ordenar: Folio descendente y 1 más».
 
-El menú del **encabezado de columna** usa el mismo estado. Ordenar desde el encabezado reemplaza la **primera** clave y conserva las secundarias. Opciones: ordenar ↑/↓, «Filtrar por…» (abre `FilterMenu` en ese filtro), agrupar, fijar y ocultar.
+El **encabezado de columna** usa el mismo estado: ordenar desde él reemplaza la **primera** clave y conserva las secundarias (E3). Su menú contextual (ordenar ↑/↓, «Filtrar por…», agrupar, fijar, ocultar) queda pendiente.
 
 ### 5.4 `GroupMenu` (E3)
 
 - **Radios:** «Sin agrupar» más `groupBy.fields`.
-- **Subtotal:** se elige entre los `aggregate` declarados.
-- **«Grupos plegados al abrir»:** preferencia local.
+- Elegir cierra el menú.
+- **Pendiente:** elegir el subtotal entre los `aggregate` declarados (llega con `groups/`, E4) y la preferencia «Grupos plegados al abrir».
 
 ### 5.5 `DisplayMenu` (E3)
 
-- **Layout:** control segmentado con los layouts de `viewPolicy.availableViews`.
-- **Densidad:** compacta o cómoda ([density-system.md](./density-system.md)).
-- **Columnas:** visibilidad, orden por arrastre y la columna identificadora fija (no se oculta).
+- **Layout:** radios con los layouts de `viewPolicy.availableViews`. El botón muestra el ícono y el nombre corto del layout actual.
+- **Columnas:** casillas de visibilidad para las columnas de la tabla montada. La columna identificadora (`primary`, o la primera) está deshabilitada y marcada «fija».
+- **Pendiente:** densidad ([density-system.md](./density-system.md)) y orden por arrastre.
 
 ### 5.6 `ExportMenu` (E1)
 

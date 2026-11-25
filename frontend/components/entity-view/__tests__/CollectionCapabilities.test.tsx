@@ -186,7 +186,7 @@ describe("Collection.Analytics", () => {
         function Controlled() {
             const collection = useEntityCollection(entity, { rows }, { pagination: { mode: "none" } })
             return (
-                <Collection.Root collection={collection} label="Productos" analyticsOpen onAnalyticsOpenChange={onAnalyticsOpenChange}>
+                <Collection.Root collection={collection} label="Productos" analytics={{ open: true, onOpenChange: onAnalyticsOpenChange }}>
                     <Collection.Toolbar />
                     <Collection.Analytics><p>Panel de analítica</p></Collection.Analytics>
                 </Collection.Root>
