@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Onest, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
@@ -7,14 +7,24 @@ import { HeaderProvider } from "@/components/providers/HeaderProvider"
 import { RealtimeProvider } from "@/features/realtime"
 import Providers from "./providers"
 
-const onest = Onest({
+// Self-hosted (app/fonts, OFL): the build must not depend on reaching Google Fonts — the dev
+// server and CI can lose internet and next/font/google then silently falls back to a system font.
+// Latin subset, variable weight; same families and CSS variables as before.
+const onest = localFont({
+  src: "./fonts/Onest-Variable.woff2",
   variable: "--font-onest",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono-Variable.woff2",
   variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
+  weight: "100 800",
+  display: "swap",
+  fallback: ["ui-monospace", "monospace"],
+  // Arial metrics (the default) would misalign a monospace fallback.
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
