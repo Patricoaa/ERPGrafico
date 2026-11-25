@@ -33,6 +33,6 @@ describe("PeriodControl", () => {
 
     it("expone el grupo con el nombre Período", () => {
         render(<PeriodControl value="all" onChange={vi.fn()} />)
-        expect(screen.getByRole("group", { name: "Período" })).toBeInTheDocument()
+        expect(screen.getByRole("radiogroup", { name: "Período" })).toBeInTheDocument()
     })
 })
