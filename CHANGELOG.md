@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.167](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.166...v0.3.167) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** lote frontend — minor/patch (46), react-day-picker 10, @sentry/nextjs 11 ([e073800](https://github.com/Patricoaa/ERPGrafico/commit/e07380063aeae31b9ea477e96eb70a929458a88b)), closes [#300](https://github.com/Patricoaa/ERPGrafico/issues/300) [#305](https://github.com/Patricoaa/ERPGrafico/issues/305) [#304](https://github.com/Patricoaa/ERPGrafico/issues/304) [#301](https://github.com/Patricoaa/ERPGrafico/issues/301) [#300](https://github.com/Patricoaa/ERPGrafico/issues/300) [#305](https://github.com/Patricoaa/ERPGrafico/issues/305) [#304](https://github.com/Patricoaa/ERPGrafico/issues/304)
+
+
+### 🧪 Testing
+
+* **inventory:** ToggleGroup de selección única es radiogroup con Radix nuevo ([e28e84d](https://github.com/Patricoaa/ERPGrafico/commit/e28e84d5474b64bec0cda5f823c4133d24bfdc04))
+
 ### [0.3.166](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.165...v0.3.166) (2026-11-25)
 
 
