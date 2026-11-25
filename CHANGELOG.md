@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.162](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.161...v0.3.162) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump actions/checkout from 5 to 7 ([eca9470](https://github.com/Patricoaa/ERPGrafico/commit/eca9470be5bde07bbf9e223e6f852b829c9f894d))
+* **deps:** bump actions/setup-python from 6 to 7 ([21515e2](https://github.com/Patricoaa/ERPGrafico/commit/21515e2b9f8324d136246e8430c20210dcae06c1))
+
 ### [0.3.161](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.160...v0.3.161) (2026-11-25)
 
 ### [0.3.160](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.159...v0.3.160) (2026-11-25)
