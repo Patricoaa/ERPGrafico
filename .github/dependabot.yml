@@ -12,6 +12,10 @@ updates:
       # One PR for all minor/patch bumps; majors arrive one by one to review their changelog.
       npm-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Migración planificada en #311 (837 errores de tipos en entity-view y DataTable).
+      - dependency-name: "@tanstack/react-table"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: pip
     directory: /backend
@@ -22,6 +26,16 @@ updates:
     groups:
       pip-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Django 5.2 es LTS (soporte hasta 2028-04); DRF, allauth y otras aún no soportan 6.x.
+      - dependency-name: "django"
+        update-types: ["version-update:semver-major"]
+      # pandas 3 exige numpy 2 (y pandas 2 exige numpy < 2): por separado nunca instalan.
+      # Se suben juntos a mano, probados contra los parsers bancarios de tesorería.
+      - dependency-name: "pandas"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "numpy"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
