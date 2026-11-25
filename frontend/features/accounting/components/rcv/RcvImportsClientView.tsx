@@ -2,13 +2,12 @@
 
 import { useMemo, useState } from "react"
 import { Download } from "lucide-react"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { Can } from "@/components/auth"
-import { ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useRcvImports } from "../../hooks/useRcvImports"
 import { rcvImportEntity, rcvImportViews } from "../../entity-view/rcvImport.entity"
-import { rcvImportUnifiedSearchDef } from "../../unifiedSearchDef"
 import type { RcvDirection, RcvImportFilters, RcvImportStatus, RcvImportTrigger } from "../../types"
 import { RcvImportModal } from "./RcvImportModal"
 
@@ -40,8 +39,9 @@ function toImportFilters(params: Record<string, string>): RcvImportFilters {
 export function RcvImportsClientView() {
     const [importOpen, setImportOpen] = useState(false)
 
-    const search = useUnifiedSearch(rcvImportUnifiedSearchDef)
-    const filters = useMemo(() => toImportFilters(search.filters), [search.filters])
+    const query = useCollectionQuery(rcvImportEntity)
+    const { search } = query
+    const filters = useMemo(() => toImportFilters(query.params), [query.params])
     const { view, onViewChange } = useCollectionViewMode("accounting.rcvimport")
     // ADR-0152: cada documento abre su propia pestaña (abridor por defecto); `?selected` solo es enlace profundo.
     useDeepLinkEntity("accounting.rcvimport")
@@ -70,16 +70,11 @@ export function RcvImportsClientView() {
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
             >
-                <Collection.Toolbar action={importAction}>
-                    <UnifiedSearchBar
-                        config={rcvImportUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Filtrar importaciones..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={importAction} />
                 <Collection.View
                     table={rcvImportViews.table}
                     card={rcvImportViews.card}

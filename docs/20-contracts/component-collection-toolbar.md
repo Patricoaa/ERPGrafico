@@ -41,8 +41,9 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 >
 > - oleada 3d-4 (tesorería, primera parte): movimientos de tesorería y bancarios, ventas y sincronizaciones de terminal (servidor); bancos, métodos de pago, cuentas, liquidaciones, proveedores y terminales de cobro (cliente).
 > - oleada 3d-5 (tesorería, segunda parte): estados de cuenta y cargos no facturados de tarjetas, líneas de crédito, cheques y préstamos (cliente). Préstamos y cargos no facturados cargan en su primera vista (activos; cargos del mes).
+> - oleada 3d-6 (contabilidad): asientos, documentos e importaciones RCV (servidor); plan de cuentas y cierres (cliente, árboles). Las ventas del RCV usan `rcvSaleQueryEntity`, que deriva de `rcvDocumentEntity` sin acuse ni estado: `useCollectionQuery` solo necesita `fields` y `query`.
 >
-> El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. Igual la actividad de una sesión POS. El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
+> El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. Igual la actividad de una sesión POS y el libro mayor de una cuenta. El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
 
 ---
 

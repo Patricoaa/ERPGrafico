@@ -7,7 +7,7 @@ import { BaseModal, FormFooter, CancelButton, SubmitButton, LabeledSelect, Label
 import { Form, FormField } from "@/components/ui/form"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useStartRcvImport } from "../../hooks/useRcvImports"
-import { RCV_MONTH_NAMES, rcvYearOptions } from "../../unifiedSearchDef"
+import { RCV_MONTH_NAMES, rcvYearOptions } from "../../rcvPeriods"
 import type { RcvDirection } from "../../types"
 import {
     defaultRcvImportValues,

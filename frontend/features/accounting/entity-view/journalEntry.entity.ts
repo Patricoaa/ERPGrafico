@@ -17,6 +17,30 @@ export const journalEntryEntity = defineEntity<JournalEntry>()((f) => ({
         description: f.text("description", { label: "Descripción", truncate: true }),
         totalDebit: f.money((e) => e.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) ?? 0, { label: "Total Débito" }),
     },
+    // ADR-0158 §3. No `sort`: the entries endpoint has no server ordering.
+    query: {
+        search: { placeholder: "Buscar por descripción, número o contacto…" },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
+            status: {
+                field: "status",
+                control: "single",
+                options: [
+                    { value: "DRAFT", label: "Borrador" },
+                    { value: "POSTED", label: "Publicado" },
+                    { value: "CLOSED", label: "Cerrado" },
+                    { value: "REVERSAL", label: "Reversión" },
+                    { value: "CANCELLED", label: "Anulado" },
+                ],
+            },
+        },
+        groupBy: { fields: ["status", "origin", "date"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+            { id: "posted", label: "Publicados", filters: { status: "POSTED" } },
+        ],
+    },
 }))
 
 export const journalEntryViews = journalEntryEntity.views({

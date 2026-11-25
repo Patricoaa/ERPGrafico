@@ -18,6 +18,26 @@ export const accountEntity = defineEntity<AccountWithChildren>()((f) => ({
         balance: f.money("balance", { label: "Saldo" }),
         isActive: f.status((a) => (a.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts the tree. No grouping: the
+    // hierarchy is the grouping.
+    query: {
+        search: { placeholder: "Buscar por cuenta o código…" },
+        filters: {
+            account_type: {
+                field: "accountType",
+                control: "single",
+                options: [
+                    { value: "ASSET", label: "Activo" },
+                    { value: "LIABILITY", label: "Pasivo" },
+                    { value: "EQUITY", label: "Patrimonio" },
+                    { value: "INCOME", label: "Ingresos" },
+                    { value: "EXPENSE", label: "Gastos" },
+                ],
+            },
+            is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] },
+        },
+        sort: { fields: ["name", "accountType", "debitTotal", "creditTotal", "balance", "isActive"] },
+    },
 }))
 
 export const accountViews = accountEntity.views({

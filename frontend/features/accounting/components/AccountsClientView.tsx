@@ -5,15 +5,14 @@ import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { useState } from "react"
 import { toast } from "sonner"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal } from "@/components/shared"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { AccountDrawer } from "@/features/finance"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { showApiError } from "@/lib/errors"
 import { type Account } from "@/features/accounting/types"
 import { accountActions, type AccountActionsCtx } from "./accountActions"
 import { buildAccountTree } from "../utils/accountTree"
-import { accountUnifiedSearchDef } from "../unifiedSearchDef"
 import { accountEntity, accountViews } from "../entity-view/account.entity"
 
 interface AccountsClientViewProps {
@@ -23,8 +22,9 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
-    const search = useUnifiedSearch(accountUnifiedSearchDef)
-    const { accounts: flatAccounts, isLoading, isError, refetch, archiveAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
+    const query = useCollectionQuery(accountEntity, { sorting: "client" })
+    const { search } = query
+    const { accounts: flatAccounts, isLoading, isError, refetch, archiveAccount } = useAccounts({ filters: query.params })
     const [archiveTarget, setArchiveTarget] = useState<Account | null>(null)
     const [formParentId, setFormParentId] = useState<string | null>(null)
 
@@ -67,18 +67,17 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const collection = useEntityCollection(
         accountEntity,
         { rows: accounts, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: { mode: "none" } },
+        { pagination: { mode: "none" }, sorting: query.sorting },
     )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 actions={rowActions}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar config={accountUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar por cuenta o código..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={accountViews.table}
                     emptyTitle="Aún no hay cuentas contables"
