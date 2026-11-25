@@ -205,7 +205,7 @@ interface UnifiedSearchBarProps {
 | Prop | Propósito |
 |------|-----------|
 | `filterOptions` | Opciones dinámicas para filtros `multi` resueltas en runtime (las fijas vienen del `config.filters`) |
-| `currentView` | Vista activa. Con `analytics` el menú oculta orden y columnas (hasta la etapa 2 de ADR-0158) |
+| `currentView` | Layout activo. El menú muestra columnas solo en la tabla (`list`). Desde la etapa 2 de ADR-0158 la analítica no es un layout: se abre en modal (`Collection.Analytics` + `useCollectionAnalytics`) |
 | `onClearAll` | Lo usa «Limpiar todo» de la fila de filtros aplicados |
 
 > **Etapa 1 de ADR-0158:**

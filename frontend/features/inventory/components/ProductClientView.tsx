@@ -4,9 +4,8 @@ import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
-import { useSearchParams } from "next/navigation"
 import { ActionConfirmModal, AnalyticsPanelContent, type BulkAction } from '@/components/shared'
-import { Collection, GROUP_ROW_LIMIT, orderingParam, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId, type SortSpec } from "@/components/entity-view"
+import { Collection, GROUP_ROW_LIMIT, useCollectionAnalytics, orderingParam, useCollectionViewMode, useEntityCollection, useServerPage, type FieldId, type SortSpec } from "@/components/entity-view"
 import { toPage } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import { Plus, AlertTriangle } from "lucide-react"
@@ -68,7 +67,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     }), [categoryOptions])
 
     const search = useUnifiedSearch(config)
-    const searchParams = useSearchParams()
     const filters = useMemo<ProductFilters>(() => {
         const raw = { ...search.filters } as Record<string, string>
 
@@ -98,12 +96,8 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [pageState, setPageState] = useServerPage([filters, sort, groupBy], DEFAULT_PAGE)
     // Server order by default (no sort): the header only claims an order the server applied.
     const { view, onViewChange } = useCollectionViewMode("inventory.product")
-    const viewParam = searchParams.get('view')
-    const isTabParam = !!viewParam && ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam)
-    const initialAnalyticsTab = isTabParam && viewParam ? viewParam : 'resumen'
-    // ?view=resumen|ventas|… (analytics tab links) opens the analytics view on that tab.
-    const activeView = isTabParam ? "analytics" : view
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState(initialAnalyticsTab)
+    // ?analytics=<tab> opens the analytics modal; old ?view=resumen|ventas|… tab links still work.
+    const analyticsUi = useCollectionAnalytics("resumen", { legacyViewTabs: ["resumen", "ventas", "compras", "existencias"] })
     const [selectedStockProduct, setSelectedStockProduct] = useState<StockReportItem | null>(null)
 
     const analyticsFilters = {
@@ -115,7 +109,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         is_active: filters.is_active,
     }
     // Figures over the whole filtered catalog, fetched only while the analytics view is open.
-    const analyticsEnabled = activeView === "analytics"
+    const analyticsEnabled = analyticsUi.open
     const resumenData = useProductAnalytics(analyticsFilters, analyticsEnabled)
     const ventasData = useProductAnalytics({ ...analyticsFilters, can_be_sold: true, price_field: "sale" }, analyticsEnabled)
     const comprasData = useProductAnalytics({ ...analyticsFilters, can_be_purchased: true, price_field: "cost" }, analyticsEnabled)
@@ -231,8 +225,8 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         () => buildProductAnalyticsScreen(
             { resumen: resumenData, ventas: ventasData, compras: comprasData },
             {
-                activeTab: analyticsActiveTab,
-                onTabChange: setAnalyticsActiveTab,
+                activeTab: analyticsUi.tab,
+                onTabChange: analyticsUi.onTabChange,
                 stockReport: (
                     <StockReport
                         externalFilters={{
@@ -247,7 +241,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 ),
             },
         ),
-        [analyticsActiveTab, resumenData, ventasData, comprasData, filters],
+        [analyticsUi.tab, analyticsUi.onTabChange, resumenData, ventasData, comprasData, filters],
     )
 
     const collection = useEntityCollection(
@@ -265,8 +259,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             <Collection.Root
                 collection={collection}
                 selection="bulk"
-                view={activeView}
+                view={view}
                 onViewChange={onViewChange}
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
                 actions={productActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>

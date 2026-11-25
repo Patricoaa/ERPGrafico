@@ -60,12 +60,11 @@ export function SearchBarMenu({
     )
   }, [table])
 
-  const isAnalyticsView = currentView === 'analytics'
-  const showColumnToggle = (currentView === 'list' || !currentView) && !isAnalyticsView
-  const activeSortableColumns = isAnalyticsView ? [] : sortableColumns
+  const showColumnToggle = currentView === 'list' || !currentView
+  const activeSortableColumns = sortableColumns
 
   const hasDisplaySection = activeSortableColumns.length > 0 || (showColumnToggle && hideableColumns.length > 0)
-  const hasGroupBySection = !isAnalyticsView && hasGroupBy
+  const hasGroupBySection = hasGroupBy
 
   const hasAnyContent = hasFilters || hasGroupBySection || hasDisplaySection
   if (!hasAnyContent) return null

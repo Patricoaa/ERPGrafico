@@ -20,7 +20,7 @@ import {
 } from '@/components/shared'
 import { formatMoney } from '@/lib/money'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { Collection, useEntityCollection } from '@/components/entity-view'
+import { Collection, useCollectionAnalytics, useEntityCollection } from '@/components/entity-view'
 import { unbilledChargeEntity, unbilledChargeViews } from '../entity-view/unbilledCharge.entity'
 import { useCardAccounts } from '../hooks/useCardAccounts'
 import { useBanks } from '../hooks/useMasterData'
@@ -53,7 +53,7 @@ export function UnbilledChargesClientView({
 }: UnbilledChargesClientViewProps = {}) {
 
     const [showBillCharges, setShowBillCharges] = useState(false)
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("cupo")
+    const analyticsUi = useCollectionAnalytics("cupo")
     const [granularity, setGranularity] = useState<Granularity>("month")
     const queryClient = useQueryClient()
     const searchParams = useSearchParams()
@@ -260,6 +260,8 @@ export function UnbilledChargesClientView({
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
                 collection={collection}
                 onOpen={(row: UnbilledItemRow) => {
                     if (isAllCards) return
@@ -307,8 +309,8 @@ export function UnbilledChargesClientView({
                 <Collection.Analytics>
                     <AnalyticsPanelContent
                         entityName="Gestión TC"
-                        activeTab={analyticsActiveTab}
-                        onTabChange={setAnalyticsActiveTab}
+                        activeTab={analyticsUi.tab}
+                        onTabChange={analyticsUi.onTabChange}
                         granularity={granularity}
                         onGranularityChange={setGranularity}
                         tabs={[

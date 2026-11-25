@@ -16,8 +16,9 @@ const toLegacy = (mode: CollectionViewMode): string => (mode === "table" ? "list
 export function useCollectionViewMode(label: EntityLabel, defaultView?: CollectionViewMode) {
     // Without an explicit default, `useViewMode` falls back to the registry's `viewPolicy.defaultView`.
     const { currentView, handleViewChange } = useViewMode(label, defaultView && toLegacy(defaultView))
-    // Legacy card-like views ("card", "grid") render as cards; "analytics" as the analytics view; anything else as the table.
-    const view: CollectionViewMode = currentView === "card" || currentView === "grid" ? "card" : currentView === "analytics" || currentView === "kanban" || currentView === "timeline" ? currentView : "table"
+    // Legacy card-like views ("card", "grid") render as cards; anything else (including the former
+    // "analytics" view, now `useCollectionAnalytics`) as the table.
+    const view: CollectionViewMode = currentView === "card" || currentView === "grid" ? "card" : currentView === "kanban" || currentView === "timeline" ? currentView : "table"
     const onViewChange = React.useCallback((next: CollectionViewMode) => handleViewChange(toLegacy(next)), [handleViewChange])
     return { view, onViewChange }
 }

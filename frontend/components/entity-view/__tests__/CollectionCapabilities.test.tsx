@@ -159,7 +159,7 @@ describe("Collection.BulkBar", () => {
 })
 
 describe("Collection.Analytics", () => {
-    it("adds an analytics view that replaces the table while active", async () => {
+    it("opens the analytics in a modal over the table (ADR-0158 §11)", async () => {
         const user = userEvent.setup()
         render(
             <Harness source={{ rows }} options={{ pagination: { mode: "none" } }}>
@@ -169,9 +169,34 @@ describe("Collection.Analytics", () => {
             </Harness>,
         )
         expect(screen.queryByText("Panel de analítica")).toBeNull()
-        await user.click(screen.getByRole("button", { name: "Analítica" }))
-        expect(screen.getByText("Panel de analítica")).toBeInTheDocument()
-        expect(screen.queryByRole("table")).toBeNull()
+        const button = screen.getByRole("button", { name: "Analítica" })
+        expect(button).toHaveAttribute("aria-expanded", "false")
+        await user.click(button)
+        const dialog = screen.getByRole("dialog")
+        expect(within(dialog).getByText("Panel de analítica")).toBeInTheDocument()
+        // The table stays mounted underneath (scroll and selection survive).
+        expect(screen.getByRole("table", { hidden: true })).toBeInTheDocument()
+        await user.click(within(dialog).getByRole("button", { name: "Cerrar" }))
+        expect(screen.queryByRole("dialog")).toBeNull()
+    })
+
+    it("follows a controlled open state", async () => {
+        const user = userEvent.setup()
+        const onAnalyticsOpenChange = vi.fn()
+        function Controlled() {
+            const collection = useEntityCollection(entity, { rows }, { pagination: { mode: "none" } })
+            return (
+                <Collection.Root collection={collection} label="Productos" analyticsOpen onAnalyticsOpenChange={onAnalyticsOpenChange}>
+                    <Collection.Toolbar />
+                    <Collection.Analytics><p>Panel de analítica</p></Collection.Analytics>
+                </Collection.Root>
+            )
+        }
+        render(<Controlled />)
+        const dialog = screen.getByRole("dialog")
+        expect(dialog).toHaveTextContent("Panel de analítica")
+        await user.click(within(dialog).getByRole("button", { name: "Cerrar" }))
+        expect(onAnalyticsOpenChange).toHaveBeenCalledWith(false)
     })
 
     it("offers no analytics view without Collection.Analytics", () => {

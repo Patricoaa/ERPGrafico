@@ -32,7 +32,7 @@ interface UnifiedSearchBarProps {
   placeholder?: string
   className?: string
   prefix?: React.ReactNode
-  /** Active layout; the menu hides sorting and columns while it is `analytics` (until ADR-0158 stage 2). */
+  /** Active layout; the menu shows the column toggle only for the table (`list`). */
   currentView?: string
   toolbarActions?: React.ReactNode
 }

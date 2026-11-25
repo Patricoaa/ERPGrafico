@@ -16,7 +16,7 @@ import {
     useUnifiedSearch,
 } from "@/components/shared"
 import type { UnifiedSearchConfig } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { usePartnerAnalyticsData } from "../hooks/usePartnerAnalyticsData"
 import { usePartnerEvolutionData } from "../hooks/usePartnerEvolutionData"
 import type { Granularity } from "@/lib/analytics-helpers"
@@ -73,7 +73,7 @@ export function PartnersClientView({
     const search = useUnifiedSearch(partnerUnifiedSearchDef)
     const { partners = [], isLoading, isFetching, refetch, error } = usePartners()
     const { view, onViewChange } = useCollectionViewMode("contacts.partner")
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("composicion")
+    const analyticsUi = useCollectionAnalytics("composicion")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const router = useRouter()
@@ -108,8 +108,8 @@ export function PartnersClientView({
     const analyticsData = usePartnerAnalyticsData(partners, granularity)
     const evolutionData = usePartnerEvolutionData(24, granularity)
     const analyticsScreen = useMemo(
-        () => buildPartnerAnalyticsScreen(analyticsData, evolutionData, { activeTab: analyticsActiveTab, onTabChange: setAnalyticsActiveTab, granularity, onGranularityChange: setGranularity }),
-        [analyticsData, evolutionData, analyticsActiveTab, granularity],
+        () => buildPartnerAnalyticsScreen(analyticsData, evolutionData, { activeTab: analyticsUi.tab, onTabChange: analyticsUi.onTabChange, granularity, onGranularityChange: setGranularity }),
+        [analyticsData, evolutionData, analyticsUi.tab, analyticsUi.onTabChange, granularity],
     )
 
     const filteredPartners = useMemo(() => {
@@ -167,6 +167,8 @@ export function PartnersClientView({
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { AnalyticsPanelContent, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from '@/components/shared'
 import type { Granularity } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT, type FieldId } from "@/components/entity-view"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -90,7 +90,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("flujo")
+    const analyticsUi = useCollectionAnalytics("flujo")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const analyticsData = useTreasuryMovementAnalytics({
@@ -106,8 +106,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     })
 
     const analyticsScreen = useMemo(
-        () => buildTreasuryMovementAnalyticsScreen(analyticsData, { activeTab: analyticsActiveTab, onTabChange: setAnalyticsActiveTab, granularity, onGranularityChange: setGranularity }),
-        [analyticsData, analyticsActiveTab, granularity],
+        () => buildTreasuryMovementAnalyticsScreen(analyticsData, { activeTab: analyticsUi.tab, onTabChange: analyticsUi.onTabChange, granularity, onGranularityChange: setGranularity }),
+        [analyticsData, analyticsUi.tab, analyticsUi.onTabChange, granularity],
     )
 
     const collection = useEntityCollection(
@@ -135,6 +135,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             </Suspense>
 
             <Collection.Root
+                analyticsOpen={analyticsUi.open}
+                onAnalyticsOpenChange={analyticsUi.onOpenChange}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}

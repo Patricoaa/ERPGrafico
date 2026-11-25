@@ -53,6 +53,7 @@ vi.mock("@/components/entity-view", () => {
     return {
         Collection: Object.assign(Root, { Root, Toolbar, View, Analytics: () => null }),
         useCollectionViewMode: () => ({ view: "table", onViewChange: vi.fn() }),
+        useCollectionAnalytics: (tab: string) => ({ open: false, onOpenChange: vi.fn(), tab, onTabChange: vi.fn() }),
         useEntityCollection: () => ({}),
     }
 })
