@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { formatCurrency } from "@/lib/money"
-import { BaseModal, FormFooter, CancelButton, SubmitButton, IconButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { BaseModal, FormFooter, CancelButton, SubmitButton, IconButton, LabeledInput, LabeledSelect, Metric, MetricStrip } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Trash2, CheckCircle2 } from "lucide-react"
@@ -133,22 +133,21 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
             }
         >
             <form onSubmit={form.handleSubmit(() => {})} className="space-y-6 max-w-3xl mx-auto">
-                <div className="flex justify-between items-center bg-muted/30 p-4 rounded-md border border-border/50">
-                    <div>
-                        <p className="text-xs font-black uppercase text-muted-foreground">Monto Total a Distribuir</p>
-                        <p className="text-xl font-bold font-mono">{formatCurrency(totalPayment)}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-xs font-black uppercase text-muted-foreground">Suma Asignada</p>
-                        <p className="text-xl font-bold font-mono text-primary">{formatCurrency(currentSum)}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-xs font-black uppercase text-muted-foreground">Diferencia</p>
-                        <p className={`text-xl font-bold font-mono ${isZeroTolerance(remaining) ? 'text-success-text' : (remaining < 0 ? 'text-destructive' : 'text-warning-text')}`}>
-                            {formatCurrency(remaining)}
-                        </p>
-                    </div>
-                </div>
+                <MetricStrip label="Distribución de montos" singleRow>
+                    <Metric
+                        label="Monto Total a Distribuir"
+                        value={formatCurrency(totalPayment)}
+                    />
+                    <Metric
+                        label="Suma Asignada"
+                        value={formatCurrency(currentSum)}
+                    />
+                    <Metric
+                        label="Diferencia"
+                        tone={isZeroTolerance(remaining) ? "success" : remaining < 0 ? "destructive" : "warning"}
+                        value={formatCurrency(remaining)}
+                    />
+                </MetricStrip>
 
                 <div className="border rounded-md">
                     <Table>

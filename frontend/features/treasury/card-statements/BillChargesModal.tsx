@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { showApiError } from '@/lib/errors'
-import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect, Chip } from '@/components/shared'
+import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect, Chip, Metric } from '@/components/shared'
 import { toast } from 'sonner'
 import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
@@ -178,12 +178,10 @@ export function BillChargesModal({
         >
             <form id="bill-charges-form" onSubmit={form.handleSubmit(handleSubmit)}>
                 <div className="space-y-6">
-                    <div className="rounded-md border bg-muted/20 p-4">
-                        <div className="text-sm text-muted-foreground">Total a facturar</div>
-                        <div className="text-2xl font-bold">
-                            <MoneyDisplay amount={total} currency={currency} />
-                        </div>
-                    </div>
+                    <Metric
+                        label="Total a facturar"
+                        value={<MoneyDisplay amount={total} currency={currency} />}
+                    />
 
                     {/* ── Desglose por grupo de compra ── */}
                     {groupedCharges.length > 0 && (

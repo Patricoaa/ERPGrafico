@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { CheckCircle } from 'lucide-react'
-import { BaseModal, MoneyDisplay } from '@/components/shared'
+import { BaseModal, Metric, MoneyDisplay } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useTreasuryAccounts } from '@/features/treasury'
 import { useCardStatementMutations } from '../hooks/useCardStatements'
@@ -57,12 +57,10 @@ export function PayStatementModal({ statement, open, onOpenChange }: PayStatemen
             }
         >
             <div className="space-y-4">
-                <div className="rounded-md border p-4">
-                    <div className="text-sm text-muted-foreground">Total a pagar</div>
-                    <div className="text-2xl font-bold">
-                        <MoneyDisplay amount={parseFloat(statement.total_to_pay)} />
-                    </div>
-                </div>
+                <Metric
+                    label="Total a pagar"
+                    value={<MoneyDisplay amount={parseFloat(statement.total_to_pay)} />}
+                />
 
                 <div>
                     <label className="text-sm font-medium">Cuenta bancaria origen</label>
