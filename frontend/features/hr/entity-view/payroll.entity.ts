@@ -18,6 +18,20 @@ export const payrollEntity = defineEntity<Payroll>()((f) => ({
         remunerationPaidStatus: f.status((p) => ({ status: p.remuneration_paid_status ?? "PENDING" }), { label: "Pago" }),
         previredPaidStatus: f.status((p) => ({ status: p.previred_paid_status ?? "PENDING" }), { label: "Previred" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar por empleado o período…", scopes: [{ label: "Año", param: "period_year" }] },
+        filters: {
+            date: { label: "Fecha", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            status: { field: "status", control: "single", options: [{ value: "DRAFT", label: "Borrador" }, { value: "POSTED", label: "Contabilizado" }] },
+        },
+        sort: { fields: ["folio", "employeeName", "period", "totalHaberes", "netSalary", "status"] },
+        groupBy: { fields: ["status", "period", "employeeName"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+        ],
+    },
 }))
 
 export const payrollViews = payrollEntity.views({

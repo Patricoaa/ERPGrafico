@@ -17,6 +17,17 @@ export const employeeEntity = defineEntity<Employee>()((f) => ({
         // Grouping dimension only (search "Tipo contrato"); not a column.
         contractType: f.text("contract_type_display", { label: "Tipo contrato" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar por nombre o RUT…" },
+        filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
+        sort: { fields: ["name", "displayId", "position", "department", "afp", "salud", "baseSalary", "isActive", "contractType"], default: "name" },
+        groupBy: { fields: ["isActive", "contractType", "department"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "active", label: "Activos", filters: { is_active: "true" } },
+        ],
+    },
 }))
 
 export const employeeViews = employeeEntity.views({

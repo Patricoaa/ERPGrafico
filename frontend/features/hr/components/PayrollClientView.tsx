@@ -7,20 +7,17 @@ import React, { useState, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import { CreatePayrollDrawer, deletePayroll, paySalary, payPrevired, triggerDraftPayrolls, usePayrollAnalyticsData } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
-import { AnalyticsPanelContent, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type Granularity } from '@/components/shared'
-import { Collection, useCollectionAnalytics, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { AnalyticsPanelContent, ToolbarCreateButton, type Granularity } from '@/components/shared'
+import { Collection, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
 import { usePayrolls } from "@/features/hr"
 import { useServerDate } from "@/hooks/useServerDate"
-import { payrollUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { payrollEntity, payrollViews } from "../entity-view/payroll.entity"
 import { buildPayrollAnalyticsScreen } from "./payrollAnalyticsScreen"
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const PAYROLL_GROUPS: Record<string, FieldId<typeof payrollEntity.fields>> = { status: "status" }
 
 interface PayrollClientViewProps {
     initialPayrolls?: Payroll[]
@@ -31,9 +28,9 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
 
     const createAction = <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
 
-    const search = useUnifiedSearch(payrollUnifiedSearchDef)
-    const groupBy = search.groupBy ? PAYROLL_GROUPS[search.groupBy] ?? null : null
-    const { payrolls, isLoading: loading, isRefetching, isError, refetch: fetchPayrolls } = usePayrolls(search.filters, initialPayrolls)
+    const query = useCollectionQuery(payrollEntity, { sorting: "client" })
+    const { search, groupBy } = query
+    const { payrolls, isLoading: loading, isRefetching, isError, refetch: fetchPayrolls } = usePayrolls(query.params, initialPayrolls)
     const { view, onViewChange } = useCollectionViewMode("hr.payroll")
 
     const [granularity, setGranularity] = useState<Granularity>("month")
@@ -118,7 +115,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     const collection = useEntityCollection(
         payrollEntity,
         { rows: payrolls, isLoading: loading, isRefetching, error: isError, refetch: fetchPayrolls, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy, sorting: query.sorting },
     )
 
     return (
@@ -135,14 +132,13 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
 
             <Collection.Root
                 analytics={analyticsUi}
+                query={query}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}
                 actions={payrollActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={toolbarActions}>
-                    <UnifiedSearchBar config={payrollUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar por empleado o período..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={toolbarActions} />
                 <Collection.View
                     table={payrollViews.table}
                     card={payrollViews.card}

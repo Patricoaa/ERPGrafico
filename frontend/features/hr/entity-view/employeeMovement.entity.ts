@@ -1,6 +1,6 @@
 import { defineEntity } from "@/components/entity-view"
 import type { EmployeeMovement } from "@/types/hr"
-import { employeeMovementStatus } from "../employeeMovementStatus"
+import { employeeMovementStatus, EMPLOYEE_MOVEMENT_STATUS_OPTIONS } from "../employeeMovementStatus"
 
 /** Pago de remuneración, anticipo o préstamo con un empleado (ADR-0156). */
 export const employeeMovementEntity = defineEntity<EmployeeMovement>()((f) => ({
@@ -13,6 +13,17 @@ export const employeeMovementEntity = defineEntity<EmployeeMovement>()((f) => ({
         amount: f.money("amount", { label: "Monto" }),
         balance: f.money("balance", { label: "Saldo" }),
         status: f.status((m) => employeeMovementStatus(m.status, m.status_display), { label: "Estado" }),
+    },
+    // ADR-0158 §3, client mode: the server filters by kind, status and dates; the employee scope matches in the browser.
+    query: {
+        search: { placeholder: "Buscar movimientos…", scopes: [{ field: "employee", param: "employee_name", clientKey: "employee_name" }] },
+        filters: {
+            date: { field: "date", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            kind: { field: "kind", control: "single", options: [{ value: "PAYMENT", label: "Pago de remuneración" }, { value: "ADVANCE", label: "Anticipo" }, { value: "LOAN", label: "Préstamo" }] },
+            status: { field: "status", control: "single", options: EMPLOYEE_MOVEMENT_STATUS_OPTIONS },
+        },
+        sort: { fields: ["date", "folio", "employee", "kind", "amount", "balance", "status"], default: "-date" },
+        groupBy: { fields: ["kind", "status", "employee"] },
     },
 }))
 

@@ -4,14 +4,13 @@ import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import React, { lazy, Suspense, useState } from "react"
-import { DatePicker, LabeledContainer, LoadingFallback, ToolbarCreateButton, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { DatePicker, LabeledContainer, LoadingFallback, ToolbarCreateButton } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { EmployeeDrawer, useEmployees } from "@/features/hr"
 import { parseDateOnly, toDateOnlyISO } from "@/lib/utils"
 import { useEmployeeMutations } from "../hooks/useEmployeeMutations"
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import type { Employee } from "@/types/hr"
-import { employeeUnifiedSearchDef } from "../unifiedSearchDef"
 import { employeeEntity, employeeViews } from "../entity-view/employee.entity"
 
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
@@ -20,20 +19,18 @@ interface EmployeeClientViewProps {
     initialEmployees?: Employee[]
 }
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const EMPLOYEE_GROUPS: Record<string, FieldId<typeof employeeEntity.fields>> = { is_active: "isActive", contract_type: "contractType", department: "department" }
 
 export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Empleado" href="/hr/employees?modal=new" />
-    const search = useUnifiedSearch(employeeUnifiedSearchDef)
-    const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees, error } = useEmployees(search.filters, initialEmployees)
-    const groupBy = search.groupBy ? EMPLOYEE_GROUPS[search.groupBy] ?? null : null
+    const query = useCollectionQuery(employeeEntity, { sorting: "client" })
+    const { search, groupBy } = query
+    const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees, error } = useEmployees(query.params, initialEmployees)
     const { view, onViewChange } = useCollectionViewMode("hr.employee")
     const collection = useEntityCollection(
         employeeEntity,
         { rows: employees, isLoading: loading, isRefetching, error, refetch: fetchEmployees, isFiltered: search.isFiltered },
         // Groups span the whole list, not one page.
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy, sorting: query.sorting },
     )
     const panel = useCreatePanelRoute({ resolved: false })
     const { openEntity } = useGlobalModals()
@@ -75,17 +72,12 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
                 actions={employeeActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={createAction}>
-                    <UnifiedSearchBar
-                        config={employeeUnifiedSearchDef}
-                        {...bindUnifiedSearch(search)}
-                        placeholder="Buscar por nombre o RUT..."
-                    />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={createAction} />
                 <Collection.View
                     table={employeeViews.table}
                     card={employeeViews.card}
