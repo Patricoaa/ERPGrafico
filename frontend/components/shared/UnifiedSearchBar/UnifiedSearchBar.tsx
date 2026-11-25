@@ -35,6 +35,10 @@ interface UnifiedSearchBarProps {
   /** Active layout; the menu shows the column toggle only for the table (`list`). */
   currentView?: string
   toolbarActions?: React.ReactNode
+  /** `false`: no filter menu (chevron), only search + suggestions; the collection command bar owns the tools (ADR-0158). */
+  menu?: boolean
+  /** `false`: the applied-filters row is rendered by the caller (the command bar puts it under the whole bar). */
+  appliedFilters?: boolean
 }
 
 export function UnifiedSearchBar({
@@ -54,6 +58,8 @@ export function UnifiedSearchBar({
   prefix,
   currentView,
   toolbarActions,
+  menu = true,
+  appliedFilters = true,
 }: UnifiedSearchBarProps) {
   const resultCount = useResultCount()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -111,7 +117,7 @@ export function UnifiedSearchBar({
   return (
     <div className={cn("flex w-full flex-col gap-1.5", className)} role="search" aria-label="Búsqueda y filtros">
       <div className="flex w-full items-center">
-        <Popover open={menuOpen} onOpenChange={(open) => { setMenuOpen(open); if (!open) setForceFilters(false) }}>
+        <Popover open={menuOpen && (menu || hasSearchText)} onOpenChange={(open) => { setMenuOpen(open); if (!open) setForceFilters(false) }}>
           <PopoverTrigger asChild>
             <div className="flex items-center w-full">
               <div
@@ -141,6 +147,7 @@ export function UnifiedSearchBar({
                   />
                 </div>
 
+                {menu && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -161,6 +168,7 @@ export function UnifiedSearchBar({
                     aria-hidden
                   />
                 </Button>
+                )}
               </div>
             </div>
           </PopoverTrigger>
@@ -173,7 +181,7 @@ export function UnifiedSearchBar({
             className="p-0 border-border/80 shadow-floating"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
-            {hasSearchText && !forceFilters ? (
+            {(hasSearchText && !forceFilters) || !menu ? (
               <SearchSuggestions
                 inputValue={inputValue}
                 searchFields={config.searchFields}
@@ -204,7 +212,7 @@ export function UnifiedSearchBar({
         )}
       </div>
 
-      <AppliedFilters chips={chips} onClearAll={onClearAll} resultCount={resultCount} />
+      {appliedFilters && <AppliedFilters chips={chips} onClearAll={onClearAll} resultCount={resultCount} />}
     </div>
   )
 }

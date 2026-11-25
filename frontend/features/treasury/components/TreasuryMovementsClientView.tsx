@@ -135,8 +135,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             </Suspense>
 
             <Collection.Root
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
                 collection={collection}
                 view={view}
                 onViewChange={onViewChange}

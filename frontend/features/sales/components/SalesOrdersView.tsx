@@ -135,8 +135,7 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
                 actions={withActions ? (order) => <DocumentRowActions id={order.id} kind="sale-order" onOpen={selection.toggle} /> : undefined}
                 view={view}
                 onViewChange={onViewChange}
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
             >
                 <Collection.Toolbar>
                     <UnifiedSearchBar

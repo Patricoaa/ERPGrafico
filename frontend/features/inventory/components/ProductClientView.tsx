@@ -261,8 +261,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 selection="bulk"
                 view={view}
                 onViewChange={onViewChange}
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
                 actions={productActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction}>

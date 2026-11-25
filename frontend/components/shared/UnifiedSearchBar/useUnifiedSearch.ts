@@ -153,6 +153,11 @@ export function useUnifiedSearch(
     await setParamValues(next)
   }, [paramDefs, setCursor, setParamValues])
 
+  const applyMany = useCallback(async (values: Record<string, string | null>) => {
+    await setCursor(null)
+    await setParamValues(values)
+  }, [setCursor, setParamValues])
+
   const filters: Record<string, string> = useMemo(
     () => Object.fromEntries(
       Object.entries(paramValues).filter(([, v]) => v !== null)
@@ -315,6 +320,7 @@ export function useUnifiedSearch(
     removeFilter,
     clearAll,
     replaceAll,
+    applyMany,
     inputValue,
     setInputValue,
     filterFn,

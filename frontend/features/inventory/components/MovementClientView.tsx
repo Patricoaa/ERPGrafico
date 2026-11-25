@@ -241,8 +241,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 flex flex-col min-h-0">
                 <Collection.Root
-                analyticsOpen={analyticsUi.open}
-                onAnalyticsOpenChange={analyticsUi.onOpenChange}
+                analytics={analyticsUi}
                     collection={collection}
                     onOpen={(move: StockMove) => openEntity("inventory.stockmove", move.id, move)}
                     actions={stockMoveActions.forCollection(actionsCtx)}
