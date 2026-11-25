@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.services.grouping import GroupField
 
 from .filters import PurchaseReceiptFilter, PurchaseReturnFilter
 from .models import PurchaseOrder, PurchaseReturn
@@ -238,7 +239,7 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelV
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = PurchaseReceiptSerializer
     pagination_class = StandardResultsSetPagination
     # ADR-0090: la lista de recepciones es una vista documental propia (orden por columna).
@@ -257,6 +258,13 @@ class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.Mode
         "purchase_order__supplier__name",
     ]
     ordering = ["-receipt_date", "-id"]
+    # ADR-0158 §7: groups/ for the server grouping (each group lists its rows with existing filters).
+    group_fields = {
+        "date": GroupField("receipt_date", param=("date_after", "date_before")),
+        "supplier": GroupField("purchase_order__supplier", label="purchase_order__supplier__name", param="supplier_id"),
+        "status": GroupField("status"),
+    }
+    group_aggregates = {"cost": "lines__total_cost"}
     action_permissions = {
         "annul": "purchasing.annul_purchasereceipt",
     }
@@ -277,7 +285,7 @@ class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.Mode
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseReturn.objects.select_related(
             "purchase_order__supplier", "warehouse"
@@ -291,6 +299,13 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, viewsets.Model
     filterset_class = PurchaseReturnFilter
     search_fields = ["number", "purchase_order__supplier__name", "purchase_order__number"]
     ordering_fields = ["number", "date", "total_cost", "status", "purchase_order__supplier__name"]
+    # ADR-0158 §7: groups/ for the server grouping (each group lists its rows with existing filters).
+    group_fields = {
+        "date": GroupField("date", param=("date_after", "date_before")),
+        "supplier": GroupField("purchase_order__supplier", label="purchase_order__supplier__name", param="supplier_id"),
+        "status": GroupField("status"),
+    }
+    group_aggregates = {"cost": "total_cost"}
     ordering = ["-date", "-id"]
     action_permissions = {
         "annul": "purchasing.annul_purchasereturn",

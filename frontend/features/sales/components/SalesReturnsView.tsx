@@ -4,6 +4,7 @@ import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode,
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { saleReturnEntity, saleReturnViews } from "../entity-view/saleReturn.entity"
 import { useSaleReturns } from "../hooks/useSaleDeliveries"
+import { useSaleReturnGroups } from "../hooks/useSaleLogisticsGroups"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
@@ -15,23 +16,28 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 export function SalesReturnsView() {
     const sheet = useDocumentSheetRoute("sales.salereturn")
     const query = useCollectionQuery(saleReturnEntity)
-    const { groupBy, params } = query
+    const { groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("sales.salereturn")
 
-    const { page, returns, isLoading, isFetching, isError, refetch } = useSaleReturns({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useSaleReturnGroups({ groupKey, params })
+    const list = useSaleReturns({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    })
+    }, groupKey === null)
+    const { page, returns } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : { ...list, isRefetching: list.isFetching }
 
     const collection = useEntityCollection(
         saleReturnEntity,
-        { rows: returns, rowCount: page?.count, isLoading, isRefetching: isFetching, error: isError, refetch, isFiltered: query.search.isFiltered },
+        { rows: returns, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: query.search.isFiltered },
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             sorting: query.sorting,
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

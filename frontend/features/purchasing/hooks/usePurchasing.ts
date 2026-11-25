@@ -78,13 +78,14 @@ export function usePurchasingOrder(id: number) {
     return { order, isLoading }
 }
 
-export function usePurchaseReceipts(filters?: Record<string, unknown>) {
+export function usePurchaseReceipts(filters?: Record<string, unknown>, enabled = true) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
     const query = useQuery({
         queryKey: PURCHASING_KEYS.receipts({ page, page_size: pageSize, ...filters }),
         queryFn: () => purchasingApi.getReceiptsPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
+        enabled,
     })
 
     return {
@@ -121,13 +122,14 @@ export function usePurchaseReturn(id: number | null, enabled = true) {
 }
 
 /** Paginated list of purchase returns (ADR-0090: "Devoluciones" is its own document list). */
-export function usePurchaseReturns(filters?: Record<string, unknown>) {
+export function usePurchaseReturns(filters?: Record<string, unknown>, enabled = true) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
     const query = useQuery({
         queryKey: [...PURCHASING_KEYS.all, 'returns', { page, page_size: pageSize, ...filters }],
         queryFn: () => purchasingApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
+        enabled,
     })
 
     return {

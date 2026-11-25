@@ -26,13 +26,15 @@ class GroupField:
     - `label`: ORM path of the group's label, for relations (`"customer__name"`). Without it the
       label comes from the field's `choices`, or is `null` (the client formats the key).
     - `param`: list filter that selects one group's rows (`?<param>=<key>`); default the group name.
+      A tuple sets every listed param to the key: a date range filter (`("date_after", "date_before")`)
+      selects one day without an exact filter.
     - `null_param`: list filter that selects the rows without a value (`?<null_param>=true`). Without
       it, the "no value" group has no `params` and its rows cannot be listed.
     """
 
     field: str
     label: str | None = None
-    param: str | None = None
+    param: str | tuple[str, ...] | None = None
     null_param: str | None = None
 
 
@@ -97,11 +99,11 @@ def list_groups(
     base = model._default_manager.filter(pk__in=queryset.order_by().values("pk")).order_by()
     values = [spec.field] + ([spec.label] if spec.label else [])
     sums = {f"_agg_{key}": Sum(path) for key, path in aggregates.items()}
-    rows = base.values(*values).annotate(_count=Count("pk"), **sums)
+    rows = base.values(*values).annotate(_count=Count("pk", distinct=True), **sums)
 
     places = {key: _decimal_places(model, path) for key, path in aggregates.items()}
     choices = _choices(model, spec.field)
-    param = spec.param or name
+    names = spec.param if isinstance(spec.param, tuple) else (spec.param or name,)
     groups: list[dict[str, Any]] = []
     for row in rows:
         value = row[spec.field]
@@ -109,7 +111,7 @@ def list_groups(
         # Plain values (dates, numbers) have no label: the client formats the key with the field kind.
         label = row[spec.label] if spec.label else choices.get(value)
         if key is not None:
-            params: dict[str, str] | None = {param: key}
+            params: dict[str, str] | None = dict.fromkeys(names, key)
         elif spec.null_param:
             params = {spec.null_param: "true"}
         else:
@@ -128,7 +130,13 @@ def list_groups(
         present = sorted((g for g in groups if g["key"] is not None), key=lambda g: g["_sort"], reverse=direction[1])
     else:
         descending = bool(direction and direction[1])
-        present = sorted((g for g in groups if g["key"] is not None), key=lambda g: (g["label"] or "").casefold(), reverse=descending)
+        # Labelled groups sort by label; plain values (dates, numbers) by value.
+        present = sorted(
+            (g for g in groups if g["key"] is not None),
+            # Mixed (a value missing from `choices`): labelled first; values compare only among themselves.
+            key=lambda g: (g["label"] is None, (g["label"] or "").casefold(), g["_sort"] if g["label"] is None else 0),
+            reverse=descending,
+        )
     # The "no value" group always goes last.
     ordered = present + [g for g in groups if g["key"] is None]
     for group in ordered:

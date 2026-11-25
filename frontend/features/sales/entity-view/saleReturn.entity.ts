@@ -27,15 +27,15 @@ export const saleReturnEntity = defineEntity<SaleReturn>()((f) => ({
     label: "sales.salereturn",
     fields: {
         folio: f.code((r) => r.display_id ?? r.number, { label: "Folio", orderBy: "number" }),
-        customer: f.contact((r) => (r.customer_name ? { id: r.customer_id ?? 0, name: r.customer_name } : null), { label: "Cliente", orderBy: "sale_order__customer__name" }),
+        customer: f.contact((r) => (r.customer_name ? { id: r.customer_id ?? 0, name: r.customer_name } : null), { label: "Cliente", orderBy: "sale_order__customer__name", groupKey: "customer" }),
         order: docRef(f, (r) => r.sale_order_document ? { label: r.sale_order_document.label, id: r.sale_order_document.id, display: r.sale_order_document.display_id, url: r.sale_order_document.url } : null, { label: "Orden de Venta", sortable: false }),
-        date: f.date("date", { label: "Fecha", orderBy: "date" }),
+        date: f.date("date", { label: "Fecha", orderBy: "date", groupKey: "date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
         status: f.status((r) => ({
             status: r.status,
             label: r.status_display,
             intent: r.status === "CONFIRMED" ? "destructive" : r.status === "CANCELLED" ? "destructive" : "info",
-        }), { label: "Estado" }),
+        }), { label: "Estado", groupKey: "status" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
     // ADR-0158 §3. Params match the backend FilterSet.
@@ -52,7 +52,7 @@ export const saleReturnEntity = defineEntity<SaleReturn>()((f) => ({
             status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
         },
         sort: { fields: ["folio", "customer", "date", "cost"], default: "-date" },
-        groupBy: { fields: ["date", "customer", "status"] },
+        groupBy: { fields: ["date", "customer", "status"], aggregate: { cost: "sum" } },
         views: [
             { id: "all", label: "Todas" },
             { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },

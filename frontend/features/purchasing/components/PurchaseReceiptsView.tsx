@@ -4,6 +4,7 @@ import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode,
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { purchaseReceiptEntity, purchaseReceiptViews } from "../entity-view/purchaseReceipt.entity"
 import { usePurchaseReceipts } from "../hooks/usePurchasing"
+import { usePurchaseReceiptGroups } from "../hooks/usePurchaseLogisticsGroups"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
@@ -14,23 +15,28 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 export function PurchaseReceiptsView() {
     const sheet = useDocumentSheetRoute("purchasing.purchasereceipt")
     const query = useCollectionQuery(purchaseReceiptEntity)
-    const { groupBy, params } = query
+    const { groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("purchasing.purchasereceipt")
 
-    const { page, receipts, isLoading, isFetching, isError, refetch } = usePurchaseReceipts({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = usePurchaseReceiptGroups({ groupKey, params })
+    const list = usePurchaseReceipts({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    })
+    }, groupKey === null)
+    const { page, receipts } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : { ...list, isRefetching: list.isFetching }
 
     const collection = useEntityCollection(
         purchaseReceiptEntity,
-        { rows: receipts, rowCount: page?.count, isLoading, isRefetching: isFetching, error: isError, refetch, isFiltered: query.search.isFiltered },
+        { rows: receipts, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: query.search.isFiltered },
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             sorting: query.sorting,
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

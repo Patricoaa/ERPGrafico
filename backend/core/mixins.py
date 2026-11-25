@@ -163,5 +163,6 @@ class GroupedListMixin:
             request.query_params.get("group_by"),
             self.group_fields,
             self.group_aggregates,
-            request.query_params.get("ordering"),
+            # Without `?ordering=`, the list's default order (`ordering`) orders the groups too.
+            request.query_params.get("ordering") or ",".join(getattr(self, "ordering", None) or []),
         ))
