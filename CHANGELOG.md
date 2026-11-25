@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.172](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.171...v0.3.172) (2026-11-25)
+
+
+### ✨ Features
+
+* **analytics:** etapa 2 de ADR-0158 — analítica en modal ([3fab06e](https://github.com/Patricoaa/ERPGrafico/commit/3fab06e164266f36a2db90d845a90d1e23edcb0c))
+
 ### [0.3.171](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.170...v0.3.171) (2026-11-25)
 
 
