@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.164](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.163...v0.3.164) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** Dependabot ignora mayores de react-table, Django, pandas y numpy ([5c63ad2](https://github.com/Patricoaa/ERPGrafico/commit/5c63ad22c2374d8be2baab49d3d1f3ed5860b1ce)), closes [#311](https://github.com/Patricoaa/ERPGrafico/issues/311)
+
 ### [0.3.163](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.162...v0.3.163) (2026-11-25)
 
 
