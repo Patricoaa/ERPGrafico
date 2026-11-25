@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.163](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.162...v0.3.163) (2026-11-25)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump actions-rust-lang/setup-rust-toolchain from 1 to 2 ([84e9f02](https://github.com/Patricoaa/ERPGrafico/commit/84e9f02525918503758a338053d926320da950cb))
+* **deps:** bump actions/setup-node from 5 to 7 ([337ebed](https://github.com/Patricoaa/ERPGrafico/commit/337ebedd6e0e01c8e89824e82345613f924d359f))
+
 ### [0.3.162](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.161...v0.3.162) (2026-11-25)
 
 
