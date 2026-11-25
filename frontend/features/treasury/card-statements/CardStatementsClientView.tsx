@@ -40,7 +40,6 @@ export function CardStatementsClientView({ bankId }: CardStatementsClientViewPro
         [banks],
     )
     const { cardAccounts: creditCardAccounts } = useCardAccounts(effectiveBankId)
-    const isAggregate = !bankId
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
