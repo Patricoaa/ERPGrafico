@@ -27,7 +27,6 @@ export { PurchaseOrdersView } from './components/PurchaseOrdersView'
 export { PurchaseReceiptsView } from './components/PurchaseReceiptsView'
 export { PurchaseReturnsView } from './components/PurchaseReturnsView'
 export { PurchaseFulfillmentView } from './components/PurchaseFulfillmentView'
-export { subscriptionUnifiedSearchDef } from './unifiedSearchDef'
 
 export type { SubscriptionActionsCtx } from './subscriptionActions'
 export { subscriptionActions } from './subscriptionActions'

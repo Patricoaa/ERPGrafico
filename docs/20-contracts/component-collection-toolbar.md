@@ -36,7 +36,7 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 >
 > Las notas de compra siguen con `purchaseInvoiceUnifiedSearchDef` de billing y migran con esa app.
 >
-> Las listas con orden y paginación en el cliente (sesiones y terminales POS, suscripciones, …) esperan un modo cliente de `useCollectionQuery`.
+> - modo cliente (3d-2): sesiones POS, terminales POS y suscripciones.
 
 ---
 
@@ -168,6 +168,14 @@ Es un único dueño del estado, construido sobre `nuqs`. Cualquier cambio de fil
 | `analytics` | pestaña abierta del modal |
 
 Preferencias por entidad que **no van en la URL**: densidad y columnas (visibilidad, orden, fijadas). Desde E3 se guarda la visibilidad en `localStorage` con la clave `entity-view:hidden-columns:<label>` (si la entidad no tiene `label`, se usa `title`). La instantánea del servidor es «nada oculto», así que la hidratación coincide y la preferencia se aplica justo después. Densidad, orden y fijado quedan para una etapa posterior.
+
+**Modo cliente:** `useCollectionQuery(entity, { sorting: "client" })` es para listas que cargan todas sus filas y las ordenan en el navegador.
+- Los campos de `query.sort` no necesitan `orderBy`.
+- Las claves siguen en `?ordering=`, pero `params` no lleva `ordering`.
+- `sorting` usa el modo `query` de `useEntityCollection`: ordena las filas cargadas por todas las claves, y solo las columnas declaradas son ordenables.
+- Filtros y búsqueda funcionan igual. La pantalla los envía al servidor (`params`) o filtra en el cliente (`search.filters` o `search.filterFn`).
+
+En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa columna lleva `aria-sort`. Las secundarias se ven y se cambian en `SortMenu`.
 
 **Adaptador:** `useCollectionQuery(entity, { searchDef })` usa un `unifiedSearchDef` existente (vía `fromUnifiedSearchDef(def)`) en lugar de `entity.query`, para migrar la vista antes que su definición. Con el adaptador no hay orden múltiple, vistas ni agregados.
 

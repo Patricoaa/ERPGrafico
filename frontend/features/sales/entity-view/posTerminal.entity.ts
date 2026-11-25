@@ -34,6 +34,14 @@ export const posTerminalEntity = defineEntity<Terminal>()((f) => ({
         paymentMethods: f.tags(paymentChips, { label: "Métodos", domain: "payment_method", sortable: false }),
         isActive: f.status((t) => (t.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Inactivo" }), { label: "Estado", sortable: false }),
     },
+    // ADR-0158 §3, client mode: every terminal is loaded; status and text filter in the browser.
+    query: {
+        search: { placeholder: "Buscar puntos de venta…" },
+        filters: {
+            status: { field: "isActive", control: "single", options: [{ value: "ACTIVE", label: "Activos" }, { value: "INACTIVE", label: "Inactivos" }] },
+        },
+        sort: { fields: ["code", "name", "location", "device"] },
+    },
 }))
 
 export const posTerminalViews = posTerminalEntity.views({

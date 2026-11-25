@@ -838,7 +838,8 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                             )}
                             {cols.map(({ id, def, align, shrink }) => {
                                 const column = table.getColumn(id)
-                                const dir = column?.getIsSorted() ?? false
+                                // Only the first key marks its header (secondary keys are in `SortMenu`): one `aria-sort` per table.
+                                const dir = column && column.getSortIndex() === 0 ? column.getIsSorted() : false
                                 return (
                                     <th
                                         key={id}

@@ -13,6 +13,11 @@ export interface UseCollectionQueryOptions {
     searchDef?: UnifiedSearchConfig
     /** Runtime options for `"remote"` / `dynamic` filters, by filter id. */
     filterOptions?: Record<string, MultiSelectOption[]>
+    /**
+     * `server` (default): `ordering` goes to the request. `client`: the screen loads every row; the keys
+     * (still in `?ordering=`) sort them in the browser and `params` carries no `ordering`.
+     */
+    sorting?: "server" | "client"
 }
 
 export interface CollectionQuery<Id extends string> {
@@ -25,7 +30,7 @@ export interface CollectionQuery<Id extends string> {
     /** DRF `ordering` for the list request (server keys + `id` tie-break), or `undefined`. */
     ordering: string | undefined
     /** Ready for `useEntityCollection(…, { sorting })`: the table header drives the first key. */
-    sorting: Extract<CollectionSorting<Id>, { mode: "server" }>
+    sorting: Extract<CollectionSorting<Id>, { mode: "server" } | { mode: "query" }>
     groupBy: Id | null
     setGroupBy: (next: Id | null) => void
     views: readonly QueryView[]
@@ -65,10 +70,10 @@ function sameParams(a: Record<string, string>, b: Record<string, string>): boole
  */
 export function useCollectionQuery<F extends QueryEntity["fields"]>(
     entity: QueryEntity & { fields: F },
-    { searchDef, filterOptions }: UseCollectionQueryOptions = {},
+    { searchDef, filterOptions, sorting: sortingMode = "server" }: UseCollectionQueryOptions = {},
 ): CollectionQuery<FieldId<F>> {
     type Id = FieldId<F>
-    const compiled = React.useMemo(() => (searchDef ? fromUnifiedSearchDef(searchDef) : compileQuery(entity)), [entity, searchDef])
+    const compiled = React.useMemo(() => (searchDef ? fromUnifiedSearchDef(searchDef) : compileQuery(entity, { sorting: sortingMode })), [entity, searchDef, sortingMode])
     const search = useUnifiedSearch(compiled.search, filterOptions)
     const [rawOrdering, setRawOrdering] = useQueryState("ordering", parseAsString)
     const [viewId, setViewId] = useQueryState("v", parseAsString)
@@ -129,11 +134,13 @@ export function useCollectionQuery<F extends QueryEntity["fields"]>(
         if (activeView) setView(activeView.id)
     }, [activeView, setView])
 
-    const ordering = orderingFor(compiled, sort)
-    const sorting = React.useMemo<Extract<CollectionSorting<Id>, { mode: "server" }>>(
-        () => ({ mode: "server", state: sort[0] ?? null, onChange: (next) => setSort(next ? [next, ...sort.slice(1).filter((s) => s.replace(/^-/, "") !== next.replace(/^-/, ""))] : sort.slice(1)) }),
-        [sort, setSort],
-    )
+    const ordering = sortingMode === "client" ? undefined : orderingFor(compiled, sort)
+    const sortFieldIds = React.useMemo(() => compiled.sortFields.map((f) => f.id as Id), [compiled])
+    const sorting = React.useMemo<Extract<CollectionSorting<Id>, { mode: "server" } | { mode: "query" }>>(() => {
+        // A header click sets the first key and keeps the others (ADR-0158 §6).
+        const onChange = (next: SortSpec<Id> | null) => setSort(next ? [next, ...sort.slice(1).filter((s) => s.replace(/^-/, "") !== next.replace(/^-/, ""))] : sort.slice(1))
+        return sortingMode === "client" ? { mode: "query", state: sort, onChange, fields: sortFieldIds } : { mode: "server", state: sort[0] ?? null, onChange }
+    }, [sort, setSort, sortingMode, sortFieldIds])
 
     const params = React.useMemo(() => {
         const out: Record<string, string> = {}

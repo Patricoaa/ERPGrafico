@@ -486,14 +486,14 @@ Ver `features/*/unifiedSearchDef.ts` para la lista completa. Cada feature tiene 
 | Feature | Archivo |
 |---------|---------|
 | Contacts | `features/contacts/unifiedSearchDef.ts` |
-| Sales | migrado a `entity.query` ([component-collection-toolbar.md](./component-collection-toolbar.md)); sesiones y terminales POS siguen en `features/pos/unifiedSearchDef.ts` |
+| Sales | migrado a `entity.query` ([component-collection-toolbar.md](./component-collection-toolbar.md)) |
 | Billing | `features/billing/unifiedSearchDef.ts` |
-| Purchasing | migrado a `entity.query`, salvo suscripciones (`features/purchasing/unifiedSearchDef.ts`) |
+| Purchasing | migrado a `entity.query` |
 | Inventory | `features/inventory/unifiedSearchDef.ts` |
 | Treasury | `features/treasury/unifiedSearchDef.ts` |
 | Accounting | `features/accounting/unifiedSearchDef.ts` |
 | HR | `features/hr/unifiedSearchDef.ts` |
 | Production | `features/production/unifiedSearchDef.ts` |
-| POS | `features/pos/unifiedSearchDef.ts` |
+| POS | migrado a `entity.query` (sesiones y terminales, modo cliente) |
 | Settings | `features/settings/unifiedSearchDef.ts` |
 | Bank Reconciliation | `features/finance/bank-reconciliation/unifiedSearchDef.ts` |

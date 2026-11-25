@@ -5,13 +5,12 @@ import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useMemo } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
-import { ActionConfirmModal, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { ActionConfirmModal } from "@/components/shared"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { usePosTerminals } from "@/features/sales"
 import type { Terminal } from "@/features/treasury"
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
-import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
 import { posTerminalEntity, posTerminalViews } from "../entity-view/posTerminal.entity"
@@ -25,7 +24,8 @@ interface PosTerminalClientViewProps {
 
 export function PosTerminalClientView({ externalOpen, onExternalOpenChange, createAction }: PosTerminalClientViewProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading, isError } = usePosTerminals()
-    const search = useUnifiedSearch(terminalPosUnifiedSearchDef)
+    const query = useCollectionQuery(posTerminalEntity, { sorting: "client" })
+    const { status, search: text } = query.search.filters
     const searchParams = useSearchParams()
     const pathname = usePathname()
     const router = useRouter()
@@ -55,12 +55,15 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
         deleteConfirm.requestConfirm(terminal)
     }
 
+    // The terminals endpoint returns every terminal: status and free text filter here.
     const filteredTerminals = useMemo(() => {
-        if (!search.filters.status) return terminals
-        return terminals.filter(t =>
-            search.filters.status === "ACTIVE" ? t.is_active : !t.is_active
-        )
-    }, [terminals, search.filters.status])
+        const needle = text?.trim().toLowerCase()
+        return terminals.filter((t) => {
+            if (status && (status === "ACTIVE") !== t.is_active) return false
+            if (!needle) return true
+            return [t.name, t.code, t.location].some((value) => value?.toLowerCase().includes(needle))
+        })
+    }, [terminals, status, text])
 
     const actionsCtx: PosTerminalActionsCtx = {
         onEdit: (terminal) => openEntity("treasury.posterminal", terminal.id, terminal),
@@ -72,8 +75,8 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     // Rows are filtered here: a failed refetch with cached data must read "no results", not "error".
     const collection = useEntityCollection(
         posTerminalEntity,
-        { rows: filteredTerminals, isLoading, error: isError && terminals.length === 0, refetch, isFiltered: search.isFiltered },
-        { pagination: { mode: "client", pageSize: 20 } },
+        { rows: filteredTerminals, isLoading, error: isError && terminals.length === 0, refetch, isFiltered: query.search.isFiltered },
+        { pagination: { mode: "client", pageSize: 20 }, sorting: query.sorting },
     )
     const toolbarAction = createAction || (
         <Button onClick={() => {
@@ -93,15 +96,14 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                 onViewChange={onViewChange}
                 onOpen={(terminal) => openEntity("treasury.posterminal", terminal.id, terminal)}
                 actions={posTerminalActions.forCollection(actionsCtx)}
+                query={query}
             >
-                <Collection.Toolbar action={toolbarAction}>
-                    <UnifiedSearchBar config={terminalPosUnifiedSearchDef} {...bindUnifiedSearch(search)} />
-                </Collection.Toolbar>
+                <Collection.Toolbar action={toolbarAction} />
                 <Collection.View
                     table={posTerminalViews.table}
                     card={posTerminalViews.card}
                     emptyAction={toolbarAction}
-                    onResetFilters={search.clearAll}
+                    onResetFilters={query.search.clearAll}
                 />
             </Collection.Root>
 

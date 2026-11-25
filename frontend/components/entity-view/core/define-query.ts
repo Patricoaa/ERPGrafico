@@ -101,7 +101,8 @@ export const MAX_SORT_KEYS = 3
 export interface CompiledSortField {
     id: string
     label: string
-    orderBy: string
+    /** DRF key. `null` in client mode: the loaded rows are sorted in the browser. */
+    orderBy: string | null
 }
 
 export interface CompiledQuery {
@@ -145,11 +146,19 @@ function labelOf(entity: QueryEntity, item: { field?: string; label?: string }):
 const toOptions = (options: readonly FilterOption[] | "remote"): MultiSelectOption[] =>
     options === "remote" ? [] : options.map((o) => ({ value: o.value, label: o.label }))
 
+export interface CompileQueryOptions {
+    /**
+     * `server` (default): sort fields need an `orderBy` key and become DRF `ordering`. `client`: the list
+     * loads every row and sorts them in the browser, so any field can sort and nothing is sent.
+     */
+    sorting?: "server" | "client"
+}
+
 /**
  * Compiles `entity.query` (ADR-0158 §3). Labels come from the fields (G-1); params get their
  * defaults; date presets become the shared date-filter options. Pure: memoize per entity.
  */
-export function compileQuery(entity: QueryEntity): CompiledQuery {
+export function compileQuery(entity: QueryEntity, { sorting = "server" }: CompileQueryOptions = {}): CompiledQuery {
     const spec = entity.query ?? {}
     const filters: DropdownFilterDef[] = []
     const dateFilters: DateFilterDef[] = []
@@ -210,7 +219,9 @@ export function compileQuery(entity: QueryEntity): CompiledQuery {
 
     const sortFields = (spec.sort?.fields ?? []).map((id) => {
         const def = entity.fields[id]
-        if (!def?.orderBy) throw new Error(`entity-view: query.sort incluye "${id}", que no declara orderBy`)
+        if (!def) throw new Error(`entity-view: query.sort incluye "${id}", que no existe`)
+        if (sorting === "client") return { id, label: def.label, orderBy: null }
+        if (!def.orderBy) throw new Error(`entity-view: query.sort incluye "${id}", que no declara orderBy`)
         return { id, label: def.label, orderBy: def.orderBy }
     })
 
@@ -261,7 +272,7 @@ export function orderingFor(compiled: CompiledQuery, sort: readonly string[]): s
         const desc = spec.startsWith("-")
         const id = desc ? spec.slice(1) : spec
         const field = compiled.sortFields.find((f) => f.id === id)
-        if (field) keys.push(`${desc ? "-" : ""}${field.orderBy}`)
+        if (field?.orderBy) keys.push(`${desc ? "-" : ""}${field.orderBy}`)
     }
     if (keys.length === 0) return undefined
     if (!keys.some((k) => k.replace(/^-/, "") === "id")) keys.push(keys[0].startsWith("-") ? "-id" : "id")

@@ -44,10 +44,13 @@ export type CollectionPagination =
  * Sorting. `local` (default) sorts the loaded rows by each kind's semantic key. `server` is
  * controlled by the page (e.g. URL + `orderingParam`): rows arrive already sorted, and only fields
  * with an `orderBy` key are sortable, so a paginated list is never reordered page by page.
+ * `query` sorts the loaded rows like `local`, by keys the page controls (`useCollectionQuery` in client
+ * mode, ADR-0158): every key sorts, and a header click reports only the new first key, as in `server`.
  */
 export type CollectionSorting<Id extends string> =
     | { mode: "local" }
     | { mode: "server"; state: SortSpec<Id> | null; onChange: (next: SortSpec<Id> | null) => void }
+    | { mode: "query"; state: readonly SortSpec<Id>[]; onChange: (next: SortSpec<Id> | null) => void; fields: readonly Id[] }
 
 export interface CollectionOptions<Id extends string> {
     pagination?: CollectionPagination
@@ -104,9 +107,10 @@ function toSpec<Id extends string>(state: SortingState): SortSpec<Id> | null {
     return (first.desc ? `-${first.id}` : first.id) as SortSpec<Id>
 }
 
-function toSorting<Id extends string>(spec: SortSpec<Id> | null | undefined): SortingState {
+function toSorting<Id extends string>(spec: SortSpec<Id> | readonly SortSpec<Id>[] | null | undefined): SortingState {
     if (!spec) return []
-    return spec.startsWith("-") ? [{ id: spec.slice(1), desc: true }] : [{ id: spec, desc: false }]
+    const specs: readonly string[] = typeof spec === "string" ? [spec] : spec
+    return specs.map((s) => (s.startsWith("-") ? { id: s.slice(1), desc: true } : { id: s, desc: false }))
 }
 
 const EMPTY_ROWS: never[] = []
@@ -130,6 +134,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     const sortingOption: CollectionSorting<FieldId<F>> = options.sorting ?? (pagination.mode === "server" ? NO_SERVER_SORT : { mode: "local" })
     const serverSorting = sortingOption.mode === "server"
     const sortDisabled = sortingOption === NO_SERVER_SORT
+    const queryFields = sortingOption.mode === "query" ? sortingOption.fields : null
     const rows = (source.rows ?? EMPTY_ROWS) as T[]
 
     const columns = React.useMemo<ColumnDef<T>[]>(
@@ -139,18 +144,21 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
                 return {
                     id,
                     accessorFn: (row: T) => sortValueOf(def, row),
-                    enableSorting: (def.sortable ?? true) && (!serverSorting || (!!def.orderBy && !sortDisabled)),
+                    enableSorting: (def.sortable ?? true) && (!serverSorting || (!!def.orderBy && !sortDisabled)) && (!queryFields || queryFields.includes(id)),
                     sortUndefined: "last",
                 }
             }),
-        [entity, serverSorting, sortDisabled],
+        [entity, serverSorting, sortDisabled, queryFields],
     )
 
     const [localSorting, setLocalSorting] = React.useState<SortingState>(() => toSorting(options.defaultSort))
-    const serverSpec = sortingOption.mode === "server" ? sortingOption.state : null
+    const controlledSpec = sortingOption.mode === "server" || sortingOption.mode === "query" ? sortingOption.state : null
     // Stable identity per spec: a new array each render would invalidate TanStack's row models (and the groups).
-    const serverSortingState = React.useMemo(() => toSorting(serverSpec), [serverSpec])
-    const sorting = serverSorting ? serverSortingState : localSorting
+    // A `query` spec is an array: keyed by its text so a new array with the same keys keeps the state.
+    const controlledKey = controlledSpec === null ? null : typeof controlledSpec === "string" ? controlledSpec : controlledSpec.join(",")
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by text: see above
+    const controlledSortingState = React.useMemo(() => toSorting(controlledSpec), [controlledKey])
+    const sorting = sortingOption.mode === "local" ? localSorting : controlledSortingState
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
     const tree = entity.tree
     // `true` = every branch open (TanStack's "all expanded"); toggling a row switches to a per-row map.
@@ -201,9 +209,11 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
             }
             : {}),
         onSortingChange: (updater) => {
-            const next = typeof updater === "function" ? updater(sorting) : updater
-            if (sortingOption.mode === "server") sortingOption.onChange(toSpec<FieldId<F>>(next))
-            else setLocalSorting(next)
+            // `query`: the header acts on the first key only (secondary keys live in `SortMenu`), as in `server`.
+            const current = sortingOption.mode === "query" ? sorting.slice(0, 1) : sorting
+            const next = typeof updater === "function" ? updater(current) : updater
+            if (sortingOption.mode === "local") setLocalSorting(next)
+            else sortingOption.onChange(toSpec<FieldId<F>>(next))
         },
         manualSorting: serverSorting,
         onRowSelectionChange: setRowSelection,

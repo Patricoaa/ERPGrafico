@@ -24,6 +24,21 @@ export const subscriptionEntity = defineEntity<Subscription>()((f) => ({
         // Grouping dimension only (search "Período"); the column shows the full schedule.
         period: f.text("recurrence_display", { label: "Período" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts the loaded rows.
+    query: {
+        search: { placeholder: "Buscar suscripciones…" },
+        filters: {
+            date: { label: "Fecha", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            status: { field: "status", control: "single", options: [{ value: "ACTIVE", label: "Activo" }, { value: "PAUSED", label: "Pausado" }, { value: "CANCELLED", label: "Cancelado" }] },
+        },
+        sort: { fields: ["nextPaymentDate", "productName", "supplier", "amount", "period", "status"], default: "nextPaymentDate" },
+        groupBy: { fields: ["status", "period", "supplier"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { status: "ACTIVE" } },
+            { id: "paused", label: "Pausadas", filters: { status: "PAUSED" } },
+        ],
+    },
 }))
 
 export const subscriptionViews = subscriptionEntity.views({

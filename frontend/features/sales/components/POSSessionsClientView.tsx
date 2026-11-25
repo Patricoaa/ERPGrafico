@@ -5,8 +5,7 @@ import { useAuth } from "@/contexts/AuthContext"
 
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { posSessionEntity, posSessionViews } from "../entity-view/posSession.entity"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { GatedSessionCloseModal } from "@/features/pos"
@@ -44,21 +43,18 @@ interface POSSessionsClientViewProps {
 }
 
 import { usePOSSessions, useDownloadPOSReportPDF, POS_SESSIONS_QUERY_KEY } from "@/features/pos"
-import { posSessionUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 
-/** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const SESSION_GROUPS: Record<string, FieldId<typeof posSessionEntity.fields>> = { status: "status" }
 
 export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
-    const search = useUnifiedSearch(posSessionUnifiedSearchDef)
-    const { sessions, isLoading, isError, refetch } = usePOSSessions(search.filters)
-    const groupBy = search.groupBy ? SESSION_GROUPS[search.groupBy] ?? null : null
+    const query = useCollectionQuery(posSessionEntity, { sorting: "client" })
+    const { sessions, isLoading, isError, refetch } = usePOSSessions(query.params)
+    const { groupBy } = query
     const { view, onViewChange } = useCollectionViewMode("pos.session")
     const collection = useEntityCollection(
         posSessionEntity,
-        { rows: sessions, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { rows: sessions, isLoading, error: isError, refetch, isFiltered: query.search.isFiltered },
         // Groups span the whole list, not one page.
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 10 }, groupBy, defaultSort: posSessionViews.table.defaultSort },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 10 }, sorting: query.sorting, groupBy },
     )
 
     // La ficha de la sesión (resumen + informe X/Z + relaciones) es la única superficie de la sesión.
@@ -105,16 +101,15 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                 onViewChange={onViewChange}
                 onOpen={(session) => sheet.toggle(session.id, session)}
                 actions={posSessionActions.forCollection(actionsCtx)}
+                query={query}
             >
-                <Collection.Toolbar>
-                    <UnifiedSearchBar config={posSessionUnifiedSearchDef} {...bindUnifiedSearch(search)} />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={posSessionViews.table}
                     card={posSessionViews.card}
                     emptyTitle="Aún no hay sesiones POS"
                     emptyDescription="Las sesiones del punto de venta aparecerán aquí al iniciar sesión."
-                    onResetFilters={search.clearAll}
+                    onResetFilters={query.search.clearAll}
                 />
             </Collection.Root>
 
