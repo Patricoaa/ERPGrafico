@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.177](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.176...v0.3.177) (2026-11-25)
+
+
+### ✨ Features
+
+* **core:** endpoint groups/ de ADR-0158 §7 con piloto en órdenes de venta ([21db1ef](https://github.com/Patricoaa/ERPGrafico/commit/21db1ef9be2a4c71ac84ed16bbb6c7f6718e111a))
+* **entity-view:** agrupación en servidor de ADR-0158 §7 con piloto en órdenes de venta ([3c26478](https://github.com/Patricoaa/ERPGrafico/commit/3c26478e7b8806867c8ecdc094ea4e63ab7d7747))
+
+
+### 📚 Documentation
+
+* **collection-toolbar:** groups/ de la etapa 4 — params por grupo, etiquetas y piloto ([675cbfa](https://github.com/Patricoaa/ERPGrafico/commit/675cbfa89c4022db7d75847aea93b1d941f648bd))
+
 ### [0.3.176](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.175...v0.3.176) (2026-11-25)
 
 
