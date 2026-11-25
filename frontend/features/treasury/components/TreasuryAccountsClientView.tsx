@@ -5,10 +5,9 @@ import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import React, { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, ActionConfirmModal } from '@/components/shared'
+import { ActionConfirmModal } from '@/components/shared'
 import { showApiError } from "@/lib/errors"
-import { Collection, useCollectionViewMode, useEntityCollection, type FieldId } from "@/components/entity-view"
-import { treasuryAccountUnifiedSearchDef } from "../unifiedSearchDef"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
 import { treasuryAccountEntity, treasuryAccountViews } from "../entity-view/treasuryAccount.entity"
 
 import { Tabs, TabsContent } from "@/components/ui/tabs"
@@ -20,7 +19,6 @@ import { FadeIn } from '@/components/shared'
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 /** Search group keys → entity field ids (grouping uses the formatted cell text). */
-const ACCOUNT_GROUPS: Record<string, FieldId<typeof treasuryAccountEntity.fields>> = { account_type: "accountType" }
 
 
 interface TreasuryAccountsClientViewProps {
@@ -30,8 +28,9 @@ interface TreasuryAccountsClientViewProps {
 }
 
 export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProps> = ({ activeTab, externalOpen, createAction }) => {
-    const search = useUnifiedSearch(treasuryAccountUnifiedSearchDef)
-    const { accounts, isLoading, isRefetching, isError, archiveAccount, refetch } = useTreasuryAccounts({ filters: search.filters })
+    const query = useCollectionQuery(treasuryAccountEntity, { sorting: "client" })
+    const { search, groupBy } = query
+    const { accounts, isLoading, isRefetching, isError, archiveAccount, refetch } = useTreasuryAccounts({ filters: query.params })
     const { view, onViewChange } = useCollectionViewMode("treasury.treasuryaccount")
     const [archiveTarget, setArchiveTarget] = useState<TreasuryAccount | null>(null)
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
@@ -101,11 +100,10 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         onArchive: (item) => setArchiveTarget(item),
     }
 
-    const groupBy = search.groupBy ? ACCOUNT_GROUPS[search.groupBy] ?? null : null
     const collection = useEntityCollection(
         treasuryAccountEntity,
         { rows: accounts, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 20 }, groupBy, sorting: query.sorting },
     )
 
     return (
@@ -114,13 +112,12 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
             <TabsContent value="accounts" className="flex-1 min-h-0 flex flex-col">
                 <Collection.Root
                     collection={collection}
+                    query={query}
                     view={view}
                     onViewChange={onViewChange}
                     actions={treasuryAccountActions.forCollection(actionsCtx)}
                 >
-                    <Collection.Toolbar action={activeTab === "accounts" ? createAction : undefined}>
-                        <UnifiedSearchBar config={treasuryAccountUnifiedSearchDef} {...bindUnifiedSearch(search)} placeholder="Buscar cuenta..." />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar action={activeTab === "accounts" ? createAction : undefined} />
                     <Collection.View
                         table={treasuryAccountViews.table}
                         card={treasuryAccountViews.card}

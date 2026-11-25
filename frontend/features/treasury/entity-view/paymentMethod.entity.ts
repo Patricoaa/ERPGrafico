@@ -46,10 +46,32 @@ export const paymentMethodEntity = defineEntity<PaymentMethod>()((f) => ({
         usage: f.tags(usage, { label: "Disponible para", sortable: false }),
         isActive: f.status((m) => (m.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: rows filter and sort in the browser.
+    query: {
+        search: { placeholder: "Buscar método de pago…", scopes: [{ field: "name", param: "name" }] },
+        filters: {
+            method_type: {
+                field: "category",
+                control: "single",
+                options: [
+                    { value: "CASH", label: "Efectivo Directo" },
+                    { value: "CARD_TERMINAL", label: "Tarjeta (terminal de cobro)" },
+                    { value: "TRANSFER", label: "Transferencia Bancaria" },
+                    { value: "DEBIT_CARD", label: "Tarjeta Débito Empresa" },
+                    { value: "CREDIT_CARD", label: "Tarjeta Crédito Empresa" },
+                    { value: "CHECK", label: "Cheque" },
+                ],
+            },
+            usage: { field: "usage", control: "multi", options: [{ value: "sales", label: "Ventas" }, { value: "purchases", label: "Compras" }] },
+            is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] },
+        },
+        sort: { fields: ["name", "category", "treasuryAccount", "isActive"], default: "name" },
+        groupBy: { fields: ["category", "treasuryAccount"] },
+    },
 }))
 
 export const paymentMethodViews = paymentMethodEntity.views({
-    table: { columns: ["name", "category", "treasuryAccount", "isActive", "usage"], defaultSort: "name" },
+    table: { columns: ["name", "category", "treasuryAccount", "isActive", "usage"] },
     card: {
         title: "name",
         subtitle: ["treasuryAccount"],

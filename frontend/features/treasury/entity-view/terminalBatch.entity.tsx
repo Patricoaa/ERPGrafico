@@ -49,6 +49,22 @@ export const terminalBatchEntity = defineEntity<TerminalBatch>()((f) => ({
         commissionTotal: f.money((b) => (b.commission_total ? -Math.abs(toNumber(b.commission_total) ?? 0) : 0), { label: "Comisión" }),
         status: f.status((b) => (b.is_settled ? { status: "settled", label: "Liquidado" } : { status: "pending", label: "Pendiente" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: the server filters by status and date; the scopes match in the browser.
+    query: {
+        search: {
+            placeholder: "Buscar liquidación…",
+            scopes: [
+                { label: "N° Liquidación", param: "batch_number", clientKey: "batch_number" },
+                { label: "Proveedor", param: "provider_name", clientKey: "provider_name" },
+            ],
+        },
+        filters: {
+            date: { field: "salesDate", control: "date", paramFrom: "date_from", paramTo: "date_to" },
+            status: { field: "status", control: "single", options: [{ value: "PENDING", label: "Pendiente" }, { value: "SETTLED", label: "Liquidado" }, { value: "RECONCILED", label: "Conciliado" }, { value: "INVOICED", label: "Facturado" }] },
+        },
+        sort: { fields: ["salesDate", "transactionCount", "netAmount", "commissionTotal", "status"], default: "-salesDate" },
+        groupBy: { fields: ["salesDate", "status"] },
+    },
 }))
 
 export const terminalBatchViews = terminalBatchEntity.views({

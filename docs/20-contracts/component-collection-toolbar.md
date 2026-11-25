@@ -39,7 +39,9 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 > - modo cliente (3d-2): sesiones POS, terminales POS y suscripciones.
 > - oleada 3d-3 (inventario): productos, movimientos, documentos y conteos (servidor); unidades, categorías de UdM, categorías, atributos, bodegas, reglas de precio y reporte de existencias (cliente).
 >
-> El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
+> - oleada 3d-4 (tesorería, primera parte): movimientos de tesorería y bancarios, ventas y sincronizaciones de terminal (servidor); bancos, métodos de pago, cuentas, liquidaciones, proveedores y terminales de cobro (cliente). Faltan tarjetas de crédito (estados y cargos por facturar), líneas de crédito, cheques y préstamos.
+>
+> El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. Igual la actividad de una sesión POS. El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
 
 ---
 
@@ -187,6 +189,10 @@ En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa colu
 **Montaje:** la pantalla pasa el resultado del hook a `<Collection.Root query={query}>`. Con `query`, `Collection.Toolbar` deja de ser la barra antigua y compone `ViewTabs` → fila de comandos (`Search`, `FilterMenu`, `SortMenu`, `GroupMenu`, `DisplayMenu`, `children`, analítica, `ExportMenu`, `action`) → `AppliedFilters`. `ExportMenu` recibe `query.params` salvo que se pase `exportFilters`. El buscador es `UnifiedSearchBar` con `menu={false}` (sin chevrón ni menú propio, solo sugerencias) y `appliedFilters={false}` (la barra dibuja la fila). `useUnifiedSearch` expone `applyMany(values)`, que escribe varios parámetros en una sola actualización y resetea el cursor.
 
 **Placeholder:** `query.search.placeholder` («Buscar guías de despacho…») es también el nombre accesible del buscador. Por defecto: «Buscar…».
+
+**Sin buscador:** `query.search: false` cuando el endpoint no tiene búsqueda de texto (ventas y sincronizaciones de terminal). La barra no muestra un buscador que no haría nada; los filtros siguen igual.
+
+**Presets de fecha:** por defecto `today`, `this_week`, `this_month`, `this_quarter` y `this_year`. `last_7_days` («Últimos 7 días») se pide en `presets`.
 
 **Lo que entrega el hook:** `search` (lo que consume `UnifiedSearchBar`), `sort` / `setSort`, `ordering` (DRF, con desempate por `id`), `sorting` (listo para `useEntityCollection`), `groupBy` / `setGroupBy` (solo campos declarados), `views` / `activeView` / `setView` / `isDirty` / `resetView` y `params` (búsqueda + filtros + `ordering`, sin `group_by`) para la petición.
 

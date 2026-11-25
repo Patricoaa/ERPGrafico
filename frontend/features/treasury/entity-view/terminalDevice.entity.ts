@@ -13,9 +13,15 @@ export const terminalDeviceEntity = defineEntity<PaymentTerminalDevice>()((f) =>
             { label: "Métodos Soportados", domain: "payment_method", sortable: false },
         ),
     },
+    // ADR-0158 §3, client mode: the server searches, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar terminal de cobro…" },
+        sort: { fields: ["name", "providerName", "serialNumber"], default: "name" },
+        groupBy: { fields: ["providerName"] },
+    },
 }))
 
 export const terminalDeviceViews = terminalDeviceEntity.views({
-    table: { columns: ["name", "providerName", "serialNumber", "supportedMethods"], defaultSort: "name" },
+    table: { columns: ["name", "providerName", "serialNumber", "supportedMethods"] },
     card: { title: "name", subtitle: ["providerName", "serialNumber"], meta: ["supportedMethods"] },
 })

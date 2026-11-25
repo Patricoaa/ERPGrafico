@@ -1,4 +1,4 @@
-import { thisMonth, thisQuarter, thisWeek, thisYear, today } from "@/lib/date-presets"
+import { lastSevenDays, thisMonth, thisQuarter, thisWeek, thisYear, today } from "@/lib/date-presets"
 import type {
     DateFilterDef,
     DropdownFilterDef,
@@ -22,7 +22,7 @@ export interface FilterOption {
  */
 type Labeled<Id extends string> = { field: Id; label?: never } | { field?: undefined; label: string }
 
-export type DatePreset = "today" | "this_week" | "this_month" | "this_quarter" | "this_year"
+export type DatePreset = "today" | "last_7_days" | "this_week" | "this_month" | "this_quarter" | "this_year"
 
 export type QueryFilter<Id extends string> = Labeled<Id> &
     (
@@ -86,9 +86,10 @@ export interface QueryView {
 export interface QuerySpec<Id extends string> {
     /**
      * Free-text search goes to the `search` param; `scopes` add field-scoped searches. `placeholder` is
-     * also the box's accessible name ("Buscar guías de despacho…"). Default "Buscar…".
+     * also the box's accessible name ("Buscar guías de despacho…"). Default "Buscar…". `false`: the
+     * endpoint has no text search, so the toolbar shows no search box.
      */
-    search?: { scopes?: readonly SearchScope<Id>[]; placeholder?: string }
+    search?: { scopes?: readonly SearchScope<Id>[]; placeholder?: string } | false
     filters?: Readonly<Record<string, QueryFilter<Id>>>
     /** Sortable fields; each needs an `orderBy` server key. Up to 3 keys at once. */
     sort?: { fields: readonly Id[]; default?: SortSpec<Id> }
@@ -113,6 +114,8 @@ export interface CompiledQuery {
     search: UnifiedSearchConfig
     /** Search box placeholder and accessible name. */
     placeholder: string
+    /** Whether the toolbar shows a search box (`query.search: false` hides it). */
+    searchBox: boolean
     sortFields: readonly CompiledSortField[]
     defaultSort: readonly string[]
     groupFields: readonly { id: string; label: string }[]
@@ -124,6 +127,7 @@ export interface CompiledQuery {
 
 const PRESET_DEFS: Record<DatePreset, { label: string; getValue: () => { from: string; to: string } }> = {
     today: { label: "Hoy", getValue: today },
+    last_7_days: { label: "Últimos 7 días", getValue: lastSevenDays },
     this_week: { label: "Esta semana", getValue: thisWeek },
     this_month: { label: "Este mes", getValue: thisMonth },
     this_quarter: { label: "Este trimestre", getValue: thisQuarter },
@@ -210,7 +214,8 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
         }
     }
 
-    const searchFields: TextFieldDef[] = (spec.search?.scopes ?? []).map((scope) => ({
+    const searchSpec = spec.search === false ? undefined : spec.search
+    const searchFields: TextFieldDef[] = (searchSpec?.scopes ?? []).map((scope) => ({
         key: scope.param,
         label: labelOf(entity, scope),
         serverParam: scope.param,
@@ -231,7 +236,8 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
 
     return {
         search: { searchFields, filters, dateFilters, groupBy },
-        placeholder: spec.search?.placeholder ?? "Buscar…",
+        placeholder: searchSpec?.placeholder ?? "Buscar…",
+        searchBox: spec.search !== false,
         sortFields,
         defaultSort: spec.sort?.default ? [spec.sort.default] : [],
         groupFields,
@@ -257,6 +263,7 @@ export function fromUnifiedSearchDef(def: UnifiedSearchConfig): CompiledQuery {
     return {
         search: def,
         placeholder: "Buscar…",
+        searchBox: true,
         sortFields: [],
         defaultSort: [],
         groupFields: (def.groupBy ?? []).map((g) => ({ id: g.field, label: g.label })),

@@ -1,6 +1,6 @@
 import { defineEntity, formatDate, toNumber, type StatusValue } from "@/components/entity-view"
 import type { BadgeIntent } from "@/lib/badge-resolvers"
-import { fiscalMatchRefValue, type FiscalMatchRef } from "@/lib/fiscal-match"
+import { FISCAL_MATCH_STATUS_OPTIONS, fiscalMatchRefValue, type FiscalMatchRef } from "@/lib/fiscal-match"
 import type { TerminalSale, TerminalSalePaymentType, TerminalSaleStatus } from "../types"
 
 export const TERMINAL_SALE_PAYMENT_TYPE_LABELS: Record<TerminalSalePaymentType, string> = {
@@ -73,6 +73,42 @@ export const terminalSaleEntity = defineEntity<TerminalSale>()((f) => ({
         settlementDate: f.text((s) => terminalSaleSettlement(s.settlement_date), { label: "Abono" }),
         status: f.status((s) => terminalSaleStatus(s.status), { label: "Estado" }),
         matchStatus: f.status((s) => terminalSaleMatchStatus(s.fiscal_match), { label: "Cuadre" }),
+    },
+    // ADR-0158 §3. No `sort`: the sales endpoint has no server ordering. `provider` options come from the screen.
+    query: {
+        // The endpoint has no text search.
+        search: false,
+        filters: {
+            date: { field: "transactionAt", control: "date", paramFrom: "date_from", paramTo: "date_to", presets: ["today", "last_7_days", "this_week", "this_month", "this_quarter", "this_year"] },
+            provider: { field: "provider", control: "single", options: "remote" },
+            payment_type: {
+                field: "paymentType",
+                control: "single",
+                options: [
+                    { value: "CASH", label: "Efectivo" },
+                    { value: "DEBIT", label: "Débito" },
+                    { value: "CREDIT", label: "Crédito" },
+                    { value: "PREPAID", label: "Prepago" },
+                    { value: "UNKNOWN", label: "Sin tipo" },
+                ],
+            },
+            document_type: {
+                field: "documentType",
+                control: "single",
+                options: [
+                    { value: "33", label: "33 · Factura Electrónica" },
+                    { value: "34", label: "34 · Factura Exenta" },
+                    { value: "39", label: "39 · Boleta Electrónica" },
+                    { value: "41", label: "41 · Boleta Exenta" },
+                    { value: "48", label: "48 · Comprobante de Pago Electrónico" },
+                    { value: "56", label: "56 · Nota de Débito" },
+                    { value: "61", label: "61 · Nota de Crédito" },
+                ],
+            },
+            status: { field: "status", control: "single", options: [{ value: "COMPLETED", label: "Completada" }, { value: "REVERSED", label: "Anulada" }, { value: "OTHER", label: "Otro" }] },
+            // Fiscal match group status of the sale (ADR-0141).
+            fiscal_match_status: { field: "matchStatus", control: "single", options: FISCAL_MATCH_STATUS_OPTIONS },
+        },
     },
 }))
 

@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react"
+import { render as rtlRender, screen } from "@testing-library/react"
+import { NuqsTestingAdapter } from "nuqs/adapters/testing"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import React from "react"
 import type { TerminalSyncRun } from "../../types"
@@ -36,20 +37,6 @@ vi.mock("@/components/auth", () => ({
 vi.mock("../TerminalSyncRunDrawer", () => ({ TerminalSyncRunDrawer: () => null }))
 vi.mock("../TerminalSyncModal", () => ({ TerminalSyncModal: () => null }))
 vi.mock("../../hooks/useTerminalProviders", () => ({ useTerminalProviders: () => ({ providers: [] }) }))
-vi.mock("@/components/shared", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@/components/shared")>()
-    return {
-        ...actual,
-        UnifiedSearchBar: () => null,
-        useUnifiedSearch: () => ({
-            filters: m.filters,
-            isFiltered: Object.keys(m.filters).length > 0,
-            applyFilter: vi.fn(),
-            clearAll: vi.fn(),
-        }),
-        bindUnifiedSearch: () => ({}),
-    }
-})
 vi.mock("../../hooks/useTerminalSync", () => ({
     useTerminalSyncRuns: (filters: unknown) => {
         m.useTerminalSyncRuns(filters)
@@ -58,6 +45,9 @@ vi.mock("../../hooks/useTerminalSync", () => ({
 }))
 
 import { TerminalSyncRunsClientView } from "../TerminalSyncRunsClientView"
+
+/** The URL query string is `m.filters` (ADR-0158: the view reads its filters through nuqs). */
+const render = (ui: React.ReactElement) => rtlRender(<NuqsTestingAdapter searchParams={new URLSearchParams(m.filters)}>{ui}</NuqsTestingAdapter>)
 
 const row: TerminalSyncRun = {
     id: 1, provider: 2, provider_name: "TUU Imprenta", trigger: "SCHEDULED", status: "PARTIAL",

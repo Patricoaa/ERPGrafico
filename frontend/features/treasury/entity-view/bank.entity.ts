@@ -16,10 +16,16 @@ export const bankEntity = defineEntity<BankRow>()((f) => ({
         // No summary (archived banks are not fetched, or still loading) reads "—", never a fake 0.
         accounts: f.number((b) => b.summary?.total_accounts ?? null, { label: "Cuentas" }),
     },
+    // ADR-0158 §3, client mode: rows filter (`search.filterFn`) and sort in the browser.
+    query: {
+        search: { placeholder: "Buscar banco…", scopes: [{ label: "Nombre / Código", param: "name", clientKey: ["name", "code"] }] },
+        filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
+        sort: { fields: ["name", "code", "isActive", "accounts"], default: "name" },
+    },
 }))
 
 export const bankViews = bankEntity.views({
-    table: { columns: ["name", "code", "isActive"], defaultSort: "name" },
+    table: { columns: ["name", "code", "isActive"] },
     card: {
         title: "name",
         subtitle: ["code"],

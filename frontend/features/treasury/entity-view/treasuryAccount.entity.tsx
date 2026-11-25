@@ -97,6 +97,27 @@ export const treasuryAccountEntity = defineEntity<TreasuryAccount>()((f) => ({
         balance: f.money("current_balance", { label: "Saldo", currency: (a) => a.currency }),
         isActive: f.status((a) => (a.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Archivado" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts.
+    query: {
+        search: { placeholder: "Buscar cuenta…", scopes: [{ field: "name", param: "name" }] },
+        filters: {
+            account_type: {
+                field: "accountType",
+                control: "single",
+                options: [
+                    { value: "CASH", label: "Caja Física (Efectivo)" },
+                    { value: "CHECKING", label: "Cuenta Bancaria" },
+                    { value: "CREDIT_CARD", label: "T. Crédito Empresa" },
+                    { value: "LOAN", label: "Préstamo Bancario" },
+                    { value: "BRIDGE", label: "Puente" },
+                    { value: "CHECK_PORTFOLIO", label: "Cheques en Cartera" },
+                ],
+            },
+            is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] },
+        },
+        sort: { fields: ["name", "accountType", "isActive", "linkedAccount", "balance"] },
+        groupBy: { fields: ["accountType"] },
+    },
 }))
 
 export const treasuryAccountViews = treasuryAccountEntity.views({

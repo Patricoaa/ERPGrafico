@@ -10,7 +10,33 @@ import {
     toActivityRow,
 } from "../../entity-view/posSessionDetail.entity"
 import { usePOSSessionActivity } from "../../hooks/usePOSSessionDetail"
-import { posSessionActivitySearchDef } from "../../unifiedSearchDef"
+import type { UnifiedSearchConfig } from "@/types/unified-search"
+
+/**
+ * Activity of a POS session, filtered in the browser over the loaded events (an embedded list: no command
+ * bar, ADR-0158 §2). `category` and `actor` are row fields; the actors come from the events (`filterOptions.actor`).
+ */
+const posSessionActivitySearchDef: UnifiedSearchConfig = {
+    searchFields: [
+        { key: "description", label: "Descripción", serverParam: "search", clientKey: ["description", "reference_display"] },
+    ],
+    filters: [
+        {
+            type: "multi",
+            key: "category",
+            label: "Tipo de evento",
+            serverParam: "category",
+            options: [
+                { label: "Caja", value: "caja" },
+                { label: "Venta", value: "venta" },
+                { label: "Acceso", value: "acceso" },
+                { label: "Cierre", value: "cierre" },
+                { label: "Sistema", value: "sistema" },
+            ],
+        },
+        { type: "multi", key: "actor", label: "Responsable", serverParam: "actor", options: [], dynamic: true },
+    ],
+}
 
 interface ActivityTabProps {
     sessionId: number

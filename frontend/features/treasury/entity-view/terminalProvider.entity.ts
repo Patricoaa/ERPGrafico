@@ -11,10 +11,15 @@ export const terminalProviderEntity = defineEntity<PaymentTerminalProvider>()((f
         receivableAccount: f.text("receivable_account_name", { label: "Cuenta Recaudación" }),
         isActive: f.status((p) => (p.is_active ? { status: "active", label: "Activo" } : { status: "inactive", label: "Inactivo" }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: rows filter (`search.filterFn`) and sort in the browser.
+    query: {
+        search: { placeholder: "Buscar proveedor…", scopes: [{ field: "name", param: "name", clientKey: "name" }] },
+        sort: { fields: ["name", "supplierName", "receivableAccount", "isActive"], default: "name" },
+    },
 }))
 
 export const terminalProviderViews = terminalProviderEntity.views({
-    table: { columns: ["name", "supplierName", "receivableAccount", "isActive"], defaultSort: "name" },
+    table: { columns: ["name", "supplierName", "receivableAccount", "isActive"] },
     card: {
         title: "name",
         subtitle: ["supplierName"],
