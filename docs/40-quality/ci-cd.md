@@ -17,7 +17,7 @@ last_review: 2026-11-24
 [push/PR] → Frontend · Backend · Security Scan   (jobs en paralelo)
 ```
 
-### Frontend job (Node 24)
+### Frontend job (Node 26)
 
 ```yaml
 - npm ci --legacy-peer-deps
