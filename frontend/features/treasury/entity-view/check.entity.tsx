@@ -50,6 +50,32 @@ export const checkEntity = defineEntity<Check>()((f) => ({
         // Not shown in table/card — only a group-by target (a view not scoped to one direction can mix both).
         direction: f.text("direction_display", { label: "Dirección" }),
     },
+    // ADR-0158 §3, client mode: the server filters, the browser sorts. `bank` options come from the screen.
+    query: {
+        search: { placeholder: "Buscar por N° cheque, girador o monto…" },
+        filters: {
+            bank: { label: "Banco", control: "single", options: "remote" },
+            status: {
+                field: "status",
+                control: "single",
+                options: [
+                    { value: "IN_PORTFOLIO", label: "En Cartera" },
+                    { value: "DEPOSITED", label: "Depositado" },
+                    { value: "CLEARED", label: "Cobrado" },
+                    { value: "BOUNCED", label: "Protestado" },
+                    { value: "VOIDED", label: "Anulado" },
+                ],
+            },
+            due_date: { field: "dueDate", control: "date", paramFrom: "due_date_after", paramTo: "due_date_before" },
+        },
+        sort: { fields: ["dueDate", "folio", "checkNumber", "amount", "status", "direction"], default: "dueDate" },
+        groupBy: { fields: ["status", "direction"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "portfolio", label: "En cartera", filters: { status: "IN_PORTFOLIO" } },
+            { id: "deposited", label: "Depositados", filters: { status: "DEPOSITED" } },
+        ],
+    },
 }))
 
 export const checkViews = checkEntity.views({

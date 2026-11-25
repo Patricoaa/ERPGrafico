@@ -39,7 +39,8 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 > - modo cliente (3d-2): sesiones POS, terminales POS y suscripciones.
 > - oleada 3d-3 (inventario): productos, movimientos, documentos y conteos (servidor); unidades, categorías de UdM, categorías, atributos, bodegas, reglas de precio y reporte de existencias (cliente).
 >
-> - oleada 3d-4 (tesorería, primera parte): movimientos de tesorería y bancarios, ventas y sincronizaciones de terminal (servidor); bancos, métodos de pago, cuentas, liquidaciones, proveedores y terminales de cobro (cliente). Faltan tarjetas de crédito (estados y cargos por facturar), líneas de crédito, cheques y préstamos.
+> - oleada 3d-4 (tesorería, primera parte): movimientos de tesorería y bancarios, ventas y sincronizaciones de terminal (servidor); bancos, métodos de pago, cuentas, liquidaciones, proveedores y terminales de cobro (cliente).
+> - oleada 3d-5 (tesorería, segunda parte): estados de cuenta y cargos no facturados de tarjetas, líneas de crédito, cheques y préstamos (cliente). Préstamos y cargos no facturados cargan en su primera vista (activos; cargos del mes).
 >
 > El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. Igual la actividad de una sesión POS. El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
 

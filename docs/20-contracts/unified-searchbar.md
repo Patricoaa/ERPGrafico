@@ -490,7 +490,7 @@ Ver `features/*/unifiedSearchDef.ts` para la lista completa. Cada feature tiene 
 | Billing | `features/billing/unifiedSearchDef.ts` |
 | Purchasing | migrado a `entity.query` |
 | Inventory | migrado a `entity.query` (el detalle de conteo usa una definición local) |
-| Treasury | migrado a `entity.query`, salvo tarjetas, líneas de crédito, cheques y préstamos (definiciones locales en cada vista); la actividad de sesión POS usa una definición local |
+| Treasury | migrado a `entity.query` (la actividad de sesión POS usa una definición local) |
 | Accounting | `features/accounting/unifiedSearchDef.ts` |
 | HR | `features/hr/unifiedSearchDef.ts` |
 | Production | `features/production/unifiedSearchDef.ts` |

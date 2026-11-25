@@ -13,6 +13,12 @@ export const creditLineEntity = defineEntity<CreditLine>()((f) => ({
         availableAmount: f.money("available_amount", { label: "Disponible" }),
         utilizationRate: f.number((c) => toNumber(c.utilization_rate), { label: "Uso %", decimals: 1, suffix: "%" }),
     },
+    // ADR-0158 §3, client mode: rows filter (`search.filterFn`) and sort in the browser.
+    query: {
+        search: { placeholder: "Buscar por código, cuenta o límite…" },
+        sort: { fields: ["code", "accountName", "status", "creditLimit", "usedAmount", "availableAmount", "utilizationRate"] },
+        groupBy: { fields: ["status"] },
+    },
 }))
 
 export const creditLineViews = creditLineEntity.views({

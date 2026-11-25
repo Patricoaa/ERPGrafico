@@ -19,6 +19,21 @@ export const bankLoanEntity = defineEntity<BankLoan>()((f) => ({
         nextDueDate: f.date("next_due_date", { label: "Próx. Vto." }),
         status: f.status((l) => ({ status: l.status, label: l.status_display }), { label: "Estado" }),
     },
+    // ADR-0158 §3, client mode: the server filters by lender; status and text filter in the browser.
+    query: {
+        search: { placeholder: "Buscar por ID, N° préstamo o banco…" },
+        filters: {
+            lender: { label: "Banco", control: "single", options: "remote" },
+            loan_status: { field: "status", control: "single", options: [{ value: "active", label: "Activos" }, { value: "completed", label: "Finalizados" }] },
+        },
+        sort: { fields: ["nextDueDate", "displayId", "lenderName", "principal", "outstandingBalance", "termMonths", "status"] },
+        groupBy: { fields: ["status"] },
+        // The first view is applied on load: without a status filter the list shows active loans.
+        views: [
+            { id: "active", label: "Activos", filters: { loan_status: "active" } },
+            { id: "completed", label: "Finalizados", filters: { loan_status: "completed" } },
+        ],
+    },
 }))
 
 export const bankLoanViews = bankLoanEntity.views({
