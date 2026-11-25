@@ -10,42 +10,10 @@ import { useProfitDistributions, useOnOpen } from "../hooks"
 import { CreateDistributionWizard } from "./CreateDistributionWizard"
 import { MassPaymentWizard } from "./MassPaymentWizard"
 import { ProfitDistributionActionModal, type ProfitDistributionActionRequest } from "./ProfitDistributionActionModal"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { profitDistributionEntity, profitDistributionViews } from "../entity-view/profitDistribution.entity"
-import { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-
-const distributionSearchConfig: UnifiedSearchConfig = {
-    searchFields: [
-        {
-            key: 'search',
-            label: 'Resolución',
-            serverParam: 'search',
-            clientKey: ['display_id', 'fiscal_year', 'acta_number', 'notes'],
-        },
-    ],
-    filters: [
-        {
-            type: 'toggle',
-            key: 'status_draft',
-            label: 'Borradores',
-            serverParam: 'status_draft',
-        },
-        {
-            type: 'toggle',
-            key: 'status_approved',
-            label: 'Aprobadas',
-            serverParam: 'status_approved',
-        },
-        {
-            type: 'toggle',
-            key: 'status_executed',
-            label: 'Ejecutadas',
-            serverParam: 'status_executed',
-        },
-    ],
-}
 
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
@@ -66,7 +34,9 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
             router.replace(query ? `?${query}` : pathname, { scroll: false })
         }
     }, [searchParams, router, pathname])
-    const search = useUnifiedSearch(distributionSearchConfig)
+    const query = useCollectionQuery(profitDistributionEntity, { sorting: "client" })
+    const { search } = query
+    const { filterFn } = search
     const { distributions, isLoading } = useProfitDistributions()
     const [flow, setFlow] = useState({
         isFlowOpen: false,
@@ -95,19 +65,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
         onPayDividends: (dist) => setFlow(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true })),
     }
 
-    const filteredDistributions = useMemo(() => {
-        let result = search.filterFn(distributions)
-        if (search.filters.status_draft) {
-            result = result.filter(d => d.status === 'DRAFT')
-        }
-        if (search.filters.status_approved) {
-            result = result.filter(d => d.status === 'APPROVED')
-        }
-        if (search.filters.status_executed) {
-            result = result.filter(d => d.status === 'EXECUTED')
-        }
-        return result
-    }, [distributions, search])
+    // Texto libre sobre todas las columnas y estado por clave de la fila (varios a la vez).
+    const filteredDistributions = useMemo(() => filterFn(distributions), [filterFn, distributions])
 
     const collection = useEntityCollection(
         profitDistributionEntity,
@@ -120,17 +79,12 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
             <div className="flex-1 min-h-0">
                 <Collection.Root
                     collection={collection}
+                    query={query}
                     label="Distribuciones de utilidades"
                     actions={profitDistributionActions.forCollection(actionsCtx)}
                     onOpen={(dist) => openEntity("contacts.profitdistributionresolution", dist.id, dist)}
                 >
-                    <Collection.Toolbar action={createAction}>
-                        <UnifiedSearchBar
-                            config={distributionSearchConfig}
-                            {...bindUnifiedSearch(search)}
-                            placeholder="Buscar por año, folio de resolución o acta..."
-                        />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar action={createAction} />
                     <Collection.View
                         table={profitDistributionViews.table}
                         emptyTitle="Sin distribuciones"
