@@ -52,3 +52,6 @@ scratch_rewrite.ts
 .gstack/
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# Generado por `next dev` (Next >= 16.4, agentRules). El AGENTS.md del proyecto es el de la raíz.
+frontend/AGENTS.md
