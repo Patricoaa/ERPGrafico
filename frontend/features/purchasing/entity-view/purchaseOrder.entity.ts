@@ -61,11 +61,12 @@ export const purchaseOrderEntity = defineEntity<PurchaseOrderAPI>()((f) => ({
         sort: { fields: ["date", "folio", "supplier", "expected", "total"], default: "-date" },
         groupBy: { fields: ["date", "hub", "receiving"], aggregate: { total: "sum" } },
         views: [
-            { id: "all", label: "Todas" },
-            { id: "to-receive", label: "Por recibir", filters: { origin_status: "ACTIVE", receiving_status: "PENDING" } },
-            { id: "to-invoice", label: "Por facturar", filters: { origin_status: "ACTIVE", billing_status: "PENDING" } },
+            // `count: true`: the tab shows its total. «Por pagar» has none: payment is evaluated in Python.
+            { id: "all", label: "Todas", count: true },
+            { id: "to-receive", label: "Por recibir", filters: { origin_status: "ACTIVE", receiving_status: "PENDING" }, count: true },
+            { id: "to-invoice", label: "Por facturar", filters: { origin_status: "ACTIVE", billing_status: "PENDING" }, count: true },
             { id: "to-pay", label: "Por pagar", filters: { origin_status: "ACTIVE", treasury_status: "UNPAID" } },
-            { id: "drafts", label: "Borradores", filters: { origin_status: "DRAFT" } },
+            { id: "drafts", label: "Borradores", filters: { origin_status: "DRAFT" }, count: true },
         ],
     },
 }))

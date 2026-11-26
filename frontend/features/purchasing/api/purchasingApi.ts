@@ -1,3 +1,4 @@
+import { facetRequestParams, toFacetCounts, type FacetCounts, type FacetViews } from '@/lib/facets'
 import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import api from '@/lib/api'
 import type {
@@ -148,6 +149,12 @@ export const purchasingApi = {
     },
 
     /** Groups of the filtered order list (ADR-0158 §7): count, total and the params of each group's rows. */
+    /** View totals of the purchase orders (ADR-0158 §8). */
+    getOrderFacets: async (filters: OrderFilters, fields: readonly string[], views: FacetViews): Promise<FacetCounts> => {
+        const { data } = await api.get<unknown>('/purchasing/orders/facets/', { params: facetRequestParams(orderListParams(filters), fields, views) })
+        return toFacetCounts(data)
+    },
+
     getOrderGroups: async (filters: OrderFilters, groupBy: string): Promise<ServerGroup[]> => {
         const params = orderListParams(filters)
         params.append('group_by', groupBy)
@@ -268,7 +275,6 @@ export const purchasingApi = {
         return res.data.results
     },
 
-    /** Receipts grouped on the server (ADR-0158 §7): every group of the filtered list. */
     /** Receipts + returns in one server-paginated list (each row carries `fulfillment_type`). */
     getFulfillmentPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {
         const { data } = await api.get<unknown>('/purchasing/fulfillment/', { params: listParams(filters, FULFILLMENT_FILTERS) })
@@ -283,6 +289,13 @@ export const purchasingApi = {
         return toServerGroups(data)
     },
 
+    /** Status option counts and view totals of the receipts (ADR-0158 §8). */
+    getReceiptFacets: async (filters: Record<string, unknown>, fields: readonly string[], views: FacetViews): Promise<FacetCounts> => {
+        const res = await api.get<unknown>('/purchasing/receipts/facets/', { params: facetRequestParams(listParams(filters, RECEIPT_FILTERS), fields, views) })
+        return toFacetCounts(res.data)
+    },
+
+    /** Receipts grouped on the server (ADR-0158 §7): every group of the filtered list. */
     getReceiptGroups: async (filters: Record<string, unknown>, groupBy: string): Promise<ServerGroup[]> => {
         const params = listParams(filters, RECEIPT_FILTERS)
         params.append('group_by', groupBy)
@@ -321,6 +334,12 @@ export const purchasingApi = {
      * `filters` match `PurchaseReturnFilter` (status, date_after/before, supplier_name, purchase_order_number, warehouse_id).
      */
     /** Purchase returns grouped on the server (ADR-0158 §7): every group of the filtered list. */
+    /** Status option counts and view totals of the purchase returns (ADR-0158 §8). */
+    getReturnFacets: async (filters: Record<string, unknown>, fields: readonly string[], views: FacetViews): Promise<FacetCounts> => {
+        const res = await api.get<unknown>('/purchasing/returns/facets/', { params: facetRequestParams(listParams(filters, RETURN_FILTERS), fields, views) })
+        return toFacetCounts(res.data)
+    },
+
     getReturnGroups: async (filters: Record<string, unknown>, groupBy: string): Promise<ServerGroup[]> => {
         const params = listParams(filters, RETURN_FILTERS)
         params.append('group_by', groupBy)

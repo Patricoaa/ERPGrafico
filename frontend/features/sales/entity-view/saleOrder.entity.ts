@@ -33,12 +33,13 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
                 { label: "Producto", param: "product_name" },
             ],
         },
+        // `counts: true`: each option shows its count from `facets/` (payment is evaluated in Python: no counts).
         filters: {
             date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
-            origin_status: { label: "Origen", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "ACTIVE", label: "Completado" }, { value: "CANCELLED", label: "Anulado" }] },
-            delivery_status: { label: "Despacho", control: "multi", options: [{ value: "PENDING", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "DELIVERED", label: "Entregado" }] },
-            production_status: { label: "Producción", control: "multi", options: [{ value: "none", label: "Sin OT" }, { value: "in_progress", label: "En proceso" }, { value: "finished", label: "Terminada" }] },
-            billing_status: { label: "Facturación", control: "multi", options: [{ value: "INVOICED", label: "Facturado" }, { value: "PENDING", label: "No facturado" }] },
+            origin_status: { label: "Origen", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "ACTIVE", label: "Completado" }, { value: "CANCELLED", label: "Anulado" }], counts: true },
+            delivery_status: { label: "Despacho", control: "multi", options: [{ value: "PENDING", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "DELIVERED", label: "Entregado" }], counts: true },
+            production_status: { label: "Producción", control: "multi", options: [{ value: "none", label: "Sin OT" }, { value: "in_progress", label: "En proceso" }, { value: "finished", label: "Terminada" }], counts: true },
+            billing_status: { label: "Facturación", control: "multi", options: [{ value: "INVOICED", label: "Facturado" }, { value: "PENDING", label: "No facturado" }], counts: true },
             payment_status: { label: "Pago", control: "multi", options: [{ value: "UNPAID", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "PAID", label: "Pagado" }] },
             total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
         },
@@ -46,11 +47,12 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
         // Grouped on the server (`groups/`): every field declares its `groupKey`; the subtotal is the total.
         groupBy: { fields: ["date", "customer", "hub", "channel"], aggregate: { total: "sum" } },
         views: [
-            { id: "all", label: "Todas" },
-            { id: "to-deliver", label: "Por despachar", filters: { origin_status: "ACTIVE", delivery_status: ["PENDING", "PARTIAL"] } },
-            { id: "to-invoice", label: "Por facturar", filters: { origin_status: "ACTIVE", billing_status: "PENDING" } },
+            // `count: true`: the tab shows its total. «Por cobrar» has none: payment is evaluated in Python.
+            { id: "all", label: "Todas", count: true },
+            { id: "to-deliver", label: "Por despachar", filters: { origin_status: "ACTIVE", delivery_status: ["PENDING", "PARTIAL"] }, count: true },
+            { id: "to-invoice", label: "Por facturar", filters: { origin_status: "ACTIVE", billing_status: "PENDING" }, count: true },
             { id: "to-collect", label: "Por cobrar", filters: { origin_status: "ACTIVE", payment_status: ["UNPAID", "PARTIAL"] } },
-            { id: "drafts", label: "Borradores", filters: { origin_status: "DRAFT" } },
+            { id: "drafts", label: "Borradores", filters: { origin_status: "DRAFT" }, count: true },
         ],
     },
 }))

@@ -5,6 +5,7 @@ import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { saleReturnEntity, saleReturnViews } from "../entity-view/saleReturn.entity"
 import { useSaleReturns } from "../hooks/useSaleDeliveries"
 import { useSaleReturnGroups } from "../hooks/useSaleLogisticsGroups"
+import { useSaleReturnFacets } from "../hooks/useSaleLogisticsFacets"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
@@ -22,6 +23,8 @@ export function SalesReturnsView() {
 
     // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
     const grouped = useSaleReturnGroups({ groupKey, params })
+    // Status option counts and view totals (`facets/`, ADR-0158 §8).
+    const facets = useSaleReturnFacets({ fields: query.facetFields, views: query.facetViews, params })
     const list = useSaleReturns({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
@@ -50,7 +53,7 @@ export function SalesReturnsView() {
                 onOpen={(ret) => sheet.toggle(ret.id, ret)}
                 view={view}
                 onViewChange={onViewChange}
-                query={query}
+                query={{ ...query, facets }}
             >
                 <Collection.Toolbar />
                 <Collection.View

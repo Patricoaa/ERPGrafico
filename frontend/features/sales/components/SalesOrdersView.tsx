@@ -15,7 +15,7 @@ import {
 } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
-import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSaleNoteGroups, useSaleOrderGroups, useSalesNotes, useSalesOrders } from "@/features/sales"
+import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSaleNoteGroups, useSaleOrderFacets, useSaleOrderGroups, useSalesNotes, useSalesOrders } from "@/features/sales"
 import { AlertTriangle } from "lucide-react"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { saleOrderEntity, saleOrderViews } from "../entity-view/saleOrder.entity"
@@ -91,6 +91,8 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
 
     // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    // Filter option counts and view totals (`facets/`, ADR-0158 §8).
+    const facets = useSaleOrderFacets({ fields: query.facetFields, views: query.facetViews, params })
     const grouped = useSaleOrderGroups({ groupKey, params })
     const list = useSalesOrders({
         filters: {
@@ -141,7 +143,7 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
                 view={view}
                 onViewChange={onViewChange}
                 analytics={analyticsUi}
-                query={query}
+                query={{ ...query, facets }}
             >
                 <Collection.Toolbar />
                 <Collection.View
