@@ -4,14 +4,12 @@ import type { FacetCounts, FacetViews } from "@/lib/facets"
 import * as React from "react"
 import { parseAsString, useQueryState } from "nuqs"
 import { useUnifiedSearch } from "@/components/shared"
-import type { MultiSelectOption, UnifiedSearchConfig, UseUnifiedSearchReturn } from "@/types/unified-search"
+import type { MultiSelectOption, UseUnifiedSearchReturn } from "@/types/unified-search"
 import type { FieldId, SortSpec } from "../core/define-entity"
 import type { CollectionSorting } from "../core/use-entity-collection"
-import { MAX_SORT_KEYS, compileQuery, fromUnifiedSearchDef, orderingFor, type CompiledQuery, type QueryEntity, type QueryView } from "../core/define-query"
+import { MAX_SORT_KEYS, compileQuery, orderingFor, type CompiledQuery, type QueryEntity, type QueryView } from "../core/define-query"
 
 export interface UseCollectionQueryOptions {
-    /** Screen not yet on `entity.query`: drive the same state from its `unifiedSearchDef` (adapter, ADR-0158 stage 3). */
-    searchDef?: UnifiedSearchConfig
     /** Runtime options for `"remote"` / `dynamic` filters, by filter id. */
     filterOptions?: Record<string, MultiSelectOption[]>
     /**
@@ -19,6 +17,12 @@ export interface UseCollectionQueryOptions {
      * (still in `?ordering=`) sort them in the browser and `params` carries no `ordering`.
      */
     sorting?: "server" | "client"
+    /**
+     * Prefix of every URL key of this collection (`ledger_` → `?ledger_search=`, `?ledger_ordering=`,
+     * `?ledger_v=`): a list embedded in a drawer or a tab never collides with the page's list.
+     * `params` keep their server names.
+     */
+    urlPrefix?: string
 }
 
 export interface CollectionQuery<Id extends string> {
@@ -87,14 +91,14 @@ function sameParams(a: Record<string, string>, b: Record<string, string>): boole
  */
 export function useCollectionQuery<F extends QueryEntity["fields"]>(
     entity: QueryEntity & { fields: F },
-    { searchDef, filterOptions, sorting: sortingMode = "server" }: UseCollectionQueryOptions = {},
+    { filterOptions, sorting: sortingMode = "server", urlPrefix = "" }: UseCollectionQueryOptions = {},
 ): CollectionQuery<FieldId<F>> {
     type Id = FieldId<F>
-    const compiled = React.useMemo(() => (searchDef ? fromUnifiedSearchDef(searchDef) : compileQuery(entity, { sorting: sortingMode })), [entity, searchDef, sortingMode])
-    const search = useUnifiedSearch(compiled.search, filterOptions)
-    const [rawOrdering, setRawOrdering] = useQueryState("ordering", parseAsString)
-    const [viewId, setViewId] = useQueryState("v", parseAsString)
-    const [, setCursor] = useQueryState("cursor", parseAsString)
+    const compiled = React.useMemo(() => compileQuery(entity, { sorting: sortingMode }), [entity, sortingMode])
+    const search = useUnifiedSearch(compiled.search, filterOptions, { urlPrefix })
+    const [rawOrdering, setRawOrdering] = useQueryState(`${urlPrefix}ordering`, parseAsString)
+    const [viewId, setViewId] = useQueryState(`${urlPrefix}v`, parseAsString)
+    const [, setCursor] = useQueryState(`${urlPrefix}cursor`, parseAsString)
 
     const sortIds = React.useMemo(() => new Set(compiled.sortFields.map((f) => f.id)), [compiled])
     const sort = React.useMemo<SortSpec<Id>[]>(() => {

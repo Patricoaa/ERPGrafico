@@ -254,33 +254,6 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
 }
 
 /**
- * Adapter for screens that still declare a `unifiedSearchDef.ts` (ADR-0158 migration, stage 3): the
- * same compiled shape, with no sorting, views or aggregates. A screen uses this or `entity.query`, never both.
- */
-export function fromUnifiedSearchDef(def: UnifiedSearchConfig): CompiledQuery {
-    const filterParams: Record<string, string[]> = {}
-    for (const f of def.filters ?? []) {
-        if (f.type === "range") filterParams[f.key] = [f.serverParamFrom, f.serverParamTo]
-        else if (f.serverParam) filterParams[f.key] = [f.serverParam]
-    }
-    for (const d of def.dateFilters ?? []) {
-        filterParams[d.key] = [...new Set(d.options.flatMap((o) => [o.serverParamFrom, o.serverParamTo].filter((p): p is string => !!p)))]
-    }
-    return {
-        search: def,
-        placeholder: "Buscar…",
-        searchBox: true,
-        sortFields: [],
-        defaultSort: [],
-        groupFields: (def.groupBy ?? []).map((g) => ({ id: g.field, label: g.label, groupKey: null })),
-        aggregate: {},
-        views: [],
-        filterParams,
-        facetParams: [],
-    }
-}
-
-/**
  * DRF `ordering` for several sort keys: `["-date", "total"]` → `"-date_field,total_field,-id"`
  * (one `id` tie-break, following the first key's direction). Unknown ids are skipped.
  */
