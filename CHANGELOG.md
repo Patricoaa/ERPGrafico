@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.198](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.197...v0.3.198) (2026-11-26)
+
+
+### 🐛 Bug Fixes
+
+* **test:** sacar PurchaseOrderModal y SplitAllocationDialog de ADHOC_TABLE_ALLOWLIST ([7707add](https://github.com/Patricoaa/ERPGrafico/commit/7707addab0c83fd40310d0aeb9a3c414b120f9ce)), closes [#350](https://github.com/Patricoaa/ERPGrafico/issues/350) [#349](https://github.com/Patricoaa/ERPGrafico/issues/349)
+
 ### [0.3.197](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.196...v0.3.197) (2026-11-26)
 
 
