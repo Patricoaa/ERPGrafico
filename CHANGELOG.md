@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.187](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.186...v0.3.187) (2026-11-26)
+
+
+### 🚀 Maintenance
+
+* **entity-view:** retirar el sistema de campos legado y las fábricas de columnas ([5ec5e97](https://github.com/Patricoaa/ERPGrafico/commit/5ec5e97b995d648a3a8cbac330c4be16a463bed5))
+
 ### [0.3.186](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.185...v0.3.186) (2026-11-26)
 
 
