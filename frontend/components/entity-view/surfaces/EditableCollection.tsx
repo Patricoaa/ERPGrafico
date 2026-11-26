@@ -4,11 +4,13 @@ import * as React from "react"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { SelectionRing, StatusBadge } from "@/components/shared"
+import { PeriodValidationDateInput, SelectionRing, StatusBadge } from "@/components/shared"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { alignOf, fieldById, type FieldMap } from "../core/define-entity"
 import { formatNumber, formatMoneyValue } from "../core/formatters"
-import { decimalsFor, eligibilityOf, processedInputs, type EditableDefinition, type EditableErrors, type EditableInput, type EditableRowValue } from "../core/define-editable"
+import { decimalsFor, eligibilityOf, isStringInput, processedInputs, type EditableDefinition, type EditableErrors, type EditableInput, type EditableRowValue } from "../core/define-editable"
 import { ALIGN_TEXT } from "../core/align"
 import { CELL, FieldValue, HEADER_TEXT } from "./Collection"
 
@@ -135,7 +137,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                             {inputNames.map((name) => {
                                 const input = def.inputs[name]
                                 return (
-                                    <th key={name} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py)", input.kind === "text" ? "text-left" : "text-right", HEADER_TEXT)}>
+                                    <th key={name} scope="col" className={cn("px-(--table-header-px) py-(--table-header-py)", isStringInput(input) ? "text-left" : "text-right", HEADER_TEXT)}>
                                         {input.header}
                                     </th>
                                 )
@@ -188,22 +190,21 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                         const errorId = `${idBase}-${key}-${name}-error`
                                         const isDisabled = disabled || !eligible.ok || (hasSelect && !rowActive)
                                         const isReadOnly = typeof input.readOnly === "function" ? input.readOnly(row) : (input.readOnly ?? false)
-                                        // E2: text inputs use textValues, align left
-                                        if (input.kind === "text") {
+                                        // Text, choice and date cells hold a string in textValues and align left.
+                                        if (isStringInput(input)) {
                                             return (
                                                 <td key={name} className={cn(CELL, "align-top text-left")}>
-                                                    <Input
-                                                        type="text"
-                                                        placeholder={input.placeholder}
-                                                        aria-label={input.label(row)}
-                                                        aria-invalid={!!error}
-                                                        aria-describedby={error ? errorId : undefined}
-                                                        disabled={isDisabled}
+                                                    <StringCell
+                                                        input={input}
+                                                        row={row}
                                                         value={byKey.get(key)?.textValues?.[name] ?? ""}
-                                                        onChange={(e) => setTextValue(key, name, e.target.value)}
-                                                        className={cn("h-control-sm w-40", error && "border-destructive")}
+                                                        onChange={(next) => setTextValue(key, name, next)}
+                                                        disabled={isDisabled}
+                                                        error={error}
+                                                        errorId={errorId}
                                                     />
-                                                    {error && (
+                                                    {/* The date input shows its own message (and the closed-period one). */}
+                                                    {error && input.kind !== "date" && (
                                                         <span id={errorId} role="alert" className="mt-0.5 block text-2xs text-destructive">{error}</span>
                                                     )}
                                                 </td>
@@ -260,7 +261,7 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                 {inputNames.map((name) => {
                                     if (!sums.includes(name)) return <td key={name} />
                                     const input = def.inputs[name]
-                                    if (input.kind === "text") return <td key={name} />
+                                    if (isStringInput(input)) return <td key={name} />
                                     const totals = new Map<string, number>()
                                     for (const v of value) {
                                         // E3: skip unselected rows in footer sums
@@ -307,12 +308,78 @@ function RowStatusCell<T, F extends FieldMap<T>, I extends Record<string, Editab
     if (def.select && !isActive) return <td className={cn(CELL, "align-middle")} />
     // Missing inputs read as 0, so the callback always receives every declared input.
     const full = Object.fromEntries(
-        Object.keys(def.inputs).filter((n) => def.inputs[n].kind !== "text").map((name) => [name, values[name] ?? 0])
+        Object.keys(def.inputs).filter((n) => !isStringInput(def.inputs[n])).map((name) => [name, values[name] ?? 0])
     ) as Record<keyof I & string, number>
     const status = def.rowStatus?.(row, full)
     return (
         <td className={cn(CELL, "align-middle whitespace-nowrap")} aria-live="polite">
             {status && <StatusBadge status={status.status} label={status.label} intent={status.intent} size="sm" />}
         </td>
+    )
+}
+
+/** A text, choice or date cell (the value is a string in `textValues`). */
+function StringCell<T>({ input, row, value, onChange, disabled, error, errorId }: {
+    input: EditableInput<T>
+    row: T
+    value: string
+    onChange: (next: string) => void
+    disabled: boolean
+    error: string | undefined
+    errorId: string
+}) {
+    const label = input.label(row)
+    if (input.kind === "choice") {
+        const options = input.options?.(row) ?? []
+        // Nothing to choose between: the current option (or the value itself while options load) as text.
+        if (options.length <= 1) {
+            const shown = options.find((o) => o.value === value)?.label ?? options[0]?.label ?? input.placeholder ?? "—"
+            return <span className="block py-1.5 text-xs text-muted-foreground" aria-label={label}>{shown}</span>
+        }
+        return (
+            <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
+                <SelectTrigger
+                    aria-label={label}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? errorId : undefined}
+                    className={cn("h-control-sm w-32 text-xs", error && "border-destructive")}
+                >
+                    <SelectValue placeholder={input.placeholder ?? "Elegir…"} />
+                </SelectTrigger>
+                <SelectContent>
+                    {options.map((o) => (
+                        <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        )
+    }
+    if (input.kind === "date") {
+        return (
+            <div aria-label={label} className="w-44">
+                <PeriodValidationDateInput
+                    label=""
+                    date={value ? new Date(`${value}T12:00:00`) : undefined}
+                    onDateChange={(d) => onChange(d ? format(d, "yyyy-MM-dd") : "")}
+                    validationType={input.validation ?? "accounting"}
+                    placeholder={input.placeholder}
+                    disabled={disabled}
+                    error={error}
+                />
+            </div>
+        )
+    }
+    return (
+        <Input
+            type="text"
+            placeholder={input.placeholder}
+            aria-label={label}
+            aria-invalid={!!error}
+            aria-describedby={error ? errorId : undefined}
+            disabled={disabled}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className={cn("h-control-sm w-40", error && "border-destructive")}
+        />
     )
 }

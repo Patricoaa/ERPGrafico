@@ -166,7 +166,6 @@ describe("entity definitions", () => {
  * reports and trees are specific cases (feature-owned surfaces). The list only shrinks.
  */
 const ADHOC_TABLE_ALLOWLIST = [
-    "features/notes/components/steps/NoteLogisticsStep.tsx",
     "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
     "features/finance/components/BudgetVarianceTable.tsx",
     "features/inventory/components/product/ProductManufacturingTab.tsx",
@@ -176,7 +175,6 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/production/components/BOMDrawer.tsx",
     "features/production/components/WorkOrderWizard.tsx",
     "features/purchasing/components/checkout/Step1_ProductSelection.tsx",
-    "features/purchasing/components/checkout/Step4_Receipt.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
     "features/partners/components/CreateDistributionWizard.tsx",

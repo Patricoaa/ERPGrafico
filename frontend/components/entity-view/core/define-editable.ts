@@ -11,9 +11,19 @@ import type { StatusValue } from "./value-kinds"
 
 // ─── Definition ──────────────────────────────────────────────────────────────
 
+/** An option of a `"choice"` cell. */
+export interface EditableChoice {
+    value: string
+    label: string
+}
+
 export interface EditableInput<T> {
-    /** `"quantity"` / `"money"`: numeric cell. `"text"`: free-text cell (E2). */
-    kind: "quantity" | "money" | "text"
+    /**
+     * `"quantity"` / `"money"`: numeric cell. `"text"`: free-text cell (E2). `"choice"`: one of the row's
+     * options (e.g. the unit of measure of the line). `"date"`: an ISO date (`yyyy-MM-dd`), validated
+     * against open periods. Text, choice and date values live in `textValues` (ADR-0087 amendment 2026-11-26).
+     */
+    kind: "quantity" | "money" | "text" | "choice" | "date"
     header: string
     /** Accessible name derived from the row (AX-6, ED-1), e.g. "Cantidad a despachar — Papel couché". */
     label: (row: T) => string
@@ -34,11 +44,27 @@ export interface EditableInput<T> {
      * rather than an editable input. The value is still included in the payload.
      */
     readOnly?: boolean | ((row: T) => boolean)
-    // ── Text-only props (ignored when kind !== "text") ─────────────────────
-    /** Initial value for text inputs; defaults to `""`. */
+    // ── Text, choice and date props (ignored by numeric inputs) ────────────
+    /** Initial value for text, choice and date inputs; defaults to `""`. */
     initialText?: (row: T) => string
     placeholder?: string
+    /** Choice and date: an empty value is an error ("Elige una opción" / "Ingresa una fecha"). */
+    required?: boolean
+    // ── Choice-only ────────────────────────────────────────────────────────
+    /**
+     * Options of the row. Asynchronous options travel on the row (the screen enriches its rows from a
+     * feature hook); while there are none the cell shows the current value and does not validate it.
+     * A single option renders as plain text.
+     */
+    options?: (row: T) => readonly EditableChoice[]
+    // ── Date-only ──────────────────────────────────────────────────────────
+    /** Periods the date must fall in (`PeriodValidationDateInput`). Default `"accounting"`. */
+    validation?: "tax" | "accounting" | "both"
 }
+
+/** Text, choice and date inputs hold a string (in `textValues`); the rest are numbers (in `values`). */
+export const isStringInput = <T,>(input: EditableInput<T>): boolean =>
+    input.kind === "text" || input.kind === "choice" || input.kind === "date"
 
 export type Eligibility = { ok: true } | { ok: false; reason: string }
 
@@ -82,15 +108,15 @@ export function defineEditable<T, F extends FieldMap<T>, Inputs extends Record<s
 
 /** Decimals shown for a numeric input: integer steps (units, packs) show none. */
 export function decimalsFor<T>(input: EditableInput<T>, row: T): number {
-    if (input.kind === "text") return 0
+    if (isStringInput(input)) return 0
     const step = input.step?.(row)
     return step !== undefined && step >= 1 ? 0 : 2
 }
 
 export function processedInputs<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>(def: EditableDefinition<T, F, I>): (keyof I & string)[] {
     const named = def.processed ? [...def.processed] : (Object.keys(def.inputs) as (keyof I & string)[])
-    // Text inputs never count toward "at least one" (E2).
-    return named.filter((name) => def.inputs[name].kind !== "text")
+    // String inputs (text, choice, date) never count toward "at least one" (E2).
+    return named.filter((name) => !isStringInput(def.inputs[name]))
 }
 
 /**
@@ -109,7 +135,7 @@ export interface EditableRowValue {
     key: string
     /** Numeric input values (quantity, money). */
     values: Record<string, number>
-    /** Text input values (E2: kind = "text"). */
+    /** String input values: text (E2), choice and date. */
     textValues?: Record<string, string>
     /** Row selection state (E3: when `def.select` is defined). */
     selected?: boolean
@@ -119,13 +145,13 @@ export function initialEditableValues<T, F extends FieldMap<T>, I extends Record
     def: EditableDefinition<T, F, I>,
     rows: readonly T[],
 ): EditableRowValue[] {
-    const hasText = Object.values(def.inputs).some((i) => i.kind === "text")
+    const hasText = Object.values(def.inputs).some(isStringInput)
     return rows.map((row) => {
         const eligible = eligibilityOf(def, row)
         const values: Record<string, number> = {}
         const textValues: Record<string, string> = {}
         for (const [name, input] of Object.entries(def.inputs)) {
-            if (input.kind === "text") {
+            if (isStringInput(input)) {
                 textValues[name] = input.initialText?.(row) ?? ""
             } else {
                 values[name] = eligible.ok ? input.initial?.(row) ?? 0 : 0
@@ -162,8 +188,20 @@ export function editableSchema<T, F extends FieldMap<T>, I extends Record<string
                 if (!row) return
                 const eligible = eligibilityOf<T, F, I>(def, row)
                 for (const [name, input] of Object.entries(def.inputs)) {
-                    // E2: text inputs have no numeric validation.
-                    if (input.kind === "text") continue
+                    if (isStringInput(input)) {
+                        // E2: free text has no validation; choice and date check presence and membership.
+                        const text = line.textValues?.[name] ?? ""
+                        const path = [index, "textValues", name]
+                        if (input.kind === "choice") {
+                            const options = input.options?.(row) ?? []
+                            if (!text && input.required) ctx.addIssue({ code: "custom", path, message: "Elige una opción" })
+                            else if (text && options.length > 0 && !options.some((o) => o.value === text)) ctx.addIssue({ code: "custom", path, message: "Opción no válida" })
+                        } else if (input.kind === "date") {
+                            if (!text && input.required) ctx.addIssue({ code: "custom", path, message: "Ingresa una fecha" })
+                            else if (text && !/^\d{4}-\d{2}-\d{2}$/.test(text)) ctx.addIssue({ code: "custom", path, message: "Fecha no válida" })
+                        }
+                        continue
+                    }
                     const value = line.values[name] ?? 0
                     if (value > 0 && processedNames.has(name)) processed++
                     const min = input.min ?? 0
@@ -197,11 +235,13 @@ export function editableErrorsFromForm(errors: unknown, value: EditableRowValue[
     value.forEach((row, index) => {
         const rowError = (errors as Record<number, unknown>)[index]
         if (!rowError || typeof rowError !== "object") return
-        const values = (rowError as { values?: unknown }).values
-        if (!values || typeof values !== "object") return
-        for (const [name, fieldError] of Object.entries(values as Record<string, unknown>)) {
-            const message = fieldError && typeof fieldError === "object" ? (fieldError as { message?: unknown }).message : undefined
-            if (typeof message === "string") out[row.key] = { ...out[row.key], [name]: message }
+        // Numeric cells report under `values`; text, choice and date cells under `textValues`.
+        for (const bucket of [(rowError as { values?: unknown }).values, (rowError as { textValues?: unknown }).textValues]) {
+            if (!bucket || typeof bucket !== "object") continue
+            for (const [name, fieldError] of Object.entries(bucket as Record<string, unknown>)) {
+                const message = fieldError && typeof fieldError === "object" ? (fieldError as { message?: unknown }).message : undefined
+                if (typeof message === "string") out[row.key] = { ...out[row.key], [name]: message }
+            }
         }
     })
     return out

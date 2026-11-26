@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQueries, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import api from '@/lib/api'
 import { toast } from 'sonner'
@@ -52,21 +52,37 @@ export const UOM_CATEGORIES_QUERY_KEY = UOM_CATEGORIES_KEYS.all
  * Devuelve sólo las UoMs permitidas para vender/comprar el producto, ya
  * filtradas por restricciones del producto (allowed_sale_uoms, etc.).
  */
+type AllowedUoM = { id: number, name: string }
+
+const allowedUoMsQuery = (productId: number | string | null | undefined, context: 'sale' | 'purchase') => ({
+    queryKey: productId
+        ? [...UOMS_KEYS.all, 'allowed', context, productId]
+        : [...UOMS_KEYS.all, 'allowed', context, 'noop'],
+    queryFn: async () => {
+        const res = await api.get<AllowedUoM[]>(
+            `/inventory/uoms/allowed/?product_id=${productId}&context=${context}`,
+        )
+        // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
+        return res.data
+    },
+    enabled: !!productId,
+    staleTime: staleTime.extended, // 30 min — datos quasi-estáticos por producto
+})
+
 export function useAllowedUoMs(productId: number | string | null | undefined, context: 'sale' | 'purchase') {
-    return useQuery<{ id: number, name: string }[]>({
-        queryKey: productId
-            ? [...UOMS_KEYS.all, 'allowed', context, productId]
-            : [...UOMS_KEYS.all, 'allowed', context, 'noop'],
-        queryFn: async () => {
-            const res = await api.get<{ id: number, name: string }[]>(
-                `/inventory/uoms/allowed/?product_id=${productId}&context=${context}`,
-            )
-            // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
-            return res.data
-        },
-        enabled: !!productId,
-        staleTime: staleTime.extended, // 30 min — datos quasi-estáticos por producto
-    })
+    return useQuery<AllowedUoM[]>(allowedUoMsQuery(productId, context))
+}
+
+/**
+ * Allowed UoMs of several products at once (one cached query per product, shared with
+ * `useAllowedUoMs`): the per-line unit of an editable collection. Products still loading are absent.
+ */
+export function useAllowedUoMsByProduct(productIds: readonly (number | string)[], context: 'sale' | 'purchase'): Map<string, AllowedUoM[]> {
+    const unique = [...new Set(productIds.map(String))]
+    const results = useQueries({ queries: unique.map((id) => allowedUoMsQuery(id, context)) })
+    const out = new Map<string, AllowedUoM[]>()
+    results.forEach((r, i) => { if (r.data) out.set(unique[i], r.data) })
+    return out
 }
 
 // ─── Hook principal ──────────────────────────────────────────────────────────
