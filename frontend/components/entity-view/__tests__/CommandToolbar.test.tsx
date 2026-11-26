@@ -166,7 +166,7 @@ describe("Analytics modal scope and drill-down (ADR-0158 stage 3c)", () => {
     it("states what it analyses, with the list's filters read-only", async () => {
         setup("v=drafts&status=DRAFT&analytics=resumen")
         const dialog = await screen.findByRole("dialog")
-        expect(within(dialog).getByText(/Analizando/)).toHaveTextContent("Analizando 2 resultados con la vista Borradores")
+        expect(within(dialog).getByText(/Analizando/)).toHaveTextContent("Analizando con la vista Borradores")
         const chips = within(dialog).getByRole("list", { name: "Filtros aplicados" })
         expect(chips).toHaveTextContent("Estado: Borrador")
         expect(within(chips).queryByRole("button")).toBeNull()
@@ -176,7 +176,7 @@ describe("Analytics modal scope and drill-down (ADR-0158 stage 3c)", () => {
     it("does not name a view the filters no longer match", async () => {
         setup("status=DRAFT&analytics=resumen")
         const dialog = await screen.findByRole("dialog")
-        expect(within(dialog).getByText(/Analizando/)).toHaveTextContent(/^Analizando 2 resultados$/)
+        expect(within(dialog).getByText(/Analizando/)).toHaveTextContent(/^Analizando con los filtros de la lista$/)
     })
 
     it("«Analizar sin filtros» widens the scope inside the modal only", async () => {

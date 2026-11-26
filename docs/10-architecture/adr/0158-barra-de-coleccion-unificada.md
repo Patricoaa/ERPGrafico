@@ -162,7 +162,7 @@ Reúne lo que hoy está en los íconos de `Collection.Toolbar` y en la sección 
 
 - `Collection.Analytics` **deja de ser un modo de vista**. Se elimina `"analytics"` de `CollectionViewMode` y de `ViewPolicy.availableViews`. Su contenido (`AnalyticsPanelContent`, screens `build…AnalyticsScreen`, hooks de la feature) no cambia.
 - Un botón de ícono en la barra abre **`AnalyticsModal`**: `BaseModal` grande con opción de pantalla completa, que en el teléfono ocupa la hoja completa. El riel de pestañas y la granularidad no cambian.
-- **Alcance heredado:** el modal recibe la consulta actual (filtros, búsqueda y vista) y la muestra en una franja («Analizando 38 notas con la vista En curso» + chips). «Analizar sin filtros» cambia el alcance solo dentro del modal.
+- **Alcance heredado:** el modal recibe la consulta actual (filtros, búsqueda y vista) y la muestra en una franja («Analizando con la vista En curso» + chips), sin contador de resultados. «Analizar sin filtros» cambia el alcance solo dentro del modal.
 - **Drill-down:** `AnalyticsPanelContent` acepta `onDrillDown(filtro)`. Un clic en una barra o en un segmento aplica ese filtro a la colección y cierra el modal.
 - **Enlace profundo:** `?analytics=<pestaña>` abre el modal. Por compatibilidad, `?view=analytics` se reescribe a `?analytics=` con `router.replace`.
 - Las consultas de analítica se piden solo con el modal abierto. Es la regla actual (`enabled: view === "analytics"`), que pasa a depender del modal.
