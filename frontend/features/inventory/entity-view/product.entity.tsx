@@ -130,8 +130,8 @@ export const productEntity = defineEntity<Product>()((f) => ({
         internalCode: f.code((p) => p.internal_code || p.code, { label: "Código interno", orderBy: "internal_code" }),
         sku: f.text("code", { label: "SKU", tone: "secondary", orderBy: "code" }),
         name: f.text("name", { label: "Nombre", orderBy: "name" }),
-        category: f.text("category_name", { label: "Categoría", tone: "secondary", orderBy: "category__name" }),
-        type: f.tags((p) => [p.product_type], { label: "Tipo", domain: "product_type", orderBy: "product_type" }),
+        category: f.text("category_name", { label: "Categoría", tone: "secondary", orderBy: "category__name", groupKey: "category" }),
+        type: f.tags((p) => [p.product_type], { label: "Tipo", domain: "product_type", orderBy: "product_type", groupKey: "product_type" }),
         // Services carry no stock: "—" instead of "0 Unidad".
         stock: f.quantity((p) => (p.product_type === "SERVICE" ? null : p.current_stock), { label: "Stock", uom: (p) => p.uom_name, orderBy: "annotated_current_stock" }),
         // The card and the table share the gross amount; templates price from their cheapest variant.

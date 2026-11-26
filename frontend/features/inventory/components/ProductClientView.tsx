@@ -19,6 +19,7 @@ import type { StockReportItem } from "@/features/inventory/entity-view/stockRepo
 
 import { productEntity, productViews } from "../entity-view/product.entity"
 import { DEFAULT_PRODUCT_LIST_QUERY, useProducts } from "@/features/inventory/hooks/useProducts"
+import { useProductGroups } from "@/features/inventory/hooks/useInventoryGroups"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
@@ -52,7 +53,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     }), [categoryOptions])
 
     const query = useCollectionQuery(productEntity, { filterOptions })
-    const { search, groupBy } = query
+    const { search, groupBy, groupKey } = query
     const filters = useMemo<ProductFilters>(() => {
         const raw: Record<string, string> = { ...query.params }
         delete raw.ordering
@@ -102,7 +103,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const comprasData = useProductAnalytics({ ...analyticsFilters, can_be_purchased: true, price_field: "cost" }, analyticsEnabled)
 
     // Grouping loads one bounded page (GROUP_ROW_LIMIT); the collection warns when it is truncated.
-    const { page, products, isLoading, isRefetching, isError, refetch, updateProduct } = useProducts({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useProductGroups({ groupKey, filters: { ...filters, ordering: query.params.ordering } })
+    const list = useProducts({
+        enabled: groupKey === null,
         filters: { ...filters, ordering: query.params.ordering },
         page: isGrouping ? 1 : pageState.pageIndex + 1,
         page_size: isGrouping ? GROUP_ROW_LIMIT : pageState.pageSize,
@@ -111,6 +115,8 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             ? { page: toPage<Product>(initialPage, 1, DEFAULT_PRODUCT_LIST_QUERY.page_size), params: DEFAULT_PRODUCT_LIST_QUERY }
             : undefined,
    })
+    const { page, products, updateProduct } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     // Restrictions state
     const [restrictions, setRestrictions] = useState<Restriction[]>([])
@@ -238,6 +244,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             pagination: isGrouping ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             sorting: query.sorting,
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

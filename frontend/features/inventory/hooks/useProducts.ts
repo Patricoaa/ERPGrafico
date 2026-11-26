@@ -34,9 +34,11 @@ interface UseProductsProps {
     initial?: InitialProductsQuery
     page?: number
     page_size?: number
+    /** `false` while the list is grouped on the server (ADR-0158 §7). */
+    enabled?: boolean
 }
 
-export function useProducts({ filters, initial, page = 1, page_size = 50 }: UseProductsProps = {}) {
+export function useProducts({ filters, initial, page = 1, page_size = 50, enabled = true }: UseProductsProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
@@ -48,6 +50,7 @@ export function useProducts({ filters, initial, page = 1, page_size = 50 }: UseP
         queryFn: () => inventoryApi.getProducts(activeFilters),
         staleTime: staleTime.stable,
         initialData,
+        enabled,
         placeholderData: (prev) => prev,
     })
 

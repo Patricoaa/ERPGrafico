@@ -58,7 +58,7 @@ class InvoiceViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, vie
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = InvoiceFilterSet
     # ADR-0158 §7: groups/ (the selector orders the list by -date; the groups follow it).
-    ordering = ["-date", "-id"]
+    group_ordering = ["-date"]
     group_fields = {
         "date": GroupField("date", param=("date_from", "date_to")),
         "status": GroupField("status"),

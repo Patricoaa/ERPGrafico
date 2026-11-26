@@ -16,12 +16,12 @@ export const treasuryMovementEntity = defineEntity<TreasuryMovement>()((f) => ({
             if (m.movement_type === "OUTBOUND") return { status: "sent", label: "Retiro", intent: "destructive" }
             if (m.movement_type === "TRANSFER") return { status: "in_progress", label: "Traspaso", intent: "primary" }
             return { status: "in_progress", label: "Ajuste", intent: "warning" }
-        }, { label: "Tipo" }),
-        date: f.date("date", { label: "Fecha" }),
+        }, { label: "Tipo", groupKey: "movement_type" }),
+        date: f.date("date", { label: "Fecha", groupKey: "date" }),
         createdAt: f.date("created_at", { label: "Fecha y hora", time: true }),
         createdBy: f.text((m) => m.created_by_name ?? "", { label: "Responsable" }),
         reason: f.text((m) => [m.justify_reason_display, m.notes].filter(Boolean).join(" · "), { label: "Concepto / destino", tone: "secondary" }),
-        paymentMethod: f.text((m) => m.payment_method_display ?? m.payment_method ?? "", { label: "Método", tone: "secondary" }),
+        paymentMethod: f.text((m) => m.payment_method_display ?? m.payment_method ?? "", { label: "Método", tone: "secondary", groupKey: "payment_method" }),
         accounts: f.value("movementPath", (m) => movementEndpoints(m), { label: "Cuentas" }),
         // No icon in the flow badge: the card rail already carries the entry/exit arrow, and the
         // shared CurrencyFlow glyph (↗/↙ trend) points the opposite way. Sign + color keep the meaning.

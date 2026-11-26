@@ -38,26 +38,28 @@ class GroupField:
     null_param: str | None = None
 
 
-def _choices(model: type, path: str) -> dict[Any, str]:
-    if "__" in path:
-        return {}
+def _model_field(model: type, path: str) -> Any:
+    """Field at the end of an ORM path (`"payment_method__method_type"`), or `None`."""
+    target = model
+    *relations, last = path.split("__")
     try:
-        field = model._meta.get_field(path)
-    except FieldDoesNotExist:
+        for name in relations:
+            target = target._meta.get_field(name).related_model
+        return target._meta.get_field(last)
+    except (FieldDoesNotExist, AttributeError):
+        return None
+
+
+def _choices(model: type, path: str) -> dict[Any, str]:
+    field = _model_field(model, path)
+    if field is None:
         return {}
     return {value: str(label) for value, label in (getattr(field, "flatchoices", None) or [])}
 
 
 def _decimal_places(model: type, path: str) -> int | None:
     """Scale of the summed field, so sums read like the list (`"150.00"`), whatever the database returns."""
-    target = model
-    *relations, last = path.split("__")
-    try:
-        for name in relations:
-            target = target._meta.get_field(name).related_model
-        return getattr(target._meta.get_field(last), "decimal_places", None)
-    except (FieldDoesNotExist, AttributeError):
-        return None
+    return getattr(_model_field(model, path), "decimal_places", None)
 
 
 def _amount(value: Any, places: int | None) -> str:

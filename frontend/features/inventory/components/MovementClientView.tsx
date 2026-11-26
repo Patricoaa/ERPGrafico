@@ -7,6 +7,7 @@ import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory
 import { Collection, GROUP_ROW_LIMIT, useCollectionAnalytics, useCollectionQuery, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
+import { useStockMoveGroups } from "@/features/inventory/hooks/useInventoryGroups"
 import { useStockMoveAnalytics } from "@/features/inventory/hooks/useStockMoveAnalytics"
 import { Metric, MetricStrip, AnalyticsPanelContent } from "@/components/shared"
 import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
@@ -21,19 +22,22 @@ interface MovementClientViewProps {
 
 export function MovementClientView({ createAction }: MovementClientViewProps) {
     const query = useCollectionQuery(stockMoveEntity)
-    const { search, groupBy, params } = query
+    const { search, groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], { pageIndex: 0, pageSize: 50 })
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useStockMoveGroups({ groupKey, filters: params })
     const { moves, totalCount, isLoading } = useStockMoves({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    })
+    }, groupKey === null)
 
     useEffect(() => {
-        if (groupBy && totalCount > GROUP_ROW_LIMIT) {
+        // Only the page grouping is bounded; server groups cover the whole result.
+        if (groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT) {
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
-    }, [groupBy, totalCount])
+    }, [groupBy, groupKey, totalCount])
 
     // Cada movimiento abre su detalle en una pestaña propia (ADR-0152); `?selected&action=view` es enlace profundo.
     const { openEntity } = useGlobalModals()
@@ -229,10 +233,13 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
 
     const collection = useEntityCollection(
         stockMoveEntity,
-        { rows: isLoading ? [] : moves as StockMove[], rowCount: totalCount },
+        groupKey
+            ? { rows: [], isLoading: grouped.isLoading, isRefetching: grouped.isRefetching, error: grouped.isError, refetch: grouped.refetch }
+            : { rows: isLoading ? [] : moves as StockMove[], rowCount: totalCount },
         {
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

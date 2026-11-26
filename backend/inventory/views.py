@@ -9,9 +9,10 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
-from core.mixins import BulkImportMixin, EditPolicyMixin, NoDestroyModelMixin
+from core.mixins import BulkImportMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.services.grouping import GroupField
 
-from .filters import ProductFilter, StockMoveFilter, UoMFilter
+from .filters import InventoryDocumentFilter, ProductFilter, StockMoveFilter, UoMFilter
 from .models import (
     InventoryCount,
     InventoryDocument,
@@ -59,7 +60,7 @@ from .services import (
 )
 
 
-class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, GroupedListMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     action_permissions = {
@@ -89,6 +90,11 @@ class ProductViewSet(NoDestroyModelMixin, EditPolicyMixin, BulkImportMixin, Audi
     # Server ordering of the product list (ADR-0087 lote 2): the client sends `?ordering=<key>,id`.
     # No default `ordering`: without the param the selector's order is kept.
     ordering_fields = ["id", "name", "internal_code", "code", "category__name", "product_type", "annotated_current_stock", "sale_price"]
+    # ADR-0158 §7: groups/ (the list's archive rule, `list_products`, applies to the groups too).
+    group_fields = {
+        "product_type": GroupField("product_type"),
+        "category": GroupField("category", label="category__name"),
+    }
 
     def get_queryset(self):
         # Archivo: en el listado, `list_products` (inventory/selectors.py) filtra
@@ -523,7 +529,7 @@ class UoMCategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistor
         return super().get_queryset()
 
 
-class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
+class StockMoveViewSet(GroupedListMixin, viewsets.ReadOnlyModelViewSet, AuditHistory):
     def get_queryset(self):
         return StockMove.objects.select_related(
             "product",
@@ -541,6 +547,12 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = StockMoveFilter
+    # ADR-0158 §7: groups/ (newest day first, like the list).
+    group_fields = {
+        "date": GroupField("date", param=("date_from", "date_to")),
+        "product": GroupField("product", label="product__name", param="product_id"),
+    }
+    group_ordering = ["-date"]
 
     @action(detail=False, methods=["get"], url_path="stock-level")
     def stock_level(self, request):
@@ -595,7 +607,7 @@ class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
         return ProductUoMPrice.objects.select_related("uom").filter(product__is_active=True)
 
 
-class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
+class InventoryDocumentViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistory):
     action_permissions = {
         "confirm": "inventory.confirm_inventorydocument",
         "annul": "inventory.annul_inventorydocument",
@@ -611,7 +623,15 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
     serializer_class = InventoryDocumentSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["document_type", "status"]
+    # The list's date filter sends date_from / date_to (they were ignored with filterset_fields).
+    filterset_class = InventoryDocumentFilter
+    # ADR-0158 §7: groups/ (newest day first).
+    group_fields = {
+        "date": GroupField("date", param=("date_from", "date_to")),
+        "document_type": GroupField("document_type"),
+        "status": GroupField("status"),
+    }
+    group_ordering = ["-date"]
 
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):

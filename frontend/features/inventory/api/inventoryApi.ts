@@ -8,6 +8,7 @@ import type { ProductSales, SalesParams } from "../analytics/sales.types"
 import type { SalesImpact, SalesImpactParams } from "../analytics/salesImpact.types"
 import type { ProductCapabilities } from "../analytics/productAnalyticsRegistry"
 import api from '@/lib/api'
+import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
 import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse, ProductAnalyticsParams, ProductAnalyticsResponse } from '../analyticsTypes'
 import { toPage, type Page } from '@/lib/pagination'
@@ -36,30 +37,57 @@ export function resolveMediaUrl(path: string | null | undefined): string | null 
 /**
  * Centralized API service for inventory operations
  */
+/** Product list params (paging included when given): shared by the rows and their groups (ADR-0158 §7). */
+function productListParams(filters?: ProductFilters & { page_size?: number, fields?: string }): URLSearchParams {
+    const params = new URLSearchParams()
+    if (filters?.page) params.append('page', String(filters.page))
+    if (filters?.is_active !== undefined) {
+        // Send 'all' literally so the backend enters the correct branch.
+        // An empty string '' would fall through to the default (is_active=True only).
+        const val = filters.is_active === 'all' ? 'all' : String(filters.is_active)
+        params.append('is_active', val)
+    }
+    if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
+    if (filters?.can_be_purchased !== undefined) params.append('can_be_purchased', String(filters.can_be_purchased))
+    if (filters?.has_variants !== undefined) params.append('has_variants', String(filters.has_variants))
+    if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
+    if (filters?.search) params.append('search', filters.search)
+    if (filters?.product_type) params.append('product_type', filters.product_type)
+    if (filters?.category !== undefined) params.append('category', String(filters.category))
+    if (filters?.track_inventory !== undefined) params.append('track_inventory', String(filters.track_inventory))
+    if (filters?.page_size) params.append('page_size', String(filters.page_size))
+    if (filters?.fields) params.append('fields', filters.fields)
+    if (filters?.ordering) params.append('ordering', filters.ordering)
+    return params
+}
+
+/** Inventory document list params: shared by the rows and their groups (ADR-0158 §7). */
+function inventoryDocumentParams(filters?: InventoryDocumentFilters): URLSearchParams {
+    const params = new URLSearchParams()
+    if (filters?.page) params.append('page', String(filters.page))
+    if (filters?.page_size) params.append('page_size', String(filters.page_size))
+    if (filters?.document_type) params.append('document_type', filters.document_type)
+    if (filters?.status) params.append('status', filters.status)
+    if (filters?.search) params.append('search', filters.search)
+    if (filters?.date_from) params.append('date_from', filters.date_from)
+    if (filters?.date_to) params.append('date_to', filters.date_to)
+    return params
+}
+
 export const inventoryApi = {
     /**
      * Fetch products with optional filtering
      */
+    /** Products grouped on the server (ADR-0158 §7). */
+    getProductGroups: async (filters: ProductFilters, groupBy: string): Promise<ServerGroup[]> => {
+        const params = productListParams(filters)
+        params.append('group_by', groupBy)
+        const { data } = await api.get<unknown>('inventory/products/groups/', { params })
+        return toServerGroups(data)
+    },
+
     getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Page<Product>> => {
-        const params = new URLSearchParams()
-        if (filters?.page) params.append('page', String(filters.page))
-        if (filters?.is_active !== undefined) {
-            // Send 'all' literally so the backend enters the correct branch.
-            // An empty string '' would fall through to the default (is_active=True only).
-            const val = filters.is_active === 'all' ? 'all' : String(filters.is_active)
-            params.append('is_active', val)
-        }
-        if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
-        if (filters?.can_be_purchased !== undefined) params.append('can_be_purchased', String(filters.can_be_purchased))
-        if (filters?.has_variants !== undefined) params.append('has_variants', String(filters.has_variants))
-        if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
-        if (filters?.search) params.append('search', filters.search)
-        if (filters?.product_type) params.append('product_type', filters.product_type)
-        if (filters?.category !== undefined) params.append('category', String(filters.category))
-        if (filters?.track_inventory !== undefined) params.append('track_inventory', String(filters.track_inventory))
-        if (filters?.page_size) params.append('page_size', String(filters.page_size))
-        if (filters?.fields) params.append('fields', filters.fields)
-        if (filters?.ordering) params.append('ordering', filters.ordering)
+        const params = productListParams(filters)
 
         const { data } = await api.get<{ count: number; results: Product[] }>('inventory/products/', { params })
         return toPage<Product>(data, filters?.page ?? 1, filters?.page_size ?? 50)
@@ -186,15 +214,22 @@ export const inventoryApi = {
     /**
      * Fetch inventory documents with filtering
      */
+    /** Inventory documents grouped on the server (ADR-0158 §7). */
+    getInventoryDocumentGroups: async (filters: InventoryDocumentFilters, groupBy: string): Promise<ServerGroup[]> => {
+        const params = inventoryDocumentParams(filters)
+        params.append('group_by', groupBy)
+        const { data } = await api.get<unknown>('inventory/documents/groups/', { params })
+        return toServerGroups(data)
+    },
+
+    /** Stock moves grouped on the server (ADR-0158 §7): the move list sends its params as-is. */
+    getStockMoveGroups: async (params: Record<string, string>): Promise<ServerGroup[]> => {
+        const { data } = await api.get<unknown>('/inventory/moves/groups/', { params })
+        return toServerGroups(data)
+    },
+
     getInventoryDocuments: async (filters?: InventoryDocumentFilters): Promise<Page<InventoryDocument>> => {
-        const params = new URLSearchParams()
-        if (filters?.page) params.append('page', String(filters.page))
-        if (filters?.page_size) params.append('page_size', String(filters.page_size))
-        if (filters?.document_type) params.append('document_type', filters.document_type)
-        if (filters?.status) params.append('status', filters.status)
-        if (filters?.search) params.append('search', filters.search)
-        if (filters?.date_from) params.append('date_from', filters.date_from)
-        if (filters?.date_to) params.append('date_to', filters.date_to)
+        const params = inventoryDocumentParams(filters)
 
         const { data } = await api.get<{ count: number; results: InventoryDocument[] }>('inventory/documents/', { params })
         return toPage<InventoryDocument>(data, filters?.page ?? 1, filters?.page_size ?? 50)

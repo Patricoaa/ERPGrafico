@@ -90,13 +90,13 @@ export const stockMoveEntity = defineEntity<StockMove>()((f) => ({
             (m) => formatEntityDisplay('inventory.stockmove', m as unknown as Record<string, unknown>),
             { label: "Folio" },
         ),
-        productName: f.text("product_name", { label: "Producto" }),
+        productName: f.text("product_name", { label: "Producto", groupKey: "product" }),
         flow: f.value(
             "stockMoveFlow",
             (m) => ({ source: m.source_location_name, dest: m.destination_location_name }),
             { label: "Origen → Destino" },
         ),
-        date: f.date("date", { label: "Fecha" }),
+        date: f.date("date", { label: "Fecha", groupKey: "date" }),
         quantity: f.value(
             "stockMoveQty",
             (m) => ({

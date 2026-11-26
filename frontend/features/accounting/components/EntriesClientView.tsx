@@ -10,6 +10,7 @@ import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollect
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryRowActions'
 
 import { useJournalEntries, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry, type JournalEntry } from "../hooks/useJournalEntries"
+import { useJournalEntryGroups } from "../hooks/useJournalEntryGroups"
 import { journalEntryEntity, journalEntryViews } from "../entity-view/journalEntry.entity"
 import { useAccountingAccounts } from "../hooks/useAccounts"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
@@ -26,18 +27,23 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 export function EntriesClientView({ externalOpen, onExternalOpenChange, createAction }: EntriesClientViewProps) {
     const query = useCollectionQuery(journalEntryEntity)
-    const { search, groupBy, params } = query
+    const { search, groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("accounting.journalentry")
 
-    const { page, entries, isLoading, isRefetching, isError, refetch } = useJournalEntries({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useJournalEntryGroups({ groupKey, filters: params })
+    const list = useJournalEntries({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    } as unknown as Parameters<typeof useJournalEntries>[0])
+    } as unknown as Parameters<typeof useJournalEntries>[0], groupKey === null)
+    const { page, entries } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     const totalCount = page?.count ?? 0
-    const isTruncated = !!groupBy && totalCount > GROUP_ROW_LIMIT
+    // Only the page grouping is bounded; server groups cover the whole result.
+    const isTruncated = !!groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT
 
     useEffect(() => {
         if (isTruncated) {
@@ -91,7 +97,7 @@ export function EntriesClientView({ externalOpen, onExternalOpenChange, createAc
     const collection = useEntityCollection(
         journalEntryEntity,
         { rows: entries, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy, serverGroups: grouped.groups },
     )
 
     return (

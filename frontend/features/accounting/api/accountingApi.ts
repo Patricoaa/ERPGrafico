@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerData } from '../types'
 import { toPage, type Page } from '@/lib/pagination'
 import { fetchBoundedList } from '@/lib/bounded-list'
@@ -54,6 +55,12 @@ export const accountingApi = {
             `/accounting/accounts/${accountId}/ledger/?start_date=${startDate}&end_date=${endDate}`
         )
         return data
+    },
+
+    /** Journal entries grouped on the server (ADR-0158 §7), with the list's params. */
+    getEntryGroups: async (params: Record<string, unknown>, groupBy: string): Promise<ServerGroup[]> => {
+        const { data } = await api.get<unknown>('/accounting/entries/groups/', { params: { ...params, group_by: groupBy } })
+        return toServerGroups(data)
     },
 
     getEntries: async (params?: Record<string, unknown>): Promise<Page<unknown>> => {

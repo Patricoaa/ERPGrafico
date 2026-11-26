@@ -8,6 +8,7 @@ import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './trea
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useTreasuryMovementGroups } from "@/features/treasury/hooks/useTreasuryMovementGroups"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 
@@ -28,7 +29,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
     )
     // Within one bank its filter has no effect: the bank is fixed below.
     const query = useCollectionQuery(treasuryMovementEntity, { filterOptions })
-    const { search, groupBy, params } = query
+    const { search, groupBy, groupKey, params } = query
 
     const allFilters: TreasuryMovementFilters = {
         ...params,
@@ -36,11 +37,15 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
     }
     const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("treasury.treasurymovement")
-    const { movements, totalCount, isLoading, isRefetching, isError, refetch } = useTreasuryMovements({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useTreasuryMovementGroups({ groupKey, filters: allFilters })
+    const list = useTreasuryMovements({
         ...(allFilters as TreasuryMovementFilters),
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    })
+    }, groupKey === null)
+    const { movements, totalCount } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     // ADR-0152: `?selected` solo es enlace profundo; abrir un movimiento es `openEntity`.
     useDeepLinkEntity("treasury.treasurymovement")
@@ -57,7 +62,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
     const collection = useEntityCollection(
         treasuryMovementEntity,
         { rows: movements, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy, serverGroups: grouped.groups },
     )
 
     return (
