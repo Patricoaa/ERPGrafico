@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.185](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.184...v0.3.185) (2026-11-26)
+
+
+### ⚙️ Refactors
+
+* **finance:** vista previa de importación de cartola sin DataTable ([9be201f](https://github.com/Patricoaa/ERPGrafico/commit/9be201f7f4d63ed575978e8a6dc2cd5869a5c3fd))
+* **pos:** selector de borradores sobre entity-view (retira DataTable) ([4754c97](https://github.com/Patricoaa/ERPGrafico/commit/4754c97ba6a4bb0a56c183dc7b729ca757c888e1))
+
+
+### 🧪 Testing
+
+* **entity-view:** ratchets al día tras retirar DataTable de borradores POS e importación de cartola ([4d40540](https://github.com/Patricoaa/ERPGrafico/commit/4d40540127a651cf94c222474d49d8b8c4453048))
+* **pos:** mock de getDrafts tipado (lint no-unsafe-return) ([1907b72](https://github.com/Patricoaa/ERPGrafico/commit/1907b72927ddd202dab850eb084196099cf3ebab))
+
 ### [0.3.184](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.183...v0.3.184) (2026-11-26)
 
 
