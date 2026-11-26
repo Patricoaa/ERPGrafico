@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import type { ReactNode } from "react"
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing"
 import { Collection, compileQuery, defineEntity, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 
@@ -56,6 +57,63 @@ function setup(search = "") {
 }
 
 const names = () => within(screen.getByRole("table")).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[0]?.textContent ?? "")
+
+interface Contract {
+    id: number
+    name: string
+    start_date: string
+    end_date: string
+}
+
+/** A date filter with two server params (budgets' `period`), i.e. not the filter id itself. */
+const contractEntity = defineEntity<Contract>()((f) => ({
+    title: "Contratos",
+    fields: {
+        name: f.text("name", { label: "Nombre" }),
+        period: f.dateRange((c) => ({ from: c.start_date, to: c.end_date }), { label: "Periodo" }),
+    },
+    query: {
+        filters: {
+            period: {
+                field: "period",
+                control: "date",
+                paramFrom: "start_date__gte",
+                paramTo: "end_date__lte",
+            },
+        },
+    },
+}))
+
+function dateFilterHarness(search = "") {
+    const onUrlUpdate = vi.fn<(event: UrlUpdateEvent) => void>()
+    const wrapper = ({ children }: { children: ReactNode }) => (
+        <NuqsTestingAdapter searchParams={search} onUrlUpdate={onUrlUpdate} hasMemory>{children}</NuqsTestingAdapter>
+    )
+    const hook = renderHook(() => useCollectionQuery(contractEntity), { wrapper })
+    const url = () => onUrlUpdate.mock.lastCall?.[0].queryString ?? ""
+    return { ...hook, url }
+}
+
+describe("useCollectionQuery with a two-param date filter", () => {
+    it("exposes paramFrom/paramTo in params, never the filter id", async () => {
+        const { result, url } = dateFilterHarness("?start_date__gte=2026-01-01&end_date__lte=2026-12-31")
+        expect(result.current.params).toEqual({
+            start_date__gte: "2026-01-01",
+            end_date__lte: "2026-12-31",
+        })
+        expect(Object.keys(result.current.params)).not.toContain("period")
+
+        act(() => void result.current.search.applyFilter("start_date__gte", "2026-06-01"))
+        act(() => void result.current.search.applyFilter("end_date__lte", "2027-05-31"))
+        await waitFor(() => expect(url()).toContain("start_date__gte=2026-06-01"))
+        expect(url()).toContain("end_date__lte=2027-05-31")
+        expect(url()).not.toContain("period=")
+        expect(result.current.params).toEqual({
+            start_date__gte: "2026-06-01",
+            end_date__lte: "2027-05-31",
+        })
+    })
+})
 
 describe("useCollectionQuery in client mode (ADR-0158 §6)", () => {
     it("compiles sort fields without a server key", () => {
