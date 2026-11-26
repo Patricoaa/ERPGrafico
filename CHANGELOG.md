@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.200](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.198...v0.3.200) (2026-11-26)
+
+
+### 🧪 Testing
+
+* cerrar gaps de cobertura del PR ([a2d7fde](https://github.com/Patricoaa/ERPGrafico/commit/a2d7fdeceef3fb19ded326bd42365003837d7d3c))
+* **e2e:** cubrir rutas canónicas y pestañas de presupuesto/liquidación ([f57af80](https://github.com/Patricoaa/ERPGrafico/commit/f57af80117cbdca308a909532218cf05e452ab1e))
+
+
+### ✨ Features
+
+* **finance:** lista de presupuestos en servidor y pestaña de ejecución ([92bfee8](https://github.com/Patricoaa/ERPGrafico/commit/92bfee84186fd997e95ba18bd73567e8c689459c))
+* **finance:** versus presupuestario con la barra de colección y el periodo en la URL ([10f0aef](https://github.com/Patricoaa/ERPGrafico/commit/10f0aeff34159ffda3cb87111d9091f31a89b44c))
+* **hr:** liquidaciones se abren como pestaña de registro ([0833f9a](https://github.com/Patricoaa/ERPGrafico/commit/0833f9ae90d954294d1602c7445fdb799b2c76d9))
+
+
+### 🐛 Bug Fixes
+
+* **analytics:** márgenes en los modales y retiro del contador de resultados ([8378f3a](https://github.com/Patricoaa/ERPGrafico/commit/8378f3a4052d3faa9bb2651766883dddc0b95228))
+* **entity-view:** enviar ambos parámetros en filtros de rango ([0ff39f9](https://github.com/Patricoaa/ERPGrafico/commit/0ff39f991554d7c2a793c54ad63a3cf6f5aa5f43))
+* **inventory:** quitar el padding doble del modal de análisis de producto ([324908f](https://github.com/Patricoaa/ERPGrafico/commit/324908f0f67e7673c4dda8bb093171d35490426c))
+* pre-landing review fixes ([8094980](https://github.com/Patricoaa/ERPGrafico/commit/80949807ae6e0c9ae6aaef3d03536d24763e8ce7))
+
+
+### 🚀 Maintenance
+
+* bump version and changelog (v0.3.199) ([634dbc2](https://github.com/Patricoaa/ERPGrafico/commit/634dbc2a46019eb673681f353dcc45fc0accda1c))
+* **ci:** ordenar imports (ruff I001) y retirar BudgetVarianceView de la baseline no-unsafe ([e2a4dd9](https://github.com/Patricoaa/ERPGrafico/commit/e2a4dd9c63297fb7c4ee81f24abe93a778b967a5))
+
+
+### 📚 Documentation
+
+* aceptar ADR-0152 y sincronizar rutas canónicas ([db96a7b](https://github.com/Patricoaa/ERPGrafico/commit/db96a7bf9087dc13e72ef2f6fb5c03622e70dcad))
+* update project documentation for v0.3.199 ([5dd6e37](https://github.com/Patricoaa/ERPGrafico/commit/5dd6e3796a34004a6ad8f81b632ea4d9852e9c16))
+
 ### [0.3.199](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.198...v0.3.199) (2026-11-26)
 
 
