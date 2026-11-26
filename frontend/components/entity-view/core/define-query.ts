@@ -228,7 +228,12 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
         clientKey: typeof scope.clientKey === "string" || scope.clientKey === undefined ? scope.clientKey : [...scope.clientKey],
     }))
 
-    const groupFields = (spec.groupBy?.fields ?? []).map((id) => ({ id, label: labelOf(entity, { field: id }), groupKey: entity.fields[id]?.groupKey ?? null }))
+    // A server-paginated list groups on the server (`groups/`): browser grouping would only see one page.
+    const groupFields = (spec.groupBy?.fields ?? []).map((id) => {
+        const groupKey = entity.fields[id]?.groupKey ?? null
+        if (sorting === "server" && !groupKey) throw new Error(`entity-view: query.groupBy incluye "${id}", que no declara groupKey`)
+        return { id, label: labelOf(entity, { field: id }), groupKey: sorting === "client" ? null : groupKey }
+    })
     const groupBy: GroupByOptionDef[] = groupFields.map((g) => ({ key: g.id, label: g.label, field: g.id }))
 
     const sortFields = (spec.sort?.fields ?? []).map((id) => {

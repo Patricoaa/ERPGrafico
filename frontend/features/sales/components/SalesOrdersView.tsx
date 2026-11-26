@@ -5,7 +5,7 @@ import { AnalyticsPanelContent, EmptyState, SkeletonShell, type Granularity } fr
 import { Button } from "@/components/ui/button"
 import {
     Collection,
-    GROUP_ROW_LIMIT,
+    
     useCollectionAnalytics,
     useCollectionQuery,
     useCollectionViewMode,
@@ -97,8 +97,8 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
     const list = useSalesOrders({
         filters: {
             ...params,
-            page: groupBy ? 1 : pageState.pageIndex + 1,
-            page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+            page: pageState.pageIndex + 1,
+            page_size: pageState.pageSize,
         },
         enabled: groupKey === null,
     })
@@ -184,8 +184,8 @@ function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: 
     const list = useSalesNotes({
         filters: {
             ...params,
-            page: groupBy ? 1 : pageState.pageIndex + 1,
-            page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+            page: pageState.pageIndex + 1,
+            page_size: pageState.pageSize,
         },
         enabled: groupKey === null,
     })

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { useInvoiceGroups } from "@/features/billing/hooks/useInvoiceGroups"
 import { type InvoiceFilters } from "@/features/billing/types"
@@ -26,8 +26,8 @@ export function SalesInvoicesClientView() {
     const list = useInvoices({
         filters: {
             ...filters,
-            page: groupBy ? 1 : pageState.pageIndex + 1,
-            page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+            page: pageState.pageIndex + 1,
+            page_size: pageState.pageSize,
         },
         enabled: groupKey === null,
     })

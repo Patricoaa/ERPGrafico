@@ -77,3 +77,19 @@ class ProductionSelectorExt:
                 total += qty * line.component.cost_price
         if obj.yield_quantity and obj.yield_quantity > 0: total = total / obj.yield_quantity
         return float(total)
+
+
+def work_order_customer_name():
+    """Customer a work order shows (same precedence as `sale_customer_name`): the manufacturing
+    dialog override in `stage_data`, the sale order's customer, the related contact, else internal."""
+    from django.db.models import CharField, F, Value
+    from django.db.models.fields.json import KeyTextTransform
+    from django.db.models.functions import Cast, Coalesce, NullIf
+
+    return Coalesce(
+        NullIf(Cast(KeyTextTransform("contact_name", "stage_data"), CharField()), Value("")),
+        F("sale_order__customer__name"),
+        F("related_contact__name"),
+        Value("Manual / Interno"),
+        output_field=CharField(),
+    )

@@ -1,6 +1,6 @@
 "use client"
 
-import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { saleFulfillmentEntity, saleFulfillmentViews } from "../entity-view/saleFulfillment.entity"
 import { useSaleFulfillment } from "../hooks/useSaleDeliveries"
@@ -24,8 +24,8 @@ export function SalesFulfillmentView() {
     const grouped = useSaleFulfillmentGroups({ groupKey, params })
     const list = useSaleFulfillment({
         ...params,
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     }, groupKey === null)
     const { page, fulfillments } = list
     const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : { ...list, isRefetching: list.isFetching }

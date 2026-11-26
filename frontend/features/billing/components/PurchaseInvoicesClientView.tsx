@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
@@ -31,8 +31,8 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
     const list = usePurchaseInvoices({
         filters: {
             ...filters,
-            page: groupBy ? 1 : pageState.pageIndex + 1,
-            page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+            page: pageState.pageIndex + 1,
+            page_size: pageState.pageSize,
         },
         enabled: groupKey === null,
     })

@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useEffect, useCallback } from "react"
-import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
+import React, { useCallback } from "react"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
 import { useInventoryDocumentGroups } from "../hooks/useInventoryGroups"
 import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
@@ -33,20 +33,14 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
     const grouped = useInventoryDocumentGroups({ groupKey, filters: allFilters })
     const list = useInventoryDocuments({
         ...allFilters,
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     }, groupKey === null)
     const { documents, totalCount } = list
     const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     // Only the page grouping is bounded; server groups cover the whole result.
-    const isTruncated = !!groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT
 
-    useEffect(() => {
-        if (isTruncated) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [isTruncated, totalCount])
 
     const sheet = useDocumentSheetRoute("inventory.inventorydocument")
 

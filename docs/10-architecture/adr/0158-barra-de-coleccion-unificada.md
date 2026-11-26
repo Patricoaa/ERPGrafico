@@ -196,7 +196,7 @@ Mientras dura la migración, una vista usa `unifiedSearchDef` (vía el adaptador
 - Retirados: el adaptador `fromUnifiedSearchDef`, `SearchBarMenu` y sus secciones, el último `unifiedSearchDef.ts`, `AnalyticsPanel` (Drawer) y `useGroupByPagination`.
 - `DataTable` se borró junto con `DataTableToolbar`, `FacetedFilter` y `DataTableColumnToggle`. Sus dos últimas pantallas (conciliación y mapeo de cuentas) migraron con [ADR-0159](0159-collection-seleccion-controlada-tono-y-arrastre.md).
 - Las listas embebidas usan la barra completa con `useCollectionQuery(entity, { urlPrefix })`.
-- `GROUP_ROW_LIMIT` **se mantiene**: es el respaldo documentado para agrupar por un valor derivado sin `groupKey`. Se retira cuando todo campo agrupable de una lista paginada tenga agrupación en servidor.
+- `GROUP_ROW_LIMIT` se retiró después (2026-11-26): los dos últimos valores derivados (origen del asiento, cliente de la OT) se agrupan en servidor con `GroupField(expression=…)`, y `compileQuery` exige `groupKey` en modo servidor.
 
 ## Consecuencias
 

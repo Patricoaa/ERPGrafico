@@ -135,7 +135,8 @@ PF-1: documentos, movimientos, contabilidad y crédito paginan **en servidor**. 
 
 **Agrupación** (ADR-0158 §7, [component-collection-toolbar.md §7.1](./component-collection-toolbar.md#71-get-listagroupsgroup_bycampofiltrosordering)).
 - **Lista paginada en servidor:** el campo declara `groupKey` y la lista expone `groups/` (`GroupedListMixin`). `useCollectionQuery().groupKey` lo entrega; la página llama al hook de grupos de la feature (`useServerGroups`), desactiva la lista (`enabled: groupKey === null`) y pasa `serverGroups`. Los grupos cubren todo el resultado: conteos y subtotales correctos, los 3 primeros abiertos y «Mostrar más» por grupo.
-- **Valor derivado** (sin columna en la base, p. ej. un estado compuesto): el campo no declara `groupKey` y se agrupa la página cargada con `groupItems` (`lib/group-utils`); si el total supera lo cargado, `Collection.View` muestra el aviso de truncado.
+- **Valor derivado** (sin columna en la base, p. ej. un estado compuesto): también declara `groupKey`. El backend lo calcula en SQL con `GroupField(…, expression=…, labels=…)` y la lista lo filtra con la misma expresión (ej. origen del asiento, cliente de la OT). `compileQuery` rechaza un campo de `groupBy` sin `groupKey` en modo servidor, igual que un `sort` sin `orderBy`.
+- **Lista que carga todas las filas** (`useCollectionQuery(…, { sorting: "client" })`): agrupa en el navegador con `groupItems`. Si aun así `rowCount` supera lo cargado, `Collection.View` muestra el aviso de truncado.
 - **Datos en cliente** (`sorting: "client"`): se agrupan las filas cargadas, que son todas.
 
 ## 6. Superficies

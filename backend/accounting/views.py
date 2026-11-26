@@ -23,10 +23,16 @@ from .models import (
 class JournalEntryFilterSet(FilterSet):
     date_after = django_filters.DateFilter(field_name="date", lookup_expr="gte")
     date_before = django_filters.DateFilter(field_name="date", lookup_expr="lte")
+    origin = django_filters.CharFilter(method="filter_origin")
 
     class Meta:
         model = JournalEntry
-        fields = ["status", "date_after", "date_before"]
+        fields = ["status", "date_after", "date_before", "origin"]
+
+    def filter_origin(self, queryset, name, value):
+        from .selectors import journal_entry_origin
+
+        return queryset.annotate(_origin=journal_entry_origin()).filter(_origin=value)
 
 
 from django.core.exceptions import ValidationError
@@ -39,7 +45,9 @@ from core.mixins import BulkImportMixin, EditPolicyMixin, GroupedListMixin
 
 from .fiscal_year_service import FiscalYearClosingService
 from .selectors import (
+    JOURNAL_ENTRY_ORIGIN_LABELS,
     get_account_ledger,
+    journal_entry_origin,
     list_accounts,
     list_budgetable_accounts,
 )
@@ -168,11 +176,11 @@ class JournalEntryViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistory)
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
     search_fields = ["description", "number", "items__partner__name", "items__partner__tax_id"]
-    # ADR-0158 §7: groups/ by status and date. The origin (manual / automatic / reversal) is derived,
-    # not a column, so it keeps grouping the loaded page.
+    # ADR-0158 §7: groups/ by status, date and origin (manual / automatic / reversal, derived in SQL).
     group_fields = {
         "status": GroupField("status"),
         "date": GroupField("date", param=("date_after", "date_before")),
+        "origin": GroupField("origin", expression=journal_entry_origin(), labels=JOURNAL_ENTRY_ORIGIN_LABELS),
     }
     group_ordering = ["-date"]
     action_permissions = {

@@ -28,10 +28,16 @@ class WorkOrderFilterSet(FilterSet):
         field_name="estimated_completion_date", lookup_expr="lte"
     )
     my_tasks = django_filters.BooleanFilter(method="filter_my_tasks")
+    customer_name = django_filters.CharFilter(method="filter_customer_name")
 
     class Meta:
         model = WorkOrder
-        fields = ["status", "current_stage", "due_date_after", "due_date_before"]
+        fields = ["status", "current_stage", "due_date_after", "due_date_before", "customer_name"]
+
+    def filter_customer_name(self, queryset, name, value):
+        from .selectors import work_order_customer_name
+
+        return queryset.annotate(_customer_name=work_order_customer_name()).filter(_customer_name=value)
 
     def filter_my_tasks(self, queryset, name, value):
         if not (value and self.request and self.request.user.is_authenticated): return queryset
@@ -54,7 +60,7 @@ from django.http import HttpResponse
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, GroupedListMixin
 
-from .selectors import ProductionSelectorExt
+from .selectors import ProductionSelectorExt, work_order_customer_name
 from .serializers import (
     BillOfMaterialsSerializer,
     WorkOrderListSerializer,
@@ -89,9 +95,13 @@ class WorkOrderViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixi
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = WorkOrderFilterSet
-    # ADR-0158 §7: groups/ by status and stage. The customer shown on a work order may come from its
-    # stage data (JSON), its sale order or its contact, so it is not a groupable column.
-    group_fields = {"status": GroupField("status"), "current_stage": GroupField("current_stage")}
+    # ADR-0158 §7: groups/ by status, stage and customer. The customer may come from the stage data
+    # (JSON), the sale order or the contact, so it is derived in SQL (`work_order_customer_name`).
+    group_fields = {
+        "status": GroupField("status"),
+        "current_stage": GroupField("current_stage"),
+        "customer": GroupField("customer_label", param="customer_name", expression=work_order_customer_name()),
+    }
     search_fields = [
         "description",
         "number",

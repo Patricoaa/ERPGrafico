@@ -12,7 +12,7 @@ export const journalEntryEntity = defineEntity<JournalEntry>()((f) => ({
             status: e.is_manual ? "manual" : e.reversal_of ? "reversal" : "auto",
             label: e.is_manual ? "Manual" : e.reversal_of ? "Reversión" : "Automático",
             intent: e.is_manual ? "neutral" : e.reversal_of ? "warning" : "info",
-        }), { label: "Origen" }),
+        }), { label: "Origen", groupKey: "origin" }),
         date: f.date("date", { label: "Fecha", groupKey: "date" }),
         description: f.text("description", { label: "Descripción", truncate: true }),
         totalDebit: f.money((e) => e.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) ?? 0, { label: "Total Débito" }),

@@ -17,8 +17,8 @@ const noteEntity = defineEntity<Note>()((f) => ({
     title: "Notas de venta",
     fields: {
         number: f.code("number", { label: "Folio", orderBy: "number" }),
-        customer: f.text("customer", { label: "Cliente", orderBy: "customer__name" }),
-        status: f.text("status", { label: "Estado" }),
+        customer: f.text("customer", { label: "Cliente", orderBy: "customer__name", groupKey: "customer" }),
+        status: f.text("status", { label: "Estado", groupKey: "status" }),
         date: f.date("date", { label: "Fecha", orderBy: "date" }),
         total: f.money("total", { label: "Total", orderBy: "total" }),
     },
@@ -87,6 +87,16 @@ describe("compileQuery (ADR-0158 §3)", () => {
             query: { sort: { fields: ["status"] } },
         }))
         expect(() => compileQuery(bad)).toThrow(/orderBy/)
+    })
+
+    it("rejects a server-mode group field without groupKey; client mode groups the loaded rows", () => {
+        const bad = defineEntity<Note>()((f) => ({
+            title: "x",
+            fields: { status: f.text("status", { label: "Estado" }) },
+            query: { groupBy: { fields: ["status"] } },
+        }))
+        expect(() => compileQuery(bad)).toThrow(/groupKey/)
+        expect(compileQuery(bad, { sorting: "client" }).groupFields).toEqual([{ id: "status", label: "Estado", groupKey: null }])
     })
 })
 
