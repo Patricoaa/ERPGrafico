@@ -20,8 +20,10 @@ pytestmark = pytest.mark.ci_gate
 #
 # `DRAWER_DETAIL_ENTITIES`: entidades que SÍ tienen página de lista propia
 #   (su `list_url` se valida contra `searchableEntityRoutes.ts`), pero cuyo
-#   detalle es un drawer — no existe `[id]/page.tsx`. Se omiten solo del
-#   invariante de rutas de detalle (T-79).
+#   detalle es un drawer o una pestaña abierta por deep link (`?selected`) —
+#   no existe `[id]/page.tsx` real. Se omiten solo del invariante de rutas de
+#   detalle (T-79). Budget y payroll entran aquí al dejar de ser standalone
+#   (ADR-0022, ADR-0152).
 #
 # Cualquier alta/baja aquí DEBE reflejarse en docs/10-architecture/adr/0022.
 # ---------------------------------------------------------------------------
@@ -39,6 +41,7 @@ DRAWER_ENTITIES: set[str] = {
 }
 
 DRAWER_DETAIL_ENTITIES: set[str] = {
+    "accounting.budget",  # lista /finances/budgets/list; detalle en pestaña con ?selected (ADR-0022)
     "production.bom",  # lista /production/boms; detalle en drawer
     "treasury.check",  # lista /treasury/operaciones/checks; detalle en drawer
     "treasury.paymentmethod",  # lista /treasury/operaciones/methods; detalle en drawer
@@ -46,6 +49,7 @@ DRAWER_DETAIL_ENTITIES: set[str] = {
     "treasury.treasuryaccount",  # lista /treasury/operaciones/accounts; detalle en drawer
     "hr.absence",  # lista /hr/absences; detalle en drawer
     "hr.employeemovement",  # lista /hr/movements; detalle en drawer (ADR-0156)
+    "hr.payroll",  # lista /hr/payrolls; detalle en pestaña con ?selected (ADR-0022)
     "sales.saledelivery",  # lista /sales/dtes/fulfillment; detalle en drawer (ADR-0090)
     "sales.salereturn",  # lista /sales/dtes/fulfillment; detalle en drawer (ADR-0090)
     "purchasing.purchasereceipt",  # lista /purchasing/dtes/fulfillment; detalle en drawer (ADR-0090)
@@ -296,10 +300,11 @@ class TestArchitecturalInvariants:
         T-103 / ADR-0022: UniversalRegistry.list_url debe coincidir con
         searchableEntityRoutes.ts (fuente de verdad del frontend).
 
-        Excepciones — entidades con vistas standalone (no modal-on-list):
-          - accounting.budget  → /finances/budgets  (BudgetEditor standalone)
-          - hr.payroll         → /hr/payrolls        (PayrollDetailContent standalone)
+        Excepción — entidad con vista standalone (no modal-on-list):
           - billing.invoice*   → split client-side por is_sale_document
+        Budget y payroll ya no son excepciones: sus listas canónicas están en
+        searchableEntityRoutes.ts y su detalle se abre como pestaña con `?selected`
+        (ADR-0022 / ADR-0152). Se omiten solo de T-79 vía DRAWER_DETAIL_ENTITIES.
         Excepciones en DRAWER_ENTITIES — entidades drawer/tab-only sin list page propia
         (ver ADR-0022). Se omiten de la comparación.
 
@@ -309,8 +314,6 @@ class TestArchitecturalInvariants:
 
         # Excepciones documentadas en ADR-0022 — NO añadir sin actualizar el ADR.
         STANDALONE_EXCEPTIONS: set[str] = {
-            "accounting.budget",  # Vista standalone /finances/budgets/[id]
-            "hr.payroll",  # Vista standalone /hr/payrolls/[id]
             "billing.invoice",  # Split client-side por is_sale_document
         }
 

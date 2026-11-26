@@ -345,10 +345,12 @@ Se migra **con el comportamiento de hoy** (paridad). Las mejoras se registran y 
 |---|---|---|
 | Maestro con datos en cliente | `features/inventory/components/UoMClientView.tsx` | `useEntityCollection(entity, { rows, isLoading, error, refetch, isFiltered })` · `Collection.Root selection="bulk" onOpen actions={xActions.forCollection(ctx)}` · `useCollectionQuery(entity, { sorting: "client" })` · `<Collection.Root query>` + `Collection.Toolbar action` · `Collection.View table card empty*` · `Collection.BulkBar` |
 | Documento con servidor | `features/purchasing/components/PurchaseOrdersView.tsx` | lo anterior + `useCollectionQuery(entity)` (búsqueda, filtros, `ordering`, `groupBy` y vistas desde `entity.query`), `useServerPage([params, groupBy])`, `<Collection.Root query>`, `selection="panel"` con `useDocumentSheetRoute`, agrupación en servidor (`usePurchaseOrderGroups` → `serverGroups`) y conteos (`facets/`) |
+| Informe con parámetros en la URL | `features/finance/components/BudgetVarianceView.tsx` | `entity.query` con `search: false` y filtros del endpoint (`budget`, `month`, `year`; `filterOptions` desde los presupuestos) · `useCollectionQuery(entity, { filterOptions })` · `<Collection.Root query>` + `<Collection.Toolbar exportFilters>` (la toolbar vive en `BudgetVarianceTable.tsx`, no en la vista) · el hook del informe recibe los parámetros efectivos y los incluye en su query key · `entity.export.useExport` genera el archivo desde la caché |
 
 Reglas de la pantalla:
 
 - **Selección:** la columna `select` a mano, `renderCard` y `AutoEntityCard` desaparecen; las da `selection`.
+- **Informes:** los parámetros del endpoint son estado de la URL vía `useCollectionQuery`; nunca `useState` local. Los valores por defecto (por ejemplo, mes/año del servidor) se derivan en render y, si deben quedar visibles en la URL, se escriben desde `useEffect`. La query key del hook de datos incluye esos parámetros.
 - **Error con filtro en cliente:** si la vista filtra las filas antes de pasarlas (`filterFn`, filtros locales), pasa `error: isError && datos.length === 0` con los datos **sin filtrar**: con datos en caché, un refresco fallido más un filtro sin coincidencias debe leerse "sin resultados", no "error".
 - **Agrupación:** los campos agrupables se listan en `query.groupBy` de la entidad. Con paginación en servidor, cada uno declara `groupKey` y la pantalla pasa `serverGroups` (§5, Agrupación); los mapas `X_GROUPS` por pantalla ya no se usan.
 - **Analítica:**

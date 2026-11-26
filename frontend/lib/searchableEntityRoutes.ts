@@ -14,8 +14,6 @@
  *   - /accounting/accounts/[id]/ledger  → Libro Mayor por cuenta (vista de datos)
  *   - /treasury/reconciliation/[id]     → Vista de reconciliación (UI propia)
  *   - /treasury/reconciliation/[id]/workbench → Mesa de Conciliación (UI compleja)
- *   - /finances/budgets/[id]            → BudgetDetailView (UI propia preexistente)
- *   - /hr/payrolls/[id]                 → PayrollDetailView (ficha documental incrustada)
  *   - /d/billing.invoice/[id]       → Resolvedor ADR-0080 (redirige a la lista según lado:
  *                                    venta → /sales/dtes?selected · compra → drawer)
  *
@@ -52,8 +50,7 @@ export const searchableEntityRoutes: Record<string, string> = {
     'accounting.fiscalyear':   '/accounting/closures',
 
     // Finance
-    // budget: vive en /finances/budgets (vista standalone preexistente)
-    // El [id]/page.tsx de budgets NO hace redirect al modal; es una página completa.
+    'accounting.budget':   '/finances/budgets/list',
 
     // Inventory
     // categories/warehouses/stock-moves viven en tabs dentro de otras páginas — T-99
@@ -81,6 +78,7 @@ export const searchableEntityRoutes: Record<string, string> = {
     'hr.employee':       '/hr/employees',
     'hr.absence':        '/hr/absences',
     'hr.employeemovement':  '/hr/movements',
+    'hr.payroll':           '/hr/payrolls',
     // payrollconcept: tab en /hr/settings/concepts (ADR-0022 DRAWER_ENTITIES)
 
     // Production

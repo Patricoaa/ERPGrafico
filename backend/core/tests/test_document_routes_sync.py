@@ -5,6 +5,7 @@ Se omite si el árbol del frontend no está disponible (contenedor solo-backend)
 """
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -69,3 +70,11 @@ def test_search_detail_url_uses_canonical_url():
     assert UniversalRegistry._canonical_url("sales.saledelivery", 800) == "/d/sales.saledelivery/800"
     assert UniversalRegistry._canonical_url("sales.saleorder", 5) == "/sales/dtes/orders?selected=5"
     assert UniversalRegistry._canonical_url("billing.invoice", 7) == "/d/billing.invoice/7"
+    # Deep links canónicos: T-79 ya no valida estos patrones (ADR-0022 / ADR-0152).
+    assert UniversalRegistry._canonical_url("accounting.budget", 604) == "/finances/budgets/list?selected=604"
+    assert UniversalRegistry._canonical_url("hr.payroll", 911) == "/hr/payrolls?selected=911"
+
+
+def test_payrollpayment_canonical_url_points_at_its_payroll():
+    payment = SimpleNamespace(payroll_id=911)
+    assert DocumentTypeRegistry.canonical_url("hr.payrollpayment", payment) == "/hr/payrolls?selected=911"

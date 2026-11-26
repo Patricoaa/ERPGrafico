@@ -43,6 +43,8 @@ Task routing — common intents:
 | Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
 | Entity collection / table / card / list columns / value kind / `defineEntity` / entity-view | [component-entity-view.md](docs/20-contracts/component-entity-view.md) |
 | Search / filter / sort / group / saved views / collection toolbar / analytics modal / `entity.query` / facets | [component-collection-toolbar.md](docs/20-contracts/component-collection-toolbar.md) + [ADR-0158](docs/10-architecture/adr/0158-barra-de-coleccion-unificada.md) |
+| Record tab / open a row with `openEntity` / `?selected` deep link / payroll opened from its record | [component-entity-drawers.md](docs/20-contracts/component-entity-drawers.md) + [ADR-0152](docs/10-architecture/adr/0152-pestanas-de-registro-multiples-por-entidad.md) |
+| Budget list filters / budget variance / execution panel / report CSV from cache | [component-collection-toolbar.md](docs/20-contracts/component-collection-toolbar.md) + [component-entity-view.md](docs/20-contracts/component-entity-view.md) + [export-formats.md](docs/20-contracts/export-formats.md) |
 | KPI / métrica / stat / `Metric` / `MetricStrip` / `ChartCard` / `kpi-value` | [component-metric.md](docs/20-contracts/component-metric.md) |
 | Panel derecho de resumen (carrito POS / lista calculadora) / `SummaryPanel` / handoff "Continuar en otro equipo" | [component-summary-panel.md](docs/20-contracts/component-summary-panel.md) |
 | Card (choice / item / nav / metric / panel) / card surface / `CardLead` / `CardRail` / `cardAnatomy` | [component-card-family.md](docs/20-contracts/component-card-family.md) |

@@ -16,6 +16,12 @@ author: architecture-team
 > rutas `[id]` redirigen a `<list_url>?selected={id}` y `EntityDetailPage` fue eliminado en T-95.
 > **Lo que sigue vigente:** las tablas de slugs canónicos §D-02 (app → módulo) y §D-03 (plural en
 > inglés), que las rutas y `searchableEntityRoutes.ts` siguen usando.
+>
+> **Nota histórica (2026-11-26):** el §Contexto afirma que «solo 2 entidades tienen página `[id]`
+> real» (`finances/budgets/[id]` y `hr/payrolls/[id]`). Ya no es así: esas dos páginas son redirects
+> delgados a `/finances/budgets/list?selected=<id>&action=execution` y
+> `/hr/payrolls?selected=<id>`. El detalle se abre como pestaña sobre la lista (ADR-0152); las
+> URLs canónicas las fija ADR-0022.
 
 ---
 
@@ -101,6 +107,8 @@ Ejemplo: `SaleOrder` → `/sales/orders/123`
 | `workflow.task` | `/workflow/tasks` | `/workflow/tasks/{id}` | ❌ | No |
 | `core.user` | `/settings/users` | `/settings/users/{id}` | ❌ | No |
 | `core.attachment` | `/files` | `/files/{id}` | ❌ | **Sí** |
+
+> **Actualización (ADR-0152, 2026-11-26):** los `detail_url_pattern` de `accounting.budget` y `hr.payroll` ya no son rutas `[id]`: `/finances/budgets/{id}` y `/hr/payrolls/{id}` redirigen a `?selected={id}` sobre la lista (el de presupuestos añade `&action=execution` para abrir el panel de ejecución). La lista canónica de presupuestos es `/finances/budgets/list` (antes `/finances/budgets`). Ver [ADR-0152](./0152-pestanas-de-registro-multiples-por-entidad.md).
 
 > **Nota `accounting.account`:** existe `accounting/ledger/[id]/ledger/page.tsx` con estructura anidada doble — no cumple el patrón. T-75 consolida esta ruta en `accounting/accounts/[id]/page.tsx` (ficha de cuenta) manteniendo `accounting/ledger/` para el mayor.
 

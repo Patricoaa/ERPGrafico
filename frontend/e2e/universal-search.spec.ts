@@ -438,7 +438,15 @@ test.describe('Universal Search Navigation', () => {
         await expect(page.locator('text=Ejercicio 2026').first()).toBeVisible();
     });
 
-    test('Navigates to budget detail page correctly', async ({ page }) => {
+    test('Navigates to the budget execution tab, not the old detail page (ADR-0152)', async ({ page }) => {
+        const budget = {
+            id: 604,
+            name: 'Presupuesto 2026',
+            start_date: '2026-01-01',
+            end_date: '2026-12-31',
+            description: 'Gastos generales',
+            items: [],
+        };
         await page.route('**/api/search/universal/?q=Presupuesto', async route => {
             const json = {
                 results: [
@@ -446,7 +454,7 @@ test.describe('Universal Search Navigation', () => {
                         id: 604,
                         type: 'accounting.budget',
                         display: 'Presupuesto 2026',
-                        detail_url: '/finances/budgets/604',
+                        detail_url: '/finances/budgets/list?selected=604&action=execution',
                         icon: 'wallet',
                         label: 'accounting.budget'
                     }
@@ -455,13 +463,21 @@ test.describe('Universal Search Navigation', () => {
             await route.fulfill({ json });
         });
 
+        // La lista alimenta `useBudgets`; el registro resuelve `useSelectedEntity` y la ejecución al panel.
+        await page.route('**/api/accounting/budgets/?*', async route => {
+            await route.fulfill({ json: { count: 1, next: null, previous: null, results: [budget] } });
+        });
         await page.route('**/api/accounting/budgets/604/', async route => {
-            const json = {
-                id: 604,
-                name: 'Presupuesto 2026',
-                year: 2026
-            };
-            await route.fulfill({ json });
+            await route.fulfill({ json: budget });
+        });
+        await page.route('**/api/accounting/budgets/604/execution/', async route => {
+            await route.fulfill({
+                json: {
+                    budget,
+                    summary: { total_budgeted: 1000, total_actual: 900, total_variance: -100 },
+                    items: [],
+                },
+            });
         });
 
         await page.goto('/');
@@ -473,7 +489,12 @@ test.describe('Universal Search Navigation', () => {
         await expect(result).toBeVisible();
         await result.click();
 
-        await expect(page).toHaveURL(/.*\/finances\/budgets\/604/);
+        await expect(page).toHaveURL(/\/finances\/budgets\/list\?selected=604&action=execution/);
+        await expect(page.locator('[data-tab-key="panel:accounting.budget:execution:604"]')).toBeVisible();
+        await expect(page.getByRole('dialog', { name: 'Ejecución: Presupuesto 2026' })).toBeVisible();
+        await expect(page.getByText('Resumen de ejecución presupuestaria')).toBeVisible();
+        // El PageHeader viejo de `/finances/budgets/[id]` traía un enlace «Volver»; aquí no existe.
+        await expect(page.getByRole('link', { name: /Volver/ })).toHaveCount(0);
     });
 
     test('Navigates to treasury movement detail page correctly', async ({ page }) => {

@@ -657,7 +657,7 @@ function Analytics({ children }: { children: React.ReactNode }) {
             title={`Analítica · ${ctx.label}`}
             size="xl"
             hideScrollArea
-            contentClassName="overflow-hidden"
+            contentClassName="overflow-hidden p-5"
         >
             <div className="flex h-[80vh] min-h-0 flex-col gap-3 overflow-hidden">
                 {query && <AnalyticsScopeStrip query={query} />}
@@ -668,15 +668,15 @@ function Analytics({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * «Analizando N <entidad> con la vista X» + the applied filters, read-only (ADR-0158 §11). The modal
- * inherits the list's query; «Analizar sin filtros» widens it inside the modal only.
+ * «Analizando con la vista X / los filtros de la lista» + the applied filters, read-only (ADR-0158 §11).
+ * No result count: the toolbar already owns it. The modal inherits the list's query; «Analizar sin filtros»
+ * widens it inside the modal only.
  */
 function AnalyticsScopeStrip({ query }: { query: CollectionQuery<string> }) {
     const ctx = useCollectionContext<unknown>()
     const scope = ctx.analyticsScope
     const all = scope?.value === "all"
     const chips = query.search.chips.filter((chip) => chip.variant !== "group")
-    const total = ctx.collection.status === "loading" ? null : ctx.collection.total
     // The view is named only while the state matches it; once filters drift, the chips tell the scope.
     const view = query.views.length > 1 && !query.isDirty ? query.activeView : null
     return (
@@ -685,10 +685,9 @@ function AnalyticsScopeStrip({ query }: { query: CollectionQuery<string> }) {
                 {all ? (
                     <>Analizando <strong className="font-semibold text-foreground">todos los registros</strong>, sin filtros</>
                 ) : (
-                    <>
-                        Analizando <strong className="font-mono font-semibold tabular-nums text-foreground">{total === null ? "…" : formatResultCount(total)}</strong>
-                        {view && <> con la vista <strong className="font-semibold text-foreground">{view.label}</strong></>}
-                    </>
+                    <>Analizando con {view
+                        ? <>la vista <strong className="font-semibold text-foreground">{view.label}</strong></>
+                        : <>los filtros de la lista</>}</>
                 )}
             </p>
             {!all && <AppliedFilters chips={chips} />}

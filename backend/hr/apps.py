@@ -58,7 +58,7 @@ class HrConfig(AppConfig):
                     short_display_template=f"{EntityPrefix.PAYROLL}-{{number}}",
                     display_template=f"{EntityPrefix.PAYROLL}-{{number}} · {{employee.contact.name}}",
                     list_url="/hr/payrolls",
-                    detail_url_pattern="/hr/payrolls/{id}",
+                    detail_url_pattern="/hr/payrolls?selected={id}",
                     permission="hr.view_payroll",
                 )
             )

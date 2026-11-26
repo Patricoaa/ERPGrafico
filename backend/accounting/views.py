@@ -38,8 +38,8 @@ class JournalEntryFilterSet(FilterSet):
 from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
-from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
+from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin, EditPolicyMixin, GroupedListMixin
 
@@ -249,8 +249,17 @@ class JournalEntryViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistory)
 # --- Budgeting ViewSets ---
 
 
+class BudgetFilterBackend(DjangoFilterBackend):
+    """Un filtro de fecha inválido debe responderse, no ignorarse silenciosamente."""
+    raise_exception = True
+
+
 class BudgetViewSet(viewsets.ModelViewSet, AuditHistory):
     pagination_class = StandardResultsSetPagination
+    filter_backends = [BudgetFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name", "description"]
+    filterset_fields = {"start_date": ["gte", "lte"], "end_date": ["gte", "lte"]}
+    ordering_fields = ["name", "start_date", "end_date", "id"]
     action_permissions = {
         # Edit via POST → change_*
         "set_items": "accounting.change_budget",

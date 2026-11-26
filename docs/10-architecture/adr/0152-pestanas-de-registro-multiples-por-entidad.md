@@ -1,7 +1,7 @@
 ---
 id: 0152
 title: Un registro = una pestaña — las filas abren pestañas por `openEntity` (varias por entidad); `?selected` pasa a ser solo enlace profundo
-status: Proposed
+status: Accepted
 date: 2026-11-22
 author: frontend-team
 ---
@@ -9,6 +9,8 @@ author: frontend-team
 # 0152 — Pestañas de registro múltiples por entidad
 
 **Relacionado:** ADR-0101 (barra de trabajo; este ADR reemplaza sus decisiones 6 y 12), ADR-0020 (`?selected`; queda como enlace profundo), ADR-0028 (registro de drawers), ADR-0086 (navegación canónica de documentos), ADR-0087 (entity-view). Issue #260.
+
+**Estado:** Accepted (2026-11-26). La verificación en navegador sigue siendo obligatoria antes de merge, pero ya no condiciona el estado del ADR.
 
 ## Contexto
 
@@ -33,6 +35,8 @@ Alcance medido (2026-11-22): 39 vistas usan `useEntityPanelRoute`, 40 etiquetas 
 6. **Pestañas hermanas con el mismo título.** Si dos pestañas abiertas tienen el mismo título, la barra añade ` (2)`, ` (3)`.
 7. **Cambios sin guardar:** sin cambios. Solo la pestaña activa está montada; cambiar de pestaña con un formulario sucio pasa por la guarda (ADR-0101 §7). Con varias pestañas de edición abiertas el estado de las inactivas se pierde al desmontar; el ADR **no** introduce montaje persistente (ver Consecuencias).
 8. **Resaltado tras guardar (ADR-0101 §13)** se mantiene: la pestaña de entidad publica `SavedRecord` por `onSuccess`.
+9. **`variant="execution"` es una acción sobre el registro, no su ficha.** En `/finances/budgets/list`, «Ver Ejecución» abre `EntityPanelTab` con `variant="execution"` y `display="Ejecución: <nombre>"`, montando `BudgetExecutionPanel` (`BaseModal` con métricas y exportación CSV). La fila y «Editar Montos» siguen abriendo `openEntity("accounting.budget", id)` (decisión 1). El deep link `?selected=<id>&action=execution` lo abre con `useCreatePanelRoute({ actions: ["execution"], create: false })`, mientras `useDeepLinkEntity(label, { actions: [null] })` impide que se abra también el editor.
+10. **Simetría `replace` al abrir y cerrar.** La apertura del panel escribe la URL con `router.replace` y `close()` también usa `replace`: «Atrás» tras cerrar no reabre el panel. Aplica también al deep link de `hr.payroll`, que limpia `?selected` al abrir la pestaña.
 
 ## Alternativas descartadas
 

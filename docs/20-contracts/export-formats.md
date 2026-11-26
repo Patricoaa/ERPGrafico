@@ -171,6 +171,13 @@ def write_csv(rows, fieldnames) -> bytes:
     return buf.getvalue()
 ```
 
+> **Excepción vigente (2026-11-26, ADR-0158 §Migración):** el versus presupuestario
+> (`/finances/budgets/versus`) genera el CSV **en cliente** desde la caché de React Query con
+> `useBudgetVarianceExport`: BOM UTF-8, delimitador `,`, comillas dobles y prefijo `'` en celdas
+> de tipo `string` que empiezan con `= + - @` o con los caracteres de control `\t` / `\r`
+> (`/^[=+\-@\t\r]/`) para neutralizar fórmulas. No hay endpoint de export nuevo; la
+> consulta (presupuesto, mes, año) ya vive en la URL vía `useCollectionQuery`.
+
 ---
 
 ## Storage async (R2/MinIO via django-storages)

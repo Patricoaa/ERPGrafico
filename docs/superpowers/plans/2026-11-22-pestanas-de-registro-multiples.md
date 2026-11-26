@@ -14,7 +14,7 @@ Prerrequisito de todo lo demás; no cambia comportamiento visible.
 4. **`useDeepLinkEntity(label, options?)`** (`hooks/`): lee `?selected`/`?action`, llama `openEntity` una vez al montar y limpia el parámetro con `router.replace`. Cubre el caso `?action=view` con `variant` cuando aplique. Idempotente ante re-render (ref).
 5. **Prueba de contrato** (`lib/__tests__/`): toda etiqueta usada en `EntityPanelTab` sin `variant` y con `id` de registro debe existir en `ENTITY_DRAWERS`; con lista de excepciones (ratchet) que baja por oleada, como el ratchet de entity-view.
 6. **Tests:** `GlobalModalProvider` — abrir `contacts.contact:1` y `:2` deja dos pestañas; reabrir `:1` solo la activa; título duplicado se desambigua. `useDeepLinkEntity` abre una vez y limpia la URL.
-7. **Documentación:** ADR-0152 a *Accepted* al cerrar la oleada piloto (no antes).
+7. **Documentación:** ADR-0152 pasó a *Accepted* el 2026-11-26 (autorizado; la verificación en navegador sigue siendo obligatoria antes de merge, pero ya no condiciona el estado del ADR).
 
 **Salida:** infraestructura mergeada; ratchet creado con las ≈12 etiquetas no registradas listadas.
 
@@ -27,7 +27,7 @@ Prerrequisito de todo lo demás; no cambia comportamiento visible.
 3. Verificar que `ContactDrawer` en `ENTITY_DRAWERS` cubre lo que hoy recibe de la vista (props, `onSuccess`, invalidación); ajustar el registro si falta.
 4. `CreditPortfolioClientView` queda **fuera**: sus paneles `credit`/`ledger` son `variant` (decisión 3), solo se revisa que no choquen de clave.
 5. Verificación en navegador (Node 24 + dev server): abrir cliente A, volver a la lista, abrir B → dos pestañas; recargar con `?selected=A` abre una; guarda con cambios sin guardar; resaltado de fila tras guardar.
-6. **Gate de la oleada:** 3 flujos manuales + tests de vista actualizados. Decide si el ADR pasa a *Accepted* y si el montaje persistente hace falta (medir pérdida de estado al alternar pestañas de edición).
+6. **Gate de la oleada:** 3 flujos manuales + tests de vista actualizados. Decide si el montaje persistente hace falta (medir pérdida de estado al alternar pestañas de edición); el estado del ADR ya no depende de este gate.
 
 ## Oleada 2 — Entidades ya registradas, módulos de datos maestros
 
@@ -45,7 +45,7 @@ Cada PR: migrar la vista, borrar `useSelectedEntity` redundante, actualizar el t
 Primero **registrar** en `ENTITY_DRAWERS` (con carga por `id` y `shortTemplate`), luego migrar:
 
 - **Tesorería:** `treasuryaccount`, `treasurymovement`, `terminal*` (batch, sale, syncrun, device, provider, `terminal`), `bankmovement`, `bank`, `bankloan`, `paymentmethod`, `cardpendingcharge`.
-- **Otros sin registro:** `accounting.budget`, `tax.taxperiod`, `production.bom`, `inventory.uomcategory`, `inventory.subscription`, `inventory.inventorycount`.
+- **Otros sin registro:** `tax.taxperiod`, `production.bom`, `inventory.uomcategory`, `inventory.subscription`, `inventory.inventorycount`. `accounting.budget` salió de esta lista el 2026-11-26: se registró su drawer y su fila abre pestaña con `openEntity`; «Ver Ejecución» abre el panel `variant="execution"` (ADR-0152, decisión 9).
 - `production.workorder` y `contacts.profitdistributionresolution` ya están registrados; entran aquí por su cercanía al flujo.
 
 Riesgo principal: drawers que hoy reciben contexto de la vista (filtros de periodo, terminal seleccionado). Inventario previo por drawer; el dato viaja en `data` o el drawer lo resuelve por sus hooks.
@@ -61,7 +61,8 @@ Riesgo principal: drawers que hoy reciben contexto de la vista (filtros de perio
 
 - Hecho: Partners, distribuciones, Movimientos y terminales POS migrados; contratos y ADR-0020/0101 anotados; `useEntityRouteActions` documenta que `openSelected/openView` solo sirven a paneles de página con contexto.
 - Se mantienen a propósito (no son «ficha de registro»): `useCreatePanelRoute` para creación y `variant` (crédito/ledger, desembolso, cargo de tarjeta, lotes de terminal), edición de asientos contables, `CreditPortfolio`, cheques y estados de tarjeta (`openAction`). Renombrar el hook a `useCreatePanelRoute` queda como refactor aparte.
-- Pendiente: **verificación en navegador** (gate de la Oleada 1) → recién entonces ADR-0152 a *Accepted*; decisión de montaje persistente de pestañas (sin datos de uso todavía, se difiere).
+- ADR-0152 en *Accepted* desde el 2026-11-26: la verificación en navegador (gate de la Oleada 1) sigue siendo obligatoria antes de merge, pero ya no condiciona el estado del ADR. Queda pendiente la decisión de montaje persistente de pestañas (sin datos de uso todavía, se difiere).
+- Salida de la excepción standalone (2026-11-26): `accounting.budget` abre su ficha como pestaña y la ejecución como panel `variant="execution"` con `router.replace` simétrico al cierre; `hr.payroll` hace lo propio desde `/hr/payrolls`, con `/hr/payrolls/[id]` y `/finances/budgets/[id]` convertidos en redirects a sus deep links.
 
 ### Oleada 5 (2026-11-22) — fuera de `features/` y fichas documentales
 

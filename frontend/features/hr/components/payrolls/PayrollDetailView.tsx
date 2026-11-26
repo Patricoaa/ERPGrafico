@@ -1,39 +1,19 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { FileText } from "lucide-react"
 import { EmptyState, Section, SkeletonShell } from "@/components/shared"
 import { usePayrollDetail, type EmployeeBasic } from "@/features/hr/hooks/usePayrolls"
-import { PayrollDetailDrawer } from "./PayrollDetailDrawer"
 import { usePayrollSections } from "./payrollSummary"
 
 interface PayrollDetailViewProps {
     payrollId: number
-    /** `admin`: ficha completa incrustada (página). `employee`: lectura de la propia liquidación (perfil). */
-    viewMode?: "admin" | "employee"
+    /** ADR-0152/0083: la ficha admin es el drawer/pestaña; aquí solo existe la lectura del empleado. */
+    viewMode?: "employee"
     employee?: EmployeeBasic | null
 }
 
-/**
- * Liquidación fuera de un drawer. La administración ve la misma ficha documental que abre
- * `openEntity("hr.payroll", id)`, incrustada; el empleado ve solo el Resumen, sin acciones.
- */
-export function PayrollDetailView({ payrollId, viewMode = "admin", employee }: PayrollDetailViewProps) {
-    const router = useRouter()
-    if (viewMode === "admin") {
-        return (
-            <PayrollDetailDrawer
-                embedded
-                open
-                payrollId={payrollId}
-                onOpenChange={(o) => { if (!o) router.push("/hr/payrolls") }}
-            />
-        )
-    }
-    return <EmployeePayrollSummary payrollId={payrollId} employee={employee} />
-}
-
-function EmployeePayrollSummary({ payrollId, employee }: { payrollId: number; employee?: EmployeeBasic | null }) {
+/** Resumen de la propia liquidación para el perfil del empleado, sin acciones de administración. */
+export function PayrollDetailView({ payrollId, employee }: PayrollDetailViewProps) {
     const { payrollDetail, isLoading, isError } = usePayrollDetail(payrollId, "employee", employee)
     const payroll = payrollDetail?.payroll ?? null
     const sections = usePayrollSections(payroll)

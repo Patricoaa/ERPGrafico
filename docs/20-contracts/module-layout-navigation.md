@@ -184,7 +184,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `accounting.account` | `/accounting/accounts` | `/accounting/accounts/{id}` | ✅ | Parcial |
 | `accounting.journalentry` | `/accounting/entries` | `/accounting/entries/{id}` | ✅ | No |
 | `accounting.fiscalyear` | `/accounting/closures` | `/accounting/closures/{id}` | ✅ | No |
-| `accounting.budget` | `/finances/budgets` | `/finances/budgets/{id}` | ✅ | No |
+| `accounting.budget` | `/finances/budgets/list` | `/finances/budgets/list?selected={id}&action=execution` (redirect al panel de ejecución; ADR-0152) | ✅ (redirect) | No |
 | `inventory.product` | `/inventory/products` | `/inventory/products/{id}` | ✅ | No |
 | `inventory.productcategory` | `/inventory/settings/categories` | `/inventory/settings/categories/{id}` | ❌ (vía `?selected`) | No |
 | `inventory.warehouse` | `/inventory/warehouses` | `/inventory/warehouses/{id}` | ✅ | No |
@@ -195,7 +195,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `treasury.bankstatement` | `/treasury/statements` | `/treasury/statements/{id}` | ✅ | **Sí** |
 | `treasury.terminalsale` | `/treasury/terminal-cobro/sales` | `/treasury/terminal-cobro/sales?selected={id}` | ❌ (vía `?selected`) | **Sí** (espejo de solo lectura de TUU) |
 | `hr.employee` | `/hr/employees` | `/hr/employees/{id}` | ✅ | No |
-| `hr.payroll` | `/hr/payrolls` | `/hr/payrolls/{id}` | ✅ | No |
+| `hr.payroll` | `/hr/payrolls` | `/hr/payrolls?selected={id}` (redirect; ADR-0152) | ✅ (redirect) | No |
 | `production.workorder` | `/production/orders` | `/production/orders/{id}` | ✅ | No |
 | `tax.f29declaration` | `/tax/f29` | `/tax/f29/{id}` | ✅ | No |
 | `tax.accountingperiod` | `/tax/periods` | `/tax/periods/{id}` | ✅ | No |

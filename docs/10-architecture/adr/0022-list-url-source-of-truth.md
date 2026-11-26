@@ -49,9 +49,12 @@ El backend `UniversalRegistry.list_url` DEBE coincidir siempre con el valor en `
 
 | Entidad | Motivo |
 |---------|--------|
-| `accounting.budget` | Vista standalone `/finances/budgets/[id]` — no usa redirect modal. `list_url='/finances/budgets'` permanece en el backend; frontend no lo consume. |
-| `hr.payroll` | Vista standalone `/hr/payrolls/[id]` — mismo caso que Budget. |
 | `billing.invoice` | Split client-side (`is_sale_document`) — no aplica el patrón standard. |
+
+`accounting.budget` y `hr.payroll` salieron de esta lista el 2026-11-26: sus listas
+canónicas (`/finances/budgets/list` y `/hr/payrolls`) están en `searchableEntityRoutes.ts`
+y se validan en T-103; sus antiguas rutas `[id]` son redirects y el detalle se abre
+como pestaña con `?selected` (ADR-0152), así que pasan a `DRAWER_DETAIL_ENTITIES`.
 
 ### Excepciones T-108 — entidades drawer/tab-only (oct 2026)
 
@@ -75,7 +78,8 @@ contra `searchableEntityRoutes`), pero su detalle es un drawer: no existe
 `treasury.treasurymovement`, `treasury.treasuryaccount`, `hr.absence`,
 `hr.employeemovement`, `sales.saledelivery`, `sales.salereturn`,
 `purchasing.purchasereceipt`, `purchasing.purchasereturn`,
-`inventory.inventorydocument`.
+`inventory.inventorydocument`, `accounting.budget`, `hr.payroll` (estos dos, con
+detalle en pestaña vía `?selected` en lugar de drawer; 2026-11-26).
 
 ---
 
@@ -106,7 +110,7 @@ El test:
 1. Parsea `frontend/lib/searchableEntityRoutes.ts` con regex para extraer el mapa `label → list_url`.
 2. Itera `UniversalRegistry._entities` y compara `entity.list_url` contra el mapa del frontend.
 3. Falla con mensaje explicativo si hay divergencia.
-4. Ignora explícitamente las excepciones documentadas (Budget, Payroll, Invoice).
+4. Ignora explícitamente la excepción documentada (Invoice); Budget y Payroll se comparan contra el mapa frontend.
 
 ### 3.3 Reconciliación T-108 (2026-10-09)
 
@@ -158,3 +162,4 @@ Los redirects `[id]/page.tsx` que usaban `&selected=` sobre `list_url` sin query
 - **2026-05-09**: ADR creado (F9, T-103). 5 divergencias corregidas en backend. Test arquitectónico agregado.
 - **2026-10-09**: Reconciliación T-108. Mapa frontend estaba obsoleto (rutas inexistentes). Categorías `DRAWER_ENTITIES` (sin lista propia) y `DRAWER_DETAIL_ENTITIES` (detalle en drawer) documentadas y reflejadas en los invariantes. Corregidos list_url/detail de budget, saledelivery, stockmove, warehouse, bankstatement, check, taxperiod y redirects `&selected=` rotos.
 - **2026-10-20**: ADR-0090 (listas propias de documentos comerciales). `purchasing.purchasereturn` y `purchasing.purchasereceipt` ganan listas propias (`/purchasing/dtes/returns`, `/purchasing/dtes/receipts`) → pasan de `DRAWER_ENTITIES` a `DRAWER_DETAIL_ENTITIES`. `sales.salereturn` también (lista `/sales/dtes/returns`). `sales.saleorder`/`purchasing.purchaseorder` se mueven a `/sales/dtes/orders` y `/purchasing/dtes/orders`.
+- **2026-11-26**: `accounting.budget` y `hr.payroll` dejan de ser excepciones standalone: sus `list_url` canónicas se validan en T-103 y sus deep links (`/finances/budgets/list?selected={id}`, `/hr/payrolls?selected={id}`) entran en `DRAWER_DETAIL_ENTITIES` (ADR-0152). `hr.payrollpayment` usa `/hr/payrolls?selected={p.payroll_id}`.

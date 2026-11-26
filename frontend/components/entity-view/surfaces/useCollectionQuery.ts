@@ -72,13 +72,20 @@ const NON_FILTER_PARAMS = new Set(["search", "group_by"])
 /** Client mode filters loaded rows: no `facets/` request. */
 const NO_FACETS: readonly string[] = []
 
-/** URL params a view writes: filter ids resolve to their param; other keys are raw params. */
+/** URL params a view writes: filter ids resolve to their param (from/to for ranges); other keys are raw. */
 function viewParams(compiled: CompiledQuery, view: QueryView | null): Record<string, string> {
     const out: Record<string, string> = {}
     for (const [key, value] of Object.entries(view?.filters ?? {})) {
         if (value === undefined) continue
         const params = compiled.filterParams[key]
-        const param = params && params.length === 1 ? params[0] : key
+        if (params && params.length > 1) {
+            const values = typeof value === "string" ? [value] : value
+            params.forEach((param, index) => {
+                if (values[index] !== undefined) out[param] = String(values[index])
+            })
+            continue
+        }
+        const param = params?.[0] ?? key
         out[param] = typeof value === "string" ? value : value.join(",")
     }
     return out
