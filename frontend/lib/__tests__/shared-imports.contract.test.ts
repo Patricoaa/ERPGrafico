@@ -15,7 +15,7 @@ const SKIP_DIRS = new Set(["node_modules", ".next", "__tests__"])
  * T4 extracted the two offenders listed in the audit (§3.1):
  *   - `NumpadModal` promoted to `components/shared/NumpadModal.tsx`
  *     (was `features/pos/components/NumpadModal`, imported by shared).
- *   - `LedgerDrawer` bridge: `ReportTable` used to own the drawer; the click
+ *   - `LedgerDrawer` bridge: `ReportTable` used to own the drawer; the click (ReportTable later moved to finance)
  *     now surfaces through `onDrillDown` and the feature renders its drawer.
  * T5 relocated the whole `ProductSelector` grid family out of shared to
  * `components/selectors/ProductGridPicker` (its `@/features/inventory`
@@ -91,11 +91,7 @@ describe("components/shared must not import from features/*", () => {
             "utf8",
         )
         expect(folio).toContain('from "./NumpadModal"')
-        const reportTable = readFileSync(
-            join(FRONTEND_ROOT, "components/shared/ReportTable.tsx"),
-            "utf8",
-        )
-        expect(reportTable).not.toContain("@/features/accounting")
-        expect(reportTable).toContain("onDrillDown")
+        // ReportTable moved to the finance feature (FinancialStatementTable on entity-view), which owns the drill-down.
+        expect(existsSync(join(FRONTEND_ROOT, "components/shared/ReportTable.tsx"))).toBe(false)
     })
 })

@@ -1,4 +1,26 @@
-import type { ReportNode } from '@/components/shared'
+/** A line of a financial statement: an account (numeric id) or a synthetic section / total row. */
+export interface ReportNode {
+    id: number | string
+    code: string
+    name: string
+    balance: number
+    comp_balance?: number
+    variance?: number
+    children?: ReportNode[]
+    /** Closing total row («Utilidad del ejercicio», «Saldo final»). */
+    isTotalRow?: boolean
+    /** Whether a rise is good news; children inherit it from their section. */
+    varianceDirection?: VarianceDirection
+}
+
+export type VarianceDirection = 'higher-is-better' | 'lower-is-better'
+
+/** Account a statement row drills into (the screen opens its ledger). */
+export interface DrillDownTarget {
+    accountId: number
+    accountName: string
+    accountCode: string
+}
 
 export interface BalanceSheetData {
     total_assets: number

@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/table";
 import { cn, formatPlainDate } from "@/lib/utils";
 import {AlertCircle, Info, Calendar} from "lucide-react";
-import { Banner, BaseModal, Chip, DataCell, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
+import { Banner, BaseModal, Chip, DataCell, MoneyDisplay } from '@/components/shared';
+import type { ReportNode } from '../types';
+import { FinancialStatementTable } from './FinancialStatementTable';
 import { Button } from "@/components/ui/button";
 
 interface CulpritAccount {
@@ -132,12 +134,11 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
 
     const tableContent = (
         <div className="space-y-8">
-            <ReportTable 
+            <FinancialStatementTable
                 data={unifiedData}
                 showComparison={showComparison}
                 periodLabel={periodLabel}
                 compPeriodLabel={compPeriodLabel}
-                disableDrillDown={true}
             />
 
             {/* Vencimientos Futuros (F5.3) */}

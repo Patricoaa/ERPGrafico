@@ -177,19 +177,9 @@ Shell genérico para tablas de líneas editables (wizards, notas C/D). Provee en
 
 > **vs `DataTable variant="minimal"`:** `FormLineItemsTable` es para edición; `minimal` es para display.
 
-### ReportTable 🟢
+### ReportTable — retirado
 
-Tabla jerárquica de reportes contables con expand/collapse y períodos de comparación.
-
-| prop | type | required | default |
-|------|------|----------|---------|
-| `data` | `ReportNode[] \| null` | ✅ | — |
-| `showComparison` | `boolean` | ❌ | `false` |
-| `isLoading` | `boolean` | ❌ | `false` |
-| `accentColor` | `'primary' \| 'success' \| 'info' \| 'destructive' \| 'income' \| 'expense' \| 'asset' \| 'liability'` | ❌ | `'primary'` |
-| `varianceDirection` | `'higher-is-better' \| 'lower-is-better'` | ❌ | `'higher-is-better'` |
-
-`ReportNode`: `{ id, code, name, balance, comp_balance?, variance?, children? }`.
+Los estados financieros (balance, resultados, flujo de efectivo) usan `FinancialStatementTable` (`features/finance`), un árbol de entity-view (`financialStatementEntity`). Ver ADR-0159, enmienda 2026-11-26.
 
 ### BudgetVarianceTable 🟢 (feature-local)
 

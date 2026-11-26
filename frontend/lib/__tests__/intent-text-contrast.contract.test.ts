@@ -20,7 +20,6 @@ const SKIP = new Set(["node_modules", ".next", "__tests__"])
 const SUCCESS_ICON_ALLOWLIST = [
     "app/(dashboard)/settings/SettingsPageClient.tsx",
     "components/shared/FolioValidationInput.tsx",
-    "components/shared/ReportTable.tsx",
     "components/shared/Section/SectionChecklist.tsx",
     "components/shared/Section/SectionNote.tsx",
     "components/ui/alert.tsx",

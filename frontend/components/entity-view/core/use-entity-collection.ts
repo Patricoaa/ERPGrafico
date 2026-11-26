@@ -75,8 +75,13 @@ export interface CollectionOptions<Id extends string, T = never> {
      * does not clear it. Without it the selection is internal and cleared on every server page.
      */
     selection?: CollectionSelection
-    /** Semantic tint of a row (ADR-0159): `attention` (a suggestion), `muted` (out of the flow). */
+    /**
+     * Semantic tint of a row (ADR-0159): `attention` (a suggestion), `muted` (out of the flow),
+     * `section` (a heading row that totals its children) and `total` (a closing total row) for reports.
+     */
     rowTone?(row: T): RowTone | null
+    /** Rows that open (ADR-0159 amendment): without it every row opens when the collection does. */
+    openable?(row: T): boolean
     /**
      * Drag and drop between rows (ADR-0159), table surface only. The screen renders the `DndContext`
      * (`@dnd-kit/core`) and resolves `onDragEnd` from each spec's `data`.
@@ -89,7 +94,7 @@ export interface CollectionSelection {
     onChange: (next: RowSelectionState) => void
 }
 
-export type RowTone = "attention" | "muted"
+export type RowTone = "attention" | "muted" | "section" | "total"
 
 export interface RowDragSpec {
     id: string
@@ -151,6 +156,7 @@ export interface EntityCollection<T, F extends FieldMap<T>> {
     /** True when grouping shows fewer rows than the server total (`rowCount`). */
     truncated: boolean
     rowTone: ((row: T) => RowTone | null) | null
+    openable: ((row: T) => boolean) | null
     dnd: CollectionDnd<T> | null
 }
 
@@ -385,6 +391,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         refetch: source.refetch,
         isFiltered: !!source.isFiltered,
         rowTone: options.rowTone ?? null,
+        openable: options.openable ?? null,
         dnd: options.dnd ?? null,
     }
 }

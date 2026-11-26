@@ -1,14 +1,15 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 
-import { FadeIn, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner, type DrillDownTarget } from '@/components/shared'
+import { FadeIn, SkeletonShell, ReportToolbar, StaleDataBanner } from '@/components/shared'
+import { FinancialStatementTable } from './FinancialStatementTable'
 import { PageContainer } from "@/components/shared"
 import { LedgerDrawer } from "@/features/accounting"
 import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigModal } from "@/features/finance/components/MappingConfigModal"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
-import type { BalanceSheetData, PLData } from "@/features/finance/types"
+import type { BalanceSheetData, DrillDownTarget, PLData, ReportNode } from "@/features/finance/types"
 import { type DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
 import { es } from 'date-fns/locale'
@@ -91,6 +92,30 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
 
     const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch, isError } = useStatements(statementParams)
 
+    // One tree per statement, shown by the table and written by the export.
+    const bsNodes = useMemo<ReportNode[] | null>(() => {
+        if (!bsData) return null
+        const d = bsData as BalanceSheetData
+        return [
+            { id: 'assets', code: '', name: 'Activos', balance: d.total_assets, comp_balance: d.total_assets_comp, children: d.assets, varianceDirection: 'higher-is-better' },
+            { id: 'liabilities', code: '', name: 'Pasivos', balance: d.total_liabilities, comp_balance: d.total_liabilities_comp, children: d.liabilities, varianceDirection: 'lower-is-better' },
+            { id: 'equity', code: '', name: 'Patrimonio y resultados', balance: d.total_equity, comp_balance: d.total_equity_comp, children: d.equity, varianceDirection: 'higher-is-better' },
+        ]
+    }, [bsData])
+    const plNodes = useMemo<ReportNode[] | null>(() => {
+        if (!plData) return null
+        return ((plData as PLData).sections || []).map((sec, idx) => ({
+            id: `sec-${idx}`,
+            code: '',
+            name: sec.name,
+            balance: sec.total,
+            comp_balance: sec.total_comp,
+            children: sec.is_total ? undefined : sec.tree,
+            isTotalRow: sec.is_total,
+            varianceDirection: sec.name.toLowerCase().includes('ingreso') ? 'higher-is-better' : 'lower-is-better',
+        }))
+    }, [plData])
+
     const handleExport = () => {
         const baseOpts = {
             periodLabel,
@@ -98,27 +123,10 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
             showComparison,
         }
 
-        if (activeTab === 'bs' && bsData) {
-            const d = bsData as BalanceSheetData
-            exportReportToCsv([
-                { id: 'assets', code: '', name: 'Activos', balance: d.total_assets, comp_balance: d.total_assets_comp, children: d.assets },
-                { id: 'liabilities', code: '', name: 'Pasivos', balance: d.total_liabilities, comp_balance: d.total_liabilities_comp, children: d.liabilities },
-                { id: 'equity', code: '', name: 'PATRIMONIO Y RESULTADOS', balance: d.total_equity, comp_balance: d.total_equity_comp, children: d.equity },
-            ], { ...baseOpts, filename: `balance_general_${periodLabel}` })
-        } else if (activeTab === 'pl' && plData) {
-            const d = plData as PLData
-            exportReportToCsv(
-                (d.sections || []).map((sec, idx) => ({
-                    id: `sec-${idx}`,
-                    code: '',
-                    name: sec.name,
-                    balance: sec.total,
-                    comp_balance: sec.total_comp,
-                    children: sec.is_total ? undefined : sec.tree,
-                    isTotalRow: sec.is_total,
-                })),
-                { ...baseOpts, filename: `estado_resultados_${periodLabel}` }
-            )
+        if (activeTab === 'bs' && bsNodes) {
+            exportReportToCsv(bsNodes, { ...baseOpts, filename: `balance_general_${periodLabel}` })
+        } else if (activeTab === 'pl' && plNodes) {
+            exportReportToCsv(plNodes, { ...baseOpts, filename: `estado_resultados_${periodLabel}` })
         }
     }
 
@@ -185,46 +193,15 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                             <>
                                 {bsData ? (
                                     <div className="space-y-6">
-                                        {(() => {
-                                            const d = bsData as BalanceSheetData;
-                                            return (
-                                                <ReportTable
-                                                    data={[
-                                                        {
-                                                            id: 'assets',
-                                                            code: '',
-                                                            name: 'Activos',
-                                                            balance: d.total_assets,
-                                                            comp_balance: d.total_assets_comp,
-                                                            children: d.assets,
-                                                            varianceDirection: 'higher-is-better'
-                                                        },
-                                                        {
-                                                            id: 'liabilities',
-                                                            code: '',
-                                                            name: 'Pasivos',
-                                                            balance: d.total_liabilities,
-                                                            comp_balance: d.total_liabilities_comp,
-                                                            children: d.liabilities,
-                                                            varianceDirection: 'lower-is-better'
-                                                        },
-                                                        {
-                                                            id: 'equity',
-                                                            code: '',
-                                                            name: 'PATRIMONIO Y RESULTADOS',
-                                                            balance: d.total_equity,
-                                                            comp_balance: d.total_equity_comp,
-                                                            children: d.equity,
-                                                            varianceDirection: 'higher-is-better'
-                                                        }
-                                                    ]}
+                                        {bsNodes && (
+                                            <FinancialStatementTable
+                                                    data={bsNodes}
                                                     compPeriodLabel={compPeriodLabel}
                                                     periodLabel={periodLabel}
                                                     showComparison={showComparison}
                                                     onDrillDown={setDrillDown}
                                                 />
-                                            );
-                                        })()}
+                                        )}
                                     </div>
                                 ) : (
                                     <SkeletonShell isLoading ariaLabel="Cargando balance">
@@ -244,27 +221,15 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                             <>
                                 {plData ? (
                                     <div className="space-y-6">
-                                        {(() => {
-                                            const d = plData as PLData;
-                                            return (
-                                                <ReportTable
-                                                    data={(d.sections || []).map((sec, idx) => ({
-                                                        id: `sec-${idx}`,
-                                                        code: '',
-                                                        name: sec.name,
-                                                        balance: sec.total,
-                                                        comp_balance: sec.total_comp,
-                                                        children: sec.is_total ? undefined : sec.tree,
-                                                        isTotalRow: sec.is_total,
-                                                        varianceDirection: sec.name.toLowerCase().includes('ingreso') ? 'higher-is-better' : 'lower-is-better'
-                                                    }))}
-compPeriodLabel={compPeriodLabel}
+                                        {plNodes && (
+                                            <FinancialStatementTable
+                                                    data={plNodes}
+                                                    compPeriodLabel={compPeriodLabel}
                                                     periodLabel={periodLabel}
                                                     showComparison={showComparison}
                                                     onDrillDown={setDrillDown}
                                                 />
-                                            );
-                                        })()}
+                                        )}
                                     </div>
                                 ) : (
                                     <SkeletonShell isLoading ariaLabel="Cargando estado de resultados">

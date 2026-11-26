@@ -1259,7 +1259,7 @@ GET /api/finances/api/report-status/{task_id}/  Polling de reportes async
 Devuelve el JSON del reporte directamente. Los reportes se cachean 90 segundos vía `core.cache.cache_report`. No usan serializers DRF, devuelven el diccionario construido por `FinanceService`.
 
 Response shape (balance-sheet / income-statement / cash-flow):
-Árbol jerárquico de nodos (consumido por `ReportTable`).
+Árbol jerárquico de nodos (consumido por `FinancialStatementTable`, `features/finance`).
 
 ```json
 {
