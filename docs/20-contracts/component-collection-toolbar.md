@@ -298,6 +298,20 @@ Los dos endpoints usan **el mismo `FilterSet` y el mismo queryset de lectura** q
 
 Los dos endpoints exigen un test `ci_gate` de conteo de consultas (zero-n-plus-one-policy.md, Regla 8).
 
+**Implementación (`FacetedListMixin`, `core/services/facets.py`).** El viewset declara
+`facet_fields = {param: FacetField(...)}`; el nombre es el param del filtro en la lista.
+
+- `FacetField(field="delivery_status")`: columna → una consulta `values(field).annotate(Count)` sobre una subconsulta de pks.
+- `FacetField(values=("DRAFT", "ACTIVE", …))`: filtro método del `FilterSet` → un `count()` por opción, aplicando el filtro con ese valor. Prohibido para filtros que se evalúan en Python sobre toda la lista (p. ej. el pago derivado).
+- `params`: params que se quitan al contar (por defecto, el nombre).
+- Los conteos reutilizan `filter_queryset(get_queryset())`, así que coinciden con la lista. Un campo desconocido → 400.
+
+Frontend: el filtro `multi` declara `counts: true` → `compiled.facetParams` / `query.facetFields`. La pantalla
+pide los conteos con su hook de feature (`useFacetCounts` en `/hooks`) y entrega `{ ...query, facets }` a
+`Collection.Root`. `FilterMenu` muestra el conteo de cada opción y deshabilita las de 0 salvo las ya elegidas;
+sin conteos (cargando, error) las opciones se ven sin número. Piloto: órdenes de venta. Pendiente: `views=`
+(conteo por vista) y «Aplicar · N resultados».
+
 ## 8. Accesibilidad
 
 - **`Collection.Toolbar`:** `role="toolbar"` con `aria-label="Herramientas de <entidad>"`.

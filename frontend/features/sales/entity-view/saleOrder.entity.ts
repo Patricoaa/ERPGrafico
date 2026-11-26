@@ -33,12 +33,13 @@ export const saleOrderEntity = defineEntity<SaleOrder>()((f) => ({
                 { label: "Producto", param: "product_name" },
             ],
         },
+        // `counts: true`: each option shows its count from `facets/` (payment is evaluated in Python: no counts).
         filters: {
             date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
-            origin_status: { label: "Origen", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "ACTIVE", label: "Completado" }, { value: "CANCELLED", label: "Anulado" }] },
-            delivery_status: { label: "Despacho", control: "multi", options: [{ value: "PENDING", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "DELIVERED", label: "Entregado" }] },
-            production_status: { label: "Producción", control: "multi", options: [{ value: "none", label: "Sin OT" }, { value: "in_progress", label: "En proceso" }, { value: "finished", label: "Terminada" }] },
-            billing_status: { label: "Facturación", control: "multi", options: [{ value: "INVOICED", label: "Facturado" }, { value: "PENDING", label: "No facturado" }] },
+            origin_status: { label: "Origen", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "ACTIVE", label: "Completado" }, { value: "CANCELLED", label: "Anulado" }], counts: true },
+            delivery_status: { label: "Despacho", control: "multi", options: [{ value: "PENDING", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "DELIVERED", label: "Entregado" }], counts: true },
+            production_status: { label: "Producción", control: "multi", options: [{ value: "none", label: "Sin OT" }, { value: "in_progress", label: "En proceso" }, { value: "finished", label: "Terminada" }], counts: true },
+            billing_status: { label: "Facturación", control: "multi", options: [{ value: "INVOICED", label: "Facturado" }, { value: "PENDING", label: "No facturado" }], counts: true },
             payment_status: { label: "Pago", control: "multi", options: [{ value: "UNPAID", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "PAID", label: "Pagado" }] },
             total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
         },

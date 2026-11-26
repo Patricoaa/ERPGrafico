@@ -9,7 +9,8 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.cache import load_singleton
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, FacetedListMixin, GroupedListMixin, NoDestroyModelMixin
+from core.services.facets import FacetField
 from core.services.grouping import GroupField
 
 from .filters import SaleDeliveryFilter, SaleReturnFilter
@@ -167,7 +168,7 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         return result.distinct()
 
 
-class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, FacetedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -214,6 +215,15 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, v
         "channel": GroupField("channel"),
     }
     group_aggregates = {"total": "total"}
+    # ADR-0158 §8: facets/ for the filters with `counts: true`. Origin, billing and production are
+    # FilterSet methods: one count per option. Payment is evaluated in Python over the whole list, so
+    # it has no counts.
+    facet_fields = {
+        "origin_status": FacetField(values=("DRAFT", "ACTIVE", "CANCELLED")),
+        "delivery_status": FacetField(field="delivery_status"),
+        "production_status": FacetField(values=("none", "in_progress", "finished")),
+        "billing_status": FacetField(values=("INVOICED", "PENDING")),
+    }
 
     @action(detail=False, methods=["get"], url_path="analytics")
     def analytics(self, request):
