@@ -1,52 +1,14 @@
 "use client"
 
-import { useEffect } from "react"
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, StepHeader, Banner, fadeInClass } from "@/components/shared"
+import { useEffect, useMemo } from "react"
+import { LabeledInput, LabeledContainer, PeriodValidationDateInput, ChoiceCard, ChoiceGroup, StepHeader, Banner, fadeInClass } from "@/components/shared"
 import { Truck, Package, Calendar, ShoppingBag } from "lucide-react"
-import { useAllowedUoMs } from "@/features/inventory"
+import { useAllowedUoMsByProduct } from "@/features/inventory"
 import { cn } from "@/lib/utils"
 import type { NoteLineItem, NoteLogisticsData, NoteLogisticsLineData } from "../../types"
 import { useServerDate } from "@/hooks/useServerDate"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-
-function UoMSelector({ line, currentUom, onUomChange }: { line: NoteLineItem, currentUom?: number, onUomChange: (uomId: number) => void }) {
-    const { data: allowedUoms = [] } = useAllowedUoMs(Number(line.productId), 'sale')
-
-    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{line.uomName}</span>
-
-    return (
-        <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
-            <SelectTrigger className="h-control-xs text-3xs w-24">
-                <SelectValue placeholder="Seleccionar..." />
-            </SelectTrigger>
-            <SelectContent>
-                {allowedUoms.map((u: { id: number, name: string }) => (
-                    <SelectItem key={u.id} value={u.id.toString()} className="text-3xs">
-                        {u.name}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-    )
-}
-
-/** Línea que requiere fabricación y no se auto-finaliza: no admite despacho inmediato en ND. */
-const isRestrictedLine = (item: NoteLineItem, isCreditNote: boolean): boolean =>
-    !isCreditNote && (item.productType === 'MANUFACTURABLE' || Boolean(item.hasBom)) && !item.mfgAutoFinalize
+import { EditableCollection, editableSchema, eligibilityOf, toEditableErrors, type EditableRowValue } from "@/components/entity-view"
+import { isRestrictedLine, noteLogisticsEditable, type NoteLogisticsRow } from "../../entity-view/noteLogistics.entity"
 
 interface NoteLogisticsStepProps {
     isCreditNote: boolean
@@ -169,88 +131,12 @@ export function NoteLogisticsStep({
                             label="Cantidades para Movimiento Inmediato"
                             tooltip="Especifique las cantidades que procesará ahora. El resto quedará pendiente para despacho futuro."
                         >
-                            <div className="w-full overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/50">
-                                        <TableHead className="w-[45%] text-3xs font-bold uppercase text-muted-foreground">Producto</TableHead>
-                                        <TableHead className="w-[15%] text-right text-3xs font-bold uppercase text-muted-foreground">Total</TableHead>
-                                        <TableHead className="w-[20%] text-3xs font-bold uppercase text-muted-foreground">A Procesar</TableHead>
-                                        <TableHead className="w-[20%] text-3xs font-bold uppercase text-muted-foreground">Unidad</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {selectedItems.map((item) => {
-                                        const lineId = item.lineId
-                                        const productId = item.productId
-                                        const uomId = item.uomId
-                                        const itemQty = item.noteQuantity ?? 0
-                                        const isRestricted = isRestrictedLine(item, isCreditNote)
-                                        const isEligible = (Boolean(item.createsStockMove) ||
-                                            item.productType === 'MANUFACTURABLE' ||
-                                            Boolean(item.hasBom)) && !isRestricted
-                                        const lineEntry = formData.line_data.find((ld) => ld.line_id === lineId)
-                                        const currentVal = lineEntry?.quantity ?? 0
-
-                                        return (
-                                            <TableRow key={lineId} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-1 py-1">
-                                                        <span className="font-medium text-xs leading-tight">{item.productName}</span>
-                                                        {!isEligible && (
-                                                            <span className="text-3xs text-warning-text font-bold uppercase tracking-tighter">
-                                                                {isRestricted ? "Requiere Producción" : "Sin control de stock"}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right font-semibold text-xs tabular-nums">
-                                                    <QuantityDisplay value={itemQty} decimals={2} inline />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <LabeledInput
-                                                        type="number"
-                                                        step="0.01"
-                                                        min="0"
-                                                        max={itemQty}
-                                                        value={currentVal}
-                                                        disabled={!isEligible}
-                                                        onChange={(e) => {
-                                                            const val = parseFloat(e.target.value) || 0;
-                                                            const lines = [...formData.line_data];
-                                                            const idx = lines.findIndex((ld) => ld.line_id === lineId);
-                                                            if (idx >= 0) {
-                                                                lines[idx] = { ...lines[idx], quantity: val };
-                                                            } else {
-                                                                lines.push({ line_id: lineId, product_id: productId, quantity: val, uom_id: uomId });
-                                                            }
-                                                            setData({ ...formData, line_data: lines });
-                                                        }}
-                                                        className="h-8 text-xs"
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground font-medium">
-                                                    <UoMSelector
-                                                        line={item}
-                                                        currentUom={lineEntry?.uom_id ?? uomId}
-                                                        onUomChange={(uomIdVal) => {
-                                                            const lines = [...formData.line_data];
-                                                            const idx = lines.findIndex((ld) => ld.line_id === lineId);
-                                                            if (idx >= 0) {
-                                                                lines[idx] = { ...lines[idx], uom_id: uomIdVal };
-                                                            } else {
-                                                                lines.push({ line_id: lineId, product_id: productId, quantity: 1, uom_id: uomIdVal });
-                                                            }
-                                                            setData({ ...formData, line_data: lines });
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                            </div>
+                            <PartialLines
+                                isCreditNote={isCreditNote}
+                                items={selectedItems}
+                                lineData={formData.line_data}
+                                onChange={(line_data) => setData({ ...formData, line_data })}
+                            />
                         </LabeledContainer>
                     </div>
                 )}
@@ -281,5 +167,60 @@ export function NoteLogisticsStep({
                 </div>
             </div>
         </div>
+    )
+}
+
+/**
+ * Partial logistics: how much of each line moves now, and in which unit (EditableCollection with a
+ * `choice` unit, ADR-0087). The wizard keeps `line_data`; this maps it to and from the collection value.
+ */
+function PartialLines({ isCreditNote, items, lineData, onChange }: {
+    isCreditNote: boolean
+    items: NoteLineItem[]
+    lineData: NoteLogisticsLineData[]
+    onChange: (lineData: NoteLogisticsLineData[]) => void
+}) {
+    const definition = useMemo(() => noteLogisticsEditable(isCreditNote), [isCreditNote])
+    const uoms = useAllowedUoMsByProduct(items.map((i) => i.productId), "sale")
+    const rows: NoteLogisticsRow[] = items.map((item) => {
+        const allowed = uoms.get(String(item.productId)) ?? []
+        // Until the allowed units arrive (or when there is only the line's own), the line's unit is the only option.
+        const own = item.uomId === undefined ? [] : [{ value: String(item.uomId), label: item.uomName ?? "UN" }]
+        return { ...item, uomOptions: allowed.length > 0 ? allowed.map((u) => ({ value: String(u.id), label: u.name })) : own }
+    })
+    const byKey = new Map(rows.map((r) => [String(r.lineId), r]))
+    const entries = new Map(lineData.map((l) => [String(l.line_id), l]))
+    const ownUom = (r: NoteLogisticsRow) => (r.uomId === undefined ? "" : String(r.uomId))
+
+    const value: EditableRowValue[] = rows.map((r) => {
+        const entry = entries.get(String(r.lineId))
+        return {
+            key: String(r.lineId),
+            values: { quantity: entry?.quantity ?? 0 },
+            textValues: { uom: entry?.uom_id !== undefined ? String(entry.uom_id) : ownUom(r) },
+        }
+    })
+    const parsed = editableSchema(definition, rows).safeParse(value)
+    const errors = parsed.success ? {} : toEditableErrors(parsed.error, value)
+
+    const handleChange = (next: EditableRowValue[]) => onChange(next.flatMap((v) => {
+        const row = byKey.get(v.key)
+        if (!row || !eligibilityOf(definition, row).ok) return []
+        const quantity = v.values.quantity ?? 0
+        const uom = v.textValues?.uom ?? ""
+        // A line enters line_data once touched: a quantity, an earlier entry or a unit other than its own.
+        if (quantity <= 0 && !entries.has(v.key) && uom === ownUom(row)) return []
+        return [{ line_id: row.lineId, product_id: row.productId, quantity, uom_id: uom ? Number(uom) : row.uomId }]
+    }))
+
+    return (
+        <EditableCollection
+            definition={definition}
+            rows={rows}
+            value={value}
+            onChange={handleChange}
+            errors={errors}
+            label="Cantidades para movimiento inmediato"
+        />
     )
 }

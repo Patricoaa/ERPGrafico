@@ -156,6 +156,15 @@ All recorded in `component-entity-view.md`; each approved at its Gate D (`docs/5
 - Invariant #13 and the contracts `component-fields.md`, `component-card.md`, `component-datatable-views.md` and `component-contracts.md#datacell-primitives` must be rewritten (Phase 6).
 - Invariant #6 may need widening if `@/components/entity-view` keeps its own barrel (decided at Gate C).
 
+> **Enmienda (2026-11-26): celdas de opción y fecha en `EditableCollection`.** `EditableInput.kind` suma `"choice"` y `"date"`. Así se migran las tablas «cuánto procesar» que además piden, por fila, la unidad de medida (logística de notas, recepción en el checkout de compras) o una fecha (inicio de suscripciones).
+>
+> - **Valor:** las dos guardan un string en `textValues`, igual que `text`.
+> - **`choice`:** toma sus opciones de `options(row)`. Las opciones asíncronas viajan en la fila (la pantalla las carga con un hook por lote), así la definición sigue siendo pura y de módulo.
+> - **`date`:** usa `PeriodValidationDateInput`.
+> - **Validación:** el esquema zod valida presencia, pertenencia y formato. No valida período cerrado: el aviso de período cerrado sigue siendo del input, como antes.
+>
+> Se descartó un selector libre (`render` por celda), porque reabre la puerta a celdas opacas (invariante 13).
+
 ## Alternatives considered
 
 - **A. Single declarative schema + one generic `<EntityCollection>`.** Scored 80/100. Rejected because it moves the 57-prop monolith into configuration keys (anti-goal 1) and leaves specific cases without a path.

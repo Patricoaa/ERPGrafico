@@ -212,7 +212,11 @@ En las superficies `table` y `card` el kind `hubStatus` muestra solo los anillos
 
 Cubre los patrones P1 (cantidad a procesar por línea) y P2 (reparto contra un tope) de wizards y modales.
 
-- **Definición** (`defineEditable(entity, spec)`, en `core/define-editable.ts`): `rowKey`, `context` (ids de campo de solo lectura), `inputs` (`kind: "quantity" | "money"`, `header`, `label(row)` (nombre accesible), `min?`, `max?(row)`, `step?(row)`, `initial?(row)`, `unit?(row)`, `check?(row, value)`), `eligible?(row)`, `processed?`, `rowStatus?(row, values)`, `footer.sum?`, `bulk?: ["fillToMax", "clear"]`, `bulkLabels?`.
+- **Definición** (`defineEditable(entity, spec)`, en `core/define-editable.ts`): `rowKey`, `context` (ids de campo de solo lectura), `inputs` (`kind: "quantity" | "money" | "text" | "choice" | "date"`, `header`, `label(row)` (nombre accesible), `min?`, `max?(row)`, `step?(row)`, `initial?(row)`, `unit?(row)`, `check?(row, value)`, `readOnly?`, `initialText?(row)`, `placeholder?`, `required?`, `options?(row)`, `validation?`), `eligible?(row)`, `processed?`, `rowStatus?(row, values)`, `footer.sum?`, `bulk?: ["fillToMax", "clear"]`, `bulkLabels?`, `select?`.
+- **Celdas de texto, opción y fecha** (enmienda 2026-11-26 a ADR-0087): guardan un string en `textValues`, no cuentan para «al menos una cantidad» y se alinean a la izquierda.
+  - `choice`: elige entre `options(row)` (`{ value, label }`). Con una sola opción se muestra como texto. Las opciones asíncronas viajan en la fila: la pantalla enriquece sus filas desde un hook de la feature, p. ej. `useAllowedUoMsByProduct`, y mientras no hay opciones no se valida la pertenencia.
+  - `date`: fecha ISO `yyyy-MM-dd` con `PeriodValidationDateInput` (`validation`: `"tax"`, `"accounting"` o `"both"`).
+  - El esquema valida `required` («Elige una opción» / «Ingresa una fecha»), la pertenencia a las opciones y el formato de fecha. Los errores quedan bajo `textValues` y `editableErrorsFromForm` los lee.
   - `processed`: los inputs que procesan la fila (la cantidad, no su costo unitario). Cuentan para "al menos una", para el tope "sin pendiente" y para las ayudas masivas: "Limpiar" no borra el costo. Por defecto, todos.
   - `check`: regla de dominio de la celda además del tope (p. ej. "Stock insuficiente (3 disponibles)"). Corre dentro del schema de zod, así que el resolver sigue siendo la única validación.
   - `rowStatus`: estado de la fila derivado de lo ingresado (Completo, Parcial, Excede pendiente). Se pinta con `StatusBadge` en una columna "Estado".

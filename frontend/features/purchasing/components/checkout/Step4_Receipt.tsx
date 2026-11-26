@@ -1,18 +1,12 @@
 "use client"
 
 import {useState, useEffect} from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, ChoiceCard, ChoiceGroup, StepHeader, Section, fadeInClass } from "@/components/shared"
+import { LabeledInput, LabeledContainer, ChoiceCard, ChoiceGroup, StepHeader, Section, fadeInClass } from "@/components/shared"
 import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { type ReceiptData, type CheckoutLine, type PartialReceiptLine } from "../../types"
+import { EditableCollection, editableSchema, toEditableErrors, type EditableRowValue } from "@/components/entity-view"
+import { orderedOf, receiptQuantitiesEditable, subscriptionKeyOf, subscriptionStartEditable, type ReceiptCheckoutRow } from "../../entity-view/checkoutReceipt.entity"
+import { type ReceiptData, type CheckoutLine } from "../../types"
 import { type Warehouse, type UoM } from "@/types/entities"
 import {Receipt, FileText, FileCheck} from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -20,32 +14,6 @@ interface Step4_ReceiptProps {
     receiptData: ReceiptData
     setReceiptData: (data: ReceiptData | ((prev: ReceiptData) => ReceiptData)) => void
     orderLines?: CheckoutLine[]
-}
-
-// New UoMSelector component
-const LocalUoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: CheckoutLine, currentUom: number | string | undefined, onUomChange: (uomId: number) => void, uoms: UoM[] }) => {
-    const getFilteredUoMs = (line: CheckoutLine) => {
-        if (!line || !uoms.length) return []
-        const productUomId = line.uom?.toString()
-        if (!productUomId) return []
-
-        const baseUom = uoms.find(u => u.id.toString() === productUomId)
-        if (!baseUom) return []
-
-        return uoms.filter(u => u.category === baseUom.category)
-    }
-
-    return (
-        <LabeledSelect
-            value={currentUom?.toString()}
-            onChange={(val) => onUomChange(parseInt(val))}
-            options={getFilteredUoMs(line).map((uom: UoM) => ({
-                value: uom.id.toString(),
-                label: uom.name
-            }))}
-            className="w-full"
-        />
-    )
 }
 
 export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: Step4_ReceiptProps) {
@@ -149,53 +117,66 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         }
     }, [hasSubscriptions, orderLines, receiptData, setReceiptData, dateString])
 
-    const updateSubscriptionDate = (productId: string, date: string) => {
+    // ── Receipt quantities and subscription dates (EditableCollection, ADR-0087) ──
+    const rowOf = (line: CheckoutLine, idx: number): ReceiptCheckoutRow => {
+        const base = uoms.find(u => u.id.toString() === line.uom?.toString())
+        const sameCategory = base ? uoms.filter(u => u.category === base.category) : []
+        return {
+            ...line,
+            key: line.id !== undefined ? `l${line.id}` : `p${line.product ?? idx}`,
+            uomOptions: sameCategory.length > 0
+                ? sameCategory.map(u => ({ value: u.id.toString(), label: u.name }))
+                : [{ value: String(line.uom), label: line.uom_name }],
+        }
+    }
+    const receiptRows = orderLines.map(rowOf)
+    const partialOf = (row: ReceiptCheckoutRow) => (receiptData.partialQuantities || []).find(
+        (pq) => (row.id && pq.lineId === row.id) || (row.product && pq.productId === row.product),
+    )
+    const receiptValue: EditableRowValue[] = receiptRows.map((row) => {
+        const pq = partialOf(row)
+        return { key: row.key, values: { received: pq?.receivedQty ?? 0 }, textValues: { uom: String(pq?.uom ?? row.uom) } }
+    })
+    const parsedReceipt = editableSchema(receiptQuantitiesEditable, receiptRows).safeParse(receiptValue)
+    const receiptErrors = parsedReceipt.success ? {} : toEditableErrors(parsedReceipt.error, receiptValue)
+    const handleReceiptChange = (next: EditableRowValue[]) => {
+        const byKey = new Map(receiptRows.map((r) => [r.key, r]))
+        setReceiptData((prev: ReceiptData) => ({
+            ...prev,
+            partialQuantities: next.flatMap((v) => {
+                const row = byKey.get(v.key)
+                if (!row) return []
+                const uom = v.textValues?.uom
+                return [{
+                    lineId: row.id,
+                    productId: row.product,
+                    productName: row.name || row.product_name,
+                    orderedQty: orderedOf(row),
+                    receivedQty: v.values.received ?? 0,
+                    uom: uom ? Number(uom) : row.uom,
+                }]
+            }),
+        }))
+    }
+
+    const subscriptionRows = orderLines.filter(line => line.product_type === 'SUBSCRIPTION').map(rowOf)
+    const subscriptionValue: EditableRowValue[] = subscriptionRows.map((row) => ({
+        key: row.key,
+        values: {},
+        textValues: { start: receiptData.subscriptionDates?.[subscriptionKeyOf(row)] || dateString || "" },
+    }))
+    const handleSubscriptionChange = (next: EditableRowValue[]) => {
+        const byKey = new Map(subscriptionRows.map((r) => [r.key, r]))
         setReceiptData((prev: ReceiptData) => ({
             ...prev,
             subscriptionDates: {
                 ...(prev.subscriptionDates || {}),
-                [productId]: date
-            }
+                ...Object.fromEntries(next.flatMap((v) => {
+                    const row = byKey.get(v.key)
+                    return row ? [[subscriptionKeyOf(row), v.textValues?.start ?? ""]] : []
+                })),
+            },
         }))
-    }
-
-    const updatePartialQty = (lineId: number | string | undefined, productId: number | string | undefined, value: string) => {
-        const qty = parseFloat(value) || 0;
-        setReceiptData((prev: ReceiptData) => {
-            const pqs = [...(prev.partialQuantities || [])];
-            const existingIdx = pqs.findIndex((pq: PartialReceiptLine) => (lineId && pq.lineId === lineId) || (productId && pq.productId === productId));
-            if (existingIdx >= 0) {
-                pqs[existingIdx] = { ...pqs[existingIdx], receivedQty: qty };
-            } else {
-                pqs.push({ 
-                    lineId: lineId || 0, 
-                    productId: productId || 0, 
-                    receivedQty: qty, 
-                    orderedQty: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.quantity || 0,
-                    uom: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.uom as number | string
-                });
-            }
-            return { ...prev, partialQuantities: pqs };
-        });
-    }
-
-    const updatePartialUom = (lineId: number | string | undefined, productId: number | string | undefined, uomId: number) => {
-        setReceiptData((prev: ReceiptData) => {
-            const pqs = [...(prev.partialQuantities || [])];
-            const existingIdx = pqs.findIndex((pq: PartialReceiptLine) => (lineId && pq.lineId === lineId) || (productId && pq.productId === productId));
-            if (existingIdx >= 0) {
-                pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
-            } else {
-                pqs.push({ 
-                    lineId: lineId || 0, 
-                    productId: productId || 0, 
-                    receivedQty: 1, 
-                    orderedQty: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.quantity || 0,
-                    uom: uomId 
-                });
-            }
-            return { ...prev, partialQuantities: pqs };
-        });
     }
 
     return (
@@ -229,94 +210,27 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (
                 <div className={cn("space-y-4", fadeInClass({ from: "top" }))}>
                     <Section.Header title="Cantidades a Recibir" />
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[40%] text-muted-foreground">Producto</TableHead>
-                                    <TableHead className="w-[20%] text-right text-muted-foreground">Ordenado</TableHead>
-                                    <TableHead className="w-[20%] text-muted-foreground">A Recibir</TableHead>
-                                    <TableHead className="w-[20%] text-muted-foreground">Unidad</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {orderLines.map((line, idx) => {
-                                    const pendingQty = line.quantity || line.qty || 0;
-                                    const currentPartial = (receiptData.partialQuantities || []).find((pq) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
-                                    const currentReceivedQty = currentPartial?.receivedQty ?? 0;
-                                    const currentUom = currentPartial?.uom || line.uom;
-
-                                    return (
-                                        <TableRow key={line.id || idx}>
-                                            <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
-                                            <TableCell className="text-right font-semibold">
-                                                {pendingQty}
-                                            </TableCell>
-                                            <TableCell>
-                                                <LabeledInput
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    max={pendingQty}
-                                                    value={currentReceivedQty}
-                                                    onChange={(e) => updatePartialQty(line.id, line.product, e.target.value)}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <LocalUoMSelector
-                                                    line={line}
-                                                    currentUom={currentUom}
-                                                    onUomChange={(uomId) => updatePartialUom(line.id, line.product, uomId)}
-                                                    uoms={uoms}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <EditableCollection
+                        definition={receiptQuantitiesEditable}
+                        rows={receiptRows}
+                        value={receiptValue}
+                        onChange={handleReceiptChange}
+                        errors={receiptErrors}
+                        label="Cantidades a recibir"
+                    />
                 </div>
             )}
 
             {hasSubscriptions && (receiptData.type as string) !== 'DEFERRED' && (
                 <div className={cn("space-y-4", fadeInClass({ from: "top" }))}>
                     <Section.Header title="Fechas de Inicio de Suscripciones" />
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[60%] text-muted-foreground">Suscripción</TableHead>
-                                    <TableHead className="w-[40%] text-muted-foreground">Fecha de Inicio</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {orderLines.filter(line => line.product_type === 'SUBSCRIPTION').map((line, idx) => {
-                                    const productId = (line.product || line.id)?.toString() || idx.toString()
-                                    const currentDate = receiptData.subscriptionDates?.[productId] || dateString || ''
-
-                                    return (
-                                        <TableRow key={productId || idx}>
-                                            <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
-                                            <TableCell>
-                                                <PeriodValidationDateInput
-                                                    date={currentDate ? new Date(currentDate + 'T12:00:00') : undefined}
-                                                    onDateChange={(d) => {
-                                                        if (!d) {
-                                                            updateSubscriptionDate(productId, "")
-                                                            return
-                                                        }
-                                                        updateSubscriptionDate(productId, d.toISOString().split('T')[0])
-                                                    }}
-                                                    validationType="tax"
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <EditableCollection
+                        definition={subscriptionStartEditable}
+                        rows={subscriptionRows}
+                        value={subscriptionValue}
+                        onChange={handleSubscriptionChange}
+                        label="Fechas de inicio de suscripciones"
+                    />
                 </div>
             )}
 
