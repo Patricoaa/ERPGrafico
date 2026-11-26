@@ -8,7 +8,6 @@ from rest_framework.test import APIClient
 
 from accounting.models import Budget
 
-
 pytestmark = pytest.mark.django_db
 
 

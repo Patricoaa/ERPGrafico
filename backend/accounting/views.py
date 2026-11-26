@@ -38,8 +38,8 @@ class JournalEntryFilterSet(FilterSet):
 from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
-from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
+from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin, EditPolicyMixin, GroupedListMixin
 
