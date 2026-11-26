@@ -3,10 +3,10 @@
 import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
-import React, { useEffect } from "react"
+import React from "react"
 
 import { JournalEntryDrawer } from "./JournalEntryDrawer"
-import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryRowActions'
 
 import { useJournalEntries, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry, type JournalEntry } from "../hooks/useJournalEntries"
@@ -14,7 +14,6 @@ import { useJournalEntryGroups } from "../hooks/useJournalEntryGroups"
 import { journalEntryEntity, journalEntryViews } from "../entity-view/journalEntry.entity"
 import { useAccountingAccounts } from "../hooks/useAccounts"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { toast } from "sonner"
 import type { JournalEntryInitialData } from '@/types/forms'
 
 interface EntriesClientViewProps {
@@ -35,21 +34,15 @@ export function EntriesClientView({ externalOpen, onExternalOpenChange, createAc
     const grouped = useJournalEntryGroups({ groupKey, filters: params })
     const list = useJournalEntries({
         ...params,
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     } as unknown as Parameters<typeof useJournalEntries>[0], groupKey === null)
     const { page, entries } = list
     const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     const totalCount = page?.count ?? 0
     // Only the page grouping is bounded; server groups cover the whole result.
-    const isTruncated = !!groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT
 
-    useEffect(() => {
-        if (isTruncated) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [isTruncated, totalCount])
 
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const { openSelected } = useEntityRouteActions()

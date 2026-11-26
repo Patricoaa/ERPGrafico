@@ -273,3 +273,20 @@ def rcv_api_key_with_same_key(plain: str, exclude_pk: int | None = None) -> RCVA
         except CryptoError:
             continue  # key ilegible: no puede colisionar
     return None
+
+
+# ─── Derived values shared by the entries list filter and its groups (ADR-0158 §7) ──────────────
+
+JOURNAL_ENTRY_ORIGIN_LABELS = {"manual": "Manual", "reversal": "Reversión", "auto": "Automático"}
+
+
+def journal_entry_origin():
+    """Origin of an entry as the list shows it: manual, reversal of another entry, or automatic."""
+    from django.db.models import Case, CharField, Value, When
+
+    return Case(
+        When(is_manual=True, then=Value("manual")),
+        When(reversal_of__isnull=False, then=Value("reversal")),
+        default=Value("auto"),
+        output_field=CharField(),
+    )

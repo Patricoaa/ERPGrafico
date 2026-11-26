@@ -4,7 +4,7 @@ import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { AnalyticsPanelContent } from '@/components/shared'
 import type { Granularity } from "@/components/shared"
-import { Collection, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -15,7 +15,6 @@ import { useTreasuryMovementGroups } from "@/features/treasury/hooks/useTreasury
 import { useTreasuryMovementAnalytics } from "@/features/treasury/hooks/useTreasuryMovementAnalytics"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
-import { toast } from "sonner"
 import { treasuryMovementEntity, treasuryMovementViews } from "@/features/treasury/entity-view/treasuryMovement.entity"
 import { buildTreasuryMovementAnalyticsScreen } from "./treasuryMovementAnalyticsScreen"
 
@@ -50,20 +49,14 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const grouped = useTreasuryMovementGroups({ groupKey, filters: params as TreasuryMovementFilters })
     const list = useTreasuryMovements({
         ...(params as TreasuryMovementFilters),
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     }, groupKey === null)
     const { movements, totalCount } = list
     const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     // Only the page grouping is bounded; server groups cover the whole result.
-    const isTruncated = !!groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT
 
-    useEffect(() => {
-        if (isTruncated) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [isTruncated, totalCount])
 
     const [openModal, setOpenModal] = useState(false)
 

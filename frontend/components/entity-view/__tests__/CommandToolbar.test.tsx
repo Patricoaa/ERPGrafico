@@ -18,8 +18,8 @@ const noteEntity = defineEntity<Note>()((f) => ({
     title: "Notas de venta",
     fields: {
         number: f.code("number", { label: "Folio", orderBy: "number" }),
-        customer: f.text("customer", { label: "Cliente", orderBy: "customer__name" }),
-        status: f.text("status", { label: "Estado" }),
+        customer: f.text("customer", { label: "Cliente", orderBy: "customer__name", groupKey: "customer" }),
+        status: f.text("status", { label: "Estado", groupKey: "status" }),
         total: f.money("total", { label: "Total", orderBy: "total" }),
     },
     query: {

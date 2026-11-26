@@ -30,3 +30,20 @@ def test_groups_list_exactly_their_rows(client, group_by):
     assert all(g["label"] for g in groups)
     for group in groups:
         assert client.get(URL, group["params"]).json()["count"] == group["count"]
+
+
+def test_customer_groups_follow_the_shown_customer(client):
+    """The customer is derived (stage data override > sale order > contact > internal), yet groups and
+    their params match the list."""
+    from contacts.models import Contact
+
+    acme = Contact.objects.create(name="Acme", tax_id="11111111-1")
+    WorkOrder.objects.create(description="OT", related_contact=acme)
+    WorkOrder.objects.create(description="OT", related_contact=acme, stage_data={"contact_name": "Beta"})
+    WorkOrder.objects.create(description="OT")
+
+    groups = {g["key"]: g for g in client.get(f"{URL}groups/", {"group_by": "customer"}).json()}
+
+    assert {k: g["count"] for k, g in groups.items()} == {"Acme": 1, "Beta": 1, "Manual / Interno": 1}
+    for group in groups.values():
+        assert client.get(URL, group["params"]).json()["count"] == group["count"]

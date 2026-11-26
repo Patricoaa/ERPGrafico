@@ -9,6 +9,7 @@ the filter names.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -30,12 +31,18 @@ class GroupField:
       selects one day without an exact filter.
     - `null_param`: list filter that selects the rows without a value (`?<null_param>=true`). Without
       it, the "no value" group has no `params` and its rows cannot be listed.
+    - `expression`: a value derived in SQL (`Case`, `Coalesce`…), annotated as `field` before grouping,
+      for a value the list shows but no column holds. `field` is then the annotation name and must not
+      clash with a model field. The list filter `param` must filter by the same expression.
+    - `labels`: label of each key, for an `expression` whose keys are codes (`{"manual": "Manual"}`).
     """
 
     field: str
     label: str | None = None
     param: str | tuple[str, ...] | None = None
     null_param: str | None = None
+    expression: Any = None
+    labels: Mapping[str, str] | None = None
 
 
 def _model_field(model: type, path: str) -> Any:
@@ -99,12 +106,14 @@ def list_groups(
     model = queryset.model
     # Subquery on the pks: joins of the list filters (search across lines) cannot inflate the sums.
     base = model._default_manager.filter(pk__in=queryset.order_by().values("pk")).order_by()
+    if spec.expression is not None:
+        base = base.annotate(**{spec.field: spec.expression})
     values = [spec.field] + ([spec.label] if spec.label else [])
     sums = {f"_agg_{key}": Sum(path) for key, path in aggregates.items()}
     rows = base.values(*values).annotate(_count=Count("pk", distinct=True), **sums)
 
     places = {key: _decimal_places(model, path) for key, path in aggregates.items()}
-    choices = _choices(model, spec.field)
+    choices = dict(spec.labels) if spec.labels else _choices(model, spec.field)
     names = spec.param if isinstance(spec.param, tuple) else (spec.param or name,)
     groups: list[dict[str, Any]] = []
     for row in rows:

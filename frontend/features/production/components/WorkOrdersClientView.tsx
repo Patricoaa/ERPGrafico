@@ -19,7 +19,7 @@ import { useWorkOrderGroups } from "../hooks/useWorkOrderGroups"
 import { useWorkOrderListActions } from "../hooks/useWorkOrderListActions"
 import { FadeIn, ToolbarCreateButton } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useEntityCollection, useServerPage, type CollectionViewMode } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useEntityCollection, useServerPage, type CollectionViewMode } from "@/components/entity-view"
 import { workOrderEntity, workOrderViews } from "../entity-view/workOrder.entity"
 import type { WorkOrder, WizardMode } from "../types"
 
@@ -48,8 +48,8 @@ export function WorkOrdersClientView({ initialOrders }: WorkOrdersClientViewProp
     const grouped = useWorkOrderGroups({ groupKey, params })
     const list = useWorkOrders({
         ...params,
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined, groupKey === null)
     const { page, orders } = list
     const isLoading = groupKey ? grouped.isLoading : list.isLoading

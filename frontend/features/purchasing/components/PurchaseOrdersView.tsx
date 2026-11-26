@@ -5,7 +5,7 @@ import { AnalyticsPanelContent, EmptyState, SkeletonShell, type Granularity } fr
 import { Button } from "@/components/ui/button"
 import {
     Collection,
-    GROUP_ROW_LIMIT,
+    
     useCollectionAnalytics,
     useCollectionQuery,
     useCollectionViewMode,
@@ -54,8 +54,8 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
     const list = usePurchasingOrders({
         filters: {
             ...params,
-            page: groupBy ? 1 : pageState.pageIndex + 1,
-            page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+            page: pageState.pageIndex + 1,
+            page_size: pageState.pageSize,
         },
         enabled: groupKey === null,
     })
@@ -144,8 +144,8 @@ function PurchaseNoteCollection() {
     const grouped = usePurchaseNoteGroups({ groupKey, params: filters })
     const list = usePurchasingNotes({
         filters,
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
         enabled: groupKey === null,
     })
     const { page, notes } = list

@@ -1,6 +1,6 @@
 "use client"
 
-import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { saleReturnEntity, saleReturnViews } from "../entity-view/saleReturn.entity"
 import { useSaleReturns } from "../hooks/useSaleDeliveries"
@@ -27,8 +27,8 @@ export function SalesReturnsView() {
     const facets = useSaleReturnFacets({ fields: query.facetFields, views: query.facetViews, params })
     const list = useSaleReturns({
         ...params,
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     }, groupKey === null)
     const { page, returns } = list
     const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : { ...list, isRefetching: list.isFetching }

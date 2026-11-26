@@ -2,9 +2,9 @@
 
 import { useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
-import { Collection, GROUP_ROW_LIMIT, useCollectionAnalytics, useCollectionQuery, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useCollectionQuery, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { stockMoveEntity, stockMoveViews, type StockMove } from "@/features/inventory/entity-view/stockMove.entity"
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { useStockMoveGroups } from "@/features/inventory/hooks/useInventoryGroups"
@@ -13,7 +13,6 @@ import { Metric, MetricStrip, AnalyticsPanelContent } from "@/components/shared"
 import type { AnalyticsPanelContentProps, Granularity } from "@/components/shared"
 import { TrendingUp, Package, Warehouse, ArrowDownLeft, ArrowUpRight } from "lucide-react"
 import { formatMoney, formatQuantity } from "@/lib/money"
-import { toast } from "sonner"
 import React from "react"
 
 interface MovementClientViewProps {
@@ -28,16 +27,10 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
     const grouped = useStockMoveGroups({ groupKey, filters: params })
     const { moves, totalCount, isLoading } = useStockMoves({
         ...params,
-        page: groupBy ? 1 : pageState.pageIndex + 1,
-        page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     }, groupKey === null)
 
-    useEffect(() => {
-        // Only the page grouping is bounded; server groups cover the whole result.
-        if (groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT) {
-            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
-        }
-    }, [groupBy, groupKey, totalCount])
 
     // Cada movimiento abre su detalle en una pestaña propia (ADR-0152); `?selected&action=view` es enlace profundo.
     const { openEntity } = useGlobalModals()

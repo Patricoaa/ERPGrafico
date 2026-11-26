@@ -59,9 +59,10 @@ export interface CollectionOptions<Id extends string, T = never> {
     sorting?: CollectionSorting<Id>
     defaultSort?: SortSpec<Id>
     /**
-     * Groups the loaded rows by a field's formatted text (same text as the cell). Grouping happens
-     * on the rows the page loaded: a server-paginated list should load one bounded page while grouping
-     * (Gate D lote 2: `GROUP_ROW_LIMIT`) and pass `rowCount` so the surfaces can warn when it is truncated.
+     * Groups by a field. Without `serverGroups` it groups the loaded rows by the field's formatted text
+     * (same text as the cell), so only a list that loads every row groups this way; a server-paginated
+     * list passes `serverGroups` (`groups/`, ADR-0158 §7). If `rowCount` exceeds the loaded rows anyway,
+     * `truncated` is set and the surfaces warn.
      */
     groupBy?: Id | null
     /**
@@ -105,9 +106,6 @@ export interface CollectionDnd<T> {
     drag?(row: T): RowDragSpec | null
     drop?(row: T): RowDropSpec | null
 }
-
-/** Uniform row cap while grouping (Gate D lote 2): beyond it the surfaces show a "refine the filter" notice. */
-export const GROUP_ROW_LIMIT = 200
 
 export interface CollectionGroup<T> {
     key: string

@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
 import { ActionConfirmModal, AnalyticsPanelContent, type BulkAction } from '@/components/shared'
-import { Collection, GROUP_ROW_LIMIT, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { Collection, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { toPage } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import { Plus, AlertTriangle } from "lucide-react"
@@ -102,14 +102,13 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const ventasData = useProductAnalytics({ ...analyticsFilters, can_be_sold: true, price_field: "sale" }, analyticsEnabled)
     const comprasData = useProductAnalytics({ ...analyticsFilters, can_be_purchased: true, price_field: "cost" }, analyticsEnabled)
 
-    // Grouping loads one bounded page (GROUP_ROW_LIMIT); the collection warns when it is truncated.
     // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
     const grouped = useProductGroups({ groupKey, filters: { ...filters, ordering: query.params.ordering } })
     const list = useProducts({
         enabled: groupKey === null,
         filters: { ...filters, ordering: query.params.ordering },
-        page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? GROUP_ROW_LIMIT : pageState.pageSize,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
         // Only reused by the hook while the query is still the default one it was rendered for.
         initial: initialPage
             ? { page: toPage<Product>(initialPage, 1, DEFAULT_PRODUCT_LIST_QUERY.page_size), params: DEFAULT_PRODUCT_LIST_QUERY }

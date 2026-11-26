@@ -86,7 +86,8 @@ export const workOrderEntity = defineEntity<WorkOrder>()((f) => ({
             (w) => translateProductionStage(w.current_stage),
             { label: "Etapa", groupKey: "current_stage" },
         ),
-        customer: f.text((w) => w.sale_customer_name ?? "", { label: "Cliente" }),
+        // Grouped on the server by the same precedence as `sale_customer_name` (`work_order_customer_name`).
+        customer: f.text((w) => w.sale_customer_name ?? "", { label: "Cliente", groupKey: "customer" }),
         quantityLabel: f.text(quantityLabel, { label: "Cantidad" }),
         dueDate: f.date("due_date", { label: "Fecha Entrega" }),
     },
