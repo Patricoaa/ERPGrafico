@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.197](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.196...v0.3.197) (2026-11-26)
+
+
+### ⚙️ Refactors
+
+* listas de solo lectura sobre entity-view; el contrato ya no marca las filas de FormLineItemsTable ([a8b998e](https://github.com/Patricoaa/ERPGrafico/commit/a8b998eda26aedeb927df1d0ea74331118c0f7fe))
+
 ### [0.3.196](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.195...v0.3.196) (2026-11-26)
 
 
