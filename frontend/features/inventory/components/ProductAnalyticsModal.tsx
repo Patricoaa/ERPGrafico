@@ -152,7 +152,7 @@ export function ProductAnalyticsModal({
             title="Análisis de producto"
             size="xl"
             hideScrollArea
-            contentClassName="overflow-hidden p-5"
+            contentClassName="overflow-hidden"
         >
             <div className="h-[80vh] overflow-hidden flex flex-col">
                 {productId && (
