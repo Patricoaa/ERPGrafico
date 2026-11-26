@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import { toPage, type Page } from '@/lib/pagination'
 import { fetchBoundedList } from '@/lib/bounded-list'
 import type {
@@ -268,6 +269,12 @@ export const treasuryApi = {
     },
 
     // ========== Movements ==========
+
+    /** Movements grouped on the server (ADR-0158 §7), with the list's params (`movementListParams`). */
+    getMovementGroups: async (params: Record<string, string | number | boolean>, groupBy: string): Promise<ServerGroup[]> => {
+        const response = await api.get<unknown>('/treasury/movements/groups/', { params: { ...params, group_by: groupBy } })
+        return toServerGroups(response.data)
+    },
 
     getMovements: async (
         params: Record<string, string | number | boolean>,

@@ -54,17 +54,20 @@ export function useStockMove<T = StockMove>(id: string | number | null | undefin
     })
 }
 
-export function useStockMoves(filters: StockMoveFilters = {}) {
+/** One page of the move list (the endpoint takes the list params as-is): rows of the list and of its groups. */
+export async function fetchStockMoves(filters: object, page: number, pageSize: number, signal?: AbortSignal): Promise<Page<StockMove>> {
+    const response = await api.get('/inventory/moves/', { params: { ...filters, page, page_size: pageSize }, signal })
+    return toPage<StockMove>(response.data, page, pageSize)
+}
+
+export function useStockMoves(filters: StockMoveFilters = {}, enabled = true) {
     const { page = 1, page_size = 50, ...rest } = filters
 
     const { data: page_, isLoading, isFetching, refetch } = useQuery({
         queryKey: [...STOCK_MOVES_QUERY_KEY, { page, page_size, ...rest }],
-        queryFn: async ({ signal }): Promise<Page<StockMove>> => {
-            const params: Record<string, unknown> = { page, page_size, ...rest }
-            const response = await api.get('/inventory/moves/', { params, signal })
-            return toPage<StockMove>(response.data, page, page_size)
-        },
+        queryFn: ({ signal }) => fetchStockMoves(rest, page, page_size, signal),
         staleTime: staleTime.standard, // 2 min — tier "Transactional"
+        enabled,
     })
 
     return {

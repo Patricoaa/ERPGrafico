@@ -47,7 +47,7 @@ export const salesInvoiceEntity = defineEntity<Invoice>()((f) => ({
             const raw = stripLeadingZeros(inv.number)
             return `${getDtePrefix(inv.dte_type)}-${raw}`
         }, { label: "Folio" }),
-        date: f.date("date", { label: "Fecha" }),
+        date: f.date("date", { label: "Fecha", groupKey: "date" }),
         customer: f.contact((inv) => (inv.partner_name ? { id: inv.partner_id ?? 0, name: inv.partner_name } : null), { label: "Cliente" }),
         dteType: f.status((inv) => ({
             status: inv.dte_type,
@@ -63,8 +63,8 @@ export const salesInvoiceEntity = defineEntity<Invoice>()((f) => ({
                     default: return "neutral"
                 }
             })(),
-        }), { label: "Tipo DTE" }),
-        hub: f.hubStatus((inv) => inv, { label: "Estado", entity: "billing.invoice", caption: (inv) => ({ status: inv.status, label: inv.status_display }) }),
+        }), { label: "Tipo DTE", groupKey: "dte_type" }),
+        hub: f.hubStatus((inv) => inv, { label: "Estado", groupKey: "status", entity: "billing.invoice", caption: (inv) => ({ status: inv.status, label: inv.status_display }) }),
         total: f.money("total", { label: "Total" }),
     },
     // ADR-0158 §3. Free text goes to `search` (contact name / RUT). No `sort`: the invoices endpoint has no
@@ -89,7 +89,7 @@ export const salesInvoiceEntity = defineEntity<Invoice>()((f) => ({
             },
             total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
         },
-        groupBy: { fields: ["date", "hub", "dteType"] },
+        groupBy: { fields: ["date", "hub", "dteType"], aggregate: { total: "sum" } },
         views: [
             { id: "all", label: "Todos" },
             { id: "unpaid", label: "Por cobrar", filters: { status: "POSTED", payment_status: "UNPAID" } },

@@ -1,8 +1,24 @@
+import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import api from '@/lib/api'
 import { toPage } from '@/lib/pagination'
 import type { Page } from '@/lib/pagination'
 import type { Invoice, InvoiceFilters, AnnulInvoicePayload, InvoiceableLinesParams, InvoiceableOrder, InvoiceFromLinesPayload } from '../types'
 import { invoiceableOrderSchema } from '../types'
+
+const INVOICE_FILTERS = ['status', 'dte_type', 'contact', 'date_from', 'date_to', 'total_min', 'total_max', 'number', 'partner_name', 'search', 'payment_status', 'ordering'] as const
+
+/** List params of the invoices of one side (`mode`, default sale): shared by the rows and their groups. */
+function invoiceListParams(filters?: InvoiceFilters): URLSearchParams {
+    const params = new URLSearchParams()
+    // Mode → server-side filter (era client-side anteriormente); por defecto, documentos de venta.
+    if (filters?.mode === 'purchase') params.append('purchase_order__isnull', 'false')
+    else params.append('sale_order__isnull', 'false')
+    for (const key of INVOICE_FILTERS) {
+        const value = filters?.[key]
+        if (value) params.append(key, String(value))
+    }
+    return params
+}
 
 /**
  * Centralized API service for billing operations
@@ -20,34 +36,20 @@ export const billingApi = {
      * filtros vía filterset_fields: { sale_order: ['isnull'], purchase_order: ['isnull'] }.
      */
     getInvoices: async (filters?: InvoiceFilters): Promise<Page<Invoice>> => {
-        const { page = 1, page_size = 20, ...rest } = filters ?? {}
-        const params = new URLSearchParams()
-
-        // Mode → server-side filter (era client-side anteriormente)
-        if (rest.mode === 'purchase') {
-            params.append('purchase_order__isnull', 'false')
-        } else if (rest.mode === 'sale' || !rest.mode) {
-            // Por defecto: documentos de venta
-            params.append('sale_order__isnull', 'false')
-        }
-
+        const { page = 1, page_size = 20 } = filters ?? {}
+        const params = invoiceListParams(filters)
         params.append('page', String(page))
         params.append('page_size', String(page_size))
-
-        if (rest.status)         params.append('status', rest.status)
-        if (rest.dte_type)       params.append('dte_type', rest.dte_type)
-        if (rest.date_from)      params.append('date_from', rest.date_from)
-        if (rest.date_to)        params.append('date_to', rest.date_to)
-        if (rest.total_min)      params.append('total_min', rest.total_min)
-        if (rest.total_max)      params.append('total_max', rest.total_max)
-        if (rest.number)         params.append('number', rest.number)
-        if (rest.partner_name)   params.append('partner_name', rest.partner_name)
-        if (rest.search)         params.append('search', rest.search)
-        if (rest.payment_status) params.append('payment_status', rest.payment_status)
-        if (rest.ordering)       params.append('ordering', rest.ordering)
-
         const { data } = await api.get<unknown>('/billing/invoices/', { params })
         return toPage<Invoice>(data, page, page_size)
+    },
+
+    /** Groups of the filtered invoice list (ADR-0158 §7), with the same sale / purchase split. */
+    getInvoiceGroups: async (filters: InvoiceFilters, groupBy: string): Promise<ServerGroup[]> => {
+        const params = invoiceListParams(filters)
+        params.append('group_by', groupBy)
+        const { data } = await api.get<unknown>('/billing/invoices/groups/', { params })
+        return toServerGroups(data)
     },
 
     /**

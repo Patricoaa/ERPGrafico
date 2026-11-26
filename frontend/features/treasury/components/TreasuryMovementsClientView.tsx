@@ -11,6 +11,7 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useTreasuryMovementGroups } from "@/features/treasury/hooks/useTreasuryMovementGroups"
 import { useTreasuryMovementAnalytics } from "@/features/treasury/hooks/useTreasuryMovementAnalytics"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
@@ -42,16 +43,21 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         bank: banks.map((b) => ({ label: b.name, value: String(b.id) })),
     }), [accounts, banks])
     const query = useCollectionQuery(treasuryMovementEntity, { filterOptions })
-    const { search, groupBy, params } = query
+    const { search, groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("treasury.treasurymovement")
-    const { movements, totalCount, isLoading, isRefetching, isError, refetch } = useTreasuryMovements({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useTreasuryMovementGroups({ groupKey, filters: params as TreasuryMovementFilters })
+    const list = useTreasuryMovements({
         ...(params as TreasuryMovementFilters),
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    })
+    }, groupKey === null)
+    const { movements, totalCount } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
-    const isTruncated = !!groupBy && totalCount > GROUP_ROW_LIMIT
+    // Only the page grouping is bounded; server groups cover the whole result.
+    const isTruncated = !!groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT
 
     useEffect(() => {
         if (isTruncated) {
@@ -103,7 +109,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const collection = useEntityCollection(
         treasuryMovementEntity,
         { rows: movements, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy, serverGroups: grouped.groups },
     )
 
     return (

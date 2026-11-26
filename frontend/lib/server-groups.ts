@@ -41,6 +41,18 @@ const serverGroupSchema = z.object({
     params: z.record(z.string(), z.string()).nullable(),
 })
 
+/**
+ * List filters as `groups/` params: drops empty values and writes the rest as text (`true` → `"true"`),
+ * so a feature's typed filters can key and feed `useServerGroups`.
+ */
+export function toGroupParams(filters: object): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(filters)
+            .filter(([, value]) => value !== undefined && value !== null && value !== "")
+            .map(([key, value]) => [key, String(value)]),
+    )
+}
+
 /** Parses a `groups/` response (validates the backend contract at the boundary). */
 export function toServerGroups(data: unknown): ServerGroup[] {
     return z.array(serverGroupSchema).parse(data)

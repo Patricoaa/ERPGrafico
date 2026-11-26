@@ -7,13 +7,14 @@ import { staleTime } from '@/lib/query-config'
 
 export const INVENTORY_DOCUMENTS_QUERY_KEY = ['inventory', 'documents'] as const
 
-export function useInventoryDocuments(filters: InventoryDocumentFilters = {}) {
+export function useInventoryDocuments(filters: InventoryDocumentFilters = {}, enabled = true) {
     const { page = 1, page_size = 50, ...rest } = filters
 
     const { data: page_, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...INVENTORY_DOCUMENTS_QUERY_KEY, { page, page_size, ...rest }],
         queryFn: () => inventoryApi.getInventoryDocuments({ page, page_size, ...rest }),
         staleTime: staleTime.standard, // 2 minutes (Transactional)
+        enabled,
     })
 
     return {

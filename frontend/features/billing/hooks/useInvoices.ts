@@ -13,9 +13,11 @@ export { INVOICES_KEYS, INVOICES_QUERY_KEY }
 
 interface UseInvoicesProps {
     filters?: InvoiceFilters
+    /** `false` while the list is grouped on the server (ADR-0158 §7). */
+    enabled?: boolean
 }
 
-export function useInvoices({ filters }: UseInvoicesProps = {}) {
+export function useInvoices({ filters, enabled = true }: UseInvoicesProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
@@ -23,6 +25,7 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         queryKey: INVOICES_KEYS.list(filters),
         queryFn: () => billingApi.getInvoices(filters),
         staleTime: staleTime.standard,
+        enabled,
         placeholderData: (prev) => prev,
     })
 

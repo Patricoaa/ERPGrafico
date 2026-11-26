@@ -54,21 +54,25 @@ export function useJournalEntry(id: string | number | undefined) {
     })
 }
 
-export function useJournalEntries(filters?: FilterState & { page?: number; page_size?: number }) {
+/** Journal entry list params (no paging): shared by the rows and their groups (ADR-0158 §7). */
+export function journalEntryListParams(filters: FilterState): Record<string, unknown> {
+    const params: Record<string, unknown> = {}
+    if (filters.status) params['status'] = filters.status
+    if (filters.search) params['search'] = filters.search
+    if (filters.date_from) params['date_after'] = filters.date_from
+    if (filters.date_to) params['date_before'] = filters.date_to
+    if (filters.date_after) params['date_after'] = filters.date_after
+    if (filters.date_before) params['date_before'] = filters.date_before
+    return params
+}
+
+export function useJournalEntries(filters?: FilterState & { page?: number; page_size?: number }, enabled = true) {
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
     const { data: pageData, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, { page, page_size, ...restFilters }],
-        queryFn: async () => {
-            const params: Record<string, unknown> = { page, page_size }
-            if (restFilters?.status) params['status'] = restFilters.status
-            if (restFilters?.search) params['search'] = restFilters.search
-            if (restFilters?.date_from) params['date_after'] = restFilters.date_from
-            if (restFilters?.date_to) params['date_before'] = restFilters.date_to
-            if (restFilters?.date_after) params['date_after'] = restFilters.date_after
-            if (restFilters?.date_before) params['date_before'] = restFilters.date_before
-            return await accountingApi.getEntries(params)
-        },
+        queryFn: () => accountingApi.getEntries({ page, page_size, ...journalEntryListParams(restFilters) }),
         staleTime: staleTime.standard,
+        enabled,
     })
 
     return {

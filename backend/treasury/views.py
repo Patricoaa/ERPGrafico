@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http import FileResponse, HttpResponse
 
+from core.services.grouping import GroupField
+
 from .pos_lock import PosSessionLockMixin
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagin
 from core.api.permissions import require_perms
 from core.edit_policy import annotate_edit_usage
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, EditPolicyMixin
+from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin
 
 from .deletion_service import BankDeletionService
 from .difference_service import DifferenceService
@@ -421,9 +423,16 @@ class POSTerminalViewSet(PosSessionLockMixin, viewsets.ModelViewSet, AuditHistor
         return Response(serializer.data)
 
 
-class TreasuryMovementViewSet(EditPolicyMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class TreasuryMovementViewSet(EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by("-date", "-created_at")
     serializer_class = TreasuryMovementSerializer
+    # ADR-0158 §7: groups/ (the selector reads the same params as the list).
+    group_fields = {
+        "date": GroupField("date"),
+        "movement_type": GroupField("movement_type"),
+        "payment_method": GroupField("payment_method_new__method_type", param="payment_method"),
+    }
+    group_ordering = ["-date"]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     action_permissions = {

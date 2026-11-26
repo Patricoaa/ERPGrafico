@@ -28,7 +28,8 @@ class InvoiceSelectorExt:
 
         from .models import Invoice
 
-        is_list = view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']
+        # groups/ (ADR-0158 §7) must see the same filtered list as `list`.
+        is_list = view.action in ['list', 'groups', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']
 
         if is_list:
             qs = Invoice.objects.select_related(
@@ -49,7 +50,7 @@ class InvoiceSelectorExt:
                 'purchase_order__supplier',
                 'corrected_invoice',
             )
-        if view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']:
+        if is_list:
             d_type = request.query_params.get('document_type')
             inv_type = request.query_params.get('invoice_type')
             is_purch = request.query_params.get('is_purchase')

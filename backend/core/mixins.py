@@ -146,12 +146,15 @@ class GroupedListMixin:
     `GET <list>/groups/?group_by=<name>&<list filters>` (ADR-0158 §7): the groups of the filtered list,
     each with its count, sums and the params that list its rows. Declare `group_fields`
     (`{name: GroupField}`) and, optionally, `group_aggregates` (`{name: orm_path}`, summed).
+    Without `?ordering=`, the groups follow `group_ordering`, else the list's `ordering`: a list
+    ordered by its selector (no `OrderingFilter`) declares `group_ordering` (e.g. `["-date"]`).
 
     It reuses the list's `filter_queryset(get_queryset())`, so the groups always match the rows.
     """
 
     group_fields: dict = {}
     group_aggregates: dict = {}
+    group_ordering: list[str] | None = None
 
     @action(detail=False, methods=["get"], url_path="groups")
     def groups(self, request, *args, **kwargs):
@@ -163,6 +166,6 @@ class GroupedListMixin:
             request.query_params.get("group_by"),
             self.group_fields,
             self.group_aggregates,
-            # Without `?ordering=`, the list's default order (`ordering`) orders the groups too.
-            request.query_params.get("ordering") or ",".join(getattr(self, "ordering", None) or []),
+            request.query_params.get("ordering")
+            or ",".join(self.group_ordering or getattr(self, "ordering", None) or []),
         ))

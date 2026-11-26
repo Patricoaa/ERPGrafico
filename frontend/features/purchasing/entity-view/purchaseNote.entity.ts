@@ -11,9 +11,9 @@ export const purchaseNoteEntity = defineEntity<Invoice>()((f) => ({
     fields: {
         dteType: f.text("dte_type_display", { label: "Documento" }),
         folio: f.code((i) => i.display_id ?? i.number ?? null, { label: "Folio" }),
-        date: f.date("date", { label: "Fecha" }),
+        date: f.date("date", { label: "Fecha", groupKey: "date" }),
         partner: f.text((i) => i.supplier_name || i.partner_name, { label: "Proveedor" }),
-        hub: f.hubStatus((i) => i, { label: "Estado", entity: "billing.invoice", caption: (i) => ({ status: i.status, label: i.status_display }) }),
+        hub: f.hubStatus((i) => i, { label: "Estado", groupKey: "status", entity: "billing.invoice", caption: (i) => ({ status: i.status, label: i.status_display }) }),
         total: f.money(signed, { label: "Total" }),
     },
     // ADR-0158 §3. Free text goes to `search` (contact name / RUT). No `sort`: the invoices endpoint has no

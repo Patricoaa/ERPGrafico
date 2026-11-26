@@ -3,6 +3,7 @@
 import React, { useEffect, useCallback } from "react"
 import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage, GROUP_ROW_LIMIT } from "@/components/entity-view"
 import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
+import { useInventoryDocumentGroups } from "../hooks/useInventoryGroups"
 import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
 import type { InventoryDocument } from "../types"
 import { inventoryDocumentEntity, inventoryDocumentViews } from "../entity-view/inventoryDocument.entity"
@@ -19,7 +20,7 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
 export function DocumentsClientView({ documentTypeFilter, createAction }: DocumentsClientViewProps) {
     const query = useCollectionQuery(inventoryDocumentEntity)
-    const { search, groupBy } = query
+    const { search, groupBy, groupKey } = query
     // A route per document type fixes it (the "Tipo" filter then has no effect there).
     const allFilters = React.useMemo(() => ({
         ...query.params,
@@ -28,13 +29,18 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
     const [pageState, setPageState] = useServerPage([allFilters, groupBy], DEFAULT_PAGE)
     const { view, onViewChange } = useCollectionViewMode("inventory.inventorydocument")
 
-    const { documents, totalCount, isLoading, isRefetching, isError, refetch } = useInventoryDocuments({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useInventoryDocumentGroups({ groupKey, filters: allFilters })
+    const list = useInventoryDocuments({
         ...allFilters,
         page: groupBy ? 1 : pageState.pageIndex + 1,
         page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
-    })
+    }, groupKey === null)
+    const { documents, totalCount } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
-    const isTruncated = !!groupBy && totalCount > GROUP_ROW_LIMIT
+    // Only the page grouping is bounded; server groups cover the whole result.
+    const isTruncated = !!groupBy && !groupKey && totalCount > GROUP_ROW_LIMIT
 
     useEffect(() => {
         if (isTruncated) {
@@ -65,7 +71,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
     const collection = useEntityCollection(
         inventoryDocumentEntity,
         { rows: documents, rowCount: totalCount, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy, serverGroups: grouped.groups },
     )
 
     const table = documentTypeFilter ? inventoryDocumentViews.table.without("documentType") : inventoryDocumentViews.table

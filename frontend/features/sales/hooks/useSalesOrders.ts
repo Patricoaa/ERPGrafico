@@ -116,19 +116,26 @@ export function useSalesOrders({ filters, enabled = true }: { filters?: SaleOrde
     }
 }
 
+/** Params of `InvoiceFilterSet` (the notes are invoices): `date_from` / `date_to` and `partner_name`. */
 export interface SaleNoteFilters {
     page?: number
     page_size?: number
-    date_after?: string
-    date_before?: string
-    customer_name?: string
+    date_from?: string
+    date_to?: string
+    partner_name?: string
+    /** Contact id (server grouping by customer, ADR-0158 §7). */
+    contact?: string
+    search?: string
+    payment_status?: string
     total_min?: string
     total_max?: string
     number?: string
     status?: string
+    /** Several statuses, comma separated (`InvoiceFilterSet` `status__in`). */
+    status__in?: string
 }
 
-export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
+export function useSalesNotes({ filters, enabled = true }: { filters?: SaleNoteFilters; enabled?: boolean } = {}) {
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
     const activeFilters = { page, page_size, ...restFilters }
 
@@ -136,6 +143,7 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
         queryKey: SALES_KEYS.notes(activeFilters),
         queryFn: () => salesApi.getSalesNotes(activeFilters),
         staleTime: staleTime.standard,
+        enabled,
         placeholderData: (prev) => prev,
     })
 

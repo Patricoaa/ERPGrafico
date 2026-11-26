@@ -45,7 +45,7 @@ export const purchaseInvoiceEntity = defineEntity<Invoice>()((f) => ({
             const raw = stripLeadingZeros(inv.number)
             return `${getDtePrefix(inv.dte_type)}-${raw}`
         }, { label: "Folio" }),
-        date: f.date("date", { label: "Fecha Emisión" }),
+        date: f.date("date", { label: "Fecha Emisión", groupKey: "date" }),
         supplier: f.contact((inv) => (inv.partner_name ? { id: inv.partner_id ?? inv.supplier ?? 0, name: inv.partner_name } : null), { label: "Proveedor" }),
         dteType: f.status((inv) => ({
             status: inv.dte_type,
@@ -63,7 +63,7 @@ export const purchaseInvoiceEntity = defineEntity<Invoice>()((f) => ({
                 }
             })(),
         }), { label: "Tipo DTE" }),
-        hub: f.hubStatus((inv) => inv, { label: "Estado", entity: "billing.invoice", caption: (inv) => ({ status: inv.status, label: inv.status_display }) }),
+        hub: f.hubStatus((inv) => inv, { label: "Estado", groupKey: "status", entity: "billing.invoice", caption: (inv) => ({ status: inv.status, label: inv.status_display }) }),
         total: f.money("total", { label: "Total" }),
     },
     // ADR-0158 §3. Free text goes to `search` (contact name / RUT). No `sort`: the invoices endpoint has no
@@ -76,7 +76,7 @@ export const purchaseInvoiceEntity = defineEntity<Invoice>()((f) => ({
             payment_status: { label: "Pago", control: "single", options: [{ value: "UNPAID", label: "Pendiente" }, { value: "PARTIAL", label: "Parcial" }, { value: "PAID", label: "Pagado" }] },
             total: { field: "total", control: "range", paramFrom: "total_min", paramTo: "total_max" },
         },
-        groupBy: { fields: ["date", "hub"] },
+        groupBy: { fields: ["date", "hub"], aggregate: { total: "sum" } },
         views: [
             { id: "all", label: "Todos" },
             { id: "unpaid", label: "Por pagar", filters: { status: "POSTED", payment_status: "UNPAID" } },

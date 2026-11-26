@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Collection, GROUP_ROW_LIMIT, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
+import { useInvoiceGroups } from "@/features/billing/hooks/useInvoiceGroups"
 import { type InvoiceFilters } from "@/features/billing/types"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
@@ -12,7 +13,7 @@ const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
 export function SalesInvoicesClientView() {
     const query = useCollectionQuery(salesInvoiceEntity)
-    const { search, groupBy } = query
+    const { search, groupBy, groupKey } = query
     // ?selected abre la ficha documental de la factura (ADR-0083)
     const sheet = useDocumentSheetRoute("billing.invoice")
     const { view, onViewChange } = useCollectionViewMode("billing.invoice")
@@ -20,18 +21,23 @@ export function SalesInvoicesClientView() {
     const filters = { ...query.params, mode: 'sale' } as InvoiceFilters
     const [pageState, setPageState] = useServerPage([filters, groupBy], DEFAULT_PAGE)
 
-    const { page, invoices, isLoading, isRefetching, isError, refetch } = useInvoices({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useInvoiceGroups({ groupKey, params: query.params, mode: "sale" })
+    const list = useInvoices({
         filters: {
             ...filters,
             page: groupBy ? 1 : pageState.pageIndex + 1,
             page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
         },
+        enabled: groupKey === null,
     })
+    const { page, invoices } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     const collection = useEntityCollection(
         salesInvoiceEntity,
         { rows: invoices, rowCount: page?.count, isLoading, isRefetching, error: isError, refetch, isFiltered: search.isFiltered },
-        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy },
+        { pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState }, groupBy, serverGroups: grouped.groups },
     )
 
     return (

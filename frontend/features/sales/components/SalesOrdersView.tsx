@@ -15,7 +15,7 @@ import {
 } from "@/components/entity-view"
 import { DocumentRowActions } from "@/features/orders"
 import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
-import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSaleOrderGroups, useSalesNotes, useSalesOrders } from "@/features/sales"
+import { EMPTY_SALES_ANALYTICS, useSaleOrderAnalytics, useSaleNoteGroups, useSaleOrderGroups, useSalesNotes, useSalesOrders } from "@/features/sales"
 import { AlertTriangle } from "lucide-react"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { saleOrderEntity, saleOrderViews } from "../entity-view/saleOrder.entity"
@@ -174,16 +174,21 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
 
 function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: CollectionProps & ViewState) {
     const query = useCollectionQuery(saleNoteEntity)
-    const { groupBy, params } = query
+    const { groupBy, groupKey, params } = query
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
 
-    const { page, notes, isLoading, isRefetching, isError, refetch } = useSalesNotes({
+    // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
+    const grouped = useSaleNoteGroups({ groupKey, params })
+    const list = useSalesNotes({
         filters: {
             ...params,
             page: groupBy ? 1 : pageState.pageIndex + 1,
             page_size: groupBy ? GROUP_ROW_LIMIT : pageState.pageSize,
         },
+        enabled: groupKey === null,
     })
+    const { page, notes } = list
+    const { isLoading, isRefetching, isError, refetch } = groupKey ? grouped : list
 
     const collection = useEntityCollection(
         saleNoteEntity,
@@ -192,6 +197,7 @@ function SaleNoteCollectionBody({ selection, withActions, view, onViewChange }: 
             pagination: groupBy ? { mode: "none" } : { mode: "server", state: pageState, onChange: setPageState },
             // No `sorting`: with server pagination the core disables sorting (invoices have no server ordering yet).
             groupBy,
+            serverGroups: grouped.groups,
         },
     )
 

@@ -119,6 +119,19 @@ function listParams(filters: Record<string, unknown> | undefined, keys: readonly
     return params
 }
 
+const PURCHASE_NOTE_FILTERS = ['search', 'number', 'status', 'payment_status', 'total_min', 'total_max', 'date_from', 'date_to', 'partner_name'] as const
+
+/** Purchase credit / debit notes: invoices of a purchase order with a note DTE type. */
+function purchaseNoteParams(filters?: Record<string, string>): URLSearchParams {
+    const params = new URLSearchParams()
+    for (const key of PURCHASE_NOTE_FILTERS) {
+        if (filters?.[key]) params.append(key, filters[key])
+    }
+    params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
+    params.append('purchase_order__isnull', 'false')
+    return params
+}
+
 export const purchasingApi = {
     // ========== Orders ==========
 
@@ -129,6 +142,15 @@ export const purchasingApi = {
         if (filters?.ordering) params.append('ordering', filters.ordering)
         const { data } = await api.get<unknown>('/purchasing/orders/', { params })
         return toPage<PurchaseOrderAPI>(data, filters?.page ?? 1, filters?.page_size ?? 50)
+    },
+
+    /** Groups of the filtered order list (ADR-0158 §7): count, total and the params of each group's rows. */
+    getOrderGroups: async (filters: OrderFilters, groupBy: string): Promise<ServerGroup[]> => {
+        const params = orderListParams(filters)
+        params.append('group_by', groupBy)
+        if (filters.ordering) params.append('ordering', filters.ordering)
+        const { data } = await api.get<unknown>('/purchasing/orders/groups/', { params })
+        return toServerGroups(data)
     },
 
     /** Analytics over the whole filtered order list (same filters as `getOrders`, no paging). */
@@ -177,18 +199,18 @@ export const purchasingApi = {
     // ========== Billing ==========
 
     /** Credit/debit notes of purchase orders; `filters` are the `/billing/invoices/` params of the search bar. */
+    /** Purchase notes grouped on the server (ADR-0158 §7). */
+    getNoteGroups: async (filters: Record<string, string>, groupBy: string): Promise<ServerGroup[]> => {
+        const params = purchaseNoteParams(filters)
+        params.append('group_by', groupBy)
+        const { data } = await api.get<unknown>('/billing/invoices/groups/', { params })
+        return toServerGroups(data)
+    },
+
     getNotes: async ({ filters, page = 1, page_size = 50 }: { filters?: Record<string, string> } & PageParams = {}): Promise<Page<Invoice>> => {
-        const params = new URLSearchParams()
-        const allowed = ['search', 'number', 'status', 'payment_status', 'total_min', 'total_max', 'date_from', 'date_to', 'partner_name']
-        if (filters) {
-            for (const key of allowed) {
-                if (filters[key]) params.append(key, filters[key])
-            }
-        }
+        const params = purchaseNoteParams(filters)
         params.append('page', String(page))
         params.append('page_size', String(page_size))
-        params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
-        params.append('purchase_order__isnull', 'false')
         const { data } = await api.get<unknown>('/billing/invoices/', { params })
         return toPage<Invoice>(data, page, page_size)
     },

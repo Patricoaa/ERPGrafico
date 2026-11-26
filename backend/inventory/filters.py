@@ -1,7 +1,7 @@
 from django_filters import rest_framework as filters
 
 from .analytics import StockMoveAnalyticsService
-from .models import Product, StockMove, UoM
+from .models import InventoryDocument, Product, StockMove, UoM
 
 
 class ProductFilter(filters.FilterSet):
@@ -19,6 +19,15 @@ class ProductFilter(filters.FilterSet):
             "has_variants": ["exact"],
             "track_inventory": ["exact"],
         }
+
+
+class InventoryDocumentFilter(filters.FilterSet):
+    date_from = filters.DateFilter(field_name="date", lookup_expr="gte")
+    date_to = filters.DateFilter(field_name="date", lookup_expr="lte")
+
+    class Meta:
+        model = InventoryDocument
+        fields = ["document_type", "status", "date_from", "date_to"]
 
 
 class UoMFilter(filters.FilterSet):

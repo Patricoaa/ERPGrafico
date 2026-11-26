@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.pagination import OptionalPaginationMixin, StandardResultsSetPagination
+from core.services.grouping import GroupField
 from treasury.pos_lock import PosSessionLockMixin, annotate_pos_lock
 
 from .models import (
@@ -34,7 +35,7 @@ from rest_framework.permissions import IsAuthenticated
 from core.idempotency import idempotent_endpoint
 from core.edit_policy import annotate_edit_usage
 from core.mixins import AuditHistoryMixin as AuditHistory
-from core.mixins import BulkImportMixin, EditPolicyMixin
+from core.mixins import BulkImportMixin, EditPolicyMixin, GroupedListMixin
 
 from .fiscal_year_service import FiscalYearClosingService
 from .selectors import (
@@ -159,7 +160,7 @@ class AccountViewSet(PosSessionLockMixin, OptionalPaginationMixin, EditPolicyMix
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
+class JournalEntryViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistory):
     pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return JournalEntry.objects.select_related("reversal_of", "source_content_type").prefetch_related("items", "items__account", "items__partner", "source_document").all()
@@ -167,6 +168,13 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
     search_fields = ["description", "number", "items__partner__name", "items__partner__tax_id"]
+    # ADR-0158 §7: groups/ by status and date. The origin (manual / automatic / reversal) is derived,
+    # not a column, so it keeps grouping the loaded page.
+    group_fields = {
+        "status": GroupField("status"),
+        "date": GroupField("date", param=("date_after", "date_before")),
+    }
+    group_ordering = ["-date"]
     action_permissions = {
         "post_entry": "accounting.post_journalentry",
         "reverse_entry": "accounting.reverse_journalentry",

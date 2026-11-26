@@ -3,6 +3,7 @@ import logging
 from rest_framework import filters, status, viewsets
 
 from core.api.pagination import StandardResultsSetPagination
+from core.services.grouping import GroupField
 
 logger = logging.getLogger(__name__)
 import django_filters
@@ -30,7 +31,7 @@ class WorkOrderFilterSet(FilterSet):
 
     class Meta:
         model = WorkOrder
-        fields = ["status", "due_date_after", "due_date_before"]
+        fields = ["status", "current_stage", "due_date_after", "due_date_before"]
 
     def filter_my_tasks(self, queryset, name, value):
         if not (value and self.request and self.request.user.is_authenticated): return queryset
@@ -51,7 +52,7 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin, GroupedListMixin
 
 from .selectors import ProductionSelectorExt
 from .serializers import (
@@ -82,12 +83,15 @@ def _error_message(exc):
     return str(exc)
 
 
-class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class WorkOrderViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     # deletion-policy: a WorkOrder is annulled (POST annul/), never hard-deleted
     http_method_names = ["get", "post", "put", "patch", "head", "options"]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = WorkOrderFilterSet
+    # ADR-0158 §7: groups/ by status and stage. The customer shown on a work order may come from its
+    # stage data (JSON), its sale order or its contact, so it is not a groupable column.
+    group_fields = {"status": GroupField("status"), "current_stage": GroupField("current_stage")}
     search_fields = [
         "description",
         "number",

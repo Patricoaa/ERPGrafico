@@ -13,12 +13,9 @@ import { staleTime } from '@/lib/query-config'
 // keep working without churn. Type itself now lives in `../types`.
 export type { TreasuryMovement, TreasuryMovementFilters }
 
-export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
-    const queryClient = useQueryClient()
-    const { markLocalMutation } = useRealtime()
-    const { page_size = 50, page = 1, ...rest } = filters
-
-    const params: Record<string, string | number | boolean> = { page, page_size }
+/** Movement list params (no paging): shared by the rows and their groups (ADR-0158 §7). */
+export function movementListParams(rest: Omit<TreasuryMovementFilters, 'page' | 'page_size'>): Record<string, string | number | boolean> {
+    const params: Record<string, string | number | boolean> = {}
     if (rest.bank)             params.bank             = rest.bank
     if (rest.bank_only !== undefined) params.bank_only    = rest.bank_only
     if (rest.treasury_account) params.treasury_account = rest.treasury_account
@@ -35,11 +32,21 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     if (rest.search)              params.search              = rest.search
     if (rest.display_id)          params.display_id          = rest.display_id
     if (rest.partner_name)        params.partner_name        = rest.partner_name
+    return params
+}
+
+export function useTreasuryMovements(filters: TreasuryMovementFilters = {}, enabled = true) {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    const { page_size = 50, page = 1, ...rest } = filters
+
+    const params = { page, page_size, ...movementListParams(rest) }
 
     const { data: page_, isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: [...MOVEMENTS_KEYS.lists(), { page, page_size, ...rest }],
         queryFn: ({ signal }) => treasuryApi.getMovements(params, signal),
         staleTime: staleTime.standard,
+        enabled,
     })
 
     const createMovement = useMutation({

@@ -275,12 +275,16 @@ Los dos endpoints usan **el mismo `FilterSet` y el mismo queryset de lectura** q
 ```
 
 - **Declaración:** `GroupedListMixin` en el `ViewSet` con `group_fields = {nombre: GroupField(campo, label=…, param=…, null_param=…)}` y `group_aggregates = {id_de_campo: ruta_orm}` (suma). En la entidad, el campo declara `groupKey: "<nombre>"`; sin él, una lista paginada en servidor agrupa solo la página cargada (transitorio hasta E5).
+  - `param` es el filtro de la lista que selecciona las filas del grupo (por defecto, el nombre). Una tupla pone la clave en todos: una fecha usa el rango existente (`param=("date_from", "date_to")`), sin un filtro exacto nuevo.
+  - El grupo solo es posible si la columna existe en la base. Un valor derivado (el estado compuesto de un documento, el origen de un asiento, el cliente de una OT, que puede venir de un JSON) sigue agrupando la página.
+  - En el cliente, el feature arma los params de filas y grupos con la misma función (`orderListParams`, `invoiceListParams`, `movementListParams`…), y la lista plana no se pide mientras se agrupa en el servidor (`enabled: groupKey === null`).
 - **Consulta:** una sola, `values(campo[, etiqueta]).annotate(count=Count("pk"), sum…)` sobre un subquery de los pk filtrados: las búsquedas que cruzan líneas no inflan las sumas.
 - **Etiqueta:** la ruta `label` (FK) o los `choices`; para valores simples (fechas, números) es `null` y el cliente formatea `key` (las fechas como fecha).
 - **Subtotales:** `aggregates` se indexa por el id del campo de la entidad y se formatea como su columna, con la escala del campo del modelo.
-- **Orden:** por la dirección de `ordering` si el campo agrupado (o su etiqueta) figura en él; si no, por `label`. El grupo sin valor va al final.
+- **Orden:** por la dirección de `?ordering` si el campo agrupado (o su etiqueta) figura en él. Sin `?ordering`, rige `group_ordering` del `ViewSet` (para listas ordenadas por su selector, p. ej. `["-date"]`) o su `ordering`. Si no, por `label`, o por valor cuando no hay etiqueta. El grupo sin valor va al final.
+- **Conteo:** `Count("pk", distinct=True)`, así un subtotal que suma líneas no infla el conteo.
 - **Filas de cada grupo:** el listado normal con los `params` del grupo y su propia paginación (`useServerGroups`). Se abren los 3 primeros; el resto carga al desplegarlo, y cada uno tiene «Mostrar más». Un grupo sin `params` (sin valor y sin `null_param`) muestra su conteo pero no se despliega.
-- **Piloto:** órdenes de venta (fecha, cliente, estado de la orden, canal; subtotal del total).
+- **Listas con agrupación en servidor:** órdenes de venta y de compra, facturas y notas, despachos, recepciones y devoluciones, OTs (estado y etapa), productos (tipo y categoría), movimientos de stock, documentos de inventario, movimientos de tesorería y asientos (estado y fecha). Las vistas unificadas de despachos/recepciones aún agrupan la página.
 
 ### 7.2 `GET <lista>/facets/?fields=status,customer&views=open,to-invoice&<filtros>`
 

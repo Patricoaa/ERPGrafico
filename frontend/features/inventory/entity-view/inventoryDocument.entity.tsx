@@ -56,14 +56,14 @@ export const inventoryDocumentEntity = defineEntity<InventoryDocument>()((f) => 
     label: "inventory.inventorydocument",
     fields: {
         folio: f.code("display_id", { label: "Folio" }),
-        date: f.date("date", { label: "Fecha" }),
+        date: f.date("date", { label: "Fecha", groupKey: "date" }),
         documentType: f.status((d) => ({
             status: d.document_type,
             label: DOCUMENT_TYPE_MAP[d.document_type]?.label ?? d.document_type,
             intent: DOCUMENT_TYPE_MAP[d.document_type]?.intent ?? "neutral",
-        }), { label: "Tipo" }),
+        }), { label: "Tipo", groupKey: "document_type" }),
         reference: f.value("inventoryDocRef", (d) => d, { label: "Referencia" }),
-        status: f.status((d) => ({ status: d.status, label: d.status_display }), { label: "Estado" }),
+        status: f.status((d) => ({ status: d.status, label: d.status_display }), { label: "Estado", groupKey: "status" }),
     },
     // ADR-0158 §3. No `sort`: the documents endpoint has no server ordering.
     query: {

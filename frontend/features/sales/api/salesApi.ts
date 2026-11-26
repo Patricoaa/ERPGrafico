@@ -76,6 +76,20 @@ function listParams(filters: Record<string, unknown> | undefined, keys: readonly
     return params
 }
 
+const SALE_NOTE_FILTERS = ['page', 'page_size', 'date_from', 'date_to', 'partner_name', 'contact', 'search', 'payment_status', 'total_min', 'total_max', 'number', 'status', 'status__in'] as const
+
+/** Sale credit / debit notes: invoices of a sale order with a note DTE type. */
+function saleNoteParams(filters?: SaleNoteFilters): URLSearchParams {
+    const params = new URLSearchParams()
+    for (const key of SALE_NOTE_FILTERS) {
+        const value = filters?.[key]
+        if (value) params.append(key, String(value))
+    }
+    params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
+    params.append('sale_order__isnull', 'false')
+    return params
+}
+
 export const salesApi = {
     /**
      * Fetch all sales orders
@@ -221,19 +235,16 @@ export const salesApi = {
     /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
+    /** Sale notes grouped on the server (ADR-0158 §7). */
+    getSalesNoteGroups: async (filters: SaleNoteFilters, groupBy: string): Promise<ServerGroup[]> => {
+        const params = saleNoteParams(filters)
+        params.append('group_by', groupBy)
+        const { data } = await api.get<unknown>('/billing/invoices/groups/', { params })
+        return toServerGroups(data)
+    },
+
     getSalesNotes: async (filters?: SaleNoteFilters): Promise<Page<SaleNote>> => {
-        const params = new URLSearchParams()
-        if (filters?.page) params.append('page', String(filters.page))
-        if (filters?.page_size) params.append('page_size', String(filters.page_size))
-        if (filters?.customer_name) params.append('customer_name', filters.customer_name)
-        if (filters?.date_after) params.append('date_after', filters.date_after)
-        if (filters?.date_before) params.append('date_before', filters.date_before)
-        if (filters?.total_min) params.append('total_min', filters.total_min)
-        if (filters?.total_max) params.append('total_max', filters.total_max)
-        if (filters?.number) params.append('number', filters.number)
-        if (filters?.status) params.append('status', filters.status)
-        params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
-        params.append('sale_order__isnull', 'false')
+        const params = saleNoteParams(filters)
 
         const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
 
