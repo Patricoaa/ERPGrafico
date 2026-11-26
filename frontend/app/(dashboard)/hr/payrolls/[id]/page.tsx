@@ -1,19 +1,13 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import React, { use } from "react"
-import { PayrollDetailView } from "@/features/hr"
+import { searchableEntityRoutes } from "@/lib/searchableEntityRoutes"
 
-interface Props {
+interface PageProps {
     params: Promise<{ id: string }>
 }
 
-export default function PayrollDetailPage({ params }: Props) {
-    const resolvedParams = use(params)
-    const payrollId = parseInt(resolvedParams.id)
-
-    return (
-        <div className="flex-1 space-y-6">
-            <PayrollDetailView payrollId={payrollId} />
-        </div>
-    )
+/** Enlace antiguo: la ficha admin vive en la pestaña de la lista (ADR-0152). */
+export default async function PayrollDetailPage({ params }: PageProps) {
+    const { id } = await params
+    redirect(`${searchableEntityRoutes["hr.payroll"]}?selected=${id}`)
 }

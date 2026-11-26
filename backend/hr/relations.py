@@ -19,7 +19,7 @@ DocumentTypeRegistry.register(DocumentType(
     label="hr.employee", status_field=None, amount_field=None, date_field="start_date",
     partner_path="contact", detail=lambda e: join(e.position, e.department),
 ))
-DocumentTypeRegistry.register(DocumentType(label="hr.payroll"))
+DocumentTypeRegistry.register(DocumentType(label="hr.payroll", canonical_url="/hr/payrolls?selected={id}"))
 DocumentTypeRegistry.register(DocumentType(
     label="hr.absence", status_field=None, amount_field=None, date_field="start_date",
     partner_path="employee.contact", detail=lambda a: join(a.get_absence_type_display(), a.days and f"{a.days} d"),
@@ -30,7 +30,7 @@ DocumentTypeRegistry.register(DocumentType(
 ))
 DocumentTypeRegistry.register(DocumentType(
     label="hr.payrollpayment", date_field="date", partner_path="payroll.employee.contact",
-    canonical_url=lambda p: f"/hr/payrolls/{p.payroll_id}",
+    canonical_url=lambda p: f"/hr/payrolls?selected={p.payroll_id}",
     detail=lambda p: p.get_payment_type_display(),
 ))
 DocumentTypeRegistry.register(DocumentType(label="hr.payrollconcept", canonical_url="/hr/settings/concepts"))
