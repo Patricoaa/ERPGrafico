@@ -194,6 +194,9 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/partners/components/MassPaymentWizard.tsx",
     "features/partners/components/MobilizeEarningsWizard.tsx",
     "features/treasury/card-statements/BillChargesModal.tsx",
+    // Raw preview of an uploaded bank statement: its columns come from the file, so there is no entity
+    // to declare. Moved here from EXEMPT_CONSUMERS when DataTable went away (ADR-0158 stage 5).
+    "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
 ]
 const ADHOC_TABLE = /<table[\s>/]|from ["']@\/components\/ui\/table["']/
 
