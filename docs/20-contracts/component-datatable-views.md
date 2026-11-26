@@ -1,7 +1,7 @@
 ---
 layer: 20-contracts
 doc: component-datatable-views
-status: frozen
+status: retired
 owner: frontend-team
 created: 2026-05-12
 last_review: 2026-05-14
@@ -10,6 +10,8 @@ depends_on:
   - component-skeleton.md
   - entity-identity.md
 ---
+
+> **Retirado (2026-11-26).** El sistema que describe este documento ya no existe en el código: `DataTable` se borró con ADR-0159 y `createEntityFields` al quedar sin consumidores. Se conserva como historia; el contrato vigente es [component-entity-view.md](./component-entity-view.md).
 
 # Contrato: DataTable — Sistema de Vistas e Interacciones
 
