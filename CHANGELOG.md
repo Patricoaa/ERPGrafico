@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.184](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.183...v0.3.184) (2026-11-26)
+
+
+### ✨ Features
+
+* **entity-view:** urlPrefix en useCollectionQuery / useUnifiedSearch; retira el adaptador ([73e182e](https://github.com/Patricoaa/ERPGrafico/commit/73e182ed0c6c1a67a392db8039b79a0dd3c5033f))
+
+
+### ⚙️ Refactors
+
+* actividad de sesión POS y pestañas del socio con barra de comandos embebida ([1555dca](https://github.com/Patricoaa/ERPGrafico/commit/1555dca1a2684108c658a5f6da71e391b3a99238))
+* **finance:** detalle de cartola con barra de comandos embebida ([b954b1e](https://github.com/Patricoaa/ERPGrafico/commit/b954b1e657f88d3fbb1e57a7c70fd4f98254a577))
+* libro mayor (contabilidad y finanzas) y detalle de conteo con barra de comandos embebida ([b5e5153](https://github.com/Patricoaa/ERPGrafico/commit/b5e5153f053c096088c9b229809cdd566ef965b1))
+
+
+### 💅 Styling
+
+* **pos:** ampliar SalesOrdersModal a tamaño 2xl ([56c9484](https://github.com/Patricoaa/ERPGrafico/commit/56c9484c51ac41dcc2d6d68405a2ede55b509333))
+
+
+### 🐛 Bug Fixes
+
+* restaura unifiedSearchDef de conciliación (lo usa ReconciliationPanel en esta rama) ([ff2a76a](https://github.com/Patricoaa/ERPGrafico/commit/ff2a76aa88fdbb5a918935d0c23482267395d51f))
+
 ### [0.3.183](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.182...v0.3.183) (2026-11-26)
 
 
