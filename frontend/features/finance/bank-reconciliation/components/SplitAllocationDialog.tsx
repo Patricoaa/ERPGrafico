@@ -2,11 +2,11 @@
 
 import { useEffect } from "react"
 import { formatCurrency } from "@/lib/money"
-import { BaseModal, FormFooter, CancelButton, SubmitButton, IconButton, LabeledInput, LabeledSelect, Metric, MetricStrip } from "@/components/shared"
+import { BaseModal, FormFooter, CancelButton, SubmitButton, IconButton, FormLineItemsTable, Metric, MetricStrip } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Trash2, CheckCircle2 } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 
 import { useAllocateMutation } from "../hooks/useReconciliationMutations"
 import { usePendingInvoices } from "../../hooks"
@@ -149,75 +149,65 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                     />
                 </MetricStrip>
 
-                <div className="border rounded-md">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[30%] text-muted-foreground">Factura/Documento</TableHead>
-                                <TableHead className="w-[40%] text-muted-foreground">Notas</TableHead>
-                                <TableHead className="w-[20%] text-right text-muted-foreground">Monto</TableHead>
-                                <TableHead className="w-[10%]"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {fields.map((field, idx) => (
-                                <TableRow key={field.id}>
-                                    <TableCell>
-                                        <Select
-                                            value={form.watch(`allocations.${idx}.invoice`) ? String(form.watch(`allocations.${idx}.invoice`)) : undefined}
-                                            onValueChange={(val) => form.setValue(`allocations.${idx}.invoice`, parseInt(val))}
-                                        >
-                                            <SelectTrigger className="w-full h-control-sm text-xs">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {invoiceOptions.map((opt) => (
-                                                    <SelectItem key={opt.value} value={opt.value}>
-                                                        {opt.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Input
-                                            {...form.register(`allocations.${idx}.notes`)}
-                                            className="h-control-sm text-xs"
-                                            />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Input
-                                            {...form.register(`allocations.${idx}.amount`)}
-                                            className="h-control-sm font-mono text-right text-xs"
-                                            type="number"
-                                            step="1"
-                                            onChange={(e) => form.setValue(`allocations.${idx}.amount`, parseFloat(e.target.value) || 0)}
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <IconButton
-                                            className="h-control-sm w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            onClick={() => remove(idx)}
-                                            type="button"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ amount: remaining > 0 ? remaining : 0, notes: '' })}
-                    className="w-full border-dashed"
-                    type="button"
+                <FormLineItemsTable
+                    columns={[
+                        { header: "Factura/Documento", width: "w-[30%]", align: "left" },
+                        { header: "Notas", width: "w-[40%]", align: "left" },
+                        { header: "Monto", width: "w-[20%]", align: "right" },
+                        { header: "", width: "w-[10%]" },
+                    ]}
+                    onAdd={() => append({ amount: remaining > 0 ? remaining : 0, notes: '' })}
+                    addButtonText="Agregar distribución"
                 >
-                    <Plus className="mr-2 h-4 w-4" /> Agregar Distribución
-                </Button>
+                    <TableBody>
+                        {fields.map((field, idx) => (
+                            <TableRow key={field.id}>
+                                <TableCell>
+                                    <Select
+                                        value={form.watch(`allocations.${idx}.invoice`) ? String(form.watch(`allocations.${idx}.invoice`)) : undefined}
+                                        onValueChange={(val) => form.setValue(`allocations.${idx}.invoice`, parseInt(val))}
+                                    >
+                                        <SelectTrigger className="w-full h-control-sm text-xs">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {invoiceOptions.map((opt) => (
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </TableCell>
+                                <TableCell>
+                                    <Input
+                                        {...form.register(`allocations.${idx}.notes`)}
+                                        className="h-control-sm text-xs"
+                                        />
+                                </TableCell>
+                                <TableCell>
+                                    <Input
+                                        {...form.register(`allocations.${idx}.amount`)}
+                                        className="h-control-sm font-mono text-right text-xs"
+                                        type="number"
+                                        step="1"
+                                        onChange={(e) => form.setValue(`allocations.${idx}.amount`, parseFloat(e.target.value) || 0)}
+                                    />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <IconButton
+                                        className="h-control-sm w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        onClick={() => remove(idx)}
+                                        type="button"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </IconButton>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </FormLineItemsTable>
+
             </form>
         </BaseModal>
     )
