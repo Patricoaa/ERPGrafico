@@ -69,6 +69,41 @@ export interface CollectionOptions<Id extends string, T = never> {
      * loaded rows. Replaces `source.rows`; `groupBy` still names the field (labels, "Sin …").
      */
     serverGroups?: readonly ServerGroupState<T>[] | null
+    /**
+     * Controlled row selection (ADR-0159), keyed by row id. The screen owns it: a server page change
+     * does not clear it. Without it the selection is internal and cleared on every server page.
+     */
+    selection?: CollectionSelection
+    /** Semantic tint of a row (ADR-0159): `attention` (a suggestion), `muted` (out of the flow). */
+    rowTone?(row: T): RowTone | null
+    /**
+     * Drag and drop between rows (ADR-0159), table surface only. The screen renders the `DndContext`
+     * (`@dnd-kit/core`) and resolves `onDragEnd` from each spec's `data`.
+     */
+    dnd?: CollectionDnd<T>
+}
+
+export interface CollectionSelection {
+    state: RowSelectionState
+    onChange: (next: RowSelectionState) => void
+}
+
+export type RowTone = "attention" | "muted"
+
+export interface RowDragSpec {
+    id: string
+    data: Record<string, unknown>
+    disabled?: boolean
+}
+
+export interface RowDropSpec {
+    id: string
+    data: Record<string, unknown>
+}
+
+export interface CollectionDnd<T> {
+    drag?(row: T): RowDragSpec | null
+    drop?(row: T): RowDropSpec | null
 }
 
 /** Uniform row cap while grouping (Gate D lote 2): beyond it the surfaces show a "refine the filter" notice. */
@@ -117,6 +152,8 @@ export interface EntityCollection<T, F extends FieldMap<T>> {
     groups: CollectionGroup<T>[] | null
     /** True when grouping shows fewer rows than the server total (`rowCount`). */
     truncated: boolean
+    rowTone: ((row: T) => RowTone | null) | null
+    dnd: CollectionDnd<T> | null
 }
 
 function toSpec<Id extends string>(state: SortingState): SortSpec<Id> | null {
@@ -208,7 +245,16 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by text: see above
     const controlledSortingState = React.useMemo(() => toSorting(controlledSpec), [controlledKey])
     const sorting = sortingOption.mode === "local" ? localSorting : controlledSortingState
-    const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+    const [internalSelection, setInternalSelection] = React.useState<RowSelectionState>({})
+    const controlledSelection = options.selection
+    const rowSelection = controlledSelection?.state ?? internalSelection
+    const setRowSelection = React.useCallback(
+        (updater: RowSelectionState | ((current: RowSelectionState) => RowSelectionState)) => {
+            if (!controlledSelection) return setInternalSelection(updater)
+            controlledSelection.onChange(typeof updater === "function" ? updater(controlledSelection.state) : updater)
+        },
+        [controlledSelection],
+    )
     const tree = entity.tree
     // `true` = every branch open (TanStack's "all expanded"); toggling a row switches to a per-row map.
     const [expanded, setExpanded] = React.useState<ExpandedState>(() => (tree && tree.defaultExpanded !== false ? true : {}))
@@ -231,8 +277,9 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     // page would no longer be visible, and the dock count and the bulk action targets would disagree.
     React.useEffect(() => {
         // Idempotent: a new empty `rows` array per render must not loop.
-        if (isServer) setRowSelection((current) => (Object.keys(current).length === 0 ? current : {}))
-    }, [isServer, rows])
+        // A controlled selection belongs to the screen (ADR-0159).
+        if (isServer && !controlledSelection) setInternalSelection((current) => (Object.keys(current).length === 0 ? current : {}))
+    }, [isServer, rows, controlledSelection])
     const table = useReactTable<T>({
         data: rows,
         columns,
@@ -339,5 +386,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         moreStep,
         refetch: source.refetch,
         isFiltered: !!source.isFiltered,
+        rowTone: options.rowTone ?? null,
+        dnd: options.dnd ?? null,
     }
 }
