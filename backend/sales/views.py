@@ -9,7 +9,13 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.cache import load_singleton
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, FacetedListMixin, GroupedListMixin, NoDestroyModelMixin
+from core.mixins import (
+    AuditHistoryMixin,
+    EditPolicyMixin,
+    FacetedListMixin,
+    GroupedListMixin,
+    NoDestroyModelMixin,
+)
 from core.services.facets import FacetField
 from core.services.grouping import GroupField
 
