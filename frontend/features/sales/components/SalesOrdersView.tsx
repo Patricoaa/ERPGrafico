@@ -91,8 +91,8 @@ function SaleOrderCollectionBody({ selection, withActions, view, onViewChange }:
     const [pageState, setPageState] = useServerPage([params, groupBy], DEFAULT_PAGE)
 
     // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
-    // Per-option counts of the filters that declare `counts: true` (`facets/`, ADR-0158 §8).
-    const facets = useSaleOrderFacets({ fields: query.facetFields, params })
+    // Filter option counts and view totals (`facets/`, ADR-0158 §8).
+    const facets = useSaleOrderFacets({ fields: query.facetFields, views: query.facetViews, params })
     const grouped = useSaleOrderGroups({ groupKey, params })
     const list = useSalesOrders({
         filters: {

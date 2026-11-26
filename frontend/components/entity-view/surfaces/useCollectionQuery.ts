@@ -1,6 +1,6 @@
 "use client"
 
-import type { FacetCounts } from "@/lib/facets"
+import type { FacetCounts, FacetViews } from "@/lib/facets"
 import * as React from "react"
 import { parseAsString, useQueryState } from "nuqs"
 import { useUnifiedSearch } from "@/components/shared"
@@ -49,6 +49,8 @@ export interface CollectionQuery<Id extends string> {
     params: Record<string, string>
     /** Filter params whose options show counts (`facets/?fields=`, ADR-0158 §8); empty in client mode. */
     facetFields: readonly string[]
+    /** Params of the views with `count: true` (`facets/?views=`), counted without the user's filters. */
+    facetViews: FacetViews
     /**
      * Counts for `facetFields`, shown in the filter menu. `useCollectionQuery` leaves it `null`; the screen
      * fetches them with its feature hook and hands `{ ...query, facets }` to `Collection.Root`.
@@ -166,5 +168,9 @@ export function useCollectionQuery<F extends QueryEntity["fields"]>(
     }, [search.filters, ordering])
 
     const facetFields = sortingMode === "client" ? NO_FACETS : compiled.facetParams
-    return { compiled, search, sort, setSort, ordering, sorting, groupBy, groupKey, setGroupBy, views, activeView, setView, isDirty, resetView, params, facetFields, facets: null }
+    const facetViews = React.useMemo<FacetViews>(
+        () => (sortingMode === "client" ? {} : Object.fromEntries(compiled.views.filter((v) => v.count).map((v) => [v.id, viewParams(compiled, v)]))),
+        [compiled, sortingMode],
+    )
+    return { compiled, search, sort, setSort, ordering, sorting, groupBy, groupKey, setGroupBy, views, activeView, setView, isDirty, resetView, params, facetFields, facetViews, facets: null }
 }

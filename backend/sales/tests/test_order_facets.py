@@ -73,3 +73,27 @@ def test_query_count_does_not_grow_with_rows(client, orders):
         client.get(URL, {"fields": fields})
 
     assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_view_counts_ignore_the_user_filters(client, orders):
+    views = '{"to-deliver": {"origin_status": "ACTIVE", "delivery_status": "PENDING,PARTIAL"}, "drafts": {"origin_status": "DRAFT"}}'
+    response = client.get(URL, {"views": views, "origin_status": "CANCELLED"})
+
+    assert response.status_code == 200, response.content
+    assert response.json()["views"] == {"to-deliver": 1, "drafts": 1}
+
+
+@pytest.mark.parametrize("views", ["no-json", '["x"]', '{"a": {"p": 1}}'])
+def test_malformed_views_are_a_400(client, orders, views):
+    assert client.get(URL, {"views": views}).status_code == 400
+
+
+def test_view_query_count_does_not_grow_with_rows(client, orders):
+    views = '{"to-deliver": {"origin_status": "ACTIVE", "delivery_status": "PENDING"}, "drafts": {"origin_status": "DRAFT"}}'
+    with CaptureQueriesContext(connection) as small:
+        client.get(URL, {"views": views})
+    _orders(orders, [("CONFIRMED", "PENDING")] * 15)
+    with CaptureQueriesContext(connection) as large:
+        client.get(URL, {"views": views})
+
+    assert len(large.captured_queries) == len(small.captured_queries)

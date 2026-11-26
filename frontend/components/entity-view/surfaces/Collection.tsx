@@ -367,7 +367,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
         : []
     return (
         <div className="flex flex-col gap-2">
-            {showTabs && <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} count={count} />}
+            {showTabs && <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} count={count} viewCounts={ctx.facets?.views} />}
             <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
                 {compiled.searchBox ? (
                     <div className="min-w-56 flex-1">

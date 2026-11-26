@@ -173,8 +173,8 @@ class GroupedListMixin:
 
 class FacetedListMixin:
     """
-    `GET <list>/facets/?fields=<name>,<name>&<list filters>` (ADR-0158 §8): per option of each requested
-    filter, the rows it would leave with the other filters applied. Declare `facet_fields`
+    `GET <list>/facets/?fields=<name>,<name>&views=<json>&<list filters>` (ADR-0158 §8): per option of
+    each requested filter, the rows it would leave with the other filters applied; per view, its rows. Declare `facet_fields`
     (`{name: FacetField}`; the name is the filter's list param). It reuses `filter_queryset(get_queryset())`,
     so counts match the list.
     """
@@ -183,9 +183,12 @@ class FacetedListMixin:
 
     @action(detail=False, methods=["get"], url_path="facets")
     def facets(self, request, *args, **kwargs):
-        from core.services.facets import facet_counts
+        from core.services.facets import facet_counts, parse_views, view_counts
 
         names = [n for n in request.query_params.get("fields", "").split(",") if n]
-        return Response({"fields": facet_counts(
-            request, names, self.facet_fields, lambda: self.filter_queryset(self.get_queryset())
-        )})
+        views = parse_views(request.query_params.get("views"))
+        filtered = lambda: self.filter_queryset(self.get_queryset())  # noqa: E731
+        return Response({
+            "fields": facet_counts(request, names, self.facet_fields, filtered),
+            "views": view_counts(request, views, filtered),
+        })

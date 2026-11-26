@@ -200,7 +200,7 @@ function MultiPane({ filter, values, filterOptions, counts, applyMany, commitRef
     const shown = find ? options.filter((o) => o.label.toLowerCase().includes(find.toLowerCase())) : options
     const dirty = draft.join(",") !== applied.join(",")
     // Counts with the other filters applied; an option with none left is disabled unless it is chosen.
-    const optionCounts = counts?.[filter.serverParam]
+    const optionCounts = counts?.fields[filter.serverParam]
 
     const apply = React.useCallback(() => {
         if (draft.join(",") !== applied.join(",")) void applyMany({ [filter.serverParam]: draft.length ? draft.join(",") : null })

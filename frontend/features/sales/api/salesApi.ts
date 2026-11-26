@@ -1,4 +1,4 @@
-import { toFacetCounts, type FacetCounts } from '@/lib/facets'
+import { facetRequestParams, toFacetCounts, type FacetCounts, type FacetViews } from '@/lib/facets'
 import { toServerGroups, type ServerGroup } from '@/lib/server-groups'
 import api from '@/lib/api'
 import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
@@ -104,10 +104,9 @@ export const salesApi = {
         return toServerGroups(data)
     },
 
-    /** Per-option counts of the order filters (ADR-0158 §8): each filter counted without its own value. */
-    getOrderFacets: async (filters: SaleOrderFilters, fields: readonly string[]): Promise<FacetCounts> => {
-        const params = orderListParams(filters)
-        params.append('fields', fields.join(','))
+    /** Per-option counts of the order filters (each without its own value) and per-view totals (ADR-0158 §8). */
+    getOrderFacets: async (filters: SaleOrderFilters, fields: readonly string[], views: FacetViews): Promise<FacetCounts> => {
+        const params = facetRequestParams(orderListParams(filters), fields, views)
         const { data } = await api.get<unknown>('/sales/orders/facets/', { params })
         return toFacetCounts(data)
     },
