@@ -166,8 +166,6 @@ describe("entity definitions", () => {
  * reports and trees are specific cases (feature-owned surfaces). The list only shrinks.
  */
 const ADHOC_TABLE_ALLOWLIST = [
-    "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
-    "features/purchasing/components/PurchaseOrderModal.tsx",
     // Raw preview of an uploaded bank statement: its columns come from the file, so there is no entity
     // to declare. Moved here from EXEMPT_CONSUMERS when DataTable went away (ADR-0158 stage 5).
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
