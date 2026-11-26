@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.189](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.188...v0.3.189) (2026-11-26)
+
+
+### ✨ Features
+
+* **shared:** ADR-0160 — PeriodPicker y ReportToolbar como barra de comandos ([9984a99](https://github.com/Patricoaa/ERPGrafico/commit/9984a9936eb5a64426e628f7d0de7c2985698a31))
+
 ### [0.3.188](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.187...v0.3.188) (2026-11-26)
 
 
