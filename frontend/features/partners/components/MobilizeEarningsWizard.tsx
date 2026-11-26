@@ -3,7 +3,8 @@
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { LabeledInput, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, Section } from "@/components/shared"
-import { Input } from "@/components/ui/input"
+import { EditableCollection, editableSchema, toEditableErrors, type EditableErrors, type EditableRowValue } from "@/components/entity-view"
+import { availableEarningsOf, mobilizeEarningsEditable } from "../entity-view/partnerPayout.entity"
 import { usePartners } from "@/features/contacts"
 import { usePartnerMutations } from "../hooks"
 import { toast } from "sonner"
@@ -81,6 +82,24 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
         }
     }
 
+    const { mobilizationValue, mobilizationErrors } = useMemo(() => {
+        const value: EditableRowValue[] = partners.map((p) => ({
+            key: String(p.id),
+            values: { dividend: mobilizations[p.id]?.dividend ?? 0, reinvest: mobilizations[p.id]?.reinvest ?? 0 },
+        }))
+        const parsed = editableSchema(mobilizeEarningsEditable, partners).safeParse(value)
+        const errors: EditableErrors = parsed.success ? {} : toEditableErrors(parsed.error, value)
+        // Both amounts draw on the same balance: their sum is capped too (a rule across two cells).
+        for (const p of partners) {
+            const { dividend = 0, reinvest = 0 } = mobilizations[p.id] ?? {}
+            const key = String(p.id)
+            if (dividend + reinvest > availableEarningsOf(p) && !errors[key]?.reinvest) {
+                errors[key] = { ...errors[key], reinvest: "La suma supera lo disponible" }
+            }
+        }
+        return { mobilizationValue: value, mobilizationErrors: errors }
+    }, [partners, mobilizations])
+
     const steps: WizardStep[] = useMemo(() => {
         const totalDividend = Object.values(mobilizations).reduce((s, v) => s + v.dividend, 0)
         const totalReinvest = Object.values(mobilizations).reduce((s, v) => s + v.reinvest, 0)
@@ -112,68 +131,14 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                 No hay socios con utilidades retenidas disponibles.
                             </div>
                         ) : (
-                            <div className="border border-border/50 rounded-md overflow-hidden">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-muted/50 text-muted-foreground">
-                                        <tr>
-                                            <th className="py-2 px-3 text-left font-medium">Socio</th>
-                                            <th className="py-2 px-3 text-right font-medium">Retenidas Dispo.</th>
-                                            <th className="py-2 px-3 text-right font-medium w-32">A Dividendos</th>
-                                            <th className="py-2 px-3 text-right font-medium w-32">A Re-inversión</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border/50">
-                                        {partners.map(partner => {
-                                            const available = parseFloat(partner.partner_earnings_balance || "0")
-                                            const divValue = mobilizations[partner.id]?.dividend || 0
-                                            const reinvValue = mobilizations[partner.id]?.reinvest || 0
-                                            const totalAssigned = divValue + reinvValue
-                                            const isError = totalAssigned > available
-
-                                            return (
-                                                <tr key={partner.id} className="hover:bg-muted/30 transition-colors">
-                                                    <td className="py-3 px-3">
-                                                        <DataCell.Text className="justify-start text-left font-medium">{partner.name}</DataCell.Text>
-                                                    </td>
-                                                    <td className="py-3 px-3 text-right">
-                                                        <DataCell.Currency value={available} className="justify-end" />
-                                                    </td>
-                                                    <td className="py-3 px-3">
-                                                        <Input
-                                                            type="number"
-                                                            className={`h-control-sm font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
-                                                            value={divValue || ""}
-                                                            placeholder="0"
-                                                            onChange={(e) => {
-                                                                const val = Number(e.target.value) || 0
-                                                                setMobilizations(prev => ({
-                                                                    ...prev,
-                                                                    [partner.id]: { ...prev[partner.id], dividend: val }
-                                                                }))
-                                                            }}
-                                                        />
-                                                    </td>
-                                                    <td className="py-3 px-3">
-                                                        <Input
-                                                            type="number"
-                                                            className={`h-control-sm font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
-                                                            value={reinvValue || ""}
-                                                            placeholder="0"
-                                                            onChange={(e) => {
-                                                                const val = Number(e.target.value) || 0
-                                                                setMobilizations(prev => ({
-                                                                    ...prev,
-                                                                    [partner.id]: { ...prev[partner.id], reinvest: val }
-                                                                }))
-                                                            }}
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                                <EditableCollection
+                                    definition={mobilizeEarningsEditable}
+                                    rows={partners}
+                                    value={mobilizationValue}
+                                    onChange={(next) => setMobilizations(Object.fromEntries(next.map((v) => [Number(v.key), { dividend: v.values.dividend ?? 0, reinvest: v.values.reinvest ?? 0 }])))}
+                                    errors={mobilizationErrors}
+                                    label="Montos a movilizar por socio"
+                                />
                         )}
                         {hasErrors && (
                             <p className="text-xs text-destructive mt-2 text-right font-medium">
@@ -239,7 +204,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 )
             }
         ]
-    }, [partners, mobilizations, date, description])
+    }, [partners, mobilizations, date, description, mobilizationValue, mobilizationErrors])
 
     return (
         <GenericWizard

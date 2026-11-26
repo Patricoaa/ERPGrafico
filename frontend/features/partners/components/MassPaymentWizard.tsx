@@ -6,8 +6,8 @@ import { generateUuidV4 } from "@/lib/uuid"
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTreasuryAccounts } from "@/features/settings"
 import { LabeledSelect, GenericWizard, type WizardStep, DataCell, SubmitButton, Section } from "@/components/shared"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { EditableCollection, editableSchema, toEditableErrors, type EditableRowValue } from "@/components/entity-view"
+import { massPaymentEditable } from "../entity-view/partnerPayout.entity"
 import { useProfitDistributionMutations } from "../hooks"
 import { toast } from "sonner"
 
@@ -88,6 +88,12 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
         }
     }
 
+    const { paymentValue, paymentErrors } = useMemo(() => {
+        const value: EditableRowValue[] = pendingLines.map((l) => ({ key: String(l.partner), values: { amount: payments[l.partner] ?? 0 } }))
+        const parsed = editableSchema(massPaymentEditable, pendingLines).safeParse(value)
+        return { paymentValue: value, paymentErrors: parsed.success ? {} : toEditableErrors(parsed.error, value) }
+    }, [pendingLines, payments])
+
     const steps: WizardStep[] = useMemo(() => {
         const totalToPay = Object.values(payments).reduce((sum, val) => sum + val, 0)
         const partnersCount = Object.values(payments).filter(val => val > 0).length
@@ -104,73 +110,17 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                                 <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Suma a Pagar</p>
                                 <DataCell.Currency value={totalToPay} weight="bold" className="justify-start text-2xl text-success-text mt-1" />
                             </div>
-                            <div className="flex gap-4">
-                                <Button
-                                    variant="link"
-                                    onClick={() => {
-                                        const next: Record<number, number> = {}
-                                        pendingLines.forEach(l => next[l.partner] = l.pendingAmount)
-                                        setPayments(next)
-                                    }}
-                                    className="text-3xs font-medium text-primary p-0 h-auto"
-                                >
-                                    Pagar Totalidad
-                                </Button>
-                                <Button
-                                    variant="link"
-                                    onClick={() => setPayments({})}
-                                    className="text-3xs font-medium text-muted-foreground p-0 h-auto"
-                                >
-                                    Limpiar Todo
-                                </Button>
-                            </div>
                         </div>
 
-                        <div className="border rounded-sm overflow-x-auto">
-                            <table className="w-full text-2xs text-left">
-                                <thead className="bg-muted text-3xs font-bold uppercase text-muted-foreground tracking-wider border-b sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-3 py-3">Socio</th>
-                                        <th className="px-3 py-3 text-right">Pendiente ($)</th>
-                                        <th className="px-3 py-3 w-[160px] text-right">A Pagar ($)</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y relative z-0">
-                                    {pendingLines.length === 0 && (
-                                        <tr>
-                                            <td colSpan={3} className="px-3 py-8 text-center text-muted-foreground text-2xs font-bold">
-                                                No hay dividendos pendientes de pago
-                                            </td>
-                                        </tr>
-                                    )}
-                                    {pendingLines.map((line) => {
-                                        const currentVal = payments[line.partner] || 0
-                                        const isOver = currentVal > line.pendingAmount
-                                        return (
-                                            <tr key={line.id} className="hover:bg-muted/30">
-                                                <td className="px-3 py-2">
-                                                    <DataCell.Text className="justify-start text-left font-black">{line.partner_name}</DataCell.Text>
-                                                </td>
-                                                <td className="px-3 py-2 text-right">
-                                                    <DataCell.Currency value={line.pendingAmount} className="justify-end" />
-                                                </td>
-                                                <td className="px-3 py-2">
-                                                    <Input
-                                                        type="number"
-                                                        className={`h-control-sm text-2xs font-mono text-right ${isOver ? 'border-destructive text-destructive focus-visible:ring-destructive' : ''}`}
-                                                        value={payments[line.partner] !== undefined ? payments[line.partner] : ''}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value === '' ? 0 : parseFloat(e.target.value)
-                                                            setPayments(p => ({ ...p, [line.partner]: val }))
-                                                        }}
-                                                    />
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                        <EditableCollection
+                            definition={massPaymentEditable}
+                            rows={pendingLines}
+                            value={paymentValue}
+                            onChange={(next) => setPayments(Object.fromEntries(next.map((v) => [Number(v.key), v.values.amount ?? 0])))}
+                            errors={paymentErrors}
+                            label="Montos a pagar por socio"
+                            emptyText="No hay dividendos pendientes de pago"
+                        />
                     </div>
                 )
             },
@@ -204,7 +154,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                 )
             },
         ]
-    }, [payments, pendingLines, selectedAccountId, treasuryAccounts])
+    }, [payments, pendingLines, selectedAccountId, treasuryAccounts, paymentValue, paymentErrors])
 
     if (!resolution) return null
 

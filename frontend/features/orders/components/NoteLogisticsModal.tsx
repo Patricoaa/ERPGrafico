@@ -1,20 +1,12 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Chip } from "@/components/shared"
+import { EditableCollection, editableSchema, toEditableErrors, type EditableRowValue } from "@/components/entity-view"
+import { noteLogisticsLinesEditable, toNoteLogisticsLines, type NoteInvoiceLine } from "../entity-view/noteLogisticsLine.entity"
 import { toast } from "sonner"
 import { useProcessLogistics } from "../hooks/useOrdersMutations"
 import { useNoteLogisticsData } from "../hooks/useNoteLogisticsData"
@@ -22,16 +14,6 @@ import { useNoteLogisticsData } from "../hooks/useNoteLogisticsData"
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { type Order } from "../types"
-
-interface InvoiceLine {
-    product_id: number
-    product_name: string
-    quantity: number
-    quantity_delivered?: number
-    quantity_received?: number
-    uom_id?: number
-    uom_name?: string
-}
 
 interface NoteLogisticsModalProps {
     open: boolean
@@ -46,7 +28,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     const { warehouses, invoice: freshInvoice, isLoading } = useNoteLogisticsData(invoice?.id ?? null, open && !!invoice)
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
-    const [displayLines, setDisplayLines] = useState<InvoiceLine[]>((invoice?.lines as unknown as InvoiceLine[]) || [])
+    const [displayLines, setDisplayLines] = useState<NoteInvoiceLine[]>((invoice?.lines as unknown as NoteInvoiceLine[]) || [])
     const [date, setDate] = useState("")
     const [notes, setNotes] = useState("")
     const [submitting, setSubmitting] = useState(false)
@@ -66,26 +48,20 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     // Initialize from hook data when it loads
     if (freshInvoice && freshInvoice !== prevFreshInvoice) {
         setPrevFreshInvoice(freshInvoice)
-        const freshLines = ((freshInvoice as Record<string, unknown>).lines || []) as InvoiceLine[]
+        const freshLines = ((freshInvoice as Record<string, unknown>).lines || []) as NoteInvoiceLine[]
         setDisplayLines(freshLines)
-
-        const initial: { [pId: number]: number } = {}
-        freshLines.forEach((line: InvoiceLine) => {
-            const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
-            const pending = Math.max(0, line.quantity - processed)
-            initial[line.product_id] = pending
-        })
-        setProcessQuantities(initial)
+        setProcessQuantities(Object.fromEntries(toNoteLogisticsLines(freshLines, isSale).map((l) => [l.product_id, l.pending])))
 
         if (warehouses.length > 0 && !selectedWarehouse) {
             setSelectedWarehouse(warehouses[0].id as number)
         }
     }
 
-    const handleQuantityChange = (pId: number, value: string, max: number) => {
-        const num = parseFloat(value) || 0
-        setProcessQuantities(prev => ({ ...prev, [pId]: Math.min(num, max) }))
-    }
+    const lines = useMemo(() => toNoteLogisticsLines(displayLines, isSale), [displayLines, isSale])
+    const quantityValue: EditableRowValue[] = lines.map((l) => ({ key: String(l.product_id), values: { toProcess: processQuantities[l.product_id] ?? 0 } }))
+    const parsedQuantities = editableSchema(noteLogisticsLinesEditable, lines).safeParse(quantityValue)
+    // "At least one" stays the submit toast below; the cell errors are the caps.
+    const quantityErrors = parsedQuantities.success ? {} : toEditableErrors(parsedQuantities.error, quantityValue)
 
     const handleSubmit = async () => {
         if (!selectedWarehouse) {
@@ -99,6 +75,11 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                 product_id: parseInt(pId),
                 quantity: qty
             }))
+
+        if (Object.keys(quantityErrors).length > 0) {
+            toast.error("Hay cantidades que superan lo pendiente")
+            return
+        }
 
         if (lineData.length === 0) {
             toast.error("Ingrese al menos una cantidad a procesar")
@@ -170,47 +151,14 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                         />
                     </div>
 
-                    <div className="rounded-md border overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="text-muted-foreground">Producto</TableHead>
-                                    <TableHead className="text-center text-muted-foreground">Cantidad Nota</TableHead>
-                                    <TableHead className="text-center text-muted-foreground">Procesado</TableHead>
-                                    <TableHead className="text-center text-muted-foreground">Pendiente</TableHead>
-                                    <TableHead className="text-center text-muted-foreground w-32">A Procesar</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {displayLines.map((line: InvoiceLine) => {
-                                    const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
-                                    const pending = Math.max(0, line.quantity - processed)
-
-                                    return (
-                                        <TableRow key={line.product_id}>
-                                            <TableCell className="font-medium">{line.product_name}</TableCell>
-                                            <TableCell className="text-center">{line.quantity}</TableCell>
-                                            <TableCell className="text-center">
-                                                <Chip.Count value={processed} hideOnZero={false} intent="success" />
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Chip.Count value={pending} hideOnZero={false} intent="warning" />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="number"
-                                                    value={processQuantities[line.product_id] || 0}
-                                                    onChange={(e) => handleQuantityChange(line.product_id, e.target.value, pending)}
-                                                    disabled={pending <= 0}
-                                                    className="text-center"
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <EditableCollection
+                        definition={noteLogisticsLinesEditable}
+                        rows={lines}
+                        value={quantityValue}
+                        onChange={(next) => setProcessQuantities(Object.fromEntries(next.map((v) => [Number(v.key), v.values.toProcess ?? 0])))}
+                        errors={quantityErrors}
+                        label="Cantidades a procesar"
+                    />
 
                     <LabeledInput
                         label="Notas"
