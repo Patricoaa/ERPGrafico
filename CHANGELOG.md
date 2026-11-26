@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.181](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.180...v0.3.181) (2026-11-26)
+
+
+### 📚 Documentation
+
+* **ADR-0158:** contratos al día con la barra de colección, groups/ y facets/ ([6c01c0b](https://github.com/Patricoaa/ERPGrafico/commit/6c01c0b45d13d288c7a87d2ee644bb6d0abb11b4))
+
 ### [0.3.180](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.179...v0.3.180) (2026-11-26)
 
 
