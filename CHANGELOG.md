@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.179](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.178...v0.3.179) (2026-11-26)
+
+
+### ✨ Features
+
+* agrupación en servidor (ADR-0158 §7) en facturas y notas de venta y compra ([8a8413c](https://github.com/Patricoaa/ERPGrafico/commit/8a8413c5949e4669bcd61f99706ae02f1aa3c009))
+* agrupación en servidor (ADR-0158 §7) en inventario, tesorería y asientos ([7826af3](https://github.com/Patricoaa/ERPGrafico/commit/7826af311160c867ec4012b04bb6012eb75819bb))
+* agrupación en servidor (ADR-0158 §7) en órdenes de compra y OTs ([c992dfc](https://github.com/Patricoaa/ERPGrafico/commit/c992dfcd5f2944c9e1e1fee6c95841821e52ed8f))
+
+
+### 🐛 Bug Fixes
+
+* **lint:** imports de agrupación sin nuevos hallazgos de Ruff (ratchet 329) ([075127b](https://github.com/Patricoaa/ERPGrafico/commit/075127bc3bf9527e3136cca72d5717052f3bac01))
+
 ### [0.3.178](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.177...v0.3.178) (2026-11-25)
 
 
