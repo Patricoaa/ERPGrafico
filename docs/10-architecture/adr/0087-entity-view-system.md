@@ -164,6 +164,8 @@ All recorded in `component-entity-view.md`; each approved at its Gate D (`docs/5
 > - **Validación:** el esquema zod valida presencia, pertenencia y formato. No valida período cerrado: el aviso de período cerrado sigue siendo del input, como antes.
 >
 > Se descartó un selector libre (`render` por celda), porque reabre la puerta a celdas opacas (invariante 13).
+>
+> **Numpad en modo táctil (misma fecha).** `EditableCollection` acepta `numpad`. Cuando está activo y el equipo está en modo táctil (`useTouchMode`), las celdas numéricas quedan de solo lectura: un toque abre `NumpadModal` con el tope de la fila («Máximo» lo completa) y al confirmar se escribe el valor. Así migra el despacho parcial del checkout de venta (POS) sin perder el numpad. Es opcional porque fuera del POS el teclado del equipo basta.
 
 ## Alternatives considered
 

@@ -175,7 +175,6 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/production/components/WorkOrderWizard.tsx",
     "features/purchasing/components/checkout/Step1_ProductSelection.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
-    "features/sales/components/checkout/Step3_Delivery.tsx",
     "features/partners/components/CreateDistributionWizard.tsx",
     "features/treasury/card-statements/BillChargesModal.tsx",
     // Raw preview of an uploaded bank statement: its columns come from the file, so there is no entity
