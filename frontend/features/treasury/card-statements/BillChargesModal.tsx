@@ -3,12 +3,14 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { showApiError } from '@/lib/errors'
-import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect, Chip, Metric } from '@/components/shared'
+import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect, Metric } from '@/components/shared'
 import { toast } from 'sonner'
 import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow, UpcomingInstallment } from '../types'
 import { ChevronDown, ChevronRight, ShoppingCart } from 'lucide-react'
+import { Collection, useEntityCollection } from '@/components/entity-view'
+import { cardChargeLineEntity, chargeLine, installmentLine } from '../entity-view/cardChargeLine.entity'
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -227,52 +229,7 @@ export function BillChargesModal({
 
                                             {isExpanded && (
                                                 <div className="border-t bg-muted/10 px-4 py-2">
-                                                    <table className="w-full text-xs">
-                                                        <thead>
-                                                            <tr className="text-muted-foreground">
-                                                                <th className="text-left py-1 pr-2">#</th>
-                                                                <th className="text-left py-1 pr-2">Tipo</th>
-                                                                <th className="text-left py-1 pr-2">Referencia</th>
-                                                                <th className="text-right py-1 pl-2">Monto</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {g.installmentRows.map(inst => (
-                                                                <tr key={`inst-${inst.id}`} className="border-t border-border/40">
-                                                                    <td className="py-1 pr-2 tabular-nums">
-                                                                        {inst.number}/{inst.total_installments}
-                                                                    </td>
-                                                                    <td className="py-1 pr-2">
-                                                                        <Chip size="sm" intent="info">
-                                                                            Cuota
-                                                                        </Chip>
-                                                                    </td>
-                                                                    <td className="py-1 pr-2 truncate max-w-[180px]">
-                                                                        {inst.due_date || '-'}
-                                                                    </td>
-                                                                    <td className="py-1 pl-2 text-right tabular-nums">
-                                                                        <MoneyDisplay amount={Number(inst.principal_amount)} currency={currency} />
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                            {g.pendingCharges.map(c => (
-                                                                <tr key={c.id} className="border-t border-border/40">
-                                                                    <td className="py-1 pr-2 tabular-nums text-muted-foreground">—</td>
-                                                                    <td className="py-1 pr-2">
-                                                                        <Chip size="sm" intent="warning">
-                                                                            {c.charge_type_display}
-                                                                        </Chip>
-                                                                    </td>
-                                                                    <td className="py-1 pr-2 truncate max-w-[180px]">
-                                                                        {c.description || c.reference || '-'}
-                                                                    </td>
-                                                                    <td className="py-1 pl-2 text-right tabular-nums">
-                                                                        <MoneyDisplay amount={Number(c.amount)} currency={currency} />
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
+                                                    <GroupLines group={g} currency={currency} />
                                                 </div>
                                             )}
                                         </div>
@@ -335,5 +292,20 @@ export function BillChargesModal({
                 </div>
             </form>
         </BaseModal>
+    )
+}
+
+/** A purchase's installments and pending charges, read only (entity-view). */
+function GroupLines({ group, currency }: { group: { installmentRows: UpcomingInstallment[]; pendingCharges: PendingChargeRow[] }; currency: string }) {
+    const { entity, views } = cardChargeLineEntity(currency)
+    const rows = useMemo(
+        () => [...group.installmentRows.map(installmentLine), ...group.pendingCharges.map(chargeLine)],
+        [group.installmentRows, group.pendingCharges],
+    )
+    const collection = useEntityCollection(entity, { rows, rowCount: rows.length }, { pagination: { mode: "none" } })
+    return (
+        <Collection.Root collection={collection} label="Cuotas y cargos de la compra">
+            <Collection.View table={views.table} />
+        </Collection.Root>
     )
 }

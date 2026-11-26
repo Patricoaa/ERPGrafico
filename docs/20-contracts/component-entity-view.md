@@ -361,6 +361,8 @@ Reglas de la pantalla:
 
 **3. Cierre.** Se borra el `*Fields.ts` (si no le quedan consumidores), se quita la pantalla de `LEGACY_CONSUMERS` (y de `ADHOC_TABLE_ALLOWLIST` si estaba), y se reporta `bash frontend/scripts/entity-view-progress.sh`.
 
+**Tabla escrita a mano (`ADHOC_TABLE_ALLOWLIST`).** Una pantalla escribe una tabla a mano cuando arma su propio `<table>`, o el `<Table>` / `<TableHeader>` de `ui/table`. Las filas sueltas (`TableRow` / `TableCell`) dentro de `FormLineItemsTable` no cuentan: ese es el marco autorizado para las líneas editables de un documento. La lista solo admite excepciones justificadas, como la vista previa de un extracto importado, cuyas columnas vienen del archivo.
+
 ---
 
 ## 11. Cobertura del kit de anatomía (Ajuste 3 / ADR-0096)

@@ -64,3 +64,23 @@ export interface MaturityItem {
     due_date: string
     amount: number
 }
+
+/** Budget variance: an account with month and year-to-date actual, budget and variance. */
+export type BudgetVarianceAccountType = 'INCOME' | 'EXPENSE';
+
+export interface BudgetVarianceNode {
+    id: number;
+    code: string;
+    name: string;
+    type: BudgetVarianceAccountType;
+    month_actual: number;
+    month_budget: number;
+    month_variance: number;
+    month_percentage: number;
+    ytd_actual: number;
+    ytd_budget: number;
+    ytd_variance: number;
+    ytd_percentage: number;
+    is_unbudgeted: boolean;
+    children: BudgetVarianceNode[];
+}

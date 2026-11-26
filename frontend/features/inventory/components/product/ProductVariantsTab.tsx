@@ -1,19 +1,18 @@
 "use client"
 
-import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, {useState, useMemo} from "react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
 import { Layers, Wand2, X, Archive } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { productVariantEntity, productVariantViews } from "../../entity-view/productVariant.entity"
 import { cn } from "@/lib/utils"
-import { type Product, type ProductAttributeValue } from "@/types/entities"
+import { type Product } from "@/types/entities"
 import { type ProductInitialData } from "@/types/forms"
-import { ActionConfirmModal, Chip, DataCell, type MultiSelectOption, MultiSelectTagInput, fadeInClass } from '@/components/shared'
+import { ActionConfirmModal, DataCell, type MultiSelectOption, MultiSelectTagInput, fadeInClass } from '@/components/shared'
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -151,14 +150,12 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
         }
     }
 
-    // Selection Handlers
-    const toggleSelectAll = () => {
-        if (selectedVariantIds.length === variants.length && variants.length > 0) {
-            setSelectedVariantIds([])
-        } else {
-            setSelectedVariantIds(variants.map(v => v.id))
-        }
-    }
+    // Selection: the collection's checkboxes and a row click edit the same ids (controlled, ADR-0159).
+    const variantSelection = useMemo(() => ({
+        state: Object.fromEntries(selectedVariantIds.map((id) => [String(id), true])),
+        onChange: (next: Record<string, boolean>) => setSelectedVariantIds(Object.entries(next).filter(([, on]) => on).map(([id]) => Number(id))),
+    }), [selectedVariantIds])
+    const variantCollection = useEntityCollection(productVariantEntity, { rows: variants, rowCount: variants.length }, { pagination: { mode: "none" }, selection: variantSelection })
 
     const toggleVariantSelect = (id: number) => {
         setSelectedVariantIds(prev => {
@@ -282,133 +279,25 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                     "md:w-1/2 lg:w-7/12"
                 )}>
                     <div className="overflow-y-auto scrollbar-thin flex-1">
-                        <Table>
-                            <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-card">
-                                <TableRow>
-                                    <TableHead className="w-12 pl-4">
-                                        <Checkbox
-                                            checked={variants.length > 0 && selectedVariantIds.length === variants.length}
-                                            onCheckedChange={toggleSelectAll}
-                                            variant="circle"
-                                        />
-                                    </TableHead>
-                                    <TableHead className="font-bold text-muted-foreground">ID</TableHead>
-                                    <TableHead className="font-bold text-muted-foreground">Atributos</TableHead>
-                                    <TableHead className="font-bold text-center text-muted-foreground">Modo de precio</TableHead>
-                                    <TableHead className="font-bold text-center text-muted-foreground">Precio</TableHead>
-                                    <TableHead className="font-bold text-center text-muted-foreground">LDM</TableHead>
-                                    <TableHead className="font-bold text-center text-muted-foreground">Disp.</TableHead>
-                                    <TableHead className="w-[80px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {variants.map(v => {
-                                    const isSelected = selectedVariantIds.includes(v.id);
-
-                                    return (
-                                        <TableRow
-                                            key={v.id}
-                                            className={cn(
-                                                "cursor-pointer group transition-colors",
-                                                "hover:bg-(--table-row-hover)",
-                                                isSelected && "bg-primary/10/50 hover:bg-primary/10/80"
-                                            )}
-                                            onClick={() => toggleVariantSelect(v.id)}
-                                        >
-                                            <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
-                                                <Checkbox
-                                                    checked={isSelected}
-                                                    onCheckedChange={() => toggleVariantSelect(v.id)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    variant="circle"
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip size="xs" intent="neutral" className="font-mono">
-                                                    {v.internal_code || v.code || 'SIN SKU'}
-                                                </Chip>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {v.attribute_values_data?.map((av: ProductAttributeValue, valIndex: number) => (
-                                                        <Chip key={valIndex} size="xs">{av.value}</Chip>
-                                                    ))}
-                                                    {(!v.attribute_values_data || v.attribute_values_data.length === 0) && (
-                                                        <span className="text-xs text-muted-foreground/50">-</span>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {(() => {
-                                                    const mode = v.price_inheritance_mode ?? 'INHERIT'
-                                                    if (mode === 'SURCHARGE') return <Chip size="xs" intent="warning">+Sobrecargo</Chip>
-                                                    if (mode === 'OVERRIDE') return <Chip size="xs" intent="primary">Propio</Chip>
-                                                    return <Chip size="xs" intent="neutral">Hereda</Chip>
-                                                })()}
-                                            </TableCell>
-                                            <TableCell className="text-center font-medium text-xs tabular-nums">
-                                                {formatCurrency(Number(v.effective_price_net ?? v.sale_price))}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {v.has_active_bom ? (
-                                                    <Chip intent="success">CON LDM</Chip>
-                                                ) : (
-                                                    v.mfg_auto_finalize ? (
-                                                        <Chip intent="destructive">SIN LDM</Chip>
-                                                    ) : (
-                                                        <span className="text-4xs text-muted-foreground/40 font-bold">-</span>
-                                                    )
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {v.has_active_bom ? (
-                                                    <Chip size="xs" intent={(v.current_stock ?? 0) > 0 ? "success" : "destructive"}>
-                                                        STOCK: {v.current_stock || 0}
-                                                    </Chip>
-                                                ) : (
-                                                    (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <Chip size="xs" intent="primary">Disp</Chip>
-                                                    ) : (
-                                                        <Chip size="xs" intent={(v.current_stock ?? 0) > 0 ? "success" : "destructive"}>
-                                                            {v.current_stock}
-                                                        </Chip>
-                                                    )
-                                                )}
-                                            </TableCell>
-                                            <TableCell onClick={(e) => e.stopPropagation()}>
-                                                <div>
-                                                    <DataCell.ActionGroup>
-                                                        <DataCell.Action
-                                                            icon={Archive}
-                                                            title="Archivar variante"
-                                                            onClick={(e) => handleDeleteVariant(v, e)}
-                                                        />
-                                                    </DataCell.ActionGroup>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                                {variants.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground italic text-sm">
-                                            {isPendingGeneration ? (
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <span className="text-primary font-bold">Variantes configuradas</span>
-                                                    <span className="text-xs">Se generarán automáticamente una vez que guarde este producto.</span>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    No se han generado variantes para este producto.
-                                                    <br />
-                                                    <span className="text-xs mt-1 block">Utilice el generador a la derecha.</span>
-                                                </>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                        <Collection.Root
+                            collection={variantCollection}
+                            selection="bulk"
+                            onOpen={(v) => toggleVariantSelect(v.id)}
+                            actions={(v) => (
+                                <DataCell.ActionGroup>
+                                    <DataCell.Action icon={Archive} title="Archivar variante" onClick={(e) => handleDeleteVariant(v, e)} />
+                                </DataCell.ActionGroup>
+                            )}
+                            label="Variantes del producto"
+                        >
+                            <Collection.View
+                                table={productVariantViews.table}
+                                emptyTitle={isPendingGeneration ? "Variantes configuradas" : "Sin variantes"}
+                                emptyDescription={isPendingGeneration
+                                    ? "Se generarán automáticamente una vez que guarde este producto."
+                                    : "Genere variantes con el generador de la derecha."}
+                            />
+                        </Collection.Root>
                     </div>
                 </div>
 
