@@ -286,17 +286,34 @@ Los dos endpoints usan **el mismo `FilterSet` y el mismo queryset de lectura** q
 - **Filas de cada grupo:** el listado normal con los `params` del grupo y su propia paginación (`useServerGroups`). Se abren los 3 primeros; el resto carga al desplegarlo, y cada uno tiene «Mostrar más». Un grupo sin `params` (sin valor y sin `null_param`) muestra su conteo pero no se despliega.
 - **Listas con agrupación en servidor:** órdenes de venta y de compra, facturas y notas, despachos, recepciones y devoluciones, OTs (estado y etapa), productos (tipo y categoría), movimientos de stock, documentos de inventario, movimientos de tesorería y asientos (estado y fecha). Las vistas unificadas de despachos/recepciones aún agrupan la página.
 
-### 7.2 `GET <lista>/facets/?fields=status,customer&views=open,to-invoice&<filtros>`
+### 7.2 `GET <lista>/facets/?fields=status,customer&views=<json>&<filtros>`
 
 ```json
 { "fields": { "status": [{ "value": "CONFIRMED", "count": 12 }] }, "views": { "open": 212, "to-invoice": 47 } }
 ```
 
 - **Conteo de cada campo:** sobre los filtros activos **menos el propio filtro** de ese campo (semántica de facetas).
-- **Conteo de cada vista:** sobre los filtros de la vista, sin los del usuario.
+- **Conteo de cada vista:** sobre los filtros de la vista, sin los del usuario. Las vistas viven en el frontend, así que `views` lleva sus params en JSON: `{"to-invoice": {"origin_status": "ACTIVE", "billing_status": "PENDING"}}` (hasta 12; mal formado → 400).
 - **Consultas:** una por campo o vista pedidos. No crecen con las filas.
 
 Los dos endpoints exigen un test `ci_gate` de conteo de consultas (zero-n-plus-one-policy.md, Regla 8).
+
+**Implementación (`FacetedListMixin`, `core/services/facets.py`).** El viewset declara
+`facet_fields = {param: FacetField(...)}`; el nombre es el param del filtro en la lista.
+
+- `FacetField(field="delivery_status")`: columna → una consulta `values(field).annotate(Count)` sobre una subconsulta de pks.
+- `FacetField(values=("DRAFT", "ACTIVE", …))`: filtro método del `FilterSet` → un `count()` por opción, aplicando el filtro con ese valor. Prohibido para filtros que se evalúan en Python sobre toda la lista (p. ej. el pago derivado).
+- `params`: params que se quitan al contar (por defecto, el nombre).
+- Los conteos reutilizan `filter_queryset(get_queryset())`, así que coinciden con la lista. Un campo desconocido → 400.
+
+Frontend: el filtro `multi` declara `counts: true` → `compiled.facetParams` / `query.facetFields`. La pantalla
+pide los conteos con su hook de feature (`useFacetCounts` en `/hooks`) y entrega `{ ...query, facets }` a
+`Collection.Root`. `FilterMenu` muestra el conteo de cada opción y deshabilita las de 0 salvo las ya elegidas;
+sin conteos (cargando, error) las opciones se ven sin número. Una vista con `count: true` muestra su total en la
+pestaña (`query.facetViews` → `facets.views`). No se marca `count`/`counts` en filtros o vistas que se evalúan
+en Python sobre toda la lista. Listas con `facets/`: órdenes de venta (opciones y vistas), despachos,
+devoluciones de venta, recepciones y devoluciones de compra (estado y vistas), órdenes de compra (vistas).
+Pendiente: «Aplicar · N resultados».
 
 ## 8. Accesibilidad
 

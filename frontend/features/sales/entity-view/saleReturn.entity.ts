@@ -49,13 +49,13 @@ export const saleReturnEntity = defineEntity<SaleReturn>()((f) => ({
         },
         filters: {
             date: { field: "date", control: "date", paramFrom: "date_after", paramTo: "date_before" },
-            status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
+            status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }], counts: true },
         },
         sort: { fields: ["folio", "customer", "date", "cost"], default: "-date" },
         groupBy: { fields: ["date", "customer", "status"], aggregate: { cost: "sum" } },
         views: [
-            { id: "all", label: "Todas" },
-            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" } },
+            { id: "all", label: "Todas", count: true },
+            { id: "drafts", label: "Borradores", filters: { status: "DRAFT" }, count: true },
         ],
     },
 }))

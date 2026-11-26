@@ -1,5 +1,6 @@
 "use client"
 
+import type { FacetCounts, FacetViews } from "@/lib/facets"
 import * as React from "react"
 import { parseAsString, useQueryState } from "nuqs"
 import { useUnifiedSearch } from "@/components/shared"
@@ -46,9 +47,20 @@ export interface CollectionQuery<Id extends string> {
     resetView: () => void
     /** List request params: search + filters (no `group_by`) + `ordering`. */
     params: Record<string, string>
+    /** Filter params whose options show counts (`facets/?fields=`, ADR-0158 §8); empty in client mode. */
+    facetFields: readonly string[]
+    /** Params of the views with `count: true` (`facets/?views=`), counted without the user's filters. */
+    facetViews: FacetViews
+    /**
+     * Counts for `facetFields`, shown in the filter menu. `useCollectionQuery` leaves it `null`; the screen
+     * fetches them with its feature hook and hands `{ ...query, facets }` to `Collection.Root`.
+     */
+    facets: FacetCounts | null
 }
 
 const NON_FILTER_PARAMS = new Set(["search", "group_by"])
+/** Client mode filters loaded rows: no `facets/` request. */
+const NO_FACETS: readonly string[] = []
 
 /** URL params a view writes: filter ids resolve to their param; other keys are raw params. */
 function viewParams(compiled: CompiledQuery, view: QueryView | null): Record<string, string> {
@@ -155,5 +167,10 @@ export function useCollectionQuery<F extends QueryEntity["fields"]>(
         return out
     }, [search.filters, ordering])
 
-    return { compiled, search, sort, setSort, ordering, sorting, groupBy, groupKey, setGroupBy, views, activeView, setView, isDirty, resetView, params }
+    const facetFields = sortingMode === "client" ? NO_FACETS : compiled.facetParams
+    const facetViews = React.useMemo<FacetViews>(
+        () => (sortingMode === "client" ? {} : Object.fromEntries(compiled.views.filter((v) => v.count).map((v) => [v.id, viewParams(compiled, v)]))),
+        [compiled, sortingMode],
+    )
+    return { compiled, search, sort, setSort, ordering, sorting, groupBy, groupKey, setGroupBy, views, activeView, setView, isDirty, resetView, params, facetFields, facetViews, facets: null }
 }
