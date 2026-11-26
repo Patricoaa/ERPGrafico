@@ -66,6 +66,25 @@ export const statementLineEntity = defineEntity<BankStatementLine>()((f) => ({
             { label: "Pago Vinculado" },
         ),
     },
+    // Command bar of a statement's lines (ADR-0158), in the browser over the loaded statement.
+    query: {
+        search: { placeholder: "Buscar descripción o referencia…" },
+        filters: {
+            reconciliation_state: {
+                field: "reconciliationState",
+                control: "multi",
+                options: [
+                    { label: "Sin Conciliar", value: "UNRECONCILED" },
+                    { label: "Conciliado", value: "RECONCILED" },
+                    { label: "Sugerencia (Match)", value: "MATCHED" },
+                    { label: "Excluido", value: "EXCLUDED" },
+                    { label: "En Disputa", value: "DISPUTED" },
+                ],
+            },
+        },
+        sort: { fields: ["lineNumber", "date", "debit", "credit"] },
+        groupBy: { fields: ["reconciliationState"] },
+    },
 }))
 
 export const statementLineViews = statementLineEntity.views({

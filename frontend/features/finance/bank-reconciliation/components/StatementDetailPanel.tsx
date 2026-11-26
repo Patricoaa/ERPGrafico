@@ -10,15 +10,14 @@ import {
     Banknote, TrendingUp, TrendingDown,
     Info, AlertCircle, Activity
 } from "lucide-react"
-import { ActionConfirmModal, Metric, MetricStrip, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { ActionConfirmModal, Metric, MetricStrip, SkeletonShell } from "@/components/shared"
 import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from "@/features/treasury"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { useStatementQuery, useUnmatchMutation } from "@/features/finance"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
-import type { UnifiedSearchConfig } from "@/types/unified-search"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { statementLineEntity, statementLineViews } from "@/features/finance"
 import type { BankStatementLine, BankStatement } from "../types"
 import { parseDateOnly } from '@/lib/utils'
@@ -53,33 +52,10 @@ export function StatementDetailPanel({
 
     const { unmatch } = useUnmatchMutation(statementId, (statement as BankStatement | null)?.treasury_account ?? 0)
 
-    const statementSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
-        searchFields: [],
-        filters: [
-            {
-                type: "multi",
-                key: "reconciliation_state",
-                label: "Estado Reconciliación",
-                serverParam: "reconciliation_state",
-                options: [
-                    { label: "Sin Conciliar", value: "UNRECONCILED" },
-                    { label: "Conciliado", value: "RECONCILED" },
-                    { label: "Sugerencia (Match)", value: "MATCHED" },
-                    { label: "Excluido", value: "EXCLUDED" },
-                    { label: "En Disputa", value: "DISPUTED" },
-                ],
-            },
-        ],
-    }), [])
-
-    const search = useUnifiedSearch(statementSearchConfig)
-
-    const filteredLines = useMemo<BankStatementLine[]>(() => {
-        const lines = statement?.lines ?? []
-        if (!search.filters.reconciliation_state) return lines
-        const allowed = new Set(search.filters.reconciliation_state.split(","))
-        return lines.filter((l) => allowed.has(l.reconciliation_state))
-    }, [statement?.lines, search.filters.reconciliation_state])
+    // Own URL keys (`line_…`): the panel opens over the statements list.
+    const linesQuery = useCollectionQuery(statementLineEntity, { sorting: "client", urlPrefix: "line_" })
+    const { search, groupBy } = linesQuery
+    const filteredLines = useMemo<BankStatementLine[]>(() => search.filterFn(statement?.lines ?? []), [search, statement?.lines])
 
     const statementLineUnmatchActionsCtx: StatementLineUnmatchActionsCtx = {
         onUnmatch: (lineId) => setUnmatchDialog({ open: true, lineId }),
@@ -104,8 +80,8 @@ export function StatementDetailPanel({
 
     const linesCollection = useEntityCollection(
         statementLineEntity,
-        { rows: filteredLines },
-        { pagination: { mode: "none" } },
+        { rows: filteredLines, isFiltered: search.isFiltered },
+        { pagination: { mode: "none" }, groupBy, sorting: linesQuery.sorting },
     )
 
     if (!statement) {
@@ -191,6 +167,7 @@ export function StatementDetailPanel({
 
                 <Collection.Root
                     collection={linesCollection}
+                    query={linesQuery}
                     actions={statementLineUnmatchActions.forCollection(statementLineUnmatchActionsCtx)}
                 >
                     {!detailOnly && (
@@ -203,21 +180,7 @@ export function StatementDetailPanel({
                                     </Button>
                                 ) : undefined
                             }
-                        >
-                            <UnifiedSearchBar
-                                config={statementSearchConfig}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
-                            />
-                        </Collection.Toolbar>
+                        />
                     )}
                     <Collection.View
                         table={statementLineViews.table}
