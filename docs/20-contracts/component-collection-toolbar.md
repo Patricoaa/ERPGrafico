@@ -218,7 +218,7 @@ En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa colu
 ### 5.1 `FilterMenu` (E3)
 
 - **Popover de dos paneles.** El panel izquierdo lista los filtros: tiene búsqueda y muestra en negrita cuántos valores elegidos tiene cada filtro. El derecho muestra los valores del filtro elegido, con los controles propios de `FilterMenu`.
-- **Pie del panel derecho:** «Quitar» y «Aplicar» para `multi` y `range` (el conteo «Aplicar · N resultados» llega con `facets/`, E4).
+- **Pie del panel derecho:** «Quitar» y «Aplicar» para `multi` y `range`. En `multi`, con conteos (`facets/`), el botón dice «Aplicar · N resultados»: N es exacto (la lista con la elección sin aplicar), no una suma de opciones.
 - **Controles por tipo:** `multi` con borrador de casillas y búsqueda si hay más de 8 opciones; `single` y presets de `date` como radios; `toggle`; `range` y `date` con dos campos («desde» / «hasta»). Los filtros `custom` del adaptador no aparecen en el menú.
 - **Al cerrar con cambios sin aplicar:** se aplican. `Esc` descarta.
 
@@ -326,7 +326,12 @@ sin conteos (cargando, error) las opciones se ven sin número. Una vista con `co
 pestaña (`query.facetViews` → `facets.views`). No se marca `count`/`counts` en filtros o vistas que se evalúan
 en Python sobre toda la lista. Listas con `facets/`: órdenes de venta (opciones y vistas), despachos,
 devoluciones de venta, recepciones y devoluciones de compra (estado y vistas), órdenes de compra (vistas).
-Pendiente: «Aplicar · N resultados».
+«Aplicar · N resultados»: el panel `multi` informa su elección sin aplicar con `query.setDraft` (se limpia al
+aplicar, cerrar o cambiar de filtro). `useCollectionQuery` la agrega a `facetViews` como una vista más, con id
+`draftViewId(draft)` y los params de la lista con la elección en lugar del filtro (`draftViewParams`), con 250 ms
+de debounce. El hook de facetas de la pantalla la cuenta sin cambios. El id lleva la elección, así que una
+respuesta vieja no se muestra para otra elección: mientras carga, el botón dice solo «Aplicar». Solo en listas
+con algún filtro `counts: true`.
 
 ## 8. Accesibilidad
 

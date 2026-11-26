@@ -379,7 +379,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
                 ) : (
                     <div className="flex-1" aria-hidden />
                 )}
-                <FilterMenu filters={filters} values={search.paramValues} filterOptions={search.filterOptions} counts={ctx.facets} applyMany={search.applyMany} />
+                <FilterMenu filters={filters} values={search.paramValues} filterOptions={search.filterOptions} counts={ctx.facets} applyMany={search.applyMany} onDraft={query.setDraft} />
                 <SortMenu fields={compiled.sortFields} sort={query.sort} defaultSort={compiled.defaultSort} onChange={query.setSort} />
                 <GroupMenu fields={compiled.groupFields} value={query.groupBy} onChange={query.setGroupBy} />
                 <DisplayMenu
