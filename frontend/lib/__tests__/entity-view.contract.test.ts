@@ -171,14 +171,10 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/inventory/components/product/ProductManufacturingTab.tsx",
     "features/inventory/components/product/ProductPricingTab.tsx",
     "features/inventory/components/product/ProductVariantsTab.tsx",
-    "features/orders/components/NoteLogisticsModal.tsx",
     "features/production/components/BOMDrawer.tsx",
     "features/production/components/WorkOrderWizard.tsx",
     "features/purchasing/components/checkout/Step1_ProductSelection.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
-    "features/sales/components/checkout/Step3_Delivery.tsx",
-    "features/partners/components/MassPaymentWizard.tsx",
-    "features/partners/components/MobilizeEarningsWizard.tsx",
     "features/treasury/card-statements/BillChargesModal.tsx",
     // Raw preview of an uploaded bank statement: its columns come from the file, so there is no entity
     // to declare. Moved here from EXEMPT_CONSUMERS when DataTable went away (ADR-0158 stage 5).

@@ -1,39 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { LabeledInput, PeriodValidationDateInput, QuantityDisplay, ChoiceCard, ChoiceGroup, Banner, fadeInClass } from "@/components/shared"
+import { PeriodValidationDateInput, ChoiceCard, ChoiceGroup, Banner, fadeInClass } from "@/components/shared"
 import {Truck, Package, Calendar} from "lucide-react"
-import { useAllowedUoMs } from "@/features/inventory"
-import { LabeledSelect } from "@/components/shared"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { NumpadModal } from "@/components/shared"
-import { useTouchMode } from "@/hooks/useTouchMode"
+import { useAllowedUoMsByProduct } from "@/features/inventory"
+import { EditableCollection, editableSchema, eligibilityOf, toEditableErrors, type EditableRowValue } from "@/components/entity-view"
+import { deliveryCheckoutEditable, productIdOf, type DeliveryCheckoutRow } from "../../entity-view/checkoutDelivery.entity"
 
 import { type CheckoutDeliveryData, type SaleOrderLine } from "../../types"
 import { cn } from "@/lib/utils"
-
-function UoMCell({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
-    const prodId = line.product && typeof line.product === 'object' ? line.product.id : line.product
-    const { data: allowedUoms = [] } = useAllowedUoMs((prodId ?? line.id) ?? null, 'sale')
-
-    if (allowedUoms.length <= 1) return <span>{line.uom_name || line.uom}</span>
-
-    return (
-        <LabeledSelect
-            variant="inline"
-            value={currentUom?.toString() ?? ''}
-            onChange={(val) => onUomChange(parseInt(val))}
-            options={allowedUoms.map((u: { id: number; name: string }) => ({ value: u.id.toString(), label: u.name }))}
-        />
-    )
-}
 
 interface Step3_DeliveryProps {
     deliveryData: CheckoutDeliveryData
@@ -53,11 +27,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     const physicalLines = isMixedMode
         ? orderLines.filter(line => line.product_type !== 'SERVICE')
         : orderLines
-
-    const { isTouchMode } = useTouchMode()
-    const [numpadOpen, setNumpadOpen] = useState(false)
-    const [numpadTarget, setNumpadTarget] = useState<{ lineId: number, productId: number, uom: string | number, pendingQty: number } | null>(null)
-    const [numpadValue, setNumpadValue] = useState("0")
 
     if (isServiceMode) {
         return (
@@ -142,98 +111,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                             {isMixedMode && " Los servicios se cumplen en su totalidad según la fecha."}
                         </p>
                     </div>
-                    <div className="max-h-80 overflow-y-auto rounded-md border border-border/50 shadow-card shadow-black/5">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[45%] text-muted-foreground">Producto</TableHead>
-                                    <TableHead className="w-[15%] text-right text-muted-foreground">Pendiente</TableHead>
-                                    <TableHead className="w-[20%] text-muted-foreground">A Despachar</TableHead>
-                                    <TableHead className="w-[20%] text-muted-foreground">Unidad</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {physicalLines.map((line) => {
-                                    const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
-                                        !line.requires_advanced_manufacturing &&
-                                        ((line.qty_available || 0) + (line.manufacturable_quantity || 0)) >= (line.qty || line.quantity || 0);
-
-                                    const isEligible = (line.product_type !== 'MANUFACTURABLE' && !line.has_bom) ||
-                                        line.mfg_auto_finalize ||
-                                        isSimpleManufacturableWithAvailability;
-
-                                    const pendingQty = line.qty || line.quantity;
-                                    const currentVal = (deliveryData.partialQuantities || []).find((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.dispatchedQty ?? 0;
-
-                                    return (
-                                        <TableRow key={line.id} className={!isEligible ? "bg-muted/30 opacity-70" : ""}>
-                                            <TableCell>
-                                                    <div className="flex flex-col py-1">
-                                                        <span className="font-medium text-xs leading-tight">{line.product_name || line.description}</span>
-                                                        {!isEligible && (
-                                                            <span className="text-3xs text-warning-text font-bold uppercase tracking-tighter mt-0.5">Requiere Producción</span>
-                                                        )}
-                                                    </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-semibold">
-                                                <QuantityDisplay value={pendingQty} decimals={2} inline />
-                                            </TableCell>
-                                            <TableCell>
-                                                <LabeledInput
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    max={pendingQty}
-                                                    value={currentVal}
-                                                    disabled={!isEligible}
-                                                    readOnly={isTouchMode}
-                                                    onClick={() => {
-                                                        if (isTouchMode && isEligible) {
-                                                            setNumpadTarget({ lineId: Number(line.id), productId: Number(line.product), uom: line.uom ?? '', pendingQty })
-                                                            setNumpadValue(currentVal.toString())
-                                                            setNumpadOpen(true)
-                                                        }
-                                                    }}
-                                                    onChange={(e) => {
-                                                        const val = parseFloat(e.target.value) || 0;
-                                                        setDeliveryData((prev: CheckoutDeliveryData) => {
-                                                            const pqs = [...(prev.partialQuantities || [])];
-                                                            const existingIdx = pqs.findIndex((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
-                                                            if (existingIdx >= 0) {
-                                                                pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
-                                                            } else {
-                                                                pqs.push({ lineId: line.id ?? 0, productId: Number(line.product) ?? 0, dispatchedQty: val, uom: line.uom ?? '' });
-                                                            }
-                                                            return { ...prev, partialQuantities: pqs };
-                                                        });
-                                                    }}
-                                                    className="h-8 text-center"
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-sm text-muted-foreground font-medium">
-                                                <UoMCell
-                                                    line={line}
-                                                    currentUom={(deliveryData.partialQuantities || []).find((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.uom || line.uom}
-                                                    onUomChange={(uomId) => {
-                                                        setDeliveryData((prev: CheckoutDeliveryData) => {
-                                                            const pqs = [...(prev.partialQuantities || [])];
-                                                            const existingIdx = pqs.findIndex((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
-                                                            if (existingIdx >= 0) {
-                                                                pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
-                                                            } else {
-                                                                pqs.push({ lineId: line.id ?? 0, productId: Number(line.product) ?? 0, dispatchedQty: 1, uom: uomId });
-                                                            }
-                                                            return { ...prev, partialQuantities: pqs };
-                                                        });
-                                                    }}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <PartialDeliveryLines lines={physicalLines} deliveryData={deliveryData} setDeliveryData={setDeliveryData} />
                 </div>
             )}
 
@@ -264,35 +142,77 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 </Banner>
             )}
 
-            {isTouchMode && numpadTarget && (
-                <NumpadModal
-                    open={numpadOpen}
-                    onOpenChange={setNumpadOpen}
-                    title="Cantidad a Despachar"
-                    icon={Package}
-                    value={numpadValue}
-                    onChange={setNumpadValue}
-                    onConfirm={() => {
-                        const val = parseFloat(numpadValue) || 0
-                        setDeliveryData((prev: CheckoutDeliveryData) => {
-                            const pqs = [...(prev.partialQuantities || [])]
-                            const existingIdx = pqs.findIndex((pq) =>
-                                (numpadTarget.lineId && pq.lineId === numpadTarget.lineId) ||
-                                (numpadTarget.productId && pq.productId === numpadTarget.productId)
-                            )
-                            if (existingIdx >= 0) {
-                                pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val }
-                            } else {
-                                pqs.push({ lineId: numpadTarget.lineId, productId: numpadTarget.productId, dispatchedQty: val, uom: numpadTarget.uom })
-                            }
-                            return { ...prev, partialQuantities: pqs }
-                        })
-                        setNumpadOpen(false)
-                    }}
-                    allowDecimal
-                    mode="number"
-                />
-            )}
         </div>
     )
 }
+
+type PartialQuantity = NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]
+
+/**
+ * Partial delivery: quantity and unit per physical line (EditableCollection, ADR-0087), with the
+ * numpad in touch mode. The checkout keeps `partialQuantities`; this maps it to and from the value.
+ */
+function PartialDeliveryLines({ lines, deliveryData, setDeliveryData }: {
+    lines: SaleOrderLine[]
+    deliveryData: CheckoutDeliveryData
+    setDeliveryData: Step3_DeliveryProps["setDeliveryData"]
+}) {
+    const uoms = useAllowedUoMsByProduct(lines.flatMap((l) => {
+        const id = productIdOf(l)
+        return id === undefined ? [] : [id]
+    }), "sale")
+    const rows: DeliveryCheckoutRow[] = lines.map((line, idx) => {
+        const productId = productIdOf(line)
+        const allowed = productId === undefined ? [] : uoms.get(String(productId)) ?? []
+        return {
+            ...line,
+            key: line.id !== undefined ? `l${line.id}` : `p${productId ?? idx}`,
+            uomOptions: allowed.length > 0
+                ? allowed.map((u) => ({ value: String(u.id), label: u.name }))
+                : [{ value: String(line.uom), label: line.uom_name || String(line.uom) }],
+        }
+    })
+    const partials = deliveryData.partialQuantities || []
+    const partialOf = (row: DeliveryCheckoutRow): PartialQuantity | undefined => {
+        const productId = productIdOf(row)
+        return partials.find((pq) => (row.id && pq.lineId === row.id) || (productId && pq.productId === productId))
+    }
+
+    const value: EditableRowValue[] = rows.map((row) => {
+        const pq = partialOf(row)
+        return { key: row.key, values: { dispatch: pq?.dispatchedQty ?? 0 }, textValues: { uom: String(pq?.uom ?? row.uom) } }
+    })
+    const parsed = editableSchema(deliveryCheckoutEditable, rows).safeParse(value)
+    const errors = parsed.success ? {} : toEditableErrors(parsed.error, value)
+
+    const handleChange = (next: EditableRowValue[]) => {
+        const byKey = new Map(rows.map((r) => [r.key, r]))
+        setDeliveryData((prev: CheckoutDeliveryData) => ({
+            ...prev,
+            partialQuantities: next.flatMap((v) => {
+                const row = byKey.get(v.key)
+                if (!row || !eligibilityOf(deliveryCheckoutEditable, row).ok) return []
+                const uom = v.textValues?.uom
+                return [{
+                    lineId: row.id ?? 0,
+                    productId: productIdOf(row) ?? 0,
+                    dispatchedQty: v.values.dispatch ?? 0,
+                    uom: uom ? Number(uom) : row.uom,
+                }]
+            }),
+        }))
+    }
+
+    return (
+        <EditableCollection
+            definition={deliveryCheckoutEditable}
+            rows={rows}
+            value={value}
+            onChange={handleChange}
+            errors={errors}
+            label="Cantidades para despacho inmediato"
+            numpad
+        />
+    )
+}
+

@@ -395,6 +395,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                             value={allocationValue}
                             onChange={handleAllocationChange}
                             label="Destino de la utilidad por socio"
+                            numpad
                             rowActions={(row) => {
                                 const v = allocationValue.find((a) => a.key === String(row.id))?.values
                                 const remaining = remainingOf(row, { dividend: v?.dividend ?? 0, reinvest: v?.reinvest ?? 0, retained: v?.retained ?? 0 })

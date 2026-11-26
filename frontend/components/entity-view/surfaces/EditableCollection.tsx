@@ -4,7 +4,8 @@ import * as React from "react"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PeriodValidationDateInput, SelectionRing, StatusBadge } from "@/components/shared"
+import { NumpadModal, PeriodValidationDateInput, SelectionRing, StatusBadge } from "@/components/shared"
+import { useTouchMode } from "@/hooks/useTouchMode"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -42,6 +43,11 @@ export interface EditableCollectionProps<T, F extends FieldMap<T>, I extends Rec
     addAction?: { label: string; onClick: () => void; disabled?: boolean }
     /** Text of the single row shown when there are no rows. Default "Sin líneas". */
     emptyText?: string
+    /**
+     * In touch mode (`useTouchMode`), numeric cells open `NumpadModal` instead of typing (POS):
+     * the cap shows in the numpad and «Máximo» fills it (ADR-0087 amendment 2026-11-26).
+     */
+    numpad?: boolean
 }
 
 export function EditableCollection<T, F extends FieldMap<T>, I extends Record<string, EditableInput<T>>>({
@@ -55,7 +61,13 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
     rowActions,
     addAction,
     emptyText = "Sin líneas",
+    numpad = false,
 }: EditableCollectionProps<T, F, I>) {
+    const { isTouchMode } = useTouchMode()
+    const usesNumpad = numpad && isTouchMode
+    // The numeric cell being edited on the numpad, and its draft (the numpad edits a string).
+    const [numpadCell, setNumpadCell] = React.useState<{ key: string; name: string } | null>(null)
+    const [numpadDraft, setNumpadDraft] = React.useState("0")
     const inputNames = Object.keys(def.inputs) as (keyof I & string)[]
     const processed = processedInputs(def)
     const byKey = React.useMemo(() => new Map(value.map((v) => [v.key, v])), [value])
@@ -230,7 +242,13 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                                                     the zod resolver runs and show the browser bubble instead of our error. */}
                                                 <Input
                                                     type="number"
-                                                    inputMode="decimal"
+                                                    inputMode={usesNumpad ? "none" : "decimal"}
+                                                    readOnly={usesNumpad}
+                                                    onClick={usesNumpad && !isDisabled ? () => {
+                                                        setNumpadDraft(String(byKey.get(key)?.values[name] ?? 0))
+                                                        setNumpadCell({ key, name })
+                                                    } : undefined}
+                                                    aria-haspopup={usesNumpad ? "dialog" : undefined}
                                                     aria-label={input.label(row)}
                                                     aria-invalid={!!error}
                                                     aria-describedby={cn(error && errorId, max !== undefined && eligible.ok && hintId, !eligible.ok && reasonId) || undefined}
@@ -299,6 +317,30 @@ export function EditableCollection<T, F extends FieldMap<T>, I extends Record<st
                     </div>
                 )}
             </div>
+            {numpadCell && (() => {
+                const row = rowByKey.get(numpadCell.key)
+                const input = def.inputs[numpadCell.name]
+                if (!row || !input) return null
+                const max = input.max?.(row)
+                return (
+                    <NumpadModal
+                        open
+                        onOpenChange={(open) => { if (!open) setNumpadCell(null) }}
+                        title={input.label(row)}
+                        value={numpadDraft}
+                        onChange={setNumpadDraft}
+                        onConfirm={() => {
+                            setValue(numpadCell.key, numpadCell.name, parseFloat(numpadDraft) || 0)
+                            setNumpadCell(null)
+                        }}
+                        allowDecimal={input.kind === "money" ? false : decimalsFor(input, row) > 0}
+                        maxValue={input.kind === "quantity" ? max : undefined}
+                        onExactAmount={max !== undefined ? () => setNumpadDraft(String(max)) : undefined}
+                        exactAmountLabel="Máximo"
+                        mode={input.kind === "money" ? "currency" : "number"}
+                    />
+                )
+            })()}
         </div>
     )
 }
