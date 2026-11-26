@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.190](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.189...v0.3.190) (2026-11-26)
+
+
+### ⚙️ Refactors
+
+* **entity-view:** retirar GROUP_ROW_LIMIT — agrupación en servidor también para valores derivados ([a46464d](https://github.com/Patricoaa/ERPGrafico/commit/a46464d7bcf10f2fcd5a55f85c59d050a34bae72))
+
 ### [0.3.189](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.188...v0.3.189) (2026-11-26)
 
 
