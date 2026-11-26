@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http import FileResponse, HttpResponse
 
+from core.services.grouping import GroupField
+
 from .pos_lock import PosSessionLockMixin
 
 logger = logging.getLogger(__name__)
@@ -24,7 +26,6 @@ from core.api.permissions import require_perms
 from core.edit_policy import annotate_edit_usage
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin
-from core.services.grouping import GroupField
 
 from .deletion_service import BankDeletionService
 from .difference_service import DifferenceService

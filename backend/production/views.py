@@ -3,6 +3,7 @@ import logging
 from rest_framework import filters, status, viewsets
 
 from core.api.pagination import StandardResultsSetPagination
+from core.services.grouping import GroupField
 
 logger = logging.getLogger(__name__)
 import django_filters
@@ -52,7 +53,6 @@ from django.http import HttpResponse
 
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, GroupedListMixin
-from core.services.grouping import GroupField
 
 from .selectors import ProductionSelectorExt
 from .serializers import (

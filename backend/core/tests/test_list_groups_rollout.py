@@ -9,7 +9,16 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
 from accounting.models import Account, AccountType, JournalEntry
-from inventory.models import InventoryDocument, Location, Product, ProductCategory, StockMove, UoM, UoMCategory, Warehouse
+from inventory.models import (
+    InventoryDocument,
+    Location,
+    Product,
+    ProductCategory,
+    StockMove,
+    UoM,
+    UoMCategory,
+    Warehouse,
+)
 from treasury.models import TreasuryAccount, TreasuryMovement
 
 pytestmark = pytest.mark.ci_gate
