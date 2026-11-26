@@ -187,7 +187,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
             <BaseModal
                 open={open}
                 onOpenChange={handleOpenChange}
-                size="xl"
+                size="2xl"
                 asDialog
                 hideScrollArea
                 title={showsEntity
