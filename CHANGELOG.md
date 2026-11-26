@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.188](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.187...v0.3.188) (2026-11-26)
+
+
+### ✨ Features
+
+* **entity-view:** «Aplicar · N resultados» en filtros multi con conteos (ADR-0158 §5) ([e5de35f](https://github.com/Patricoaa/ERPGrafico/commit/e5de35f370b0de8539099a7aed530eac25f8f69e))
+
 ### [0.3.187](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.186...v0.3.187) (2026-11-26)
 
 
