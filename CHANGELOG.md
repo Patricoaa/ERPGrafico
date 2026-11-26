@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.191](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.190...v0.3.191) (2026-11-26)
+
+
+### ⚙️ Refactors
+
+* **finance:** estados financieros sobre entity-view; se retira ReportTable ([31c657a](https://github.com/Patricoaa/ERPGrafico/commit/31c657a7d719e33d447f10436bc638b646092b67))
+
+
+### 🐛 Bug Fixes
+
+* **finance:** claves únicas en el flujo de caja; vencimientos y auditoría sobre entity-view ([473e3c8](https://github.com/Patricoaa/ERPGrafico/commit/473e3c81fffcbed197a54c32bf9f070bea309b55))
+
 ### [0.3.190](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.189...v0.3.190) (2026-11-26)
 
 
