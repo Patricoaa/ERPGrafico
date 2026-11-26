@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.183](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.182...v0.3.183) (2026-11-26)
+
+
+### 🐛 Bug Fixes
+
+* **tax:** grupos fiscales creados en orden de factura (desempate determinista) ([bb4afca](https://github.com/Patricoaa/ERPGrafico/commit/bb4afca5c527abbae15fd6c9f450e8bb9f0e250f))
+
 ### [0.3.182](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.181...v0.3.182) (2026-11-26)
 
 
