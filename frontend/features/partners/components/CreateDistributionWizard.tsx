@@ -2,19 +2,18 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo, useCallback } from "react"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, SubmitButton, NumpadModal, Section } from "@/components/shared"
-import { Input } from "@/components/ui/input"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell, SubmitButton, Section } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
 import { useFiscalYears } from "@/features/accounting"
 import { useProfitDistributionMutations } from "../hooks"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/money"
 import { DistributionImpactStep } from "./DistributionImpactStep"
+import { Collection, EditableCollection, useEntityCollection, type EditableRowValue } from "@/components/entity-view"
+import { distributionAllocationEditable, distributionLineToRow, distributionLossViews, distributionPartnerEntity, remainingOf } from "../entity-view/distributionPartner.entity"
 
 import {
     PieChart,
-    Calculator,
     Wand2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -53,17 +52,6 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
     // Destinations config: line_id -> array of allocations
     const [lineDestinations, setLineDestinations] = useState<Record<number, DestinationAllocation[]>>({})
 
-    // Numpad state
-    const [numpadState, setNumpadState] = useState<{
-        lineId: number
-        partnerName: string
-        destination: string
-        destinationLabel: string
-        value: string
-        availableDifference: number
-        totalNet: number
-    } | null>(null)
-
     const handleAmountChange = useCallback((lineId: number, type: string, val: string | number) => {
         const numVal = typeof val === 'number' ? val : (val === '' ? 0 : parseFloat(val));
         const safeNum = isNaN(numVal) ? 0 : Math.max(0, numVal);
@@ -101,7 +89,6 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
         setDraftResolution(null)
         setLines([])
         setLineDestinations({})
-        setNumpadState(null)
         setFormData({
             fiscal_year_id: "",
             net_result: "",
@@ -260,6 +247,31 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
         }
     }
 
+    // ── Allocation table (EditableCollection, ADR-0087): one row per partner line ──
+    const allocationRows = useMemo(() => lines.map((l) => distributionLineToRow(l)), [lines])
+    const allocationValue: EditableRowValue[] = useMemo(() => allocationRows.map((r) => {
+        const dests = lineDestinations[r.id] || []
+        const amount = (type: string) => dests.find((d) => d.destination === type)?.amount ?? 0
+        return { key: String(r.id), values: { dividend: amount("DIVIDEND"), reinvest: amount("REINVEST"), retained: amount("RETAINED") } }
+    }), [allocationRows, lineDestinations])
+    const handleAllocationChange = useCallback((next: EditableRowValue[]) => {
+        setLineDestinations((prev) => {
+            const out = { ...prev }
+            for (const v of next) {
+                const row = allocationRows.find((r) => String(r.id) === v.key)
+                // Fully compensated partners keep whatever they had: they have nothing to allocate.
+                if (!row || row.net <= 0) continue
+                out[row.id] = [
+                    { destination: "DIVIDEND", amount: Math.max(0, v.values.dividend ?? 0) },
+                    { destination: "REINVEST", amount: Math.max(0, v.values.reinvest ?? 0) },
+                    { destination: "RETAINED", amount: Math.max(0, v.values.retained ?? 0) },
+                ]
+            }
+            return out
+        })
+    }, [allocationRows])
+    const lossCollection = useEntityCollection(distributionPartnerEntity, { rows: allocationRows, rowCount: allocationRows.length }, { pagination: { mode: "none" } })
+
     const totals = useMemo(() => [
         { key: 'DIVIDEND', label: 'Dividendos' },
         { key: 'REINVEST', label: 'Reinversión' },
@@ -376,182 +388,38 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                         <Section.Row variant="stat" title="Monto a distribuir" value={<DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="w-auto p-0 text-primary" />} strong />
                     </Section>
 
-                    <div className="border rounded-sm overflow-hidden">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-muted/50 text-xs font-semibold uppercase text-muted-foreground tracking-wider border-b">
-                                <tr>
-                                    <th className="px-4 py-3">Socio</th>
-                                    <th className="px-4 py-3 text-right">Participación</th>
-                                    <th className="px-4 py-3 text-right">Detalle Base</th>
-                                    {draftResolution?.is_profit ? (
-                                        <>
-                                            <th className="px-3 py-3 w-[170px]">Dividendos ($)</th>
-                                            <th className="px-3 py-3 w-[170px]">Reinversión ($)</th>
-                                            <th className="px-3 py-3 w-[170px]">Retenido ($)</th>
-                                            <th className="px-4 py-3 w-[130px] text-right">Diferencia</th>
-                                        </>
-                                    ) : (
-                                        <th className="px-4 py-3">Absorción (Pérdida)</th>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {lines.map((line) => {
-                                    const net = parseFloat(line.net_amount);
-                                    const isCompensated = net <= 0 && draftResolution?.is_profit;
-                                    const dests = lineDestinations[line.id] || [];
-
-                                    const getAmount = (type: string) => dests.find(d => d.destination === type)?.amount || 0;
-
-                                    const sumAllocated = dests.reduce((sum, d) => sum + d.amount, 0);
-                                    const remaining = Math.abs(net) - sumAllocated;
-
-                                    const openCellNumpad = (destKey: string, destLabel: string) => {
-                                        const currentVal = getAmount(destKey);
-                                        const otherSum = dests.filter(d => d.destination !== destKey).reduce((acc, d) => acc + d.amount, 0);
-                                        const avail = Math.max(0, Math.abs(net) - otherSum);
-                                        setNumpadState({
-                                            lineId: line.id,
-                                            partnerName: line.partner_name,
-                                            destination: destKey,
-                                            destinationLabel: destLabel,
-                                            value: currentVal ? currentVal.toString() : '0',
-                                            availableDifference: avail,
-                                            totalNet: Math.abs(net),
-                                        });
-                                    };
-
-                                    return (
-                                        <tr key={line.id} className="hover:bg-muted/30">
-                                            <td className="px-4 py-3 align-middle">
-                                                <span className="font-semibold text-foreground text-sm">{line.partner_name}</span>
-                                            </td>
-                                            <td className="px-4 py-3 text-right align-middle">
-                                                <span className="font-medium text-sm tabular-nums text-muted-foreground">{line.percentage_at_date}%</span>
-                                            </td>
-                                            <td className="px-4 py-3 text-right align-middle">
-                                                <div className="flex flex-col text-xs items-end gap-0.5">
-                                                    <span className="text-muted-foreground flex items-center gap-1">
-                                                        Bruto: <span className="font-mono">{formatCurrency(parseFloat(line.gross_amount))}</span>
-                                                    </span>
-                                                    {parseFloat(line.provisional_withdrawals_offset) > 0 && (
-                                                        <span className="text-warning-text font-semibold flex items-center gap-1 text-3xs">
-                                                            Absorbe retiros provisorios: <span className="font-mono">-{formatCurrency(parseFloat(line.provisional_withdrawals_offset))}</span>
-                                                        </span>
-                                                    )}
-                                                    <span className="font-bold text-primary flex items-center gap-1 text-xs">
-                                                        Neto: <span className="font-mono font-bold">{formatCurrency(parseFloat(line.net_amount))}</span>
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            {isCompensated ? (
-                                                <td colSpan={draftResolution?.is_profit ? 4 : 1} className="px-4 py-3 text-center align-middle">
-                                                    <span className="text-xs font-semibold text-muted-foreground uppercase">Retiros Compensan Totalmente Utilidad Bruta</span>
-                                                </td>
-                                            ) : draftResolution?.is_profit ? (
-                                                <>
-                                                    <td className="px-3 py-3 align-middle">
-                                                        <div className="flex items-center gap-1">
-                                                            <Input
-                                                                type="number"
-                                                                className="h-control-md text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                                value={getAmount('DIVIDEND') || ''}
-                                                                onChange={(e) => handleAmountChange(line.id, 'DIVIDEND', e.target.value)}
-                                                                placeholder="0"
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-control-sm w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
-                                                                title="Abrir teclado numérico"
-                                                                onClick={() => openCellNumpad('DIVIDEND', 'Dividendos')}
-                                                            >
-                                                                <Calculator className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-middle">
-                                                        <div className="flex items-center gap-1">
-                                                            <Input
-                                                                type="number"
-                                                                className="h-control-md text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                                value={getAmount('REINVEST') || ''}
-                                                                onChange={(e) => handleAmountChange(line.id, 'REINVEST', e.target.value)}
-                                                                placeholder="0"
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-control-sm w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
-                                                                title="Abrir teclado numérico"
-                                                                onClick={() => openCellNumpad('REINVEST', 'Reinversión')}
-                                                            >
-                                                                <Calculator className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-middle">
-                                                        <div className="flex items-center gap-1">
-                                                            <Input
-                                                                type="number"
-                                                                className="h-control-md text-xs font-mono text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                                value={getAmount('RETAINED') || ''}
-                                                                onChange={(e) => handleAmountChange(line.id, 'RETAINED', e.target.value)}
-                                                                placeholder="0"
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-control-sm w-8 shrink-0 text-muted-foreground hover:text-primary hover:bg-muted"
-                                                                title="Abrir teclado numérico"
-                                                                onClick={() => openCellNumpad('RETAINED', 'Retenido')}
-                                                            >
-                                                                <Calculator className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right align-middle">
-                                                        <div className="flex flex-col items-end gap-1">
-                                                            <div className={cn(
-                                                                "font-mono text-xs font-bold flex items-center justify-end gap-0.5",
-                                                                Math.abs(remaining) <= 0.01 ? "text-success-text" : remaining < 0 ? "text-destructive" : "text-warning-text"
-                                                            )}>
-                                                                {remaining > 0 ? '+' : ''}
-                                                                {formatCurrency(remaining)}
-                                                            </div>
-                                                            {remaining > 0.01 && (
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    className="h-6 px-1.5 text-3xs font-medium gap-1 text-primary hover:bg-primary/10 border-primary/30"
-                                                                    title="Asignar automáticamente el remanente disponible"
-                                                                    onClick={() => handleAssignFirstAvailable(line.id)}
-                                                                >
-                                                                    <Wand2 className="h-3 w-3" />
-                                                                    <span>Auto</span>
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </>
-                                            ) : (
-                                                <td className="px-4 py-3 text-xs font-medium text-muted-foreground align-middle">
-                                                    <div className="flex items-center gap-2">
-                                                        <span>Monto Automático a Absorber: </span>
-                                                        <span className="font-mono font-bold text-foreground">{formatCurrency(Math.abs(parseFloat(line.net_amount)))}</span>
-                                                    </div>
-                                                </td>
-                                            )}
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                    {draftResolution?.is_profit ? (
+                        <EditableCollection
+                            definition={distributionAllocationEditable}
+                            rows={allocationRows}
+                            value={allocationValue}
+                            onChange={handleAllocationChange}
+                            label="Destino de la utilidad por socio"
+                            numpad
+                            rowActions={(row) => {
+                                const v = allocationValue.find((a) => a.key === String(row.id))?.values
+                                const remaining = remainingOf(row, { dividend: v?.dividend ?? 0, reinvest: v?.reinvest ?? 0, retained: v?.retained ?? 0 })
+                                if (row.net <= 0 || remaining <= 0.01) return null
+                                return (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1 text-primary"
+                                        aria-label={`Asignar remanente — ${row.partnerName}`}
+                                        onClick={() => handleAssignFirstAvailable(row.id)}
+                                    >
+                                        <Wand2 className="h-3.5 w-3.5" aria-hidden />
+                                        Asignar remanente
+                                    </Button>
+                                )
+                            }}
+                        />
+                    ) : (
+                        <Collection.Root collection={lossCollection} label="Absorción de la pérdida por socio">
+                            <Collection.View table={distributionLossViews.table} />
+                        </Collection.Root>
+                    )}
                 </div>
             )
         },
@@ -586,7 +454,7 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                 </div>
             )
         }
-    ], [fiscalYears, formData, lines, lineDestinations, draftResolution, totals, offsetTotal])
+    ], [fiscalYears, formData, lines, lineDestinations, draftResolution, totals, offsetTotal, allocationRows, allocationValue, handleAllocationChange, handleAssignFirstAvailable, lossCollection])
 
     // Tras ejecutar, el éxito es un paso más del mismo wizard (mismo modal, altura y footer).
     const doneStep: WizardStep = {
@@ -644,27 +512,6 @@ export function CreateDistributionWizard({ open, onOpenChange, onSuccess, initia
                 initialStep={initialResolution?.status === 'DRAFT' ? 1 : 0}
             />
 
-            {numpadState && (
-                <NumpadModal
-                    open={!!numpadState}
-                    onOpenChange={(o) => { if (!o) setNumpadState(null) }}
-                    value={numpadState.value}
-                    onChange={(val) => setNumpadState(prev => prev ? ({ ...prev, value: val }) : null)}
-                    onConfirm={() => {
-                        if (numpadState) {
-                            handleAmountChange(numpadState.lineId, numpadState.destination, numpadState.value);
-                            setNumpadState(null);
-                        }
-                    }}
-                    title={`Asignar ${numpadState.destinationLabel}`}
-                    description={`${numpadState.partnerName} · Neto a distribuir: ${formatCurrency(numpadState.totalNet)}`}
-                    netValue={numpadState.totalNet}
-                    onExactAmount={() => {
-                        setNumpadState(prev => prev ? ({ ...prev, value: prev.availableDifference.toString() }) : null);
-                    }}
-                    exactAmountLabel={`ASIGNAR DISPONIBLE (${formatCurrency(numpadState.availableDifference)})`}
-                />
-            )}
         </>
     )
 }
