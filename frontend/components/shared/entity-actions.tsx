@@ -1,7 +1,6 @@
 import { type ReactNode } from "react"
-import type { ColumnDef } from "@tanstack/react-table"
 import type { LucideIcon } from "lucide-react"
-import { createActionsColumn, DataCell, type ActionMenuItem } from "./DataTableCells"
+import { DataCell, type ActionMenuItem } from "./DataTableCells"
 import { ROW_ACTIONS, type RowActionKey } from "@/lib/row-actions"
 
 // ─── Structured Action Types ────────────────────────────────────────────────
@@ -105,7 +104,7 @@ export function toMenuItems(actions: StructuredAction[]): ActionMenuItem[] {
 
 /**
  * createEntityActions — Generic factory for entity actions shared between
- * DataTable (createActionsColumn) and EntityCard (actions prop).
+ * entity-view collections (`forCollection`) and EntityCard (`render`).
  *
  * Supports two patterns:
  *
@@ -119,7 +118,7 @@ export function toMenuItems(actions: StructuredAction[]): ActionMenuItem[] {
  * )
  *
  * // DataTable — auto-detects ActionSingle (1 visible) vs ActionMenu (2+)
- * const columns = [ myActions.auto(ctx) ]
+ * <Collection.Root actions={myActions.forCollection(ctx)}>
  *
  * // EntityCard — converts structured data → JSX
  * <EntityCard actions={myActions.render(item, ctx)} />
@@ -132,16 +131,13 @@ export function toMenuItems(actions: StructuredAction[]): ActionMenuItem[] {
  *     <DataCell.Action action="edit" onClick={() => ctx.onEdit(item.id)} />
  *   )
  * )
- * const columns = [ myActions.column(ctx) ]
+ * <Collection.Root actions={myActions.forCollection(ctx)}>
  * ```
  */
 export type EntityActionsReturn<T, Ctx> = {
-    column: (ctx: Ctx, headerLabel?: string) => ColumnDef<T>
-    auto: (ctx: Ctx, headerLabel?: string) => ColumnDef<T>
     /** entity-view `Collection.Root actions`: table cell (`.cell`) or card actions (`.render`) per surface (ADR-0087). */
     forCollection: (ctx: Ctx) => (item: T, surface: "table" | "card") => ReactNode
     render: (item: T, ctx: Ctx) => ReactNode
-    single: (ctx: Ctx) => ColumnDef<T>
     defaultAction: (ctx: Ctx) => ((item: T) => ((e: React.MouseEvent) => void) | null)
 }
 
@@ -168,31 +164,6 @@ export function createEntityActions<T, Ctx = object>(
     }
 
     return {
-        /**
-         * Column definition for DataTable — JSX pattern.
-         * Pass context and optional header label.
-         */
-        column: (ctx: Ctx, headerLabel?: string): ColumnDef<T> =>
-            createActionsColumn({
-                headerLabel,
-                renderActions: (item) => render(item, ctx) as ReactNode,
-            }),
-
-        /**
-         * Auto-detect column for DataTable — structured data pattern.
-         * Counts visible actions at runtime:
-         * - 0 visible → empty cell
-         * - 1 visible → ActionSingle (ArrowRight on hover)
-         * - 2+ visible → ActionMenu (kebab)
-         *
-         * Falls back to `.column()` if render returns JSX (legacy).
-         */
-        auto: (ctx: Ctx, headerLabel?: string): ColumnDef<T> =>
-            createActionsColumn({
-                headerLabel,
-                renderActions: (item) => tableCell(item, ctx),
-            }),
-
         forCollection: (ctx: Ctx) => (item: T, surface: "table" | "card") => {
             if (surface === "table") return tableCell(item, ctx)
             const result = render(item, ctx)
@@ -208,16 +179,6 @@ export function createEntityActions<T, Ctx = object>(
             if (isStructured(result)) return renderActions(result)
             return result
         },
-
-        /**
-         * Single-action variant for DataTable.
-         * Renders ArrowRight on row hover (no header, minimal column width).
-         * Use when the entity has only one action.
-         */
-        single: (ctx: Ctx): ColumnDef<T> =>
-            createActionsColumn({
-                renderActions: (item) => render(item, ctx) as ReactNode,
-            }),
 
         /**
          * Returns the onClick handler of the first visible action for a given item,

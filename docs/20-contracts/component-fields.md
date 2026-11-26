@@ -1,11 +1,13 @@
 ---
 layer: 20-contracts
 doc: component-fields
-status: frozen
+status: retired
 owner: frontend-team
 last_review: 2026-08-03
 stability: stable
 ---
+
+> **Retirado (2026-11-26).** El sistema que describe este documento ya no existe en el código: `DataTable` se borró con ADR-0159 y `createEntityFields` al quedar sin consumidores. Se conserva como historia; el contrato vigente es [component-entity-view.md](./component-entity-view.md).
 
 # Entity Fields — asignación de FieldType a DataCell
 

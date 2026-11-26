@@ -66,7 +66,7 @@ Gate A (2026-10-17) approved these causes, the common/frequent/specific requirem
     - The spike lives in `components/entity-view/` with its own barrel, on branch `spike/entity-view-system`.
     - The legacy system is frozen (props-compat test) and coexists with the new one.
     - ~~`fromLegacyFields()` adapts schemas that have no `computed`.~~ **Amended 2026-10-18:** dropped. A runtime adapter turns typed field ids back into `string` (the TC-012 defect class) and saves little: the definition is ~10 % of a migration, the screen is the rest. Migration follows the recipe in `component-entity-view.md` §10.2.
-    - Migration runs in waves (Phase 7 replan, `docs/50-audit/Tablascards/07-migration-matrix.md` §6); a ratchet test (`LEGACY_CONSUMERS`) lets the legacy consumer list only shrink. The legacy system is removed when it has zero consumers (ADR-0072 precedent).
+    - Migration runs in waves (Phase 7 replan, `docs/50-audit/Tablascards/07-migration-matrix.md` §6); a ratchet test (`LEGACY_CONSUMERS`) lets the legacy consumer list only shrink. The legacy system is removed when it has zero consumers (ADR-0072 precedent). **Done 2026-11-26:** `DataTable` went with ADR-0159; `createEntityFields`, `DataTableColumnHeader`, the column factories and the `LEGACY_CONSUMERS`/`EXEMPT_CONSUMERS` ratchets were deleted once they had no consumers.
 
 ### Amendment 2026-10-18 · hierarchical rows (tree)
 

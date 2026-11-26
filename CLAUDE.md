@@ -43,7 +43,6 @@ Task routing — common intents:
 | Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
 | Entity collection / table / card / list columns / value kind / `defineEntity` / entity-view | [component-entity-view.md](docs/20-contracts/component-entity-view.md) |
 | Search / filter / sort / group / saved views / collection toolbar / analytics modal / `entity.query` / facets | [component-collection-toolbar.md](docs/20-contracts/component-collection-toolbar.md) + [ADR-0158](docs/10-architecture/adr/0158-barra-de-coleccion-unificada.md) |
-| Legacy field type / DataCell assignment / createEntityFields / \*Fields.ts (frozen) | [component-fields.md](docs/20-contracts/component-fields.md) |
 | KPI / métrica / stat / `Metric` / `MetricStrip` / `ChartCard` / `kpi-value` | [component-metric.md](docs/20-contracts/component-metric.md) |
 | Panel derecho de resumen (carrito POS / lista calculadora) / `SummaryPanel` / handoff "Continuar en otro equipo" | [component-summary-panel.md](docs/20-contracts/component-summary-panel.md) |
 | Card (choice / item / nav / metric / panel) / card surface / `CardLead` / `CardRail` / `cardAnatomy` | [component-card-family.md](docs/20-contracts/component-card-family.md) |
@@ -97,7 +96,7 @@ Before writing any code, verify:
 10. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
 11. **Component suffix matches surface** — `Drawer`/`Modal`/`Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` prohibited. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
-13. **Entity collections are declared once and composed per surface** — fields live in `defineEntity<T>()` (`features/*/entity-view/*.entity.ts`) and every table, card grid, embedded list and batch-edit table is rendered with `@/components/entity-view`. Specific needs are feature value kinds or typed card sections, never opaque escapes (`computed`, `renderCard`, inline JSX columns, `as unknown as`). The legacy system (`*Fields.ts`, `toColumns()`, `AutoEntityCard`, `DataTable`) is frozen until its last consumer migrates. See [component-entity-view.md](docs/20-contracts/component-entity-view.md) (ADR-0087).
+13. **Entity collections are declared once and composed per surface** — fields live in `defineEntity<T>()` (`features/*/entity-view/*.entity.ts`) and every table, card grid, embedded list and batch-edit table is rendered with `@/components/entity-view`. Specific needs are feature value kinds or typed card sections, never opaque escapes (`computed`, `renderCard`, inline JSX columns, `as unknown as`). The legacy system (`*Fields.ts`, `toColumns()`, `AutoEntityCard`, `DataTable`) was removed (2026-11-26). See [component-entity-view.md](docs/20-contracts/component-entity-view.md) (ADR-0087).
 14. **Zero N+1** — a list endpoint's query count does not grow with its rows, whatever the path (serializer, model property, manager chain); no `Serializer` / `SerializerMethodField` runs ORM queries; a selector preloads only what the response reads; object graphs are created in `services.py` under `@transaction.atomic`. See [zero-n-plus-one-policy.md](docs/90-governance/zero-n-plus-one-policy.md) (ADR-0118).
 
 ## Rule precedence

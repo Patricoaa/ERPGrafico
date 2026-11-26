@@ -1,14 +1,13 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { describe, it, expect } from "vitest"
-import { LEGACY_CONSUMERS, EXEMPT_CONSUMERS } from "./entity-view.legacy-consumers"
 
 /**
  * Entity view system contract (ADR-0087 §9, docs/20-contracts/component-entity-view.md §9).
  *
- * Mechanical guards that keep the new system small and the legacy system frozen while
- * both coexist (Phase 7 strangler). ESLint (`eslint-rules/entity-view-guards.mjs`) covers
- * per-file patterns; this test covers the repo-wide ratchets ESLint cannot express.
+ * Mechanical guards that keep the system small and freeze hand-written tables. The legacy
+ * presentation system was removed on 2026-11-26. ESLint (`eslint-rules/entity-view-guards.mjs`)
+ * covers per-file patterns; this test covers the repo-wide ratchets ESLint cannot express.
  *
  * Every allowlist below is a ratchet: entries may only be removed (that removal IS the
  * migration), never added.
@@ -159,13 +158,7 @@ describe("entity definitions", () => {
     })
 })
 
-// ─── Legacy system: frozen ───────────────────────────────────────────────────
-
-/**
- * Props-compat freeze (reused from ADR-0078, superseded by ADR-0087): the legacy authoring
- * API may shrink as entities migrate, never grow. Lower a number when a prop is removed.
- */
-const LEGACY_FIELD_TYPES = 15
+// ─── Hand-written tables: frozen ─────────────────────────────────────────────
 
 /**
  * Hand-written tables in features (`<table>` or the `ui/table` primitive), measured
@@ -197,20 +190,7 @@ const ADHOC_TABLE_ALLOWLIST = [
 ]
 const ADHOC_TABLE = /<table[\s>/]|from ["']@\/components\/ui\/table["']/
 
-/** Legacy authoring API in use (M8). The legacy system itself and its replacement are out of scope. */
-const LEGACY_USE = /toColumns\(|AutoEntityCard|<DataTable\b|DataTableView|createEntityFields/
-const legacyScope = () =>
-    [...FEATURE_FILES, ...collect("app"), ...collect("components")].filter(
-        (rel) => !/^components\/(shared|entity-view|ui)\//.test(rel) && !/\.stories\.tsx$/.test(rel),
-    )
-
-describe("legacy presentation system is frozen", () => {
-    it(`FieldType gains no new member (≤ ${LEGACY_FIELD_TYPES})`, () => {
-        const source = read("components/shared/entity-fields.tsx")
-        const block = /type FieldType =([\s\S]*?)\n\n/.exec(source)?.[1] ?? ""
-        expect((block.match(/\|\s*"[\w-]+"/g) ?? []).length).toBeLessThanOrEqual(LEGACY_FIELD_TYPES)
-    })
-
+describe("hand-written tables are frozen", () => {
     it("no new hand-written table appears in features or app", () => {
         const allow = new Set(ADHOC_TABLE_ALLOWLIST)
         const offenders = [...FEATURE_FILES, ...collect("app")].filter(
@@ -223,26 +203,6 @@ describe("legacy presentation system is frozen", () => {
         for (const rel of ADHOC_TABLE_ALLOWLIST) {
             expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from the allowlist`).toBe(true)
             expect(ADHOC_TABLE.test(read(rel)), `${rel} no longer holds a table — remove it from the allowlist`).toBe(true)
-        }
-    })
-
-    it("no new file consumes the legacy system", () => {
-        const allow = new Set([...LEGACY_CONSUMERS, ...EXEMPT_CONSUMERS])
-        const offenders = legacyScope().filter((rel) => !allow.has(rel) && LEGACY_USE.test(read(rel)))
-        expect(offenders).toEqual([])
-    })
-
-    it("legacy consumer entries still exist and still use the legacy system", () => {
-        for (const rel of LEGACY_CONSUMERS) {
-            expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from LEGACY_CONSUMERS`).toBe(true)
-            expect(LEGACY_USE.test(read(rel)), `${rel} migrated — remove it from LEGACY_CONSUMERS`).toBe(true)
-        }
-    })
-
-    it("exempt consumer entries still exist and still use the legacy system", () => {
-        for (const rel of EXEMPT_CONSUMERS) {
-            expect(existsSync(join(ROOT, rel)), `${rel} is missing — remove it from EXEMPT_CONSUMERS`).toBe(true)
-            expect(LEGACY_USE.test(read(rel)), `${rel} migrated — remove it from EXEMPT_CONSUMERS`).toBe(true)
         }
     })
 })

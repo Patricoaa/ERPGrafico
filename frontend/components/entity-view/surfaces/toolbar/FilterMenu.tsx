@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import type { FacetCounts } from "@/lib/facets"
+import { draftViewId, type FacetCounts, type FilterDraft } from "@/lib/facets"
 import { cn } from "@/lib/utils"
+import { formatNumber } from "../../core/formatters"
 import type {
     DateFilterDef,
     DropdownFilterDef,
@@ -54,6 +55,8 @@ interface FilterMenuProps {
     /** Per-option counts by filter param (`facets/`, ADR-0158 §8): shown next to each option; 0 disables it. */
     counts?: FacetCounts | null
     applyMany: ApplyMany
+    /** Reports the unapplied `multi` choice so the list counts it: the footer reads «Aplicar · N resultados». */
+    onDraft?: (draft: FilterDraft | null) => void
 }
 
 /**
@@ -61,7 +64,7 @@ interface FilterMenuProps {
  * the selected one on the right. `toggle` / `single` apply at once; `multi`, `range` and a custom
  * `date` range apply with «Aplicar» or when the menu closes; Esc discards.
  */
-export function FilterMenu({ filters, values, filterOptions, counts = null, applyMany }: FilterMenuProps) {
+export function FilterMenu({ filters, values, filterOptions, counts = null, applyMany, onDraft }: FilterMenuProps) {
     const [open, setOpen] = React.useState(false)
     const [currentKey, setCurrentKey] = React.useState<string | null>(null)
     const [find, setFind] = React.useState("")
@@ -130,7 +133,7 @@ export function FilterMenu({ filters, values, filterOptions, counts = null, appl
                         </ul>
                     </div>
                     <div className="flex min-h-48 min-w-0 flex-col">
-                        {current && <FilterPane key={current.key} filter={current} values={values} filterOptions={filterOptions} counts={counts} applyMany={applyMany} commitRef={commitRef} />}
+                        {current && <FilterPane key={current.key} filter={current} values={values} filterOptions={filterOptions} counts={counts} applyMany={applyMany} commitRef={commitRef} onDraft={onDraft} />}
                     </div>
                 </div>
             </PopoverContent>
@@ -145,6 +148,7 @@ interface PaneProps<F extends MenuFilter> {
     counts: FacetCounts | null
     applyMany: ApplyMany
     commitRef: CommitRef
+    onDraft?: (draft: FilterDraft | null) => void
 }
 
 function FilterPane(props: PaneProps<MenuFilter>) {
@@ -163,7 +167,11 @@ function FilterPane(props: PaneProps<MenuFilter>) {
     }
 }
 
-function PaneFooter({ onClear, onApply, canClear, dirty }: { onClear: () => void; onApply?: () => void; canClear: boolean; dirty?: boolean }) {
+function resultsLabel(count: number): string {
+    return `${formatNumber(count)} ${count === 1 ? "resultado" : "resultados"}`
+}
+
+function PaneFooter({ onClear, onApply, canClear, dirty, results }: { onClear: () => void; onApply?: () => void; canClear: boolean; dirty?: boolean; results?: number }) {
     return (
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/50 px-2 py-1.5">
             <Button variant="ghost" size="sm" className="h-control-xs text-xs text-muted-foreground" disabled={!canClear} onClick={onClear}>
@@ -171,7 +179,7 @@ function PaneFooter({ onClear, onApply, canClear, dirty }: { onClear: () => void
             </Button>
             {onApply && (
                 <Button size="sm" className="h-control-xs text-xs" disabled={!dirty} onClick={onApply}>
-                    Aplicar
+                    {results === undefined ? "Aplicar" : `Aplicar · ${resultsLabel(results)}`}
                 </Button>
             )}
         </div>
@@ -192,7 +200,7 @@ function optionsOf(filter: MultiSelectFilterDef | SingleSelectFilterDef, filterO
     return dynamic ?? filter.options ?? []
 }
 
-function MultiPane({ filter, values, filterOptions, counts, applyMany, commitRef }: PaneProps<MultiSelectFilterDef>) {
+function MultiPane({ filter, values, filterOptions, counts, applyMany, commitRef, onDraft }: PaneProps<MultiSelectFilterDef>) {
     const applied = React.useMemo(() => (values[filter.serverParam] ?? "").split(",").filter(Boolean), [values, filter.serverParam])
     const [draft, setDraft] = React.useState<string[]>(applied)
     const [find, setFind] = React.useState("")
@@ -208,6 +216,14 @@ function MultiPane({ filter, values, filterOptions, counts, applyMany, commitRef
     React.useEffect(() => {
         commitRef.current = apply
     }, [commitRef, apply])
+
+    // The list counts the unapplied choice; the pane drops it when it applies, closes or switches filter.
+    const pending = React.useMemo<FilterDraft | null>(() => (dirty ? { param: filter.serverParam, value: draft.length ? draft.join(",") : null } : null), [dirty, draft, filter.serverParam])
+    React.useEffect(() => {
+        onDraft?.(pending)
+    }, [onDraft, pending])
+    React.useEffect(() => () => onDraft?.(null), [onDraft])
+    const results = pending ? counts?.views[draftViewId(pending)] : undefined
 
     return (
         <>
@@ -233,7 +249,7 @@ function MultiPane({ filter, values, filterOptions, counts, applyMany, commitRef
                 })}
                 {shown.length === 0 && <li className="px-3 py-2 text-xs text-muted-foreground">Sin opciones</li>}
             </ul>
-            <PaneFooter canClear={applied.length > 0 || draft.length > 0} dirty={dirty} onApply={apply} onClear={() => { setDraft([]); void applyMany({ [filter.serverParam]: null }) }} />
+            <PaneFooter canClear={applied.length > 0 || draft.length > 0} dirty={dirty} results={results} onApply={apply} onClear={() => { setDraft([]); void applyMany({ [filter.serverParam]: null }) }} />
         </>
     )
 }

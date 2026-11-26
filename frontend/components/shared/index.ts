@@ -9,7 +9,6 @@
 // Entity actions & fields — must be exported FIRST so feature modules
 // that import the barrel at eval time (e.g. *Actions) find these defined.
 export * from './entity-actions';
-export * from './entity-fields';
 
 // Charts
 export * from './charts';
@@ -172,7 +171,6 @@ export type { SelectorItemProps } from './SelectorItem'
 // Table system
 export * from './emptyStateResolver';
 export * from './DataTablePagination';
-export * from './DataTableColumnHeader';
 export * from './DataTableCells';
 
 // Utilities

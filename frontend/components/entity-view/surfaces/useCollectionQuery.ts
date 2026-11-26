@@ -1,9 +1,10 @@
 "use client"
 
-import type { FacetCounts, FacetViews } from "@/lib/facets"
+import { draftViewId, draftViewParams, type FacetCounts, type FacetViews, type FilterDraft } from "@/lib/facets"
 import * as React from "react"
 import { parseAsString, useQueryState } from "nuqs"
 import { useUnifiedSearch } from "@/components/shared"
+import { useDebounce } from "@/hooks/useDebounce"
 import type { MultiSelectOption, UseUnifiedSearchReturn } from "@/types/unified-search"
 import type { FieldId, SortSpec } from "../core/define-entity"
 import type { CollectionSorting } from "../core/use-entity-collection"
@@ -53,8 +54,13 @@ export interface CollectionQuery<Id extends string> {
     params: Record<string, string>
     /** Filter params whose options show counts (`facets/?fields=`, ADR-0158 §8); empty in client mode. */
     facetFields: readonly string[]
-    /** Params of the views with `count: true` (`facets/?views=`), counted without the user's filters. */
+    /**
+     * Params of the views with `count: true` (`facets/?views=`), counted without the user's filters, plus
+     * the filter-menu draft under `draftViewId(draft)` while one is pending.
+     */
     facetViews: FacetViews
+    /** The filter menu reports its unapplied choice here so `facets/` counts it («Aplicar · N»). */
+    setDraft: (draft: FilterDraft | null) => void
     /**
      * Counts for `facetFields`, shown in the filter menu. `useCollectionQuery` leaves it `null`; the screen
      * fetches them with its feature hook and hands `{ ...query, facets }` to `Collection.Root`.
@@ -172,9 +178,14 @@ export function useCollectionQuery<F extends QueryEntity["fields"]>(
     }, [search.filters, ordering])
 
     const facetFields = sortingMode === "client" ? NO_FACETS : compiled.facetParams
-    const facetViews = React.useMemo<FacetViews>(
-        () => (sortingMode === "client" ? {} : Object.fromEntries(compiled.views.filter((v) => v.count).map((v) => [v.id, viewParams(compiled, v)]))),
-        [compiled, sortingMode],
-    )
-    return { compiled, search, sort, setSort, ordering, sorting, groupBy, groupKey, setGroupBy, views, activeView, setView, isDirty, resetView, params, facetFields, facetViews, facets: null }
+    // Debounced: ticking several options asks for one count, not one per click.
+    const [draft, setDraft] = React.useState<FilterDraft | null>(null)
+    const countedDraft = useDebounce(draft, 250)
+    const facetViews = React.useMemo<FacetViews>(() => {
+        if (sortingMode === "client") return {}
+        const counted: Record<string, Readonly<Record<string, string>>> = Object.fromEntries(compiled.views.filter((v) => v.count).map((v) => [v.id, viewParams(compiled, v)]))
+        if (countedDraft && facetFields.length > 0) counted[draftViewId(countedDraft)] = draftViewParams(params, countedDraft)
+        return counted
+    }, [compiled, sortingMode, countedDraft, facetFields, params])
+    return { compiled, search, sort, setSort, ordering, sorting, groupBy, groupKey, setGroupBy, views, activeView, setView, isDirty, resetView, params, facetFields, facetViews, setDraft, facets: null }
 }
