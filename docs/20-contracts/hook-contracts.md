@@ -435,7 +435,6 @@ Promoted en `frontend/hooks/` y sin entrada extensa aquí. Detalle del shape de 
 | `useFormWithToast<T>({ schema, ... })` | `() => UseFormReturn<T> & toast helpers` | Envuelve `react-hook-form` + `zodResolver` + toast de submit (invariante #9) |
 | `useQueryLoading(...)` | `() => { showSkeleton, isRefetching }` | Decide skeleton vs contenido (refetch CLS) |
 | `usePaginatedFilters<TFilters>(...)` | `() => { filters, setFilters, ... }` | Filtros paginados con reset de page |
-| `useGroupByPagination(...)` | `() => ...` | Paginación agrupada por clave (card groups) |
 | `useOrderHubData({ orderId, invoiceId, type, enabled? })` | `() => { ... }` | Datos del HUB de órdenes (CollapsibleSheet) |
 | `useSuggestions(url?, query)` | `() => ...` | Autocomplete server-side |
 | `useTreasuryAccounts(options)` | `() => { accounts, ... }` + `TREASURY_ACCOUNT_KEYS` | Cuentas de tesorería con query keys |

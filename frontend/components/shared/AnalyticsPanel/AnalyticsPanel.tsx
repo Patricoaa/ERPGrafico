@@ -1,10 +1,9 @@
 "use client"
 
 import React, { useState } from "react"
-import { LayoutDashboard } from "lucide-react"
-import { Drawer, RailNav, TabBar } from "@/components/shared"
+import { RailNav, TabBar } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
-import type { AnalyticsPanelProps, AnalyticsTab, AnalyticsPanelContentProps } from "./types"
+import type { AnalyticsTab, AnalyticsPanelContentProps } from "./types"
 import { cn } from "@/lib/utils"
 import { GranularityControl } from "./GranularityControl"
 import { AnalyticsDrillDownProvider } from "./drill-down"
@@ -89,38 +88,6 @@ export function AnalyticsPanelContent({
     )
     // Inside `Collection.Analytics` a provider is already set; an explicit handler wins.
     return onDrillDown ? <AnalyticsDrillDownProvider onDrillDown={onDrillDown}>{content}</AnalyticsDrillDownProvider> : content
-}
-
-export function AnalyticsPanel({
-    open,
-    onOpenChange,
-    entityName,
-    tabs,
-    activeTab,
-    onTabChange,
-    granularity,
-    onGranularityChange,
-}: AnalyticsPanelProps) {
-    return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            title={`Análisis · ${entityName}`}
-            icon={<LayoutDashboard />}
-            side="right"
-            defaultSize="60%"
-            boundary="embedded"
-        >
-            <AnalyticsPanelContent
-                entityName={entityName}
-                tabs={tabs}
-                activeTab={activeTab}
-                onTabChange={onTabChange}
-                granularity={granularity}
-                onGranularityChange={onGranularityChange}
-            />
-        </Drawer>
-    )
 }
 
 function AnalyticsTabContent({ tab, isActive }: { tab: AnalyticsTab; isActive: boolean }) {

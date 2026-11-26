@@ -139,17 +139,6 @@ export interface AnalyticsTab {
     gridRows?: string
 }
 
-export interface AnalyticsPanelProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    entityName: string
-    tabs: AnalyticsTab[]
-    activeTab?: string
-    onTabChange?: (value: string) => void
-    granularity?: Granularity
-    onGranularityChange?: (value: Granularity) => void
-}
-
 export interface AnalyticsPanelContentProps {
     entityName: string
     tabs: AnalyticsTab[]
