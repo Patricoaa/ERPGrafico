@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.192](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.191...v0.3.192) (2026-11-26)
+
+
+### ✨ Features
+
+* **entity-view:** celdas de opción y fecha en EditableCollection; logística de notas y recepción de compras migradas ([09614e2](https://github.com/Patricoaa/ERPGrafico/commit/09614e22f0ac90942f49e052f80147c0e7172b25))
+
 ### [0.3.191](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.190...v0.3.191) (2026-11-26)
 
 
