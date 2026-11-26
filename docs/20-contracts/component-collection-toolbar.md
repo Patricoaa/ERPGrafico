@@ -8,7 +8,7 @@ last_review: 2026-11-25
 stability: evolving
 adr: 0158
 supersedes:
-  - unified-searchbar.md (al cerrar la etapa 5 de ADR-0158)
+  - unified-searchbar.md (retirado en la etapa 5 de ADR-0158)
 depends_on:
   - component-entity-view.md
   - export-formats.md
@@ -28,7 +28,7 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 > - **E4** endpoints `groups/` (hecho, piloto en órdenes de venta) y `facets/`;
 > - **E5** limpieza.
 >
-> Hasta migrar, las pantallas siguen declarando `unifiedSearchDef.ts` y montando `UnifiedSearchBar` ([unified-searchbar.md](./unified-searchbar.md)). Una pantalla usa un sistema o el otro, nunca los dos.
+> Etapa 5 cerrada: ninguna pantalla declara `unifiedSearchDef.ts`. `UnifiedSearchBar` queda solo como la caja de búsqueda de esta barra.
 >
 > **Migradas a la barra de comandos:**
 > - órdenes de venta (`saleOrderEntity.query`, piloto de la etapa 3c);
@@ -46,7 +46,19 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 >
 > En modo cliente, `search.filterFn` aplica el texto libre sobre todas las columnas primitivas y cada filtro `single`/`multi` comparando **la clave de la fila igual al parámetro**. Si el filtro no es una clave de la fila, o nómbralo como ella (`credit_risk_level`, `treasury_account`), o fíltralo a mano: si no, vacía la lista. Los `toggle` no los aplica.
 >
-> El detalle de un conteo es una lista embebida en un drawer: sigue con `UnifiedSearchBar` y una definición local, sin barra de comandos. Igual la actividad de una sesión POS, el libro mayor de una cuenta (contabilidad y finanzas), el detalle de una cartola y las tablas de la ficha del socio (`usePartnerTableSearch`, con parámetros prefijados). Quedan fuera por no ser una `Collection`: el panel de conciliación bancaria y el modal de mapeo de cuentas (sobre `DataTable`, congelado). El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
+> **Listas embebidas** (en un drawer, una pestaña o un modal sobre otra lista) usan la misma barra con `useCollectionQuery(entity, { urlPrefix })`: cada clave de URL lleva el prefijo (`ledger_search`, `ledger_ordering`), así que no choca con la lista de la página.
+>
+> | Lista | Prefijo |
+> |---|---|
+> | Libro mayor (contabilidad y ficha de cuenta) | `ledger_` |
+> | Detalle de conteo | `count_` |
+> | Actividad de sesión POS | `activity_` |
+> | Movimientos / utilidades del socio | `mov_` / `dst_` |
+> | Detalle de cartola | `line_` |
+> | Panel de conciliación (una búsqueda para las dos listas y los conciliados) | `rec_` |
+> | Modal de mapeo de cuentas | `map_` |
+>
+> El reporte de existencias embebido en la analítica de productos ignora el estado de la URL (que es de la lista de productos).
 
 ---
 
@@ -191,7 +203,7 @@ En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa colu
 
 **Adaptador:** `useCollectionQuery(entity, { searchDef })` usa un `unifiedSearchDef` existente (vía `fromUnifiedSearchDef(def)`) en lugar de `entity.query`, para migrar la vista antes que su definición. Con el adaptador no hay orden múltiple, vistas ni agregados.
 
-**Montaje:** la pantalla pasa el resultado del hook a `<Collection.Root query={query}>`. Con `query`, `Collection.Toolbar` deja de ser la barra antigua y compone `ViewTabs` → fila de comandos (`Search`, `FilterMenu`, `SortMenu`, `GroupMenu`, `DisplayMenu`, `children`, analítica, `ExportMenu`, `action`) → `AppliedFilters`. `ExportMenu` recibe `query.params` salvo que se pase `exportFilters`. El buscador es `UnifiedSearchBar` con `menu={false}` (sin chevrón ni menú propio, solo sugerencias) y `appliedFilters={false}` (la barra dibuja la fila). `useUnifiedSearch` expone `applyMany(values)`, que escribe varios parámetros en una sola actualización y resetea el cursor.
+**Montaje:** la pantalla pasa el resultado del hook a `<Collection.Root query={query}>`. Con `query`, `Collection.Toolbar` deja de ser la barra antigua y compone `ViewTabs` → fila de comandos (`Search`, `FilterMenu`, `SortMenu`, `GroupMenu`, `DisplayMenu`, `children`, analítica, `ExportMenu`, `action`) → `AppliedFilters`. `ExportMenu` recibe `query.params` salvo que se pase `exportFilters`. El buscador es `UnifiedSearchBar`: solo la caja de texto con sus sugerencias (Backspace en vacío quita el último filtro). La barra dibuja la fila de filtros aplicados. `useUnifiedSearch` expone `applyMany(values)`, que escribe varios parámetros en una sola actualización y resetea el cursor.
 
 **Placeholder:** `query.search.placeholder` («Buscar guías de despacho…») es también el nombre accesible del buscador. Por defecto: «Buscar…».
 
@@ -205,7 +217,7 @@ En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa colu
 
 ### 5.1 `FilterMenu` (E3)
 
-- **Popover de dos paneles.** El panel izquierdo lista los filtros: tiene búsqueda y muestra en negrita cuántos valores elegidos tiene cada filtro. El derecho muestra los valores del filtro elegido, con los controles de `UnifiedSearchBar/filters/*`.
+- **Popover de dos paneles.** El panel izquierdo lista los filtros: tiene búsqueda y muestra en negrita cuántos valores elegidos tiene cada filtro. El derecho muestra los valores del filtro elegido, con los controles propios de `FilterMenu`.
 - **Pie del panel derecho:** «Quitar» y «Aplicar» para `multi` y `range` (el conteo «Aplicar · N resultados» llega con `facets/`, E4).
 - **Controles por tipo:** `multi` con borrador de casillas y búsqueda si hay más de 8 opciones; `single` y presets de `date` como radios; `toggle`; `range` y `date` con dos campos («desde» / «hasta»). Los filtros `custom` del adaptador no aparecen en el menú.
 - **Al cerrar con cambios sin aplicar:** se aplican. `Esc` descarta.

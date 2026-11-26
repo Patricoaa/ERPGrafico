@@ -1,15 +1,17 @@
 ---
 layer: 20-contracts
 doc: unified-searchbar
-status: deprecated
+status: retired
 superseded_by: component-collection-toolbar.md (ADR-0158)
 owner: frontend-team
 created: 2026-07-09
-updated: 2026-11-25
+updated: 2026-11-26
 last_review: 2026-07-09
 stability: stable
 scope: Contrato único para UnifiedSearchBar — reemplaza SmartSearchBar + SegmentationBar + GroupBy. Búsqueda por texto, filtros dropdown, filtros de fecha, group-by y chips en un solo componente.
 ---
+
+> **Retirado (2026-11-26, etapa 5 de ADR-0158).** No queda ningún `unifiedSearchDef.ts` ni el menú de la barra. `UnifiedSearchBar` es solo la caja de búsqueda de la barra de comandos: ver [component-collection-toolbar.md](./component-collection-toolbar.md). El resto de este documento es histórico.
 
 # Contrato: UnifiedSearchBar — Barra de Búsqueda y Filtros Unificada
 
