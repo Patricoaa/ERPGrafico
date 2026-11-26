@@ -69,7 +69,6 @@ export * from './DocumentFieldGrid';
 export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';
 
-export * from './ReportTable';
 
 export * from './DataManagement';
 export * from './AttachmentList';

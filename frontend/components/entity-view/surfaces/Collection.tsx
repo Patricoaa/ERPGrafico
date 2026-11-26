@@ -748,6 +748,8 @@ type DataAttributes = { [key: `data-${string}`]: string | boolean | undefined }
 const ROW_TONE: Record<RowTone, string> = {
     attention: "bg-warning/10 [&>td]:border-y [&>td]:border-warning/40",
     muted: "opacity-50",
+    section: "font-semibold [&>td]:bg-muted/30",
+    total: "font-bold text-primary [&>td]:border-t-2 [&>td]:border-border [&>td]:bg-muted/40",
 }
 
 type RowShellProps = React.ComponentPropsWithoutRef<"tr"> & DataAttributes & { drag: RowDragSpec | null; drop: RowDropSpec | null }
@@ -831,11 +833,12 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
     const originals = (isTree ? rows.filter((r) => r.depth === 0) : rows).map((r) => r.original)
     const treeColumn = cols[0]?.id
     const colSpan = cols.length + (isBulk ? 1 : 0) + (hasActions ? 1 : 0)
-    const { rowTone, dnd } = ctx.collection
+    const { rowTone, openable, dnd } = ctx.collection
     const renderRow = (row: Row<T>, index: number) => {
         const isSelected = ctx.selectedId === row.id || row.getIsSelected()
         const isFlashing = ctx.flashId === row.id
         const tone = rowTone?.(row.original) ?? null
+        const opens = ctx.canOpen && (openable?.(row.original) ?? true)
         const trProps: React.ComponentPropsWithoutRef<"tr"> & DataAttributes = {
             // Grouped and tree rows are not a flat sequence of the total: no row index.
             "aria-rowindex": groups || isTree ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2,
@@ -845,13 +848,13 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
             // The highlight fades out through `transition-colors` when the flash ends.
             className: cn(
                 "group border-b border-border/40 table-row-hover transition-colors duration-700",
-                ctx.canOpen && "cursor-pointer",
+                opens && "cursor-pointer",
                 isSelected && "bg-primary/5",
                 isFlashing && "bg-primary/10",
                 tone && ROW_TONE[tone],
             ),
             // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
-            onClick: () => ctx.canOpen && ctx.open(row.original),
+            onClick: () => opens && ctx.open(row.original),
         }
         const drag = dnd?.drag?.(row.original) ?? null
         const drop = dnd?.drop?.(row.original) ?? null
@@ -869,7 +872,7 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                     </td>
                 )}
                 {cols.map(({ id, def, align, shrink }) => {
-                    const value = id === primary && ctx.canOpen ? (
+                    const value = id === primary && opens ? (
                         <PrimaryCell def={def} row={row.original} onOpen={ctx.open} align={align} />
                     ) : (
                         <FieldValue def={def} row={row.original} surface="table" align={align} />
@@ -1151,6 +1154,7 @@ function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: Car
 
     const renderCard = (row: Row<T>) => {
         const data = row.original
+        const opens = ctx.canOpen && (ctx.collection.openable?.(data) ?? true)
         const media = layout.media
         const Avatar = media?.avatar
         const mediaOnTop = media?.placement === "top"
@@ -1221,7 +1225,7 @@ function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: Car
                 <EntityCard
                     variant="compact"
                     isSelected={ctx.selectedId === row.id}
-                    openable={ctx.canOpen}
+                    openable={opens}
                     muted={layout.muted?.(data) ?? false}
                     rail={rail}
                     // Hub focus (Gate D 2b): while a sheet is open, the other cards step back (dimmed, no blur).
@@ -1253,7 +1257,7 @@ function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: Car
                         imageSrc={mediaOnTop ? undefined : media?.image?.(data) ?? undefined}
                         avatar={!mediaOnTop && !rail && Avatar ? <Avatar row={data} /> : undefined}
                         title={
-                            ctx.canOpen ? (
+                            opens ? (
                                 <Button data-card-open variant="link" className={cn("min-w-0 max-w-full justify-start p-0 text-left text-sm font-semibold text-foreground after:absolute after:inset-0 after:content-[''] hover:no-underline focus-visible:no-underline focus-visible:ring-0", mediaOnTop ? "h-auto min-h-0 whitespace-normal leading-tight" : "h-control-xs")} onClick={() => ctx.open(data)}>
                                     {/* A flex button cannot ellipsize its own text: the span does. */}
                                     <span className={mediaOnTop ? "line-clamp-2" : "truncate"}>{title}</span>

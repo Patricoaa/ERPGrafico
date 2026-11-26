@@ -1,25 +1,14 @@
 "use client";
 
 import React, { useState } from 'react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from "@/components/ui/table";
-import { cn, formatPlainDate } from "@/lib/utils";
+import { Collection, useEntityCollection } from "@/components/entity-view";
+import { cn } from "@/lib/utils";
 import {AlertCircle, Info, Calendar} from "lucide-react";
-import { Banner, BaseModal, Chip, DataCell, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
+import { Banner, BaseModal, Chip, MoneyDisplay } from '@/components/shared';
+import type { CulpritAccount, MaturityItem, ReportNode } from '../types';
+import { FinancialStatementTable } from './FinancialStatementTable';
+import { cashFlowCulpritEntity, cashFlowCulpritViews, cashFlowMaturityEntity, cashFlowMaturityViews, toMaturityRows } from '../entity-view/cashFlow.entity';
 import { Button } from "@/components/ui/button";
-
-interface CulpritAccount {
-    code: string;
-    name: string;
-    variation: number;
-    type: string;
-}
 
 interface CashFlowItem {
     name: string;
@@ -52,14 +41,6 @@ export interface CashFlowData {
     culprit_accounts: CulpritAccount[];
 }
 
-interface MaturityItem {
-    type: string
-    direction: string
-    label: string
-    due_date: string
-    amount: number
-}
-
 interface CashFlowTableProps {
     data: CashFlowData;
     embedded?: boolean;
@@ -71,10 +52,14 @@ interface CashFlowTableProps {
 
 export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, showComparison, periodLabel, compPeriodLabel, futureMaturities }) => {
     const [auditModalOpen, setAuditModalOpen] = useState(false);
+    const maturities = React.useMemo(() => toMaturityRows(futureMaturities ?? []), [futureMaturities]);
+    const maturityCollection = useEntityCollection(cashFlowMaturityEntity, { rows: maturities, rowCount: maturities.length }, { pagination: { mode: "none" } });
+    const culprits = data.culprit_accounts ?? [];
+    const culpritCollection = useEntityCollection(cashFlowCulpritEntity, { rows: culprits, rowCount: culprits.length }, { pagination: { mode: "none" } });
 
-    const mapToNodes = (items: CashFlowItem[]): ReportNode[] => 
+    const mapToNodes = (items: CashFlowItem[], activity: string): ReportNode[] => 
         (items || []).map((item, i) => ({
-            id: i,
+            id: `${activity}-${i}`,
             code: '',
             name: item.name,
             balance: item.amount,
@@ -96,21 +81,21 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             code: '',
             name: 'Actividades de Operación',
             balance: data.total_operating,
-            children: mapToNodes(data.operating),
+            children: mapToNodes(data.operating, 'operating'),
         },
         {
             id: 'inv',
             code: '',
             name: 'Actividades de Inversión',
             balance: data.total_investing,
-            children: mapToNodes(data.investing),
+            children: mapToNodes(data.investing, 'investing'),
         },
         {
             id: 'fin',
             code: '',
             name: 'Actividades de Financiamiento',
             balance: data.total_financing,
-            children: mapToNodes(data.financing),
+            children: mapToNodes(data.financing, 'financing'),
         },
         { 
             id: 'net', 
@@ -132,12 +117,11 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
 
     const tableContent = (
         <div className="space-y-8">
-            <ReportTable 
+            <FinancialStatementTable
                 data={unifiedData}
                 showComparison={showComparison}
                 periodLabel={periodLabel}
                 compPeriodLabel={compPeriodLabel}
-                disableDrillDown={true}
             />
 
             {/* Vencimientos Futuros (F5.3) */}
@@ -147,40 +131,9 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <Calendar className="h-4 w-4 text-primary" />
                         <span className="text-3xs font-bold uppercase text-muted-foreground tracking-widest">Vencimientos Futuros (Proyectado)</span>
                     </div>
-                    <div className="rounded-md border overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/30">
-                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Tipo</TableHead>
-                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Descripción</TableHead>
-                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Vencimiento</TableHead>
-                                    <TableHead className="text-right text-3xs font-bold uppercase text-muted-foreground">Monto</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {futureMaturities.map((item, idx) => (
-                                    <TableRow key={idx}>
-                                        <TableCell>
-                                            <span className={`text-3xs font-bold uppercase ${
-                                                item.direction === 'INBOUND' ? 'text-success-text' : 'text-destructive'
-                                            }`}>
-                                                {item.type === 'LOAN_INSTALLMENT' ? 'Cuota' :
-                                                 item.type === 'CHECK_RECEIVED' ? 'Cheque Recibido' :
-                                                 item.type === 'CHECK_ISSUED' ? 'Cheque Propio' : 'Tarjeta'}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-xs font-medium">{item.label}</TableCell>
-                                        <TableCell className="text-xs">
-                                            {formatPlainDate(item.due_date)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DataCell.CurrencyFlow value={item.amount} direction={item.direction === 'INBOUND' ? 'inflow' : 'outflow'} showIcon={false} />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <Collection.Root collection={maturityCollection} label="Vencimientos futuros">
+                        <Collection.View table={cashFlowMaturityViews.table} />
+                    </Collection.Root>
                 </div>
             )}
         </div>
@@ -241,31 +194,9 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <Info className="h-8 w-8 text-muted-foreground opacity-30" />
                     </div>
 
-                    <div className="rounded-md border overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/30">
-                                    <TableHead className="text-3xs font-bold uppercase text-muted-foreground">Cuenta</TableHead>
-                                    <TableHead className="text-right text-3xs font-bold uppercase text-muted-foreground">Variación</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {data.culprit_accounts?.map((acc, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-mono text-3xs text-muted-foreground">{acc.code}</span>
-                                                <span className="font-bold text-xs">{acc.name}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <MoneyDisplay amount={acc.variation} className="font-mono text-sm" />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <Collection.Root collection={culpritCollection} label="Cuentas sin mapeo de flujo">
+                        <Collection.View table={cashFlowCulpritViews.table} emptyTitle="Sin cuentas pendientes de mapeo" />
+                    </Collection.Root>
 
                     <p className="text-3xs text-muted-foreground leading-relaxed italic">
                         Tip: Para eliminar esta diferencia, accede a &quot;Configurar Mapeo&quot; y asigna estas cuentas a una de las categorías 

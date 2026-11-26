@@ -67,7 +67,7 @@ Definidos en `:root` de `globals.css`. Son la única fuente de verdad para el pa
 | `.table-header-compact` | Cabecera extra-densa (`--table-header-h: 2rem`) para vistas de lista |
 | `.table-comfortable` | Scope que afloja: `--table-cell-py: 0.75rem`, `--table-header-h: 2.75rem` |
 
-**Regla invariante (PR Reject):** toda variante de tabla (DataTable, FormLineItemsTable, ReportTable, `variant="minimal"`) debe consumir `.table-cell`/`.table-header` en vez de clases de padding sueltas.
+**Regla invariante (PR Reject):** toda variante de tabla (Collection de entity-view, FormLineItemsTable, `variant="minimal"`) debe consumir `.table-cell`/`.table-header` en vez de clases de padding sueltas.
 
 ---
 

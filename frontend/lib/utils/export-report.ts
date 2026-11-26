@@ -3,7 +3,14 @@
  * Works directly with the ReportNode tree — no backend required.
  */
 
-import { type ReportNode } from '@/components/shared'
+/** What the export reads from a statement line (structural: features pass their own line type). */
+export interface ReportNode {
+    code: string
+    name: string
+    balance: number
+    comp_balance?: number
+    children?: ReportNode[]
+}
 
 interface ExportOptions {
     filename: string

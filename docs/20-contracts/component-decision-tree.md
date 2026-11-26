@@ -67,7 +67,7 @@ graph TD
     A -->|Gráfico con cabecera| H2(ChartCard)
     A -->|Título de sección dentro de card o listado| I(SectionHeader)
     A -->|Sin resultados/Vacio| F(EmptyState)
-    A -->|Reporte jerárquico contable| G(ReportTable)
+    A -->|Reporte jerárquico contable| G("Árbol de entity-view (FinancialStatementTable en finance)")
 ```
 
 ```mermaid
@@ -77,7 +77,7 @@ graph TD
     T -->|Pantalla que cambia de entidad: órdenes ↔ notas| TM(CollectionModes)
     T -->|Cantidad a procesar / reparto contra tope en wizard o modal| TB(defineEditable + EditableCollection)
     T -->|Líneas editables de un formulario de documento| TD(FormLineItemsTable / AccountingLinesTable)
-    T -->|Reporte jerárquico contable| TE(ReportTable)
+    T -->|Reporte jerárquico contable| TE("defineEntity con tree + rowTone section/total")
     T -->|Kanban, árbol, conciliación u otra vista de dominio| TF("Superficie de la feature sobre EntityCollection<T>")
 ```
 

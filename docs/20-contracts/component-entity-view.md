@@ -119,7 +119,8 @@ Reglas:
 | `groupBy` | id de campo o `null`. Sin `serverGroups`, agrupa las filas cargadas por el texto formateado del campo |
 | `serverGroups` | `useServerGroups(…).groups`: grupos de todo el resultado (`groups/`, ADR-0158 §7) con su conteo, subtotales y filas paginadas por grupo. Reemplaza la agrupación de las filas cargadas |
 | `selection` | `{ state: RowSelectionState, onChange }` (ADR-0159): selección controlada por la pantalla, con claves = `rowId`. Con paginación en servidor no se limpia al cambiar de página; lo decide la pantalla. Sin la opción, la selección es interna y se limpia en cada página del servidor |
-| `rowTone` | `(row) => "attention" \| "muted" \| null` (ADR-0159): tinte semántico de la fila en la tabla (`attention` = sugerencia, `muted` = fuera del flujo). No acepta clases |
+| `rowTone` | `(row) => "attention" \| "muted" \| "section" \| "total" \| null` (ADR-0159): tinte semántico de la fila en la tabla (`attention` = sugerencia, `muted` = fuera del flujo, `section` = encabezado que totaliza sus hijos, `total` = fila de cierre de un reporte). No acepta clases |
+| `openable` | `(row) => boolean` (ADR-0159, enmienda): filas que abren; las demás no tienen cursor, botón primario ni clic. Sin él, todas abren si la colección abre |
 | `dnd` | `{ drag?: (row) => { id, data, disabled? } \| null, drop?: (row) => { id, data } \| null }` (ADR-0159): cada `<tr>` se conecta a `useDraggable` / `useDroppable` de `@dnd-kit/core`. La pantalla pone el `DndContext` y resuelve `onDragEnd` con `data`. Solo en la tabla |
 
 PF-1: documentos, movimientos, contabilidad y crédito paginan **en servidor**. La paginación en cliente se admite solo en maestros pequeños (< ~1 000 filas).

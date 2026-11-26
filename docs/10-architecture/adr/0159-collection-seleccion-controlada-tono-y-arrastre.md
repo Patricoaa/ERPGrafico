@@ -46,6 +46,19 @@ Cuatro capacidades **tipadas**. Ninguna recibe JSX libre de la pantalla.
 - `@dnd-kit/core` pasa a ser dependencia de `components/entity-view`. Solo se usa cuando una colección declara `dnd`.
 - Los props de los componentes núcleo no crecen (techo de 12, Gate B): todo entra por las opciones de `useEntityCollection`, salvo `choice` en `BulkBar`.
 
+## Enmienda (2026-11-26) — reportes jerárquicos
+
+Para migrar `ReportTable` (balance, resultados y flujo de efectivo) a entity-view:
+
+- **Dos tonos más:**
+  - `section` es la fila encabezado que totaliza a sus hijos (nivel 0 del árbol);
+  - `total` es la fila de cierre («Utilidad del ejercicio», «Saldo final»).
+  
+  Siguen siendo tonos semánticos: la pantalla no pasa clases.
+- **`openable(row)`:** solo abren las filas que lo cumplen. Un reporte abre el libro mayor de las cuentas, pero no de las secciones ni de los totales. Sin `openable` el comportamiento no cambia.
+- **Encabezados con la etiqueta del período:** no hace falta API nueva. La feature construye la entidad con una función (`financialStatementEntity({ period, comparison })`) dentro del archivo `.entity.tsx`, y la pantalla la memoiza.
+- **Resultado:** se borra `ReportTable` de `components/shared` y `FinancialStatementTable` (finance) lo reemplaza. La dirección de la variación («subir es bueno») ahora se hereda de la sección a sus cuentas; antes las cuentas usaban siempre «subir es bueno».
+
 ## Alternativas descartadas
 
 - **`renderRow` / envoltorio libre de fila.** Reabre el escape opaco que ADR-0087 cerró: clases y elementos arbitrarios por pantalla.
