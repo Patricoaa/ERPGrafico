@@ -1,4 +1,4 @@
-import { defineEntity } from "@/components/entity-view"
+import { defineEditable, defineEntity, formatMoneyValue, type EditableInput, type StatusValue } from "@/components/entity-view"
 import { docRef } from "@/features/documents"
 import type { ProfitDistribution, ProfitDistributionImpactPartner, ProfitDistributionLine } from "@/features/contacts"
 
@@ -109,6 +109,7 @@ export const distributionPartnerEntity = defineEntity<DistributionPartnerRow>()(
             }
         }, { ...fixed, label: "Estado" }),
         evolution: f.text((r) => participationEvolution(r), { ...fixed, label: "Evolución de participación" }),
+        participation: f.text((r) => (r.percentageBefore == null ? "" : `${r.percentageBefore}%`), { ...fixed, label: "Participación", align: "end" }),
         gross: f.money((r) => r.gross, { ...fixed, label: "Bruto" }),
         offset: f.money((r) => r.offset, { ...fixed, label: "Retiros absorbidos" }),
         balanceAfter: f.money((r) => r.balanceAfter ?? 0, { ...fixed, label: "Saldo retiros tras la distribución" }),
@@ -117,6 +118,7 @@ export const distributionPartnerEntity = defineEntity<DistributionPartnerRow>()(
         reinvest: f.money((r) => r.reinvest, { ...fixed, label: "Reinversión" }),
         retained: f.money((r) => r.retained, { ...fixed, label: "Ut. retenidas" }),
         loss: f.money((r) => r.loss, { ...fixed, label: "Pérdida absorbida" }),
+        toAbsorb: f.money((r) => Math.abs(r.net), { ...fixed, label: "Monto a absorber" }),
         paid: f.money((r) => r.paid ?? 0, { ...fixed, label: "Pagado" }),
     },
     // Command bar of the partner record's distributions tab (ADR-0158): it filters
@@ -160,3 +162,45 @@ export const impactLossViews = tableOf(["partner", "gross", "net", "loss"])
 export const documentPartnerViews = tableOf(["partner", "evolution", "gross", "offset", "net", "dividend", "reinvest", "retained"])
 /** Pestaña Utilidades de la ficha del socio: su reparto en cada resolución. */
 export const partnerProfitViews = tableOf(["resolution", "year", "status", "evolution", "gross", "offset", "net", "dividend", "reinvest", "retained", "paid"])
+
+// ─── Allocation step of the wizard (ADR-0087 P1) ─────────────────────────────
+
+/** What is left to allocate of a partner's net (negative = over-allocated). */
+export const remainingOf = (r: DistributionPartnerRow, v: { dividend: number; reinvest: number; retained: number }) =>
+    Math.abs(r.net) - (v.dividend + v.reinvest + v.retained)
+
+function allocationStatus(r: DistributionPartnerRow, v: { dividend: number; reinvest: number; retained: number }): StatusValue {
+    const remaining = remainingOf(r, v)
+    if (Math.abs(remaining) <= 0.01) return { status: "balanced", label: "Cuadra", intent: "success" }
+    return remaining > 0
+        ? { status: "pending", label: `Faltan ${formatMoneyValue(remaining)}`, intent: "warning" }
+        : { status: "over", label: `Excede ${formatMoneyValue(-remaining)}`, intent: "destructive" }
+}
+
+const destinationInput = (header: string): EditableInput<DistributionPartnerRow> => ({
+    kind: "money",
+    header,
+    label: (r) => `${header} — ${r.partnerName}`,
+    max: (r) => Math.abs(r.net),
+})
+
+/**
+ * Profit: each partner's net goes to dividends, reinvestment or retained earnings, and must add up
+ * exactly (the row status says what is missing or over). Partners whose provisional withdrawals
+ * absorb the whole gross have nothing to allocate.
+ */
+export const distributionAllocationEditable = defineEditable(distributionPartnerEntity, {
+    rowKey: (r) => r.id,
+    context: ["partner", "participation", "gross", "offset", "net"],
+    inputs: {
+        dividend: destinationInput("Dividendos"),
+        reinvest: destinationInput("Reinversión"),
+        retained: destinationInput("Retenido"),
+    },
+    eligible: (r) => (r.net <= 0 ? { ok: false, reason: "Los retiros compensan toda la utilidad bruta" } : { ok: true }),
+    rowStatus: allocationStatus,
+    footer: { sum: ["dividend", "reinvest", "retained"] },
+})
+
+/** Loss: each partner absorbs its share automatically (read only). */
+export const distributionLossViews = tableOf(["partner", "participation", "gross", "net", "toAbsorb"])
