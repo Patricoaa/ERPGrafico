@@ -108,7 +108,7 @@ export function FieldValue<T>({ def, row, surface, align }: { def: FieldDef<T, V
 
 /** Cell padding from the density tokens (compact/comfortable, track B). */
 export const CELL = "px-(--table-cell-px) py-(--table-cell-py)"
-/** Canonical header text (DataTableColumnHeader `headerTextClass`, track B). */
+/** Canonical header text (track B). */
 export const HEADER_TEXT = "text-3xs font-bold uppercase tracking-widest text-muted-foreground"
 
 // ─── Root ────────────────────────────────────────────────────────────────────
@@ -939,7 +939,7 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                                             {column?.getCanSort() ? (
                                                 // Compact header height; the Fitts guard is lifted by `data-density="compact"` (R3).
                                                 <Button variant="ghost" size="sm" className={cn("-mx-2 h-control-xs gap-1", align === "end" && "flex-row-reverse")} onClick={column.getToggleSortingHandler()}>
-                                                    {/* Same header text treatment as DataTableColumnHeader (canonical header, track B). */}
+                                                    {/* Canonical header text treatment (track B). */}
                                                     <span className={HEADER_TEXT}>{def.header ?? def.label}</span>
                                                     <SortIcon dir={dir} />
                                                 </Button>
