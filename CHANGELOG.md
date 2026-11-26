@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.182](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.181...v0.3.182) (2026-11-26)
+
+
+### ✨ Features
+
+* lista unificada de despachos/recepciones paginada y agrupada en servidor (ADR-0158 §7) ([10fa2b7](https://github.com/Patricoaa/ERPGrafico/commit/10fa2b7c957c4402f67aecae1a435be701a8eabc))
+
 ### [0.3.181](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.180...v0.3.181) (2026-11-26)
 
 
