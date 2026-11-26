@@ -16,6 +16,12 @@ author: architecture-team
 > rutas `[id]` redirigen a `<list_url>?selected={id}` y `EntityDetailPage` fue eliminado en T-95.
 > **Lo que sigue vigente:** las tablas de slugs canónicos §D-02 (app → módulo) y §D-03 (plural en
 > inglés), que las rutas y `searchableEntityRoutes.ts` siguen usando.
+>
+> **Nota histórica (2026-11-26):** el §Contexto afirma que «solo 2 entidades tienen página `[id]`
+> real» (`finances/budgets/[id]` y `hr/payrolls/[id]`). Ya no es así: esas dos páginas son redirects
+> delgados a `/finances/budgets/list?selected=<id>&action=execution` y
+> `/hr/payrolls?selected=<id>`. El detalle se abre como pestaña sobre la lista (ADR-0152); las
+> URLs canónicas las fija ADR-0022.
 
 ---
 

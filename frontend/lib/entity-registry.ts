@@ -577,7 +577,7 @@ const REGISTRY = {
     description: 'Proyección financiera',
     shortTemplate: 'BUD-{id}',
     listUrl: '/finances/budgets/list',
-    detailUrlPattern: '/finances/budgets/{id}',
+    detailUrlPattern: '/finances/budgets/list?selected={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'accounting.journalentry': {
@@ -652,7 +652,7 @@ const REGISTRY = {
     description: 'Cálculo mensual de remuneraciones',
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
-    detailUrlPattern: '/hr/payrolls/{id}',
+    detailUrlPattern: '/hr/payrolls?selected={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'hr.employeemovement': {

@@ -69,3 +69,6 @@ def test_search_detail_url_uses_canonical_url():
     assert UniversalRegistry._canonical_url("sales.saledelivery", 800) == "/d/sales.saledelivery/800"
     assert UniversalRegistry._canonical_url("sales.saleorder", 5) == "/sales/dtes/orders?selected=5"
     assert UniversalRegistry._canonical_url("billing.invoice", 7) == "/d/billing.invoice/7"
+    # Deep links canónicos: T-79 ya no valida estos patrones (ADR-0022 / ADR-0152).
+    assert UniversalRegistry._canonical_url("accounting.budget", 604) == "/finances/budgets/list?selected=604"
+    assert UniversalRegistry._canonical_url("hr.payroll", 911) == "/hr/payrolls?selected=911"

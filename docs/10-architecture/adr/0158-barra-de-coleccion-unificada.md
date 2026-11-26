@@ -197,6 +197,7 @@ Mientras dura la migración, una vista usa `unifiedSearchDef` (vía el adaptador
 - `DataTable` se borró junto con `DataTableToolbar`, `FacetedFilter` y `DataTableColumnToggle`. Sus dos últimas pantallas (conciliación y mapeo de cuentas) migraron con [ADR-0159](0159-collection-seleccion-controlada-tono-y-arrastre.md).
 - Las listas embebidas usan la barra completa con `useCollectionQuery(entity, { urlPrefix })`.
 - `GROUP_ROW_LIMIT` se retiró después (2026-11-26): los dos últimos valores derivados (origen del asiento, cliente de la OT) se agrupan en servidor con `GroupField(expression=…)`, y `compileQuery` exige `groupKey` en modo servidor.
+- **Cierre de `accounting.budget` (2026-11-26).** `/finances/budgets/list` usa `entity.query` + `useCollectionQuery` + `Collection.Root` en **modo servidor**: `useBudgets(query.params)` envía búsqueda, filtros y `ordering` a un `BudgetViewSet` con `SearchFilter`, `OrderingFilter` y `filterset_fields` de fechas, y la paginación la hace el servidor. Se retira `sorting: "client"` porque el §6 prohíbe el orden en cliente cuando el endpoint ya ofrece `ordering`. El filtro de período usa `paramFrom`/`paramTo` (`start_date__gte`, `end_date__lte`) sobre campos reales del row, también en las vistas por año. La ficha se abre como pestaña (`openEntity`) y la ejecución como panel `variant="execution"` (ADR-0152).
 
 ## Consecuencias
 
