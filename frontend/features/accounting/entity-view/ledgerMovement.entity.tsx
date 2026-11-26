@@ -18,6 +18,10 @@ export const ledgerMovementEntity = defineEntity<LedgerMovement>()((f) => ({
         reference: f.text("reference", { label: "Referencia", tone: "secondary" }),
         partner: f.text("partner", { label: "Tercero", tone: "secondary" }),
     },
+    // Command bar of the ledger lists (ADR-0158). Chronological order only: the running balance depends on it.
+    query: {
+        search: { placeholder: "Buscar por descripción…" },
+    },
 }))
 
 /** Columns for the LedgerDrawer embedded table. */

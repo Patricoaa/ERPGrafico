@@ -1,20 +1,14 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { StatusBadge, UnifiedSearchBar, useUnifiedSearch, Drawer, FadeIn, SkeletonShell, SubmitButton } from "@/components/shared"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { StatusBadge, Drawer, FadeIn, SkeletonShell, SubmitButton } from "@/components/shared"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { inventoryCountLineEntity, inventoryCountLineViews, type AugmentedCountLine } from "../entity-view/inventoryCountLine.entity"
 import { ClipboardCheck, Check, Equal } from "lucide-react"
 import { useInventoryCount, useInventoryCountMutations } from "../hooks/useInventoryCounts"
-import type { UnifiedSearchConfig } from "@/types/unified-search"
 import type { InventoryCountLine } from "../types"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
-
-/** Search over the count's lines, in the browser (an embedded list: no command bar, ADR-0158 §2). */
-const inventoryCountLineSearchDef: UnifiedSearchConfig = {
-    searchFields: [{ key: "search", label: "Producto / Código / SKU", serverParam: "search", clientKey: ["product_name", "product_code", "product_internal_code"] }],
-}
 
 interface InventoryCountDetailDrawerProps {
     countId: number | null
@@ -29,7 +23,9 @@ interface InventoryCountDetailDrawerProps {
  * not yet migrated — the cell-level editing needs EditableCollection, not just a read-only list).
  */
 export function InventoryCountDetailDrawer({ countId, open, onOpenChange, onApplied }: InventoryCountDetailDrawerProps) {
-    const lineSearch = useUnifiedSearch(inventoryCountLineSearchDef)
+    // Own URL keys (`count_…`): the drawer opens over the counts list.
+    const lineQuery = useCollectionQuery(inventoryCountLineEntity, { sorting: "client", urlPrefix: "count_" })
+    const lineSearch = lineQuery.search
     const { data: selectedCount, isLoading: isLoadingCount } = useInventoryCount(countId)
     const { saveLines, applyCount, isSaving, isApplying } = useInventoryCountMutations()
 
@@ -150,8 +146,8 @@ export function InventoryCountDetailDrawer({ countId, open, onOpenChange, onAppl
 
     const lineCollection = useEntityCollection(
         inventoryCountLineEntity,
-        { rows: filteredAugmentedLines },
-        { pagination: { mode: "none" } },
+        { rows: filteredAugmentedLines, isFiltered: lineSearch.isFiltered },
+        { pagination: { mode: "none" }, sorting: lineQuery.sorting },
     )
 
     const drawerSubtitle = count ? (
@@ -215,24 +211,12 @@ export function InventoryCountDetailDrawer({ countId, open, onOpenChange, onAppl
                 </div>
             ) : count ? (
                 <FadeIn className="p-4 space-y-3" duration={0.5}>
-                    <UnifiedSearchBar
-                        config={inventoryCountLineSearchDef}
-                        chips={lineSearch.chips}
-                        isFiltered={lineSearch.isFiltered}
-                        inputValue={lineSearch.inputValue}
-                        onInputChange={lineSearch.setInputValue}
-                        onApply={lineSearch.applyFilter}
-                        onRemove={lineSearch.removeFilter}
-                        onClearAll={lineSearch.clearAll}
-                        groupBy={lineSearch.groupBy}
-                        onGroupBySelect={lineSearch.setGroupBy}
-                        paramValues={lineSearch.paramValues}
-                        placeholder="Buscar producto, código o SKU..."
-                    />
                     <Collection.Root
                         collection={lineCollection}
+                        query={lineQuery}
                         label="Líneas de conteo"
                     >
+                        <Collection.Toolbar />
                         <Collection.View
                             table={inventoryCountLineViews.table}
                             emptyTitle="Sin productos"
