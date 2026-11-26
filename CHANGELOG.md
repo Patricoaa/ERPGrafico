@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.193](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.192...v0.3.193) (2026-11-26)
+
+
+### ⚙️ Refactors
+
+* **orders,partners:** logística de notas, pago masivo y movilización de utilidades sobre EditableCollection ([110eab3](https://github.com/Patricoaa/ERPGrafico/commit/110eab3248872599cd0327495f996c0df2663c2b))
+
 ### [0.3.192](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.191...v0.3.192) (2026-11-26)
 
 
