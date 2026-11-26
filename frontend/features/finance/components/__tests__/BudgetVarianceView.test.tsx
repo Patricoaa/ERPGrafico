@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react"
-import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { BudgetVarianceView } from "../BudgetVarianceView"
@@ -26,15 +25,11 @@ vi.mock("@/components/shared", () => ({
     PageHeader: ({ title, description }: { title: string; description: string }) => (
         <header><h1>{title}</h1><p>{description}</p></header>
     ),
-    Metric: ({ label, value }: { label: string; value: string }) => <div>{label}: {value}</div>,
-    MetricStrip: ({ children }: { label: string; children: ReactNode }) => <section>{children}</section>,
 }))
 
 vi.mock("@/hooks/useServerDate", () => ({
     useServerDate: () => ({ month: 7, year: 2026 }),
 }))
-
-vi.mock("@/lib/money", () => ({ formatMoney: (value: number) => String(value) }))
 
 vi.mock("../../entity-view/budgetVariance.entity", () => ({ budgetVarianceEntity: {} }))
 
@@ -75,9 +70,18 @@ describe("BudgetVarianceView con barra canónica (ADR-0158)", () => {
 
     it("usa la fecha del servidor como periodo por defecto", () => {
         m.budgets = [budget(604)]
+        m.paramValues = { budget: "604" }
         render(<BudgetVarianceView />)
 
         expect(m.useBudgetVariance).toHaveBeenCalledWith(604, { month: "7", year: "2026" })
+    })
+
+    it("no vuelve al primer presupuesto tras Restablecer sin budget en la URL", () => {
+        m.budgets = [budget(604)]
+        render(<BudgetVarianceView />)
+
+        expect(m.useBudgetVariance).toHaveBeenCalledWith(null, expect.objectContaining({ month: "7", year: "2026" }))
+        expect(m.tableProps.exportFilters).toEqual({ budget: 0, month: "7", year: "2026" })
     })
 
     it("selecciona el primer presupuesto una sola vez escribiendo la URL, nunca en el render", () => {

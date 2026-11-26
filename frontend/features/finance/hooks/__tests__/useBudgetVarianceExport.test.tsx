@@ -63,4 +63,18 @@ describe("useBudgetVarianceExport", () => {
         expect(m.createObjectURL).not.toHaveBeenCalled()
         expect(m.error).toHaveBeenCalled()
     })
+
+    it("neutraliza fórmulas en las celdas de texto", async () => {
+        const malicious: BudgetVarianceNode = { ...node, code: "=1+1", name: '=HYPERLINK("x","clic")' }
+        queryClient.setQueryData(FINANCE_KEYS.budgets.variance(604, { month: "3", year: "2025" }), [malicious])
+        const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {})
+
+        const { result } = renderHook(() => useBudgetVarianceExport(), { wrapper })
+        act(() => result.current.run("csv", { budget: 604, month: "3", year: "2025" }))
+
+        const csv = await m.blob!.text()
+        expect(csv).toContain('"\'=1+1"')
+        expect(csv).toContain('"\'=HYPERLINK(""x"",""clic"")"')
+        click.mockRestore()
+    })
 })

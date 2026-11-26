@@ -103,8 +103,10 @@ describe("useCollectionQuery with a two-param date filter", () => {
         })
         expect(Object.keys(result.current.params)).not.toContain("period")
 
-        act(() => void result.current.search.applyFilter("start_date__gte", "2026-06-01"))
-        act(() => void result.current.search.applyFilter("end_date__lte", "2027-05-31"))
+        await act(async () => {
+            await result.current.search.applyFilter("start_date__gte", "2026-06-01")
+            await result.current.search.applyFilter("end_date__lte", "2027-05-31")
+        })
         await waitFor(() => expect(url()).toContain("start_date__gte=2026-06-01"))
         expect(url()).toContain("end_date__lte=2027-05-31")
         expect(url()).not.toContain("period=")

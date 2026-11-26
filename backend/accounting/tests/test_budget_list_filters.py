@@ -103,3 +103,10 @@ def test_budget_list_paginates_in_server(client, budgets):
     first_names, second_names = set(names(first)), set(names(second))
     assert not first_names & second_names
     assert first_names | second_names == {budget.name for budget in budgets}
+
+
+def test_budget_list_rejects_invalid_date_filter(client, budgets):
+    response = client.get("/api/accounting/budgets/", {"start_date__gte": "no-es-una-fecha"})
+
+    assert response.status_code == 400
+    assert "start_date__gte" in str(response.data)

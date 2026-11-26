@@ -249,9 +249,14 @@ class JournalEntryViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistory)
 # --- Budgeting ViewSets ---
 
 
+class BudgetFilterBackend(DjangoFilterBackend):
+    """Un filtro de fecha inválido debe responderse, no ignorarse silenciosamente."""
+    raise_exception = True
+
+
 class BudgetViewSet(viewsets.ModelViewSet, AuditHistory):
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [BudgetFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "description"]
     filterset_fields = {"start_date": ["gte", "lte"], "end_date": ["gte", "lte"]}
     ordering_fields = ["name", "start_date", "end_date", "id"]

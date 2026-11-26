@@ -34,7 +34,7 @@ export function BudgetVarianceView() {
 
     const query = useCollectionQuery(budgetVarianceEntity, { filterOptions })
     const params = query.search.paramValues
-    const budgetId = Number(params.budget ?? budgets[0]?.id ?? 0)
+    const budgetId = Number(params.budget ?? 0)
     const month = Number(params.month ?? serverMonth ?? new Date().getMonth() + 1)
     const year = Number(params.year ?? serverYear ?? new Date().getFullYear())
 

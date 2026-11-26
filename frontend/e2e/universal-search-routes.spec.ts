@@ -677,14 +677,14 @@ test.describe('ADR-0158 — versus presupuestario con estado en la URL', () => {
         await page.goto('/finances/budgets/versus?budget=604&month=3&year=2025');
 
         await expect(page.getByRole('heading', { name: 'Versus Presupuestario' })).toBeVisible();
-        await expect(varianceUrls[0]).toContain('month=3');
-        await expect(varianceUrls[0]).toContain('year=2025');
+        await expect.poll(() => varianceUrls[0] ?? '').toContain('month=3');
+        await expect.poll(() => varianceUrls.at(-1) ?? '').toContain('year=2025');
         await expect(page.getByText('Ingresos operacionales')).toBeVisible();
 
         // Un cambio de mes en la URL debe refetchear; la key de React Query incluye el periodo.
         await page.goto('/finances/budgets/versus?budget=604&month=4&year=2025');
-        await expect(varianceUrls.at(-1)).toContain('month=4');
-        expect(varianceUrls).toHaveLength(2);
+        await expect.poll(() => varianceUrls.at(-1) ?? '').toContain('month=4');
+        await expect.poll(() => varianceUrls.length).toBe(2);
 
         await page.getByRole('button', { name: 'Exportar' }).click();
         const downloadPromise = page.waitForEvent('download');

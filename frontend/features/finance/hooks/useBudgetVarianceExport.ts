@@ -10,7 +10,14 @@ const HEADERS = [
     "Real acumulado", "Presupuesto acumulado", "Desviación acumulada",
 ]
 
-const cell = (value: string | number): string => `"${String(value).replace(/"/g, '""')}"`
+const CSV_FORMULA_PREFIX = /^[=+\-@\t\r]/
+
+/** Escapa comillas y neutraliza celdas de texto que Excel/LibreOffice leería como fórmula. */
+const cell = (value: string | number): string => {
+    const raw = String(value)
+    const safe = typeof value === "string" && CSV_FORMULA_PREFIX.test(raw) ? `'${raw}` : raw
+    return `"${safe.replace(/"/g, '""')}"`
+}
 
 function flatten(nodes: readonly BudgetVarianceNode[]): BudgetVarianceNode[] {
     return nodes.flatMap((node) => [node, ...flatten(node.children ?? [])])
