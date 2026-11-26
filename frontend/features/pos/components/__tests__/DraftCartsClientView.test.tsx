@@ -3,8 +3,8 @@ import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { DraftCartsClientView, type DraftCart } from "../DraftCartsClientView"
 
-const getDrafts = vi.fn()
-vi.mock("../../api/posApi", () => ({ posApi: { getDrafts: (...args: unknown[]) => getDrafts(...args), deleteDraft: vi.fn() } }))
+const getDrafts = vi.fn<(params: unknown) => Promise<DraftCart[]>>()
+vi.mock("../../api/posApi", () => ({ posApi: { getDrafts: (params: unknown) => getDrafts(params), deleteDraft: vi.fn() } }))
 
 function draft(id: number, overrides: Partial<DraftCart> = {}): DraftCart {
     return {
