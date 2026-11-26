@@ -8,8 +8,15 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.mixins import (
+    AuditHistoryMixin,
+    EditPolicyMixin,
+    GroupedListMixin,
+    NoDestroyModelMixin,
+    UnionListViewSet,
+)
 from core.services.grouping import GroupField
+from core.services.union_list import UnionSource
 
 from .filters import PurchaseReceiptFilter, PurchaseReturnFilter
 from .models import PurchaseOrder, PurchaseReturn
@@ -331,3 +338,30 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMix
 
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def _receipt_cost():
+    """Receipts keep their cost on the lines: summed per receipt for the combined list's cost column."""
+    from django.db.models import DecimalField, OuterRef, Subquery, Sum, Value
+    from django.db.models.functions import Coalesce
+
+    from .models import PurchaseReceiptLine
+
+    lines = PurchaseReceiptLine.objects.filter(receipt=OuterRef("pk")).order_by().values("receipt").annotate(s=Sum("total_cost")).values("s")
+    return Coalesce(Subquery(lines), Value(0), output_field=DecimalField(max_digits=14, decimal_places=2))
+
+
+class PurchaseFulfillmentViewSet(UnionListViewSet):
+    """Recepciones + devoluciones de compra in one list (ADR-0090, ADR-0158 §7): server pagination,
+    order and grouping over both, each filtered and serialized by its own list."""
+
+    union_sources = [
+        UnionSource("RECEIPT", "Recepción", PurchaseReceiptViewSet, {
+            "date": "receipt_date", "number": "number", "party": "purchase_order__supplier__name", "cost": _receipt_cost(),
+        }),
+        UnionSource("RETURN", "Devolución", PurchaseReturnViewSet, {
+            "date": "date", "number": "number", "party": "purchase_order__supplier__name", "cost": "total_cost",
+        }),
+    ]
+    union_ordering = {"date": "u_date", "number": "u_number", "purchase_order__supplier__name": "u_party", "total_cost": "u_cost"}
+    union_aggregate = "cost"

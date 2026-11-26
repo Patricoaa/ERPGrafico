@@ -9,8 +9,15 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.cache import load_singleton
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.mixins import (
+    AuditHistoryMixin,
+    EditPolicyMixin,
+    GroupedListMixin,
+    NoDestroyModelMixin,
+    UnionListViewSet,
+)
 from core.services.grouping import GroupField
+from core.services.union_list import UnionSource
 
 from .filters import SaleDeliveryFilter, SaleReturnFilter
 from .models import SaleOrder, SaleReturn, SalesSettings
@@ -516,3 +523,19 @@ class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, 
 
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SaleFulfillmentViewSet(UnionListViewSet):
+    """Despachos + devoluciones de venta in one list (ADR-0090, ADR-0158 §7): server pagination,
+    order and grouping over both, each filtered and serialized by its own list."""
+
+    union_sources = [
+        UnionSource("DELIVERY", "Despacho", SaleDeliveryViewSet, {
+            "date": "delivery_date", "number": "number", "party": "sale_order__customer__name", "cost": "total_cost",
+        }),
+        UnionSource("RETURN", "Devolución", SaleReturnViewSet, {
+            "date": "date", "number": "number", "party": "sale_order__customer__name", "cost": "total_cost",
+        }),
+    ]
+    union_ordering = {"date": "u_date", "number": "u_number", "sale_order__customer__name": "u_party", "total_cost": "u_cost"}
+    union_aggregate = "cost"
