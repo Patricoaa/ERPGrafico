@@ -70,7 +70,7 @@ import { POSIdleScreen, POSLiveTime } from '@/features/pos/components/flow/POSId
 import { useIdle } from '@/features/pos/hooks/useIdle'
 import { ScannerFeedback, type ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing-utils'
-import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
+import { SalesOrdersModal } from '@/features/pos/components/SalesOrdersModal'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
 import { useTouchMode } from '@/hooks/useTouchMode'
@@ -766,7 +766,7 @@ export function POSClientView() {
                 mode={numpadConfig?.field === 'qty' ? "number" : "currency"}
             />
             <ScannerFeedback ref={scannerFeedbackRef} />
-            <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
+            <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
             <BaseModal
                 open={!!completedSaleData}

@@ -94,9 +94,18 @@ function getChipVariant(source: FlatParamDef['source']): UnifiedChip['variant'] 
   }
 }
 
+export interface UseUnifiedSearchOptions {
+  /**
+   * Prefix of every URL key (`ledger_` → `?ledger_search=`): a list embedded in a drawer or a tab keeps
+   * its own state without touching the page's list. Values keep their server names (`filters.search`).
+   */
+  urlPrefix?: string
+}
+
 export function useUnifiedSearch(
   config: UnifiedSearchConfig,
   filterOptions?: Record<string, MultiSelectOption[]>,
+  { urlPrefix = '' }: UseUnifiedSearchOptions = {},
 ): UseUnifiedSearchReturn {
   const [inputValue, setInputValue] = useState('')
 
@@ -110,8 +119,12 @@ export function useUnifiedSearch(
     return map
   }, [paramDefs])
 
-  const [paramValues, setParamValues] = useQueryStates(parsers)
-  const [, setCursor] = useQueryState('cursor', parseAsString)
+  const urlKeys = useMemo(
+    () => (urlPrefix ? Object.fromEntries(Object.keys(parsers).map((param) => [param, `${urlPrefix}${param}`])) : undefined),
+    [parsers, urlPrefix],
+  )
+  const [paramValues, setParamValues] = useQueryStates(parsers, { urlKeys })
+  const [, setCursor] = useQueryState(`${urlPrefix}cursor`, parseAsString)
 
   const applyFilter = useCallback(
     async (param: string, value: string) => {

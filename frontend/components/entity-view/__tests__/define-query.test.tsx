@@ -2,8 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing"
 import type { ReactNode } from "react"
-import { compileQuery, defineEntity, fromUnifiedSearchDef, orderingFor, useCollectionQuery } from "@/components/entity-view"
-import type { UnifiedSearchConfig } from "@/types/unified-search"
+import { compileQuery, defineEntity, orderingFor, useCollectionQuery } from "@/components/entity-view"
 
 interface Note {
     id: number
@@ -89,20 +88,6 @@ describe("compileQuery (ADR-0158 §3)", () => {
         }))
         expect(() => compileQuery(bad)).toThrow(/orderBy/)
     })
-
-    it("adapts a legacy unifiedSearchDef without sorting or views", () => {
-        const def: UnifiedSearchConfig = {
-            searchFields: [{ key: "number", label: "Folio", serverParam: "number" }],
-            filters: [{ type: "range", key: "total", label: "Monto", serverParamFrom: "total_min", serverParamTo: "total_max" }],
-            dateFilters: [{ type: "date", key: "created", label: "Creación", options: [{ label: "Hoy", serverParamFrom: "date_after", serverParamTo: "date_before" }] }],
-            groupBy: [{ key: "status", label: "Estado", field: "status" }],
-        }
-        const adapted = fromUnifiedSearchDef(def)
-        expect(adapted.search).toBe(def)
-        expect(adapted.filterParams).toEqual({ total: ["total_min", "total_max"], created: ["date_after", "date_before"] })
-        expect(adapted.groupFields).toEqual([{ id: "status", label: "Estado", groupKey: null }])
-        expect(adapted.views).toEqual([])
-    })
 })
 
 describe("query type guarantees", () => {
@@ -127,17 +112,30 @@ describe("query type guarantees", () => {
     })
 })
 
-function harness(search = "") {
+function harness(search = "", urlPrefix?: string) {
     const onUrlUpdate = vi.fn<(event: UrlUpdateEvent) => void>()
     const wrapper = ({ children }: { children: ReactNode }) => (
         <NuqsTestingAdapter searchParams={search} onUrlUpdate={onUrlUpdate} hasMemory>{children}</NuqsTestingAdapter>
     )
-    const hook = renderHook(() => useCollectionQuery(noteEntity), { wrapper })
+    const hook = renderHook(() => useCollectionQuery(noteEntity, { urlPrefix }), { wrapper })
     const lastUrl = () => onUrlUpdate.mock.lastCall?.[0].queryString ?? ""
     return { ...hook, onUrlUpdate, lastUrl }
 }
 
 describe("useCollectionQuery (ADR-0158 §4)", () => {
+    it("namespaces its URL keys with urlPrefix and leaves the page's own params alone", async () => {
+        const { result, lastUrl } = harness("?status=CONFIRMED&ledger_status=DRAFT&ledger_ordering=total", "ledger_")
+        expect(result.current.search.paramValues.status).toBe("DRAFT")
+        expect(result.current.params).toEqual({ status: "DRAFT", ordering: "total,id" })
+        act(() => void result.current.search.applyFilter("search", "kilo"))
+        act(() => result.current.setSort(["-number"]))
+        await waitFor(() => expect(lastUrl()).toContain("ledger_ordering=-number"))
+        expect(lastUrl()).toContain("ledger_search=kilo")
+        expect(lastUrl()).toContain("status=CONFIRMED")
+        expect(lastUrl()).not.toMatch(/(^|[?&])ordering=/)
+        expect(result.current.params).toMatchObject({ search: "kilo", status: "DRAFT", ordering: "-number,-id" })
+    })
+
     it("starts on the default view and default sort, with list params ready for the request", () => {
         const { result } = harness("?status=DRAFT&search=kilo")
         expect(result.current.activeView?.id).toBe("all")

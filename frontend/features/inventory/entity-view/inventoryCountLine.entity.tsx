@@ -146,6 +146,11 @@ export const inventoryCountLineEntity = defineEntity<AugmentedCountLine>()((f) =
         diff: f.value("inventoryCountDiff", (r) => r, { label: "Diferencia", sortable: true }),
         uom: f.text("uom_name", { label: "Unidad", sortable: false }),
     },
+    // Command bar of the count detail (ADR-0158): every line is loaded, so it runs in the browser.
+    query: {
+        search: { placeholder: "Buscar producto, código o SKU…" },
+        sort: { fields: ["code", "theoretical", "diff"] },
+    },
 }))
 
 export const inventoryCountLineViews = inventoryCountLineEntity.views({

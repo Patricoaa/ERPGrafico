@@ -96,6 +96,21 @@ export const posSessionActivityEntity = defineEntity<POSSessionActivityRow>()((f
         amount: f.money((e) => (e.amount == null ? null : Number(e.amount)), { label: "Importe", sign: "always" }),
         reference: f.value("sessionEventReference", (e) => e.reference, { label: "Referencia" }),
     },
+    // Command bar of the session activity (ADR-0158), in the browser over the loaded events.
+    // `actor` options come from the events (`filterOptions.actor`).
+    query: {
+        search: { placeholder: "Buscar en la actividad…" },
+        filters: {
+            category: {
+                field: "category",
+                control: "multi",
+                options: (Object.keys(ACTIVITY_CATEGORY_LABEL) as POSSessionActivityEvent["category"][]).map((value) => ({ value, label: ACTIVITY_CATEGORY_LABEL[value] })),
+            },
+            actor: { field: "actor", control: "multi", options: "remote" },
+        },
+        sort: { fields: ["date", "amount"], default: "-date" },
+        groupBy: { fields: ["category", "actor"] },
+    },
 }))
 
 export const posSessionActivityViews = posSessionActivityEntity.views({

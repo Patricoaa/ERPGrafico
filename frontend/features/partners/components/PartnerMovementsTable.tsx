@@ -1,13 +1,10 @@
 "use client"
 
 import { useMemo } from "react"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import type { PartnerTransaction } from "@/features/contacts"
 import { partnerMovementEntity, partnerMovementViews } from "../entity-view/partnerMovement.entity"
-import { PARTNER_TRANSACTION_TYPE_OPTIONS } from "../entity-view/partnerLedger.entity"
-import { usePartnerTableSearch } from "../hooks"
 import { partnerTransactionActions } from "./partnerTransactionActions"
-import { PartnerTableSearchBar } from "./PartnerTableSearchBar"
 import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 interface PartnerMovementsTableProps {
@@ -17,32 +14,32 @@ interface PartnerMovementsTableProps {
     refetch: () => void
 }
 
-const textOf = (tx: PartnerTransaction) => `${tx.transaction_type_display} ${tx.description ?? ""} ${tx.date}`
-const select = { label: "Tipo", options: PARTNER_TRANSACTION_TYPE_OPTIONS, valueOf: (tx: PartnerTransaction) => tx.transaction_type }
-
-/** Todos los movimientos del socio con búsqueda, filtro por tipo y paginación; loading/empty/error los resuelve `Collection`. */
+/**
+ * Todos los movimientos del socio con barra de comandos (búsqueda, tipo, orden y agrupación) en el navegador
+ * y paginación; claves de URL propias (`mov_…`). loading/empty/error los resuelve `Collection`.
+ */
 export function PartnerMovementsTable({ rows, isLoading, isError, refetch }: PartnerMovementsTableProps) {
     const openEntity = useOptionalGlobalModalActions()?.openEntity
-    const table = usePartnerTableSearch({ prefix: "mov", textOf, select })
-    const filtered = useMemo(() => table.apply(rows), [table, rows])
+    const query = useCollectionQuery(partnerMovementEntity, { sorting: "client", urlPrefix: "mov_" })
+    const { search, groupBy } = query
+    const filtered = useMemo(() => search.filterFn(rows), [search, rows])
     const collection = useEntityCollection(
         partnerMovementEntity,
-        { rows: filtered, isLoading, error: isError, refetch, isFiltered: table.search.isFiltered },
-        { pagination: { mode: "client", pageSize: 10 } },
+        { rows: filtered, isLoading, error: isError, refetch, isFiltered: search.isFiltered },
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 10 }, groupBy, sorting: query.sorting },
     )
     return (
         <Collection.Root
             collection={collection}
+            query={query}
             actions={partnerTransactionActions.forCollection({ onViewDocument: (label, id) => openEntity?.(label, id) })}
         >
-            <Collection.Toolbar>
-                <PartnerTableSearchBar table={table} placeholder="Buscar movimiento..." />
-            </Collection.Toolbar>
+            <Collection.Toolbar />
             <Collection.View
                 table={partnerMovementViews.table}
                 emptyTitle="Sin movimientos"
                 emptyDescription="Este socio no tiene movimientos registrados."
-                onResetFilters={() => void table.search.clearAll()}
+                onResetFilters={() => void search.clearAll()}
             />
         </Collection.Root>
     )

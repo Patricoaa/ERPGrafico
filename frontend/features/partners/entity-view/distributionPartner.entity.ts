@@ -119,7 +119,36 @@ export const distributionPartnerEntity = defineEntity<DistributionPartnerRow>()(
         loss: f.money((r) => r.loss, { ...fixed, label: "Pérdida absorbida" }),
         paid: f.money((r) => r.paid ?? 0, { ...fixed, label: "Pagado" }),
     },
+    // Command bar of the partner record's distributions tab (ADR-0158): it filters
+    // `DistributionPartnerSearchRow`, which carries the resolution's status flat.
+    query: {
+        search: { placeholder: "Buscar distribución…" },
+        filters: {
+            status: {
+                field: "status",
+                control: "multi",
+                options: [
+                    { value: "DRAFT", label: "Borrador" }, { value: "APPROVED", label: "Aprobada" },
+                    { value: "EXECUTED", label: "Ejecutada" }, { value: "CANCELLED", label: "Anulada" },
+                ],
+            },
+        },
+    },
 }))
+
+/** Row of the distributions tab: the resolution's folio, year and status flat, for search and filters. */
+export interface DistributionPartnerSearchRow extends DistributionPartnerRow {
+    status: string
+    resolution_display: string
+    fiscal_year: string
+}
+
+export const toDistributionSearchRow = (r: DistributionPartnerRow): DistributionPartnerSearchRow => ({
+    ...r,
+    status: r.resolution?.status ?? "",
+    resolution_display: r.resolution?.displayId ?? "",
+    fiscal_year: r.resolution ? String(r.resolution.fiscalYear) : "",
+})
 
 const tableOf = (columns: Array<keyof typeof distributionPartnerEntity.fields>) => distributionPartnerEntity.views({ table: { columns } })
 

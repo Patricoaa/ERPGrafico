@@ -1,22 +1,11 @@
 "use client"
 
 import { useMemo } from "react"
-import { Collection, useEntityCollection } from "@/components/entity-view"
-import { distributionPartnerEntity, distributionLineToRow, partnerProfitViews, type DistributionPartnerRow } from "../entity-view/distributionPartner.entity"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
+import { distributionPartnerEntity, distributionLineToRow, partnerProfitViews, toDistributionSearchRow, type DistributionPartnerSearchRow } from "../entity-view/distributionPartner.entity"
 import { distributionPartnerActions } from "./distributionPartnerActions"
 import { useOptionalGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { useProfitDistributions, usePartnerTableSearch } from "../hooks"
-import { PartnerTableSearchBar } from "./PartnerTableSearchBar"
-
-const textOf = (r: DistributionPartnerRow) => `${r.resolution?.displayId ?? ""} ${r.resolution?.fiscalYear ?? ""}`
-const select = {
-    label: "Estado",
-    options: [
-        { value: "DRAFT", label: "Borrador" }, { value: "APPROVED", label: "Aprobada" },
-        { value: "EXECUTED", label: "Ejecutada" }, { value: "CANCELLED", label: "Anulada" },
-    ],
-    valueOf: (r: DistributionPartnerRow) => r.resolution?.status ?? "",
-}
+import { useProfitDistributions } from "../hooks"
 
 /**
  * Pestaña Utilidades: las resoluciones de distribución de utilidades en las que participa el socio,
@@ -24,31 +13,32 @@ const select = {
  */
 export function PartnerDistributionsPanel({ partnerId }: { partnerId: number }) {
     const { distributions, isLoading, error, refetch } = useProfitDistributions()
-    const table = usePartnerTableSearch({ prefix: "dst", textOf, select })
+    // Own URL keys (`dst_…`): the tab lives in the partner drawer, over the partners list.
+    const query = useCollectionQuery(distributionPartnerEntity, { sorting: "client", urlPrefix: "dst_" })
+    const { search } = query
     const openEntity = useOptionalGlobalModalActions()?.openEntity
-    const rows = useMemo<DistributionPartnerRow[]>(() => distributions.flatMap(d =>
-        (d.lines ?? []).filter(l => l.partner === partnerId).map(l => distributionLineToRow(l, d)),
+    const rows = useMemo<DistributionPartnerSearchRow[]>(() => distributions.flatMap(d =>
+        (d.lines ?? []).filter(l => l.partner === partnerId).map(l => toDistributionSearchRow(distributionLineToRow(l, d))),
     ), [distributions, partnerId])
-    const filtered = useMemo(() => table.apply(rows), [table, rows])
+    const filtered = useMemo(() => search.filterFn(rows), [search, rows])
     const collection = useEntityCollection(
         distributionPartnerEntity,
-        { rows: filtered, isLoading, error: !!error, refetch, isFiltered: table.search.isFiltered },
+        { rows: filtered, isLoading, error: !!error, refetch, isFiltered: search.isFiltered },
         { pagination: { mode: "client", pageSize: 10 } },
     )
     return (
         <div className="p-4 h-full min-h-0 flex flex-col gap-3">
             <Collection.Root
                 collection={collection}
+                query={query}
                 actions={distributionPartnerActions.forCollection({ onViewDistribution: id => openEntity?.("contacts.profitdistributionresolution", id) })}
             >
-                <Collection.Toolbar>
-                    <PartnerTableSearchBar table={table} placeholder="Buscar distribución..." />
-                </Collection.Toolbar>
+                <Collection.Toolbar />
                 <Collection.View
                     table={partnerProfitViews.table}
                     emptyTitle="Sin utilidades"
                     emptyDescription="Este socio no participa en ninguna resolución de distribución de utilidades."
-                    onResetFilters={() => void table.search.clearAll()}
+                    onResetFilters={() => void search.clearAll()}
                 />
             </Collection.Root>
         </div>

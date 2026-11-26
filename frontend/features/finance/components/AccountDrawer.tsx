@@ -16,8 +16,8 @@ import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
 import { type AccountPayload } from "@/features/accounting"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, DrawerLayout, UnifiedSearchBar, DateRangeFilter, SkeletonShell, useUnifiedSearch, type UnifiedSearchConfig } from "@/components/shared"
-import { Collection, useEntityCollection } from "@/components/entity-view"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, DrawerLayout, DateRangeFilter, SkeletonShell } from "@/components/shared"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, useDrawerMode, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
@@ -266,13 +266,9 @@ export function AccountDrawer({
     const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
     const { data: ledgerData, isLoading: ledgerLoading } = useLedger(accountId ?? 0, startStr, endStr)
 
-    // UnifiedSearch for ledger movements
-    const ledgerSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
-        searchFields: [
-            { key: 'description', label: 'Descripción', serverParam: 'search', clientKey: ['description', 'label'] },
-        ],
-    }), [])
-    const ledgerSearch = useUnifiedSearch(ledgerSearchConfig)
+    // Ledger command bar with its own URL keys (`ledger_…`): the drawer opens over the accounts list.
+    const ledgerQuery = useCollectionQuery(ledgerMovementEntity, { sorting: "client", urlPrefix: "ledger_" })
+    const ledgerSearch = ledgerQuery.search
 
     const handleTabChange = useCallback((value: string) => {
         setActiveTab(value as "form" | "ledger")
@@ -303,7 +299,7 @@ export function AccountDrawer({
 
     const collection = useEntityCollection(
         ledgerMovementEntity,
-        { rows: filteredMovements },
+        { rows: filteredMovements, isFiltered: ledgerSearch.isFiltered },
         { pagination: { mode: "none" } },
     )
 
@@ -331,37 +327,24 @@ export function AccountDrawer({
                         {dateRange ? (
                             <Collection.Root
                                 collection={collection}
+                                query={ledgerQuery}
                                 actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
                                 onOpen={(mov) => openEntry(mov.entry_id)}
                             >
-                                <Collection.Toolbar>
-                                    <UnifiedSearchBar
-                                        config={ledgerSearchConfig}
-                                        chips={ledgerSearch.chips}
-                                        isFiltered={ledgerSearch.isFiltered}
-                                        inputValue={ledgerSearch.inputValue}
-                                        onInputChange={ledgerSearch.setInputValue}
-                                        onApply={ledgerSearch.applyFilter}
-                                        onRemove={ledgerSearch.removeFilter}
-                                        onClearAll={ledgerSearch.clearAll}
-                                        groupBy={ledgerSearch.groupBy}
-                                        onGroupBySelect={ledgerSearch.setGroupBy}
-                                        paramValues={ledgerSearch.paramValues}
-                                        placeholder="Buscar por descripción..."
-                                        toolbarActions={
-                                            <DateRangeFilter
-                                                defaultRange={dateRange || undefined}
-                                                onDateChange={(range) => {
-                                                    if (range?.from && range?.to) {
-                                                        setDateRange({ from: range.from, to: range.to })
-                                                    }
-                                                }}
-                                                className="bg-background border-none shadow-none rounded-sm"
-                                                variant="outline"
-                                            />
-                                        }
-                                    />
-                                </Collection.Toolbar>
+                                <Collection.Toolbar
+                                    action={
+                                        <DateRangeFilter
+                                            defaultRange={dateRange || undefined}
+                                            onDateChange={(range) => {
+                                                if (range?.from && range?.to) {
+                                                    setDateRange({ from: range.from, to: range.to })
+                                                }
+                                            }}
+                                            className="bg-background border-none shadow-none rounded-sm"
+                                            variant="outline"
+                                        />
+                                    }
+                                />
                                 <Collection.View
                                     table={ledgerMovementDrawerViews.table}
                                     emptyTitle="Sin movimientos"

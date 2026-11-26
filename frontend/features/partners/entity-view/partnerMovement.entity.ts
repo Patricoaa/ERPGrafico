@@ -3,7 +3,7 @@ import "@/features/accounting"
 
 import { defineEntity } from "@/components/entity-view"
 import type { PartnerTransaction } from "@/features/contacts"
-import { partnerTxDirection } from "./partnerLedger.entity"
+import { PARTNER_TRANSACTION_TYPE_OPTIONS, partnerTxDirection } from "./partnerLedger.entity"
 
 /**
  * Tipos que no se listan: CONTRIB_TRANSFER_IN/OUT son seguimiento interno de lo enterado, se crean junto a
@@ -22,6 +22,15 @@ export const partnerMovementEntity = defineEntity<PartnerTransaction>()((f) => (
         transactionType: f.text((tx) => tx.transaction_type_display, { label: "Tipo", tone: "secondary" }),
         description: f.text((tx) => tx.description, { label: "Descripción", sortable: false }),
         amount: f.flow("amount", { label: "Monto", direction: (tx) => partnerTxDirection(tx.transaction_type) }),
+    },
+    // Command bar of the partner record's movements tab (ADR-0158), in the browser over the loaded rows.
+    query: {
+        search: { placeholder: "Buscar movimiento…" },
+        filters: {
+            transaction_type: { field: "transactionType", control: "multi", options: PARTNER_TRANSACTION_TYPE_OPTIONS },
+        },
+        sort: { fields: ["date", "amount"] },
+        groupBy: { fields: ["transactionType"] },
     },
 }))
 
