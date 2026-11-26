@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.194](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.193...v0.3.194) (2026-11-26)
+
+
+### ✨ Features
+
+* **entity-view:** numpad en modo táctil para EditableCollection; despacho parcial del checkout de venta migrado ([1e4b2f6](https://github.com/Patricoaa/ERPGrafico/commit/1e4b2f68d96163b935b91fbba85409017b5b5cdc))
+
 ### [0.3.193](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.192...v0.3.193) (2026-11-26)
 
 
