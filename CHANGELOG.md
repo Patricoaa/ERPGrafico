@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.199](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.198...v0.3.199) (2026-11-26)
+
+
+### ✨ Features
+
+* **finance,hr:** el listado de presupuestos filtra y ordena en servidor, abre la ejecución como pestaña y las liquidaciones se abren desde el registro
+* **finance:** el versus presupuestario lleva presupuesto, mes y año en la URL, ofrece todas las páginas de presupuestos y exporta el CSV del periodo
+* **tests:** las rutas canónicas y las pestañas de presupuesto/liquidación quedan cubiertas de extremo a extremo
+
+### 🐛 Bug Fixes
+
+* **entity-view:** los filtros de rango conservan los dos parámetros al navegar
+* **finance:** el versus no vuelve al primer presupuesto tras restablecer y el CSV neutraliza celdas que parecen fórmulas
+* **accounting:** las fechas inválidas en el listado de presupuestos responden 400 en lugar de ignorarse
+* **inventory,analytics:** corregir el padding del modal de análisis y los márgenes de los modales
+
+### ⚙️ Refactors
+
+* **docs:** ADR-0152 aceptado, rutas canónicas sincronizadas y contrato de informes con parámetros en la URL
+
+### ✅ Tests
+
+* cerrar los gaps de cobertura de la barra de colección y las vistas de finanzas/liquidaciones
+
+### 🔧 Infrastructure
+
+* ordenar imports y retirar la vista del versus de la baseline de código no seguro
+
+
 ### [0.3.198](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.197...v0.3.198) (2026-11-26)
 
 
