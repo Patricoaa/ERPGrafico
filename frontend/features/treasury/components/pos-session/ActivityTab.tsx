@@ -1,8 +1,8 @@
 "use client"
 
 import { useMemo } from "react"
-import { Collection, useEntityCollection } from "@/components/entity-view"
-import { SkeletonShell, UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch } from "@/components/shared"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
+import { SkeletonShell } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import {
     posSessionActivityEntity,
@@ -10,33 +10,6 @@ import {
     toActivityRow,
 } from "../../entity-view/posSessionDetail.entity"
 import { usePOSSessionActivity } from "../../hooks/usePOSSessionDetail"
-import type { UnifiedSearchConfig } from "@/types/unified-search"
-
-/**
- * Activity of a POS session, filtered in the browser over the loaded events (an embedded list: no command
- * bar, ADR-0158 §2). `category` and `actor` are row fields; the actors come from the events (`filterOptions.actor`).
- */
-const posSessionActivitySearchDef: UnifiedSearchConfig = {
-    searchFields: [
-        { key: "description", label: "Descripción", serverParam: "search", clientKey: ["description", "reference_display"] },
-    ],
-    filters: [
-        {
-            type: "multi",
-            key: "category",
-            label: "Tipo de evento",
-            serverParam: "category",
-            options: [
-                { label: "Caja", value: "caja" },
-                { label: "Venta", value: "venta" },
-                { label: "Acceso", value: "acceso" },
-                { label: "Cierre", value: "cierre" },
-                { label: "Sistema", value: "sistema" },
-            ],
-        },
-        { type: "multi", key: "actor", label: "Responsable", serverParam: "actor", options: [], dynamic: true },
-    ],
-}
 
 interface ActivityTabProps {
     sessionId: number
@@ -56,12 +29,15 @@ export function ActivityTab({ sessionId }: ActivityTabProps) {
         () => ({ actor: Array.from(new Set(rows.map((r) => r.actor))).map((name) => ({ label: name, value: name })) }),
         [rows],
     )
-    const search = useUnifiedSearch(posSessionActivitySearchDef, filterOptions)
+    // Filtered in the browser over the loaded events, with its own URL keys (`activity_…`).
+    const query = useCollectionQuery(posSessionActivityEntity, { sorting: "client", filterOptions, urlPrefix: "activity_" })
+    const { search, groupBy } = query
     const filtered = useMemo(() => search.filterFn(rows), [search, rows])
     const collection = useEntityCollection(
         posSessionActivityEntity,
         { rows: filtered, isLoading, isFiltered: search.isFiltered },
-        { pagination: { mode: "client", pageSize: 12 } },
+        // Groups span every event, not one page.
+        { pagination: groupBy ? { mode: "none" } : { mode: "client", pageSize: 12 }, groupBy, sorting: query.sorting },
     )
 
     return (
@@ -69,17 +45,11 @@ export function ActivityTab({ sessionId }: ActivityTabProps) {
             <div className="flex flex-1 min-h-0 flex-col gap-2">
                 <Collection.Root
                     collection={collection}
+                    query={query}
                     label="Actividad de la sesión"
                     onOpen={(event) => { if (event.reference) openEntity(event.reference.label, event.reference.id) }}
                 >
-                    <Collection.Toolbar>
-                        <UnifiedSearchBar
-                            config={posSessionActivitySearchDef}
-                            filterOptions={filterOptions}
-                            placeholder="Buscar en la actividad…"
-                            {...bindUnifiedSearch(search)}
-                        />
-                    </Collection.Toolbar>
+                    <Collection.Toolbar />
                     <Collection.View
                         table={posSessionActivityViews.table}
                         emptyTitle="Sin eventos"
