@@ -16,7 +16,4 @@ export const LEGACY_CONSUMERS: readonly string[] = []
  *
  * Entries are removed only when the architectural blocker is lifted and the file migrates.
  */
-export const EXEMPT_CONSUMERS: readonly string[] = [
-    "features/finance/bank-reconciliation/components/ReconciliationPanel.tsx",
-    "features/finance/components/MappingConfigModal.tsx",
-]
+export const EXEMPT_CONSUMERS: readonly string[] = []

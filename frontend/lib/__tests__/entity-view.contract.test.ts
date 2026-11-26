@@ -165,9 +165,6 @@ describe("entity definitions", () => {
  * Props-compat freeze (reused from ADR-0078, superseded by ADR-0087): the legacy authoring
  * API may shrink as entities migrate, never grow. Lower a number when a prop is removed.
  */
-const LEGACY_CEILINGS: { file: string; name: string; max: number }[] = [
-    { file: "components/shared/DataTable.tsx", name: "DataTableProps", max: 57 },
-]
 const LEGACY_FIELD_TYPES = 15
 
 /**
@@ -208,10 +205,6 @@ const legacyScope = () =>
     )
 
 describe("legacy presentation system is frozen", () => {
-    it.each(LEGACY_CEILINGS)("$name has at most $max props", ({ file, name, max }) => {
-        expect(interfaceMembers(read(file), name).length).toBeLessThanOrEqual(max)
-    })
-
     it(`FieldType gains no new member (≤ ${LEGACY_FIELD_TYPES})`, () => {
         const source = read("components/shared/entity-fields.tsx")
         const block = /type FieldType =([\s\S]*?)\n\n/.exec(source)?.[1] ?? ""

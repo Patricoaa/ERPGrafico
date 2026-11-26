@@ -8,7 +8,6 @@ import boundaries from "eslint-plugin-boundaries";
 import fsdNoApiInComponent from "./eslint-rules/fsd-no-api-in-component.mjs";
 import paginationNoEnvelopeDiscard from "./eslint-rules/pagination-no-envelope-discard.mjs";
 import paginationNoRawResponseData from "./eslint-rules/pagination-no-raw-response-data.mjs";
-import paginationDatatableNeedsRowcount from "./eslint-rules/pagination-datatable-needs-rowcount.mjs";
 import noRawTailwindColors from "./eslint-rules/no-raw-tailwind-colors.mjs";
 import typographyTokenFirst from "./eslint-rules/typography-token-first.mjs";
 import formsMustUseHook from "./eslint-rules/forms-must-use-hook.mjs";
@@ -258,18 +257,6 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   rules: {
     "pagination/no-envelope-discard": "error",
     "pagination/no-raw-response-data": "error",
-  },
-},
-// 2. datatable-needs-rowcount: any <DataTable manualPagination /> without
-//    rowCount produces a wrong "Mostrando X a Y de Z" footer. This is a
-//    visible bug, so `error` from day one (no migration warmup).
-{
-  files: ["features/**/*.tsx", "components/**/*.tsx", "app/**/*.tsx"],
-  plugins: {
-    pagination: { rules: { "datatable-needs-rowcount": paginationDatatableNeedsRowcount } },
-  },
-  rules: {
-    "pagination/datatable-needs-rowcount": "error",
   },
 },
 // UI component data fetching and formatting restrictions for shared/ui components

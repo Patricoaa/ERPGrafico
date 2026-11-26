@@ -137,7 +137,6 @@ export type {
 export * from './DatePicker';
 export * from './DateRangeFilter';
 export * from './ReportToolbar';
-export * from './FacetedFilter'
 export * from './SelectableCard';
 export * from './ChoiceCard';
 export * from './CardSurface';
@@ -171,12 +170,8 @@ export type { SelectorItemProps } from './SelectorItem'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './emptyStateResolver';
-export * from './DataTable';
-export * from './DataTableToolbar';
 export * from './DataTablePagination';
 export * from './DataTableColumnHeader';
-export * from './DataTableFacetedFilter';
-export * from './DataTableColumnToggle';
 export * from './DataTableCells';
 
 // Utilities

@@ -150,16 +150,4 @@ export interface AnalyticsPanelContentProps {
     onDrillDown?: (filter: AnalyticsDrillDownFilter) => void
 }
 
-export type AnalyticsPanelConfig = {
-    onClick?: () => void
-    screen?: {
-        entityName: string
-        tabs: AnalyticsTab[]
-        activeTab?: string
-        onTabChange?: (value: string) => void
-        granularity?: Granularity
-        onGranularityChange?: (value: Granularity) => void
-    }
-}
-
 

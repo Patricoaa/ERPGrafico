@@ -11,7 +11,6 @@ export { AnalyticsDrillDownProvider, useAnalyticsDrillDown } from "./drill-down"
 export { SummaryTable } from "./shared-utils"
 
 export type {
-    AnalyticsPanelConfig,
     AnalyticsTab,
     AnalyticsColumn,
     AnalyticsSection,
