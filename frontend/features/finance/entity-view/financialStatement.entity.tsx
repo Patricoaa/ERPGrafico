@@ -14,6 +14,8 @@ import type { ReportNode, VarianceDirection } from "../types"
  */
 export interface StatementLine extends ReportNode {
     children?: StatementLine[]
+    /** Row key: the path in the tree («liabilities/21»), unique even when two branches repeat an id. */
+    key: string
     /** Depth in the statement: 0 = section heading. */
     level: number
     /** Inherited from the section when the line does not set it. */
@@ -21,10 +23,12 @@ export interface StatementLine extends ReportNode {
 }
 
 /** Statement nodes → lines: depth and the section's variance direction pushed down to every account. */
-export function toStatementLines(nodes: readonly ReportNode[], direction: VarianceDirection = "higher-is-better", level = 0): StatementLine[] {
-    return nodes.map((node) => {
+export function toStatementLines(nodes: readonly ReportNode[], direction: VarianceDirection = "higher-is-better", level = 0, parent = ""): StatementLine[] {
+    return nodes.map((node, index) => {
         const own = node.varianceDirection ?? direction
-        return { ...node, level, direction: own, children: node.children?.length ? toStatementLines(node.children, own, level + 1) : undefined }
+        // Position keeps siblings with the same id apart (cash flow lines are numbered per activity).
+        const key = `${parent}${node.id}#${index}`
+        return { ...node, key, level, direction: own, children: node.children?.length ? toStatementLines(node.children, own, level + 1, `${key}/`) : undefined }
     })
 }
 
@@ -106,6 +110,7 @@ export function financialStatementEntity({ period, comparison }: StatementLabels
     const entity = defineEntity<StatementLine>()((f) => ({
         title: "Estado financiero",
         tree: { children: (line) => line.children },
+        rowId: (line) => line.key,
         fields: {
             account: f.value("statementAccount", (line) => ({ code: line.code, name: line.name }), { label: "Cuenta / Concepto", sortable: false }),
             balance: f.money("balance", { label: "Saldo", header: period, sortable: false }),

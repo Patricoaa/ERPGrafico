@@ -47,3 +47,20 @@ export interface PLSection {
 export interface PLData {
     sections: PLSection[]
 }
+
+/** Cash flow: an account with movements in the period that is not mapped to a flow category. */
+export interface CulpritAccount {
+    code: string;
+    name: string;
+    variation: number;
+    type: string;
+}
+
+/** Cash flow: a projected maturity (loan installment, check, card). */
+export interface MaturityItem {
+    type: string
+    direction: string
+    label: string
+    due_date: string
+    amount: number
+}
