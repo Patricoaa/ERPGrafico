@@ -1,10 +1,9 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { cn, formatDateWith } from "@/lib/utils"
 import { toast } from "sonner"
@@ -12,18 +11,13 @@ import { posApi } from "../api/posApi"
 import {
     Archive,
     Trash2,
-    Loader2,
-    ClipboardCheck,
-    ShoppingCart,
-    User,
     ChevronRight,
     Lock,
-    Wallet,
 } from "lucide-react"
-import { ActionConfirmModal, DangerButton, BaseModal, DataTable, Chip, DataCell } from "@/components/shared"
-import type { ColumnDef } from "@tanstack/react-table"
+import { ActionConfirmModal, DangerButton, BaseModal } from "@/components/shared"
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { draftCartEntity, draftCartViews, type DraftCartRow } from "../entity-view/draftCart.entity"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
-import { formatDraftNumber, resolveDraftStatusChips } from '../utils/draft-status'
 
 export interface DraftCart {
     id: number
@@ -243,105 +237,14 @@ export function DraftCartsClientView({
         } catch { return dateString }
     }
 
-    // Excepción documentada al patrón *Fields.toColumns(): este componente es un
-    // picker-modal (no una lista/card/kanban de entidad) cuyas celdas dependen de
-    // locks en tiempo real (WebSocket), chips de estado del wizard y un ticker de
-    // tiempo relativo — imposible de expresar como campos estáticos sin un contexto
-    // React que no aporta valor aquí. Ver docs/30-playbooks/refactor-workflow.md.
-    const draftColumns = useMemo<ColumnDef<DraftCart>[]>(() => [
-        {
-            id: 'id',
-            header: 'N°',
-            cell: ({ row }) => {
-                const lockInfo = resolveLockInfo(row.original.id)
-                const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
-                return (
-                    <span className={cn(
-                        "text-center text-2xs font-mono font-bold",
-                        lockedByOther ? "text-destructive/60" : "text-primary/70"
-                    )}>
-                        {formatDraftNumber(row.original)}
-                    </span>
-                )
-            },
-        },
-        {
-            id: 'name',
-            header: 'Nombre / Cliente',
-            cell: ({ row }) => {
-                const draft = row.original
-                const lockInfo = resolveLockInfo(draft.id)
-                const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
-                const isOwnLock = lockInfo.isOwnLock
-
-                // Use shared status resolver for consistent chips
-                const statusChips = resolveDraftStatusChips(draft as unknown as SyncDraft, { isOwnLock })
-                // Filter out the "locked by other" chip here since we show it separately with tooltip
-                const filteredChips = statusChips.filter(c => c.key !== 'locked')
-
-                return (
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-sm font-medium truncate leading-tight">
-                                {draft.name || `Borrador ${formatDraftNumber(draft)}`}
-                            </span>
-                            {lockedByOther && (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span className="cursor-help">
-                                            <Chip size="xs" intent="destructive" icon={Lock}>
-                                                {lockInfo?.lockedByName || 'En uso'}
-                                            </Chip>
-                                        </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[200px] text-xs">
-                                        Este borrador está siendo editado por <strong>{lockInfo?.lockedByName}</strong>.
-                                        No se puede cargar hasta que termine.
-                                    </TooltipContent>
-                                </Tooltip>
-                            )}
-                            {filteredChips.map(chip => (
-                                <Chip
-                                    key={chip.key}
-                                    size="xs"
-                                    intent={chip.intent}
-                                    icon={chip.icon}
-                                >
-                                    {chip.label}
-                                </Chip>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5 text-3xs text-muted-foreground">
-                            {draft.customer_name && (
-                                <span className="flex items-center gap-0.5 truncate max-w-[140px]">
-                                    <User className="h-2.5 w-2.5 shrink-0" />
-                                    {draft.customer_name}
-                                </span>
-                            )}
-                            <span className="shrink-0">{formatRelative(draft.updated_at)}</span>
-                        </div>
-                    </div>
-                )
-            },
-        },
-        {
-            id: 'items',
-            header: 'Ítems',
-            cell: ({ row }) => (
-                <div className="flex items-center gap-0.5 justify-center">
-                    <ShoppingCart className="h-3 w-3 text-muted-foreground" />
-                    <DataCell.Number value={row.original.item_count} align="center" />
-                </div>
-            ),
-        },
-        {
-            id: 'total',
-            header: 'Total',
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.original.total_gross} />
-            ),
-        },
-    ], [resolveLockInfo, formatRelative])
+    // The lock (real-time sync) and the relative age change without a new fetch: derived per render
+    // and handed on the row, so the entity's fields stay pure (draftCart.entity.tsx).
+    const rows = useMemo<DraftCartRow[]>(
+        () => drafts.map((d) => ({ ...d, lock: resolveLockInfo(d.id), isCurrent: d.id === currentDraftId, updatedLabel: formatRelative(d.updated_at) })),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `now` ticks the relative age
+        [drafts, resolveLockInfo, currentDraftId, now],
+    )
+    const collection = useEntityCollection(draftCartEntity, { rows, isLoading: loading }, { pagination: { mode: "none" } })
 
     return (
         <>
@@ -375,30 +278,24 @@ export function DraftCartsClientView({
             >
                 <TooltipProvider delayDuration={200}>
                     <div className="py-1">
-                        <DataTable
-                            variant="compact"
-                            gridTemplate="grid-cols-[2.5rem_1fr_auto_auto_auto]"
-                            columns={draftColumns}
-                            data={drafts}
-                            isLoading={loading}
-                            onRowClick={(draft) => handleLoadDraft(draft as DraftCart)}
-                            renderRowActions={(draft) => {
-                                const d = draft as DraftCart
-                                const lockInfo = resolveLockInfo(d.id)
-                                const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
-                                const isCurrentDraft = d.id === currentDraftId
-                                const cannotDelete = lockedByOther || isCurrentDraft
-                                const cannotLoad = lockedByOther || isCurrentDraft
+                        <Collection.Root
+                            collection={collection}
+                            onOpen={(draft) => void handleLoadDraft(draft)}
+                            label="Borradores"
+                            actions={(d) => {
+                                const lockedByOther = d.lock.isLocked && !d.lock.isOwnLock
+                                const blocked = lockedByOther || d.isCurrent
                                 return (
-                                    <>
+                                    <div className="flex items-center justify-end gap-1">
                                         <DangerButton
                                             variant="destructive"
                                             className={cn(
-                                                "h-control-xs w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
-                                                cannotDelete && "!opacity-0 pointer-events-none"
+                                                "h-control-xs w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100",
+                                                blocked && "pointer-events-none !opacity-0"
                                             )}
                                             loading={deletingId === d.id}
-                                            disabled={cannotDelete}
+                                            disabled={blocked}
+                                            aria-label={`Eliminar ${d.name || "borrador"}`}
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 setConfirmDeleteId(d.id)
@@ -410,21 +307,19 @@ export function DraftCartsClientView({
                                             size="sm"
                                             variant="ghost"
                                             className={cn(
-                                                "h-control-xs px-2 text-2xs font-medium gap-0.5",
-                                                cannotLoad
-                                                    ? "text-muted-foreground cursor-not-allowed"
-                                                    : "hover:bg-primary/10 hover:text-primary"
+                                                "h-control-xs gap-0.5 px-2 text-2xs font-medium",
+                                                blocked ? "cursor-not-allowed text-muted-foreground" : "hover:bg-primary/10 hover:text-primary"
                                             )}
-                                            disabled={cannotLoad}
+                                            disabled={blocked}
                                             onClick={(e) => {
                                                 e.stopPropagation()
-                                                handleLoadDraft(d)
+                                                void handleLoadDraft(d)
                                             }}
                                         >
-                                            {cannotLoad ? (
+                                            {blocked ? (
                                                 <>
                                                     <Lock className="h-3 w-3" />
-                                                    {isCurrentDraft ? "Actual" : "En uso"}
+                                                    {d.isCurrent ? "Actual" : "En uso"}
                                                 </>
                                             ) : (
                                                 <>
@@ -433,15 +328,12 @@ export function DraftCartsClientView({
                                                 </>
                                             )}
                                         </Button>
-                                    </>
+                                    </div>
                                 )
                             }}
-                            emptyState={{
-                                context: "generic",
-                                title: "No hay borradores en esta sesión",
-                                icon: Archive,
-                            }}
-                        />
+                        >
+                            <Collection.View table={draftCartViews.table} empty="message" emptyTitle="No hay borradores en esta sesión" />
+                        </Collection.Root>
                     </div>
                 </TooltipProvider>
             </BaseModal>
