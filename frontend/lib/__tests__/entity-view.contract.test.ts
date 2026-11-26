@@ -176,7 +176,6 @@ const ADHOC_TABLE_ALLOWLIST = [
     "features/production/components/WorkOrderWizard.tsx",
     "features/purchasing/components/checkout/Step1_ProductSelection.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
-    "features/sales/components/checkout/Step3_Delivery.tsx",
     "features/partners/components/CreateDistributionWizard.tsx",
     "features/partners/components/MassPaymentWizard.tsx",
     "features/partners/components/MobilizeEarningsWizard.tsx",
