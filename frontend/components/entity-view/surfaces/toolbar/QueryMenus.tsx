@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { MAX_SORT_KEYS, type CompiledSortField } from "../../core/define-query"
-import { CommandButton } from "./CommandButton"
+import { CommandButton } from "@/components/shared"
 
 const SECTION = "px-3 pb-1 pt-2 text-3xs font-semibold uppercase tracking-widest text-muted-foreground"
 

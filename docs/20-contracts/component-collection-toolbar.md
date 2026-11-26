@@ -219,7 +219,7 @@ En ambos modos, el encabezado actúa solo sobre la primera clave y solo esa colu
 
 - **Popover de dos paneles.** El panel izquierdo lista los filtros: tiene búsqueda y muestra en negrita cuántos valores elegidos tiene cada filtro. El derecho muestra los valores del filtro elegido, con los controles propios de `FilterMenu`.
 - **Pie del panel derecho:** «Quitar» y «Aplicar» para `multi` y `range`. En `multi`, con conteos (`facets/`), el botón dice «Aplicar · N resultados»: N es exacto (la lista con la elección sin aplicar), no una suma de opciones.
-- **Controles por tipo:** `multi` con borrador de casillas y búsqueda si hay más de 8 opciones; `single` y presets de `date` como radios; `toggle`; `range` y `date` con dos campos («desde» / «hasta»). Los filtros `custom` del adaptador no aparecen en el menú.
+- **Controles por tipo:** `multi` con borrador de casillas y búsqueda si hay más de 8 opciones; `single` y presets de `date` como radios; `toggle`; `range` y `date` con dos campos («desde» / «hasta»). El panel de `date` es `PeriodPanel`, el mismo cuerpo que `PeriodPicker` (ADR-0160). Los filtros `custom` del adaptador no aparecen en el menú.
 - **Al cerrar con cambios sin aplicar:** se aplican. `Esc` descarta.
 
 ### 5.2 `AppliedFilters` (E1)

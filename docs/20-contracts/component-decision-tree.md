@@ -120,7 +120,7 @@ graph TD
     A -->|Seleccionar Fecha simple| D(DatePicker)
     A -->|Fecha con validación de Cierre| E(PeriodValidationDateInput)
     A -->|Folio de DTE| F(FolioValidationInput)
-    A -->|Rango de fechas - Filtro| G(DateRangeFilter)
+    A -->|Período - rango de fechas| G(PeriodPicker)
     A -->|"Input en celda de tabla editable"| H(["Table Cell Input \n raw shadcn — ver contrato"])
     A -->|"Búsqueda/filtro en toolbar"| I(["Toolbar Filter Input \n raw shadcn — ver contrato"])
     A -->|"Elegir 1 opción visual (documento, entrega, pago, contacto)"| J(ChoiceCard + ChoiceGroup)

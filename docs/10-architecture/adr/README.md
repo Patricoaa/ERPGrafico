@@ -222,5 +222,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0157](0157-design-system-doc-consolidation.md) | Consolidación del design system: `DESIGN.md` única entrada (retira `design-system.md`, nace `geometry-surfaces.md`), contratos alineados al código, receta `fadeInClass()` y ratchets de diseño en 0 | Accepted |
 | [0158](0158-barra-de-coleccion-unificada.md) | Barra de colección unificada: consulta declarada en `defineEntity.query`, una barra de comandos (ícono + valor) para todas las entidades, solo vistas predefinidas, agrupación y facetas en servidor, analítica en modal; reemplaza `unified-searchbar.md` | Accepted |
 | [0159](0159-collection-seleccion-controlada-tono-y-arrastre.md) | `Collection`: selección controlada, tono de fila semántico, arrastrar y soltar por fila y elección en el dock de selección; migran conciliación bancaria y mapeo de cuentas y se borra `DataTable` | Accepted |
+| [0160](0160-control-de-periodo-y-barra-de-informes.md) | `PeriodPicker`: un control de período (presets + Desde/Hasta, popover) para listas, informes y drawers; `ReportToolbar` como barra de comandos con «Comparar con» relativo; se retira `DateRangeFilter` | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

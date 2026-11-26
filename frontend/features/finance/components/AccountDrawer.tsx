@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
 import { type AccountPayload } from "@/features/accounting"
-import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, DrawerLayout, DateRangeFilter, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, SubmitButton, DrawerLayout, PeriodPicker, SkeletonShell } from "@/components/shared"
+import { datesOf, periodOf, presetsOf, REPORT_PERIOD_PRESETS } from "@/lib/date-presets"
 import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { EntitySidebar } from "@/features/comments"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -32,6 +33,8 @@ import {
 } from "@/features/accounting"
 import { format } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
+
+const ACCOUNT_PERIOD_PRESETS = presetsOf(REPORT_PERIOD_PRESETS)
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -333,15 +336,12 @@ export function AccountDrawer({
                             >
                                 <Collection.Toolbar
                                     action={
-                                        <DateRangeFilter
-                                            defaultRange={dateRange || undefined}
-                                            onDateChange={(range) => {
-                                                if (range?.from && range?.to) {
-                                                    setDateRange({ from: range.from, to: range.to })
-                                                }
-                                            }}
-                                            className="bg-background border-none shadow-none rounded-sm"
-                                            variant="outline"
+                                        <PeriodPicker
+                                            name="Período"
+                                            value={periodOf(dateRange)}
+                                            presets={ACCOUNT_PERIOD_PRESETS}
+                                            clearable={false}
+                                            onChange={(period) => period && setDateRange(datesOf(period))}
                                         />
                                     }
                                 />

@@ -177,7 +177,7 @@ Es un botón de ícono con los formatos de `entity.export`. Exporta la consulta 
 - Vistas guardadas por el usuario.
 - Panel lateral de facetas (propuesta B): **todas las entidades usan la misma barra**.
 - Agrupación anidada.
-- La alineación de `ReportToolbar` queda para una etapa posterior: compartirá el control de fecha con presets, pero no se decide aquí.
+- La alineación de `ReportToolbar` queda para una etapa posterior: compartirá el control de fecha con presets, pero no se decide aquí. **Resuelto en ADR-0160** (`PeriodPicker`, `ReportToolbar` como barra de comandos, retiro de `DateRangeFilter`).
 
 ## Migración
 

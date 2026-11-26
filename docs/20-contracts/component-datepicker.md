@@ -18,7 +18,7 @@ Todos los selectores de fecha deben seguir uno de los **dos patrones estándar**
 | Contexto | Patrón | Componente |
 |----------|--------|------------|
 | Campo de fecha en formulario (suelto o con validación de periodo) | Single date en form | `PeriodValidationDateInput` |
-| Filtro de rango en dashboard / reporte / toolbar | Date range | `DateRangeFilter` |
+| Período en barra de lista / informe / drawer | Período (rango) | `PeriodPicker` (ADR-0160) |
 
 ---
 
@@ -87,45 +87,44 @@ El trigger Button debe usar `h-6 p-0` (token estándar). `DatePicker.tsx` intern
 
 ---
 
-## Patrón 2 — Date range en filtros: `DateRangeFilter`
+## Patrón 2 — Período (rango) en barras, informes y drawers: `PeriodPicker` (ADR-0160)
 
-### Props 🟡
+Un solo control de período en listas, informes y drawers. `DateRangeFilter` (modal con calendario) se retiró.
+
+### Props
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
-| `onRangeChange` | `(range: DateRange \| undefined) => void` | ✅ | — | |
-| `label` | `string` | ❌ | `"Buscar por fecha"` | Texto del trigger |
-| `defaultRange` | `DateRange` | ❌ | — | |
-| `className` | `string` | ❌ | — | |
+| `name` | `string` | ✅ | — | Tooltip y nombre accesible («Período: Este mes») |
+| `value` | `Period \| null` | ✅ | — | ISO `{ from: "yyyy-MM-dd", to }` (`@/lib/date-presets`) |
+| `onChange` | `(period: Period \| null) => void` | ✅ | — | `null` = «Quitar» |
+| `presets` | `PeriodPreset[]` | ❌ | `[]` | `presetsOf([...ids])` de `PERIOD_PRESETS`; `REPORT_PERIOD_PRESETS` para informes |
+| `clearable` | `boolean` | ❌ | `true` | Muestra «Quitar» |
+| `icon` / `placeholder` / `align` / `className` | — | ❌ | — | `placeholder` = valor visible sin período |
 
-### Uso estándar
+### Uso
 
 ```tsx
-// En toolbar de listado
-<DateRangeFilter
-  onRangeChange={setDateRange}
-  label="Período"
-/>
+import { PeriodPicker } from '@/components/shared'
+import { datesOf, periodOf, presetsOf, REPORT_PERIOD_PRESETS } from '@/lib/date-presets'
 
-// Con rango inicial
-<DateRangeFilter
-  onRangeChange={setDateRange}
-  defaultRange={{ from: startOfMonth(new Date()), to: new Date() }}
-  label="Rango de Reporte"
-/>
+const PRESETS = presetsOf(REPORT_PERIOD_PRESETS)
+
+// Pantalla con Date (react-day-picker / zod): periodOf / datesOf en el borde
+<PeriodPicker name="Período" value={periodOf(range)} presets={PRESETS} clearable={false}
+  onChange={(p) => p && setRange(datesOf(p))} />
 ```
 
-### Características técnicas
+### Comportamiento
 
-- **Wrapper**: Popover standalone (sin fieldset — es un filtro, no un campo de formulario)
-- **Height**: `h-9` (size="sm")
-- **Locale**: `es`
-- **Formato display**: `"LLL dd, y"` → "ene 01, 2025"
-- **Clear button**: incluido (X en hover)
-- **Calendar mode**: `range`, `numberOfMonths={2}`
-- **Width**: `w-auto` (**excepción** al invariante de ancho de dropdowns). Debido a que muestra 2 meses, el popover debe expandirse horizontalmente más allá del ancho del trigger.
-
-> **No usar `DateRangeSelector`** (`features/finance/`) — es una implementación legacy sin clear button. Usar siempre `DateRangeFilter` de `components/shared/`.
+- **Botón:** `CommandButton` (icono + valor). El valor es el preset que coincide o el rango corto («1 ene – 26 nov 2026»).
+- **Panel:** popover `PeriodPanel`, el mismo cuerpo que el filtro `date` del menú de filtros de las listas:
+  - presets como radios (un clic aplica y cierra);
+  - Desde/Hasta;
+  - «Quitar» / «Aplicar».
+- **Cierre:** cerrar aplica el borrador; Esc lo descarta. Un rango a medio llenar se aplica como un solo día, y uno invertido se ordena.
+- **Comparación (informes):** `comparisonPresets(period)` da «Período anterior» (misma duración, justo antes) y «Mismo período del año anterior».
+- **Fecha:** los presets usan la fecha local. Para el período inicial de un informe, usar `useServerDate`.
 
 ---
 
@@ -135,7 +134,7 @@ El trigger Button debe usar `h-6 p-0` (token estándar). `DatePicker.tsx` intern
 |---------|-------------|--------|----------|
 | `PeriodValidationDateInput.tsx` | Componente base | ✅ | — |
 | `DatePicker.tsx` | Primitivo | ✅ | `h-10` solo válido standalone |
-| `DateRangeFilter.tsx` | Range base | ✅ | — |
+| `PeriodPicker.tsx` | Período (rango) | ✅ | — |
 | checkout `Step1_CustomerDTE.tsx` | PeriodValidationDateInput | ✅ | — |
 | checkout `Step3_Delivery.tsx` | PeriodValidationDateInput | ✅ | — |
 | `JournalEntryForm.tsx` | Custom inline | ⚠️ | locale faltante (ya corregido), acción directa en vez de hook |
@@ -158,8 +157,8 @@ El trigger Button debe usar `h-6 p-0` (token estándar). `DatePicker.tsx` intern
   validationType="accounting"
 />
 
-// ✅ Rango en toolbar — siempre DateRangeFilter
-<DateRangeFilter onRangeChange={setRange} label="Período" />
+// ✅ Período — siempre PeriodPicker
+<PeriodPicker name="Período" value={period} onChange={setPeriod} presets={presetsOf(REPORT_PERIOD_PRESETS)} />
 ```
 
 ### DON'T
@@ -188,7 +187,7 @@ const { isClosed } = usePeriodValidation()             // ✅
 
 // ❌ DateRangeSelector legacy
 import { DateRangeSelector } from '@/features/finance/components/DateRangeSelector'  // ❌ legacy
-import { DateRangeFilter } from '@/components/shared'  // ✅
+import { PeriodPicker } from '@/components/shared'  // ✅
 ```
 
 ---

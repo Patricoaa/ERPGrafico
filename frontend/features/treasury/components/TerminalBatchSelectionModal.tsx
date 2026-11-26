@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Calculator, Search, Check, MousePointerClick, Landmark } from "lucide-react"
-import { DateRangeFilter } from "@/components/shared"
+import { PeriodPicker } from "@/components/shared"
+import { datesOf, periodOf, presetsOf } from "@/lib/date-presets"
 import { toast } from "sonner"
 import { type DateRange } from "react-day-picker"
 
@@ -21,6 +22,8 @@ import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTermi
 import type { TreasuryMovement } from "@/features/treasury/types"
 
 import { BaseModal, SubmitButton, CancelButton, LabeledContainer, LabeledInput, FormSelectionGroup, FormFooter, SkeletonShell, Section } from "@/components/shared"
+
+const SALES_PERIOD_PRESETS = presetsOf(["today", "last_7_days", "this_week", "this_month"])
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -217,10 +220,11 @@ export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterState
                                     name="dateRange"
                                     control={form.control}
                                     render={({ field }) => (
-                                        <DateRangeFilter
-                                            date={field.value}
-                                            onDateChange={(d) => field.onChange(d)}
-                                            variant="ghost"
+                                        <PeriodPicker
+                                            name="Fechas de venta"
+                                            value={periodOf(field.value)}
+                                            presets={SALES_PERIOD_PRESETS}
+                                            onChange={(period) => field.onChange(period ? datesOf(period) : undefined)}
                                         />
                                     )}
                                 />

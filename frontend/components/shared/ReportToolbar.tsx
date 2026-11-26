@@ -1,23 +1,35 @@
 "use client"
 
 import React from "react"
-import { DateRangeFilter } from "@/components/shared"
 import type { DateRange } from "react-day-picker"
-import { Button } from "@/components/ui/button"
-import { SlidersHorizontal, ChevronDown, GitCompare, Download } from "lucide-react"
-import { SEG_TRIGGER, SEG_DROPDOWN_ITEM } from './search-styles'
-import { cn } from "@/lib/utils"
+import { Columns3, Download, GitCompare, SlidersHorizontal } from "lucide-react"
+import { comparisonPresets, datesOf, periodOf, presetsOf, REPORT_PERIOD_PRESETS } from "@/lib/date-presets"
 import {
     DropdownMenu,
-    DropdownMenuTrigger,
     DropdownMenuContent,
+    DropdownMenuLabel,
     DropdownMenuRadioGroup,
-    DropdownMenuRadioItem
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CommandButton } from "./CommandButton"
+import { PeriodPicker } from "./PeriodPicker"
+
+export type ReportHeaderFormat = "year" | "month-year" | "day-month-year"
+
+const HEADER_FORMATS: readonly { value: ReportHeaderFormat; label: string }[] = [
+    { value: "year", label: "Año" },
+    { value: "month-year", label: "Mes/Año" },
+    { value: "day-month-year", label: "Día/Mes/Año" },
+]
+
+const isHeaderFormat = (value: string): value is ReportHeaderFormat => HEADER_FORMATS.some((f) => f.value === value)
+
+const REPORT_PRESETS = presetsOf(REPORT_PERIOD_PRESETS)
 
 export interface ReportToolbarProps {
-    headerFormat: 'year' | 'month-year' | 'day-month-year'
-    onHeaderFormatChange: (format: 'year' | 'month-year' | 'day-month-year') => void
+    headerFormat: ReportHeaderFormat
+    onHeaderFormatChange: (format: ReportHeaderFormat) => void
     date: DateRange | undefined
     onDateChange: (range: DateRange | undefined) => void
     showComparison: boolean
@@ -30,6 +42,11 @@ export interface ReportToolbarProps {
     showHeaderFormat?: boolean
 }
 
+/**
+ * Report command bar (ADR-0160 §2): scope (period, comparison), presentation (column header),
+ * then actions (mapping, export). Same grammar as `Collection.Toolbar`: each button shows its value,
+ * the tool name lives in the tooltip and the accessible name.
+ */
 export function ReportToolbar({
     headerFormat,
     onHeaderFormatChange,
@@ -44,89 +61,51 @@ export function ReportToolbar({
     onExport,
     showHeaderFormat = true,
 }: ReportToolbarProps) {
-    const headerFormatLabel = headerFormat === 'year' ? 'Año' : headerFormat === 'month-year' ? 'Mes/Año' : 'Día/Mes/Año'
-
-    const btnBase = `${SEG_TRIGGER} transition-colors`
+    const period = periodOf(date)
+    const from = period?.from
+    const to = period?.to
+    const comparePresets = React.useMemo(() => comparisonPresets(from && to ? { from, to } : null), [from, to])
+    const headerLabel = HEADER_FORMATS.find((f) => f.value === headerFormat)?.label
 
     return (
-        <div className="flex flex-wrap items-center justify-between shrink-0 h-9 bg-background rounded-sm px-1 mb-3">
-            <div className="flex items-center gap-1">
-                {showMapeo && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onMapeoClick}
-                        className={cn(btnBase, "hover:bg-accent/30 text-muted-foreground hover:text-foreground")}
-                    >
-                        <SlidersHorizontal className="h-3 w-3" />
-                        Mapeo
-                    </Button>
-                )}
-
-                {showHeaderFormat && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn(btnBase, "text-muted-foreground hover:bg-accent/30 hover:text-foreground")}
-                            >
-                                Vista: {headerFormatLabel}
-                                <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-[180px] p-1">
-                            <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => onHeaderFormatChange(val as 'year' | 'month-year' | 'day-month-year')}>
-                                <DropdownMenuRadioItem value="year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
-                                    Año
+        <div role="toolbar" aria-label="Herramientas del informe" className="mb-3 flex shrink-0 flex-wrap items-center gap-1.5 px-1">
+            <PeriodPicker
+                name="Período"
+                value={period}
+                presets={REPORT_PRESETS}
+                clearable={false}
+                onChange={(next) => next && onDateChange(datesOf(next))}
+            />
+            <PeriodPicker
+                name="Comparar con"
+                icon={GitCompare}
+                value={showComparison ? periodOf(compDate) : null}
+                presets={comparePresets}
+                onChange={(next) => {
+                    if (next) onCompDateChange(datesOf(next))
+                    onShowComparisonChange(next !== null)
+                }}
+            />
+            {showHeaderFormat && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <CommandButton icon={Columns3} name="Encabezado de columnas" value={headerLabel} />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-44">
+                        <DropdownMenuLabel className="text-3xs uppercase tracking-wide text-muted-foreground">Encabezado de columnas</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup value={headerFormat} onValueChange={(value) => isHeaderFormat(value) && onHeaderFormatChange(value)}>
+                            {HEADER_FORMATS.map((f) => (
+                                <DropdownMenuRadioItem key={f.value} value={f.value} className="text-xs">
+                                    {f.label}
                                 </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
-                                    Mes/Año
-                                </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="day-month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
-                                    Día/Mes/Año
-                                </DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
-
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onShowComparisonChange(!showComparison)}
-                    className={cn(
-                        btnBase,
-                        showComparison
-                            ? "bg-accent/50 text-foreground"
-                            : "text-muted-foreground hover:bg-accent/30 hover:text-foreground"
-                    )}
-                >
-                    <GitCompare className="h-3 w-3" />
-                    Comparar
-                </Button>
-
-                {onExport && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onExport}
-                        className={cn(btnBase, "text-muted-foreground hover:bg-accent/30 hover:text-foreground")}
-                    >
-                        <Download className="h-3 w-3" />
-                        Exportar
-                    </Button>
-                )}
-            </div>
-
-            <div className="flex items-center gap-1">
-                <DateRangeFilter date={date} onDateChange={onDateChange} label="Período Actual" variant="ghost" />
-                {showComparison && (
-                    <div className="flex items-center border-l border-border/60 pl-2 ml-1">
-                        <DateRangeFilter date={compDate} onDateChange={onCompDateChange} label="Período Comparativo" variant="ghost" />
-                    </div>
-                )}
-            </div>
+                            ))}
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+            <div className="flex-1" aria-hidden />
+            {showMapeo && <CommandButton icon={SlidersHorizontal} name="Mapeo de cuentas" onClick={onMapeoClick} />}
+            {onExport && <CommandButton icon={Download} name="Exportar" onClick={onExport} />}
         </div>
     )
 }
