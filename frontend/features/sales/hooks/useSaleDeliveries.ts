@@ -68,56 +68,27 @@ export function useSaleReturns(filters?: Record<string, unknown>, enabled = true
     }
 }
 
-/** Unified list of deliveries + returns (fulfillment documents). */
-export function useSaleFulfillment(filters?: Record<string, unknown>) {
+/**
+ * Deliveries + returns in one list (ADR-0090), paginated and ordered on the server
+ * (`sales/fulfillment/`, ADR-0158 §7). `enabled: false` while grouping on the server.
+ */
+export function useSaleFulfillment(filters?: Record<string, unknown>, enabled = true) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
-    // Multi-select: "DELIVERY", "RETURN" or both ("DELIVERY,RETURN").
-    const types = typeof filters?.fulfillment_type === 'string' ? filters.fulfillment_type.split(',') : null
-
-    const deliveriesQuery = useQuery({
-        queryKey: SALES_KEYS.deliveries({ page, page_size: pageSize, ...filters }),
-        queryFn: () => salesApi.getDeliveriesPaginated({ page, page_size: pageSize, ...filters }),
+    const query = useQuery({
+        queryKey: [...SALES_KEYS.all, 'fulfillment', { page, page_size: pageSize, ...filters }],
+        queryFn: () => salesApi.getFulfillmentPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
-        enabled: !types || types.includes('DELIVERY'),
+        enabled,
     })
-
-    const returnsQuery = useQuery({
-        queryKey: SALES_KEYS.returns({ page, page_size: pageSize, ...filters }),
-        queryFn: () => salesApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
-        staleTime: staleTime.standard,
-        enabled: !types || types.includes('RETURN'),
-    })
-
-    const isLoading = deliveriesQuery.isLoading || returnsQuery.isLoading
-    const isFetching = deliveriesQuery.isFetching || returnsQuery.isFetching
-    const isError = deliveriesQuery.isError || returnsQuery.isError
-
-    const deliveryResults = (deliveriesQuery.data?.results ?? []) as unknown as SaleDelivery[]
-    const returnResults = (returnsQuery.data?.results ?? []) as unknown as SaleReturn[]
-
-    // Merge and add fulfillment_type discriminator
-    // Map delivery_date to date for DELIVERY type
-    const merged: SaleFulfillment[] = [
-        ...deliveryResults.map(d => ({ ...d, fulfillment_type: 'DELIVERY' as const, date: d.delivery_date })),
-        ...returnResults.map(r => ({ ...r, fulfillment_type: 'RETURN' as const })),
-    ]
-
-    // Sort by date desc (newest first)
-    merged.sort((a, b) => b.date.localeCompare(a.date))
-
-    // Apply pagination manually on merged results (since we fetch full pages from both)
-    const start = (page - 1) * pageSize
-    const paginated = merged.slice(start, start + pageSize)
-    const totalCount = merged.length
 
     return {
-        page: { count: totalCount, results: paginated, next: null, previous: null },
-        fulfillments: paginated,
-        totalCount,
-        isLoading,
-        isFetching,
-        isError,
-        refetch: () => { deliveriesQuery.refetch(); returnsQuery.refetch(); },
+        page: query.data,
+        fulfillments: (query.data?.results ?? []) as unknown as SaleFulfillment[],
+        totalCount: query.data?.count ?? 0,
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        isError: query.isError,
+        refetch: query.refetch,
     }
 }
