@@ -84,3 +84,23 @@ def test_budget_list_ordering_uses_drf_keys(client, budgets):
         "end_date__lte": "2026-12-31",
         "ordering": "-name",
     })) == [operativo.name]
+
+
+def test_budget_list_paginates_in_server(client, budgets):
+    url = "/api/accounting/budgets/"
+
+    first = client.get(url, {"page": 1, "page_size": 2})
+    assert first.status_code == 200
+    assert first.data["count"] == 3
+    assert first.data["next"]
+    assert len(first.data["results"]) == 2
+
+    second = client.get(url, {"page": 2, "page_size": 2})
+    assert second.status_code == 200
+    assert second.data["count"] == 3
+    assert second.data["next"] is None
+    assert len(second.data["results"]) == 1
+
+    first_names, second_names = set(names(first)), set(names(second))
+    assert not first_names & second_names
+    assert first_names | second_names == {budget.name for budget in budgets}
