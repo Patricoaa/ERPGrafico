@@ -7,7 +7,7 @@
  */
 
 import { Lock, Wallet, ShieldAlert, CheckCircle2, ShoppingCart, User, FileWarning, Factory, Truck } from "lucide-react"
-import type { SyncDraft } from "../hooks/useDraftSync"
+import type { SyncDraft, SyncDraftWizardState } from "../hooks/useDraftSync"
 import type { LucideIcon } from "lucide-react"
 
 export interface DraftPhase {
@@ -42,11 +42,18 @@ export function formatDraftNumber(draft: SyncDraft | { session_local_id?: number
     return `#${n}`
 }
 
+/** What the status helpers read from a draft: a synced draft (`SyncDraft`) or a listed one (`DraftCart`). */
+export interface DraftStatusSource {
+    is_locked?: boolean
+    locked_by_name?: string | null
+    wizard_state?: SyncDraftWizardState | null
+}
+
 /**
  * Resolve the phase for a draft.
  * Uses phaseId (exact, from wizard); fallback to step-based heuristic for legacy drafts.
  */
-export function resolveDraftPhase(draft: SyncDraft): DraftPhase | null {
+export function resolveDraftPhase(draft: DraftStatusSource): DraftPhase | null {
     const ws = draft.wizard_state
     if (ws?.phaseId) {
         const phase = DRAFT_PHASES.find(p => p.id === ws.phaseId)
@@ -144,7 +151,7 @@ export function resolveDraftStatus(
  * Returns array ordered by priority. Includes own-lock chip ("Tú").
  */
 export function resolveDraftStatusChips(
-    draft: SyncDraft,
+    draft: DraftStatusSource,
     opts?: { isOwnLock?: boolean }
 ): Array<{ key: string; icon: LucideIcon; intent: "destructive" | "warning" | "success" | "primary" | "neutral"; label: string }> {
     const ws = draft.wizard_state
