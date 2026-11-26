@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.186](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.185...v0.3.186) (2026-11-26)
+
+
+### 🚀 Maintenance
+
+* **ADR-0158 E5:** retira AnalyticsPanel (Drawer) y useGroupByPagination sin uso ([f210923](https://github.com/Patricoaa/ERPGrafico/commit/f21092388f98c1883c0f1e2cceb7032ce77b8873))
+
+
+### ✨ Features
+
+* **entity-view:** selección controlada, tono de fila, arrastrar y soltar y elección en el dock (ADR-0159); conciliación y mapeo de cuentas migran ([d8d733a](https://github.com/Patricoaa/ERPGrafico/commit/d8d733a4ad3c1c3b21068bbd0b5221517408bee1))
+
+
+### ⚙️ Refactors
+
+* **finance:** retira el unifiedSearchDef de conciliación (ya sin uso) ([69c624b](https://github.com/Patricoaa/ERPGrafico/commit/69c624b13a046c892826557dbfcf86602470babe))
+* **shared:** retira DataTable, DataTableToolbar, FacetedFilter y DataTableColumnToggle (ADR-0158 E5, ADR-0159) ([8d00b4b](https://github.com/Patricoaa/ERPGrafico/commit/8d00b4ba625d226951221a4683502d9ca02886f5))
+* **shared:** UnifiedSearchBar queda como caja de búsqueda de la barra de comandos ([9fd926c](https://github.com/Patricoaa/ERPGrafico/commit/9fd926cd5278e4f7ae36ed310e236fe5d9a6d343))
+
+
+### 📚 Documentation
+
+* cierre de la etapa 5 de ADR-0158 y ADR-0159 (contratos de colección y barra) ([196542f](https://github.com/Patricoaa/ERPGrafico/commit/196542f175dadb861f892e01004ffee188a4e299))
+
+
+### 🧪 Testing
+
+* **finance:** modal de mapeo de cuentas sobre entity-view (categoría guardada y asignación desde el dock) ([446747d](https://github.com/Patricoaa/ERPGrafico/commit/446747d24f0efde4294c38790b84de89bf84aaef))
+
 ### [0.3.185](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.184...v0.3.185) (2026-11-26)
 
 
