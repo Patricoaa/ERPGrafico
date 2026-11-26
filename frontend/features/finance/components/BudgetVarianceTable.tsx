@@ -1,194 +1,34 @@
 "use client"
-import { Button } from "@/components/ui/button"
-import { useState } from "react";
 
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { ChevronRight, ChevronDown, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Collection, useEntityCollection } from "@/components/entity-view"
+import { budgetVarianceEntity, budgetVarianceViews } from "../entity-view/budgetVariance.entity"
+import type { BudgetVarianceNode } from "../types"
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {DataCell, SkeletonShell} from '@/components/shared';
-
-export type BudgetVarianceAccountType = 'INCOME' | 'EXPENSE';
-
-export interface BudgetVarianceNode {
-    id: number;
-    code: string;
-    name: string;
-    type: BudgetVarianceAccountType;
-    month_actual: number;
-    month_budget: number;
-    month_variance: number;
-    month_percentage: number;
-    ytd_actual: number;
-    ytd_budget: number;
-    ytd_variance: number;
-    ytd_percentage: number;
-    is_unbudgeted: boolean;
-    children: BudgetVarianceNode[];
-}
+export type { BudgetVarianceAccountType, BudgetVarianceNode } from "../types"
 
 interface BudgetVarianceTableProps {
-    data: BudgetVarianceNode[];
-    loading?: boolean;
+    data: BudgetVarianceNode[]
+    loading?: boolean
 }
 
-const BUDGET_VARIANCE_SKELETON_ROWS: BudgetVarianceNode[] = Array.from({ length: 8 }, (_, i) => ({
-    id: i,
-    code: '————',
-    name: '——————————————————————',
-    type: 'INCOME',
-    month_actual: 0,
-    month_budget: 0,
-    month_variance: 0,
-    month_percentage: 0,
-    ytd_actual: 0,
-    ytd_budget: 0,
-    ytd_variance: 0,
-    ytd_percentage: 0,
-    is_unbudgeted: false,
-    children: [],
-}))
-
-const VarianceCell = ({ value, percentage, type }: { value: number, percentage: number, type: BudgetVarianceAccountType }) => {
-    // Logic for "good" vs "bad" variance depends on account type
-    // Income: Actual > Budget is GOOD (+ variance)
-    // Expense: Actual > Budget is BAD (+ variance)
-    const isIncome = type === 'INCOME';
-    const isGood = isIncome ? value >= 0 : value <= 0;
-
+/**
+ * Budget variance as an entity-view tree: top-level accounts are section rows, unbudgeted accounts
+ * with activity carry the «Sin presupuesto» note and the attention tone.
+ */
+export function BudgetVarianceTable({ data, loading = false }: BudgetVarianceTableProps) {
+    const collection = useEntityCollection(budgetVarianceEntity, { rows: data, rowCount: data.length, isLoading: loading }, {
+        pagination: { mode: "none" },
+        // Top-level accounts (the roots in `data`) head their branch.
+        rowTone: (node: BudgetVarianceNode) => (node.is_unbudgeted ? "attention" : data.includes(node) ? "section" : null),
+    })
     return (
-        <TableCell className="text-right p-2">
-            <div className="flex flex-col items-end">
-                <DataCell.Currency
-                    value={value}
-                    weight="bold"
-                    className={cn(
-                        "justify-end font-mono text-xs w-auto p-0 inline-flex",
-                        value === 0 ? "text-muted-foreground" : (isGood ? "text-success-text" : "text-destructive")
-                    )}
-                />
-                <span className={cn(
-                    "text-3xs opacity-70",
-                    value === 0 ? "" : (isGood ? "text-success-text font-bold" : "text-destructive font-bold")
-                )}>
-                    {percentage.toFixed(1)}%
-                </span>
-            </div>
-        </TableCell>
-    );
-};
-
-const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: number }) => {
-    const [expanded, setExpanded] = useState(level < 1);
-    const hasChildren = node.children && node.children.length > 0;
-    const paddingLeft = level * 16 + 8;
-
-    return (
-        <>
-            <TableRow className={cn(
-                "group hover:bg-(--table-row-hover) transition-colors",
-                level === 0 ? "bg-muted/20 font-bold" : "",
-                node.is_unbudgeted ? "bg-warning/5" : ""
-            )}>
-                <TableCell className="p-2 min-w-[280px]">
-                    <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
-                        {hasChildren ? (
-                            <Button
-                                onClick={() => setExpanded(!expanded)}
-                                className="mr-2 h-5 w-5 flex items-center justify-center hover:bg-accent rounded transition-colors"
-                            >
-                                {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                            </Button>
-                        ) : (
-                            <div className="w-7" />
-                        )}
-                        <DataCell.Code className="mr-2 text-muted-foreground font-mono text-3xs w-12 shrink-0 justify-start">{node.code}</DataCell.Code>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className="truncate max-w-[200px]">
-                                    <DataCell.Text className="truncate justify-start text-left inline font-inherit p-0 text-inherit">{node.name}</DataCell.Text>
-                                </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">{node.name}</TooltipContent>
-                        </Tooltip>
-
-                        {node.is_unbudgeted && (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-warning-text shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>Cuenta no presupuestada con movimientos reales</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        )}
-                    </div>
-                </TableCell>
-
-                {/* Month Columns */}
-                <TableCell className="text-right p-2">
-                    <DataCell.Currency value={node.month_actual} className="justify-end font-mono text-xs text-foreground font-inherit" />
-                </TableCell>
-                <TableCell className="text-right p-2">
-                    <DataCell.Currency value={node.month_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />
-                </TableCell>
-                <VarianceCell value={node.month_variance} percentage={node.month_percentage} type={node.type} />
-
-                {/* YTD Columns */}
-                <TableCell className="text-right p-2 bg-muted/10">
-                    <DataCell.Currency value={node.ytd_actual} weight="semibold" className="justify-end font-mono text-xs" />
-                </TableCell>
-                <TableCell className="text-right p-2 bg-muted/10">
-                    <DataCell.Currency value={node.ytd_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />
-                </TableCell>
-                <VarianceCell value={node.ytd_variance} percentage={node.ytd_percentage} type={node.type} />
-            </TableRow>
-            {hasChildren && expanded && node.children.map(child => (
-                <AccountRow key={child.id} node={child} level={level + 1} />
-            ))}
-        </>
-    );
-};
-
-function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
-    const rows = loading ? BUDGET_VARIANCE_SKELETON_ROWS : data
-
-    return (
-        <SkeletonShell isLoading={loading ?? false} ariaLabel="Cargando variación presupuestal">
-            <div className="surface-panel relative overflow-x-auto shadow-card">
-                <Table>
-                    <TableHeader className="bg-muted/50">
-                        <TableRow className="hover:bg-transparent border-b-2">
-                            <TableHead className="w-[300px] text-muted-foreground">Cuenta Contable</TableHead>
-
-                            {/* Month Group */}
-                            <TableHead className="text-right  text-3xs uppercase text-primary border-l">Real Mes</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground border-r/50">Ppto Mes</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground">Var Mes</TableHead>
-
-                            {/* YTD Group */}
-                            <TableHead className="text-right  text-3xs uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground border-r/50 bg-muted/20">Ppto YTD</TableHead>
-                            <TableHead className="text-right  text-3xs uppercase text-muted-foreground bg-muted/20">Var YTD</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {rows.map(node => (
-                            <AccountRow key={node.id} node={node} />
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        </SkeletonShell>
-    );
+        <Collection.Root collection={collection} label="Variación presupuestal">
+            <Collection.View
+                table={budgetVarianceViews.table}
+                emptyTitle="Sin presupuesto para el período"
+                emptyDescription="No hay cuentas con presupuesto o movimientos en el período seleccionado."
+            />
+        </Collection.Root>
+    )
 }
 
-export const BudgetVarianceTable = BudgetVarianceTableBase

@@ -167,22 +167,19 @@ describe("entity definitions", () => {
  */
 const ADHOC_TABLE_ALLOWLIST = [
     "features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx",
-    "features/finance/components/BudgetVarianceTable.tsx",
-    "features/inventory/components/product/ProductManufacturingTab.tsx",
-    "features/inventory/components/product/ProductPricingTab.tsx",
-    "features/inventory/components/product/ProductVariantsTab.tsx",
-    "features/production/components/BOMDrawer.tsx",
-    "features/production/components/WorkOrderWizard.tsx",
-    "features/purchasing/components/checkout/Step1_ProductSelection.tsx",
     "features/purchasing/components/PurchaseOrderModal.tsx",
     "features/sales/components/checkout/Step3_Delivery.tsx",
     "features/partners/components/CreateDistributionWizard.tsx",
-    "features/treasury/card-statements/BillChargesModal.tsx",
     // Raw preview of an uploaded bank statement: its columns come from the file, so there is no entity
     // to declare. Moved here from EXEMPT_CONSUMERS when DataTable went away (ADR-0158 stage 5).
     "features/finance/bank-reconciliation/components/StatementImportModal.tsx",
 ]
-const ADHOC_TABLE = /<table[\s>/]|from ["']@\/components\/ui\/table["']/
+/**
+ * A hand-written table builds its own `<table>` (raw or `ui/table`'s `<Table>` / `<TableHeader>`).
+ * Rows alone (`TableRow` / `TableCell`) are what `FormLineItemsTable` asks its callers for — the
+ * sanctioned frame for editable document lines — so they do not count.
+ */
+const ADHOC_TABLE = /<table[\s>/]|<Table[\s>]|<TableHeader[\s>]/
 
 describe("hand-written tables are frozen", () => {
     it("no new hand-written table appears in features or app", () => {

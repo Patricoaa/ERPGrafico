@@ -25,7 +25,8 @@ import { cn } from '@/lib/utils'
 import { formatEntityDisplay, getDomainConceptTitle, getDomainConceptCode } from '@/lib/entity-registry'
 import { showApiError } from '@/lib/errors'
 import { useVatRate } from '@/hooks/useVatRate'
-import { grossFromNet } from '@/lib/vat'
+import { Collection, useEntityCollection } from '@/components/entity-view'
+import { outsourcedPurchaseEntity, outsourcedPurchaseViews, toOutsourcedPurchaseLines } from '../entity-view/outsourcedPurchase.entity'
 import { useAuth } from '@/contexts/AuthContext'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useOnEntityStackClose } from '@/hooks/useOnEntityStackClose'
@@ -227,6 +228,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     setTaskConfirmation,
     reset: resetStore,
   } = useWizardStore()
+  // Preview of the outsourced purchase orders (entity-view, read only).
+  const outsourcedLines = useMemo(() => toOutsourcedPurchaseLines(outsourcedPending, vatMultiplier), [outsourcedPending, vatMultiplier])
+  const outsourcedCollection = useEntityCollection(outsourcedPurchaseEntity, { rows: outsourcedLines, rowCount: outsourcedLines.length }, { pagination: { mode: 'none' } })
 
   const [showCheatsheet, setShowCheatsheet] = useState(false)
   const [wizardTab, setWizardTab] = useState('stages')
@@ -1044,32 +1048,9 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         }
       >
         <div className="space-y-4 py-4">
-          <div className="border rounded-md overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="p-2 text-left">Proveedor</th>
-                  <th className="p-2 text-left">Servicio</th>
-                  <th className="p-2 text-right">Cantidad</th>
-                  <th className="p-2 text-right">P. Bruto</th>
-                  <th className="p-2 text-right">Total Bruto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {outsourcedPending.map((m, i) => (
-                  <tr key={i} className="border-t">
-                    <td className="p-2 font-medium">{m.supplier_name}</td>
-                    <td className="p-2">{m.component_name}</td>
-                    <td className="p-2 text-right">{m.quantity_planned}</td>
-                    <td className="p-2 text-right">{grossFromNet(parseFloat(m.unit_price ?? '0'), vatMultiplier).toFixed(0)}</td>
-                    <td className="p-2 text-right font-bold">
-                      {grossFromNet(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0'), vatMultiplier).toFixed(0)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Collection.Root collection={outsourcedCollection} label="Órdenes de compra a generar">
+            <Collection.View table={outsourcedPurchaseViews.table} />
+          </Collection.Root>
         </div>
       </BaseModal>
 

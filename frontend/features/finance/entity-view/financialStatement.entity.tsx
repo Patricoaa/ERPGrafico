@@ -42,11 +42,20 @@ export interface StatementVariance {
     balance: number
     comp: number
     direction: VarianceDirection
+    /** Percentage computed by the server (budget variance); otherwise derived from `comp`. */
+    percentage?: number
+}
+
+/** An account line: code, name and an optional warning note (e.g. "Sin presupuesto"). */
+export interface StatementAccount {
+    code: string
+    name: string
+    note?: string
 }
 
 declare module "@/components/entity-view/core/value-kinds" {
     interface ValueKinds {
-        statementAccount: { value: { code: string; name: string }; options: Record<never, never> }
+        statementAccount: { value: StatementAccount; options: Record<never, never> }
         statementVariance: { value: StatementVariance; options: Record<never, never> }
     }
 }
@@ -56,6 +65,7 @@ function StatementAccountInline({ value }: ValueRenderProps<"statementAccount">)
         <span className="inline-flex min-w-0 items-baseline gap-2">
             {value.code && <span className="font-mono text-2xs text-muted-foreground">{value.code}</span>}
             <span className="truncate">{value.name}</span>
+            {value.note && <span className="shrink-0 text-2xs font-medium text-warning-text">{value.note}</span>}
         </span>
     )
 }
@@ -64,7 +74,7 @@ function StatementVarianceCell({ value }: ValueRenderProps<"statementVariance">)
     const { balance, comp, direction } = value
     if (balance === 0 && comp === 0) return null
     const variance = balance - comp
-    const pct = comp !== 0 ? ((variance / Math.abs(comp)) * 100).toFixed(1) : null
+    const pct = value.percentage !== undefined ? value.percentage.toFixed(1) : comp !== 0 ? ((variance / Math.abs(comp)) * 100).toFixed(1) : null
     const good = variance === 0 ? null : (variance > 0) === (direction === "higher-is-better")
     const Icon = variance > 0 ? TrendingUp : TrendingDown
     return (
@@ -83,14 +93,15 @@ function registerStatementKinds(): void {
     if (registered) return
     registered = true
     registerValueKind("statementAccount", {
-        format: (v) => (v.code ? `${v.code} ${v.name}` : v.name),
+        format: (v) => [v.code, v.name, v.note && `(${v.note})`].filter(Boolean).join(" "),
         render: StatementAccountInline,
         inline: StatementAccountInline,
     })
     registerValueKind("statementVariance", {
         format: (v) => {
             const variance = v.balance - v.comp
-            return v.comp !== 0 ? `${formatMoneyValue(variance)} (${((variance / Math.abs(v.comp)) * 100).toFixed(1)}%)` : formatMoneyValue(variance)
+            const pct = v.percentage ?? (v.comp !== 0 ? (variance / Math.abs(v.comp)) * 100 : undefined)
+            return pct !== undefined ? `${formatMoneyValue(variance)} (${pct.toFixed(1)}%)` : formatMoneyValue(variance)
         },
         sortValue: (v) => v.balance - v.comp,
         render: StatementVarianceCell,
