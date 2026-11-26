@@ -107,7 +107,7 @@ Reglas:
 | `rows` | `readonly T[] \| undefined` | **obligatorio**; viene de un hook de feature (invariante #5) |
 | `isLoading` / `isRefetching` | `boolean` | carga inicial / refetch con datos visibles |
 | `error` | `unknown` | cualquier valor no nulo activa el estado de error **si no hay filas** (con filas en caché se siguen mostrando) |
-| `rowCount` | `number` | total del servidor; **obligatorio** con paginación en servidor, y también al agrupar una página acotada (activa el aviso de truncado) |
+| `rowCount` | `number` | total del servidor; **obligatorio** con paginación en servidor (conteo de resultados de la barra) |
 | `refetch` | `() => void` | habilita "Reintentar" en el estado de error |
 | `isFiltered` | `boolean` | cambia el copy del vacío ("Ningún resultado para el filtro") |
 
@@ -116,7 +116,8 @@ Reglas:
 | `pagination` | `{ mode: "client", pageSize? }` (defecto, 20) · `{ mode: "more", step? }` («Mostrar más», solo cliente, `step` 10; ADR-0137) · `{ mode: "server", state, onChange }` · `{ mode: "none" }` |
 | `sorting` | `{ mode: "local" }` (defecto con paginación cliente o sin paginar: ordena las filas cargadas con la clave semántica del kind) · `{ mode: "server", state: SortSpec \| null, onChange }` · `{ mode: "query", state: SortSpec[], onChange, fields }`: ordena las filas cargadas por varias claves controladas. Es el modo cliente de `useCollectionQuery` ([component-collection-toolbar.md](./component-collection-toolbar.md) §4); solo `fields` son ordenables. Con paginación en servidor y sin `sorting`, **ninguna cabecera se puede ordenar** |
 | `defaultSort` | `"id"` o `"-id"` (ids tipados; solo en orden local) |
-| `groupBy` | id de campo o `null`: agrupa las filas cargadas por el texto formateado del campo |
+| `groupBy` | id de campo o `null`. Sin `serverGroups`, agrupa las filas cargadas por el texto formateado del campo |
+| `serverGroups` | `useServerGroups(…).groups`: grupos de todo el resultado (`groups/`, ADR-0158 §7) con su conteo, subtotales y filas paginadas por grupo. Reemplaza la agrupación de las filas cargadas |
 
 PF-1: documentos, movimientos, contabilidad y crédito paginan **en servidor**. La paginación en cliente se admite solo en maestros pequeños (< ~1 000 filas).
 
@@ -129,7 +130,10 @@ PF-1: documentos, movimientos, contabilidad y crédito paginan **en servidor**. 
 
 **Página por forma de consulta:** `useServerPage(shape, initial)` devuelve `[page, setPage]` y vuelve a `initial` cuando cambia la forma (filtros, orden, agrupación).
 
-**Agrupación.** Usa `groupItems` (`lib/group-utils`), igual que las vistas agrupadas actuales: claves ordenadas y valores vacíos en un último grupo "Sin {campo}". Agrupar desactiva la paginación: la página carga una sola página acotada a `GROUP_ROW_LIMIT` (200) con `pagination: { mode: "none" }` y pasa `rowCount`. Si el total supera lo cargado, `Collection.View` muestra el aviso "Agrupando los primeros N de M resultados". La agrupación en servidor queda como Pd-backend (PF-5). Las claves de agrupación de `UnifiedSearchBar` se traducen a ids de campo en la página.
+**Agrupación** (ADR-0158 §7, [component-collection-toolbar.md §7.1](./component-collection-toolbar.md#71-get-listagroupsgroup_bycampofiltrosordering)).
+- **Lista paginada en servidor:** el campo declara `groupKey` y la lista expone `groups/` (`GroupedListMixin`). `useCollectionQuery().groupKey` lo entrega; la página llama al hook de grupos de la feature (`useServerGroups`), desactiva la lista (`enabled: groupKey === null`) y pasa `serverGroups`. Los grupos cubren todo el resultado: conteos y subtotales correctos, los 3 primeros abiertos y «Mostrar más» por grupo.
+- **Valor derivado** (sin columna en la base, p. ej. un estado compuesto): el campo no declara `groupKey` y se agrupa la página cargada con `groupItems` (`lib/group-utils`); si el total supera lo cargado, `Collection.View` muestra el aviso de truncado.
+- **Datos en cliente** (`sorting: "client"`): se agrupan las filas cargadas, que son todas.
 
 ## 6. Superficies
 
@@ -139,12 +143,12 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 
 | Componente | Props |
 |---|---|
-| `Collection.Root` | `collection`, `children`, `actions?: (row, surface: "table" \| "card") => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?`, `view?` + `onViewChange?` (vista controlada), `label?` |
-| `Collection.Toolbar` | Arma la barra de colección ([component-collection-toolbar.md](./component-collection-toolbar.md), ADR-0158) desde `entity.query`. Hasta la etapa 3: `children?` (búsqueda `UnifiedSearchBar`). Siempre: `action?` (acción primaria, p. ej. crear; en pantallas angostas baja bajo la búsqueda en vez de taparla — lote 2c), `views?`, `exportFilters?` |
+| `Collection.Root` | `collection`, `children`, `actions?: (row, surface: "table" \| "card") => ReactNode`, `onOpen?: (row) => void`, `selection?: "none" \| "bulk" \| "panel"`, `selectedId?`, `defaultView?`, `view?` + `onViewChange?` (vista controlada), `query?` (`useCollectionQuery(entity)`: la barra de comandos se arma desde ella), `analytics?` (`useCollectionAnalytics`: pestaña y alcance del modal controlados), `label?` |
+| `Collection.Toolbar` | Arma la barra de colección ([component-collection-toolbar.md](./component-collection-toolbar.md), ADR-0158) desde la `query` del `Root`: vistas, búsqueda, filtros, orden, agrupación, visualización, exportación y analítica. Props: `action?` (acción primaria, p. ej. crear; en pantallas angostas baja bajo la búsqueda en vez de taparla — lote 2c), `views?`, `exportFilters?` |
 | `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`, `emptyAction?` (p. ej. crear), `onResetFilters?` ("Limpiar filtros" en el vacío filtrado), más `variant?`, `frame?`, `empty?`, `pager?`, `maxHeight?` (§6.1a): elige la superficie activa |
 | `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista. Con `groupBy` pintan un `<tbody>` por grupo con su cabecera `th scope="rowgroup"` (tabla) o una sección con encabezado (cards) |
 | `Collection.BulkBar` | `actions: BulkAction<T>[]`: el mismo tipo y la misma barra (`SelectionDock`) que el sistema antiguo; aparece con la selección (`selection="bulk"`) |
-| `Collection.Analytics` | `children`: el contenido de la feature (p. ej. `AnalyticsPanelContent`). Hasta la etapa 2 de ADR-0158 es el modo `analytics` (`?view=analytics`), que reemplaza la tabla. Desde la etapa 2 se monta en `AnalyticsModal`, que se abre con el botón de la barra (`?analytics=<pestaña>`), hereda el alcance filtrado y acepta drill-down ([component-collection-toolbar.md §5.7](./component-collection-toolbar.md#57-analítica-en-modal-e2)) |
+| `Collection.Analytics` | `children`: el contenido de la feature (p. ej. `AnalyticsPanelContent`). Se monta en `AnalyticsModal`, que se abre con el botón de la barra (`?analytics=<pestaña>`), hereda el alcance filtrado y acepta drill-down; la tabla sigue debajo (ADR-0158 §5.7; ya no existe el modo `analytics`) ([component-collection-toolbar.md §5.7](./component-collection-toolbar.md#57-analítica-en-modal-e2)) |
 
 #### 6.1a Variante embebida (ADR-0137)
 
@@ -219,7 +223,7 @@ Cubre los patrones P1 (cantidad a procesar por línea) y P2 (reparto contra un t
 
 - **`CollectionModes`** (`modes`, `value`, `onChange`, `label`): pantallas que cambian de entidad (órdenes ↔ notas). Cada modo monta su propio `Collection.Root` con su propia entidad: así no hace falta ningún cast (TY-5, TC-018).
 - **`EntityViewProvider`** (`opener: { open(label, id, row), labelOf(label) }`): montado **una vez** por `GlobalModalProvider` (vía `components/providers/EntityViewBridge.tsx`) alrededor de la página **y** del host de drawers, de modo que las colecciones dentro de un drawer también abren sus filas. El contexto vive en `components/providers/EntityOpenerContext.tsx`, que solo depende de React; así se evita el ciclo con `@/components/shared` y el barrel no entra en el bundle raíz. `@/components/entity-view` lo reexporta. Conecta la acción por defecto con `openEntity` y el registro de drawers (ADR-0028/0086), y el nombre accesible con `titlePlural` del registro. Sin provider y sin `onOpen`, la celda principal no se muestra como enlace.
-- **`useCollectionViewMode(label, defaultView?)`** → `{ view, onViewChange }` para `Collection.Root`. Da paridad con el sistema actual: el mismo parámetro `?view=` (`list` ↔ `table`, `card` ↔ `card`) y la misma preferencia guardada que `useViewMode`. Los filtros siguen en `UnifiedSearchBar` (hijo de `Toolbar`) y la selección en `?selected=` vía `selectedId`.
+- **`useCollectionViewMode(label, defaultView?)`** → `{ view, onViewChange }` para `Collection.Root`. Da paridad con el sistema actual: el mismo parámetro `?view=` (`list` ↔ `table`, `card` ↔ `card`) y la misma preferencia guardada que `useViewMode`. Los filtros, el orden, la agrupación y la vista predefinida viven en la URL vía `useCollectionQuery`; la selección, en `?selected=` vía `selectedId`.
 
 ## 7. Reglas de resolución (deterministas)
 
@@ -329,14 +333,14 @@ Se migra **con el comportamiento de hoy** (paridad). Las mejoras se registran y 
 
 | Patrón | Referencia | Piezas |
 |---|---|---|
-| Maestro con datos en cliente | `features/inventory/components/UoMClientView.tsx` | `useEntityCollection(entity, { rows, isLoading, error, refetch, isFiltered })` · `Collection.Root selection="bulk" onOpen actions={xActions.forCollection(ctx)}` · `Collection.Toolbar action` + `UnifiedSearchBar {...bindUnifiedSearch(search)}` · `Collection.View table card empty*` · `Collection.BulkBar` |
-| Documento con servidor | `features/purchasing/components/PurchaseOrdersView.tsx` | lo anterior + `useCollectionQuery(entity)` (búsqueda, filtros, `ordering`, `groupBy` y vistas desde `entity.query`), `useServerPage([params, groupBy])`, `<Collection.Root query>`, `selection="panel"` con `useDocumentSheetRoute`, `groupBy` con `GROUP_ROW_LIMIT` |
+| Maestro con datos en cliente | `features/inventory/components/UoMClientView.tsx` | `useEntityCollection(entity, { rows, isLoading, error, refetch, isFiltered })` · `Collection.Root selection="bulk" onOpen actions={xActions.forCollection(ctx)}` · `useCollectionQuery(entity, { sorting: "client" })` · `<Collection.Root query>` + `Collection.Toolbar action` · `Collection.View table card empty*` · `Collection.BulkBar` |
+| Documento con servidor | `features/purchasing/components/PurchaseOrdersView.tsx` | lo anterior + `useCollectionQuery(entity)` (búsqueda, filtros, `ordering`, `groupBy` y vistas desde `entity.query`), `useServerPage([params, groupBy])`, `<Collection.Root query>`, `selection="panel"` con `useDocumentSheetRoute`, agrupación en servidor (`usePurchaseOrderGroups` → `serverGroups`) y conteos (`facets/`) |
 
 Reglas de la pantalla:
 
 - **Selección:** la columna `select` a mano, `renderCard` y `AutoEntityCard` desaparecen; las da `selection`.
 - **Error con filtro en cliente:** si la vista filtra las filas antes de pasarlas (`filterFn`, filtros locales), pasa `error: isError && datos.length === 0` con los datos **sin filtrar**: con datos en caché, un refresco fallido más un filtro sin coincidencias debe leerse "sin resultados", no "error".
-- **Agrupación:** hasta la etapa 3 de ADR-0158, un mapa a nivel de módulo `const X_GROUPS: Record<string, FieldId<typeof xEntity.fields>>` traduce la clave de la búsqueda al campo. Desde la etapa 4, las colecciones con servidor agrupan con `groups/` y se retira `GROUP_ROW_LIMIT` ([component-collection-toolbar.md §7.1](./component-collection-toolbar.md#71-get-listagroupsgroup_bycampofiltrosordering)).
+- **Agrupación:** los campos agrupables se listan en `query.groupBy` de la entidad. Con paginación en servidor, cada uno declara `groupKey` y la pantalla pasa `serverGroups` (§5, Agrupación); los mapas `X_GROUPS` por pantalla ya no se usan.
 - **Analítica:**
   - el armado vive en `components/<entidad>AnalyticsScreen.ts`, sin JSX: `buildXAnalyticsScreen(data, ui): AnalyticsPanelContentProps`;
   - las consultas se piden solo con la analítica abierta (`enabled: view === "analytics"`; desde la etapa 2 de ADR-0158, `enabled: analyticsOpen`);

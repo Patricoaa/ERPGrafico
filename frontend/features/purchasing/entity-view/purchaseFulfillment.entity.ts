@@ -33,10 +33,10 @@ export const purchaseFulfillmentEntity = defineEntity<PurchaseFulfillment>()((f)
             status: d.fulfillment_type,
             label: d.fulfillment_type === "RECEIPT" ? "Recepción" : "Devolución",
             intent: d.fulfillment_type === "RECEIPT" ? "success" : "destructive",
-        }), { label: "Tipo" }),
-        supplier: f.contact((d) => (d.supplier_name ? { id: d.supplier_id ?? 0, name: d.supplier_name } : null), { label: "Proveedor", orderBy: "purchase_order__supplier__name" }),
+        }), { label: "Tipo", groupKey: "type" }),
+        supplier: f.contact((d) => (d.supplier_name ? { id: d.supplier_id ?? 0, name: d.supplier_name } : null), { label: "Proveedor", orderBy: "purchase_order__supplier__name", groupKey: "supplier" }),
         order: docRef(f, (d) => d.purchase_order_document ? { label: d.purchase_order_document.label, id: d.purchase_order_document.id, display: d.purchase_order_document.display_id, url: d.purchase_order_document.url } : null, { label: "Orden de Compra", sortable: false }),
-        date: f.date((d) => d.date ?? d.receipt_date ?? "", { label: "Fecha", orderBy: "date" }),
+        date: f.date((d) => d.date ?? d.receipt_date ?? "", { label: "Fecha", orderBy: "date", groupKey: "date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
         status: f.status((d) => ({
             status: d.status,
@@ -46,7 +46,7 @@ export const purchaseFulfillmentEntity = defineEntity<PurchaseFulfillment>()((f)
                 : d.status === "CANCELLED"
                     ? "destructive"
                     : "info",
-        }), { label: "Estado" }),
+        }), { label: "Estado", groupKey: "status" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
     // ADR-0158 §3. No `sort`: two endpoints merged in the client (newest first), so a server key
@@ -64,7 +64,8 @@ export const purchaseFulfillmentEntity = defineEntity<PurchaseFulfillment>()((f)
             fulfillment_type: { field: "type", control: "multi", options: [{ value: "RECEIPT", label: "Recepción" }, { value: "RETURN", label: "Devolución" }] },
             status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
         },
-        groupBy: { fields: ["date", "supplier", "status", "type"] },
+        // Grouped on the server (`fulfillment/groups/`): both document types merged per group.
+        groupBy: { fields: ["date", "supplier", "status", "type"], aggregate: { cost: "sum" } },
         views: [
             { id: "all", label: "Todos" },
             { id: "receipts", label: "Recepciones", filters: { fulfillment_type: "RECEIPT" } },

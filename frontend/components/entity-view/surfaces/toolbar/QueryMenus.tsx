@@ -226,15 +226,18 @@ interface ViewTabsProps {
     onReset: () => void
     /** Right-hand count ("38 resultados"); `null` while loading. */
     count: React.ReactNode
+    /** Rows of each view with its own filters (`facets/?views=`), for the views with `count: true`. */
+    viewCounts?: Readonly<Record<string, number>>
 }
 
 /** Predefined views as tabs (ADR-0158 §9), with «Restablecer» once the state drifts from the view. */
-export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count }: ViewTabsProps) {
+export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, viewCounts }: ViewTabsProps) {
     return (
         <div className="flex flex-wrap items-center gap-x-1 border-b border-border/50">
             <div role="tablist" aria-label="Vistas" className="flex flex-wrap items-center">
                 {views.map((view) => {
                     const selected = view.id === activeId
+                    const total = viewCounts?.[view.id]
                     return (
                         <Button
                             key={view.id}
@@ -246,6 +249,12 @@ export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count }: V
                             className={cn("-mb-px h-control-sm rounded-none border-b-2 border-transparent px-3 text-xs", selected ? "border-primary font-semibold text-foreground" : "text-muted-foreground")}
                         >
                             {view.label}
+                            {total !== undefined && (
+                                <span className="ml-1.5 font-mono text-3xs font-normal tabular-nums text-muted-foreground">
+                                    <span aria-hidden>{total}</span>
+                                    <span className="sr-only">, {total} {total === 1 ? "resultado" : "resultados"}</span>
+                                </span>
+                            )}
                         </Button>
                     )
                 })}

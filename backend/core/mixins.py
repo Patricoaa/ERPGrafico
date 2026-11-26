@@ -4,7 +4,9 @@ import io
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 
 class NoDestroyModelMixin:
@@ -169,3 +171,54 @@ class GroupedListMixin:
             request.query_params.get("ordering")
             or ",".join(self.group_ordering or getattr(self, "ordering", None) or []),
         ))
+
+
+class FacetedListMixin:
+    """
+    `GET <list>/facets/?fields=<name>,<name>&views=<json>&<list filters>` (ADR-0158 §8): per option of
+    each requested filter, the rows it would leave with the other filters applied; per view, its rows. Declare `facet_fields`
+    (`{name: FacetField}`; the name is the filter's list param). It reuses `filter_queryset(get_queryset())`,
+    so counts match the list.
+    """
+
+    facet_fields: dict = {}
+
+    @action(detail=False, methods=["get"], url_path="facets")
+    def facets(self, request, *args, **kwargs):
+        from core.services.facets import facet_counts, parse_views, view_counts
+
+        names = [n for n in request.query_params.get("fields", "").split(",") if n]
+        views = parse_views(request.query_params.get("views"))
+        filtered = lambda: self.filter_queryset(self.get_queryset())  # noqa: E731
+        return Response({
+            "fields": facet_counts(request, names, self.facet_fields, filtered),
+            "views": view_counts(request, views, filtered),
+        })
+
+
+class UnionListViewSet(GenericViewSet):
+    """
+    One list over two document lists (ADR-0158 §7): `list` and `groups/` over a SQL union of the
+    `union_sources` (`core.services.union_list.UnionSource`), each filtered, permission-checked and
+    serialized by its own list viewset. `union_ordering`: entity `orderBy` key → union column.
+    """
+
+    permission_classes = [IsAuthenticated]
+    union_sources: list = []
+    union_ordering: dict[str, str] = {}
+    union_default_ordering: list[str] = ["-date"]
+    union_aggregate: str | None = None
+
+    def list(self, request, *args, **kwargs):
+        from core.services.union_list import union_page
+
+        paginator, rows = union_page(self.union_sources, request, self, self.union_ordering, self.union_default_ordering)
+        if paginator is None:
+            return Response({"count": 0, "next": None, "previous": None, "results": []})
+        return paginator.get_paginated_response(rows)
+
+    @action(detail=False, methods=["get"], url_path="groups")
+    def groups(self, request, *args, **kwargs):
+        from core.services.union_list import union_groups
+
+        return Response(union_groups(self.union_sources, request, self, self.union_aggregate))

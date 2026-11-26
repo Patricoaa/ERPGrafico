@@ -36,10 +36,10 @@ export const saleFulfillmentEntity = defineEntity<SaleFulfillment>()((f) => ({
             status: d.fulfillment_type,
             label: d.fulfillment_type === "DELIVERY" ? "Despacho" : "Devolución",
             intent: d.fulfillment_type === "DELIVERY" ? "success" : "destructive",
-        }), { label: "Tipo" }),
-        customer: f.contact((d) => (d.customer_name ? { id: d.customer_id ?? 0, name: d.customer_name } : null), { label: "Cliente", orderBy: "sale_order__customer__name" }),
+        }), { label: "Tipo", groupKey: "type" }),
+        customer: f.contact((d) => (d.customer_name ? { id: d.customer_id ?? 0, name: d.customer_name } : null), { label: "Cliente", orderBy: "sale_order__customer__name", groupKey: "customer" }),
         order: docRef(f, (d) => d.sale_order_document ? { label: d.sale_order_document.label, id: d.sale_order_document.id, display: d.sale_order_document.display_id, url: d.sale_order_document.url } : null, { label: "Orden de Venta", sortable: false }),
-        date: f.date((d) => d.date ?? d.delivery_date ?? "", { label: "Fecha", orderBy: "date" }),
+        date: f.date((d) => d.date ?? d.delivery_date ?? "", { label: "Fecha", orderBy: "date", groupKey: "date" }),
         warehouse: f.text("warehouse_name", { label: "Bodega", tone: "secondary" }),
         status: f.status((d) => ({
             status: d.status,
@@ -49,7 +49,7 @@ export const saleFulfillmentEntity = defineEntity<SaleFulfillment>()((f) => ({
                 : d.status === "CANCELLED"
                     ? "destructive"
                     : "info",
-        }), { label: "Estado" }),
+        }), { label: "Estado", groupKey: "status" }),
         cost: f.money("total_cost", { label: "Costo", orderBy: "total_cost" }),
     },
     // ADR-0158 §3. No `sort`: two endpoints merged in the client (newest first), so a server key
@@ -67,7 +67,8 @@ export const saleFulfillmentEntity = defineEntity<SaleFulfillment>()((f) => ({
             fulfillment_type: { field: "type", control: "multi", options: [{ value: "DELIVERY", label: "Despacho" }, { value: "RETURN", label: "Devolución" }] },
             status: { field: "status", control: "multi", options: [{ value: "DRAFT", label: "Borrador" }, { value: "CONFIRMED", label: "Confirmado" }, { value: "CANCELLED", label: "Anulado" }] },
         },
-        groupBy: { fields: ["date", "customer", "status", "type"] },
+        // Grouped on the server (`fulfillment/groups/`): both document types merged per group.
+        groupBy: { fields: ["date", "customer", "status", "type"], aggregate: { cost: "sum" } },
         views: [
             { id: "all", label: "Todos" },
             { id: "deliveries", label: "Despachos", filters: { fulfillment_type: "DELIVERY" } },

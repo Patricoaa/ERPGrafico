@@ -60,7 +60,9 @@ def _evaluable_invoice_rows(*, purchase_drafts: bool = False):
 
 
 def _evaluable_invoices(since: date):
-    return _evaluable_invoice_rows().filter(date__gte=since, fiscal_match_set__isnull=True)
+    # By invoice id: groups are created in this order, and lists ordered by date break ties on the
+    # group id. Without it Postgres returns the rows in plan order and that tie flips between runs.
+    return _evaluable_invoice_rows().filter(date__gte=since, fiscal_match_set__isnull=True).order_by("id")
 
 
 def _invoice_group(row: dict) -> FiscalMatch:

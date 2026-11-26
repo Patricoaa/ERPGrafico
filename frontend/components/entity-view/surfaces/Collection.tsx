@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
 import { ENTITY_REGISTRY, getEntityIcon, type ViewPolicy } from "@/lib/entity-registry"
+import type { FacetCounts } from "@/lib/facets"
 import { cn } from "@/lib/utils"
 import {
     alignOf,
@@ -70,6 +71,8 @@ interface CollectionContextValue<T> {
     analyticsScope: { value: AnalyticsScope; onChange: (scope: AnalyticsScope) => void } | null
     /** Query state when the entity declares `query` (ADR-0158 stage 3): the toolbar renders the command bar. */
     query: CollectionQuery<string> | null
+    /** Per-option counts of the filters with `counts: true` (`facets/`, ADR-0158 §8). */
+    facets: FacetCounts | null
     /** Columns of the mounted table layout (registered by the table surface) and the ones the user hid. */
     tableColumns: { ids: readonly string[]; primary: string } | null
     registerTableColumns: (columns: { ids: readonly string[]; primary: string } | null) => void
@@ -187,6 +190,7 @@ function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen,
         setAnalyticsOpen,
         analyticsScope: controlledAnalytics?.scope !== undefined && controlledAnalytics.onScopeChange ? { value: controlledAnalytics.scope, onChange: controlledAnalytics.onScopeChange } : null,
         query: query ? eraseQuery(query) : null,
+        facets: query?.facets ?? null,
         tableColumns,
         registerTableColumns,
         hiddenColumns,
@@ -363,7 +367,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
         : []
     return (
         <div className="flex flex-col gap-2">
-            {showTabs && <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} count={count} />}
+            {showTabs && <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} count={count} viewCounts={ctx.facets?.views} />}
             <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
                 {compiled.searchBox ? (
                     <div className="min-w-56 flex-1">
@@ -372,7 +376,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
                 ) : (
                     <div className="flex-1" aria-hidden />
                 )}
-                <FilterMenu filters={filters} values={search.paramValues} filterOptions={search.filterOptions} applyMany={search.applyMany} />
+                <FilterMenu filters={filters} values={search.paramValues} filterOptions={search.filterOptions} counts={ctx.facets} applyMany={search.applyMany} />
                 <SortMenu fields={compiled.sortFields} sort={query.sort} defaultSort={compiled.defaultSort} onChange={query.setSort} />
                 <GroupMenu fields={compiled.groupFields} value={query.groupBy} onChange={query.setGroupBy} />
                 <DisplayMenu

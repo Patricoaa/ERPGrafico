@@ -5,6 +5,7 @@ import type { Page } from "@/lib/pagination"
 import { purchasingApi } from "../api/purchasingApi"
 import type { PurchaseReceipt } from "../entity-view/purchaseReceipt.entity"
 import type { PurchaseReturn } from "../entity-view/purchaseReturn.entity"
+import type { PurchaseFulfillment } from "../entity-view/purchaseFulfillment.entity"
 import { PURCHASING_KEYS } from "./queryKeys"
 
 interface GroupsArgs {
@@ -27,4 +28,13 @@ export function usePurchaseReceiptGroups({ groupKey, params }: GroupsArgs) {
 /** Purchase returns grouped on the server (ADR-0158 §7). */
 export function usePurchaseReturnGroups({ groupKey, params }: GroupsArgs) {
     return useServerGroups<PurchaseReturn>({ groupKey, params, queryKey: [...PURCHASING_KEYS.all, "returns"], fetchGroups: returnGroups, fetchRows: returnRows })
+}
+
+const fulfillmentGroups = (params: Record<string, string>) => purchasingApi.getFulfillmentGroups(params, params.group_by)
+const fulfillmentRows = async (params: Record<string, string>, page: number, pageSize: number) =>
+    (await purchasingApi.getFulfillmentPaginated({ ...params, page, page_size: pageSize })) as unknown as Page<PurchaseFulfillment>
+
+/** Receipts + returns grouped on the server (ADR-0158 §7). */
+export function usePurchaseFulfillmentGroups({ groupKey, params }: GroupsArgs) {
+    return useServerGroups<PurchaseFulfillment>({ groupKey, params, queryKey: [...PURCHASING_KEYS.all, "fulfillment"], fetchGroups: fulfillmentGroups, fetchRows: fulfillmentRows })
 }

@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.183](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.182...v0.3.183) (2026-11-26)
+
+
+### 🐛 Bug Fixes
+
+* **tax:** grupos fiscales creados en orden de factura (desempate determinista) ([bb4afca](https://github.com/Patricoaa/ERPGrafico/commit/bb4afca5c527abbae15fd6c9f450e8bb9f0e250f))
+
+### [0.3.182](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.181...v0.3.182) (2026-11-26)
+
+
+### ✨ Features
+
+* lista unificada de despachos/recepciones paginada y agrupada en servidor (ADR-0158 §7) ([10fa2b7](https://github.com/Patricoaa/ERPGrafico/commit/10fa2b7c957c4402f67aecae1a435be701a8eabc))
+
+### [0.3.181](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.180...v0.3.181) (2026-11-26)
+
+
+### 📚 Documentation
+
+* **ADR-0158:** contratos al día con la barra de colección, groups/ y facets/ ([6c01c0b](https://github.com/Patricoaa/ERPGrafico/commit/6c01c0b45d13d288c7a87d2ee644bb6d0abb11b4))
+
+### [0.3.180](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.179...v0.3.180) (2026-11-26)
+
+
+### 🐛 Bug Fixes
+
+* **lint:** import de core.mixins envuelto (ratchet Ruff) ([9582a0b](https://github.com/Patricoaa/ERPGrafico/commit/9582a0b9828d459f3f0a2cf1a669637241305da8))
+
+
+### ✨ Features
+
+* conteos de facets/ en logística y órdenes de compra (ADR-0158 §8) ([5f18dca](https://github.com/Patricoaa/ERPGrafico/commit/5f18dcad84c31fe902b846b9b0c578782a5e337b))
+* conteos por opción en filtros (facets/, ADR-0158 §8) — piloto órdenes de venta ([d7eb91c](https://github.com/Patricoaa/ERPGrafico/commit/d7eb91ca3677403f038f1fee79587fb1a0dc0fbe))
+* total por vista en las pestañas (facets/?views=, ADR-0158 §8) ([bc16100](https://github.com/Patricoaa/ERPGrafico/commit/bc1610069e9e8d45bf2cf877593712854dc2ec56))
+
 ### [0.3.179](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.178...v0.3.179) (2026-11-26)
 
 

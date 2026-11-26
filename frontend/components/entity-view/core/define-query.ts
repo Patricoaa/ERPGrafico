@@ -124,6 +124,8 @@ export interface CompiledQuery {
     views: readonly QueryView[]
     /** Filter id → URL params it owns (one, or from/to), for views and dirty checks. */
     filterParams: Readonly<Record<string, readonly string[]>>
+    /** Params of the `multi` filters with `counts: true`: the fields of `facets/?fields=` (ADR-0158 §8). */
+    facetParams: readonly string[]
 }
 
 const PRESET_DEFS: Record<DatePreset, { label: string; getValue: () => { from: string; to: string } }> = {
@@ -171,6 +173,7 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
     const filters: DropdownFilterDef[] = []
     const dateFilters: DateFilterDef[] = []
     const filterParams: Record<string, string[]> = {}
+    const facetParams: string[] = []
 
     for (const [id, filter] of Object.entries(spec.filters ?? {})) {
         const label = labelOf(entity, filter)
@@ -179,6 +182,7 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
                 const param = filter.param ?? id
                 filters.push({ type: "multi", key: id, label, serverParam: param, options: toOptions(filter.options), dynamic: filter.options === "remote" || undefined })
                 filterParams[id] = [param]
+                if (filter.counts) facetParams.push(param)
                 break
             }
             case "single": {
@@ -245,6 +249,7 @@ export function compileQuery(entity: QueryEntity, { sorting = "server" }: Compil
         aggregate: (spec.groupBy?.aggregate ?? {}) as Record<string, GroupAggregate>,
         views: spec.views ?? [],
         filterParams,
+        facetParams,
     }
 }
 
@@ -271,6 +276,7 @@ export function fromUnifiedSearchDef(def: UnifiedSearchConfig): CompiledQuery {
         aggregate: {},
         views: [],
         filterParams,
+        facetParams: [],
     }
 }
 

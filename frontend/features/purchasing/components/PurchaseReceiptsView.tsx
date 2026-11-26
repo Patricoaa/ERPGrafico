@@ -5,6 +5,7 @@ import { useDocumentSheetRoute } from "@/hooks/useDocumentSheetRoute"
 import { purchaseReceiptEntity, purchaseReceiptViews } from "../entity-view/purchaseReceipt.entity"
 import { usePurchaseReceipts } from "../hooks/usePurchasing"
 import { usePurchaseReceiptGroups } from "../hooks/usePurchaseLogisticsGroups"
+import { usePurchaseReceiptFacets } from "../hooks/usePurchasingFacets"
 
 const DEFAULT_PAGE = { pageIndex: 0, pageSize: 20 }
 
@@ -21,6 +22,8 @@ export function PurchaseReceiptsView() {
 
     // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
     const grouped = usePurchaseReceiptGroups({ groupKey, params })
+    // Option counts and view totals (`facets/`, ADR-0158 §8).
+    const facets = usePurchaseReceiptFacets({ fields: query.facetFields, views: query.facetViews, params })
     const list = usePurchaseReceipts({
         ...params,
         page: groupBy ? 1 : pageState.pageIndex + 1,
@@ -49,7 +52,7 @@ export function PurchaseReceiptsView() {
                 onOpen={(receipt) => sheet.toggle(receipt.id, receipt)}
                 view={view}
                 onViewChange={onViewChange}
-                query={query}
+                query={{ ...query, facets }}
             >
                 <Collection.Toolbar />
                 <Collection.View
