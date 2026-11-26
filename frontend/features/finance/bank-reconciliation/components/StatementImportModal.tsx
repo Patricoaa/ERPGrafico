@@ -5,9 +5,9 @@ import * as z from "zod"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getErrorMessage } from "@/lib/errors"
-import type { ColumnDef } from "@tanstack/react-table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Banner, DataCell, DataTable, LabeledSelect, BaseModal, DrawerLayout, DrawerResizableRail, FadeIn, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep, Section } from "@/components/shared"
+import { Banner, LabeledSelect, BaseModal, DrawerLayout, DrawerResizableRail, FadeIn, DocumentAttachmentDropzone, LabeledInput, WizardStepsSidebar, type WizardSidebarStep, Section } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal, Calendar } from "lucide-react"
@@ -461,52 +461,57 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                     {previewData && (
                         <div className="rounded-md border border-border/40 overflow-hidden bg-background">
-                            <DataTable
-                                columns={previewData.columns.map<ColumnDef<unknown[]>>((col, idx) => ({
-                                    id: `col-${idx}`,
-                                    accessorFn: (row) => row?.[idx] ?? null,
-                                    header: () => (
-                                        <div className="p-2 min-w-[240px]">
-                                            <Select
-                                                value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
-                                                onValueChange={(val) => {
-                                                    const newMapping = { ...mapping }
-                                                    if (val !== 'ignore') {
-                                                        newMapping[val] = col
-                                                    } else {
-                                                        const entry = Object.entries(mapping).find((e) => e[1] === col)
-                                                        if (entry) newMapping[entry[0]] = null
-                                                    }
-                                                    form.setValue("mapping", newMapping)
-                                                }}
-                                            >
-                                                <SelectTrigger className="h-control-md text-xs font-bold uppercase bg-background">
-                                                    <SelectValue placeholder="Ignorar Columna" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
-                                                    <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
-                                                    <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
-                                                    <SelectItem value="debit" className="text-xs font-bold uppercase text-expense">Cargos (Egresos)</SelectItem>
-                                                    <SelectItem value="credit" className="text-xs font-bold uppercase text-income">Abonos (Ingresos)</SelectItem>
-                                                    <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
-                                                    <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
-                                                    <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    ),
-                                    cell: ({ row }) => (
-                                        <DataCell.Text className="text-left whitespace-nowrap min-w-[240px] justify-start pl-2">
-                                            {String((row.original as Record<number, unknown>)[idx] ?? "")}
-                                        </DataCell.Text>
-                                    )
-                                }))}
-                                data={previewData.rows.slice(0, 8) as unknown[][]}
-                                variant="minimal"
-                                hidePagination
-                                noBorder
-                            />
+                            {/* Raw file preview: its columns come from the file, so it is a plain table, not an entity collection. */}
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            {previewData.columns.map((col, idx) => (
+                                                <TableHead key={`col-${idx}`} className="h-auto p-2 min-w-[240px]">
+                                                    <Select
+                                                        value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
+                                                        onValueChange={(val) => {
+                                                            const newMapping = { ...mapping }
+                                                            if (val !== 'ignore') {
+                                                                newMapping[val] = col
+                                                            } else {
+                                                                const entry = Object.entries(mapping).find((e) => e[1] === col)
+                                                                if (entry) newMapping[entry[0]] = null
+                                                            }
+                                                            form.setValue("mapping", newMapping)
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="h-control-md text-xs font-bold uppercase bg-background">
+                                                            <SelectValue placeholder="Ignorar Columna" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
+                                                            <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
+                                                            <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
+                                                            <SelectItem value="debit" className="text-xs font-bold uppercase text-expense">Cargos (Egresos)</SelectItem>
+                                                            <SelectItem value="credit" className="text-xs font-bold uppercase text-income">Abonos (Ingresos)</SelectItem>
+                                                            <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
+                                                            <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
+                                                            <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {previewData.rows.slice(0, 8).map((row, rowIdx) => (
+                                            <TableRow key={rowIdx}>
+                                                {previewData.columns.map((_, idx) => (
+                                                    <TableCell key={idx} className="min-w-[240px] whitespace-nowrap pl-2 text-left text-xs">
+                                                        {String(row?.[idx] ?? "")}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     )}
 
