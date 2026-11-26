@@ -32,11 +32,35 @@ export function useBudgetDetailData(id: number | null, initialBudget?: Budget | 
 
 export function useBudgetVariance(id: number | null, params?: Record<string, unknown>) {
     return useQuery({
-        queryKey: FINANCE_KEYS.budgets.variance(id ?? 0),
+        queryKey: FINANCE_KEYS.budgets.variance(id ?? 0, params),
         queryFn: () => financeApi.getBudgetVariance(id as number, params),
         enabled: id != null,
         staleTime: staleTime.standard,
     })
+}
+
+/**
+ * Todos los presupuestos para selectores: el paginador del API corta a 200 filas por página,
+ * así que se recorren las páginas (no se comparte caché con la lista filtrada de budgets/list).
+ */
+export function useAllBudgets() {
+    const { data, isLoading, isError } = useQuery({
+        queryKey: [...FINANCE_KEYS.budgets.lists(), { all: true }] as const,
+        queryFn: async () => {
+            const first = await financeApi.getBudgets({ page: "1", page_size: "200", ordering: "name" })
+            const rows = [...first.results]
+            let page = 2
+            while (first.hasNextPage && rows.length < first.count) {
+                const next = await financeApi.getBudgets({ page: String(page), page_size: "200", ordering: "name" })
+                if (next.results.length === 0) break
+                rows.push(...next.results)
+                page += 1
+            }
+            return rows
+        },
+        staleTime: staleTime.stable,
+    })
+    return { budgets: data ?? [], isLoading, isError }
 }
 
 export function useBudgets(params: Record<string, string> = {}) {

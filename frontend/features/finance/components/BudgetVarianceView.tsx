@@ -1,165 +1,78 @@
 "use client"
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+
+import { useCollectionQuery } from '@/components/entity-view';
+import { PageHeader } from '@/components/shared';
 import { useServerDate } from '@/hooks/useServerDate';
-import {
-    CalendarDays,
-    FileDown,
-    Target
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
-} from "@/components/ui/select";
+
+import { budgetVarianceEntity } from "../entity-view/budgetVariance.entity";
+import { useAllBudgets, useBudgetVariance } from "../hooks/useBudgets";
 import { BudgetVarianceTable, type BudgetVarianceNode } from "./BudgetVarianceTable";
-import { EmptyState, PageHeader, Metric, MetricStrip } from '@/components/shared';
-import { formatMoney } from '@/lib/money';
-import { useBudgets, useBudgetVariance } from "../hooks/useBudgets";
-const MONTH_NAMES = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-];
 
+/**
+ * Versus presupuestario (ADR-0158): presupuesto, mes y año son estado de la URL gestionado por
+ * `useCollectionQuery`; la barra de la colección los muestra y el hook de variación recibe el periodo.
+ */
 export function BudgetVarianceView() {
-    const { serverDate } = useServerDate();
-    const [selectedBudget, setSelectedBudget] = useState<string>("");
-    const [selectedMonth, setSelectedMonth] = useState<number>((serverDate ?? new Date()).getMonth() + 1);
-    const [selectedYear, setSelectedYear] = useState<number>((serverDate ?? new Date()).getFullYear());
+    const { month: serverMonth, year: serverYear } = useServerDate()
+    const { budgets } = useAllBudgets()
 
-    const varianceParams = selectedBudget ? {
-        month: selectedMonth,
-        year: selectedYear,
-    } : undefined
+    const filterOptions = useMemo(() => {
+        const years = new Set<number>()
+        for (const budget of budgets) {
+            const from = Number(budget.start_date?.slice(0, 4))
+            const to = Number(budget.end_date?.slice(0, 4))
+            if (Number.isFinite(from)) years.add(from)
+            if (Number.isFinite(to)) years.add(to)
+        }
+        return {
+            budget: budgets.map((b) => ({ value: String(b.id), label: b.name })),
+            year: [...years].sort((a, b) => a - b).map((y) => ({ value: String(y), label: String(y) })),
+        }
+    }, [budgets])
 
-    const { budgets } = useBudgets()
+    const query = useCollectionQuery(budgetVarianceEntity, { filterOptions })
+    const params = query.search.paramValues
+    const budgetId = Number(params.budget ?? budgets[0]?.id ?? 0)
+    const month = Number(params.month ?? serverMonth ?? new Date().getMonth() + 1)
+    const year = Number(params.year ?? serverYear ?? new Date().getFullYear())
+
+    // Selección inicial: se escribe en la URL una sola vez, nunca durante el render.
+    const defaultSelected = useRef(false)
+    useEffect(() => {
+        if (defaultSelected.current || params.budget || budgets.length === 0) return
+        defaultSelected.current = true
+        void query.search.applyMany({ budget: String(budgets[0].id) })
+    }, [params.budget, budgets, query.search])
+
     const { data, isLoading } = useBudgetVariance(
-        selectedBudget ? Number(selectedBudget) : null,
-        varianceParams as Record<string, unknown> | undefined
+        budgetId || null,
+        { month: String(month), year: String(year) },
+    )
+    const varianceData = useMemo<BudgetVarianceNode[]>(
+        () => (Array.isArray(data) ? data as BudgetVarianceNode[] : []),
+        [data],
     )
 
-    const varianceData: BudgetVarianceNode[] = Array.isArray(data) ? data : []
-
-    // Auto-select first budget on load
-    if (!selectedBudget && budgets.length > 0) {
-        setSelectedBudget(budgets[0].id.toString())
-    }
-
-    // Calculate top-level summary sums from the tree
-    const summary = useMemo(() => {
-        if (!varianceData.length) return null;
-        
-        let ma = 0, mb = 0, ya = 0, yb = 0;
-        // The tree has top-level accounts (groups like 4, 5, 6 - Income, Expenses, etc.)
-        // We sum them up based on their type to get a "Result" summary or just total activity.
-        // Usually we want: Net Margin/Result = Income - Expenses
-        varianceData.forEach(node => {
-            // This is a naive sum, but works for identifying top-level movement
-            // For a proper financial summary, we'd filter by income/expense type
-            if (node.type === 'INCOME') {
-                ma += node.month_actual;
-                mb += node.month_budget;
-                ya += node.ytd_actual;
-                yb += node.ytd_budget;
-            } else if (node.type === 'EXPENSE') {
-                ma -= node.month_actual;
-                mb -= node.month_budget;
-                ya -= node.ytd_actual;
-                yb -= node.ytd_budget;
-            }
-        });
-
-        return { 
-            month_actual: ma, 
-            month_budget: mb, 
-            month_variance: ma - mb,
-            month_perc: mb !== 0 ? (ma / mb * 100) : 0,
-            ytd_actual: ya, 
-            ytd_budget: yb,
-            ytd_variance: ya - yb,
-            ytd_perc: yb !== 0 ? (ya / yb * 100) : 0
-        };
-    }, [varianceData]);
-
     return (
-        <div className="space-y-6">
-            <PageHeader 
-                title="Versus Presupuestario"
-                description="Análisis de ejecución mensual y acumulada contra el presupuesto."
-                titleActions={
-                    <div className="flex items-center gap-3">
-                        <Select value={selectedBudget} onValueChange={setSelectedBudget}>
-                            <SelectTrigger className="w-[200px] h-control-md bg-background">
-                                <Target className="mr-2 h-4 w-4 text-primary" />
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {budgets.map((b: { id: number; name: string }) => (
-                                    <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+        <div className="flex flex-1 min-h-0 flex-col gap-6">
+            <div className="shrink-0">
+                <PageHeader
+                    title="Versus Presupuestario"
+                    description="Análisis de ejecución mensual y acumulada contra el presupuesto."
+                />
+            </div>
 
-                        <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                            <SelectTrigger className="w-[140px] h-control-md bg-background">
-                                <CalendarDays className="mr-2 h-4 w-4 text-primary" />
-                                <SelectValue placeholder="Mes" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {MONTH_NAMES.map((name, i) => (
-                                    <SelectItem key={i + 1} value={(i + 1).toString()}>{name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                            <SelectTrigger className="w-[100px] h-control-md bg-background">
-                                <SelectValue placeholder="Año" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {[2024, 2025, 2026].map(y => (
-                                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <Button variant="outline" size="sm" className="h-control-md">
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Exportar
-                        </Button>
-                    </div>
-                }
-            />
-
-             {summary && (
-                 <MetricStrip label="Resumen de variación presupuestaria">
-                     <Metric
-                         label="Margen Mes"
-                         value={formatMoney(summary.month_actual)}
-                         delta={{ text: `${summary.month_perc.toFixed(1)}% ejecución`, direction: summary.month_variance >= 0 ? "up" : "down" }}
-                     />
-                     <Metric label="Presupuesto Mes" value={formatMoney(summary.month_budget)} context="Proyección de objetivos del periodo" />
-                     <Metric
-                         label="Margen YTD (Acum.)"
-                         value={formatMoney(summary.ytd_actual)}
-                         delta={{ text: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`, direction: summary.ytd_variance >= 0 ? "up" : "down" }}
-                     />
-                     <Metric label="Desviación Neta YTD" value={formatMoney(summary.ytd_variance)} context="Diferencia acumulada anual" />
-                 </MetricStrip>
-             )}
-
-             {!isLoading && varianceData.length === 0 ? (
-                 <EmptyState 
-                     context="finance" 
-                     title="Sin datos presupuestarios" 
-                     description="No se encontraron datos para el periodo seleccionado." 
-                 />
-             ) : (
-                 <BudgetVarianceTable data={varianceData} loading={isLoading} />
-             )}
+            <div className="flex min-h-0 flex-1 flex-col">
+                <BudgetVarianceTable
+                    data={varianceData}
+                    loading={isLoading}
+                    query={query}
+                    exportFilters={{ budget: budgetId, month: String(month), year: String(year) }}
+                    onResetFilters={query.search.clearAll}
+                />
+            </div>
         </div>
     );
 }

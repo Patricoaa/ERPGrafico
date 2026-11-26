@@ -1,4 +1,5 @@
 import { defineEntity } from "@/components/entity-view"
+import { useBudgetVarianceExport } from "../hooks/useBudgetVarianceExport"
 import type { BudgetVarianceNode } from "../types"
 import "./financialStatement.entity"
 
@@ -10,8 +11,25 @@ import "./financialStatement.entity"
 const directionOf = (n: BudgetVarianceNode) => (n.type === "INCOME" ? "higher-is-better" as const : "lower-is-better" as const)
 const fixed = { sortable: false } as const
 
+const MONTH_NAMES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+]
+const MONTH_OPTIONS = MONTH_NAMES.map((label, index) => ({ value: String(index + 1), label }))
+
 export const budgetVarianceEntity = defineEntity<BudgetVarianceNode>()((f) => ({
     title: "Variación presupuestal",
+    // ADR-0158: los parámetros del informe viven en la barra y en la URL, no en el estado local.
+    query: {
+        search: false,
+        filters: {
+            budget: { control: "single", label: "Presupuesto", options: "remote" },
+            month: { control: "single", label: "Mes", options: MONTH_OPTIONS },
+            // Los años salen de los presupuestos disponibles (los pasa la vista como filterOptions).
+            year: { control: "single", label: "Año", options: "remote" },
+        },
+    },
+    export: { formats: ["csv"], useExport: useBudgetVarianceExport },
     tree: { children: (n) => (n.children.length > 0 ? n.children : undefined) },
     fields: {
         account: f.value("statementAccount", (n) => ({ code: n.code, name: n.name, note: n.is_unbudgeted ? "Sin presupuesto" : undefined }), { ...fixed, label: "Cuenta contable" }),

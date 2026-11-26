@@ -8,7 +8,8 @@ export const FINANCE_KEYS = {
     list: (filters?: unknown) => [...FINANCE_KEYS.budgets.lists(), { filters }] as const,
     details: () => [...FINANCE_KEYS.budgets.all(), 'detail'] as const,
     detail: (id: number) => [...FINANCE_KEYS.budgets.details(), id] as const,
-    variance: (id: number) => [...FINANCE_KEYS.budgets.all(), 'variance', id] as const,
+    /** El periodo (mes/año) cambia el informe: entra en la key para no servir datos cacheados del periodo anterior. */
+    variance: (id: number, params?: Record<string, unknown>) => [...FINANCE_KEYS.budgets.all(), 'variance', id, { params }] as const,
     execution: (id: number) => [...FINANCE_KEYS.budgets.all(), 'execution', id] as const,
     detailData: (id: number) => [...FINANCE_KEYS.budgets.all(), 'detail-data', id] as const,
     previousYearActuals: (id: number) => [...FINANCE_KEYS.budgets.all(), 'previous-year-actuals', id] as const,

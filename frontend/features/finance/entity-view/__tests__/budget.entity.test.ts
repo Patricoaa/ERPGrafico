@@ -22,7 +22,7 @@ import { budgetEntity } from "../budget.entity"
 
 describe("budgetEntity.query (ADR-0158)", () => {
     it("busca y filtra el periodo con los parámetros DRF del viewset", () => {
-        expect(budgetEntity.query?.search?.placeholder).toBe("Buscar presupuestos…")
+        expect(budgetEntity.query?.search).toMatchObject({ placeholder: "Buscar presupuestos…" })
         expect(budgetEntity.query?.filters?.period).toMatchObject({
             field: "period",
             control: "date",

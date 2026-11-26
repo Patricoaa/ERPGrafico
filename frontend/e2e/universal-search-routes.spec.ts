@@ -640,3 +640,56 @@ test.describe('ADR-0152 — redirects y pestañas múltiples (#260)', () => {
     });
 
 });
+
+// ---------------------------------------------------------------------------
+// ADR-0158 — /finances/budgets/versus: barra canónica con el periodo en la URL
+// ---------------------------------------------------------------------------
+test.describe('ADR-0158 — versus presupuestario con estado en la URL', () => {
+    const varianceNode = {
+        id: 1,
+        code: '4',
+        name: 'Ingresos operacionales',
+        type: 'INCOME',
+        month_actual: 120,
+        month_budget: 100,
+        month_variance: 20,
+        month_percentage: 120,
+        ytd_actual: 900,
+        ytd_budget: 800,
+        ytd_variance: 100,
+        ytd_percentage: 112.5,
+        is_unbudgeted: false,
+        children: [],
+    };
+
+    test('el mes de la URL llega al endpoint y el CSV usa ese mismo periodo', async ({ page }) => {
+        const budgets = [budgetRow(604, 'Presupuesto 2026')];
+        await mockBudgetEndpoints(page, budgets);
+        await page.route('**/api/core/server-time/', async route => {
+            await route.fulfill({ json: { datetime: '2026-11-26T12:00:00Z', date: '2026-11-26', year: 2026, month: 11, day: 26, timezone: 'UTC' } });
+        });
+        const varianceUrls: string[] = [];
+        await page.route(/\/api\/accounting\/budgets\/604\/variance\//, async route => {
+            varianceUrls.push(route.request().url());
+            await route.fulfill({ json: [varianceNode] });
+        });
+
+        await page.goto('/finances/budgets/versus?budget=604&month=3&year=2025');
+
+        await expect(page.getByRole('heading', { name: 'Versus Presupuestario' })).toBeVisible();
+        await expect(varianceUrls[0]).toContain('month=3');
+        await expect(varianceUrls[0]).toContain('year=2025');
+        await expect(page.getByText('Ingresos operacionales')).toBeVisible();
+
+        // Un cambio de mes en la URL debe refetchear; la key de React Query incluye el periodo.
+        await page.goto('/finances/budgets/versus?budget=604&month=4&year=2025');
+        await expect(varianceUrls.at(-1)).toContain('month=4');
+        expect(varianceUrls).toHaveLength(2);
+
+        await page.getByRole('button', { name: 'Exportar' }).click();
+        const downloadPromise = page.waitForEvent('download');
+        await page.getByRole('menuitem', { name: 'CSV' }).click();
+        const download = await downloadPromise;
+        expect(download.suggestedFilename()).toBe('variacion_604_2025-4.csv');
+    });
+});
