@@ -67,6 +67,9 @@ const DELIVERY_FILTERS = ['status', 'date_after', 'date_before', 'customer_name'
 /** List filters forwarded by `getReturnsPaginated` and its groups (customer / supplier id: server grouping). */
 const RETURN_FILTERS = ['status', 'date_after', 'date_before', 'customer_name', 'customer_id', 'sale_order_number', 'warehouse_id', 'search', 'ordering'] as const
 
+/** Filters of the combined deliveries + returns list (`fulfillment/`, ADR-0158 §7). */
+const FULFILLMENT_FILTERS = [...RETURN_FILTERS, 'fulfillment_type'] as const
+
 /** Appends the truthy `keys` of `filters` (plus page / page_size) as list params. */
 function listParams(filters: Record<string, unknown> | undefined, keys: readonly string[]): URLSearchParams {
     const params = new URLSearchParams()
@@ -200,6 +203,20 @@ export const salesApi = {
         params.append('group_by', groupBy)
         const res = await api.get<unknown>('/sales/deliveries/groups/', { params })
         return toServerGroups(res.data)
+    },
+
+    /** Deliveries + returns in one server-paginated list (each row carries `fulfillment_type`). */
+    getFulfillmentPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {
+        const { data } = await api.get<unknown>('/sales/fulfillment/', { params: listParams(filters, FULFILLMENT_FILTERS) })
+        return toPage<Record<string, unknown>>(data, Number(filters?.page ?? 1), Number(filters?.page_size ?? 50))
+    },
+
+    /** Groups of the combined list (ADR-0158 §7): sources merged by key, or one per type. */
+    getFulfillmentGroups: async (filters: Record<string, unknown>, groupBy: string): Promise<ServerGroup[]> => {
+        const params = listParams(filters, FULFILLMENT_FILTERS)
+        params.append('group_by', groupBy)
+        const { data } = await api.get<unknown>('/sales/fulfillment/groups/', { params })
+        return toServerGroups(data)
     },
 
     getDeliveriesPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {

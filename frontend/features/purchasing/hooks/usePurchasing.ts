@@ -143,57 +143,28 @@ export function usePurchaseReturns(filters?: Record<string, unknown>, enabled = 
     }
 }
 
-/** Unified list of receipts + returns (fulfillment documents). */
-export function usePurchaseFulfillment(filters?: Record<string, unknown>) {
+/**
+ * Receipts + returns in one list (ADR-0090), paginated and ordered on the server
+ * (`purchasing/fulfillment/`, ADR-0158 §7). `enabled: false` while grouping on the server.
+ */
+export function usePurchaseFulfillment(filters?: Record<string, unknown>, enabled = true) {
     const page = Number(filters?.page ?? 1)
     const pageSize = Number(filters?.page_size ?? 50)
-    // Multi-select: "RECEIPT", "RETURN" or both ("RECEIPT,RETURN").
-    const types = typeof filters?.fulfillment_type === 'string' ? filters.fulfillment_type.split(',') : null
-
-    const receiptsQuery = useQuery({
-        queryKey: PURCHASING_KEYS.receipts({ page, page_size: pageSize, ...filters }),
-        queryFn: () => purchasingApi.getReceiptsPaginated({ page, page_size: pageSize, ...filters }),
+    const query = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'fulfillment', { page, page_size: pageSize, ...filters }],
+        queryFn: () => purchasingApi.getFulfillmentPaginated({ page, page_size: pageSize, ...filters }),
         staleTime: staleTime.standard,
-        enabled: !types || types.includes('RECEIPT'),
+        enabled,
     })
-
-    const returnsQuery = useQuery({
-        queryKey: [...PURCHASING_KEYS.all, 'returns', { page, page_size: pageSize, ...filters }],
-        queryFn: () => purchasingApi.getReturnsPaginated({ page, page_size: pageSize, ...filters }),
-        staleTime: staleTime.standard,
-        enabled: !types || types.includes('RETURN'),
-    })
-
-    const isLoading = receiptsQuery.isLoading || returnsQuery.isLoading
-    const isFetching = receiptsQuery.isFetching || returnsQuery.isFetching
-    const isError = receiptsQuery.isError || returnsQuery.isError
-
-    const receiptResults = (receiptsQuery.data?.results ?? []) as unknown as PurchaseReceipt[]
-    const returnResults = (returnsQuery.data?.results ?? []) as unknown as PurchaseReturn[]
-
-    // Merge and add fulfillment_type discriminator
-    // Map receipt_date to date for RECEIPT type
-    const merged: PurchaseFulfillment[] = [
-        ...receiptResults.map(r => ({ ...r, fulfillment_type: 'RECEIPT' as const, date: r.receipt_date })),
-        ...returnResults.map(r => ({ ...r, fulfillment_type: 'RETURN' as const })),
-    ]
-
-    // Sort by date desc (newest first)
-    merged.sort((a, b) => b.date.localeCompare(a.date))
-
-    // Apply pagination manually on merged results
-    const start = (page - 1) * pageSize
-    const paginated = merged.slice(start, start + pageSize)
-    const totalCount = merged.length
 
     return {
-        page: { count: totalCount, results: paginated, next: null, previous: null },
-        fulfillments: paginated,
-        totalCount,
-        isLoading,
-        isFetching,
-        isError,
-        refetch: () => { receiptsQuery.refetch(); returnsQuery.refetch(); },
+        page: query.data,
+        fulfillments: (query.data?.results ?? []) as unknown as PurchaseFulfillment[],
+        totalCount: query.data?.count ?? 0,
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        isError: query.isError,
+        refetch: query.refetch,
     }
 }
 
