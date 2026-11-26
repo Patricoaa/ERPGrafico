@@ -12,6 +12,8 @@ author: fullstack-team
 
 Rechazado el 2026-11-05: se acepta la limitación (agrupado desactivado por encima de 200 filas). El costo de mapear cada campo de agrupado a SQL y etiqueta, y de cambiar el render de las seis vistas, no compensa. Este ADR queda como registro de la alternativa evaluada.
 
+> **Nota (2026-11-26):** [ADR-0158](0158-barra-de-coleccion-unificada.md) §7 adoptó después la agrupación en servidor con otro diseño: un endpoint `groups/` por lista (`GroupedListMixin`) con grupos, conteos, subtotales y filas paginadas por grupo, en lugar de conteos sobre la agrupación del cliente. Ver [component-collection-toolbar.md §7.1](../../20-contracts/component-collection-toolbar.md#71-get-listagroupsgroup_bycampofiltrosordering).
+
 ## Context
 
 El agrupado de las colecciones (`frontend/components/entity-view/core/use-entity-collection.ts`) se calcula en el cliente sobre las filas que ya cargó la página. Para no mostrar grupos incompletos, `GROUP_ROW_LIMIT = 200` (`use-entity-collection.ts:63`) desactiva el agrupado cuando el total del servidor supera 200 filas (`GROUP_ROW_LIMIT` en las seis vistas de `complexity-map.md` §2.6).
