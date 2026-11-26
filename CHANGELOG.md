@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.196](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.195...v0.3.196) (2026-11-26)
+
+
+### ⚙️ Refactors
+
+* **purchasing,finance:** orden de compra y distribución de un movimiento sobre FormLineItemsTable ([b983900](https://github.com/Patricoaa/ERPGrafico/commit/b983900d2996f8947080cc8fd55d8a8e2c2231d2)), closes [#349](https://github.com/Patricoaa/ERPGrafico/issues/349)
+
 ### [0.3.195](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.194...v0.3.195) (2026-11-26)
 
 
