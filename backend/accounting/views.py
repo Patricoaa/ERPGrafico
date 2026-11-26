@@ -251,6 +251,10 @@ class JournalEntryViewSet(GroupedListMixin, viewsets.ModelViewSet, AuditHistory)
 
 class BudgetViewSet(viewsets.ModelViewSet, AuditHistory):
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name", "description"]
+    filterset_fields = {"start_date": ["gte", "lte"], "end_date": ["gte", "lte"]}
+    ordering_fields = ["name", "start_date", "end_date", "id"]
     action_permissions = {
         # Edit via POST → change_*
         "set_items": "accounting.change_budget",

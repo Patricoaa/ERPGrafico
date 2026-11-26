@@ -2,7 +2,7 @@ export {
   AnalysisDashboard,
   BudgetsClientView,
   BudgetVarianceView,
-  BudgetDetailView,
+  BudgetExecutionPanel,
   BIAnalyticsDashboard,
   BudgetEditor,
   BudgetRecordEditor,

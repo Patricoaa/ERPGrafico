@@ -1,17 +1,25 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Wallet } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
-import { Collection, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
+import { Collection, useCollectionQuery, useCollectionViewMode, useEntityCollection, useServerPage } from "@/components/entity-view"
+import { EntityPanelTab, useGlobalModals } from "@/components/providers"
 
 import { budgetActions, type BudgetActionsCtx } from "@/features/finance/budgetActions"
 import { budgetEntity, budgetViews } from "@/features/finance/entity-view/budget.entity"
+import { useBudgets, type Budget } from "@/features/finance/hooks/useBudgets"
+import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
+import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
+import { useServerDate } from '@/hooks/useServerDate'
 
+import { BudgetExecutionPanel } from "./BudgetExecutionPanel"
+
+const DEFAULT_PAGE = { pageIndex: 0, pageSize: 50 }
 
 interface BudgetsClientViewProps {
     externalOpen?: boolean
@@ -19,24 +27,37 @@ interface BudgetsClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { useBudgets } from "@/features/finance/hooks/useBudgets"
-import { useCreatePanelRoute } from "@/hooks/useCreatePanelRoute"
-import { EntityPanelTab, useGlobalModals } from "@/components/providers"
-import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
-import { useServerDate } from '@/hooks/useServerDate'
-
 export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAction }: BudgetsClientViewProps) {
     const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
 
-    const { budgets, isLoading, isError, refetch, createBudget } = useBudgets()
+    // ADR-0158: la barra canónica es dueña de búsqueda, filtros, orden y vistas; el viewset resuelve todo.
+    const query = useCollectionQuery(budgetEntity)
+    const { search } = query
+    const [pageState, setPageState] = useServerPage([query.params], DEFAULT_PAGE)
+    const listParams = React.useMemo(
+        () => ({
+            ...query.params,
+            page: String(pageState.pageIndex + 1),
+            page_size: String(pageState.pageSize),
+        }),
+        [query.params, pageState.pageIndex, pageState.pageSize],
+    )
+    const { page, budgets, isLoading, isError, refetch, createBudget } = useBudgets(listParams)
     const { serverDate } = useServerDate()
     const { view, onViewChange } = useCollectionViewMode("accounting.budget")
 
     // Crear (`?modal=new` / botón externo) es la pestaña de página; editar abre la pestaña del presupuesto.
     const createPanel = useCreatePanelRoute({ actions: [], external: { open: externalOpen, onOpenChange: onExternalOpenChange } })
+    // ADR-0152: `?selected` sin `action` abre el editor; con `action=execution` solo abre el panel de ejecución.
+    const executionPanel = useCreatePanelRoute<Budget>({
+        endpoint: "/accounting/budgets",
+        actions: ["execution"],
+        create: false,
+    })
     const { openEntity } = useGlobalModals()
-    // ADR-0152: cada presupuesto abre su editor en una pestaña propia; `?selected` solo es enlace profundo.
-    useDeepLinkEntity("accounting.budget")
+    useDeepLinkEntity("accounting.budget", { actions: [null] })
 
     const [newBudget, setNewBudget] = useState({
         name: "",
@@ -55,25 +76,43 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
         }
     }
 
+    const openExecution = (id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected", String(id))
+        params.set("action", "execution")
+        // Simetría con `close()` (ADR-0152): «Atrás» no debe reabrir un panel ya cerrado.
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
     const actionsCtx: BudgetActionsCtx = {
         onEdit: (id) => openEntity("accounting.budget", id),
-        onViewExecution: (id) => router.push(`/finances/budgets/${id}`),
+        onViewExecution: openExecution,
     }
 
     const collection = useEntityCollection(
         budgetEntity,
-        { rows: budgets, isLoading, error: isError, refetch },
-        { pagination: { mode: "client", pageSize: 20 } },
+        {
+            rows: budgets,
+            rowCount: page?.count,
+            isLoading,
+            error: isError,
+            refetch,
+            isFiltered: search.isFiltered,
+        },
+        {
+            pagination: { mode: "server", state: pageState, onChange: setPageState },
+            sorting: query.sorting,
+        },
     )
 
     return (
-
         <div className="flex-1 min-h-0 flex flex-col">
             <Collection.Root
                 collection={collection}
+                query={query}
                 view={view}
                 onViewChange={onViewChange}
-                onOpen={(budget) => actionsCtx.onViewExecution(budget.id)}
+                onOpen={(budget) => openEntity("accounting.budget", budget.id)}
                 actions={budgetActions.forCollection(actionsCtx)}
             >
                 <Collection.Toolbar action={createAction} />
@@ -82,6 +121,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                     card={budgetViews.card}
                     emptyTitle="Aún no hay presupuestos"
                     emptyAction={createAction}
+                    onResetFilters={query.search.clearAll}
                 />
             </Collection.Root>
 
@@ -143,6 +183,15 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                 )}
             </EntityPanelTab>
 
+            <EntityPanelTab label="accounting.budget" {...executionPanel.tab} variant="execution" display={`Ejecución: ${executionPanel.entity?.name ?? "…"}`}>
+                {(open) => (
+                    <BudgetExecutionPanel
+                        budget={executionPanel.entity}
+                        open={open}
+                        onOpenChange={(next) => { if (!next) executionPanel.close() }}
+                    />
+                )}
+            </EntityPanelTab>
         </div>
     )
 }

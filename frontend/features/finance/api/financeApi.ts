@@ -38,9 +38,9 @@ async function fetchStatement(endpoint: string, params: StatementParams) {
 
 export const financeApi = {
     // ── Budgets ──
-    getBudgets: async (): Promise<Page<Budget>> => {
-        const { data } = await api.get<unknown>('/accounting/budgets/')
-        return toPage<Budget>(data, 1, 50)
+    getBudgets: async (params?: Record<string, string | number | boolean | undefined>): Promise<Page<Budget>> => {
+        const { data } = await api.get<unknown>('/accounting/budgets/', { params })
+        return toPage<Budget>(data, Number(params?.page ?? 1), Number(params?.page_size ?? 50))
     },
     createBudget: (payload: Record<string, unknown>) =>
         api.post<unknown>('/accounting/budgets/', payload).then(r => r.data),

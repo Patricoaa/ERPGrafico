@@ -1,14 +1,13 @@
-import { BudgetDetailView } from "@/features/finance"
+import { redirect } from "next/navigation"
+
+import { searchableEntityRoutes } from "@/lib/searchableEntityRoutes"
 
 interface PageProps {
     params: Promise<{ id: string }>
 }
 
+/** Enlace antiguo: la ejecución vive en la lista como pestaña `variant="execution"` (ADR-0152). */
 export default async function BudgetDetailPage({ params }: PageProps) {
     const { id } = await params
-    return (
-        <div className="flex-1 space-y-4">
-            <BudgetDetailView budgetId={id} />
-        </div>
-    )
+    redirect(`${searchableEntityRoutes["accounting.budget"]}?selected=${id}&action=execution`)
 }

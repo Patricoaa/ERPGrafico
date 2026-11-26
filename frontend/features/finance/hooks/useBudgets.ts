@@ -8,10 +8,16 @@ import { staleTime } from '@/lib/query-config'
 
 export type { Budget }
 
-export function useBudgetDetailData(id: number | null) {
+export function useBudgetDetailData(id: number | null, initialBudget?: Budget | null) {
+    const source = initialBudget ? "initial" : "full"
     return useQuery({
-        queryKey: FINANCE_KEYS.budgets.detailData(id ?? 0),
+        queryKey: [...FINANCE_KEYS.budgets.detailData(id ?? 0), source],
         queryFn: async () => {
+            if (initialBudget) {
+                // The panel already has the row loaded by `useSelectedEntity`: no second GET.
+                const execution = await financeApi.getBudgetExecution(id as number)
+                return { budget: initialBudget, execution }
+            }
             const [budget, execution] = await Promise.all([
                 financeApi.getBudgetDetail(id as number),
                 financeApi.getBudgetExecution(id as number)
@@ -33,13 +39,13 @@ export function useBudgetVariance(id: number | null, params?: Record<string, unk
     })
 }
 
-export function useBudgets() {
+export function useBudgets(params: Record<string, string> = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: FINANCE_KEYS.budgets.lists(),
-        queryFn: financeApi.getBudgets,
+        queryKey: FINANCE_KEYS.budgets.list(params),
+        queryFn: () => financeApi.getBudgets(params),
         staleTime: staleTime.stable,
     })
 

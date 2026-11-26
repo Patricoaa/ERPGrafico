@@ -29,6 +29,6 @@ def journal_entry_relations(entry):
             yield Link("association", "incoming", "partner", ptx.partner, is_dependency=False)
 
 
-# Tipos sin ficha (drawer): ruta propia verificada por core/tests/test_document_routes_sync.py
-DocumentTypeRegistry.register(DocumentType(label="accounting.budget", canonical_url="/finances/budgets/{id}"))
+# Tipos sin ficha propia (budget abre pestaña sobre la lista): ruta verificada por core/tests/test_document_routes_sync.py
+DocumentTypeRegistry.register(DocumentType(label="accounting.budget", canonical_url="/finances/budgets/list?selected={id}"))
 DocumentTypeRegistry.register(DocumentType(label="accounting.fiscalyear", canonical_url="/accounting/closures/{id}"))
