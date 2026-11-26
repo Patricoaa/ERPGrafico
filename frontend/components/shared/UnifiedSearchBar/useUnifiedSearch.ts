@@ -341,21 +341,12 @@ export function useUnifiedSearch(
   }
 }
 
-/**
- * Wires a `useUnifiedSearch` result into `<UnifiedSearchBar>`: `<UnifiedSearchBar config={…} {...bindUnifiedSearch(search)} />`.
- * Replaces the ten hand-written state props each list repeated.
- */
+/** Wires a `useUnifiedSearch` result into the search box: `<UnifiedSearchBar config={…} {...bindUnifiedSearch(search)} />`. */
 export function bindUnifiedSearch(search: UseUnifiedSearchReturn) {
   return {
     chips: search.chips,
-    isFiltered: search.isFiltered,
     inputValue: search.inputValue,
     onInputChange: search.setInputValue,
     onApply: search.applyFilter,
-    onRemove: search.removeFilter,
-    onClearAll: search.clearAll,
-    groupBy: search.groupBy,
-    onGroupBySelect: search.setGroupBy,
-    paramValues: search.paramValues,
   }
 }

@@ -118,6 +118,9 @@ Reglas:
 | `defaultSort` | `"id"` o `"-id"` (ids tipados; solo en orden local) |
 | `groupBy` | id de campo o `null`. Sin `serverGroups`, agrupa las filas cargadas por el texto formateado del campo |
 | `serverGroups` | `useServerGroups(…).groups`: grupos de todo el resultado (`groups/`, ADR-0158 §7) con su conteo, subtotales y filas paginadas por grupo. Reemplaza la agrupación de las filas cargadas |
+| `selection` | `{ state: RowSelectionState, onChange }` (ADR-0159): selección controlada por la pantalla, con claves = `rowId`. Con paginación en servidor no se limpia al cambiar de página; lo decide la pantalla. Sin la opción, la selección es interna y se limpia en cada página del servidor |
+| `rowTone` | `(row) => "attention" \| "muted" \| null` (ADR-0159): tinte semántico de la fila en la tabla (`attention` = sugerencia, `muted` = fuera del flujo). No acepta clases |
+| `dnd` | `{ drag?: (row) => { id, data, disabled? } \| null, drop?: (row) => { id, data } \| null }` (ADR-0159): cada `<tr>` se conecta a `useDraggable` / `useDroppable` de `@dnd-kit/core`. La pantalla pone el `DndContext` y resuelve `onDragEnd` con `data`. Solo en la tabla |
 
 PF-1: documentos, movimientos, contabilidad y crédito paginan **en servidor**. La paginación en cliente se admite solo en maestros pequeños (< ~1 000 filas).
 
@@ -147,7 +150,7 @@ Todo componente del núcleo tiene **≤ 12 props** (test de contrato). Lo que no
 | `Collection.Toolbar` | Arma la barra de colección ([component-collection-toolbar.md](./component-collection-toolbar.md), ADR-0158) desde la `query` del `Root`: vistas, búsqueda, filtros, orden, agrupación, visualización, exportación y analítica. Props: `action?` (acción primaria, p. ej. crear; en pantallas angostas baja bajo la búsqueda en vez de taparla — lote 2c), `views?`, `exportFilters?` |
 | `Collection.View` | `table?`, `card?`, `emptyTitle?`, `emptyDescription?`, `emptyAction?` (p. ej. crear), `onResetFilters?` ("Limpiar filtros" en el vacío filtrado), más `variant?`, `frame?`, `empty?`, `pager?`, `maxHeight?` (§6.1a): elige la superficie activa |
 | `Collection.Table` / `Collection.Grid` | la superficie concreta, para pantallas con una sola vista. Con `groupBy` pintan un `<tbody>` por grupo con su cabecera `th scope="rowgroup"` (tabla) o una sección con encabezado (cards) |
-| `Collection.BulkBar` | `actions: BulkAction<T>[]`: el mismo tipo y la misma barra (`SelectionDock`) que el sistema antiguo; aparece con la selección (`selection="bulk"`) |
+| `Collection.BulkBar` | `actions?: BulkAction<T>[]` y/o `choice?: { label, options, onChoose(items, value) }` (ADR-0159: un selector en el dock que aplica un valor a las filas elegidas y limpia la selección). Barra `SelectionDock`; aparece con la selección (`selection="bulk"`) |
 | `Collection.Analytics` | `children`: el contenido de la feature (p. ej. `AnalyticsPanelContent`). Se monta en `AnalyticsModal`, que se abre con el botón de la barra (`?analytics=<pestaña>`), hereda el alcance filtrado y acepta drill-down; la tabla sigue debajo (ADR-0158 §5.7; ya no existe el modo `analytics`) ([component-collection-toolbar.md §5.7](./component-collection-toolbar.md#57-analítica-en-modal-e2)) |
 
 #### 6.1a Variante embebida (ADR-0137)
@@ -170,7 +173,7 @@ Reglas:
 
 **Ancho de columnas (sin scroll horizontal):** un kind declara `shrink: true` si su valor puede encogerse con elipsis (`text`, `contact`; el renderer trunca y deja el texto completo en `title`). En la tabla, esas columnas encogen (`max-w-0`) y las demás se ajustan a su contenido (`w-px`, `nowrap`). La columna principal conserva un mínimo (`min-w-28`), así encogen antes las otras. Solo hay scroll horizontal si las columnas fijas no caben.
 
-**Acciones de fila por superficie:** `actions={xActions.forCollection(ctx)}` (`createEntityActions`). En la tabla, si hay una sola acción visible se muestra `ActionSingle`; si hay varias, el menú kebab (lo mismo que `.auto()`). En la card se usa `.render`. La barra de `BulkBar` es el `SelectionDock` compartido (`components/shared/ActionDock.tsx`), el mismo que usa `DataTable`.
+**Acciones de fila por superficie:** `actions={xActions.forCollection(ctx)}` (`createEntityActions`). En la tabla, si hay una sola acción visible se muestra `ActionSingle`; si hay varias, el menú kebab (lo mismo que `.auto()`). En la card se usa `.render`. La barra de `BulkBar` es el `SelectionDock` compartido (`components/shared/ActionDock.tsx`).
 
 ### 6.2 `TableLayout`
 
@@ -287,7 +290,8 @@ No existe inferencia por rol, por regex de nombre de clave ni por capacidad de z
 
 ## 10. Coexistencia con el sistema antiguo
 
-- **Congelado:** `createEntityFields`/`*Fields.ts`/`toColumns()`, `AutoEntityCard`, `DataTable`/`DataTableView` y `renderCard`/`renderCustomView`. No admiten props, `FieldType` ni consumidores nuevos. Siguen rigiéndose por [component-fields.md](./component-fields.md) y [component-datatable-views.md](./component-datatable-views.md) mientras tengan consumidores.
+- **Retirado:** `DataTable` (con `DataTableToolbar`, `FacetedFilter` y `DataTableColumnToggle`) se borró en la etapa 5 de ADR-0158, cuando `EXEMPT_CONSUMERS` quedó vacío (ADR-0159).
+- **Congelado:** `createEntityFields`/`*Fields.ts`/`toColumns()`, `AutoEntityCard` y `renderCard`/`renderCustomView`. No admiten props, `FieldType` ni consumidores nuevos. Siguen rigiéndose por [component-fields.md](./component-fields.md) y [component-datatable-views.md](./component-datatable-views.md) mientras tengan consumidores.
 - **Se heredan sin cambios:** los tokens de densidad `--table-*`, la cabecera canónica, el hover único y los bordes, sombras y radios (`component-datatable-views.md` §10); `StatusBadge` como único renderer de estado; `ROW_ACTIONS` para las acciones de fila y de card (`component-row-actions.md`); y `EntityCard` como shell visual.
 - **Migración:** por oleadas (Fase 7 replanificada, `docs/50-audit/Tablascards/07-migration-matrix.md` §6) con la receta de §10.2. No hay adaptador en tiempo de ejecución: `fromLegacyFields()` se descartó (2026-10-18) porque perdía el tipado de los ids. El ratchet `LEGACY_CONSUMERS` (§9) solo puede encoger, y el sistema antiguo se retira cuando queda vacío (precedente: ADR-0072).
 

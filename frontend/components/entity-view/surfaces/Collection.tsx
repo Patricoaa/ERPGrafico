@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRang
 import { AnalyticsDrillDownProvider, AppliedFilters, BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, UnifiedSearchBar, bindUnifiedSearch, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type AnalyticsDrillDownFilter, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { resolveStatus, type BadgeIntent } from "@/lib/badge-resolvers"
 import { ENTITY_REGISTRY, getEntityIcon, type ViewPolicy } from "@/lib/entity-registry"
@@ -31,7 +32,9 @@ import {
 } from "../core/define-entity"
 import { toNumber } from "../core/formatters"
 import { getValueKind, type Align, type Surface, type ValueKind } from "../core/value-kinds"
-import type { CollectionGroup, CollectionPaging, EntityCollection } from "../core/use-entity-collection"
+import type { CollectionGroup, CollectionPaging, EntityCollection, RowDragSpec, RowDropSpec, RowTone } from "../core/use-entity-collection"
+import { useDraggable, useDroppable } from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
 import type { Row, Table as TanstackTable } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
@@ -371,7 +374,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
             <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
                 {compiled.searchBox ? (
                     <div className="min-w-56 flex-1">
-                        <UnifiedSearchBar config={compiled.search} {...bindUnifiedSearch(search)} filterOptions={search.filterOptions} placeholder={compiled.placeholder} menu={false} appliedFilters={false} />
+                        <UnifiedSearchBar config={compiled.search} {...bindUnifiedSearch(search)} placeholder={compiled.placeholder} />
                     </div>
                 ) : (
                     <div className="flex-1" aria-hidden />
@@ -576,11 +579,20 @@ function CollectionMessage({ status, frame, emptyTitle, emptyDescription, emptyA
 
 export interface CollectionBulkBarProps<T> {
     /** Same `BulkAction` type as the legacy bulk dock (ActionDock), so actions migrate unchanged. */
-    actions: BulkAction<T>[]
+    actions?: BulkAction<T>[]
+    /** A value to apply to every selected row, chosen in the dock (ADR-0159); the selection clears after it. */
+    choice?: BulkChoice<T>
+}
+
+export interface BulkChoice<T> {
+    /** Placeholder of the selector ("Asignar categoría"). */
+    label: string
+    options: readonly { value: string; label: string }[]
+    onChoose: (items: T[], value: string) => void | Promise<void>
 }
 
 /** Floating dock with the selected rows' actions (`selection="bulk"`); hidden while nothing is selected. */
-function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
+function BulkBar<T>({ actions = [], choice }: CollectionBulkBarProps<T>) {
     const ctx = useCollectionContext<T>()
     const { table } = ctx.collection
     const rowSelection = table.getState().rowSelection
@@ -594,6 +606,23 @@ function BulkBar<T>({ actions }: CollectionBulkBarProps<T>) {
     )
     return (
         <SelectionDock count={selected.length} onClear={() => table.resetRowSelection()}>
+            {choice && (
+                <Select
+                    // Uncontrolled and remounted per choice: the selector always shows its label.
+                    key={selected.length}
+                    onValueChange={(value) => {
+                        void choice.onChoose(selected, value)
+                        table.resetRowSelection()
+                    }}
+                >
+                    <SelectTrigger aria-label={choice.label} className="h-control-md w-56 rounded-full text-xs font-semibold">
+                        <SelectValue placeholder={choice.label} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {choice.options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            )}
             <BulkActionButtons actions={actions} items={selected} />
         </SelectionDock>
     )
@@ -712,6 +741,44 @@ function TreeCell<T>({ row, label, children }: { row: Row<T>; label: string; chi
     )
 }
 
+
+type DataAttributes = { [key: `data-${string}`]: string | boolean | undefined }
+
+/** Row tints (ADR-0159): semantic tones, never classes from the screen. */
+const ROW_TONE: Record<RowTone, string> = {
+    attention: "bg-warning/10 [&>td]:border-y [&>td]:border-warning/40",
+    muted: "opacity-50",
+}
+
+type RowShellProps = React.ComponentPropsWithoutRef<"tr"> & DataAttributes & { drag: RowDragSpec | null; drop: RowDropSpec | null }
+
+function PlainRow({ drag: _drag, drop: _drop, ...props }: RowShellProps) {
+    return <tr {...props} />
+}
+
+/** A row that can be dragged and/or dropped on (ADR-0159); the screen renders the `DndContext`. */
+function DndRow({ drag, drop, className, style, ...props }: RowShellProps) {
+    const draggable = useDraggable({ id: drag?.id ?? "", data: drag?.data, disabled: !drag || !!drag.disabled })
+    const droppable = useDroppable({ id: drop?.id ?? "", data: drop?.data, disabled: !drop })
+    const setRef = React.useCallback(
+        (node: HTMLTableRowElement | null) => {
+            draggable.setNodeRef(node)
+            droppable.setNodeRef(node)
+        },
+        [draggable, droppable],
+    )
+    const transform = draggable.transform ? CSS.Translate.toString(draggable.transform) : undefined
+    return (
+        <tr
+            ref={setRef}
+            {...props}
+            {...(drag && !drag.disabled ? { ...draggable.attributes, ...draggable.listeners } : {})}
+            style={{ ...style, transform, zIndex: draggable.isDragging ? 50 : undefined }}
+            className={cn(className, drag && "touch-none", draggable.isDragging && "opacity-50", droppable.isOver && "relative z-10 bg-primary/15 ring-2 ring-inset ring-primary")}
+        />
+    )
+}
+
 /**
  * Header control of a tree table: expands or collapses every branch. "All open" is computed over the
  * expandable rows: TanStack's own check also wants every leaf in the per-row map, which hand-expanding
@@ -764,22 +831,33 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
     const originals = (isTree ? rows.filter((r) => r.depth === 0) : rows).map((r) => r.original)
     const treeColumn = cols[0]?.id
     const colSpan = cols.length + (isBulk ? 1 : 0) + (hasActions ? 1 : 0)
+    const { rowTone, dnd } = ctx.collection
     const renderRow = (row: Row<T>, index: number) => {
         const isSelected = ctx.selectedId === row.id || row.getIsSelected()
         const isFlashing = ctx.flashId === row.id
+        const tone = rowTone?.(row.original) ?? null
+        const trProps: React.ComponentPropsWithoutRef<"tr"> & DataAttributes = {
+            // Grouped and tree rows are not a flat sequence of the total: no row index.
+            "aria-rowindex": groups || isTree ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2,
+            "aria-selected": ctx.selection !== "none" ? isSelected : undefined,
+            "data-saved-flash": isFlashing || undefined,
+            "data-tone": tone ?? undefined,
+            // The highlight fades out through `transition-colors` when the flash ends.
+            className: cn(
+                "group border-b border-border/40 table-row-hover transition-colors duration-700",
+                ctx.canOpen && "cursor-pointer",
+                isSelected && "bg-primary/5",
+                isFlashing && "bg-primary/10",
+                tone && ROW_TONE[tone],
+            ),
+            // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
+            onClick: () => ctx.canOpen && ctx.open(row.original),
+        }
+        const drag = dnd?.drag?.(row.original) ?? null
+        const drop = dnd?.drop?.(row.original) ?? null
+        const Tr = drag || drop ? DndRow : PlainRow
         return (
-            <tr
-                key={row.id}
-                // Grouped rows are not a flat sequence: no row index (the group header carries the context).
-                // Grouped and tree rows are not a flat sequence of the total: no row index.
-                aria-rowindex={groups || isTree ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2}
-                aria-selected={ctx.selection !== "none" ? isSelected : undefined}
-                data-saved-flash={isFlashing || undefined}
-                // The highlight fades out through `transition-colors` when the flash ends.
-                className={cn("group border-b border-border/40 table-row-hover transition-colors duration-700", ctx.canOpen && "cursor-pointer", isSelected && "bg-primary/5", isFlashing && "bg-primary/10")}
-                // Mouse enhancement only: the keyboard path is the primary cell button (AX-3).
-                onClick={() => ctx.canOpen && ctx.open(row.original)}
-            >
+            <Tr key={row.id} drag={drag} drop={drop} {...trProps}>
                 {isBulk && (
                     <td className={CELL} onClick={(e) => e.stopPropagation()}>
                         <SelectionRing
@@ -811,7 +889,7 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
                         {ctx.actions?.(row.original, "table")}
                     </td>
                 )}
-            </tr>
+            </Tr>
         )
     }
 

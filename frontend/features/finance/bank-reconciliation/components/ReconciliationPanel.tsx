@@ -4,7 +4,6 @@ import * as React from "react"
 import { formatCurrency } from "@/lib/money"
 import {useState, useEffect, useMemo, useCallback} from "react"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 
 import { ExclusionModal } from "./ExclusionModal"
 import { SplitAllocationDialog } from "./SplitAllocationDialog"
@@ -12,8 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, SubmitButton, BaseModal, CancelButton, Chip, Drawer, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner, Banner } from "@/components/shared"
-import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
+import { ActionConfirmModal, ActionDock, SubmitButton, BaseModal, CancelButton, Chip, Drawer, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner, Banner } from "@/components/shared"
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
+import { workbenchItemEntity, workbenchItemViews, workbenchLineEntity, workbenchLineViews, type WorkbenchItemRow, type WorkbenchLineRow } from "../entity-view/reconciliationWorkbench.entity"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
@@ -27,13 +27,10 @@ import { cn, parseDateOnly } from "@/lib/utils"
 import {
     DndContext,
     type DragEndEvent,
-    useDraggable,
-    useDroppable,
     PointerSensor,
     useSensor,
     useSensors,
 } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
 import {
     useStatementQuery,
     useUnreconciledLinesQuery,
@@ -59,14 +56,9 @@ import { MovementWizard, type MovementData } from "@/features/treasury"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 import { ReconciliationIntelligencePanel } from "./ReconciliationIntelligencePanel"
 
-import { DataTable } from '@/components/shared'
 import { LazyDrawer } from "@/features/_shared"
-import { type ColumnDef, type RowSelectionState, type PaginationState, type Updater } from "@tanstack/react-table"
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { statementLineActionItems, type StatementLineActionsCtx } from './statementLineActions'
-import { systemItemActionItems, type SystemItemActionsCtx } from './systemItemActions'
-import { RowActionsCell } from './RowActionsCell'
+import { statementLineActions, type StatementLineActionsCtx } from './statementLineActions'
+import { systemItemActions, type SystemItemActionsCtx } from './systemItemActions'
 import { buildReconciledGroups } from '../lib/reconciledGroups'
 
 import { Label } from "@/components/ui/label"
@@ -89,55 +81,6 @@ interface ReconciliationPanelProps {
     onComplete: () => void
 }
 
-// ─── DnD Wrappers ────────────────────────────────────────────────────────────
-
-function DraggablePayment({ id, children, disabled }: { id: number, children: React.ReactNode, disabled?: boolean }) {
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-        id: `payment-${id}`,
-        data: { type: 'payment', id },
-        disabled
-    });
-
-    const style = transform ? {
-        transform: CSS.Translate.toString(transform),
-        zIndex: isDragging ? 50 : undefined,
-    } : undefined;
-
-    if (!React.isValidElement(children)) return <>{children}</>;
-    const child = children as React.ReactElement<Record<string, unknown>>;
-
-    return React.cloneElement(child, {
-        ref: setNodeRef,
-        style: { ...style, ...(child.props.style as React.CSSProperties | undefined) },
-        className: cn(
-            child.props.className as string,
-            "touch-none",
-            isDragging && "opacity-50 grayscale-[0.5] scale-95"
-        ),
-        ...listeners,
-        ...attributes
-    } as Record<string, unknown>);
-}
-
-function DroppableBankLine({ id, children }: { id: number, children: React.ReactNode }) {
-    const { setNodeRef, isOver } = useDroppable({
-        id: `line-${id}`,
-        data: { type: 'line', id }
-    });
-
-    if (!React.isValidElement(children)) return <>{children}</>;
-    const child = children as React.ReactElement<Record<string, unknown>>;
-
-    return React.cloneElement(child, {
-        ref: setNodeRef,
-        className: cn(
-            child.props.className as string,
-            "transition-all duration-200",
-            isOver && "bg-primary/20 scale-[1.01] shadow-overlay ring-2 ring-primary ring-inset z-10 relative"
-        )
-    });
-}
-
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
@@ -151,7 +94,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
-    const search = useUnifiedSearch(reconciliationUnifiedSearchDef)
+    // Search, type and date range for both lists and the reconciled tab, with its own URL keys (`rec_…`).
+    const query = useCollectionQuery(workbenchLineEntity, { urlPrefix: "rec_" })
+    const { search } = query
 
     // Synchronize unified search filters to query parameters
     useEffect(() => {
@@ -205,8 +150,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const reconciledGroups = useMemo(() => buildReconciledGroups(reconciledData?.results ?? []), [reconciledData])
     const reconciledCount = reconciledData?.count ?? 0
     const reconciledTruncated = reconciledCount > (reconciledData?.results?.length ?? 0)
-    const unreconciledLines: BankStatementLine[] = bankData?.results || []
-    const unreconciledPayments: ReconciliationSystemItem[] = systemData?.results || []
+    const unreconciledLines = useMemo<BankStatementLine[]>(() => bankData?.results || [], [bankData])
+    const unreconciledPayments = useMemo<ReconciliationSystemItem[]>(() => systemData?.results || [], [systemData])
 
     const { data: suggestions = [] } = useLineSuggestionsQuery(lineIdStr, selectedLines.length === 1)
     const { data: lineSuggestions = [] } = usePaymentSuggestionsQuery(paymentIdStr, selectedPayments.length === 1)
@@ -306,35 +251,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Selection Handlers ───────────────────────────────────────────────────
 
-    const handleLineSelectionChange = useCallback((selection: RowSelectionState) => {
-        const selected = Object.keys(selection).map(index => unreconciledLines[parseInt(index)])
-        setSelectedLines(selected.filter(Boolean))
-    }, [unreconciledLines])
+    // Controlled selection (ADR-0159): the screen keeps the selected rows of the current page.
+    const lineSelection = useMemo(() => ({
+        state: Object.fromEntries(selectedLines.map((l) => [String(l.id), true])),
+        onChange: (next: Record<string, boolean>) => setSelectedLines(unreconciledLines.filter((l) => next[String(l.id)])),
+    }), [selectedLines, unreconciledLines])
 
-    const handlePaymentSelectionChange = useCallback((selection: RowSelectionState) => {
-        const selected = Object.keys(selection).map(index => unreconciledPayments[parseInt(index)])
-        setSelectedPayments(selected.filter(Boolean))
-    }, [unreconciledPayments])
-
-    const bankRowSelection = useMemo(() => {
-        const selection: RowSelectionState = {}
-        unreconciledLines.forEach((l, index) => {
-            if (selectedLines.some(sl => sl.id === l.id)) {
-                selection[index] = true
-            }
-        })
-        return selection
-    }, [unreconciledLines, selectedLines])
-
-    const systemRowSelection = useMemo(() => {
-        const selection: RowSelectionState = {}
-        unreconciledPayments.forEach((p, index) => {
-            if (selectedPayments.some(sp => sp.id === p.id)) {
-                selection[index] = true
-            }
-        })
-        return selection
-    }, [unreconciledPayments, selectedPayments])
+    const paymentSelection = useMemo(() => ({
+        state: Object.fromEntries(selectedPayments.map((p) => [String(p.id), true])),
+        onChange: (next: Record<string, boolean>) => setSelectedPayments(unreconciledPayments.filter((p) => next[String(p.id)])),
+    }), [selectedPayments, unreconciledPayments])
 
     // ─── Matching Logic ───────────────────────────────────────────────────────
 
@@ -437,8 +363,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         const { active, over } = event;
 
         if (over && active.data.current?.type === 'payment' && over.data.current?.type === 'line') {
-            const paymentId = active.data.current.id;
-            const lineId = over.data.current.id;
+            const paymentId = Number(active.data.current.id);
+            const lineId = Number(over.data.current.id);
 
             handleMatch(lineId, paymentId);
         }
@@ -494,248 +420,53 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
     }
 
-    // ─── Column Definitions ───────────────────────────────────────────────────
+    // ─── Collections ──────────────────────────────────────────────────────────
 
-    // Acción de fila: una sola → su icono; varias → kebab (RowActionsCell).
-    const bankActionsColumn = useMemo<ColumnDef<BankStatementLine>>(() => ({
-        id: "actions",
-        header: "",
-        size: 56,
-        enableSorting: false,
-        cell: ({ row }) => <RowActionsCell actions={statementLineActionItems(row.original, statementLineActionsCtx)} />,
-    }), [statementLineActionsCtx])
+    const lineRows = useMemo<WorkbenchLineRow[]>(
+        () => unreconciledLines.map((l) => ({ ...l, suggested: lineSuggestions.some((s: LineSuggestion) => s.line_data?.id === l.id) })),
+        [unreconciledLines, lineSuggestions],
+    )
+    const itemRows = useMemo<WorkbenchItemRow[]>(
+        () => unreconciledPayments.map((item) => {
+            const deposit = item.movement_type === 'INBOUND' || (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
+            let typeLabel = deposit ? "Depósito" : "Retiro"
+            if (item.movement_type === 'TRANSFER') typeLabel = deposit ? "Transf. Entrante" : "Transf. Saliente"
+            if (item.movement_type === 'ADJUSTMENT') typeLabel = "Ajuste"
+            const suggested = suggestions.some((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id === item.terminal_batch_id : s.payment_data?.id === item.id))
+            return { ...item, deposit, typeLabel, suggested }
+        }),
+        [unreconciledPayments, suggestions, treasuryAccountId],
+    )
 
-    const bankColumns = useMemo<ColumnDef<BankStatementLine>[]>(() => [
+    const lineCollection = useEntityCollection(
+        workbenchLineEntity,
+        { rows: lineRows, isLoading: loadingLines, rowCount: bankData?.count ?? 0 },
         {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            size: 40,
-        },
-        {
-            id: "line_number",
-            header: "Linea",
-            cell: ({ row }) => (
-                <span className="font-mono text-muted-foreground tabular-nums">
-                    {row.original.line_number}
-                </span>
-            ),
-            size: 36,
-        },
-        {
-            accessorKey: "transaction_date",
-            header: "Fecha",
-            cell: ({ row }) => (
-                <span className="text-xs">
-                    {format(parseDateOnly(row.original.transaction_date), 'dd/mm', { locale: es })}
-                </span>
-            ),
-            size: 80,
-        },
-        {
-            accessorKey: "description",
-            header: "Descripción",
-            cell: ({ row }) => {
-                const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data.id === row.original.id)
-                return (
-                    <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
-                        <span className={cn("text-xs truncate", isSuggested && "text-warning-text")}>
-                            {row.original.description}
-                        </span>
-                        {row.original.reconciliation_status === 'EXCLUDED' && (
-                            <Chip size="xs" intent="destructive">
-                                Excluido
-                            </Chip>
-                        )}
-                        {row.original.reference && (
-                            <span className="text-3xs font-mono text-muted-foreground truncate opacity-70"> REF: {row.original.reference}</span>
-                        )}
-                        {isSuggested && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                                <Sparkles className="h-2.5 w-2.5 text-warning-text" />
-                                <span className="text-3xs font-bold uppercase text-warning-text"> {/* intentional: badge density */} Match Sugerido</span>
-                            </div>
-                        )}
-                    </div>
-                )
+            pagination: {
+                mode: "server",
+                state: { pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 },
+                onChange: (next) => setBankParams((p) => ({ ...p, page: next.pageIndex + 1, pageSize: next.pageSize })),
             },
+            selection: lineSelection,
+            rowTone: (l) => (l.reconciliation_status === "EXCLUDED" ? "muted" : l.suggested ? "attention" : null),
+            // A treasury movement is dropped on a statement line to match them (`handleDragEnd`).
+            dnd: { drop: (l) => ({ id: `line-${l.id}`, data: { type: "line", id: l.id } }) },
         },
+    )
+    const itemCollection = useEntityCollection(
+        workbenchItemEntity,
+        { rows: itemRows, isLoading: loadingPayments, rowCount: systemData?.count ?? 0 },
         {
-            id: "type",
-            header: "Tipo",
-            cell: ({ row }) => {
-                const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
-                return (
-                    <span className={cn("text-xs font-semibold", isCredit ? "text-success-text" : "text-destructive")}>
-                        {isCredit ? "Abono" : "Cargo"}
-                    </span>
-                )
+            pagination: {
+                mode: "server",
+                state: { pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 },
+                onChange: (next) => setSystemParams((p) => ({ ...p, page: next.pageIndex + 1, pageSize: next.pageSize })),
             },
-            size: 70,
+            selection: paymentSelection,
+            rowTone: (i) => (i.suggested ? "attention" : null),
+            dnd: { drag: (i) => ({ id: `payment-${i.id}`, data: { type: "payment", id: i.id } }) },
         },
-        {
-            id: "amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
-            cell: ({ row }) => {
-                const amount = Math.abs(safeDifference(safeParseFloat(row.original.credit), safeParseFloat(row.original.debit)))
-                const isCredit = safeParseFloat(row.original.credit) > safeParseFloat(row.original.debit)
-                return (
-                    <div className="flex flex-col items-end justify-center h-full">
-                        <DataCell.CurrencyFlow value={amount} direction={isCredit ? 'inflow' : 'outflow'} showIcon={false} className="text-sm" />
-                    </div>
-                )
-            },
-            size: 100,
-        },
-        bankActionsColumn
-    ], [lineSuggestions, bankActionsColumn])
-
-    const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            size: 40,
-        },
-        {
-            accessorKey: "display_id",
-            header: "Documento",
-            cell: ({ row }) => (
-                <span className=" text-xs">
-                    {row.original.display_id || row.original.code || 'PEND'}
-                </span>
-            ),
-            size: 72,
-        },
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => (
-                <span className=" text-xs text-muted-foreground">
-                    {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
-                </span>
-            ),
-            size: 72,
-        },
-        {
-            accessorKey: "contact_name",
-            header: "Entidad / Concepto",
-            cell: ({ row }) => {
-                const isSuggested = suggestions.some((s: PaymentSuggestion) =>
-                    s.is_batch ? s.batch_data?.id === row.original.terminal_batch_id : s.payment_data?.id === row.original.id
-                )
-                return (
-                    <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
-                        <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning-text")}>
-                            {row.original.contact_name}
-                        </span>
-                        {row.original.terminal_batch_id && (
-                            <Chip size="xs" intent="info" className="w-fit">
-                                Liquidación Terminal: {row.original.terminal_batch_display}
-                            </Chip>
-                        )}
-                        {isSuggested && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                                <Sparkles className="h-2.5 w-2.5 text-warning-text shadow-card" />
-                                <span className="text-3xs font-bold uppercase text-warning-text"> {/* intentional: badge density */} Match Sugerido</span>
-                            </div>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
-            id: "type",
-            header: "Tipo",
-            cell: ({ row }) => {
-                const item = row.original
-                const isDeposit = (
-                    item.movement_type === 'INBOUND' ||
-                    (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
-                )
-                let label = isDeposit ? "Depósito" : "Retiro"
-                if (item.movement_type === 'TRANSFER') label = isDeposit ? "Transf. Entrante" : "Transf. Saliente"
-                if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
-
-                return (
-                    <span className={cn("text-xs font-semibold", isDeposit ? "text-success-text" : "text-destructive")}>
-                        {label}
-                    </span>
-                )
-            },
-            size: 90,
-        },
-        {
-            id: "amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
-            cell: ({ row }) => {
-                const item = row.original
-                const isDeposit = (
-                    item.movement_type === 'INBOUND' ||
-                    (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
-                )
-                return (
-                    <div className="flex flex-col items-end justify-center h-full">
-                        <span className={cn(
-                            "font-semibold text-xs tracking-tight group-hover:scale-105 transition-transform",
-                            isDeposit ? "text-success-text" : "text-destructive"
-                        )}>
-                            
-                            {formatCurrency(Math.abs(parseFloat(item.amount)))}
-                        </span>
-                    </div>
-                )
-            },
-            size: 100,
-        },
-        {
-            id: "actions",
-            header: "",
-            size: 56,
-            enableSorting: false,
-            cell: ({ row }) => <RowActionsCell actions={systemItemActionItems(row.original, systemItemActionsCtx)} />,
-        },
-    ], [suggestions, systemItemActionsCtx, treasuryAccountId])
+    )
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -744,28 +475,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             {isError && <StaleDataBanner className="px-4 py-2" />}
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
             <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
-                {/* ─── Unified Workbench Toolbar ─── */}
-                <div className="flex items-center justify-between gap-4 w-full mb-3 h-9">
-                    {/* Left: Unified Search Bar (Search + Filters) */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0 h-9">
-                        <UnifiedSearchBar
-                            config={reconciliationUnifiedSearchDef}
-                            chips={search.chips}
-                            isFiltered={search.isFiltered}
-                            inputValue={search.inputValue}
-                            onInputChange={search.setInputValue}
-                            onApply={search.applyFilter}
-                            onRemove={search.removeFilter}
-                            onClearAll={search.clearAll}
-                            groupBy={search.groupBy}
-                            onGroupBySelect={search.setGroupBy}
-                            paramValues={search.paramValues}
-                            placeholder="Buscar movimientos y pagos por descripción, monto..."
-                            className="flex-1"
-                        />
-                    </div>
-
-                    {/* Right: Actions & Navigation Group */}
+                {/* ─── Workbench command bar: one search for both lists; tabs and actions on the right ─── */}
+                <Collection.Root collection={lineCollection} query={query} selection="bulk" label="Líneas de cartola pendientes" actions={statementLineActions.forCollection(statementLineActionsCtx)}>
+                <Collection.Toolbar
+                    action={
                     <div className="flex items-center gap-3 shrink-0 h-9">
                         {/* Navigation Tabs List */}
                         <div className={SEG_WRAPPER}>
@@ -811,7 +524,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <TooltipContent side="top">Inteligencia de conciliación</TooltipContent>
                         </Tooltip>
                     </div>
-                </div>
+                    }
+                />
 
                 <TabsContent value="unreconciled" className="flex-1 min-h-0 flex flex-col mt-0 data-[state=inactive]:hidden">
                     <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-1 pb-2 text-3xs text-muted-foreground">
@@ -839,51 +553,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <span className="text-3xs font-mono tabular-nums text-muted-foreground">{bankData?.count || 0} pendientes</span>
                                     </div>
                                     <div className="flex-1 min-h-0">
-                                        <DataTable
-                                            columns={bankColumns}
-                                            data={unreconciledLines}
-                                            variant="embedded"
-                                            emptyState={{
-                                                title: "Sin líneas pendientes",
-                                                description: "Todas las líneas de esta cartola están conciliadas o excluidas. Confírmala para cerrarla.",
-                                            }}
-                                            rowSelection={bankRowSelection}
-                                            onRowSelectionChange={handleLineSelectionChange}
-                                            skeletonRows={10}
-                                            pageSizeOptions={[50, 100]}
-                                            defaultPageSize={50}
-                                            renderRow={(row, children) => {
-                                                const line = row.original as BankStatementLine
-                                                const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data?.id === line.id)
-                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as unknown as Record<string, unknown>).reconciliation_state === 'EXCLUDED'
-
-                                                if (!React.isValidElement(children)) return children as unknown as React.ReactElement
-
-                                                return (
-                                                    <DroppableBankLine id={line.id}>
-                                                        {React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-                                                            className: cn(
-                                                                (children.props as Record<string, unknown>).className as string,
-                                                                "group transition-all duration-300",
-                                                                isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.05)]",
-                                                                isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
-                                                            )
-                                                        } as Record<string, unknown>)}
-                                                    </DroppableBankLine>
-                                                )
-                                            }}
-                                            onPaginationChange={(updater: Updater<PaginationState>) => {
-                                                if (typeof updater === 'function') {
-                                                    const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
-                                                    setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                                } else {
-                                                    setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                                }
-                                            }}
-                                            manualPagination
-                                            pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
-                                            rowCount={bankData?.count || 0}
-                                            pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
+                                        <Collection.View
+                                            table={workbenchLineViews.table}
+                                            emptyTitle="Sin líneas pendientes"
+                                            emptyDescription="Todas las líneas de esta cartola están conciliadas o excluidas. Confírmala para cerrarla."
                                         />
                                     </div>
                                 </div>
@@ -908,54 +581,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <span className="text-3xs font-mono tabular-nums text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
                                     <div className="flex-1 min-h-0">
-                                        <DataTable
-                                            columns={paymentColumns}
-                                            data={unreconciledPayments}
-                                            variant="embedded"
-                                            emptyState={{
-                                                title: "Sin movimientos disponibles",
-                                                description: "No hay pagos ni movimientos de tesorería sin conciliar en esta cuenta. Crea uno si falta.",
-                                            }}
-                                            rowSelection={systemRowSelection}
-                                            onRowSelectionChange={handlePaymentSelectionChange}
-                                            skeletonRows={10}
-                                            pageSizeOptions={[50, 100]}
-                                            defaultPageSize={50}
-                                            renderRow={(row, children) => {
-                                                const item = row.original as ReconciliationSystemItem
-                                                const isSuggested = suggestions.some((s: PaymentSuggestion) => {
-                                                    if (s.is_batch) {
-                                                        return s.batch_data?.id === item.terminal_batch_id
-                                                    }
-                                                    return s.payment_data?.id === item.id
-                                                })
-                                                if (!React.isValidElement(children)) return children as unknown as React.ReactElement
-
-                                                return (
-                                                    <DraggablePayment id={item.id}>
-                                                        {React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-                                                            className: cn(
-                                                                (children.props as Record<string, unknown>).className as string,
-                                                                "group transition-all duration-300",
-                                                                isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.08)]"
-                                                            )
-                                                        } as Record<string, unknown>)}
-                                                    </DraggablePayment>
-                                                )
-                                            }}
-                                            onPaginationChange={(updater: Updater<PaginationState>) => {
-                                                if (typeof updater === 'function') {
-                                                    const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
-                                                    setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                                } else {
-                                                    setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                                }
-                                            }}
-                                            manualPagination
-                                            pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
-                                            rowCount={systemData?.count || 0}
-                                            pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
-                                        />
+                                        <Collection.Root collection={itemCollection} selection="bulk" label="Movimientos de tesorería disponibles" actions={systemItemActions.forCollection(systemItemActionsCtx)}>
+                                            <Collection.View
+                                                table={workbenchItemViews.table}
+                                                emptyTitle="Sin movimientos disponibles"
+                                                emptyDescription="No hay pagos ni movimientos de tesorería sin conciliar en esta cuenta. Crea uno si falta."
+                                            />
+                                        </Collection.Root>
                                     </div>
                                 </div>
                             </div>
@@ -1555,6 +1187,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <ReconciliationIntelligencePanel accountId={treasuryAccountId} />
                     </div>
                 </Drawer>
+                </Collection.Root>
             </Tabs>
         </DndContext>
         </SkeletonShell>

@@ -139,17 +139,6 @@ export interface AnalyticsTab {
     gridRows?: string
 }
 
-export interface AnalyticsPanelProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    entityName: string
-    tabs: AnalyticsTab[]
-    activeTab?: string
-    onTabChange?: (value: string) => void
-    granularity?: Granularity
-    onGranularityChange?: (value: Granularity) => void
-}
-
 export interface AnalyticsPanelContentProps {
     entityName: string
     tabs: AnalyticsTab[]
@@ -159,18 +148,6 @@ export interface AnalyticsPanelContentProps {
     onGranularityChange?: (value: Granularity) => void
     /** Drillable charts call this. Inside `Collection.Analytics` it is provided: the filter is applied and the modal closes. */
     onDrillDown?: (filter: AnalyticsDrillDownFilter) => void
-}
-
-export type AnalyticsPanelConfig = {
-    onClick?: () => void
-    screen?: {
-        entityName: string
-        tabs: AnalyticsTab[]
-        activeTab?: string
-        onTabChange?: (value: string) => void
-        granularity?: Granularity
-        onGranularityChange?: (value: Granularity) => void
-    }
 }
 
 

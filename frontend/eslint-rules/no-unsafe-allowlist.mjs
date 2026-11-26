@@ -19,13 +19,11 @@
  */
 /** @type {Record<string, number>} */
 export const NO_UNSAFE_BASELINE = {
-    "components/shared/DataTableToolbar.tsx": 1,
     "components/shared/StatusBadge.tsx": 1,
     "components/shared/UniversalSearch.tsx": 1,
     "features/billing/api/billingApi.ts": 1,
     "features/contacts/api/partnersApi.ts": 11,
     "features/credits/api/creditsApi.ts": 10,
-    "features/finance/bank-reconciliation/components/ReconciliationPanel.tsx": 2,
     "features/finance/components/BudgetVarianceView.tsx": 1,
     "features/hr/api/hrApi.ts": 24,
     "features/inventory/api/inventoryApi.ts": 10,

@@ -115,7 +115,7 @@ La **densidad y las columnas** (visibilidad, orden, fijadas) no van en la URL. S
 
 ### 5. Filtros: `FilterMenu` y `AppliedFilters`
 
-- **`FilterMenu`** es un popover de dos paneles: la lista de filtros a la izquierda (con búsqueda y el conteo de valores elegidos) y los valores del filtro actual a la derecha. Reutiliza los controles de `UnifiedSearchBar/filters/*`.
+- **`FilterMenu`** es un popover de dos paneles: la lista de filtros a la izquierda (con búsqueda y el conteo de valores elegidos) y los valores del filtro actual a la derecha. Usa sus propios controles.
 - **Momento de aplicar:**
   - `toggle` y `single` aplican al instante.
   - `multi` y `range` aplican con «Aplicar · N resultados» o al cerrar el popover.
@@ -191,6 +191,12 @@ Es un botón de ícono con los formatos de `entity.export`. Exporta la consulta 
 | 5 | Limpieza: se retiran `SearchBarMenu`, el modo de chips en el input, `GROUP_ROW_LIMIT`, `AnalyticsPanel` (Drawer), `DataTableToolbar`, `FacetedFilter`, `DataTableColumnToggle` y los `unifiedSearchDef.ts` migrados | sí |
 
 Mientras dura la migración, una vista usa `unifiedSearchDef` (vía el adaptador) o `entity.query`, nunca los dos.
+
+**Cierre de la etapa 5 (2026-11-26).**
+- Retirados: el adaptador `fromUnifiedSearchDef`, `SearchBarMenu` y sus secciones, el último `unifiedSearchDef.ts`, `AnalyticsPanel` (Drawer) y `useGroupByPagination`.
+- `DataTable` se borró junto con `DataTableToolbar`, `FacetedFilter` y `DataTableColumnToggle`. Sus dos últimas pantallas (conciliación y mapeo de cuentas) migraron con [ADR-0159](0159-collection-seleccion-controlada-tono-y-arrastre.md).
+- Las listas embebidas usan la barra completa con `useCollectionQuery(entity, { urlPrefix })`.
+- `GROUP_ROW_LIMIT` **se mantiene**: es el respaldo documentado para agrupar por un valor derivado sin `groupKey`. Se retira cuando todo campo agrupable de una lista paginada tenga agrupación en servidor.
 
 ## Consecuencias
 

@@ -1,4 +1,4 @@
-export { AnalyticsPanel, AnalyticsPanelContent, AnalyticsTabBar } from "./AnalyticsPanel"
+export { AnalyticsPanelContent, AnalyticsTabBar } from "./AnalyticsPanel"
 export { getCssChartColors } from "./nivo-theme"
 export type { AnalyticsTabBarProps } from "./AnalyticsPanel"
 export type { AnalyticsPanelContentProps } from "./types"
@@ -11,8 +11,6 @@ export { AnalyticsDrillDownProvider, useAnalyticsDrillDown } from "./drill-down"
 export { SummaryTable } from "./shared-utils"
 
 export type {
-    AnalyticsPanelConfig,
-    AnalyticsPanelProps,
     AnalyticsTab,
     AnalyticsColumn,
     AnalyticsSection,

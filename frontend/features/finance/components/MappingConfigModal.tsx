@@ -2,15 +2,13 @@
 
 import React, { useCallback, useMemo } from "react"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
-import { DataTable, ActionDock, Chip, DataCell, BaseModal, AutoSaveStatusBadge, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, LabeledSelect } from '@/components/shared'
-import type { UnifiedSearchConfig } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import { useForm, Controller } from "react-hook-form"
+import { BaseModal, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
+import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
+import { FormProvider, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 
-import { SlidersHorizontal, AlertCircle, Tag } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SlidersHorizontal } from "lucide-react"
 
 import { useAccountMappings, type MappingType } from "@/features/finance/hooks/useAccountMappings"
 import {
@@ -19,8 +17,7 @@ import {
     BS_CATEGORIES,
     type Account
 } from "@/features/accounting"
-import { Checkbox } from "@/components/ui/checkbox"
-import { cn } from "@/lib/utils"
+import { accountMappingEntity, accountMappingViews, MappingCategoriesProvider, type AccountMappingRow } from "../entity-view/accountMapping.entity"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
@@ -69,29 +66,19 @@ export function MappingConfigModal({
         defaultValues: () => ({}),
     })
 
-    const searchConfig: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            {
-                key: 'search',
-                label: 'Búsqueda por código o nombre',
-                serverParam: 'search'
-            }
-        ]
-    }), [])
-
-    const search = useUnifiedSearch(searchConfig)
-
-    const filteredAccounts = useMemo(() => {
-        let result = accounts
-        const searchTerm = search.paramValues.search?.toLowerCase()
-        if (searchTerm) {
-            result = result.filter(a =>
-                a.code.toLowerCase().includes(searchTerm) ||
-                a.name.toLowerCase().includes(searchTerm)
-            )
-        }
-        return result
-    }, [accounts, search.paramValues.search])
+    // Own URL keys (`map_…`): the modal opens over the reports page.
+    const query = useCollectionQuery(accountMappingEntity, { sorting: "client", urlPrefix: "map_" })
+    const { search } = query
+    const rows = useMemo<AccountMappingRow[]>(
+        () => accounts.map((a) => ({ ...a, original: (a[fieldName as keyof Account] as string | null) || "none" })),
+        [accounts, fieldName],
+    )
+    const filteredRows = useMemo(() => search.filterFn(rows), [search, rows])
+    const collection = useEntityCollection(
+        accountMappingEntity,
+        { rows: filteredRows, isLoading, isFiltered: search.isFiltered },
+        { pagination: { mode: "none" }, sorting: query.sorting },
+    )
 
     const getCategories = () => {
         switch (mappingType) {
@@ -153,122 +140,17 @@ export function MappingConfigModal({
         onOpenChange(newOpen)
     }, [flush, onOpenChange])
 
-    const handleBulkUpdate = (items: Account[], value: string, clear: () => void) => {
+    const handleBulkUpdate = (items: AccountMappingRow[], value: string) => {
         items.forEach(item => {
-            form.setValue(item.id.toString(), value === "none" ? "none" : value, {
+            form.setValue(item.id.toString(), value, {
                 shouldDirty: true,
                 shouldTouch: true,
                 shouldValidate: true,
             })
         })
-        clear()
     }
 
-    const columns: ColumnDef<Account>[] = [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                            ? "indeterminate"
-                            : false
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    className="translate-y-[2px] border-muted-foreground/30"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    className="translate-y-[2px] border-muted-foreground/30"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        {
-            accessorKey: "code",
-            header: "Código",
-            enableSorting: true,
-            cell: ({ row }) => (
-                <DataCell.Code className="justify-start opacity-70">
-                    {row.getValue("code")}
-                </DataCell.Code>
-            )
-        },
-        {
-            accessorKey: "name",
-            header: "Cuenta",
-            enableSorting: true,
-            cell: ({ row }) => (
-                <DataCell.Text className="justify-start tracking-tight uppercase max-w-[200px] sm:max-w-[300px] truncate">
-                    {row.getValue("name")}
-                </DataCell.Text>
-            )
-        },
-        {
-            accessorKey: "account_type_display",
-            header: "Tipo",
-            enableSorting: true,
-            cell: ({ row }) => (
-                <Chip size="xs" intent="neutral" className="h-5 rounded-sm bg-muted/30">
-                    {row.getValue("account_type_display")}
-                </Chip>
-            )
-        },
-        {
-            id: "category",
-            header: "Categoría Asignada",
-            accessorFn: (row) => row[fieldName as keyof Account] || "none",
-            enableSorting: true,
-            cell: ({ row }) => {
-                const account = row.original
-                return (
-                    <Controller
-                        control={form.control}
-                        name={account.id.toString()}
-                        render={({ field }) => {
-                            const fieldValue = field.value as string | null | undefined
-                            const currentValue = fieldValue ?? "none"
-                            const originalValue = account[fieldName as keyof Account] as string | null
-                            const isModified = currentValue !== (originalValue || "none")
-
-                            return (
-                                <div className="flex items-center gap-2">
-                                    {(!fieldValue || fieldValue === "none") && (
-                                        <AlertCircle className="h-3.5 w-3.5 text-warning-text shrink-0" />
-                                    )}
-                                    <LabeledSelect
-                                        variant="inline"
-                                        value={currentValue}
-                                        onChange={field.onChange}
-                                        className={cn(
-                                            "h-8 text-2xs font-medium w-[200px]",
-                                            isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
-                                            (!fieldValue || fieldValue === "none") && !isModified && "text-warning-text border-warning/30 bg-warning/5"
-                                        )}
-                                        options={[
-                                            { value: "none", label: <span className="text-muted-foreground italic">Sin mapeo</span> },
-                                            ...getCategories().map(cat => ({ value: cat.value, label: cat.label }))
-                                        ]}
-                                    />
-                                </div>
-                            )
-                        }}
-                    />
-                )
-            }
-        }
-    ]
+    const categoryOptions = useMemo(() => getCategories().map((c) => ({ value: c.value, label: c.label })), [mappingType]) // eslint-disable-line react-hooks/exhaustive-deps -- getCategories reads mappingType only
 
     return (
         <BaseModal
@@ -293,45 +175,26 @@ export function MappingConfigModal({
         >
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando mapeo de cuentas">
                 <div className="flex-1 flex flex-col min-h-0 max-h-[65vh] overflow-hidden">
-                    <DataTable
-                        columns={columns}
-                        data={filteredAccounts}
-                        isLoading={isLoading}
-                        variant="embedded"
-                        unifiedSearch={
-                            <UnifiedSearchBar
-                                config={searchConfig}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
-                            />
-                        }
-                        bulkDock={(items, clear) => (
-                            <ActionDock.Actions>
-                                <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
-                                    <SelectTrigger className="h-control-md rounded-sm border-border/40 bg-muted/30 text-xs font-bold uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
-                                        <Tag className="mr-2 h-3.5 w-3.5" />
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                        <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
-                                        {getCategories().map(cat => (
-                                            <SelectItem key={cat.value} value={cat.value}>
-                                                {cat.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </ActionDock.Actions>
-                        )}
-                    />
+                    <FormProvider {...form}>
+                        <MappingCategoriesProvider options={categoryOptions}>
+                            <Collection.Root collection={collection} query={query} selection="bulk" label="Cuentas a mapear">
+                                <Collection.Toolbar />
+                                <Collection.View
+                                    table={accountMappingViews.table}
+                                    emptyTitle="Sin cuentas"
+                                    emptyDescription="No hay cuentas para este informe."
+                                    onResetFilters={() => void search.clearAll()}
+                                />
+                                <Collection.BulkBar<AccountMappingRow>
+                                    choice={{
+                                        label: "Asignar categoría",
+                                        options: [{ value: "none", label: "Quitar mapeo" }, ...categoryOptions],
+                                        onChoose: handleBulkUpdate,
+                                    }}
+                                />
+                            </Collection.Root>
+                        </MappingCategoriesProvider>
+                    </FormProvider>
                 </div>
             </SkeletonShell>
         </BaseModal>
