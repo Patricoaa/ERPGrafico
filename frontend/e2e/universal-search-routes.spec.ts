@@ -18,11 +18,113 @@ import { test, expect, Page } from '@playwright/test';
 // ---------------------------------------------------------------------------
 // Helper: abre el Universal Search, escribe la query y devuelve el locator
 // ---------------------------------------------------------------------------
-async function openSearchAndType(page: Page, query: string) {
-    await page.goto('/');
+async function openSearchAndType(page: Page, query: string, { reload = true }: { reload?: boolean } = {}) {
+    // El valor por defecto preserva el patrón T-79 (cada caso empieza en `/`). Los casos de
+    // regresión #260 necesitan abrir la búsqueda dos veces sin recargar para no perder las pestañas.
+    if (reload) await page.goto('/');
     await page.keyboard.press('Control+k');
-    await expect(page.getByRole('dialog', { name: /búsqueda/i })).toBeVisible();
-    await page.keyboard.type(query);
+    const dialog = page.getByRole('dialog', { name: /búsqueda/i });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('combobox').fill(query);
+}
+
+// ---------------------------------------------------------------------------
+// Helpers ADR-0152: filas mínimas y mocks compartidos por búsqueda/redirects
+// ---------------------------------------------------------------------------
+function budgetRow(id: number, name: string) {
+    return {
+        id,
+        name,
+        description: 'Gastos generales',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+        items: [],
+    };
+}
+
+function payrollRow(id: number, employeeName = 'Juan Empleado') {
+    return {
+        id,
+        display_id: `LIQ-${id}`,
+        employee: id - 1,
+        employee_name: employeeName,
+        employee_detail: {
+            contact_detail: { name: employeeName, tax_id: '12.345.678-9' },
+            position: 'Desarrollador',
+            department: 'TI',
+        },
+        period_year: 2026,
+        period_month: 11,
+        period_label: 'Noviembre 2026',
+        status: 'POSTED',
+        status_display: 'Contabilizado',
+        base_salary: '500000',
+        total_haberes: '500000',
+        total_descuentos: '100000',
+        net_salary: '400000',
+        legal_deductions_worker: '100000',
+        employer_contribution: '70000',
+        other_deductions: '0',
+        advances_total: '0',
+        worked_days: 30,
+        agreed_days: 30,
+        remuneration_paid_status: 'PENDING',
+        previred_paid_status: 'PENDING',
+        items: [],
+        payments: [],
+    };
+}
+
+function searchResult(id: number, type: string, display: string, detail_url: string, icon: string) {
+    return { id, type, display, detail_url, icon, label: type };
+}
+
+async function mockUniversalSearch(page: Page, query: string, results: ReturnType<typeof searchResult>[]) {
+    await page.route(`**/api/search/universal/?q=${query}`, async route => {
+        await route.fulfill({ json: { results } });
+    });
+}
+
+async function mockBudgetEndpoints(page: Page, budgets: ReturnType<typeof budgetRow>[]) {
+    await page.route(/\/api\/accounting\/budgets\/\?/, async route => {
+        await route.fulfill({ json: { count: budgets.length, next: null, previous: null, results: budgets } });
+    });
+    for (const budget of budgets) {
+        await page.route(`**/api/accounting/budgets/${budget.id}/`, async route => {
+            await route.fulfill({ json: budget });
+        });
+        await page.route(`**/api/accounting/budgets/${budget.id}/execution/`, async route => {
+            await route.fulfill({
+                json: {
+                    budget,
+                    summary: { total_budgeted: 1000, total_actual: 900, total_variance: -100 },
+                    items: [],
+                },
+            });
+        });
+    }
+}
+
+async function mockPayrollEndpoints(page: Page, payrolls: ReturnType<typeof payrollRow>[]) {
+    await page.route(/\/api\/hr\/payrolls\/\?/, async route => {
+        await route.fulfill({ json: { count: payrolls.length, next: null, previous: null, results: payrolls } });
+    });
+    for (const payroll of payrolls) {
+        await page.route(`**/api/hr/payrolls/${payroll.id}/`, async route => {
+            await route.fulfill({ json: payroll });
+        });
+    }
+    // La ficha admin (drawer) necesita conceptos, pagos y movimientos; el resumen del empleado
+    // consume el mismo registro, así que no hace falta un mock adicional para la preview.
+    await page.route('**/api/hr/concepts/', async route => {
+        await route.fulfill({ json: [] });
+    });
+    await page.route(/\/api\/hr\/payroll-payments\/\?/, async route => {
+        await route.fulfill({ json: { count: 0, next: null, previous: null, results: [] } });
+    });
+    await page.route(/\/api\/hr\/employee-movements\/\?/, async route => {
+        await route.fulfill({ json: { count: 0, next: null, previous: null, results: [] } });
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -232,40 +334,19 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
     // ---------------------------------------------------------------------------
     // hr.payroll
     // ---------------------------------------------------------------------------
-    test('Navega a detalle de Liquidación de Sueldo', async ({ page }) => {
-        await page.route('**/api/search/universal/?q=LIQ-911', async route => {
-            await route.fulfill({
-                json: {
-                    results: [{
-                        id: 911,
-                        type: 'hr.payroll',
-                        display: 'LIQ-911 · Juan Empleado',
-                        detail_url: '/hr/payrolls/911',
-                        icon: 'wallet',
-                        label: 'hr.payroll',
-                    }],
-                },
-            });
-        });
-        await page.route('**/api/hr/payrolls/911/', async route => {
-            await route.fulfill({
-                json: {
-                    id: 911,
-                    number: 911,
-                    employee_name: 'Juan Empleado',
-                    period_month: 5,
-                    period_year: 2026,
-                    total_gross: 1000000,
-                    total_net: 800000,
-                },
-            });
-        });
+    test('Navega a la pestaña de Liquidación de Sueldo y limpia la URL (ADR-0152)', async ({ page }) => {
+        await mockUniversalSearch(page, 'LIQ-911', [
+            searchResult(911, 'hr.payroll', 'LIQ-911 · Juan Empleado', '/hr/payrolls?selected=911', 'wallet'),
+        ]);
+        await mockPayrollEndpoints(page, [payrollRow(911)]);
 
         await openSearchAndType(page, 'LIQ-911');
         const result = page.locator('text=LIQ-911 · Juan Empleado').first();
         await expect(result).toBeVisible();
         await result.click();
-        await expect(page).toHaveURL(/.*\/hr\/payrolls\/911/);
+        // `useDeepLinkEntity` abre la pestaña y retira `?selected`.
+        await expect(page).toHaveURL(/\/hr\/payrolls$/);
+        await expect(page.locator('[data-tab-key="hr.payroll:911"]')).toBeVisible();
     });
 
     // ---------------------------------------------------------------------------
@@ -486,6 +567,76 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
         await expect(result).toBeVisible();
         await result.click();
         await expect(page).toHaveURL(/.*\/files\/950/);
+    });
+
+});
+
+// ---------------------------------------------------------------------------
+// ADR-0152 — links antiguos y regresión #260 (dos pestañas del mismo tipo)
+// ---------------------------------------------------------------------------
+test.describe('ADR-0152 — redirects y pestañas múltiples (#260)', () => {
+
+    test('El enlace antiguo /finances/budgets/604 abre la ejecución en la lista', async ({ page }) => {
+        await mockBudgetEndpoints(page, [budgetRow(604, 'Presupuesto 2026')]);
+
+        await page.goto('/finances/budgets/604');
+
+        await expect(page).toHaveURL(/\/finances\/budgets\/list\?selected=604&action=execution/);
+        await expect(page.locator('[data-tab-key="panel:accounting.budget:execution:604"]')).toBeVisible();
+        await expect(page.getByRole('dialog', { name: 'Ejecución: Presupuesto 2026' })).toBeVisible();
+        await expect(page.getByText('Resumen de ejecución presupuestaria')).toBeVisible();
+    });
+
+    test('El enlace antiguo /hr/payrolls/911 abre la pestaña y limpia la URL', async ({ page }) => {
+        await mockPayrollEndpoints(page, [payrollRow(911)]);
+
+        await page.goto('/hr/payrolls/911');
+
+        await expect(page).toHaveURL(/\/hr\/payrolls$/);
+        await expect(page.locator('[data-tab-key="hr.payroll:911"]')).toBeVisible();
+    });
+
+    test('Dos presupuestos abiertos desde la lista conservan dos pestañas (#260)', async ({ page }) => {
+        await mockBudgetEndpoints(page, [
+            budgetRow(604, 'Presupuesto 2026'),
+            budgetRow(605, 'Presupuesto 2027'),
+        ]);
+
+        await page.goto('/finances/budgets/list');
+        const firstRow = page.getByRole('button', { name: 'Presupuesto 2026' });
+        const secondRow = page.getByRole('button', { name: 'Presupuesto 2027' });
+        await expect(firstRow).toBeVisible();
+        await firstRow.click();
+        await expect(page.locator('[data-tab-key="accounting.budget:604"]')).toBeVisible();
+
+        // Volver a la pestaña de la lista para poder pulsar la segunda fila; el drawer queda abierto.
+        await page.getByRole('tab').first().click();
+        await expect(secondRow).toBeVisible();
+        await secondRow.click();
+
+        await expect(page.locator('[data-tab-key="accounting.budget:605"]')).toBeVisible();
+        await expect(page.locator('[data-tab-key="accounting.budget:604"]')).toBeVisible();
+    });
+
+    test('Dos liquidaciones abiertas desde la búsqueda conservan dos pestañas (#260)', async ({ page }) => {
+        await mockUniversalSearch(page, 'LIQ-911', [
+            searchResult(911, 'hr.payroll', 'LIQ-911 · Juan Empleado', '/hr/payrolls?selected=911', 'wallet'),
+        ]);
+        await mockUniversalSearch(page, 'LIQ-912', [
+            searchResult(912, 'hr.payroll', 'LIQ-912 · María Empleada', '/hr/payrolls?selected=912', 'wallet'),
+        ]);
+        await mockPayrollEndpoints(page, [payrollRow(911), payrollRow(912, 'María Empleada')]);
+
+        await openSearchAndType(page, 'LIQ-911');
+        await page.locator('text=LIQ-911 · Juan Empleado').first().click();
+        await expect(page).toHaveURL(/\/hr\/payrolls$/);
+        await expect(page.locator('[data-tab-key="hr.payroll:911"]')).toBeVisible();
+
+        // Segunda búsqueda sin `page.goto`: las pestañas viven en el provider y deben conservar la primera.
+        await openSearchAndType(page, 'LIQ-912', { reload: false });
+        await page.locator('text=LIQ-912 · María Empleada').first().click();
+        await expect(page.locator('[data-tab-key="hr.payroll:912"]')).toBeVisible();
+        await expect(page.locator('[data-tab-key="hr.payroll:911"]')).toBeVisible();
     });
 
 });
