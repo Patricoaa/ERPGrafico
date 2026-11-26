@@ -446,7 +446,7 @@ class SaleOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, F
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, FacetedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     serializer_class = SaleDeliverySerializer
     # ADR-0090: la lista de entregas es una vista documental propia (orden por columna).
@@ -472,6 +472,8 @@ class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin
         "status": GroupField("status"),
     }
     group_aggregates = {"cost": "total_cost"}
+    # ADR-0158 §8: counts per status option and per view (facets/).
+    facet_fields = {"status": FacetField(field="status")}
     action_permissions = {
         "annul": "sales.annul_saledelivery",
     }
@@ -492,7 +494,7 @@ class SaleDeliveryViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, FacetedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     queryset = (
         SaleReturn.objects.select_related("sale_order__customer", "warehouse")
@@ -513,6 +515,8 @@ class SaleReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, 
         "status": GroupField("status"),
     }
     group_aggregates = {"cost": "total_cost"}
+    # ADR-0158 §8: counts per status option and per view (facets/).
+    facet_fields = {"status": FacetField(field="status")}
     action_permissions = {
         "annul": "sales.annul_salereturn",
     }

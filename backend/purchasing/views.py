@@ -8,7 +8,14 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin, EditPolicyMixin, GroupedListMixin, NoDestroyModelMixin
+from core.mixins import (
+    AuditHistoryMixin,
+    EditPolicyMixin,
+    FacetedListMixin,
+    GroupedListMixin,
+    NoDestroyModelMixin,
+)
+from core.services.facets import FacetField
 from core.services.grouping import GroupField
 
 from .filters import PurchaseReceiptFilter, PurchaseReturnFilter
@@ -95,7 +102,7 @@ class PurchaseOrderFilterSet(FilterSet):
         return filter_by_payment_status(queryset.exclude(status="CANCELLED"), value)
 
 
-class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, FacetedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseOrderSelector.get_base_queryset()
     pagination_class = StandardResultsSetPagination
@@ -114,6 +121,8 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixi
         "receiving": GroupField("receiving_status", param="receiving_status"),
     }
     group_aggregates = {"total": "total"}
+    # ADR-0158 §8: facets/ serves the view totals; the order filters are single-choice (no option counts).
+    facet_fields: dict = {}
     action_permissions = {
         "confirm": "purchasing.confirm_purchaseorder",
         "cancel": "purchasing.cancel_purchaseorder",
@@ -246,7 +255,7 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixi
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, FacetedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = PurchaseReceiptSerializer
     pagination_class = StandardResultsSetPagination
     # ADR-0090: la lista de recepciones es una vista documental propia (orden por columna).
@@ -272,6 +281,8 @@ class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMi
         "status": GroupField("status"),
     }
     group_aggregates = {"cost": "lines__total_cost"}
+    # ADR-0158 §8: counts per status option and per view (facets/).
+    facet_fields = {"status": FacetField(field="status")}
     action_permissions = {
         "annul": "purchasing.annul_purchasereceipt",
     }
@@ -292,7 +303,7 @@ class PurchaseReceiptViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMi
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMixin, FacetedListMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseReturn.objects.select_related(
             "purchase_order__supplier", "warehouse"
@@ -313,6 +324,8 @@ class PurchaseReturnViewSet(NoDestroyModelMixin, EditPolicyMixin, GroupedListMix
         "status": GroupField("status"),
     }
     group_aggregates = {"cost": "total_cost"}
+    # ADR-0158 §8: counts per status option and per view (facets/).
+    facet_fields = {"status": FacetField(field="status")}
     ordering = ["-date", "-id"]
     action_permissions = {
         "annul": "purchasing.annul_purchasereturn",

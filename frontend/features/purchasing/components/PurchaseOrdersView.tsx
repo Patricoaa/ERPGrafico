@@ -22,6 +22,7 @@ import { EMPTY_PURCHASING_ANALYTICS, usePurchaseOrderAnalytics } from "../hooks/
 import { usePurchasingNotes, usePurchasingOrders } from "../hooks/usePurchasing"
 import { usePurchaseNoteGroups } from "../hooks/usePurchaseNoteGroups"
 import { usePurchaseOrderGroups } from "../hooks/usePurchaseOrderGroups"
+import { usePurchaseOrderFacets } from "../hooks/usePurchasingFacets"
 import { buildPurchaseAnalyticsScreen } from "./purchaseOrderAnalyticsScreen"
 
 interface PurchaseOrdersViewProps {
@@ -48,6 +49,8 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
 
     // Grouping by a field with a server key groups the whole result (`groups/`, ADR-0158 §7).
     const grouped = usePurchaseOrderGroups({ groupKey, params })
+    // Option counts and view totals (`facets/`, ADR-0158 §8).
+    const facets = usePurchaseOrderFacets({ fields: query.facetFields, views: query.facetViews, params })
     const list = usePurchasingOrders({
         filters: {
             ...params,
@@ -97,7 +100,7 @@ function PurchaseOrderCollection({ createAction }: { createAction?: React.ReactN
                 view={view}
                 onViewChange={onViewChange}
                 analytics={analyticsUi}
-                query={query}
+                query={{ ...query, facets }}
             >
                 <Collection.Toolbar action={createAction} />
                 <Collection.View

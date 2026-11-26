@@ -311,7 +311,9 @@ pide los conteos con su hook de feature (`useFacetCounts` en `/hooks`) y entrega
 `Collection.Root`. `FilterMenu` muestra el conteo de cada opción y deshabilita las de 0 salvo las ya elegidas;
 sin conteos (cargando, error) las opciones se ven sin número. Una vista con `count: true` muestra su total en la
 pestaña (`query.facetViews` → `facets.views`). No se marca `count`/`counts` en filtros o vistas que se evalúan
-en Python sobre toda la lista. Piloto: órdenes de venta. Pendiente: «Aplicar · N resultados».
+en Python sobre toda la lista. Listas con `facets/`: órdenes de venta (opciones y vistas), despachos,
+devoluciones de venta, recepciones y devoluciones de compra (estado y vistas), órdenes de compra (vistas).
+Pendiente: «Aplicar · N resultados».
 
 ## 8. Accesibilidad
 
