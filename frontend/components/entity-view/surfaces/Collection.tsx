@@ -374,7 +374,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
             <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
                 {compiled.searchBox ? (
                     <div className="min-w-56 flex-1">
-                        <UnifiedSearchBar config={compiled.search} {...bindUnifiedSearch(search)} filterOptions={search.filterOptions} placeholder={compiled.placeholder} menu={false} appliedFilters={false} />
+                        <UnifiedSearchBar config={compiled.search} {...bindUnifiedSearch(search)} placeholder={compiled.placeholder} />
                     </div>
                 ) : (
                     <div className="flex-1" aria-hidden />
