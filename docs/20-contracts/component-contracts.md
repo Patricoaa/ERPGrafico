@@ -230,14 +230,14 @@ Props: `value` (✅), `uom?`, `decimals?` (default 4), `showSign?`.
 ## Inputs & Forms
 
 > 📄 **LabeledInput / MultiTagInput / MultiSelectTagInput** → [component-input.md](./component-input.md)
-> 📄 **DatePicker / DateRangeFilter** → [component-datepicker.md](./component-datepicker.md)
+> 📄 **DatePicker / PeriodPicker** → [component-datepicker.md](./component-datepicker.md)
 > 📄 **CRUD radio/checkbox option cards** → [component-form-selection-group.md](./component-form-selection-group.md)
 
 ### Dropdown & Popover Layout Invariants
 
 Rules for positioning and width of floating UI elements.
 
-**Width invariant:** every dropdown within a form field (Select, Selector, Combobox) MUST match trigger width via `w-[var(--radix-select-trigger-width)]` or `w-[var(--radix-popover-trigger-width)]`. Exception: filters in toolbars and `DateRangeFilter`.
+**Width invariant:** every dropdown within a form field (Select, Selector, Combobox) MUST match trigger width via `w-[var(--radix-select-trigger-width)]` or `w-[var(--radix-popover-trigger-width)]`. Exception: filters in toolbars and `PeriodPicker`.
 
 **Positioning vs. notched fields:**
 - Standard `LabeledSelect` → `item-aligned` (covers trigger)

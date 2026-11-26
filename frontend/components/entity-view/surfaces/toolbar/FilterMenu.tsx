@@ -17,7 +17,7 @@ import type {
     SingleSelectFilterDef,
     ToggleFilterDef,
 } from "@/types/unified-search"
-import { CommandButton } from "./CommandButton"
+import { CommandButton, PeriodPanel } from "@/components/shared"
 
 export type MenuFilter = Exclude<DropdownFilterDef, { type: "custom" }> | DateFilterDef
 
@@ -316,64 +316,20 @@ function DatePane({ filter, values, applyMany, commitRef }: PaneProps<DateFilter
     const toParam = filter.options.find((o) => o.serverParamTo)?.serverParamTo
     const appliedFrom = (fromParam && values[fromParam]) || ""
     const appliedTo = (toParam && values[toParam]) || ""
-    const [from, setFrom] = React.useState(appliedFrom)
-    const [to, setTo] = React.useState(appliedTo)
-    const write = React.useCallback(
-        (f: string, t: string) => {
+    const value = React.useMemo(() => (appliedFrom || appliedTo ? { from: appliedFrom || appliedTo, to: appliedTo || appliedFrom } : null), [appliedFrom, appliedTo])
+    const presets = React.useMemo(
+        () => filter.options.flatMap((o) => (o.getValue ? [{ label: o.label, getValue: o.getValue }] : [])),
+        [filter.options],
+    )
+    const onApply = React.useCallback(
+        (period: { from: string; to: string } | null) => {
             const next: Values = {}
-            if (fromParam) next[fromParam] = f || null
-            if (toParam) next[toParam] = t || null
+            if (fromParam) next[fromParam] = period?.from ?? null
+            if (toParam) next[toParam] = period?.to ?? null
             void applyMany(next)
         },
         [fromParam, toParam, applyMany],
     )
-    const dirty = from !== appliedFrom || to !== appliedTo
-    const apply = React.useCallback(() => {
-        if (from !== appliedFrom || to !== appliedTo) write(from, to || from)
-    }, [from, to, appliedFrom, appliedTo, write])
-    React.useEffect(() => {
-        commitRef.current = apply
-    }, [commitRef, apply])
-
-    return (
-        <>
-            <div role="radiogroup" aria-label={`${filter.label}: períodos`} className="py-1">
-                {filter.options.map((option) => {
-                    const range = option.getValue?.()
-                    const checked = !!range && range.from === appliedFrom && range.to === appliedTo
-                    return (
-                        <Button
-                            key={option.label}
-                            variant="ghost"
-                            size="sm"
-                            role="radio"
-                            aria-checked={checked}
-                            disabled={!range}
-                            onClick={() => {
-                                if (!range) return
-                                setFrom(range.from)
-                                setTo(range.to)
-                                write(range.from, range.to)
-                            }}
-                            className={cn("h-control-sm w-full justify-start gap-2 rounded-none px-3 text-xs font-normal", checked && "font-semibold")}
-                        >
-                            <span className={cn("size-3.5 shrink-0 rounded-full border border-border", checked && "border-4 border-primary")} aria-hidden />
-                            {option.label}
-                        </Button>
-                    )
-                })}
-            </div>
-            <div className="grid grid-cols-2 gap-2 border-t border-border/50 p-3">
-                <label className="flex flex-col gap-1 text-3xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Desde
-                    <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-control-sm font-mono text-xs" aria-label={`${filter.label} desde`} />
-                </label>
-                <label className="flex flex-col gap-1 text-3xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Hasta
-                    <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-control-sm font-mono text-xs" aria-label={`${filter.label} hasta`} />
-                </label>
-            </div>
-            <PaneFooter canClear={!!(appliedFrom || appliedTo)} dirty={dirty} onApply={apply} onClear={() => { setFrom(""); setTo(""); write("", "") }} />
-        </>
-    )
+    // Same body as the report period control (ADR-0160 §1); closing the menu applies its draft.
+    return <PeriodPanel value={value} presets={presets} onApply={onApply} label={filter.label} commitRef={commitRef} />
 }

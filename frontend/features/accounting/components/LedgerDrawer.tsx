@@ -5,7 +5,8 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book } from "lucide-react"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
-import { DateRangeFilter, Drawer, IconButton, SkeletonShell } from '@/components/shared'
+import { Drawer, IconButton, PeriodPicker, SkeletonShell } from '@/components/shared'
+import { datesOf, periodOf, presetsOf, REPORT_PERIOD_PRESETS } from '@/lib/date-presets'
 import { Collection, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatCurrency } from "@/lib/money"
@@ -19,6 +20,8 @@ import { LedgerSummaryPanel } from "@/features/accounting/components/LedgerSumma
 import type { LedgerData, LedgerMovement } from "@/features/accounting/types"
 import { ledgerMovementActions, type LedgerMovementActionsCtx } from './ledgerMovementActions'
 import { ledgerMovementEntity, ledgerMovementDrawerViews } from "@/features/accounting"
+
+const LEDGER_PERIOD_PRESETS = presetsOf(REPORT_PERIOD_PRESETS)
 
 /**
  * Libro Mayor. The Debe/Haber/Saldo summary uses MetricStrip (ADR-0149)
@@ -252,15 +255,12 @@ function LedgerContent({
                 >
                     <Collection.Toolbar
                         action={
-                            <DateRangeFilter
-                                defaultRange={dateRange || undefined}
-                                onDateChange={(range) => {
-                                    if (range?.from && range?.to) {
-                                        setDateRange({ from: range.from, to: range.to })
-                                    }
-                                }}
-                                className="bg-background border-none shadow-none rounded-sm"
-                                variant="outline"
+                            <PeriodPicker
+                                name="Período"
+                                value={periodOf(dateRange)}
+                                presets={LEDGER_PERIOD_PRESETS}
+                                clearable={false}
+                                onChange={(period) => period && setDateRange(datesOf(period))}
                             />
                         }
                     />

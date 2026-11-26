@@ -2,7 +2,8 @@
 import { formatCurrency } from "@/lib/money"
 import { parseDateOnly } from "@/lib/utils"
 
-import { BaseModal, DateRangeFilter, EmptyState, SkeletonShell } from '@/components/shared'
+import { BaseModal, EmptyState, PeriodPicker, SkeletonShell } from '@/components/shared'
+import { datesOf, periodOf, presetsOf } from '@/lib/date-presets'
 
 import { useState, useMemo } from "react"
 
@@ -23,6 +24,8 @@ import { es } from "date-fns/locale"
 import { TabBar, TabBarContent } from "@/components/shared"
 import { BarChart } from "@/components/shared"
 import { useOnEntityStackClose } from "@/hooks/useOnEntityStackClose"
+
+const CHART_PERIOD_PRESETS = presetsOf(['this_month', 'this_quarter', 'year_to_date', 'last_year'])
 
 
 interface SubscriptionHistoryModalProps {
@@ -146,7 +149,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 </MetricStrip>
 
                                                 <div className="flex justify-end">
-                                                    <DateRangeFilter onDateChange={setDateRange} label="Periodo para el gráfico" />
+                                                    <PeriodPicker name="Período del gráfico" placeholder="Todo el historial" value={periodOf(dateRange)} presets={CHART_PERIOD_PRESETS} align="end" onChange={(period) => setDateRange(period ? datesOf(period) : undefined)} />
                                                 </div>
                                             </div>
 
