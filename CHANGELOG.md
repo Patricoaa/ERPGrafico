@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### 🐛 Bug Fixes
 
-* **shell:** solapas de la barra de trabajo sin bordes, separación ni sangrado; estado inactivo levemente más oscuro que el fondo
+* **shell:** solapas sin bordes, separación ni margen lateral; activa con `bg-card` como las páginas e inactiva levemente más oscura
 
 ### [0.3.203](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.202...v0.3.203) (2026-11-27)
 

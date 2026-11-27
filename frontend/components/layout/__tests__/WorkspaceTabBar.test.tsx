@@ -51,19 +51,22 @@ describe("WorkspaceTabBar", () => {
         expect(modals.closeTab).toHaveBeenCalledWith("billing.invoice:9")
     })
 
-    it("renders borderless folder tabs flush against each other with a darker idle surface", () => {
+    it("renders borderless folder tabs flush against each other, active on card surface and idle darker", () => {
         modals.tabs = [tab("a.b:1", "A-1", true), tab("a.b:2", "A-2")]
         render(<WorkspaceTabBar page={page} />)
 
         const [pageTab, activeTab, idleTab] = screen.getAllByRole("tab").map((el) => el.parentElement as HTMLElement)
-        expect(activeTab).toHaveClass("bg-primary")
+        expect(activeTab).toHaveClass("bg-card", "text-card-foreground")
+        expect(activeTab.className).not.toContain("bg-primary")
         expect(pageTab).toHaveClass("bg-[color-mix(in_oklch,var(--background)_92%,black)]")
         expect(idleTab).toHaveClass("bg-[color-mix(in_oklch,var(--background)_92%,black)]")
         for (const tabEl of [pageTab, activeTab, idleTab]) {
             expect(tabEl).toHaveClass("overflow-hidden", "rounded-tr-sm")
             expect(tabEl.className).not.toMatch(/(^|\s)border(-|$)/)
         }
-        expect(screen.getByRole("tablist")).toHaveClass("gap-0")
+        const list = screen.getByRole("tablist")
+        expect(list).toHaveClass("gap-0")
+        expect(list.parentElement?.className).not.toMatch(/(^|\s)(pl|pr|px)-/)
     })
 
     it("has no module navigation links nor a permanent calculator button", () => {
