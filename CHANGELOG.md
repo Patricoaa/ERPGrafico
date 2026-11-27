@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.212](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.211...v0.3.212) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **ui:** tooltip en acciones y analytics de toolbar, remueve separador y simplifica titulo payrolls ([74a85cf](https://github.com/Patricoaa/ERPGrafico/commit/74a85cffe7f26332573c7659a4fffbb0d004b715))
+
 ### [0.3.211](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.210...v0.3.211) (2026-11-27)
 
 
