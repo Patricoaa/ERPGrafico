@@ -60,7 +60,7 @@ Problemas:
 | Período | `PeriodPicker` «Período» | Presets de informe; no se puede quitar |
 | Comparar con | `PeriodPicker` «Comparar con», ícono de comparar | Presets **relativos al período**: «Período anterior» (misma duración, justo antes) y «Mismo período del año anterior». Elegir uno activa la comparación; «Quitar» la apaga. Reemplaza el interruptor «Comparar» |
 | Encabezado | `CommandButton` con valor («Año», «Mes/Año», «Día/Mes/Año») | Menú de radios |
-| Mapeo, Exportar | Botones de ícono con nombre en tooltip | A la derecha |
+| Mapeo, Exportar | Botones ghost de ícono con nombre en tooltip y `aria-label` | A la derecha, en `role="group" aria-label="Acciones del informe"`; los comandos con valor quedan a la izquierda (sin separador: el informe no tiene acción primaria) |
 
 La API de `ReportToolbarProps` no cambia (`DateRange` de react-day-picker), así que las pantallas de informes no se tocan. El componente convierte internamente.
 

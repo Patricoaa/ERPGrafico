@@ -46,7 +46,7 @@ Tabs are declared per module in 14 `[Module]Header.tsx` files. Several are dynam
 7. **Global accesses = Search + Task inbox.** Notifications move into the **avatar menu** (rail footer) with an unread dot on the avatar.
 8. **POS / cost calculator** use the rail icon size (40 px hit area, 20 px icon). The top bar spans the full width and is **not** shifted by global sheets (`totalSheetsWidth` now applies to the content area only); sheets open below it (`top: var(--header-height)`), so these shortcuts keep a fixed position.
 9. **Single page title = top bar.** The top bar title is the page's only `<h1>`; `description` becomes its tooltip. In-page title/description blocks are removed: `PageSectionHeader` loses `title`, `description` and `as` and only renders in-view tabs (77 title-only usages deleted). **Supersedes ADR-0073 §1, §2 and §5**; §3 (PageHeader renders nothing in place) and §4 (`SectionHeader` = `<h2>`) still hold.
-10. **Navigation survives nested PageHeaders.** `HeaderProvider` keeps `moduleNavigation` (last published navigation + root segment) independently of `config`; `clearHeader` does not reset it. Views that mount their own `PageHeader` without `navigation` (e.g. `BudgetVarianceView`, `BudgetDetailView` for `titleActions`) no longer empty the sidebar.
+10. **Navigation survives nested PageHeaders.** `HeaderProvider` keeps `moduleNavigation` (last published navigation + root segment) independently of `config`; `clearHeader` does not reset it. Views that mount their own `PageHeader` without `navigation` (e.g. `BudgetVarianceReport`, `BudgetDetailView` for `titleActions`) no longer empty the sidebar.
 
 ## Consequences
 

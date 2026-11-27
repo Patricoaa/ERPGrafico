@@ -66,25 +66,28 @@ Una sola barra para toda colección de entidad. **Fuente:** [ADR-0158](../10-arc
 ## 1. Anatomía
 
 ```
-┌ ViewTabs ─────────────────────────────────────────────── 1–38 de 38 ┐   ← solo si query.views
-│ [Search────────────] [⛛ 3] [⇅ Fecha ↓] [◇ Estado] [▦ Tabla] │ [📊] [⤓] [+ Nueva nota] │
-└ AppliedFilters: (Estado: 2 ×) (Fecha: Este mes ×) (Agrupado por Estado ×)  Limpiar todo ┘
+┌ ViewTabs ──────────────────────────────────── [📊] [⤓] [⚙ acciones extra] ┐ ← fila superior, siempre con acciones
+│ [Search────────────] [⛛ 3] [⇅ Fecha ↓] [◇ Estado] [▦ Tabla] │ [+ Nueva nota] │
+└ AppliedFilters: (Estado: 2 ×) (Fecha: Este mes ×)  Limpiar todo  1–38 de 38 ┘
 ```
 
 Las piezas tienen orden fijo. Cada una aparece solo si la entidad la declara:
 
 | Pieza | Aparece si | Etapa |
 |---|---|---|
-| `ViewTabs` | `query.views` tiene ≥ 2 vistas | E3 |
+| `ViewTabs` | `query.views` tiene ≥ 2 vistas (izquierda de la fila superior) | E3 |
+| `AnalyticsButton` | hay un hijo `Collection.Analytics` (fila superior, ghost icono) | E2 |
+| `ExportMenu` | `entity.export` (fila superior, ghost icono) | E1 |
+| `extraActions` | prop de `Collection.Toolbar` (fila superior, ghost iconos) | — |
 | `Search` | `query.search` | E3 (antes: `UnifiedSearchBar`) |
 | `FilterMenu` | `query.filters` | E3 |
 | `SortMenu` | `query.sort` | E3 |
 | `GroupMenu` | `query.groupBy` | E3 |
 | `DisplayMenu` | más de un layout en `viewPolicy`, o columnas ocultables | E3 |
-| `AnalyticsButton` | hay un hijo `Collection.Analytics` | E2 |
-| `ExportMenu` | `entity.export` | E1 |
-| `action` | prop de `Collection.Toolbar` | — |
-| `AppliedFilters` | hay algún filtro, búsqueda o grupo activo | E1 |
+| `divider` + `action` | solo si hay acción primaria; ninguna otra acción tras él | — |
+| `AppliedFilters` + total | hay un filtro activo, o siempre que el total sea conocido | E1 |
+
+La fila superior existe siempre: si no hay vistas ni acciones, el lado izquierdo queda vacío y el borde inferior mantiene el ritmo de dos líneas. El total de registros vive al final de `AppliedFilters`, con `aria-live="polite"`; los botones de la fila superior ocupan su antiguo lugar junto a las pestañas.
 
 La página **no** arma la barra:
 
@@ -105,12 +108,13 @@ La página **no** arma la barra:
 | Sin valor | Solo el ícono, sin borde de estado activo |
 | Con valor | Borde `--foreground` (estado activo) |
 | Nombre | Tooltip y `aria-label` con nombre y valor: `"Ordenar: Fecha descendente"`, `"Filtros: 3 activos"` |
-| Solo ícono | `AnalyticsButton`, `ExportMenu` (con tooltip y `aria-label`) |
-| Acción primaria | Conserva su texto (`ToolbarCreateButton`) |
+| Solo ícono | `AnalyticsButton`, `ExportMenu` y `extraActions`: `variant="ghost" size="icon-sm"`, tooltip y `aria-label` |
+| Acción primaria | Conserva su texto (`ToolbarCreateButton`); es lo único después del separador |
+| Acciones extra | `extraActions: { id, icon, label, onClick?/href?, disabled? }[]` en la fila superior; el `action` sigue siendo sólo el primario |
 | `aria-expanded` | En todo botón que abre un popover |
-| Pantallas < `md` | Filtros, Orden, Grupo y Vista se juntan en un botón de ajustes con el total de cambios. `Search` ocupa la fila |
+| Pantallas < `md` | Filtros, Orden, Grupo y Vista se juntan en un botón «Ajustes» (`SlidersHorizontal`) con el total de cambios; un solo popover sin popovers anidados. `Search` ocupa la fila y la acción primaria baja bajo ella (`basis-full md:basis-auto`). El popover respeta el ciclo del filtro: cerrar aplica, `Esc` descarta |
 
-Tamaño `size="sm"` y tokens semánticos solamente (invariante 2).
+Tamaño `size="sm"` y tokens semánticos solamente (invariante 2). El badge de «Ajustes» cuenta: filtros con valor + orden distinto del `default` + grupo activo + columnas ocultas + layout distinto de tabla. No usa `query.isDirty` (ese estado sólo describe el desvío respecto a una vista guardada).
 
 ## 3. Declaración: `entity.query` (E3)
 

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { BudgetVarianceView } from "../BudgetVarianceView"
+import { BudgetVarianceReport } from "../BudgetVarianceReport"
 import type { Budget } from "../../hooks/useBudgets"
 import type { BudgetVarianceNode } from "../../types"
 
@@ -49,7 +49,7 @@ const budget = (id: number): Budget => ({
     id, name: `Presupuesto ${id}`, start_date: "2026-01-01", end_date: "2026-12-31",
 })
 
-describe("BudgetVarianceView con barra canónica (ADR-0158)", () => {
+describe("BudgetVarianceReport con barra canónica (ADR-0158)", () => {
     beforeEach(() => {
         vi.clearAllMocks()
         m.budgets = []
@@ -61,7 +61,7 @@ describe("BudgetVarianceView con barra canónica (ADR-0158)", () => {
     it("toma presupuesto, mes y año de la URL para pedir la variación", () => {
         m.budgets = [budget(604), budget(605)]
         m.paramValues = { budget: "604", month: "3", year: "2025" }
-        render(<BudgetVarianceView />)
+        render(<BudgetVarianceReport />)
 
         expect(m.useBudgetVariance).toHaveBeenCalledWith(604, { month: "3", year: "2025" })
         expect(m.tableProps.exportFilters).toEqual({ budget: 604, month: "3", year: "2025" })
@@ -71,14 +71,14 @@ describe("BudgetVarianceView con barra canónica (ADR-0158)", () => {
     it("usa la fecha del servidor como periodo por defecto", () => {
         m.budgets = [budget(604)]
         m.paramValues = { budget: "604" }
-        render(<BudgetVarianceView />)
+        render(<BudgetVarianceReport />)
 
         expect(m.useBudgetVariance).toHaveBeenCalledWith(604, { month: "7", year: "2026" })
     })
 
     it("no vuelve al primer presupuesto tras Restablecer sin budget en la URL", () => {
         m.budgets = [budget(604)]
-        render(<BudgetVarianceView />)
+        render(<BudgetVarianceReport />)
 
         expect(m.useBudgetVariance).toHaveBeenCalledWith(null, expect.objectContaining({ month: "7", year: "2026" }))
         expect(m.tableProps.exportFilters).toEqual({ budget: 0, month: "7", year: "2026" })
@@ -87,8 +87,8 @@ describe("BudgetVarianceView con barra canónica (ADR-0158)", () => {
     it("selecciona el primer presupuesto una sola vez escribiendo la URL, nunca en el render", () => {
         const error = vi.spyOn(console, "error").mockImplementation(() => {})
         m.budgets = [budget(604)]
-        const { rerender } = render(<BudgetVarianceView />)
-        rerender(<BudgetVarianceView />)
+        const { rerender } = render(<BudgetVarianceReport />)
+        rerender(<BudgetVarianceReport />)
 
         expect(m.applyMany).toHaveBeenCalledTimes(1)
         expect(m.applyMany).toHaveBeenCalledWith({ budget: "604" })
@@ -97,7 +97,7 @@ describe("BudgetVarianceView con barra canónica (ADR-0158)", () => {
     })
 
     it("no pide la variación si aún no hay presupuestos", () => {
-        render(<BudgetVarianceView />)
+        render(<BudgetVarianceReport />)
 
         expect(m.useBudgetVariance).toHaveBeenCalledWith(null, expect.objectContaining({ year: "2026" }))
         expect(screen.getByTestId("variance-table")).toBeInTheDocument()
