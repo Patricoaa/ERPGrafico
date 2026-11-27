@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### 🐛 Bug Fixes
 
-* **shell:** solapas sin bordes, separación ni margen lateral; activa con `bg-card` como las páginas e inactiva levemente más oscura
+* **shell:** solapas sin bordes, separación ni margen lateral, esquina superior derecha `md`; activa con `bg-card` como las páginas e inactiva levemente más oscura
 
 ### [0.3.203](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.202...v0.3.203) (2026-11-27)
 

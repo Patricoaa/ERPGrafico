@@ -28,7 +28,7 @@ interface WorkspaceTabBarProps {
     leading?: ReactNode
 }
 
-const TAB_BASE = "group/tab relative flex h-9 min-w-0 shrink-0 items-center overflow-hidden rounded-tr-sm text-xs transition-colors"
+const TAB_BASE = "group/tab relative flex h-9 min-w-0 shrink-0 items-center overflow-hidden rounded-tr-md text-xs transition-colors"
 const TAB_ACTIVE = "bg-card text-card-foreground"
 const TAB_IDLE = "bg-[color-mix(in_oklch,var(--background)_92%,black)] text-muted-foreground hover:bg-[color-mix(in_oklch,var(--background)_86%,black)] hover:text-foreground"
 const TAB_TRIGGER = "h-full min-w-0 flex-1 justify-start gap-1.5 rounded-none py-0 pl-2.5 pr-2 text-xs font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset"

@@ -61,7 +61,7 @@ describe("WorkspaceTabBar", () => {
         expect(pageTab).toHaveClass("bg-[color-mix(in_oklch,var(--background)_92%,black)]")
         expect(idleTab).toHaveClass("bg-[color-mix(in_oklch,var(--background)_92%,black)]")
         for (const tabEl of [pageTab, activeTab, idleTab]) {
-            expect(tabEl).toHaveClass("overflow-hidden", "rounded-tr-sm")
+            expect(tabEl).toHaveClass("overflow-hidden", "rounded-tr-md")
             expect(tabEl.className).not.toMatch(/(^|\s)border(-|$)/)
         }
         const list = screen.getByRole("tablist")
