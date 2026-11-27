@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useState } from "react"
 import { Settings } from "lucide-react"
 import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 import { Can } from "@/components/auth"
@@ -9,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useBranding } from "@/contexts/BrandingProvider"
 import { MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-registry"
 import { ModuleNavTree } from "./ModuleNavTree"
+import { getFallbackModuleNavigation } from "./module-nav-fallback"
 import { SidebarNavItem } from "./SidebarNavItem"
 import { SidebarUtilityNav } from "./SidebarUtilityNav"
 import { SidebarQuickActions } from "./SidebarQuickActions"
@@ -32,33 +34,32 @@ interface ModuleSidebarPanelProps {
 export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, onInboxToggle, onNavigate, onProfileOpen }: ModuleSidebarPanelProps) {
     const { logo, company } = useBranding()
     const companyName = company?.trade_name || company?.name || "ERP"
-    const initials = companyName.substring(0, 2).toUpperCase()
-    const hasModuleNav = !!navigation && navigation.tabs.length > 0
+    // Todos los módulos del primer nivel son acordeones sin redirección (Enmienda 1, ADR-0162).
+    // El activo arranca abierto; el estado se conserva por módulo mientras el panel siga montado.
+    const [openModules, setOpenModules] = useState<Record<string, boolean>>({})
+    const toggleModule = (modId: string) => setOpenModules(prev => ({ ...prev, [modId]: !(prev[modId] ?? modId === currentModuleId) }))
 
     return (
         <div className="w-56 shrink-0 h-full flex flex-col border-r border-border/40 bg-muted/30">
-            {/* Cabecera: identidad de la empresa en lugar del nombre del módulo */}
+            {/* Cabecera: icono de empresa centrado; sin logo, el nombre de la empresa (Enmienda 1, ADR-0162) */}
             <TooltipProvider delayDuration={0}>
-                <div className="shrink-0 h-12 flex items-center gap-2 px-3 border-b border-border/40">
-                    <Link
-                        href="/accounting/ledger?view=list"
-                        onClick={onNavigate}
-                        aria-label="Inicio"
-                        className="h-7 w-7 shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
-                    >
-                        {logo ? (
-                            <div className="relative h-7 w-7 rounded-sm overflow-hidden">
-                                <Image src={logo} alt={companyName} fill className="object-contain" />
-                            </div>
-                        ) : (
-                            <div className="h-7 w-7 rounded-sm flex items-center justify-center bg-primary text-primary-foreground font-bold text-3xs uppercase">
-                                {initials}
-                            </div>
-                        )}
-                    </Link>
+                <div className="shrink-0 h-12 flex items-center justify-center px-2 border-b border-border/40">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-foreground">{companyName}</span>
+                            <Link
+                                href="/accounting/ledger?view=list"
+                                onClick={onNavigate}
+                                aria-label="Inicio"
+                                className="max-w-full h-8 rounded-sm flex items-center justify-center overflow-hidden"
+                            >
+                                {logo ? (
+                                    <div className="relative h-7 w-7 shrink-0 rounded-sm overflow-hidden">
+                                        <Image src={logo} alt={companyName} fill className="object-contain" />
+                                    </div>
+                                ) : (
+                                    <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground">{companyName}</span>
+                                )}
+                            </Link>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="font-semibold text-xs border-border/50">{companyName}</TooltipContent>
                     </Tooltip>
@@ -68,12 +69,11 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, o
             {/* Utilidades globales fijas: Buscar, Bandeja, POS y Calculadora (ADR-0162) */}
             <div className="shrink-0 bg-background/40 px-2 pt-2 flex flex-col gap-px">
                 <SidebarUtilityNav isInboxOpen={isInboxOpen} onInboxToggle={onInboxToggle} />
-                <div className="h-px bg-border/60 mx-2 my-2" aria-hidden />
                 <SidebarQuickActions />
             </div>
             <div className="h-px bg-border/60 mx-2 shrink-0" aria-hidden />
 
-            {/* Primer nivel = módulos; el activo despliega sus vistas debajo */}
+            {/* Primer nivel = módulos como acordeones; la fila nunca navega */}
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 py-2 flex flex-col gap-px">
                 <nav aria-label="Módulos y vistas" className="flex flex-col gap-px">
                     {MODULE_ORDER.map(modId => {
@@ -81,18 +81,22 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, o
                         if (!mod) return null
                         const isActive = modId === currentModuleId
                         const Icon = getModuleIcon(modId)
+                        const moduleNav = isActive && navigation?.tabs.length
+                            ? navigation
+                            : getFallbackModuleNavigation(modId)
+                        const expanded = openModules[modId] ?? isActive
                         return (
                             <Can key={modId} permission={mod.permission}>
                                 <div className="flex flex-col gap-px">
                                     <SidebarNavItem
                                         label={mod.label}
-                                        href={mod.defaultUrl}
                                         icon={Icon}
                                         isActive={isActive}
-                                        onClick={onNavigate}
+                                        expanded={expanded}
+                                        onClick={() => toggleModule(modId)}
                                     />
-                                    {isActive && hasModuleNav && (
-                                        <ModuleNavTree navigation={navigation} onNavigate={onNavigate} renderDepth={1} embedded />
+                                    {expanded && moduleNav && (
+                                        <ModuleNavTree navigation={moduleNav} onNavigate={onNavigate} renderDepth={1} embedded />
                                     )}
                                 </div>
                             </Can>

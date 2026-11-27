@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, LogOut, User } from "lucide-react"
+import { LogOut, User } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import {
     Tooltip,
@@ -41,8 +41,7 @@ export function UserSidebarMenu({ onProfileOpen, onNavigate, variant = "row" }: 
             className="group/navitem h-control-sm w-full justify-start gap-2 px-2 text-xs font-normal text-foreground/80 hover:bg-foreground/5 hover:text-foreground"
         >
             <Blobatar name={userLabel} className="h-4 w-4 shrink-0 rounded-full" />
-            <span className="flex-1 min-w-0 truncate">Cuenta</span>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="flex-1 min-w-0 truncate text-left">Cuenta</span>
         </Button>
     )
 
