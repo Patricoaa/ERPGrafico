@@ -65,6 +65,13 @@ export const creditHistoryEntryEntity = defineEntity<CreditHistoryEntry>()((f) =
         },
         sort: { fields: ["date", "customerName", "effectiveTotal"], default: "-date" },
         groupBy: { fields: ["origin"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "manual", label: "Manual", filters: { credit_assignment_origin: "MANUAL" } },
+            { id: "sale", label: "Venta", filters: { credit_assignment_origin: "SALE" } },
+            { id: "adjustment", label: "Ajuste", filters: { credit_assignment_origin: "ADJUSTMENT" } },
+            { id: "reversal", label: "Reversión", filters: { credit_assignment_origin: "REVERSAL" } },
+        ],
     },
 }))
 

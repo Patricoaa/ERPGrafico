@@ -117,6 +117,11 @@ export const treasuryAccountEntity = defineEntity<TreasuryAccount>()((f) => ({
         },
         sort: { fields: ["name", "accountType", "isActive", "linkedAccount", "balance"] },
         groupBy: { fields: ["accountType"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { is_active: "true" } },
+            { id: "archived", label: "Archivadas", filters: { is_active: "false" } },
+        ],
     },
 }))
 

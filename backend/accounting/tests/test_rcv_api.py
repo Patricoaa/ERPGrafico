@@ -280,7 +280,7 @@ def test_settings_derived_fields(reader, manager):
     assert r.status_code == 200, r.content
     body = r.json()
     assert body["estimated_monthly_queries"] == 12
-    assert body["total_monthly_quota"] == 20
+    assert "total_monthly_quota" not in body
     assert body["next_period"] == {"year": 2026, "month": 11}
     assert body["enabled"] is False and body["interval_days"] == 7 and body["run_hour"] == 6
 
@@ -309,7 +309,7 @@ def test_api_keys_crud_masked_and_unique(manager, reader):
     body = r.json()
     assert "key" not in body
     assert body["masked_key"] == "••••-4472"
-    assert body["monthly_limit"] == 10 and body["used_this_month"] == 0
+    assert "monthly_limit" not in body and body["used_this_month"] == 0
     assert SECRET_KEY.encode() not in r.content
     created = RCVApiKey.objects.get(pk=body["id"])
     assert created.get_key() == SECRET_KEY

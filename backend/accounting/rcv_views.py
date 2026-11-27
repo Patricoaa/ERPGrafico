@@ -29,7 +29,6 @@ from .selectors import (
     rcv_documents_queryset,
     rcv_import_detail_queryset,
     rcv_imports_queryset,
-    rcv_total_monthly_quota,
 )
 
 
@@ -98,7 +97,6 @@ def _settings_context(settings: RCVSettings) -> dict:
     return {
         "next_period": {"year": year, "month": month},
         "estimated_monthly_queries": rcv_service.estimated_monthly_queries(settings),
-        "total_monthly_quota": rcv_total_monthly_quota(),
     }
 
 

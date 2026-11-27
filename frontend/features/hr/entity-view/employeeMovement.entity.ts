@@ -24,6 +24,12 @@ export const employeeMovementEntity = defineEntity<EmployeeMovement>()((f) => ({
         },
         sort: { fields: ["date", "folio", "employee", "kind", "amount", "balance", "status"], default: "-date" },
         groupBy: { fields: ["kind", "status", "employee"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "payment", label: "Pagos", filters: { kind: "PAYMENT" } },
+            { id: "advance", label: "Anticipos", filters: { kind: "ADVANCE" } },
+            { id: "loan", label: "Préstamos", filters: { kind: "LOAN" } },
+        ],
     },
 }))
 

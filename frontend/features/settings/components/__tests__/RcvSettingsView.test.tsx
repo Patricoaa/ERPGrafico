@@ -36,13 +36,12 @@ const baseSettings = {
     include_sales: true,
     next_period: { year: 2026, month: 10 },
     estimated_monthly_queries: 8,
-    total_monthly_quota: 10,
     fiscal_match_start_date: "2026-10-01",
     terminal_match_window_minutes: 15,
 }
 
 const apiKey = {
-    id: 1, label: "Principal", masked_key: "••••-4472", is_active: true, monthly_limit: 10, used_this_month: 3,
+    id: 1, label: "Principal", masked_key: "••••-4472", is_active: true, used_this_month: 3,
     exhausted_until: null, last_used_at: null, last_error: "",
 }
 
@@ -79,27 +78,22 @@ describe("RcvSettingsView", () => {
         expect(container.querySelector('input[type="password"]')).toBeNull()
     })
 
-    it("muestra el aviso cuando el consumo estimado supera el cupo", () => {
-        state.settings = { ...baseSettings, estimated_monthly_queries: 12, total_monthly_quota: 10 }
+    it("muestra el consumo estimado sin cupo interno", () => {
+        state.settings = { ...baseSettings, estimated_monthly_queries: 12 }
         render(<RcvSettingsView />)
-        expect(screen.getByText(/El consumo estimado supera el cupo disponible/)).toBeTruthy()
-        expect(screen.getByText(/Consumo estimado: 12 consultas\/mes · cupo disponible 10/)).toBeTruthy()
-    })
-
-    it("no muestra el aviso cuando el consumo cabe en el cupo", () => {
-        render(<RcvSettingsView />)
-        expect(screen.queryByText(/El consumo estimado supera el cupo disponible/)).toBeNull()
+        expect(screen.getByText("Consumo estimado: 12 consultas/mes")).toBeTruthy()
+        expect(screen.queryByText(/cupo disponible/)).toBeNull()
     })
 
     it("lista las API keys con su consumo y clave enmascarada", () => {
         render(<RcvSettingsView />)
-        expect(screen.getByText("3/10 este mes")).toBeTruthy()
+        expect(screen.getByText("3 este mes")).toBeTruthy()
         expect(screen.getByText("••••-4472")).toBeTruthy()
     })
 
     it("explica la rotación de keys por menor uso", () => {
         render(<RcvSettingsView />)
-        expect(screen.getByText(/Se usa primero la key con menos consultas este mes; al agotarse una, se pasa a la siguiente\./)).toBeTruthy()
+        expect(screen.getByText(/Se usa primero la key con menos consultas este mes; si SimpleAPI responde que una no tiene cupo, se pasa a la siguiente\./)).toBeTruthy()
     })
 
     it("sin permisos de escritura no ofrece cambiar la clave ni agregar keys", () => {

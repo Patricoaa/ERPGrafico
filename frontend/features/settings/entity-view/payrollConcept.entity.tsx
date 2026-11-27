@@ -60,6 +60,7 @@ export const payrollConceptEntity = defineEntity<PayrollConcept>()((f) => ({
         search: { placeholder: "Buscar concepto…" },
         sort: { fields: ["name", "category", "formulaType", "accountCode"], default: "name" },
         groupBy: { fields: ["category", "formulaType"] },
+        views: [{ id: "all", label: "Todos" }],
     },
 }))
 

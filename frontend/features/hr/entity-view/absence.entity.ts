@@ -31,6 +31,13 @@ export const absenceEntity = defineEntity<Absence>()((f) => ({
         },
         sort: { fields: ["startDate", "employeeName", "absenceType", "endDate", "days"], default: "-startDate" },
         groupBy: { fields: ["absenceTypeLabel", "employeeName"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "ausentismo", label: "Ausentismo", filters: { absence_type: "AUSENTISMO" } },
+            { id: "licencia", label: "Licencia Médica", filters: { absence_type: "LICENCIA" } },
+            { id: "permiso", label: "Permiso sin Goce", filters: { absence_type: "PERMISO_SIN_GOCE" } },
+            { id: "hours", label: "Ausencia de Horas", filters: { absence_type: "AUSENCIA_HORAS" } },
+        ],
     },
 }))
 

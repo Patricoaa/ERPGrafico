@@ -247,7 +247,9 @@ def _send(ids: list[int], delay: Callable[[list[int]], Any]) -> None:
 
 
 def select_api_key(today: date, exclude: set[int] | None = None) -> RCVApiKey | None:
-    """Key activa con cupo y menor uso del mes; marca ``last_used_at``.
+    """Key activa no marcada sin cupo por SimpleAPI y de menor uso del mes; marca ``last_used_at``.
+
+    No hay límite interno: el cupo real lo informa SimpleAPI (``exhausted_until``).
 
     Transacción corta propia: el bloqueo no se mantiene durante la llamada HTTP.
     """
@@ -262,10 +264,7 @@ def select_api_key(today: date, exclude: set[int] | None = None) -> RCVApiKey | 
         if not candidates:
             return None
         usage = rcv_key_usage(month_start(today))
-        eligible = [k for k in candidates if usage.get(k.id, 0) < k.monthly_limit]
-        if not eligible:
-            return None
-        key = min(eligible, key=lambda k: (usage.get(k.id, 0), k.id))
+        key = min(candidates, key=lambda k: (usage.get(k.id, 0), k.id))
         key.last_used_at = timezone.now()
         key.save(update_fields=["last_used_at", "updated_at"])
         return key

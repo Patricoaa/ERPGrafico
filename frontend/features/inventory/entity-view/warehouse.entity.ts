@@ -26,6 +26,11 @@ export const warehouseEntity = defineEntity<Warehouse>()((f) => ({
         search: { placeholder: "Buscar almacén…", scopes: [{ label: "Nombre / Código", param: "name", clientKey: ["name", "code", "address"] }] },
         filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
         sort: { fields: ["name", "code", "address", "stockedProductCount", "stockUnits", "isActive"], default: "name" },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "active", label: "Activos", filters: { is_active: "true" } },
+            { id: "archived", label: "Archivados", filters: { is_active: "false" } },
+        ],
     },
 }))
 

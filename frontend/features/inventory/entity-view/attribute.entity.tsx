@@ -62,6 +62,11 @@ export const attributeEntity = defineEntity<Attribute>()((f) => ({
         filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
         sort: { fields: ["name", "code", "valueType", "isActive"], default: "name" },
         groupBy: { fields: ["valueType"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "active", label: "Activos", filters: { is_active: "true" } },
+            { id: "archived", label: "Archivados", filters: { is_active: "false" } },
+        ],
     },
 }))
 

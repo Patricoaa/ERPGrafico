@@ -364,7 +364,7 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
         ...(compiled.search.dateFilters ?? []),
     ]
     const count = resultCount === null ? null : formatResultCount(resultCount)
-    const showTabs = query.views.length > 1
+    const showTabs = query.views.length > 0
     const columns = ctx.view === "table" && ctx.tableColumns
         ? ctx.tableColumns.ids.map((id) => ({ id, label: fieldById(ctx.collection.entity, id).label, visible: !ctx.hiddenColumns.has(id), locked: id === ctx.tableColumns?.primary }))
         : []

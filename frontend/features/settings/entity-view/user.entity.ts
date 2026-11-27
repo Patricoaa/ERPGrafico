@@ -31,7 +31,10 @@ export const userEntity = defineEntity<AppUser>()((f) => ({
         contact: f.contact((u) => (u.contact ? { id: u.contact, name: fullName(u) || u.username } : null), { label: "Contacto", sortable: false }),
     },
     // ADR-0158 §3. Sin `sort`: el endpoint de usuarios no ordena.
-    query: { search: { placeholder: "Buscar usuario por nombre, email o username…" } },
+    query: {
+        search: { placeholder: "Buscar usuario por nombre, email o username…" },
+        views: [{ id: "all", label: "Todos" }],
+    },
 }))
 
 export const userViews = userEntity.views({

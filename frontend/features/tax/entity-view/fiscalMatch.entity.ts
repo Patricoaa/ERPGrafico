@@ -73,6 +73,11 @@ export const fiscalMatchEntity = defineEntity<FiscalMatchListItem>()((f) => ({
             dte_type: { label: "Tipo de documento", control: "single", options: FISCAL_MATCH_DTE_OPTIONS },
             issue_date: { field: "issueDate", control: "date", paramFrom: "date_from", paramTo: "date_to" },
         },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "sales", label: "Ventas", filters: { direction: "sale" } },
+            { id: "purchases", label: "Compras", filters: { direction: "purchase" } },
+        ],
     },
 }))
 

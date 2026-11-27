@@ -253,12 +253,6 @@ def rcv_api_keys_queryset(month_start: date) -> QuerySet[RCVApiKey]:
     ).order_by("id")
 
 
-def rcv_total_monthly_quota() -> int:
-    """Suma de ``monthly_limit`` de las API keys activas."""
-    total = RCVApiKey.objects.filter(is_active=True).aggregate(total=Sum("monthly_limit"))["total"]
-    return total or 0
-
-
 def rcv_api_key_with_same_key(plain: str, exclude_pk: int | None = None) -> RCVApiKey | None:
     """Otra API key RCV cuyo valor descifrado es ``plain`` (o ``None``)."""
     if not plain:

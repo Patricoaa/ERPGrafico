@@ -109,6 +109,11 @@ export const terminalSaleEntity = defineEntity<TerminalSale>()((f) => ({
             // Fiscal match group status of the sale (ADR-0141).
             fiscal_match_status: { field: "matchStatus", control: "single", options: FISCAL_MATCH_STATUS_OPTIONS },
         },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "completed", label: "Completadas", filters: { status: "COMPLETED" } },
+            { id: "reversed", label: "Anuladas", filters: { status: "REVERSED" } },
+        ],
     },
 }))
 

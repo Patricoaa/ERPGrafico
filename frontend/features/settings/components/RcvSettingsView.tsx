@@ -25,7 +25,7 @@ import {
 } from "@/features/accounting"
 import type { RcvApiKey, RcvSettings } from "@/features/accounting"
 
-import { RcvApiKeyDrawer } from "./RcvApiKeyDrawer"
+import { RcvApiKeyModal } from "./RcvApiKeyModal"
 import { rcvSettingsSchema, validateRcvSettings, type RcvSettingsFormValues } from "./RcvSettingsView.schema"
 
 const SETTINGS_PERMISSION = "accounting.change_rcvsettings"
@@ -128,7 +128,7 @@ function ApiKeysCard() {
             <CardHeader className="flex flex-row items-start justify-between gap-3">
                 <div className="space-y-1.5">
                     <CardTitle className="text-lg text-primary">API keys de SimpleAPI</CardTitle>
-                    <CardDescription>Cada key tiene un cupo mensual de consultas. Se usa primero la key con menos consultas este mes; al agotarse una, se pasa a la siguiente.</CardDescription>
+                    <CardDescription>El cupo lo controla SimpleAPI. Se usa primero la key con menos consultas este mes; si SimpleAPI responde que una no tiene cupo, se pasa a la siguiente.</CardDescription>
                 </div>
                 <Can permission="accounting.add_rcvapikey">
                     <Button type="button" onClick={() => setCreating(true)}>
@@ -145,7 +145,7 @@ function ApiKeysCard() {
                     />
                 </Collection.Root>
             </CardContent>
-            <RcvApiKeyDrawer
+            <RcvApiKeyModal
                 key={selected?.id ?? "new"}
                 apiKey={selected}
                 open={creating || selected !== null}
@@ -185,7 +185,6 @@ function RcvSettingsPanel({ settings }: { settings: RcvSettings }) {
 
     useUnsavedChangesGuard(status)
 
-    const overQuota = settings.estimated_monthly_queries > settings.total_monthly_quota
     const nextPeriod = formatRcvPeriod(settings.next_period.year, settings.next_period.month)
 
     return (
@@ -317,14 +316,9 @@ function RcvSettingsPanel({ settings }: { settings: RcvSettings }) {
                                     <div className="md:col-span-3 space-y-1 text-sm">
                                         <p className="text-foreground">Si corriera hoy consultaría {nextPeriod}</p>
                                         <p className="text-muted-foreground">
-                                            Consumo estimado: {settings.estimated_monthly_queries} consultas/mes · cupo disponible {settings.total_monthly_quota}
+                                            Consumo estimado: {settings.estimated_monthly_queries} consultas/mes
                                         </p>
                                     </div>
-                                    {overQuota && (
-                                        <Banner tone="warning" className="md:col-span-3">
-                                            El consumo estimado supera el cupo disponible: agrega otra API key, sube el cupo mensual o aumenta los días entre consultas.
-                                        </Banner>
-                                    )}
                                 </CardContent>
                             </Card>
 
