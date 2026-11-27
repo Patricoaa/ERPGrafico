@@ -4,6 +4,7 @@ import * as React from "react"
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, Download, FileText, Kanban, LayoutGrid, Rows3, type LucideIcon } from "lucide-react"
 import { AnalyticsDrillDownProvider, AppliedFilters, BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, UnifiedSearchBar, bindUnifiedSearch, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type AnalyticsDrillDownFilter, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -323,19 +324,22 @@ function policyModes(label: string | undefined): readonly CollectionViewMode[] {
 function ExtraActionButton({ action }: { action: ToolbarExtraAction }) {
     const Icon = action.icon
     const icon = <Icon className="size-4" aria-hidden />
-    if (action.href && !action.disabled) {
-        return (
-            <Button asChild variant="ghost" size="icon-sm">
-                <a href={action.href} aria-label={action.label} title={action.label}>
-                    {icon}
-                </a>
-            </Button>
-        )
-    }
-    return (
+    const button = action.href && !action.disabled ? (
+        <Button asChild variant="ghost" size="icon-sm">
+            <a href={action.href} aria-label={action.label} title={action.label}>
+                {icon}
+            </a>
+        </Button>
+    ) : (
         <Button variant="ghost" size="icon-sm" aria-label={action.label} title={action.label} disabled={action.disabled} onClick={action.onClick}>
             {icon}
         </Button>
+    )
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>{button}</TooltipTrigger>
+            <TooltipContent>{action.label}</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -354,9 +358,14 @@ function UtilityActions({ hasAnalytics, analyticsOpen, onAnalyticsOpen, exportSp
     return (
         <div className="flex items-center gap-1" role="group" aria-label="Acciones de la colección">
             {hasAnalytics && (
-                <Button variant="ghost" size="icon-sm" aria-label="Analítica" title="Analítica" aria-haspopup="dialog" aria-expanded={analyticsOpen} onClick={onAnalyticsOpen}>
-                    <BarChart3 className="size-4" aria-hidden />
-                </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon-sm" aria-label="Analítica" title="Analítica" aria-haspopup="dialog" aria-expanded={analyticsOpen} onClick={onAnalyticsOpen}>
+                            <BarChart3 className="size-4" aria-hidden />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Analítica</TooltipContent>
+                </Tooltip>
             )}
             {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters} count={count} />}
             {extraActions.map((action) => <ExtraActionButton key={action.id} action={action} />)}
@@ -414,7 +423,6 @@ function Toolbar({ children, action, views, exportFilters, extraActions = [] }: 
                             })}
                         </div>
                     )}
-                    {action && <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />}
                     {action && <div className="basis-full md:basis-auto">{action}</div>}
                 </div>
             </div>
@@ -512,7 +520,6 @@ function CommandToolbar({ query, modes, action, resultCount, children, utilities
                 )}
                 {tools}
                 {children}
-                {action && <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />}
                 {action && <div className="basis-full md:basis-auto">{action}</div>}
             </div>
             <AppliedFilters chips={search.chips} onClearAll={() => void search.clearAll()} resultCount={resultCount} showCountWhenEmpty />

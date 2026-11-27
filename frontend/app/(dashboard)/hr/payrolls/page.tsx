@@ -5,7 +5,7 @@ import { getHRTab } from "@/features/hr/navigation"
 import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
 const tabConfig = getHRTab("payrolls")
-export const metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Liquidaciones y Remuneraciones | ERPGrafico" }
+export const metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Liquidaciones | ERPGrafico" }
 
 const FILTER_PARAMS = new Set(["search", "status", "period_year"])
 
