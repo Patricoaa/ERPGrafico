@@ -22,8 +22,10 @@ const numeric = z
     })
 
 const sourceLineSchema = z.object({
-    id: z.number(),
-    product: z.number(),
+    id: z.number().nullish(),
+    invoice_line_id: z.number().nullish(),
+    product: z.number().nullish(),
+    product_id: z.number().nullish(),
     product_name: z.string().nullish(),
     product_code: z.string().nullish(),
     product_type: z.string().nullish(),
@@ -35,6 +37,9 @@ const sourceLineSchema = z.object({
     quantity: numeric,
     quantity_delivered: numeric,
     unit_price: numeric,
+    unit_cost: numeric,
+    unit_price_net: numeric,
+    unit_price_gross: numeric,
     tax_rate: numeric,
 })
 
@@ -56,11 +61,13 @@ export function parseSalesNoteSource(raw: unknown): NoteWizardSourceDocument {
     const inv = sourceInvoiceSchema.parse(raw)
 
     const lines = inv.lines.map((l) => {
-        const unitPrice = l.unit_price ?? 0
+        const unitPrice = l.unit_price ?? l.unit_cost ?? l.unit_price_net ?? l.unit_price_gross ?? 0
         const trackInventory = l.track_inventory ?? undefined
+        const lineId = l.id ?? l.invoice_line_id ?? 0
+        const productId = l.product ?? l.product_id ?? 0
         return {
-            lineId: l.id,
-            productId: l.product,
+            lineId,
+            productId,
             productName: l.product_name ?? '',
             productCode: l.product_code ?? undefined,
             productType: l.product_type ?? undefined,

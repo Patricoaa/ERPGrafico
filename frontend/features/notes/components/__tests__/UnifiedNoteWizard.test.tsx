@@ -42,4 +42,35 @@ describe('UnifiedNoteWizard', () => {
         expect(screen.getByText('01 / 03')).toBeInTheDocument()
         expect(screen.queryByText('02 / 03')).not.toBeInTheDocument()
     })
+
+    it('al seleccionar un producto en el primer paso le asigna cantidad y precio', async () => {
+        render(
+            <QueryClientProvider client={new QueryClient()}>
+                <UnifiedNoteWizard
+                    open
+                    onOpenChange={() => {}}
+                    mode="sales"
+                    initialType="NOTA_CREDITO"
+                    fetchSource={fetchSource}
+                    onSubmit={async () => {}}
+                    referenceLabel="1"
+                />
+            </QueryClientProvider>,
+        )
+
+        expect(await screen.findByText('Emitir Nota de Crédito')).toBeInTheDocument()
+        await waitFor(() => expect(screen.getByText('01 / 03')).toBeInTheDocument())
+
+        // Checkbox de selección para "Tarjetas"
+        const checkbox = screen.getByRole('checkbox', { name: /seleccionar tarjetas/i })
+        expect(checkbox).toHaveAttribute('aria-checked', 'false')
+
+        // Al marcar el checkbox, debe asignar la cantidad original y computar total con su precio
+        await userEvent.click(checkbox)
+        expect(checkbox).toHaveAttribute('aria-checked', 'true')
+
+        // Input de cantidad debe tener 5 (originalQuantity)
+        const qtyInput = screen.getByRole('spinbutton', { name: /cantidad de nota — tarjetas/i })
+        expect(qtyInput).toHaveValue(5)
+    })
 })

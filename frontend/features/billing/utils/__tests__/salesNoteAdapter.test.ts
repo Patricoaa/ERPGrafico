@@ -37,6 +37,33 @@ describe('parseSalesNoteSource', () => {
         expect(parseSalesNoteSource({ ...rawInvoice, dte_type: 'FACTURA_EXENTA' }).isExempt).toBe(true)
     })
 
+    it('soporta facturas de compra con unit_cost o unit_price_net sin unit_price', () => {
+        const purchaseInvoice = {
+            id: 9,
+            number: '12',
+            dte_type: 'FACTURA',
+            dte_type_display: 'Factura Electrónica',
+            total: '297500.00',
+            lines: [
+                {
+                    id: 1,
+                    product: 34,
+                    product_name: 'Mantención',
+                    quantity: '1',
+                    unit_cost: '250000',
+                    tax_rate: '19',
+                },
+            ],
+        }
+        const doc = parseSalesNoteSource(purchaseInvoice)
+        expect(doc.lines[0]).toMatchObject({
+            lineId: 1,
+            productId: 34,
+            noteUnitPrice: 250000,
+            taxAmountPerUnit: 47500,
+        })
+    })
+
     it('rechaza respuestas con forma inválida', () => {
         expect(() => parseSalesNoteSource({ id: 'x' })).toThrow()
     })

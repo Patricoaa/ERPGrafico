@@ -242,7 +242,7 @@ export function UnifiedNoteWizard({
                             selectionMode="select"
                             noteType={noteType}
                             lines={sourceDocument?.lines ?? []}
-                            selectedLines={lines}
+                            selectedLines={lines.filter(l => l.noteQuantity > 0)}
                             onLinesChange={setLines}
                             isExempt={isExempt}
                         />

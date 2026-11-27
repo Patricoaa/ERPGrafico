@@ -43,14 +43,15 @@ function toSelectValue(lines: NoteLineItem[], selectedLines: NoteLineItem[]): Ed
     const selMap = new Map(selectedLines.map((s) => [String(s.lineId), s]))
     return lines.map((line) => {
         const sel = selMap.get(String(line.lineId))
+        const isSelected = sel !== undefined && sel.noteQuantity > 0
         return {
             key: String(line.lineId),
             values: {
                 noteQuantity: sel?.noteQuantity ?? 0,
-                noteUnitPrice: sel?.noteUnitPrice ?? line.noteUnitPrice,
+                noteUnitPrice: (sel && sel.noteUnitPrice > 0) ? sel.noteUnitPrice : line.noteUnitPrice,
             },
             textValues: { motivo: sel?.reason ?? "" },
-            selected: selMap.has(String(line.lineId)),
+            selected: isSelected,
         }
     })
 }
@@ -151,16 +152,26 @@ export function NoteLineItemsStep({
                 .flatMap((v) => {
                     const line = lines.find((l) => String(l.lineId) === v.key)
                     if (!line) return []
+                    const wasSelected = selectedLines.some((s) => String(s.lineId) === v.key && s.noteQuantity > 0)
+                    const currentQty = v.values.noteQuantity ?? 0
+                    // Al seleccionar un ítem por primera vez (v.selected true y cant 0),
+                    // asignamos la cantidad original disponible para que tenga precio y total inmediatos.
+                    const noteQuantity = (!wasSelected && currentQty === 0)
+                        ? (line.originalQuantity || 1)
+                        : currentQty
+                    const noteUnitPrice = (v.values.noteUnitPrice && v.values.noteUnitPrice > 0)
+                        ? v.values.noteUnitPrice
+                        : line.noteUnitPrice
                     return [{
                         ...line,
-                        noteQuantity: v.values.noteQuantity ?? 0,
-                        noteUnitPrice: v.values.noteUnitPrice ?? line.noteUnitPrice,
+                        noteQuantity,
+                        noteUnitPrice,
                         reason: v.textValues?.motivo ?? "",
                     }]
                 })
             onLinesChange(selected)
         },
-        [lines, onLinesChange],
+        [lines, selectedLines, onLinesChange],
     )
 
     const handleEditChange = React.useCallback(
@@ -168,10 +179,13 @@ export function NoteLineItemsStep({
             const updated = next.flatMap((v) => {
                 const line = lines.find((l) => String(l.lineId) === v.key)
                 if (!line) return []
+                const noteUnitPrice = (v.values.noteUnitPrice && v.values.noteUnitPrice > 0)
+                    ? v.values.noteUnitPrice
+                    : line.noteUnitPrice
                 return [{
                     ...line,
                     noteQuantity: v.values.noteQuantity ?? 0,
-                    noteUnitPrice: v.values.noteUnitPrice ?? line.noteUnitPrice,
+                    noteUnitPrice,
                 }]
             })
             onLinesChange(updated)

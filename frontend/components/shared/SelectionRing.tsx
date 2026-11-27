@@ -14,6 +14,8 @@ interface SelectionRingProps {
   onCheckedChange?: (checked: boolean) => void
   /** Accessible label (required for screen readers) */
   ariaLabel?: string
+  /** Accessible label alternative */
+  "aria-label"?: string
   /** Disables interaction */
   disabled?: boolean
   /** Visual size — maps to CmykRing sizes */
@@ -36,12 +38,14 @@ interface SelectionRingProps {
 export function SelectionRing({
   checked = false,
   onCheckedChange,
-  ariaLabel = "Seleccionar",
+  ariaLabel,
+  "aria-label": ariaLabelProp,
   disabled = false,
   size = "sm",
   className,
   tabIndex = 0,
 }: SelectionRingProps) {
+  const label = ariaLabelProp ?? ariaLabel ?? "Seleccionar"
   const isIndeterminate = checked === "indeterminate"
   const isChecked = checked === true
   const ref = React.useRef<HTMLButtonElement>(null)
@@ -84,7 +88,7 @@ export function SelectionRing({
       type="button"
       role="checkbox"
       aria-checked={isChecked ? "true" : isIndeterminate ? "mixed" : "false"}
-      aria-label={ariaLabel}
+      aria-label={label}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : tabIndex}
       onClick={handleClick}
