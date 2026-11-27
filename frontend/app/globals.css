@@ -1122,16 +1122,11 @@ table [data-notched-field] {
 
   /*
    * GLOBAL REPULSION SYSTEM
-   * Captures the widths of global panels (Inbox, Hub) and stores them for reactive layouts.
+   * Only entity drawers repel the canvas now: the task inbox is a blocking
+   * full-viewport overlay and does not push content (ADR-0161).
+   * `--inbox-width` is kept as an opt-in fallback for legacy selectors;
+   * no consumer sets it, so every `var(--inbox-width, 0px)` resolves to 0.
    */
-  body {
-    --inbox-width: 0px;
-  }
-
-  body[data-inbox-open="true"] {
-    --inbox-width: calc(320px + 1rem);
-    /* Width (320px) + Gap (16px) */
-  }
 
   /* 
    * PREMIUM ANIMATIONS - SHEET OVERRIDES
@@ -1407,6 +1402,16 @@ table [data-notched-field] {
     padding-right: 0 !important;
   }
 
+  /* Blocking inbox overlay: viewport-wide scrim above the ActionDock (ADR-0161) */
+  #main-content [data-slot="sheet-overlay"].inbox-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 0 !important;
+    z-index: 105 !important;
+  }
+
   #main-content > div:first-child {
     transition: filter 400ms var(--ease-premium);
   }
@@ -1422,11 +1427,12 @@ table [data-notched-field] {
     filter: blur(2px) brightness(0.8);
   }
 
-  #main-content:has([data-sheet-id="task-inbox-sidebar"][data-state="open"]):not(:has([data-slot="sheet-overlay"])) > div:first-child {
-    filter: brightness(0.8);
+  #main-content:has([data-slot="sheet-overlay"]) > div:first-child {
+    filter: blur(6px) brightness(0.65);
   }
 
-  #main-content:has([data-slot="sheet-overlay"]) > div:first-child {
+  /* Same specificity as the gentle scrim, declared later: the blocking inbox wins. */
+  #main-content:has([data-slot="sheet-overlay"].inbox-overlay) > div:first-child {
     filter: blur(6px) brightness(0.65);
   }
 
@@ -1455,8 +1461,14 @@ table [data-notched-field] {
     box-shadow: -16px 0 32px oklch(0.12 0.02 240 / 0.18);
   }
 
+  /* Inbox enters from the right and casts its shadow onto the canvas (ADR-0161) */
   #main-content [data-slot="sheet-content"][data-sheet-id="task-inbox-sidebar"][data-state="open"] {
-    box-shadow: none;
+    animation-name: panel-enter-right !important;
+    box-shadow: -16px 0 32px oklch(0.12 0.02 240 / 0.18);
+  }
+
+  #main-content [data-slot="sheet-content"][data-sheet-id="task-inbox-sidebar"][data-state="closed"] {
+    animation-name: panel-exit-right !important;
   }
 
   #main-content [data-slot="sheet-content"][data-state="closed"] {

@@ -24,7 +24,12 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             fullWidth={360}
             priority={0}
             badge={taskCount}
-            className="w-[360px] max-w-[360px] bg-muted/30"
+            side="right"
+            fullViewport
+            blockingOverlay
+            registerInStack={false}
+            overlayClassName="inbox-overlay"
+            className="w-[360px] max-w-[360px] bg-card shadow-overlay"
         >
             {/* Header — same height as entity drawers (h-14 = 56 px) */}
             <div className="border-b border-border shrink-0 h-14 flex items-center px-4">

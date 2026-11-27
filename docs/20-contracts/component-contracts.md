@@ -71,11 +71,15 @@ Index of all shared components. Sections marked with 📄 have a dedicated contr
 | `tabLabel` | `string` | ✅ | — | Vertical tab text when collapsed |
 | `tabIcon` | `LucideIcon` | ✅ | — | |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'xl' \| 'full'` | ❌ | `'md'` | sm=442px, md=682px, lg=882px, xl=1082px, full=100vw |
-| `side` | `'top' \| 'bottom' \| 'left' \| 'right'` | ❌ | `'right'` | |
+| `side` | `'top' \| 'bottom' \| 'left' \| 'right'` | ❌ | `'right'` | Drive borde, dirección del slide y sombra |
 | `forceCollapse` | `boolean` | ❌ | `false` | Keep tab visible even when open |
 | `fullWidth` | `number` | ❌ | — | Override size with px value |
-| `hideOverlay` | `boolean` | ❌ | `false` | |
+| `hideOverlay` | `boolean` | ❌ | `true` | Los panels edge no llevan scrim por defecto |
 | `pushOffset` | `number` | ❌ | — | Pixel offset for stacking |
+| `fullViewport` | `boolean` | ❌ | `false` | `100dvh` desde `top: 0` en vez de debajo del header |
+| `blockingOverlay` | `boolean` | ❌ | `false` | Modal de Radix: scrim, foco dentro, cierra con Escape/clic fuera; z-index por encima del dock |
+| `registerInStack` | `boolean` | ❌ | `true` | `false` evita que el panel empuje el canvas y los drawers |
+| `overlayClassName` | `string` | ❌ | — | Clase para estilizar el scrim desde CSS |
 
 Requires `GlobalModalProvider` in layout. DOM unmounts 500ms after close for exit animation.
 
