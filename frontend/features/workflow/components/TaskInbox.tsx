@@ -221,7 +221,7 @@ function SectionGroup({ title, count, hint, expanded, onToggle, children, always
                     {hint && <span className="text-3xs text-muted-foreground/35 shrink-0">{hint}</span>}
                     {action}
                 </div>
-                <div className="space-y-1 px-3">{children}</div>
+                <div className="space-y-2 px-3">{children}</div>
             </div>
         )
     }
@@ -244,7 +244,7 @@ function SectionGroup({ title, count, hint, expanded, onToggle, children, always
                 </div>
             </Button>
             {expanded && (
-                <div className={cn("mt-1 space-y-1 px-3", fadeInClass({ from: "top", distance: 1, duration: 150 }))}>
+                <div className={cn("mt-1 space-y-2 px-3", fadeInClass({ from: "top", distance: 1, duration: 150 }))}>
                     {children}
                 </div>
             )}
@@ -460,13 +460,15 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
             <div
                 key={task.id}
                 className={cn(
-                    "surface-item flex flex-col rounded-sm select-none overflow-hidden",
+                    "surface-item flex items-stretch rounded-sm select-none overflow-hidden",
                     !isActive && "opacity-50",
                 )}
             >
-                <div className="flex items-start gap-2 p-3 pb-2">
-                    <Icon className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", iconColor)} aria-hidden />
-                    <div className="min-w-0 flex-1">
+                <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-border/15 bg-muted/10">
+                    <Icon className={cn("h-5 w-5", iconColor)} aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1 flex flex-col">
+                    <div className="p-3 pb-2">
                         <div className="flex items-start justify-between gap-1.5">
                             <p className="text-xs font-semibold tracking-tight text-foreground leading-snug">
                                 {cardTitle}
@@ -511,50 +513,50 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             </p>
                         )}
                     </div>
-                </div>
 
-                {(showInline || forceOpenDoc || hasDocument || canOpenCustomer) && (
-                    <CtaBar>
-                        {showInline && (
-                            <>
+                    {(showInline || forceOpenDoc || hasDocument || canOpenCustomer) && (
+                        <CtaBar>
+                            {showInline && (
+                                <>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 text-3xs h-control-xs px-2 border-destructive/30 text-destructive hover:bg-destructive/10 rounded-sm font-semibold uppercase tracking-wide"
+                                        onClick={(e) => handleApprovalAction(e, task, 'REJECT')}
+                                        disabled={actioningTask === task.id}
+                                    >
+                                        Rechazar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        className="flex-1 text-3xs h-control-xs px-2 bg-success/90 hover:bg-success text-success-foreground font-semibold rounded-sm uppercase tracking-wide"
+                                        onClick={(e) => handleApprovalAction(e, task, 'APPROVE')}
+                                        disabled={actioningTask === task.id}
+                                    >
+                                        Aprobar
+                                    </Button>
+                                </>
+                            )}
+                            {forceOpenDoc && isActive && (
+                                <p className="text-2xs text-muted-foreground/55 flex-1 italic">
+                                    Abre la OT para completar la rectificación.
+                                </p>
+                            )}
+                            {(hasDocument || canOpenCustomer) && (
                                 <Button
+                                    variant="ghost"
                                     size="sm"
-                                    variant="outline"
-                                    className="flex-1 text-3xs h-control-xs px-2 border-destructive/30 text-destructive hover:bg-destructive/10 rounded-sm font-semibold uppercase tracking-wide"
-                                    onClick={(e) => handleApprovalAction(e, task, 'REJECT')}
-                                    disabled={actioningTask === task.id}
+                                    className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 shrink-0 font-medium ml-auto"
+                                    onClick={() => navigateToTask(task)}
+                                    aria-label={canOpenCustomer ? "Ver ficha de cliente" : "Ver documento"}
                                 >
-                                    Rechazar
+                                    <ExternalLink className="h-3 w-3" />
+                                    {canOpenCustomer ? 'Ver cliente' : 'Ver doc.'}
                                 </Button>
-                                <Button
-                                    size="sm"
-                                    className="flex-1 text-3xs h-control-xs px-2 bg-success/90 hover:bg-success text-success-foreground font-semibold rounded-sm uppercase tracking-wide"
-                                    onClick={(e) => handleApprovalAction(e, task, 'APPROVE')}
-                                    disabled={actioningTask === task.id}
-                                >
-                                    Aprobar
-                                </Button>
-                            </>
-                        )}
-                        {forceOpenDoc && isActive && (
-                            <p className="text-2xs text-muted-foreground/55 flex-1 italic">
-                                Abre la OT para completar la rectificación.
-                            </p>
-                        )}
-                        {(hasDocument || canOpenCustomer) && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 shrink-0 font-medium ml-auto"
-                                onClick={() => navigateToTask(task)}
-                                aria-label={canOpenCustomer ? "Ver ficha de cliente" : "Ver documento"}
-                            >
-                                <ExternalLink className="h-3 w-3" />
-                                {canOpenCustomer ? 'Ver cliente' : 'Ver doc.'}
-                            </Button>
-                        )}
-                    </CtaBar>
-                )}
+                            )}
+                        </CtaBar>
+                    )}
+                </div>
             </div>
         )
     }
@@ -572,28 +574,25 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 variant="ghost"
                 onClick={() => navigateToTask(task)}
                 aria-label={`Abrir tarea: ${getCardTitle(task)}`}
-                className="surface-item group h-auto min-h-0 w-full flex flex-col items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="surface-item group h-auto min-h-0 w-full flex items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-                <div className="flex items-start gap-2 p-3">
-                    <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 mt-0.5" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
+                <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-border/15 bg-muted/10">
+                    <Icon className="h-5 w-5 text-muted-foreground/50" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-foreground leading-snug">{getCardTitle(task)}</p>
-                            <span className="flex shrink-0 items-center gap-1 text-2xs font-medium text-muted-foreground/55 transition-colors group-hover:text-foreground">
-                                <ExternalLink className="h-3 w-3" aria-hidden />
-                                Abrir
-                            </span>
+                            {cardRef && (
+                                <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
+                                    {cardRef}
+                                </span>
+                            )}
                         </div>
-                        {cardRef && (
-                            <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
-                                {cardRef}
-                            </span>
-                        )}
-                        {createdAt && (
-                            <p className="flex items-center gap-1 text-2xs text-muted-foreground/45 mt-1">
-                                {createdAt && <span>{createdAt}</span>}
-                            </p>
-                        )}
+                        <div className="flex shrink-0 flex-col items-end gap-1 text-muted-foreground/55 transition-colors group-hover:text-foreground">
+                            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                            {createdAt && <span className="text-2xs text-muted-foreground/45">{createdAt}</span>}
+                        </div>
                     </div>
                 </div>
             </Button>
@@ -605,6 +604,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const renderNotificationCard = (n: Notification) => {
         const Icon = NOTIFICATION_ICONS[n.notification_type ?? ''] ?? Bell
         const navigable = isNavigableNotification(n)
+        const createdAt = relativeTime(n.created_at)
         return (
             <Button
                 key={n.id}
@@ -613,29 +613,32 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 onClick={() => handleNotificationClick(n)}
                 aria-label={`${navigable ? 'Abrir' : 'Marcar como leído'}: ${n.title}`}
                 className={cn(
-                    "surface-item group h-auto min-h-0 w-full flex items-start justify-start gap-2 overflow-hidden rounded-sm p-3 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    "surface-item group h-auto min-h-0 w-full flex items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     !n.read && "bg-primary/[0.03]",
                 )}
             >
-                <Icon className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", n.read ? "text-muted-foreground/40" : "text-primary")} aria-hidden />
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-1.5">
-                        <p className={cn("truncate text-xs leading-snug", n.read ? "font-medium text-foreground/60" : "font-semibold text-foreground")}>
-                            {n.title}
-                        </p>
-                        <span className="shrink-0 text-3xs text-muted-foreground/40">{relativeTime(n.created_at)}</span>
-                        {!n.read && <span className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-primary" aria-label="No leído" />}
-                    </div>
-                    {n.message && (
-                        <p className="mt-0.5 line-clamp-2 whitespace-normal text-2xs text-muted-foreground/60">{n.message}</p>
-                    )}
+                <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-border/15 bg-muted/10">
+                    <Icon className={cn("h-5 w-5", n.read ? "text-muted-foreground/40" : "text-primary")} aria-hidden />
                 </div>
-                {navigable && (
-                    <ExternalLink
-                        className="h-3 w-3 shrink-0 self-center text-muted-foreground/45 transition-colors group-hover:text-foreground"
-                        aria-hidden
-                    />
-                )}
+                <div className="min-w-0 flex-1 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                                <p className={cn("truncate text-xs leading-snug", n.read ? "font-medium text-foreground/60" : "font-semibold text-foreground")}>
+                                    {n.title}
+                                </p>
+                                {!n.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-label="No leído" />}
+                            </div>
+                            {n.message && (
+                                <p className="mt-0.5 line-clamp-2 whitespace-normal text-2xs text-muted-foreground/60">{n.message}</p>
+                            )}
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1 text-muted-foreground/45 transition-colors group-hover:text-foreground">
+                            {navigable && <ExternalLink className="h-3.5 w-3.5" aria-hidden />}
+                            <span className="text-3xs text-muted-foreground/40">{createdAt}</span>
+                        </div>
+                    </div>
+                </div>
             </Button>
         )
     }
