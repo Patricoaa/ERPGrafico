@@ -1,10 +1,11 @@
 import copy
 import json
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from treasury.integrations.tuu_client import (
     REPORT_BRANCH_CARD,
@@ -29,6 +30,7 @@ from treasury.terminal_sync_service import (
     execute_run,
     is_sync_due,
     manual_range,
+    oldest_pending_settlement,
     scheduled_range,
     split_range,
 )
@@ -136,6 +138,54 @@ def test_scheduled_range_short_intervals_cover_yesterday_and_today():
         assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 12), date(2026, 11, 13))
     s.history_start_date = date(2026, 11, 13)
     assert scheduled_range(s, date(2026, 11, 13)) == (date(2026, 11, 13), date(2026, 11, 13))
+
+
+def test_scheduled_range_short_interval_extends_to_pending_settlement():
+    s = TerminalSyncSettings(lookback_days=7, interval_unit="MINUTES", history_start_date=None)
+    today = date(2026, 11, 23)
+    # Venta del viernes aún sin abono: el rango retrocede hasta ella.
+    assert scheduled_range(s, today, date(2026, 11, 20)) == (date(2026, 11, 20), today)
+    # Pendiente de ayer u hoy no acorta la ventana mínima.
+    assert scheduled_range(s, today, today) == (date(2026, 11, 22), today)
+    # Tope en lookback_days y en el inicio del historial.
+    assert scheduled_range(s, today, date(2026, 11, 1)) == (date(2026, 11, 16), today)
+    s.history_start_date = date(2026, 11, 21)
+    assert scheduled_range(s, today, date(2026, 11, 20)) == (date(2026, 11, 21), today)
+
+
+def test_scheduled_range_days_interval_ignores_pending():
+    s = TerminalSyncSettings(lookback_days=7, interval_unit="DAYS", history_start_date=None)
+    today = date(2026, 11, 23)
+    assert scheduled_range(s, today, date(2026, 11, 22)) == (date(2026, 11, 16), today)
+
+
+def _terminal_sale(provider, key, day, **kwargs):
+    return TerminalSale.objects.create(
+        provider=provider,
+        natural_key=key,
+        serial_number=SERIAL,
+        sale_id=key,
+        sequence_number=key,
+        transaction_at=timezone.make_aware(datetime(day.year, day.month, day.day, 12)),
+        payment_type=kwargs.pop("payment_type", TerminalSale.PaymentType.DEBIT),
+        **kwargs,
+    )
+
+
+def test_oldest_pending_settlement_only_counts_unsettled_card_sales_in_window():
+    provider = make_terminal_provider()
+    other = make_terminal_provider()
+    s = TerminalSyncSettings(lookback_days=7)
+    today = date(2026, 11, 23)
+    assert oldest_pending_settlement(provider, s, today) is None
+    _terminal_sale(provider, "old", date(2026, 11, 10))  # fuera de la ventana
+    _terminal_sale(provider, "cash", date(2026, 11, 17), payment_type="CASH")
+    _terminal_sale(provider, "reversed", date(2026, 11, 17), status="REVERSED")
+    _terminal_sale(provider, "settled", date(2026, 11, 18), settlement_id="123")
+    _terminal_sale(other, "other", date(2026, 11, 17))
+    _terminal_sale(provider, "pending", date(2026, 11, 20))
+    _terminal_sale(provider, "today", today)
+    assert oldest_pending_settlement(provider, s, today) == date(2026, 11, 20)
 
 
 def _at(hour, minute=0, day=13):
