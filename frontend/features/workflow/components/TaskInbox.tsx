@@ -466,8 +466,6 @@ export function TaskInbox({ onCountChange, onClose }: TaskInboxProps) {
         const cardRef = getCardRef(task)
         const primaryAmount = getPrimaryAmount(task)
         const Icon = getTaskIcon(task)
-        const hasDocument = !!documentForTask(task)
-        const canOpenCustomer = task.task_type === 'CREDIT_POS_REQUEST' && !!task.data?.customer_id
         const assigneeName = task.assigned_group_name ?? task.assigned_to_data?.username ?? null
         const createdAt = task.created_at ? relativeTime(task.created_at) : null
 
@@ -548,7 +546,7 @@ export function TaskInbox({ onCountChange, onClose }: TaskInboxProps) {
                         )}
                     </div>
 
-                    {(showInline || forceOpenDoc || hasDocument || canOpenCustomer) && (
+                    {(showInline || (forceOpenDoc && isActive)) && (
                         <CtaBar onClick={(e) => e.stopPropagation()}>
                             {showInline && (
                                 <>
@@ -576,20 +574,6 @@ export function TaskInbox({ onCountChange, onClose }: TaskInboxProps) {
                                     Abre la OT para completar la rectificación.
                                 </p>
                             )}
-                            {(hasDocument || canOpenCustomer) && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 shrink-0 font-medium ml-auto"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        navigateToTask(task)
-                                    }}
-                                    aria-label={canOpenCustomer ? "Ver ficha de cliente" : "Ver documento"}
-                                >
-                                    <ExternalLink className="h-3 w-3" />
-                                </Button>
-                            )}
                         </CtaBar>
                     )}
                 </div>
@@ -610,7 +594,7 @@ export function TaskInbox({ onCountChange, onClose }: TaskInboxProps) {
                 variant="ghost"
                 onClick={() => navigateToTask(task)}
                 aria-label={`Abrir tarea: ${getCardTitle(task)}`}
-                className="surface-item group h-auto min-h-0 w-full flex items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="surface-item group h-auto min-h-0 w-full flex cursor-pointer items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
                 <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-border/15 bg-muted/10">
                     <Icon className="h-5 w-5 text-muted-foreground/50" aria-hidden />
@@ -649,7 +633,7 @@ export function TaskInbox({ onCountChange, onClose }: TaskInboxProps) {
                 onClick={() => handleNotificationClick(n)}
                 aria-label={`${navigable ? 'Abrir' : 'Marcar como leído'}: ${n.title}`}
                 className={cn(
-                    "surface-item group h-auto min-h-0 w-full flex items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    "surface-item group h-auto min-h-0 w-full flex cursor-pointer items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     !n.read && "bg-primary/[0.03]",
                 )}
             >
