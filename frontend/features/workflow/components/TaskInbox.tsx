@@ -264,9 +264,9 @@ function isNavigableNotification(n: Notification): boolean {
     return !!n.link || (typeof n.data?.label === 'string' && typeof n.data?.id === 'number')
 }
 
-function CtaBar({ children }: { children: React.ReactNode }) {
+function CtaBar({ children, onClick }: { children: React.ReactNode; onClick?: React.MouseEventHandler<HTMLDivElement> }) {
     return (
-        <div className="flex items-center gap-1 px-3 py-1.5 border-t border-border/20 bg-muted/15">
+        <div className="flex items-center gap-1 px-3 py-1.5 border-t border-border/20 bg-muted/15" onClick={onClick}>
             {children}
         </div>
     )
@@ -276,9 +276,10 @@ function CtaBar({ children }: { children: React.ReactNode }) {
 
 interface TaskInboxProps {
     onCountChange?: (counts: { total: number; approvals: number; tasks: number; notifications: number }) => void
+    onClose?: () => void
 }
 
-export function TaskInbox({ onCountChange }: TaskInboxProps) {
+export function TaskInbox({ onCountChange, onClose }: TaskInboxProps) {
     const { approvalTasks, operationalTasks, isLoading, refetch } = useTasks()
     const [actioningTask, setActioningTask] = useState<number | null>(null)
     const [activeTab, setActiveTab] = useState("all")
@@ -338,9 +339,16 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         // Notificaciones con entidad (comentarios, ADR-0111) se abren en su drawer.
         const label = n.data?.label
         const id = n.data?.id
-        if (typeof label === 'string' && typeof id === 'number') { openEntity(label, id); return }
-        if (n.link) router.push(n.link)
-    }, [router, openEntity])
+        if (typeof label === 'string' && typeof id === 'number') {
+            openEntity(label, id)
+            onClose?.()
+            return
+        }
+        if (n.link) {
+            router.push(n.link)
+            onClose?.()
+        }
+    }, [router, openEntity, onClose])
 
     const handleMarkAllRead = useCallback(async () => {
         try {
@@ -368,22 +376,31 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         // Credit POS: open customer sheet as entity drawer
         if (task.task_type === 'CREDIT_POS_REQUEST') {
             const customerId = task.data?.customer_id
-            if (customerId) openEntity('contacts.contact', Number(customerId))
+            if (customerId) {
+                openEntity('contacts.contact', Number(customerId))
+                onClose?.()
+            }
             return
         }
         const target = documentForTask(task)
-        if (target) { openEntity(target.label, target.id); return }
+        if (target) {
+            openEntity(target.label, target.id)
+            onClose?.()
+            return
+        }
         if (task.task_type === 'F29_CREATE' || task.task_type === 'F29_PAY') {
             const year = task.data?.year ?? ''; const month = task.data?.month ?? ''
             window.location.href = `/accounting?view=tax&year=${year}&month=${month}&action=${task.task_type === 'F29_PAY' ? 'pay' : 'create'}`
+            onClose?.()
             return
         }
         if (task.task_type === 'PERIOD_CLOSE') {
             window.location.href = `/accounting/periods?year=${task.data?.year ?? ''}&month=${task.data?.month ?? ''}`
+            onClose?.()
             return
         }
         toast.info("Navegación específica no configurada para este tipo de tarea")
-    }, [openEntity])
+    }, [openEntity, onClose])
 
     useEffect(() => {
         if (selectedId && !isLoading) {
@@ -459,8 +476,18 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         return (
             <div
                 key={task.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Abrir aprobación: ${cardTitle}`}
+                onClick={() => navigateToTask(task)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        navigateToTask(task)
+                    }
+                }}
                 className={cn(
-                    "surface-item flex items-stretch rounded-sm select-none overflow-hidden",
+                    "surface-item group flex items-stretch rounded-sm select-none overflow-hidden cursor-pointer transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     !isActive && "opacity-50",
                 )}
             >
@@ -469,40 +496,47 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 </div>
                 <div className="min-w-0 flex-1 flex flex-col">
                     <div className="p-3 pb-2">
-                        <div className="flex items-start justify-between gap-1.5">
-                            <p className="text-xs font-semibold tracking-tight text-foreground leading-snug">
-                                {cardTitle}
-                            </p>
-                            {primaryAmount && (
-                                <span className="text-xs font-bold tabular-nums shrink-0 text-foreground/80 leading-snug">
-                                    {primaryAmount}
-                                </span>
-                            )}
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold tracking-tight text-foreground leading-snug">
+                                    {cardTitle}
+                                </p>
+                                {cardRef && (
+                                    <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
+                                        {cardRef}
+                                    </span>
+                                )}
+                                {primaryAmount && (
+                                    <p className="mt-1 text-xs font-bold tabular-nums text-foreground/80 leading-snug">
+                                        {primaryAmount}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="flex shrink-0 flex-col items-end gap-1 text-muted-foreground/55 transition-colors group-hover:text-foreground">
+                                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                                {createdAt && <span className="text-2xs text-muted-foreground/45">{createdAt}</span>}
+                            </div>
                         </div>
 
-                        {cardRef && (
-                            <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
-                                {cardRef}
-                            </span>
-                        )}
-
-                        {(assigneeName || createdAt) && (
-                            <p className="flex items-center gap-1 text-2xs text-muted-foreground/45 mt-1">
-                                {assigneeName && <><User className="h-2.5 w-2.5 shrink-0" aria-hidden /><span>{assigneeName}</span></>}
-                                {assigneeName && createdAt && <span aria-hidden>·</span>}
-                                {createdAt && <span>{createdAt}</span>}
-                            </p>
-                        )}
-
-                        {contextItems.length > 0 && (
-                            <dl className="flex flex-wrap gap-x-3 gap-y-0 mt-1.5">
-                                {contextItems.map(({ label, value }) => (
-                                    <div key={label} className="flex items-baseline gap-1">
-                                        <dt className="text-2xs text-muted-foreground/40 font-medium">{label}:</dt>
-                                        <dd className="text-2xs text-foreground/65 tabular-nums">{value}</dd>
-                                    </div>
-                                ))}
-                            </dl>
+                        {(assigneeName || contextItems.length > 0) && (
+                            <div className="mt-1.5 space-y-1">
+                                {assigneeName && (
+                                    <p className="flex items-center gap-1 text-2xs text-muted-foreground/45">
+                                        <User className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                                        <span>{assigneeName}</span>
+                                    </p>
+                                )}
+                                {contextItems.length > 0 && (
+                                    <dl className="flex flex-wrap gap-x-3 gap-y-0">
+                                        {contextItems.map(({ label, value }) => (
+                                            <div key={label} className="flex items-baseline gap-1">
+                                                <dt className="text-2xs text-muted-foreground/40 font-medium">{label}:</dt>
+                                                <dd className="text-2xs text-foreground/65 tabular-nums">{value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                )}
+                            </div>
                         )}
 
                         {approvalsInCurrentCycle(task) > 0 && isActive && (
@@ -515,7 +549,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                     </div>
 
                     {(showInline || forceOpenDoc || hasDocument || canOpenCustomer) && (
-                        <CtaBar>
+                        <CtaBar onClick={(e) => e.stopPropagation()}>
                             {showInline && (
                                 <>
                                     <Button
@@ -547,11 +581,13 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                                     variant="ghost"
                                     size="sm"
                                     className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 shrink-0 font-medium ml-auto"
-                                    onClick={() => navigateToTask(task)}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        navigateToTask(task)
+                                    }}
                                     aria-label={canOpenCustomer ? "Ver ficha de cliente" : "Ver documento"}
                                 >
                                     <ExternalLink className="h-3 w-3" />
-                                    {canOpenCustomer ? 'Ver cliente' : 'Ver doc.'}
                                 </Button>
                             )}
                         </CtaBar>
