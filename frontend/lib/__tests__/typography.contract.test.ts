@@ -161,8 +161,8 @@ describe('typography contract', () => {
     expect(/text-2xs font-bold uppercase tracking-tighter/.test(shell.dashboardShell)).toBe(false);
   });
 
-  it('brand initials are text-3xs font-bold uppercase; company tooltip text-xs font-semibold', () => {
-    expect(/font-bold text-3xs uppercase/.test(shell.modulePanel)).toBe(true);
+  it('company-name fallback is text-sm font-semibold tracking-tight; company tooltip text-xs font-semibold (ADR 0162 enmienda 1)', () => {
+    expect(/font-bold text-3xs uppercase/.test(shell.modulePanel)).toBe(false);
     expect(/font-semibold text-xs/.test(shell.modulePanel)).toBe(true);
   });
 

@@ -48,20 +48,20 @@ const navigation = {
 
 ### 2.1 Renderizado en el shell (ADR-0162, sustituye ADR-0079 §1 y enmienda 1.6)
 
-`DashboardShell` = **panel único de navegación** (`ModuleSidebarPanel`, 224px, siempre visible ≥ md; drawer en móvil) + columna de contenido (barra de trabajo + página). No hay riel de iconos: el panel lista todos los módulos como primer nivel y despliega debajo las vistas del activo.
+`DashboardShell` = **panel único de navegación** (`ModuleSidebarPanel`, 224px, siempre visible ≥ md; drawer en móvil) + columna de contenido (barra de trabajo + página). No hay riel de iconos: el panel lista todos los módulos como primer nivel y despliega debajo sus vistas. **Todas** las filas de módulo son **acordeones** (`expanded` / `aria-expanded`) y ninguna redirige: el activo arranca abierto y usa el `navigation` publicado por su `[Module]Header`; los inactivos usan el árbol derivado por `module-nav-fallback.ts` de las constantes `*_TABS` (Enmienda 1 de ADR-0162). Sólo las vistas bajo el módulo son enlaces.
 
-| `navigation` | Vistas bajo el módulo activo |
+| `navigation` | Vistas bajo cada módulo |
 |---|---|
 | tab sin `subTabs` | ítem plano |
 | tab con `subTabs` | grupo colapsable (abierto si contiene la vista activa) |
 | `subTabs` de nivel 3 | ítems anidados; activo por `pathname` (sin query) |
 | grupo con un único hijo visible | se aplana: un ítem con label/ícono del padre |
 | `permission` sin acceso en un tab | se oculta el tab y se promueven sus hijos visibles |
-| `tabs: []` (dashboard) | sin vistas anidadas; el módulo sigue siendo un enlace a su vista por defecto |
+| `tabs: []` (dashboard) | sin vistas anidadas; la fila del módulo sigue siendo un acordeón sin redirección |
 
 Reglas de activo: nivel 1 por `activeValue`, nivel 2 por `subActiveValue` (solo bajo el tab activo), nivel 3 por `pathname`. `ModuleNavTree` añade `renderDepth` para sangrar sin alterar esa resolución y `embedded` para no anidar `<nav>`.
 
-La cabecera del panel muestra **logo + nombre de la empresa** (`useBranding`), con iniciales como fallback. El bloque fijo superior reúne **Buscar** (Ctrl+K), **Bandeja de entrada**, **Punto de Venta** y **Calculadora de Costos**; el pie reúne **Configuración** y **Cuenta** (avatar, con Perfil y Cerrar Sesión). Los módulos se filtran por su `permission` del registro (`MODULE_ORDER`).
+La cabecera del panel muestra el **logo de la empresa centrado** (`useBranding`); sin logo, muestra centrado el **nombre de la empresa** (`trade_name || name`) como fallback, con tooltip para el texto truncado. El bloque fijo superior reúne **Buscar** (Ctrl+K), **Bandeja de entrada**, **Punto de Venta** y **Calculadora de Costos** —sin separador entre Bandeja y POS—; el pie reúne **Configuración** y **Cuenta** (fila simple sin chevron, con blobatar del tamaño de los iconos y dropdown de Perfil/Cerrar Sesión). Los módulos se filtran por su `permission` del registro (`MODULE_ORDER`).
 
 > Los roles tipográficos del chrome del shell (topbar, riel, panel de módulo, panel lateral) están normados en [typography-scale.md § Escala del chrome del shell](./typography-scale.md#escala-del-chrome-del-shell-adr-0079).
 

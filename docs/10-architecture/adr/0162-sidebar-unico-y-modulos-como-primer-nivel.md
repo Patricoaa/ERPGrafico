@@ -27,6 +27,15 @@ Además, los accesos globales estaban repartidos: Buscar y Bandeja arriba del pa
 4. **Utilidades globales juntas y fijas.** Buscar, Bandeja de entrada, Punto de Venta y Calculadora de Costos se agrupan en el bloque superior, antes del área con scroll. POS mantiene su permiso y la Calculadora su estado de pestaña activa (ADR-0101).
 5. **Pie del panel.** Configuración (`core.change_companysettings`) y Cuenta (dropdown de perfil/sesión del avatar) se mueven desde el extinto riel de iconos al pie del panel. `onProfileOpen` pasa de `ModuleRail` a `ModuleSidebarPanel`.
 
+### Enmienda 1 (2026-11-26) — acordeón de primer nivel y ajustes del panel
+
+Aplica sobre los puntos 2, 3 y 4 de la Decisión:
+
+1. **Cabecera centrada.** La cabecera `h-12` muestra un único elemento centrado: el logo de `useBranding`, o el nombre de la empresa (`trade_name || name`) como fallback cuando no hay logo. Se retiran las iniciales y el nombre junto al logo. El enlace a «Inicio» y el tooltip con el nombre completo se conservan.
+2. **Acordeón en todo el primer nivel.** Ninguna fila de módulo navega: las nueve son cabeceras de acordeón (`expanded` / `aria-expanded` en `SidebarNavItem`) que contraen o despliegan sus vistas. La del módulo activo arranca expandida; el estado se conserva por módulo mientras el panel esté montado. El módulo activo usa el `navigation` publicado por su `[Module]Header` (`HeaderProvider.moduleNavigation`, con bancos y preferencias de vista resueltos). Para los inactivos, `module-nav-fallback.ts` deriva el árbol de las constantes canónicas `*_TABS` de cada feature; Contactos y Producción, que no tienen `navigation.ts`, declaran allí sus vistas mínimas. Sólo las vistas (nivel ≥ 1) son enlaces.
+3. **Bandeja y POS contiguas.** Se elimina el separador entre `SidebarUtilityNav` y `SidebarQuickActions`. El separador bajo el bloque de utilidades, antes de los módulos, se mantiene.
+4. **Cuenta como fila simple.** La fila de Cuenta se alinea con el resto de ítems de navegación: sin chevron, etiqueta a la izquierda y blobatar del mismo tamaño que los iconos (`h-4 w-4`). El dropdown de Perfil/Cerrar Sesión no cambia.
+
 ## Consecuencias
 
 ### Positivas
@@ -52,5 +61,6 @@ Además, los accesos globales estaban repartidos: Buscar y Bandeja arriba del pa
 - `frontend/components/layout/DashboardShell.tsx`
 - `frontend/components/layout/ModuleSidebarPanel.tsx`
 - `frontend/components/layout/ModuleNavTree.tsx`
+- `frontend/components/layout/module-nav-fallback.ts`
 - `frontend/components/layout/SidebarQuickActions.tsx`
 - `frontend/components/layout/UserSidebarMenu.tsx`

@@ -60,42 +60,76 @@ describe("ModuleSidebarPanel", () => {
         mocks.pathname = "/sales/docs"
     })
 
-    it("shows the company identity in the header instead of the module name", () => {
+    it("shows the company identity in the header, with the name as fallback when there is no logo", () => {
         renderPanel()
         expect(screen.getByText("ACME S.A.")).toBeInTheDocument()
+        expect(screen.queryByText("AC")).toBeNull()
         expect(screen.getByRole("link", { name: "Inicio" })).toBeInTheDocument()
     })
 
-    it("puts POS and the cost calculator right below the inbox, before the module list", () => {
+    it("puts POS and the cost calculator right below the inbox, with no separator between them", () => {
         renderPanel()
         const rows = [
             screen.getByText("Buscar"),
             screen.getByText("Bandeja de entrada"),
             screen.getByText("Punto de Venta"),
             screen.getByText("Calculadora de Costos"),
-            screen.getByRole("link", { name: "Contabilidad" }),
+            screen.getByRole("button", { name: "Contabilidad" }),
         ]
         for (let i = 1; i < rows.length; i++) {
             expect(rows[i - 1].compareDocumentPosition(rows[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
         }
+        const utilities = screen.getByText("Buscar").closest("div.flex.flex-col.gap-px")?.parentElement
+        expect(Array.from(utilities?.children ?? []).some(el => el.classList.contains("h-px"))).toBe(false)
     })
 
-    it("lists every module as the first level and nests only the active module's views", () => {
+    it("lists every module as a first-level accordion with no direct link", () => {
         renderPanel()
         const nav = screen.getByRole("navigation", { name: "Módulos y vistas" })
-        expect(within(nav).getAllByRole("link").map(link => link.textContent)).toEqual(
-            expect.arrayContaining(["Contabilidad", "Ventas", "Contactos", "Inventario", "Producción", "Tesorería", "Compras", "Finanzas", "RRHH"])
-        )
-        const views = within(nav).getByRole("link", { name: "Documentos" })
-        expect(views).toHaveAttribute("aria-current", "page")
+        const moduleLabels = ["Contabilidad", "Ventas", "Contactos", "Inventario", "Producción", "Tesorería", "Compras", "Finanzas", "RRHH"]
+        for (const label of moduleLabels) {
+            expect(within(nav).getByRole("button", { name: label })).toHaveAttribute("aria-expanded")
+            expect(within(nav).queryByRole("link", { name: label })).toBeNull()
+        }
+        expect(within(nav).getByRole("button", { name: "Ventas" })).toHaveAttribute("aria-expanded", "true")
+        expect(within(nav).getByRole("link", { name: "Documentos" })).toHaveAttribute("aria-current", "page")
+    })
+
+    it("collapses and expands the active module's views from the first level", () => {
+        renderPanel()
+        const nav = screen.getByRole("navigation", { name: "Módulos y vistas" })
+        const active = within(nav).getByRole("button", { name: "Ventas" })
+        fireEvent.click(active)
+        expect(active).toHaveAttribute("aria-expanded", "false")
+        expect(within(nav).queryByRole("link", { name: "Documentos" })).toBeNull()
+        fireEvent.click(active)
+        expect(active).toHaveAttribute("aria-expanded", "true")
+        expect(within(nav).getByRole("link", { name: "Documentos" })).toHaveAttribute("aria-current", "page")
+    })
+
+    it("expands any inactive module and shows its views without navigating", () => {
+        renderPanel()
+        const nav = screen.getByRole("navigation", { name: "Módulos y vistas" })
+        const accounting = within(nav).getByRole("button", { name: "Contabilidad" })
+        expect(accounting).toHaveAttribute("aria-expanded", "false")
+        expect(within(nav).queryByRole("link", { name: "Plan de Cuentas" })).toBeNull()
+
+        fireEvent.click(accounting)
+        expect(accounting).toHaveAttribute("aria-expanded", "true")
+        expect(within(nav).getByRole("link", { name: "Plan de Cuentas" })).toHaveAttribute("href", "/accounting/ledger")
+        expect(within(nav).getByRole("button", { name: "Ventas" })).toHaveAttribute("aria-expanded", "true")
+
+        fireEvent.click(accounting)
+        expect(accounting).toHaveAttribute("aria-expanded", "false")
+        expect(within(nav).queryByRole("link", { name: "Plan de Cuentas" })).toBeNull()
     })
 
     it("hides modules and POS without permission", () => {
         mocks.can.mockImplementation((permission: string | null) => permission !== "sales.view_dashboard_sales" && permission !== "inventory.view_dashboard_inventory")
         renderPanel()
         expect(screen.queryByText("Punto de Venta")).toBeNull()
-        expect(screen.queryByRole("link", { name: "Inventario" })).toBeNull()
-        expect(screen.getByRole("link", { name: "Contabilidad" })).toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: "Inventario" })).toBeNull()
+        expect(screen.getByRole("button", { name: "Contabilidad" })).toBeInTheDocument()
     })
 
     it("opens the cost calculator and keeps Configuración and Cuenta in the footer", () => {
@@ -103,6 +137,8 @@ describe("ModuleSidebarPanel", () => {
         fireEvent.click(screen.getByText("Calculadora de Costos"))
         expect(mocks.openTool).toHaveBeenCalledWith("cost-calculator")
         expect(screen.getByRole("link", { name: "Configuración" })).toHaveAttribute("href", "/settings")
-        expect(screen.getByRole("button", { name: /Cuenta/ })).toBeInTheDocument()
+        const cuenta = screen.getByRole("button", { name: /Cuenta/ })
+        expect(cuenta).toBeInTheDocument()
+        expect(cuenta.querySelector(".lucide-chevron-right")).toBeNull()
     })
 })
