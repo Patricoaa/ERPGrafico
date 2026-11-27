@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -8,7 +8,7 @@ import { type LucideIcon } from "lucide-react"
 import { fadeInClass } from "./fade-in-class"
 
 interface CollapsibleSheetProps {
-    children: React.ReactNode
+    children: ReactNode
     sheetId: string
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -26,6 +26,14 @@ interface CollapsibleSheetProps {
     hideTab?: boolean
     priority?: number
     badge?: number
+    /** Ocupa `100dvh` desde arriba en vez de abrir debajo de la barra de trabajo. */
+    fullViewport?: boolean
+    /** Scrim bloqueante: modal de Radix, clic fuera/Escape cierran, foco dentro. */
+    blockingOverlay?: boolean
+    /** Si es `false`, no entra en la pila de GlobalModalProvider (no empuja contenido). */
+    registerInStack?: boolean
+    /** Clase extra para el overlay; permite estilos scoped por panel. */
+    overlayClassName?: string
 }
 
 export function CollapsibleSheet({
@@ -45,7 +53,11 @@ export function CollapsibleSheet({
     variant = "module",
     hideTab,
     priority = 20,
-    badge
+    badge,
+    fullViewport = false,
+    blockingOverlay = false,
+    registerInStack = true,
+    overlayClassName
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
     const [isMounted, setIsMounted] = useState(false)
@@ -69,13 +81,13 @@ export function CollapsibleSheet({
     }, [])
 
     useEffect(() => {
-        if (open) {
+        if (open && registerInStack) {
             registerSheet(sheetId, calculatedWidth, priority, forceCollapse)
         } else {
             unregisterSheet(sheetId)
         }
         return () => unregisterSheet(sheetId)
-    }, [open, sheetId, calculatedWidth, priority, forceCollapse, registerSheet, unregisterSheet])
+    }, [open, registerInStack, sheetId, calculatedWidth, priority, forceCollapse, registerSheet, unregisterSheet])
 
     const isCollapsed = isSheetCollapsed(sheetId)
     const offset = getSheetOffset(sheetId)
@@ -124,33 +136,45 @@ export function CollapsibleSheet({
     if (!isMounted || !shouldMount) return null
 
     return (
-        <Sheet open={open || isCollapsed} modal={false}>
+        <Sheet
+            open={open || isCollapsed}
+            modal={blockingOverlay}
+            onOpenChange={blockingOverlay ? (nextOpen) => { if (!nextOpen) onOpenChange(false) } : undefined}
+        >
             <SheetContent
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 rounded-none! border-l border-border/40 bg-card text-foreground",
-                "top-[var(--header-height)] bottom-0 h-[calc(100dvh-var(--header-height))]",
+                "p-0 rounded-none! bg-card text-foreground",
+                side === "left" ? "border-r border-border/40" : "border-l border-border/40",
+                fullViewport
+                    ? "top-0 bottom-0 h-[100dvh]"
+                    : "top-[var(--header-height)] bottom-0 h-[calc(100dvh-var(--header-height))]",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
                 allowOverflow ? "overflow-visible" : "overflow-hidden",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
                 (isHidden && !forceCollapse) && "hidden",
                 className
             )}
-            hideOverlay={hideOverlay}
+            hideOverlay={blockingOverlay ? false : hideOverlay}
+            overlayClassName={overlayClassName}
             hideCloseButton={true}
-            onPointerDownOutside={(e) => e.preventDefault()}
-            onFocusOutside={(e) => e.preventDefault()}
-            onInteractOutside={(e) => e.preventDefault()}
+            onPointerDownOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
+            onFocusOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
+            onInteractOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
             style={{
-                right: offset,
-                transform: (!open || isCollapsed) ? `translateX(100%)` : 'translateX(0)',
-                zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
+                left: side === "left" ? offset : undefined,
+                right: side === "left" ? 'auto' : offset,
+                transform: (!open || isCollapsed)
+                    ? (side === "left" ? `translateX(-100%)` : `translateX(100%)`)
+                    : 'translateX(0)',
+                // Bloqueante va por encima del ActionDock (z-100); los demás siguen en z-45
+                zIndex: blockingOverlay ? 110 : 40 + (!open || isCollapsed ? 0 : 5),
                 // If full size, use 100vw but keep offset for layering if needed
                 maxWidth: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 width: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 '--stack-offset': `${offset}px`
-            } as React.CSSProperties}
+            } as CSSProperties}
         >
             <SheetTitle className="sr-only">{tabLabel}</SheetTitle>
             <SheetDescription className="sr-only">Panel lateral para {tabLabel}</SheetDescription>
@@ -199,7 +223,7 @@ export function CollapsibleSheet({
                 style={open && !isCollapsed ? ({
                     animationDuration: "0.2s",
                     animationDelay: "0.06s",
-                } as React.CSSProperties) : undefined}
+                } as CSSProperties) : undefined}
             >
                 {children}
             </div>

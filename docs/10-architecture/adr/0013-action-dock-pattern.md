@@ -24,7 +24,7 @@ Implement a standardized `ActionDock` component in `components/shared/` using a 
 ### Constraints & Rules:
 1. **Z-Index**: Must stay at `z-[100]` to be above most content but below modals if necessary.
 2. **Animation**: Entry and exit must use `framer-motion` (AnimatePresence) to avoid jarring UI jumps.
-3. **Responsive Centering**: The component must not use simple `left-1/2`. It must track the `data-hub-open` and `data-inbox-open` attributes on `document.body` via a `MutationObserver` and adjust its horizontal offset accordingly.
+3. **Responsive Centering**: The dock is centered with `left-1/2 -translate-x-1/2`. It no longer tracks panel attributes: the task inbox is a blocking full-viewport overlay that does not push the canvas (ADR-0161), and the former `data-hub-open` attribute disappeared with the Hub (ADR-0083). Entity drawers still repel `#main-content` through `totalSheetsWidth`.
 4. **Internal Structure**:
     - `ActionDock.Stats`: Inner-shadow container for metrics.
     - `ActionDock.Actions`: Right-aligned button group with standardized separators.
@@ -37,12 +37,12 @@ Implement a standardized `ActionDock` component in `components/shared/` using a 
 - **Developer Experience**: Declarative API makes it easy to add batch actions to any table.
 
 ### Negative
-- **DOM Dependency**: Relies on `document.body` attributes, which creates a loose coupling between the Shell layout and the Dock.
+- ~~**DOM Dependency**: Relies on `document.body` attributes, which creates a loose coupling between the Shell layout and the Dock.~~ Superseded by ADR-0161: the dock no longer observes body attributes.
 
 ## Alternatives considered
 
 - **Portal-based Dock**: Using a React Portal to render the dock into a specific "dock zone" in the Layout. Rejected because it complicates state management for context-specific actions (like the Reconciliation suggestions).
-- **Simple Fixed Div**: Rejected because it doesn't handle the layout collision with side panels.
+- **Simple Fixed Div**: Rejected because it didn't handle collision with the Hub/Inbox panels; those panels no longer push the canvas (ADR-0161), so the dock is now a simple centered fixed div.
 
 ## References
 

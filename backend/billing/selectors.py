@@ -132,7 +132,7 @@ class InvoiceSelectorExt:
                         order_display = order.display_id
                         order_ref = {"label": "purchasing.purchaseorder", "id": order.id, "display": order.display_id}
                 else:
-                    item = {"id": None, "product": il.product_id, "product_id": il.product_id,
+                    item = {"id": il.id, "product": il.product_id, "product_id": il.product_id,
                             "product_name": il.description, "description": il.description,
                             "unit_price": il.unit_price, "tax_rate": il.tax_rate}
                     if invoice.sale_order_id:
@@ -144,6 +144,8 @@ class InvoiceSelectorExt:
                         order_display = invoice.purchase_order.display_id
                         order_ref = {"label": "purchasing.purchaseorder", "id": order_id, "display": order_display}
                 item.update({
+                    "id": item.get("id") or il.id,
+                    "unit_price": item.get("unit_price") if item.get("unit_price") is not None else (il.unit_price if il.unit_price is not None else item.get("unit_cost")),
                     "invoice_line_id": il.id,
                     "corrected_line": il.corrected_line_id,
                     "quantity": il.quantity,
@@ -181,6 +183,8 @@ class InvoiceSelectorExt:
                 row["order"] = order_ref
                 row["order_id"] = invoice.purchase_order_id
                 row["order_display"] = invoice.purchase_order.display_id
+                if "unit_price" not in row or row["unit_price"] is None:
+                    row["unit_price"] = row.get("unit_cost")
             return data
         return []
 

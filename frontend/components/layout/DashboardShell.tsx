@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
@@ -50,20 +50,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const nav = config?.navigation
         ?? (moduleNavigation?.moduleId === currentModuleId ? moduleNavigation.navigation : undefined)
 
-    // Sync global data attributes for repelling fixed UI elements (like Sheets).
-    // Attribute removal is deferred ~220ms so consumers (ActionDock, sheet padding)
-    // shift back in sync with the 200ms panel exit instead of snapping.
-    useEffect(() => {
-        let inboxTimeout: NodeJS.Timeout | undefined
-
-        if (isInboxOpen) {
-            document.body.setAttribute('data-inbox-open', 'true')
-        } else {
-            inboxTimeout = setTimeout(() => document.body.removeAttribute('data-inbox-open'), 220)
-        }
-
-        return () => clearTimeout(inboxTimeout)
-    }, [isInboxOpen])
+    // La bandeja es un overlay bloqueante: no publica `data-inbox-open` ni desplaza
+    // el contenido ni el ActionDock (ADR-0161). La repulsión sigue vigente para los
+    // drawers de entidad, gestionada por GlobalModalProvider.
 
     const handleInboxToggle = () => {
         setIsInboxOpen(prev => !prev)
@@ -178,7 +167,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 </div>
             </div>
 
-            {/* Task Inbox Sidebar (Right) */}
+            {/* Task Inbox: overlay derecho a pantalla completa (ADR-0161) */}
             <TaskInboxSidebar
                 isOpen={isInboxOpen}
                 onClose={() => setIsInboxOpen(false)}
