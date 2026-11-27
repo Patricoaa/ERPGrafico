@@ -12,7 +12,7 @@ import {
     DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { SEG_WRAPPER, SEG_TRIGGER, SEG_INACTIVE, SEG_DROPDOWN_ITEM } from './search-styles'
+import { SEG_TRIGGER, SEG_INACTIVE, SEG_DROPDOWN_ITEM } from './search-styles'
 
 interface DataTablePaginationProps<TData> {
     table: Table<TData>
@@ -41,7 +41,7 @@ export function DataTablePagination<TData>({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className={cn(SEG_TRIGGER, SEG_INACTIVE)}
+                                className={cn(SEG_TRIGGER, SEG_INACTIVE, "cursor-pointer border-none bg-transparent hover:bg-transparent")}
                             >
                                 <span>{table.getState().pagination.pageSize}</span>
                                 <ChevronDown className="h-3 w-3" />
@@ -65,11 +65,11 @@ export function DataTablePagination<TData>({
                     Página {table.getState().pagination.pageIndex + 1} de{" "}
                     {table.getPageCount()}
                 </div>
-                <div className={SEG_WRAPPER}>
+                <div className="flex items-center gap-0.5">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-control-xs w-7 hidden lg:flex"
+                        className="h-control-xs w-7 hidden lg:flex cursor-pointer border-none bg-transparent hover:bg-transparent hover:text-foreground"
                         onClick={() => table.setPageIndex(0)}
                         disabled={!table.getCanPreviousPage()}
                     >
@@ -79,7 +79,7 @@ export function DataTablePagination<TData>({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-control-xs w-7"
+                        className="h-control-xs w-7 cursor-pointer border-none bg-transparent hover:bg-transparent hover:text-foreground"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
@@ -89,7 +89,7 @@ export function DataTablePagination<TData>({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-control-xs w-7"
+                        className="h-control-xs w-7 cursor-pointer border-none bg-transparent hover:bg-transparent hover:text-foreground"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
@@ -99,7 +99,7 @@ export function DataTablePagination<TData>({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-control-xs w-7 hidden lg:flex"
+                        className="h-control-xs w-7 hidden lg:flex cursor-pointer border-none bg-transparent hover:bg-transparent hover:text-foreground"
                         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                         disabled={!table.getCanNextPage()}
                     >
