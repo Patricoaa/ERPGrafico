@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.202](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.201...v0.3.202) (2026-11-27)
+
+
+### ✨ Features
+
+* **shell:** sidebar único con empresa y módulos como primer nivel (ADR-0162) ([a944535](https://github.com/Patricoaa/ERPGrafico/commit/a9445358eb800686df5282b498e09300dad5ac8f))
+
 ### [0.3.201](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.200...v0.3.201) (2026-11-27)
 
 
