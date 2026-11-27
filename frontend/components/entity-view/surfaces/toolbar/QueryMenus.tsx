@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { MAX_SORT_KEYS, type CompiledSortField } from "../../core/define-query"
-import { CommandButton } from "@/components/shared"
+import { CommandButton, CMYK_ACCENT } from "@/components/shared"
 
 const SECTION = "px-3 pb-1 pt-2 text-3xs font-semibold uppercase tracking-widest text-muted-foreground"
 
@@ -235,9 +235,10 @@ export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, vie
     return (
         <div className="flex flex-wrap items-center gap-x-1 border-b border-border/50">
             <div role="tablist" aria-label="Vistas" className="flex flex-wrap items-center">
-                {views.map((view) => {
+                {views.map((view, index) => {
                     const selected = view.id === activeId
                     const total = viewCounts?.[view.id]
+                    const accent = CMYK_ACCENT[index % CMYK_ACCENT.length]
                     return (
                         <Button
                             key={view.id}
@@ -245,8 +246,15 @@ export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, vie
                             size="sm"
                             role="tab"
                             aria-selected={selected}
+                            data-state={selected ? "active" : "inactive"}
                             onClick={() => onSelect(view.id)}
-                            className={cn("-mb-px h-control-sm rounded-none border-b-2 border-transparent px-3 text-xs", selected ? "border-primary font-semibold text-foreground" : "text-muted-foreground")}
+                            className={cn(
+                                "group relative -mb-px h-control-sm rounded-none border-b-2 border-transparent bg-transparent px-3 text-xs transition-all duration-200",
+                                "hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                                selected
+                                    ? cn(accent.activeText, "font-semibold")
+                                    : cn("text-foreground/60 font-medium hover:font-semibold", accent.hoverText),
+                            )}
                         >
                             {view.label}
                             {total !== undefined && (
@@ -255,6 +263,14 @@ export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, vie
                                     <span className="sr-only">, {total} {total === 1 ? "resultado" : "resultados"}</span>
                                 </span>
                             )}
+                            <span
+                                aria-hidden
+                                className={cn(
+                                    "absolute bottom-[-1px] left-0 h-[2px] w-full transition-opacity duration-200",
+                                    accent.bar,
+                                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                                )}
+                            />
                         </Button>
                     )
                 })}
