@@ -8,7 +8,7 @@ from django.utils import timezone
 from config.celery import app as celery_app
 from treasury import tasks
 from treasury.integrations.tuu_client import TuuAuthError, TuuTransientError
-from treasury.models import TerminalSyncRun, TerminalSyncSettings
+from treasury.models import TerminalSale, TerminalSyncRun, TerminalSyncSettings
 from treasury.terminal_sync_service import AUTH_MESSAGE
 from treasury.tests.helpers import make_terminal_provider
 
@@ -337,3 +337,23 @@ def test_stale_threshold_grows_with_retry_budget(monkeypatch, enqueued):
     old.refresh_from_db()
     assert young.status == TerminalSyncRun.Status.RUNNING
     assert old.status == TerminalSyncRun.Status.FAILED
+
+
+def test_dispatcher_short_interval_reaches_back_to_pending_settlement(monkeypatch, enqueued):
+    _configure(interval_value=5, interval_unit="MINUTES", lookback_days=7, history_start_date=None)
+    provider = _keyed_provider()
+    today = timezone.localtime().date()
+    friday = today - timedelta(days=3)
+    TerminalSale.objects.create(
+        provider=provider,
+        natural_key="card:1",
+        serial_number="S",
+        sale_id="1",
+        sequence_number="1",
+        transaction_at=timezone.make_aware(datetime(friday.year, friday.month, friday.day, 12)),
+        payment_type=TerminalSale.PaymentType.DEBIT,
+    )
+    _freeze(monkeypatch, 10)
+    assert tasks.dispatch_terminal_sales_sync() == 1
+    run = TerminalSyncRun.objects.get()
+    assert (run.start_date, run.end_date) == (friday, today)

@@ -18,6 +18,7 @@ from .terminal_sync_service import (
     enqueue_runs,
     execute_run,
     is_sync_due,
+    oldest_pending_settlement,
     recover_stale_runs,
     scheduled_range,
 )
@@ -925,8 +926,8 @@ def dispatch_terminal_sales_sync() -> int:
     now = _now()
     if not config.enabled:
         return 0
-    date_range = scheduled_range(config, now.date())
-    if date_range is None:
+    today = now.date()
+    if scheduled_range(config, today) is None:
         return 0
     recover_stale_runs(now)
     queued = 0
@@ -944,6 +945,10 @@ def dispatch_terminal_sales_sync() -> int:
             .first()
         )
         if not is_sync_due(config, now, last):
+            continue
+        pending = oldest_pending_settlement(provider, config, today)
+        date_range = scheduled_range(config, today, pending)
+        if date_range is None:
             continue
         run = create_run(provider, *date_range, TerminalSyncRun.Trigger.SCHEDULED)
         enqueue_runs([run], sync_terminal_run.delay)

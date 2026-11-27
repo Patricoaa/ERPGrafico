@@ -119,17 +119,47 @@ def eligible_providers() -> models.QuerySet[PaymentTerminalProvider]:
     )
 
 
-def scheduled_range(settings: TerminalSyncSettings, today: date) -> tuple[date, date] | None:
-    """Rango programado hasta hoy: ayer en intervalos cortos, la ventana completa en días."""
-    back = (
-        1
-        if settings.interval_unit != TerminalSyncSettings.IntervalUnit.DAYS
-        else settings.lookback_days
-    )
-    start = today - timedelta(days=back)
+def scheduled_range(
+    settings: TerminalSyncSettings, today: date, pending_since: date | None = None
+) -> tuple[date, date] | None:
+    """Rango programado hasta hoy.
+
+    En días cubre la ventana completa. En intervalos cortos cubre ayer y hoy, y se
+    extiende hasta ``pending_since`` (la venta con tarjeta más antigua aún sin abono)
+    para recoger el ID que TUU asigna días después, con tope en ``lookback_days``.
+    """
+    floor = today - timedelta(days=settings.lookback_days)
+    if settings.interval_unit == TerminalSyncSettings.IntervalUnit.DAYS:
+        start = floor
+    else:
+        start = today - timedelta(days=1)
+        if pending_since is not None:
+            start = min(start, max(pending_since, floor))
     if settings.history_start_date:
         start = max(settings.history_start_date, start)
     return None if start > today else (start, today)
+
+
+def oldest_pending_settlement(
+    provider: PaymentTerminalProvider, settings: TerminalSyncSettings, today: date
+) -> date | None:
+    """Fecha local de la venta con tarjeta más antigua sin ID de abono dentro de la ventana.
+
+    Solo mira ``lookback_days`` hacia atrás: una venta que nunca recibe abono deja de
+    arrastrar el rango al salir de esa ventana.
+    """
+    floor = today - timedelta(days=settings.lookback_days)
+    oldest = (
+        TerminalSale.objects.filter(
+            provider=provider,
+            settlement_id__isnull=True,
+            status=TerminalSale.Status.COMPLETED,
+            transaction_at__gte=timezone.make_aware(datetime.combine(floor, datetime.min.time())),
+        )
+        .exclude(payment_type=TerminalSale.PaymentType.CASH)
+        .aggregate(oldest=models.Min("transaction_at"))["oldest"]
+    )
+    return timezone.localtime(oldest).date() if oldest else None
 
 
 def stale_threshold_minutes(settings: TerminalSyncSettings) -> int:
