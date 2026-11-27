@@ -678,7 +678,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 variant="underline"
                 dense
                 stretchTabs
-                className="w-full"
+                className="w-full pt-2"
                 contentClassName="flex-1 min-h-0 bg-transparent flex flex-col overflow-hidden"
             >
                 {/* ── Todo tab ──────────────────────────────────────────────── */}
