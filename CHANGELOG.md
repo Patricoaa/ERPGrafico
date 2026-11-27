@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.201](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.200...v0.3.201) (2026-11-27)
+
+
+### ✨ Features
+
+* **inbox:** overlay bloqueante a pantalla completa desde la derecha ([101e56c](https://github.com/Patricoaa/ERPGrafico/commit/101e56ceb5ee868535186cef1a89bb7a120e1610))
+
+
+### 🐛 Bug Fixes
+
+* **billing:** notas de crédito asignan precio al seleccionar producto en paso 1 ([97bef3b](https://github.com/Patricoaa/ERPGrafico/commit/97bef3b98493a61a6a5b6ffc99d0c71bbfaa0bcb))
+
 ### [0.3.200](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.198...v0.3.200) (2026-11-26)
 
 
