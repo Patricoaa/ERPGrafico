@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { ModuleRail } from "./ModuleRail"
 import { ModuleSidebarPanel } from "./ModuleSidebarPanel"
 import { WorkspaceTabBar } from "./WorkspaceTabBar"
 import { useHeader } from "@/components/providers/HeaderProvider"
@@ -93,21 +92,14 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     ) : null
 
     const sidebar = (onNavigate?: () => void) => (
-        <>
-            <ModuleRail
-                currentModuleId={currentModuleId}
-                onNavigate={onNavigate}
-                onProfileOpen={() => setIsProfileSettingsOpen(true)}
-            />
-            <ModuleSidebarPanel
-                currentModuleId={currentModuleId}
-                navigation={nav}
-                isHeaderReady={!!config}
-                isInboxOpen={isInboxOpen}
-                onInboxToggle={handleInboxToggle}
-                onNavigate={onNavigate}
-            />
-        </>
+        <ModuleSidebarPanel
+            currentModuleId={currentModuleId}
+            navigation={nav}
+            isInboxOpen={isInboxOpen}
+            onInboxToggle={handleInboxToggle}
+            onNavigate={onNavigate}
+            onProfileOpen={() => setIsProfileSettingsOpen(true)}
+        />
     )
 
     return (
@@ -117,9 +109,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 {sidebar()}
             </aside>
 
-            {/* Móvil: el sidebar completo se abre como drawer */}
+            {/* Móvil: el panel único se abre como drawer */}
             <Sheet open={isMobileNavOpen} onOpenChange={setIsMobileNavOpen}>
-                <SheetContent side="left" hideCloseButton className="w-auto max-w-[90vw] p-0 flex-row gap-0">
+                <SheetContent side="left" hideCloseButton className="w-56 max-w-[90vw] p-0">
                     <SheetTitle className="sr-only">Navegación</SheetTitle>
                     {sidebar(() => setIsMobileNavOpen(false))}
                 </SheetContent>

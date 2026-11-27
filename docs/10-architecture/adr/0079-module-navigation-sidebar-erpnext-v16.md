@@ -10,6 +10,8 @@ author: frontend-team
 
 **Related:** `docs/20-contracts/module-layout-navigation.md` (§2, §2.1), `docs/20-contracts/component-section-header.md`, ADR-0073 (partially superseded here), ADR-0075 (motion), `components/layout/DashboardShell.tsx`.
 
+> **Actualizado por ADR-0162:** el shell pasa a una sola columna (se elimina `ModuleRail`), la cabecera del panel muestra la empresa y los módulos son el primer nivel. Quedan reemplazados el punto 1 de la Decisión y la enmienda 1.6. El resto del contrato de navegación (tabs, permisos, activo por nivel) sigue vigente.
+
 ---
 
 ## Context

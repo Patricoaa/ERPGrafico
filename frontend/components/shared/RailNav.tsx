@@ -29,7 +29,7 @@ export interface RailNavProps {
     className?: string
 }
 
-/** Active/inactive surface shared by every rail item (RailNav, ModuleRail). Color of the text is left to the caller. */
+/** Active/inactive surface shared by every rail item. Color of the text is left to the caller. */
 export function railItemSurfaceClass(isActive: boolean): string {
     return isActive ? "bg-card shadow-card" : "hover:bg-foreground/5"
 }

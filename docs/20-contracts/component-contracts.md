@@ -366,7 +366,7 @@ Props: `sections: RailNavSection[]` (✅), `value` (✅), `onValueChange` (✅),
 
 - Úsalo dentro de `DrawerLayout` (`leftRail`, `leftRailWidth="w-14 sm:w-56"`) o inline junto al contenido (analytics, sin borde).
 - Los slots `top`/`bottom` se ocultan bajo `sm`: el consumidor DEBE renderizar una copia `sm:hidden` junto al contenido si el control es funcional (selector, granularidad).
-- Navegación por rutas (`ModuleRail`) no usa `RailNav`; comparte solo la superficie activa vía `railItemSurfaceClass(isActive)` (y `railItemClass` para ítems con etiqueta).
+- La navegación del shell (`ModuleSidebarPanel`) no usa `RailNav`: sus filas son `SidebarNavItem`. `RailNav` comparte con ella la superficie activa vía `railItemSurfaceClass(isActive)` (y `railItemClass` para ítems con etiqueta).
 - Consumidores: `ProfileSettingsSidebar`, `AnalyticsPanelContent`, `ProductAnalyticsModal`.
 
 ---

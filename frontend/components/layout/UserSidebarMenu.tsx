@@ -1,6 +1,6 @@
 "use client"
 
-import { User, LogOut } from "lucide-react"
+import { ChevronRight, LogOut, User } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import {
     Tooltip,
@@ -22,36 +22,56 @@ import { Button } from "@/components/ui/button"
 interface UserSidebarMenuProps {
     onProfileOpen: () => void
     onNavigate?: () => void
+    /** `row` para el pie del panel (ADR-0162); `icon` para el extinto riel de módulos. */
+    variant?: "row" | "icon"
 }
 
 /**
- * Menú del avatar (pie del riel de módulos): perfil y sesión (ADR-0079).
- * Las notificaciones viven en la Bandeja de Entrada (pestaña Avisos).
+ * Menú del avatar: perfil y sesión. En el panel se muestra como fila «Cuenta»;
+ * las notificaciones viven en la Bandeja de Entrada (pestaña Avisos).
  */
-export function UserSidebarMenu({ onProfileOpen, onNavigate }: UserSidebarMenuProps) {
+export function UserSidebarMenu({ onProfileOpen, onNavigate, variant = "row" }: UserSidebarMenuProps) {
     const { logout, user } = useAuth()
     const userLabel = user?.username || "Usuario"
+
+    const rowTrigger = (
+        <Button
+            type="button"
+            variant="ghost"
+            className="group/navitem h-control-sm w-full justify-start gap-2 px-2 text-xs font-normal text-foreground/80 hover:bg-foreground/5 hover:text-foreground"
+        >
+            <Blobatar name={userLabel} className="h-4 w-4 shrink-0 rounded-full" />
+            <span className="flex-1 min-w-0 truncate">Cuenta</span>
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        </Button>
+    )
+
+    const iconTrigger = (
+        <Button
+            variant="outline"
+            size="icon"
+            aria-label={userLabel}
+            className="h-control-sm w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
+        >
+            <Blobatar name={userLabel} className="h-full w-full rounded-full bg-transparent" />
+        </Button>
+    )
 
     return (
         <TooltipProvider delayDuration={0}>
             <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                aria-label={userLabel}
-                                className="h-control-sm w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
-                            >
-                                <Blobatar name={userLabel} className="h-full w-full rounded-full bg-transparent" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        {userLabel}
-                    </TooltipContent>
-                </Tooltip>
+                {variant === "row" ? (
+                    <DropdownMenuTrigger asChild>{rowTrigger}</DropdownMenuTrigger>
+                ) : (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>{iconTrigger}</DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            {userLabel}
+                        </TooltipContent>
+                    </Tooltip>
+                )}
                 <DropdownMenuContent className="w-64 border-sidebar-border shadow-overlay p-0" align="end" side="right" sideOffset={12}>
                     <DropdownMenuLabel className="font-normal p-1.5">
                         <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
