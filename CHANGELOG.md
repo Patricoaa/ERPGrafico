@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.207](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.206...v0.3.207) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **ui:** cursor pointer en controles interactivos y shell sin bordes internos ([dadfcf7](https://github.com/Patricoaa/ERPGrafico/commit/dadfcf7e15168e9cfa05572c3d4e5a564515c20c))
+
 ### [0.3.206](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.204...v0.3.206) (2026-11-27)
 
 
