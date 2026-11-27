@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.211](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.210...v0.3.211) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **ui:** pagination controls sin fondo ni borde, hover transparente ([d8d5f68](https://github.com/Patricoaa/ERPGrafico/commit/d8d5f68ca289536d96e2718b31833ed5c78c55ac))
+
 ### [0.3.210](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.209...v0.3.210) (2026-11-27)
 
 
