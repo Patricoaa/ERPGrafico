@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.206](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.204...v0.3.206) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **shell:** activa con bg-card y sin margen lateral en la barra de trabajo ([aef1c25](https://github.com/Patricoaa/ERPGrafico/commit/aef1c25d51b7e21ba9f42ce29e0f4c339fae6a9d))
+* **shell:** solapas sin bordes ni separación con estado inactivo más oscuro ([b7845dd](https://github.com/Patricoaa/ERPGrafico/commit/b7845dd793803f01d21b7289d3e542dfdc5e64ad))
+
+
+### 💅 Styling
+
+* **shell:** esquina superior derecha md en las solapas ([680b394](https://github.com/Patricoaa/ERPGrafico/commit/680b394bb53053dd9b04e481868280ec40235fee))
+
 ### [0.3.205](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.204...v0.3.205) (2026-11-27)
 
 
