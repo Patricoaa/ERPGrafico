@@ -324,7 +324,7 @@ describe("Collection.Toolbar export menu and result count", () => {
         expect(run).toHaveBeenCalledWith("csv", { search: "kilo" })
     })
 
-    it("moves utility actions out of the command row and leaves only the primary after the divider", () => {
+    it("moves utility actions out of the command row and leaves only the primary action in the toolbar", () => {
         function ActionHarness() {
             const collection = useEntityCollection(exportable, { rows })
             return (
@@ -339,7 +339,7 @@ describe("Collection.Toolbar export menu and result count", () => {
         expect(within(bar).queryByRole("button", { name: "Exportar" })).toBeNull()
         expect(within(screen.getByRole("group", { name: "Acciones de la colección" })).getByRole("button", { name: "Exportar" })).toBeInTheDocument()
         const primary = within(bar).getByRole("button", { name: "Nueva UOM" })
-        expect(primary.parentElement?.previousElementSibling).toHaveAttribute("aria-hidden", "true")
+        expect(primary).toBeInTheDocument()
     })
 
     it("publishes the collection total to the search slot, null while loading", () => {

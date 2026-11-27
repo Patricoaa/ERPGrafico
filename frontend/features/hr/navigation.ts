@@ -78,12 +78,12 @@ export const HR_TABS: NavTabConfig[] = [
   },
   {
     value: "payrolls",
-    label: "Liquidaciones y Remuneraciones",
+    label: "Liquidaciones",
     href: "/hr/payrolls",
     iconName: getEntityIconName("hr.payroll") ?? "file-spreadsheet",
-    headerTitle: "Liquidaciones y Remuneraciones",
+    headerTitle: "Liquidaciones",
     headerDescription: "Cálculo de haberes, descuentos y generación de pagos.",
-    metadataTitle: "Liquidaciones y Remuneraciones | ERPGrafico",
+    metadataTitle: "Liquidaciones | ERPGrafico",
     subTabs: [],
   },
   {

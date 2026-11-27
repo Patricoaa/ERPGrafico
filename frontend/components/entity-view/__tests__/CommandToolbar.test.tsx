@@ -206,7 +206,7 @@ describe("Collection command bar (ADR-0158 stage 3b)", () => {
 })
 
 describe("Collection utility row and narrow toolbar (ADR-0158 §1–2)", () => {
-    it("keeps only the primary action after the divider and moves analytics to the top row", () => {
+    it("keeps only the primary action in the toolbar and moves analytics to the top row", () => {
         setup()
         const bar = toolbar()
         const buttons = within(bar).getAllByRole("button")
