@@ -104,8 +104,12 @@ export function ReportToolbar({
                 </DropdownMenu>
             )}
             <div className="flex-1" aria-hidden />
-            {showMapeo && <CommandButton icon={SlidersHorizontal} name="Mapeo de cuentas" onClick={onMapeoClick} />}
-            {onExport && <CommandButton icon={Download} name="Exportar" onClick={onExport} />}
+            <div className="flex items-center gap-1" role="group" aria-label="Acciones del informe">
+                {showMapeo && (
+                    <CommandButton variant="ghost" size="icon-sm" className="border-0 bg-transparent px-0" icon={SlidersHorizontal} name="Mapeo de cuentas" onClick={onMapeoClick} />
+                )}
+                {onExport && <CommandButton variant="ghost" size="icon-sm" className="border-0 bg-transparent px-0" icon={Download} name="Exportar" onClick={onExport} />}
+            </div>
         </div>
     )
 }

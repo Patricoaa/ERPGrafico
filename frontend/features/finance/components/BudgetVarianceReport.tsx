@@ -14,7 +14,7 @@ import { BudgetVarianceTable, type BudgetVarianceNode } from "./BudgetVarianceTa
  * Versus presupuestario (ADR-0158): presupuesto, mes y año son estado de la URL gestionado por
  * `useCollectionQuery`; la barra de la colección los muestra y el hook de variación recibe el periodo.
  */
-export function BudgetVarianceView() {
+export function BudgetVarianceReport() {
     const { month: serverMonth, year: serverYear } = useServerDate()
     const { budgets } = useAllBudgets()
 

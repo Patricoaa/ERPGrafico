@@ -141,7 +141,7 @@ El patrón `text-[Npx] font-bold/black uppercase` aparecía con 4 tamaños disti
 |---------|-------------|---------|
 | `features/finance/bank-reconciliation/components/DashboardKPIs.tsx:31` | `text-3xl font-black font-heading tracking-tighter` | ✅ Patrón correcto |
 | `features/orders/components/OrderHeaderDashboard.tsx:79` | `text-2xl font-black text-foreground tracking-tight` | ⚠️ Sin `font-heading`, tracking-tight no tighter |
-| `features/finance/components/BudgetVarianceView.tsx:175` | `text-2xl font-heading font-bold` | ⚠️ `font-bold` en lugar de `font-black`, sin tracking |
+| `features/finance/components/BudgetVarianceReport.tsx:175` | `text-2xl font-heading font-bold` | ⚠️ `font-bold` en lugar de `font-black`, sin tracking |
 | `features/settings/components/HRSettingsView.tsx:362` | `text-2xl font-black text-primary font-heading` | ⚠️ `text-2xl` y sin tracking |
 
 **Patrón canónico:** `text-3xl font-black font-heading tracking-tighter`

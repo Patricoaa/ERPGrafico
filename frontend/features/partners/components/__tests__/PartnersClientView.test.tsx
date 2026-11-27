@@ -38,7 +38,12 @@ vi.mock("@/components/entity-view", () => {
         m.rootProps = { ...rest, onOpen }
         return <div>{children}</div>
     }
-    const Toolbar = ({ action }: { action?: ReactNode }) => <div role="toolbar">{action}</div>
+    const Toolbar = ({ action, extraActions = [] }: { action?: ReactNode; extraActions?: readonly { id: string; label: string; onClick?: () => void }[] }) => (
+        <div role="toolbar">
+            {action}
+            {extraActions.map((item) => <button key={item.id} aria-label={item.label} title={item.label} onClick={item.onClick} />)}
+        </div>
+    )
     const View = ({ emptyAction }: { emptyAction?: ReactNode }) => (
         <div>
             {m.partners.map(p => (

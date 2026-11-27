@@ -2,8 +2,9 @@
  * component-naming-suffix
  *
  * Enforces that React component files under features/ use a suffix that
- * matches their UI surface (Drawer, Modal, Sheet, Wizard, View, Form,
- * Step, Sidebar, Panel, Card, Selector, Provider, Management, etc.).
+ * matches their UI surface (Drawer, Modal, Sheet, Wizard, ClientView,
+ * Report, View, Form, Step, Sidebar, Panel, Card, Selector, Provider, etc.).
+ * ReportToolbar screens must end in `Report`, not `View` (ADR-0160).
  *
  * See naming-conventions.md S 1.1 — "Component suffix must match the surface."
  * See GOVERNANCE.md S 2 rule 11.

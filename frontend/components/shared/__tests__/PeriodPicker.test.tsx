@@ -111,4 +111,35 @@ describe("ReportToolbar (ADR-0160 §2)", () => {
         await user.click(screen.getByRole("button", { name: "Quitar" }))
         expect(onShow).toHaveBeenLastCalledWith(false)
     })
+
+    it("keeps Mapeo and Exportar as ghost icon-only actions in their own group", async () => {
+        const user = userEvent.setup()
+        const onMapeoClick = vi.fn()
+        const onExport = vi.fn()
+        render(
+            <ReportToolbar
+                headerFormat="year"
+                onHeaderFormatChange={vi.fn()}
+                date={{ from: new Date(2026, 2, 1), to: new Date(2026, 2, 31) }}
+                onDateChange={vi.fn()}
+                showComparison={false}
+                onShowComparisonChange={vi.fn()}
+                compDate={undefined}
+                onCompDateChange={vi.fn()}
+                showMapeo
+                onMapeoClick={onMapeoClick}
+                onExport={onExport}
+            />,
+        )
+        const actions = screen.getByRole("group", { name: "Acciones del informe" })
+        for (const [name, onClick] of [["Mapeo de cuentas", onMapeoClick], ["Exportar", onExport]] as const) {
+            const button = within(actions).getByRole("button", { name })
+            expect(button).toHaveAttribute("title", name)
+            expect(button).toHaveClass("bg-transparent", "border-0")
+            expect(button).toHaveTextContent("")
+            expect(button.querySelector("svg")).toBeInTheDocument()
+            await user.click(button)
+            expect(onClick).toHaveBeenCalledOnce()
+        }
+    })
 })

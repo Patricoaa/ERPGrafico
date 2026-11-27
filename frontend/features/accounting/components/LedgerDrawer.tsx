@@ -253,17 +253,15 @@ function LedgerContent({
                     actions={ledgerMovementActions.forCollection(ledgerMovementActionsCtx)}
                     onOpen={(mov) => openEntry(mov.entry_id)}
                 >
-                    <Collection.Toolbar
-                        action={
-                            <PeriodPicker
-                                name="Período"
-                                value={periodOf(dateRange)}
-                                presets={LEDGER_PERIOD_PRESETS}
-                                clearable={false}
-                                onChange={(period) => period && setDateRange(datesOf(period))}
-                            />
-                        }
-                    />
+                    <Collection.Toolbar>
+                        <PeriodPicker
+                            name="Período"
+                            value={periodOf(dateRange)}
+                            presets={LEDGER_PERIOD_PRESETS}
+                            clearable={false}
+                            onChange={(period) => period && setDateRange(datesOf(period))}
+                        />
+                    </Collection.Toolbar>
                     <Collection.View
                         table={ledgerMovementDrawerViews.table}
                         emptyTitle="Sin movimientos"

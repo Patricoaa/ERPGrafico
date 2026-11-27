@@ -29,8 +29,9 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 | `Modal` | `<BaseModal>` / `<Dialog>` (centrado en pantalla) | Auto-contenido: incluye su surface | `CreditAssignmentModal`, `ExclusionModal` |
 | `Sheet` | `<Sheet>` de shadcn (side panel nativo) | Auto-contenido: incluye su surface | `PayrollDetailSheet`, `MappingConfigSheet` |
 | `Wizard` | `<GenericWizard>` (flujo multi-paso) | Auto-contenido: incluye su surface | `WorkOrderWizard`, `DeclarationWizard` |
-| `ClientView` | `<DataTableView>` — listado maestro de entidad | Stateful, tabla con toolbar, filtros, CRUD | `ProductClientView`, `ContactsClientView` |
-| `View` | Sin surface — ocupa su contenedor padre (página o tab) | Stateful, vista que NO es listado de entidad (reporte, dashboard, detalle) | `TrialBalanceView`, `StatementsView` |
+| `ClientView` | Colección con toolbar — listado maestro de entidad | Stateful, tabla con filtros, CRUD | `ProductClientView`, `ContactsClientView` |
+| `Report` | Sin surface — ocupa su contenedor padre | Informe con `ReportToolbar` (período, comparación, encabezado, exportar) | `BudgetVarianceReport`, `FinancialStatementsReport` |
+| `View` | Sin surface — ocupa su contenedor padre (página o tab) | Stateful, vista que NO es listado ni informe (configuración, detalle, resumen) | `PayrollDetailView`, `SalesSettingsView` |
 | `Form` | **Sin surface** — solo el formulario, el padre decide la surface | Reutilizable dentro de Drawer o Modal | `UoMForm` *(si se reutiliza en dos contextos)* |
 | `Step` | Sin surface — slide de un wizard | Siempre hijo de un `Wizard` | `Step1_Items`, `ManufacturingConfigStep` |
 | `Sidebar` | Panel lateral fijo / persistente (no slide-over) | Sección de layout | `ActivitySidebar`, `EntitySidebar` |
@@ -66,9 +67,10 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 
 6. **Sufijos no apilables.** No usar `SomethingModalDrawer`, `SomethingSheetModal`, etc.
 
-7. **Usar `ClientView` para listados maestros de entidad.**  
-   Si el componente es un listado paginado con `<DataTableView>` para CRUD de una entidad → sufijo `ClientView`.  
-   Si es un reporte, dashboard, detalle o cualquier vista que NO sea un listado de entidad → sufijo `View`.
+7. **Usar `ClientView` para listados maestros de entidad y `Report` para informes.**
+   Si el componente es un listado paginado con CRUD de una entidad → sufijo `ClientView`.
+   Si es un informe con `ReportToolbar` → sufijo `Report`, nunca `View` (ADR-0160).
+   Si es detalle, configuración o cualquier vista que NO sea listado ni informe → sufijo `View`; los dashboards usan `Dashboard`.
 
 8. **`List` no es sufijo autorizado para vistas de página.**  
    Los archivos `*List` deben ser listas reutilizables inline (sub-componentes), no vistas de página.  
@@ -91,7 +93,9 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 └── No → ¿Es un formulario editable?
     ├── Sí, reutilizable → sufijo Form
     ├── Sí, solo en un contexto → puede incluirse en el mismo Drawer/Modal file
-    └── No → nombre semántico sin sufijo de surface (View, Step, Card, Panel...)
+    ├── No → ¿Es un informe (ReportToolbar)?
+    │   ├── Sí → sufijo Report
+    │   └── No → nombre semántico sin sufijo de surface (View, Dashboard, Step, Card, Panel...)
 ```
 
 ---
@@ -259,6 +263,7 @@ Antes de abrir un PR que agrega o renombra artefactos:
 - [ ] El sufijo del componente coincide con la surface que renderiza.
 - [ ] El nombre del archivo coincide con el export principal.
 - [ ] Vistas de listado de entidad usan sufijo `ClientView` (no `List`, `Management` ni `View` solos).
+- [ ] Informes usan sufijo `Report` (no `View`), con `ReportToolbar`.
 - [ ] `PageClient` solo se usa en `app/(dashboard)/**/`, no en `features/`.
 - [ ] Hooks siguen el patrón `use[Entity][Calificador]`.
 - [ ] Tipos son `PascalCase` sin `I` prefix ni `Type` suffix.

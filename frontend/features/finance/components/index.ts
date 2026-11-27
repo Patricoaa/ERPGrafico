@@ -1,6 +1,6 @@
 export * from './AnalysisDashboard';
 export * from './BudgetsClientView';
-export * from './BudgetVarianceView';
+export * from './BudgetVarianceReport';
 export * from './BudgetExecutionPanel';
 export * from './BIAnalyticsDashboard';
 export * from './BudgetEditor';

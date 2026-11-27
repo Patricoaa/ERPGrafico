@@ -1,7 +1,7 @@
 export {
   AnalysisDashboard,
   BudgetsClientView,
-  BudgetVarianceView,
+  BudgetVarianceReport,
   BudgetExecutionPanel,
   BIAnalyticsDashboard,
   BudgetEditor,

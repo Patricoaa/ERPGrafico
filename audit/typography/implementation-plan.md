@@ -152,7 +152,7 @@ grep -rn "text-\[8px\]\|text-\[9px\]" frontend/features/ --include="*.tsx"
 
 **Archivos corregidos:**
 - `features/production/components/ProductionMetricsCard.tsx` — 4 KPI numbers + 12 raw colors (→ semantic tokens)
-- `features/finance/components/BudgetVarianceView.tsx` — 4 KPI numbers (`font-bold` → `font-black tracking-tighter`) + `text-emerald-500` → `text-success` + labels
+- `features/finance/components/BudgetVarianceReport.tsx` — 4 KPI numbers (`font-bold` → `font-black tracking-tighter`) + `text-emerald-500` → `text-success` + labels
 - `features/orders/components/OrderHeaderDashboard.tsx:79` — añadido `font-heading tracking-tighter`
 
 **Deuda restante (baja prioridad):**

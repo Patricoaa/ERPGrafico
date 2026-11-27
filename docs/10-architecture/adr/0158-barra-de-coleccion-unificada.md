@@ -53,21 +53,21 @@ Maqueta aprobada (propuesta A con ajustes): artefacto «Barra de colección unif
 `Collection.Toolbar` arma la barra completa a partir de la entidad. La página no pasa `UnifiedSearchBar` como hijo, solo `action` (crear) y, si hace falta, `views` para restringir los layouts. Orden fijo:
 
 ```
-[ViewTabs ··························· 1–38 de 38]
-[Search──────────] [Filtros] [Orden] [Grupo] [Vista] | [Analítica] [Exportar] [Acción primaria]
-[AppliedFilters: chip · chip · chip · Limpiar todo]
+[ViewTabs ···················· [Analítica] [Exportar] [acciones extra]]  ← fila superior
+[Search──────────] [Filtros] [Orden] [Grupo] [Vista] | [Acción primaria]
+[AppliedFilters: chip · chip · chip · Limpiar todo · 1–38 de 38]
 ```
 
-Cada pieza solo aparece si la entidad la declara. Una entidad sin `query` muestra solo la acción y los layouts, como hoy.
+Cada pieza solo aparece si la entidad la declara. Tras el separador sólo queda la acción primaria; analítica, exportar y las acciones extra son botones ghost de ícono en la fila superior, que ocupa el lugar del antiguo total junto a las pestañas. Una entidad sin `query` conserva la ruta legada con el mismo orden de acciones.
 
 ### 2. Anatomía de los botones de comando
 
 - **Ícono + valor elegido**, sin el nombre de la herramienta. Filtros: ícono + conteo (`3`). Orden: ícono + `Fecha ↓` (con más de una clave, `Fecha ↓ +1`). Grupo: ícono + `Estado`. Vista: ícono + `Tabla`.
 - **Sin valor elegido, solo el ícono.** Un botón con valor lleva borde marcado (estado «activo»).
 - El nombre va en el **tooltip y en el `aria-label`**, que también incluye el valor (`"Ordenar: Fecha descendente"`).
-- **Analítica y Exportar** son solo ícono.
-- La **acción primaria** (crear) conserva su texto: es la acción de la página, no un comando de la barra.
-- **En pantallas angostas** (< `md`), Filtros, Orden, Grupo y Vista se juntan en un botón de ajustes con el total de cambios, y la búsqueda ocupa la fila.
+- **Analítica, Exportar y `extraActions`** son botones ghost de solo ícono en la fila superior (`aria-label` + tooltip).
+- La **acción primaria** (crear) conserva su texto: es la acción de la página y lo único tras el separador.
+- **En pantallas angostas** (< `md`), Filtros, Orden, Grupo y Vista se juntan en un botón «Ajustes» con el total de cambios (filtros activos + orden + grupo + columnas ocultas + layout). Un único popover contiene los cuatro cuerpos, sin popovers anidados; cerrar aplica el borrador de filtros y `Esc` lo descarta. La búsqueda ocupa la fila y la acción primaria baja bajo ella en vez de taparla.
 
 ### 3. La consulta se declara en la entidad: `entity.query`
 

@@ -26,21 +26,25 @@ interface AppliedFiltersProps {
   onClearAll?: () => void
   /** Collection total; shown at the end of the row ("38 resultados"). `null` = unknown. */
   resultCount?: number | null
+  /** Keep the row (and its live count) when no chip is active, e.g. the collection command bar. */
+  showCountWhenEmpty?: boolean
   className?: string
 }
 
 /**
  * Applied-filters row (ADR-0158, collection-toolbar §5.2): one removable chip per active filter,
  * search or grouping, wrapping onto new lines (never scrolling sideways), then "Limpiar todo" and
- * the result count. Renders nothing while no chip is active.
+ * the result count. Renders nothing while no chip is active unless `showCountWhenEmpty` keeps the
+ * live total visible (collection command bar).
  */
-export function AppliedFilters({ chips, onClearAll, resultCount = null, className }: AppliedFiltersProps) {
-  if (chips.length === 0) return null
-  const editable = onClearAll !== undefined
+export function AppliedFilters({ chips, onClearAll, resultCount = null, showCountWhenEmpty = false, className }: AppliedFiltersProps) {
+  const hasChips = chips.length > 0
+  if (!hasChips && !(showCountWhenEmpty && resultCount !== null)) return null
+  const editable = onClearAll !== undefined && hasChips
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
-      <ul aria-label="Filtros aplicados" className="flex flex-wrap items-center gap-1.5">
+      {hasChips && <ul aria-label="Filtros aplicados" className="flex flex-wrap items-center gap-1.5">
         {chips.map((chip) => {
           const label = formatChipLabel(chip)
           return (
@@ -67,7 +71,7 @@ export function AppliedFilters({ chips, onClearAll, resultCount = null, classNam
             </li>
           )
         })}
-      </ul>
+      </ul>}
 
       {editable && (
         <Button

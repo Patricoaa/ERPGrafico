@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useMemo } from "react"
 import { MoveHorizontal } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { useGlobalModals } from "@/components/providers"
 import { useDeepLinkEntity } from "@/hooks/useDeepLinkEntity"
 
@@ -99,19 +98,6 @@ export function PartnersClientView({
 
     const hasPartners = partners.length > 0
 
-    // «Añadir socio» es siempre el `createAction` de la página (primario); «Transferencia» solo con socios.
-    const partnerActionButtons = (
-        <>
-            {createAction}
-            {hasPartners && (
-                <Button variant="outline" size="sm" onClick={() => run({ type: "transfer" })}>
-                    <MoveHorizontal className="h-4 w-4 mr-1.5" />
-                    Transferencia
-                </Button>
-            )}
-        </>
-    )
-
     const collection = useEntityCollection(
         partnerEntity,
         // The core already favors cached rows over a failed background refetch (ADR-0087 — rows
@@ -133,7 +119,10 @@ export function PartnersClientView({
                 onViewChange={onViewChange}
                 onOpen={(partner) => openEntity("contacts.partner", partner.id, partner)}
             >
-                <Collection.Toolbar action={partnerActionButtons} />
+                <Collection.Toolbar
+                    action={createAction}
+                    extraActions={hasPartners ? [{ id: "transfer", icon: MoveHorizontal, label: "Transferencia", onClick: () => run({ type: "transfer" }) }] : []}
+                />
                 <Collection.View
                     table={partnerViews.table}
                     card={partnerViews.card}
