@@ -105,6 +105,13 @@ export const creditContactEntity = defineEntity<CreditContact>()((f) => ({
         },
         sort: { fields: ["name", "riskLevel", "limit", "balanceUsed", "currentAging", "overdueAging"] },
         groupBy: { fields: ["riskLevel"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "low", label: "Bajo", filters: { credit_risk_level: "LOW" } },
+            { id: "medium", label: "Medio", filters: { credit_risk_level: "MEDIUM" } },
+            { id: "high", label: "Alto", filters: { credit_risk_level: "HIGH" } },
+            { id: "critical", label: "Crítico", filters: { credit_risk_level: "CRITICAL" } },
+        ],
     },
 }))
 

@@ -16,8 +16,27 @@ export const creditLineEntity = defineEntity<CreditLine>()((f) => ({
     // ADR-0158 §3, client mode: rows filter (`search.filterFn`) and sort in the browser.
     query: {
         search: { placeholder: "Buscar por código, cuenta o límite…" },
+        filters: {
+            status: {
+                field: "status",
+                control: "single",
+                options: [
+                    { value: "ACTIVE", label: "Activa" },
+                    { value: "EXPIRED", label: "Vencida" },
+                    { value: "SUSPENDED", label: "Suspendida" },
+                    { value: "CANCELED", label: "Cancelada" },
+                ],
+            },
+        },
         sort: { fields: ["code", "accountName", "status", "creditLimit", "usedAmount", "availableAmount", "utilizationRate"] },
         groupBy: { fields: ["status"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { status: "ACTIVE" } },
+            { id: "expired", label: "Vencidas", filters: { status: "EXPIRED" } },
+            { id: "suspended", label: "Suspendidas", filters: { status: "SUSPENDED" } },
+            { id: "canceled", label: "Canceladas", filters: { status: "CANCELED" } },
+        ],
     },
 }))
 

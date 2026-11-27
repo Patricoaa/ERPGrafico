@@ -15,6 +15,7 @@ export const terminalProviderEntity = defineEntity<PaymentTerminalProvider>()((f
     query: {
         search: { placeholder: "Buscar proveedor…", scopes: [{ field: "name", param: "name", clientKey: "name" }] },
         sort: { fields: ["name", "supplierName", "receivableAccount", "isActive"], default: "name" },
+        views: [{ id: "all", label: "Todos" }],
     },
 }))
 

@@ -446,7 +446,7 @@ function CommandToolbar({ query, modes, action, resultCount, children, utilities
         ...(compiled.search.filters ?? []).filter((f): f is Exclude<typeof f, { type: "custom" }> => f.type !== "custom"),
         ...(compiled.search.dateFilters ?? []),
     ]
-    const showTabs = query.views.length > 1
+    const showTabs = query.views.length > 0
     const columns = ctx.view === "table" && ctx.tableColumns
         ? ctx.tableColumns.ids.map((id) => ({ id, label: fieldById(ctx.collection.entity, id).label, visible: !ctx.hiddenColumns.has(id), locked: id === ctx.tableColumns?.primary }))
         : []

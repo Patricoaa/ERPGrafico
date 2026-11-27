@@ -5,7 +5,6 @@ export const rcvApiKeySchema = z.object({
     label: z.string().trim().max(60, "Máximo 60 caracteres").optional(),
     key: z.string().optional(),
     is_active: z.boolean(),
-    monthly_limit: z.number({ error: "Ingrese un número" }).int("Debe ser un número entero").min(1, "Entre 1 y 1000").max(1000, "Entre 1 y 1000"),
 })
 
 export type RcvApiKeyFormValues = z.infer<typeof rcvApiKeySchema>

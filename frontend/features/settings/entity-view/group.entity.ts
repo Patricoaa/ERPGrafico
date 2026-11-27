@@ -13,6 +13,7 @@ export const groupEntity = defineEntity<Group>()((f) => ({
     query: {
         search: { placeholder: "Buscar grupo…" },
         sort: { fields: ["name", "userCount"], default: "name" },
+        views: [{ id: "all", label: "Todos" }],
     },
 }))
 

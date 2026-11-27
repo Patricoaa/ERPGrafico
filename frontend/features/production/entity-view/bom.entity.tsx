@@ -65,6 +65,11 @@ export const bomEntity = defineEntity<BOM>()((f) => ({
         filters: { active: { field: "active", control: "single", options: [{ value: "true", label: "Activa" }, { value: "false", label: "Inactiva" }] } },
         sort: { fields: ["product", "name", "linesCount", "totalCost", "active"] },
         groupBy: { fields: ["active", "product"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { active: "true" } },
+            { id: "inactive", label: "Inactivas", filters: { active: "false" } },
+        ],
     },
 }))
 

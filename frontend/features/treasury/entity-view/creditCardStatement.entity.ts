@@ -34,9 +34,26 @@ export const creditCardStatementEntity = defineEntity<CreditCardStatement>()((f)
             bank: { label: "Banco", control: "single", options: "remote" },
             card: { field: "cardAccountName", control: "single", options: "remote" },
             cutoff_date: { field: "cutOffDate", control: "date", paramFrom: "cutoff_from", paramTo: "cutoff_to" },
+            status: {
+                field: "status",
+                control: "single",
+                options: [
+                    { value: "OPEN", label: "Abierta" },
+                    { value: "PAID", label: "Pagada" },
+                    { value: "OVERDUE", label: "Vencida" },
+                    { value: "CANCELED", label: "Cancelada" },
+                ],
+            },
         },
         sort: { fields: ["cutOffDate", "displayId", "cardAccountName", "billedAmount", "dueDate", "status"], default: "-cutOffDate" },
         groupBy: { fields: ["status", "period", "cardAccountName"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "open", label: "Abiertas", filters: { status: "OPEN" } },
+            { id: "paid", label: "Pagadas", filters: { status: "PAID" } },
+            { id: "overdue", label: "Vencidas", filters: { status: "OVERDUE" } },
+            { id: "canceled", label: "Canceladas", filters: { status: "CANCELED" } },
+        ],
     },
 }))
 

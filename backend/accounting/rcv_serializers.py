@@ -243,8 +243,8 @@ def _clean_rut(value: str) -> str:
 
 
 class RCVSettingsSerializer(serializers.ModelSerializer):
-    """Singleton de configuración. Contexto: ``next_period``, ``estimated_monthly_queries``,
-    ``total_monthly_quota`` (calculados en la vista)."""
+    """Singleton de configuración. Contexto: ``next_period`` y ``estimated_monthly_queries``
+    (calculados en la vista)."""
 
     sii_password = serializers.CharField(
         write_only=True, required=False, allow_blank=True, trim_whitespace=True
@@ -252,7 +252,6 @@ class RCVSettingsSerializer(serializers.ModelSerializer):
     has_sii_password = serializers.BooleanField(read_only=True)
     next_period = serializers.SerializerMethodField()
     estimated_monthly_queries = serializers.SerializerMethodField()
-    total_monthly_quota = serializers.SerializerMethodField()
 
     class Meta:
         model = RCVSettings
@@ -270,7 +269,6 @@ class RCVSettingsSerializer(serializers.ModelSerializer):
             "terminal_match_window_minutes",
             "next_period",
             "estimated_monthly_queries",
-            "total_monthly_quota",
         ]
 
     def validate_company_rut(self, value: str) -> str:
@@ -290,9 +288,6 @@ class RCVSettingsSerializer(serializers.ModelSerializer):
 
     def get_estimated_monthly_queries(self, obj: RCVSettings) -> int | None:
         return self.context.get("estimated_monthly_queries")
-
-    def get_total_monthly_quota(self, obj: RCVSettings) -> int | None:
-        return self.context.get("total_monthly_quota")
 
 
 # ── API keys ─────────────────────────────────────────────────────────────────
@@ -315,7 +310,6 @@ class RCVApiKeySerializer(serializers.ModelSerializer):
             "key",
             "masked_key",
             "is_active",
-            "monthly_limit",
             "used_this_month",
             "exhausted_until",
             "last_used_at",

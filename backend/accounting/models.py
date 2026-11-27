@@ -1878,17 +1878,16 @@ class RCVSettings(TimeStampedModel):
 
 
 class RCVApiKey(TimeStampedModel):
-    """API key de SimpleAPI (cupo mensual limitado), cifrada en reposo."""
+    """API key de SimpleAPI, cifrada en reposo.
+
+    El cupo lo controla SimpleAPI: ``exhausted_until`` se fija solo cuando la API
+    responde que la key no tiene cupo (o la rechaza).
+    """
 
     label = models.CharField(_("Etiqueta"), max_length=60, blank=True)
     key_encrypted = models.TextField(_("API key (cifrada)"))
     key_last4 = models.CharField(_("Últimos 4"), max_length=4, blank=True)
     is_active = models.BooleanField(_("Activa"), default=True)
-    monthly_limit = models.PositiveSmallIntegerField(
-        _("Límite mensual"),
-        default=10,
-        validators=[MinValueValidator(1), MaxValueValidator(1000)],
-    )
     exhausted_until = models.DateField(_("Sin cupo hasta"), null=True, blank=True)
     last_used_at = models.DateTimeField(_("Último uso"), null=True, blank=True)
     last_error = models.TextField(_("Último error"), blank=True)

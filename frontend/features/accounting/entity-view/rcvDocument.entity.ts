@@ -86,6 +86,11 @@ export const rcvDocumentEntity = defineEntity<RcvDocument>()((f) => ({
             fiscal_match_status: { field: "matchStatus", control: "single", options: FISCAL_MATCH_STATUS_OPTIONS },
             missing: { field: "missing", control: "single", options: [{ value: "true", label: "No vino en la última importación" }, { value: "false", label: "Vigentes" }] },
         },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "current", label: "Vigentes", filters: { missing: "false" } },
+            { id: "missing", label: "Faltantes", filters: { missing: "true" } },
+        ],
     },
 }))
 
@@ -98,6 +103,11 @@ export const rcvSaleQueryEntity = {
         filters: Object.fromEntries(
             Object.entries(rcvDocumentEntity.query?.filters ?? {}).filter(([id]) => id !== "acknowledgement" && id !== "status"),
         ),
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "current", label: "Vigentes", filters: { missing: "false" } },
+            { id: "missing", label: "Faltantes", filters: { missing: "true" } },
+        ],
     },
 }
 

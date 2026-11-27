@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.209](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.208...v0.3.209) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **rcv:** quitar cupo interno de API keys y agregar vistas predefinidas ([afd052f](https://github.com/Patricoaa/ERPGrafico/commit/afd052f21eeab85a80c66d811637bc2de7b88fd4))
+
+### [0.3.208](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.207...v0.3.208) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **treasury:** la sincronización TUU corta recoge abonos tardíos ([02e1210](https://github.com/Patricoaa/ERPGrafico/commit/02e121036a485a5445b623a8b4122ab80e7c0e71))
+
 ### [0.3.207](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.206...v0.3.207) (2026-11-27)
 
 

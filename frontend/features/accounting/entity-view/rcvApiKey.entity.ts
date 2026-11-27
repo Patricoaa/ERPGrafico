@@ -29,7 +29,7 @@ export const rcvApiKeyEntity = defineEntity<RcvApiKey>()((f) => ({
         label: f.text((k) => k.label || "Sin etiqueta", { ...fixed, label: "Etiqueta" }),
         maskedKey: f.code("masked_key", { ...fixed, label: "API key" }),
         active: f.status((k) => rcvApiKeyActive(k), { ...fixed, label: "Estado" }),
-        usage: f.text((k) => `${k.used_this_month}/${k.monthly_limit} este mes`, { ...fixed, label: "Consumo" }),
+        usage: f.text((k) => `${k.used_this_month} este mes`, { ...fixed, label: "Consumo" }),
         exhausted: f.text((k) => rcvKeyExhaustion(k), { ...fixed, label: "Cupo" }),
         lastUsed: f.date("last_used_at", { ...fixed, label: "Último uso", time: true }),
         lastError: f.text("last_error", { ...fixed, label: "Último error", truncate: true }),

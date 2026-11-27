@@ -85,6 +85,11 @@ export const pricingRuleEntity = defineEntity<PricingRule>()((f) => ({
         filters: { active: { field: "active", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Inactivo" }] } },
         sort: { fields: ["priority", "code", "name", "type", "active", "condition", "uom"] },
         groupBy: { fields: ["type", "active"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { active: "true" } },
+            { id: "inactive", label: "Inactivas", filters: { active: "false" } },
+        ],
     },
 }))
 

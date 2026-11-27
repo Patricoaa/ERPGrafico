@@ -67,6 +67,11 @@ export const paymentMethodEntity = defineEntity<PaymentMethod>()((f) => ({
         },
         sort: { fields: ["name", "category", "treasuryAccount", "isActive"], default: "name" },
         groupBy: { fields: ["category", "treasuryAccount"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "active", label: "Activos", filters: { is_active: "true" } },
+            { id: "archived", label: "Archivados", filters: { is_active: "false" } },
+        ],
     },
 }))
 

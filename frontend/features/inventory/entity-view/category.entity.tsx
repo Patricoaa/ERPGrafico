@@ -61,6 +61,11 @@ export const categoryEntity = defineEntity<Category>()((f) => ({
         filters: { is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] } },
         sort: { fields: ["name", "prefix", "parentName", "productCount", "isActive"], default: "name" },
         groupBy: { fields: ["parentName"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { is_active: "true" } },
+            { id: "archived", label: "Archivadas", filters: { is_active: "false" } },
+        ],
     },
 }))
 

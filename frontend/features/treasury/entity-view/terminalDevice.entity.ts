@@ -18,6 +18,7 @@ export const terminalDeviceEntity = defineEntity<PaymentTerminalDevice>()((f) =>
         search: { placeholder: "Buscar terminal de cobro…" },
         sort: { fields: ["name", "providerName", "serialNumber"], default: "name" },
         groupBy: { fields: ["providerName"] },
+        views: [{ id: "all", label: "Todos" }],
     },
 }))
 
