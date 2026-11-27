@@ -9,7 +9,6 @@ import { CreatePayrollDrawer, deletePayroll, paySalary, payPrevired, triggerDraf
 import type { Payroll } from "@/types/hr"
 import { AnalyticsPanelContent, ToolbarCreateButton, type Granularity } from '@/components/shared'
 import { Collection, useCollectionAnalytics, useCollectionQuery, useCollectionViewMode, useEntityCollection } from "@/components/entity-view"
-import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
@@ -53,16 +52,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
             toast.error(apiMsg || "Error al iniciar tarea")
         }
     }, [fetchPayrolls])
-
-    const toolbarActions = (
-        <>
-            <Button variant="outline" size="sm" onClick={handleGenerateDrafts}>
-                <FileText className="h-4 w-4 mr-1.5" />
-                Generar borradores
-            </Button>
-            {createAction}
-        </>
-    )
 
     // `?modal=new` crea una nómina; `?selected` abre el detalle (dos paneles sobre la misma ruta).
     const createPanel = useCreatePanelRoute({ actions: [] })
@@ -138,7 +127,10 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 onViewChange={onViewChange}
                 actions={payrollActions.forCollection(actionsCtx)}
             >
-                <Collection.Toolbar action={toolbarActions} />
+                <Collection.Toolbar
+                    action={createAction}
+                    extraActions={[{ id: "generate-drafts", icon: FileText, label: "Generar borradores", onClick: handleGenerateDrafts }]}
+                />
                 <Collection.View
                     table={payrollViews.table}
                     card={payrollViews.card}

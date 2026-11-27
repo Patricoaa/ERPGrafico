@@ -28,12 +28,7 @@ export default function JobsView() {
             <Collection.Root collection={collection} query={query} label="Tareas en segundo plano">
                 <Collection.Toolbar
                     views={["table", "card"]}
-                    action={
-                        <Button variant="outline" size="sm" onClick={() => refetch()}>
-                            <RefreshCw className="w-4 h-4 mr-1" />
-                            Actualizar
-                        </Button>
-                    }
+                    extraActions={[{ id: "refresh", icon: RefreshCw, label: "Actualizar", onClick: () => refetch() }]}
                 />
                 <Collection.View
                     table={backgroundJobViews.table}
