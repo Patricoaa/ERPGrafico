@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
 
-export const SELECTOR_TRIGGER_BASE = "w-full justify-between overflow-hidden shadow-none focus-visible:ring-0 transition-all font-normal"
+export const SELECTOR_TRIGGER_BASE = "w-full cursor-pointer justify-between overflow-hidden shadow-none focus-visible:ring-0 transition-all font-normal"
 export const SELECTOR_PLACEHOLDER_CLASS = "text-sm text-muted-foreground/60 font-normal"
 export const SELECTOR_VALUE_CLASS = "text-sm text-foreground font-normal"
 

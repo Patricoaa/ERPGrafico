@@ -40,10 +40,10 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, o
     const toggleModule = (modId: string) => setOpenModules(prev => ({ ...prev, [modId]: !(prev[modId] ?? modId === currentModuleId) }))
 
     return (
-        <div className="w-56 shrink-0 h-full flex flex-col border-r border-border/40 bg-muted/30">
+        <div className="w-56 shrink-0 h-full flex flex-col bg-muted/30">
             {/* Cabecera: icono de empresa centrado; sin logo, el nombre de la empresa (Enmienda 1, ADR-0162) */}
             <TooltipProvider delayDuration={0}>
-                <div className="shrink-0 h-12 flex items-center justify-center px-2 border-b border-border/40">
+                <div className="shrink-0 h-12 flex items-center justify-center px-2">
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Link
