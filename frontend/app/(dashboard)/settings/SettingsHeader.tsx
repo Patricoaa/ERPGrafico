@@ -22,22 +22,6 @@ export const SETTINGS_TABS = [
         ]
     },
     {
-        value: "users",
-        label: "Usuarios",
-        iconName: "shield-check",
-        href: "/settings/users",
-        subTabs: [
-            { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users" },
-            { value: "groups", label: "Grupos y Equipos", iconName: "user-plus", href: "/settings/users/groups" },
-        ]
-    },
-    {
-        value: "audit",
-        label: "Auditoría",
-        iconName: "history",
-        href: "/settings/audit",
-    },
-    {
         value: "accounts",
         label: "Cuentas Contables",
         iconName: "book-open",
@@ -60,18 +44,6 @@ export const SETTINGS_TABS = [
                 ]
             }
         ]
-    },
-    {
-        value: "jobs",
-        label: "Procesos",
-        iconName: "server-cog",
-        href: "/settings/jobs",
-    },
-    {
-        value: "debug",
-        label: "Depuración",
-        iconName: "bug",
-        href: "/settings/debug",
     },
     {
         value: "workflow",

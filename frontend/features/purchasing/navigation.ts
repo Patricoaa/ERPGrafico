@@ -86,16 +86,6 @@ export const PURCHASING_TABS: NavTabConfig[] = [
     metadataTitle: "Suscripciones | ERPGrafico",
     subTabs: [],
   },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/purchasing/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Parámetros de abastecimiento y documentos electrónicos de proveedores.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: PURCHASING_CONFIG_SUB_TABS,
-  },
 ]
 
 // ============================================

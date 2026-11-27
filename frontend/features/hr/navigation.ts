@@ -8,6 +8,31 @@ import type { NavTabConfig } from "@/lib/navigation-types"
  */
 
 // ============================================
+// SUB-TABS: LIQUIDACIONES Y REMUNERACIONES
+// ============================================
+
+export const HR_PAYROLLS_SUB_TABS: NavTabConfig[] = [
+  {
+    value: "payrolls",
+    label: "Liquidaciones",
+    href: "/hr/payrolls",
+    iconName: getEntityIconName("hr.payroll") ?? "file-spreadsheet",
+    headerTitle: "Liquidaciones",
+    headerDescription: "Cálculo de haberes, descuentos y generación de pagos.",
+    metadataTitle: "Liquidaciones | ERPGrafico",
+  },
+  {
+    value: "concepts",
+    label: "Conceptos de Nómina",
+    href: "/hr/payrolls/concepts",
+    iconName: getEntityIconName("hr.payrollconcept") ?? "alert-circle",
+    headerTitle: "Conceptos de Nómina",
+    headerDescription: "Gestión de conceptos de nómina: haberes, descuentos, bonos y deducciones.",
+    metadataTitle: "Conceptos de Nómina | ERPGrafico",
+  },
+]
+
+// ============================================
 // SUB-TABS: CONFIGURACIÓN
 // ============================================
 
@@ -20,15 +45,6 @@ export const HR_CONFIG_SUB_TABS: NavTabConfig[] = [
     headerTitle: "Globales",
     headerDescription: "Configuración general de RRHH, parámetros de la empresa y económicos.",
     metadataTitle: "Globales | ERPGrafico",
-  },
-  {
-    value: "concepts",
-    label: "Conceptos",
-    href: "/hr/settings/concepts",
-    iconName: "alert-circle",
-    headerTitle: "Conceptos",
-    headerDescription: "Gestión de conceptos de nómina: haberes, descuentos, bonos y deducciones.",
-    metadataTitle: "Conceptos | ERPGrafico",
   },
   {
     value: "previsional",
@@ -84,17 +100,7 @@ export const HR_TABS: NavTabConfig[] = [
     headerTitle: "Liquidaciones",
     headerDescription: "Cálculo de haberes, descuentos y generación de pagos.",
     metadataTitle: "Liquidaciones | ERPGrafico",
-    subTabs: [],
-  },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/hr/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Gestione indicadores económicos, conceptos de nómina e instituciones previsionales.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: HR_CONFIG_SUB_TABS,
+    subTabs: HR_PAYROLLS_SUB_TABS,
   },
 ]
 
@@ -107,6 +113,11 @@ import { findTabConfig, findSubTabConfig } from "@/lib/navigation-helpers"
 /** Busca tab principal de RRHH */
 export function getHRTab(value: string): NavTabConfig | undefined {
   return findTabConfig(HR_TABS, value)
+}
+
+/** Busca sub-tab de Liquidaciones */
+export function getHRPayrollsSubTab(value: string): NavTabConfig | undefined {
+  return findSubTabConfig(HR_TABS, "payrolls", value)
 }
 
 /** Busca sub-tab de Configuración */

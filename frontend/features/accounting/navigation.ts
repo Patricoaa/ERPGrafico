@@ -120,16 +120,6 @@ export const ACCOUNTING_TABS: NavTabConfig[] = [
     metadataTitle: "Registro de Compras y Ventas | ERPGrafico",
     subTabs: RCV_SUB_TABS,
   },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/accounting/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Gestión de tasas de IVA, integración RCV / SII y parámetros contables.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: ACCOUNTING_CONFIG_SUB_TABS,
-  },
 ]
 
 // ============================================

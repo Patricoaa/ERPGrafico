@@ -169,16 +169,6 @@ export const SALES_TABS: NavTabConfig[] = [
     metadataTitle: "Cartera de Créditos | ERPGrafico",
     subTabs: SALES_CREDITS_SUB_TABS,
   },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/sales/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Políticas de crédito, parámetros del POS y documentos electrónicos.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: SALES_CONFIG_SUB_TABS,
-  },
 ]
 
 // ============================================

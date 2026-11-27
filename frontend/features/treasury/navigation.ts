@@ -293,16 +293,6 @@ export const TREASURY_TABS: NavTabConfig[] = [
     metadataTitle: "Terminal de cobro | ERPGrafico",
     subTabs: TERMINAL_COBRO_SUB_TABS,
   },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/treasury/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Parámetros del módulo de Tesorería.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: TREASURY_CONFIG_SUB_TABS,
-  },
 ]
 
 /**
