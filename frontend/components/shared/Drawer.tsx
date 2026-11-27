@@ -346,9 +346,9 @@ export function Drawer({
                         ? "absolute! border border-border/40 bg-card"
                         : "fixed! bg-card",
                     sideStyles[side],
-                    // Fixed panels: hairline border, no shadow, no rounding
-                    boundary !== "embedded" && side === "right" && "rounded-none! border-l border-border/40",
-                    boundary !== "embedded" && side === "left" && "rounded-none! border-r border-border/40",
+                    // Fixed panels: no outer edge border (overlaps viewport contour), no shadow, no rounding
+                    boundary !== "embedded" && side === "right" && "rounded-none!",
+                    boundary !== "embedded" && side === "left" && "rounded-none!",
                     boundary === "embedded" && isHorizontal
                         ? "h-full"
                         : boundary === "embedded" && !isHorizontal
