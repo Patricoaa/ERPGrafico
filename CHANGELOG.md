@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.203](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.202...v0.3.203) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **shell:** acordeón en todos los módulos del primer nivel y ajustes del panel (ADR-0162 enmienda 1) ([886635e](https://github.com/Patricoaa/ERPGrafico/commit/886635eb239ef017658974f05efaccf5e99bdcd9))
+
 ### [0.3.202](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.201...v0.3.202) (2026-11-27)
 
 
