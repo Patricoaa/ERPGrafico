@@ -120,24 +120,23 @@ Equivalencias canónicas (el rango micro es exclusivo para chrome denso; desde A
 
 ## Escala del chrome del shell (ADR-0079)
 
-Roles tipográficos de los consumidores del shell (`DashboardShell`, `ModuleRail`, `ModuleSidebarPanel`, `SidebarNavItem`, `SidebarUtilityNav`, `PanelHeader`). Referencia de estructura: [module-layout-navigation.md §2.1](./module-layout-navigation.md).
+Roles tipográficos de los consumidores del shell (`DashboardShell`, `ModuleSidebarPanel`, `SidebarNavItem`, `SidebarUtilityNav`, `PanelHeader`). Referencia de estructura: [module-layout-navigation.md §2.1](./module-layout-navigation.md) (ADR-0162).
 
 | Rol | Componente (archivo) | Tipografía | Tracking | Transform |
 |-----|----------------------|------------|----------|-----------|
 | Topbar — título de vista (`<h1>` único) | `DashboardShell.tsx` | `text-base font-semibold` | `tracking-tight` | normal |
 | Topbar — breadcrumb | `DashboardShell.tsx` | `text-xs font-medium text-muted-foreground` | normal | normal |
 | Topbar — status pill | `DashboardShell.tsx` | `text-2xs font-bold` | `tracking-wider` | `uppercase` |
-| Riel — logo/iniciales | `ModuleRail.tsx` | `text-3xs font-bold` | normal | `uppercase` |
-| Riel — tooltip de módulo | `ModuleRail.tsx` | `text-xs font-semibold` | normal | normal |
-| Panel — título de módulo | `ModuleSidebarPanel.tsx` | `text-sm font-semibold` | `tracking-tight` | normal |
-| Panel — fallback "Módulos" | `ModuleSidebarPanel.tsx` | `text-xs font-semibold` | `tracking-wider` | `uppercase` |
+| Panel — iniciales de la empresa | `ModuleSidebarPanel.tsx` | `text-3xs font-bold` | normal | `uppercase` |
+| Panel — tooltip del nombre de empresa | `ModuleSidebarPanel.tsx` | `text-xs font-semibold` | normal | normal |
+| Panel — nombre de la empresa | `ModuleSidebarPanel.tsx` | `text-sm font-semibold` | `tracking-tight` | normal |
 | Panel — ítem de navegación (L0/L1/L2) | `SidebarNavItem.tsx` | `text-xs` | normal | normal |
 | Panel — atajo `kbd` (Ctrl K) | `SidebarUtilityNav.tsx` | `text-3xs` | normal | normal |
 | Panel — badge de conteo | `SidebarUtilityNav.tsx` | `text-4xs font-medium` | normal | normal |
 | Panel lateral — título | `PanelHeader.tsx` | `text-sm font-semibold` | `tracking-tight` | normal |
 | Panel lateral — subtítulo | `PanelHeader.tsx` | `text-xs font-medium text-muted-foreground` | normal | normal |
 
-> El tamaño micro mínimo del chrome es `text-4xs` (9px) y sólo se usa en glifos y contadores (iniciales del riel, badges de número), nunca en prosa.
+> El tamaño micro mínimo del chrome es `text-4xs` (9px) y sólo se usa en glifos y contadores (iniciales de la empresa, badges de número), nunca en prosa.
 
 ---
 

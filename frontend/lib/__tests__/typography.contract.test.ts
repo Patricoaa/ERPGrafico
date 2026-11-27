@@ -12,7 +12,7 @@
  *  - the token-first rule keeps its forbidden raw-size map and its
  *    rem/em arbitrary-size guard,
  *  - shell chrome roles map to the documented tokens (ADR 0079/0082):
- *    nav item, breadcrumb, status pill, rail initials + tooltip, panel title,
+ *    nav item, breadcrumb, status pill, brand initials + tooltip, panel title,
  *  - micro-label weight is `font-bold` (N1/N2/N4) while `font-black` is
  *    reserved for action buttons (Submit/Danger/Cancel).
  *  - field legends (N2) share a single source: FieldLegend → text-2xs font-bold
@@ -33,7 +33,6 @@ const shell = {
   navItem: read('../../components/layout/SidebarNavItem.tsx'),
   dashboardShell: read('../../components/layout/DashboardShell.tsx'),
   workspaceTabBar: read('../../components/layout/WorkspaceTabBar.tsx'),
-  moduleRail: read('../../components/layout/ModuleRail.tsx'),
   modulePanel: read('../../components/layout/ModuleSidebarPanel.tsx'),
   panelHeader: read('../../components/shared/PanelHeader.tsx'),
   sectionHeader: read('../../components/shared/SectionHeader.tsx'),
@@ -162,12 +161,12 @@ describe('typography contract', () => {
     expect(/text-2xs font-bold uppercase tracking-tighter/.test(shell.dashboardShell)).toBe(false);
   });
 
-  it('rail initials are text-3xs font-bold uppercase; tooltip text-xs font-semibold', () => {
-    expect(/font-bold text-3xs uppercase/.test(shell.moduleRail)).toBe(true);
-    expect(/font-semibold text-xs/.test(shell.moduleRail)).toBe(true);
+  it('brand initials are text-3xs font-bold uppercase; company tooltip text-xs font-semibold', () => {
+    expect(/font-bold text-3xs uppercase/.test(shell.modulePanel)).toBe(true);
+    expect(/font-semibold text-xs/.test(shell.modulePanel)).toBe(true);
   });
 
-  it('module panel title is text-sm font-semibold tracking-tight', () => {
+  it('panel company title is text-sm font-semibold tracking-tight', () => {
     expect(/text-sm font-semibold tracking-tight/.test(shell.modulePanel)).toBe(true);
   });
 

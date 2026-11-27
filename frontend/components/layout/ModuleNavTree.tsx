@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
@@ -26,6 +26,10 @@ interface ModuleNavTreeProps {
     navigation: NavigationConfig
     /** Se invoca al navegar (p. ej. cerrar el drawer móvil). */
     onNavigate?: () => void
+    /** Sangría adicional cuando el árbol se anida bajo un módulo (ADR-0162). */
+    renderDepth?: number
+    /** Evita un `<nav>` anidado al incrustar el árbol en el panel del módulo. */
+    embedded?: boolean
 }
 
 const stripQuery = (href: string) => href.split("?")[0]
@@ -35,7 +39,7 @@ const stripQuery = (href: string) => href.split("?")[0]
  * Tab sin subTabs → ítem plano. Tab con subTabs → grupo colapsable.
  * Niveles 0/1 resuelven el activo con `activeValue`/`subActiveValue`; nivel 2 por pathname.
  */
-export function ModuleNavTree({ navigation, onNavigate }: ModuleNavTreeProps) {
+export function ModuleNavTree({ navigation, onNavigate, renderDepth = 0, embedded = false }: ModuleNavTreeProps) {
     const pathname = usePathname()
     const { can } = useAuth()
     const { tabs, activeValue, subActiveValue } = navigation
@@ -96,7 +100,7 @@ export function ModuleNavTree({ navigation, onNavigate }: ModuleNavTreeProps) {
         return visibleTabs.map(t => flatten(resolve(t, 0, true, "")))
     }, [visibleTabs, activeValue, subActiveValue, pathname])
 
-    const renderNode = (node: ResolvedNode, depth: number): React.ReactNode => {
+    const renderNode = (node: ResolvedNode, depth: number): ReactNode => {
         if (node.children.length === 0) {
             return (
                 <SidebarNavItem
@@ -104,7 +108,7 @@ export function ModuleNavTree({ navigation, onNavigate }: ModuleNavTreeProps) {
                     label={node.label}
                     href={node.href}
                     iconName={node.iconName}
-                    depth={depth}
+                    depth={depth + renderDepth}
                     isActive={node.selfActive}
                     onClick={onNavigate}
                 />
@@ -117,7 +121,7 @@ export function ModuleNavTree({ navigation, onNavigate }: ModuleNavTreeProps) {
                 <SidebarNavItem
                     label={node.label}
                     iconName={node.iconName}
-                    depth={depth}
+                    depth={depth + renderDepth}
                     expanded={expanded}
                     onClick={() => setManualOpen(prev => ({ ...prev, [node.key]: !expanded }))}
                 />
@@ -126,9 +130,9 @@ export function ModuleNavTree({ navigation, onNavigate }: ModuleNavTreeProps) {
         )
     }
 
-    return (
-        <nav aria-label={navigation.moduleName ?? "Módulo"} className="flex flex-col gap-px">
-            {tree.map(node => renderNode(node, 0))}
-        </nav>
-    )
+    const nodes = <div className="flex flex-col gap-px">{tree.map(node => renderNode(node, 0))}</div>
+
+    return embedded
+        ? nodes
+        : <nav aria-label={navigation.moduleName ?? "Módulo"}>{nodes}</nav>
 }
