@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.210](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.209...v0.3.210) (2026-11-27)
+
+
+### ⚙️ Refactors
+
+* **reports:** renombra BudgetVarianceView a BudgetVarianceReport ([38f12bf](https://github.com/Patricoaa/ERPGrafico/commit/38f12bf53aefe8740a1ea1bb2af45b2ecfb1e96d))
+* **toolbar:** barra responsiva con fila de utilidades y acciones extra ([626947c](https://github.com/Patricoaa/ERPGrafico/commit/626947c4a5917a5d223690883d03ef314106db78))
+* **toolbar:** migra acciones secundarias a extraActions ([8399111](https://github.com/Patricoaa/ERPGrafico/commit/83991116f975a681578cf38308e25454904cb5b0))
+
+
+### 🧪 Testing
+
+* **toolbar:** cubre acciones extra, borrador de Ajustes y useIsMobile ([722a1db](https://github.com/Patricoaa/ERPGrafico/commit/722a1dbdc9128ea4ced323704cda4ef5e1923b3c))
+
 ### [0.3.209](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.208...v0.3.209) (2026-11-27)
 
 
