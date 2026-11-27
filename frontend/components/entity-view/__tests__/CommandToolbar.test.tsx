@@ -228,6 +228,30 @@ describe("Collection utility row and narrow toolbar (ADR-0158 §1–2)", () => {
         expect(onClick).toHaveBeenCalledOnce()
     })
 
+    it("renders extra action links and disabled actions without an onClick", () => {
+        setup("", {
+            extraActions: [
+                { id: "docs", icon: RefreshCw, label: "Documentación", href: "/docs" },
+                { id: "locked", icon: RefreshCw, label: "Bloqueada", disabled: true },
+            ],
+        })
+        const utilities = screen.getByRole("group", { name: "Acciones de la colección" })
+        const link = within(utilities).getByRole("link", { name: "Documentación" })
+        expect(link).toHaveAttribute("href", "/docs")
+        expect(link).toHaveAttribute("title", "Documentación")
+        expect(within(utilities).getByRole("button", { name: "Bloqueada" })).toBeDisabled()
+    })
+
+    it("announces a single active change and toggles aria-expanded on «Ajustes»", async () => {
+        const { user } = setup("ordering=customer", { mobile: true })
+        const settings = within(toolbar()).getByRole("button", { name: /Ajustes/ })
+        expect(settings).toHaveAttribute("aria-label", "Ajustes: 1 cambio")
+        expect(settings).toHaveAttribute("title", "Ajustes")
+        expect(settings).toHaveAttribute("aria-expanded", "false")
+        await user.click(settings)
+        expect(settings).toHaveAttribute("aria-expanded", "true")
+    })
+
     it("shows the total at the end of AppliedFilters, not beside the view tabs", () => {
         setup()
         expect(screen.getByText("2 resultados")).toBeInTheDocument()
@@ -249,6 +273,23 @@ describe("Collection utility row and narrow toolbar (ADR-0158 §1–2)", () => {
         await user.click(screen.getByRole("checkbox", { name: "Confirmada" }))
         await user.click(screen.getByRole("button", { name: /^Aplicar/ }))
         await waitFor(() => expect(url().get("status")).toContain("CONFIRMED"))
+    })
+
+    it("commits the pending filter draft when «Ajustes» closes, not only with «Aplicar»", async () => {
+        const { user, url } = setup("status=DRAFT", { mobile: true })
+        const settings = within(toolbar()).getByRole("button", { name: /Ajustes/ })
+        await user.click(settings)
+        await user.click(screen.getByRole("checkbox", { name: "Confirmada" }))
+        await user.click(settings)
+        await waitFor(() => expect(url().get("status")).toContain("CONFIRMED"))
+    })
+
+    it("discards the pending filter draft when «Ajustes» receives Escape", async () => {
+        const { user, url } = setup("status=DRAFT", { mobile: true })
+        await user.click(within(toolbar()).getByRole("button", { name: /Ajustes/ }))
+        await user.click(screen.getByRole("checkbox", { name: "Confirmada" }))
+        await user.keyboard("{Escape}")
+        expect(url().get("status")).toBe("DRAFT")
     })
 })
 
