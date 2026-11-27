@@ -28,10 +28,10 @@ interface WorkspaceTabBarProps {
     leading?: ReactNode
 }
 
-const TAB_BASE = "group/tab relative flex h-9 min-w-0 shrink-0 items-center overflow-hidden rounded-tr-md text-xs transition-colors"
+const TAB_BASE = "group/tab relative flex h-9 min-w-0 shrink-0 items-center overflow-hidden rounded-tr-md border-0 text-xs transition-colors"
 const TAB_ACTIVE = "bg-card text-card-foreground"
-const TAB_IDLE = "bg-[color-mix(in_oklch,var(--background)_92%,black)] text-muted-foreground hover:bg-[color-mix(in_oklch,var(--background)_86%,black)] hover:text-foreground"
-const TAB_TRIGGER = "h-full min-w-0 flex-1 justify-start gap-1.5 rounded-none py-0 pl-2.5 pr-2 text-xs font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset"
+const TAB_IDLE = "bg-[color-mix(in_oklch,var(--background)_92%,black)] text-muted-foreground cursor-pointer hover:bg-[color-mix(in_oklch,var(--background)_86%,black)] hover:text-foreground"
+const TAB_TRIGGER = "h-full min-w-0 flex-1 justify-start gap-1.5 rounded-none border-0 py-0 pl-2.5 pr-2 text-xs font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset"
 
 /**
  * Barra de trabajo: primer panel del viewport (ADR-0101, sustituye a la topbar).
@@ -65,7 +65,7 @@ export function WorkspaceTabBar({ page, breadcrumbs, actions, leading }: Workspa
     const PageIcon = page?.icon
 
     return (
-        <div className="flex-none h-12 flex items-end gap-2 border-b border-border/40 bg-muted/30 z-30">
+        <div className="flex-none h-12 flex items-end gap-2 bg-muted/30 z-30">
             {leading}
 
             {/* Título de la vista = único <h1> de la página (ADR-0079); la pestaña lo muestra. */}
@@ -87,7 +87,7 @@ export function WorkspaceTabBar({ page, breadcrumbs, actions, leading }: Workspa
                         tabIndex={pageActive ? 0 : -1}
                         title={page?.description || page?.title}
                         onClick={showPage}
-                        className={cn(TAB_TRIGGER, "font-medium")}
+                        className={cn(TAB_TRIGGER, "font-medium", !pageActive && "cursor-pointer")}
                     >
                         {page ? (
                             <>
@@ -120,7 +120,7 @@ export function WorkspaceTabBar({ page, breadcrumbs, actions, leading }: Workspa
                                 tabIndex={tab.active ? 0 : -1}
                                 title={tab.description}
                                 onClick={() => activateTab(tab.key)}
-                                className={cn(TAB_TRIGGER, "pr-1")}
+                                className={cn(TAB_TRIGGER, "pr-1", !tab.active && "cursor-pointer")}
                             >
                                 {Icon && <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />}
                                 <span className="truncate">{tab.title}</span>
@@ -134,7 +134,7 @@ export function WorkspaceTabBar({ page, breadcrumbs, actions, leading }: Workspa
                                 title="Cerrar pestaña"
                                 onClick={() => closeTab(tab.key)}
                                 className={cn(
-                                    "mr-1 size-5 shrink-0 p-0 transition-opacity hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring/30",
+                                    "mr-1 size-5 shrink-0 border-0 p-0 transition-opacity hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring/30",
                                     tab.active ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover/tab:opacity-100 sm:focus-visible:opacity-100",
                                 )}
                             >

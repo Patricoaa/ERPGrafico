@@ -43,7 +43,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
 
             {/* Task Inbox Content */}
             <div className="flex-1 overflow-hidden min-h-0">
-                {isOpen && <TaskInbox onCountChange={(c) => setTaskCount(c.total)} />}
+                {isOpen && <TaskInbox onCountChange={(c) => setTaskCount(c.total)} onClose={onClose} />}
             </div>
         </CollapsibleSheet>
     )

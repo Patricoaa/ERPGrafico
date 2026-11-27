@@ -38,7 +38,7 @@ export function UserSidebarMenu({ onProfileOpen, onNavigate, variant = "row" }: 
         <Button
             type="button"
             variant="ghost"
-            className="group/navitem h-control-sm w-full justify-start gap-2 px-2 text-xs font-normal text-foreground/80 hover:bg-foreground/5 hover:text-foreground"
+            className="group/navitem h-control-sm w-full cursor-pointer justify-start gap-2 px-2 text-xs font-normal text-foreground/80 hover:bg-foreground/5 hover:text-foreground"
         >
             <Blobatar name={userLabel} className="h-4 w-4 shrink-0 rounded-full" />
             <span className="flex-1 min-w-0 truncate text-left">Cuenta</span>
@@ -50,7 +50,7 @@ export function UserSidebarMenu({ onProfileOpen, onNavigate, variant = "row" }: 
             variant="outline"
             size="icon"
             aria-label={userLabel}
-            className="h-control-sm w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
+            className="h-control-sm w-8 cursor-pointer rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-0 bg-transparent shadow-none"
         >
             <Blobatar name={userLabel} className="h-full w-full rounded-full bg-transparent" />
         </Button>

@@ -312,7 +312,7 @@ export function ProductSelector({
                                     key={product.id}
                                     data-disabled={isStockRestricted(product) || isCustomDisabled(product)}
                                     className={cn(
-                                        "relative mx-1 flex cursor-default select-none items-start rounded-sm px-2 py-1.5 outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+                                        "relative mx-1 flex cursor-pointer select-none items-start rounded-sm px-2 py-1.5 outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
                                         selectedProduct?.id === product.id && "bg-accent"
                                     )}
                                     onClick={() => handleSelect(product)}

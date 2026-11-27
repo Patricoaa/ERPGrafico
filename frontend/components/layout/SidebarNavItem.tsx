@@ -34,7 +34,7 @@ export const SidebarNavItem = React.forwardRef<HTMLElement, SidebarNavItemProps>
     const showIcon = depth === 0 && (Icon || iconName)
 
     const classes = cn(
-        "group/navitem flex w-full items-center gap-2 h-8 rounded-sm px-2 text-xs text-left outline-none transition-colors",
+        "group/navitem flex w-full cursor-pointer items-center gap-2 h-8 rounded-sm px-2 text-xs text-left outline-none transition-colors",
         "focus-visible:ring-2 focus-visible:ring-ring/30",
         depth > 0 && "pl-8 text-foreground/75",
         depth > 1 && "pl-11 text-xs text-foreground/65",
