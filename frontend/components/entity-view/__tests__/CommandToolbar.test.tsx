@@ -160,6 +160,31 @@ describe("Collection command bar (ADR-0158 stage 3b)", () => {
         await user.click(await screen.findByRole("button", { name: "Restablecer" }))
         await waitFor(() => expect(url().get("status")).toBe("DRAFT"))
     })
+
+    it("shows a single predefined view as visible context (Decision A)", async () => {
+        const singleViewEntity = defineEntity<Note>()((f) => ({
+            title: "Notas",
+            fields: { number: f.code("number", { label: "Folio" }) },
+            query: { views: [{ id: "all", label: "Todas" }] },
+        }))
+        const singleViews = singleViewEntity.views({ table: { columns: ["number"] } })
+
+        function SingleToolbar() {
+            const query = useCollectionQuery(singleViewEntity, { sorting: "client" })
+            const collection = useEntityCollection(singleViewEntity, { rows, isLoading: false }, { sorting: query.sorting })
+            return (
+                <Collection.Root collection={collection} query={query} view="table" onViewChange={vi.fn()}>
+                    <Collection.Toolbar />
+                    <Collection.View table={singleViews.table} />
+                </Collection.Root>
+            )
+        }
+
+        render(<NuqsTestingAdapter><SingleToolbar /></NuqsTestingAdapter>)
+        const tab = screen.getByRole("tab", { name: "Todas" })
+        expect(tab).toHaveAttribute("aria-selected", "true")
+        expect(screen.getByRole("tablist", { name: "Vistas" })).toBeInTheDocument()
+    })
 })
 
 describe("Analytics modal scope and drill-down (ADR-0158 stage 3c)", () => {

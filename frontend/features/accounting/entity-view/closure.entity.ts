@@ -49,6 +49,12 @@ export const closureEntity = defineEntity<ClosureRow>()((f) => ({
         filters: {
             status: { field: "status", control: "single", options: [{ value: "OPEN", label: "Abierto" }, { value: "CLOSING", label: "En Cierre" }, { value: "CLOSED", label: "Cerrado" }] },
         },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "open", label: "Abiertos", filters: { status: "OPEN" } },
+            { id: "closing", label: "En Cierre", filters: { status: "CLOSING" } },
+            { id: "closed", label: "Cerrados", filters: { status: "CLOSED" } },
+        ],
     },
 }))
 

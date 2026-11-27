@@ -141,7 +141,6 @@ export interface RcvSettings {
     include_sales: boolean
     next_period: RcvNextPeriod
     estimated_monthly_queries: number
-    total_monthly_quota: number
     /** ISO date desde la que se cuadra; null = sin cuadre de faltantes en el ERP. */
     fiscal_match_start_date: string | null
     /** Ventana del cuadre TUU, 1..240 minutos. */
@@ -167,7 +166,6 @@ export interface RcvApiKey {
     label: string
     masked_key: string
     is_active: boolean
-    monthly_limit: number
     used_this_month: number
     /** ISO date */
     exhausted_until: string | null
@@ -180,7 +178,6 @@ export interface RcvApiKeyPayload {
     label?: string
     key?: string
     is_active?: boolean
-    monthly_limit?: number
 }
 
 export interface RcvDocumentFilters {

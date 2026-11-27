@@ -6,29 +6,25 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { KeyRound } from "lucide-react"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, CancelButton, Drawer, FormFooter, LabeledInput, LabeledSwitch, SubmitButton } from "@/components/shared"
+import { ActionConfirmModal, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSwitch, SubmitButton } from "@/components/shared"
 import { Can } from "@/components/auth"
 import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
-import { formDrawerWidth } from "@/lib/form-widths"
 import { getFieldErrorMessage } from "@/lib/errors"
 import { useRcvApiKeyMutations } from "@/features/accounting"
 import type { RcvApiKey, RcvApiKeyPayload } from "@/features/accounting"
 
-import { missingRcvKeyMessage, rcvApiKeySchema, type RcvApiKeyFormValues } from "./rcvApiKeyDrawer.schema"
+import { missingRcvKeyMessage, rcvApiKeySchema, type RcvApiKeyFormValues } from "./rcvApiKeyModal.schema"
 
-interface RcvApiKeyDrawerProps {
+interface RcvApiKeyModalProps {
     /** `null` crea una nueva API key. */
     apiKey: RcvApiKey | null
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-const EMPTY_VALUES: RcvApiKeyFormValues = { label: "", key: "", is_active: true, monthly_limit: 10 }
+const EMPTY_VALUES: RcvApiKeyFormValues = { label: "", key: "", is_active: true }
 
-const numberValue = (value: number) => (Number.isNaN(value) ? "" : value)
-const parseNumber = (raw: string) => (raw === "" ? Number.NaN : Number(raw))
-
-export function RcvApiKeyDrawer({ apiKey, open, onOpenChange }: RcvApiKeyDrawerProps) {
+export function RcvApiKeyModal({ apiKey, open, onOpenChange }: RcvApiKeyModalProps) {
     const { create, update, remove, isCreating, isUpdating, isRemoving } = useRcvApiKeyMutations()
     const [confirmOpen, setConfirmOpen] = useState(false)
     const isEditing = apiKey !== null
@@ -44,7 +40,7 @@ export function RcvApiKeyDrawer({ apiKey, open, onOpenChange }: RcvApiKeyDrawerP
         open,
         initialData: apiKey,
         defaultValues: () => EMPTY_VALUES,
-        mapData: (data) => ({ label: data.label, key: "", is_active: data.is_active, monthly_limit: data.monthly_limit }),
+        mapData: (data) => ({ label: data.label, key: "", is_active: data.is_active }),
     })
 
     const onSubmit = async (values: RcvApiKeyFormValues) => {
@@ -56,7 +52,6 @@ export function RcvApiKeyDrawer({ apiKey, open, onOpenChange }: RcvApiKeyDrawerP
         const payload: RcvApiKeyPayload = {
             label: values.label ?? "",
             is_active: values.is_active,
-            monthly_limit: values.monthly_limit,
             ...(values.key?.trim() ? { key: values.key.trim() } : {}),
         }
         try {
@@ -83,15 +78,13 @@ export function RcvApiKeyDrawer({ apiKey, open, onOpenChange }: RcvApiKeyDrawerP
 
     return (
         <>
-            <Drawer
+            <BaseModal
                 open={open}
                 onOpenChange={onOpenChange}
-                side="left"
-                defaultSize={formDrawerWidth("simple", isEditing)}
-                mode={isEditing ? "edit" : "create"}
+                size="sm"
                 icon={KeyRound}
                 title={isEditing ? "Editar API key" : "Agregar API key"}
-                subtitle="Clave de SimpleAPI usada para consultar el RCV del SII."
+                description="Clave de SimpleAPI usada para consultar el RCV del SII."
                 footer={
                     <Can permission={writePermission}>
                         <FormFooter
@@ -115,7 +108,7 @@ export function RcvApiKeyDrawer({ apiKey, open, onOpenChange }: RcvApiKeyDrawerP
                 }
             >
                 <Form {...form}>
-                    <form className="space-y-4 p-6" onSubmit={form.handleSubmit(onSubmit)}>
+                    <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
                         <FormField
                             control={form.control}
                             name="label"
@@ -148,24 +141,6 @@ export function RcvApiKeyDrawer({ apiKey, open, onOpenChange }: RcvApiKeyDrawerP
                         />
                         <FormField
                             control={form.control}
-                            name="monthly_limit"
-                            render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    label="Cupo mensual"
-                                    hint="Consultas por mes, entre 1 y 1000."
-                                    type="number"
-                                    {...field}
-                                    value={numberValue(field.value)}
-                                    onChange={(event) => field.onChange(parseNumber(event.target.value))}
-                                    min={1}
-                                    max={1000}
-                                    step={1}
-                                    error={fieldState.error?.message}
-                                />
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
                             name="is_active"
                             render={({ field }) => (
                                 <LabeledSwitch
@@ -178,7 +153,7 @@ export function RcvApiKeyDrawer({ apiKey, open, onOpenChange }: RcvApiKeyDrawerP
                         />
                     </form>
                 </Form>
-            </Drawer>
+            </BaseModal>
 
             <ActionConfirmModal
                 open={confirmOpen}

@@ -55,6 +55,7 @@ export const stockReportEntity = defineEntity<StockReportItem>()((f) => ({
             total_value: { field: "totalValue", control: "range", paramFrom: "total_value_from", paramTo: "total_value_to" },
         },
         sort: { fields: ["name", "stockQty", "qtyReserved", "qtyAvailable", "totalValue"] },
+        views: [{ id: "all", label: "Todos" }],
     },
 }))
 

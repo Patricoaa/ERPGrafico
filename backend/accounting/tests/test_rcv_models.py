@@ -31,7 +31,6 @@ def test_api_key_masked():
     assert k.masked_key == "••••-4472"
     assert k.get_key() == "TEST-KEY-0000-0000-4472"
     assert "TEST-KEY" not in k.key_encrypted
-    assert k.monthly_limit == 10
 
 
 def _doc(imp, **kw):

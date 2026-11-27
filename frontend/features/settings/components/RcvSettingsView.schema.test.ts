@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { rcvSettingsSchema, validateRcvSettings, type RcvSettingsFormValues } from "./RcvSettingsView.schema"
-import { rcvApiKeySchema, missingRcvKeyMessage } from "./rcvApiKeyDrawer.schema"
+import { rcvApiKeySchema, missingRcvKeyMessage } from "./rcvApiKeyModal.schema"
 
 const base: RcvSettingsFormValues = {
     company_rut: "", user_rut: "", enabled: false, interval_days: 7, run_hour: 6, include_purchases: true, include_sales: true,
@@ -40,11 +40,9 @@ describe("rcvSettingsSchema", () => {
 })
 
 describe("rcvApiKeySchema", () => {
-    const key = { label: "", key: "", is_active: true, monthly_limit: 10 }
-    it("acota el cupo mensual y la etiqueta", () => {
+    const key = { label: "", key: "", is_active: true }
+    it("acota la etiqueta", () => {
         expect(rcvApiKeySchema.safeParse(key).success).toBe(true)
-        expect(rcvApiKeySchema.safeParse({ ...key, monthly_limit: 0 }).success).toBe(false)
-        expect(rcvApiKeySchema.safeParse({ ...key, monthly_limit: 1001 }).success).toBe(false)
         expect(rcvApiKeySchema.safeParse({ ...key, label: "x".repeat(61) }).success).toBe(false)
     })
     it("la key es obligatoria solo al crear", () => {

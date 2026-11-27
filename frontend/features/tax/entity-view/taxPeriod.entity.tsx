@@ -57,6 +57,31 @@ export const taxPeriodEntity = defineEntity<TaxPeriod>()((f) => ({
     // ADR-0158 §3: la lista carga todos los períodos y filtra en el navegador (mes o año).
     query: {
         search: { placeholder: "Buscar período…", scopes: [{ field: "period", param: "month_display", clientKey: ["month_display", "year"] }] },
+        filters: {
+            status: {
+                field: "status",
+                control: "single",
+                options: [
+                    { value: "OPEN", label: "Abierto" },
+                    { value: "CLOSED", label: "Cerrado" },
+                    { value: "REPORTED", label: "Reportado" },
+                ],
+            },
+            paymentStatus: {
+                field: "paymentStatus",
+                control: "single",
+                options: [
+                    { value: "PAID", label: "Pagado" },
+                    { value: "VOIDED", label: "Pendiente de pago" },
+                ],
+            },
+        },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "open", label: "Abiertos", filters: { status: "OPEN" } },
+            { id: "closed", label: "Cerrados", filters: { status: "CLOSED" } },
+            { id: "reported", label: "Reportados", filters: { status: "REPORTED" } },
+        ],
     },
 }))
 

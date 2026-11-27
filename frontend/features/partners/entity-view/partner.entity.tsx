@@ -89,6 +89,7 @@ export const partnerEntity = defineEntity<Partner>()((f) => ({
             has_withdrawals: { label: "Con retiros provisorios", control: "toggle" },
         },
         sort: { fields: ["name", "equityPercentage", "totalContributions", "totalPaidIn", "pendingCapital", "provisionalWithdrawals", "earningsBalance", "dividendsPayable", "netEquity"], default: "name" },
+        views: [{ id: "all", label: "Todos" }],
     },
 }))
 

@@ -41,6 +41,11 @@ export const posTerminalEntity = defineEntity<Terminal>()((f) => ({
             status: { field: "isActive", control: "single", options: [{ value: "ACTIVE", label: "Activos" }, { value: "INACTIVE", label: "Inactivos" }] },
         },
         sort: { fields: ["code", "name", "location", "device"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { status: "ACTIVE" } },
+            { id: "inactive", label: "Inactivas", filters: { status: "INACTIVE" } },
+        ],
     },
 }))
 

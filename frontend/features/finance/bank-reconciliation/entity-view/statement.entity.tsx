@@ -75,6 +75,12 @@ export const statementEntity = defineEntity<BankStatement>()((f) => ({
         },
         sort: { fields: ["date", "displayId", "account", "openingBalance", "closingBalance", "state"], default: "-date" },
         groupBy: { fields: ["account", "state"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "draft", label: "Borradores", filters: { state: "DRAFT" } },
+            { id: "confirmed", label: "Confirmadas", filters: { state: "CONFIRMED" } },
+            { id: "cancelled", label: "Anuladas", filters: { state: "CANCELLED" } },
+        ],
     },
 }))
 

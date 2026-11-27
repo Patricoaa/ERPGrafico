@@ -64,6 +64,13 @@ export const terminalBatchEntity = defineEntity<TerminalBatch>()((f) => ({
         },
         sort: { fields: ["salesDate", "transactionCount", "netAmount", "commissionTotal", "status"], default: "-salesDate" },
         groupBy: { fields: ["salesDate", "status"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "pending", label: "Pendientes", filters: { status: "PENDING" } },
+            { id: "settled", label: "Liquidadas", filters: { status: "SETTLED" } },
+            { id: "reconciled", label: "Conciliadas", filters: { status: "RECONCILED" } },
+            { id: "invoiced", label: "Facturadas", filters: { status: "INVOICED" } },
+        ],
     },
 }))
 

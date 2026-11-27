@@ -37,6 +37,11 @@ export const accountEntity = defineEntity<AccountWithChildren>()((f) => ({
             is_active: { field: "isActive", control: "single", options: [{ value: "true", label: "Activo" }, { value: "false", label: "Archivado" }] },
         },
         sort: { fields: ["name", "accountType", "debitTotal", "creditTotal", "balance", "isActive"] },
+        views: [
+            { id: "all", label: "Todas" },
+            { id: "active", label: "Activas", filters: { is_active: "true" } },
+            { id: "archived", label: "Archivadas", filters: { is_active: "false" } },
+        ],
     },
 }))
 

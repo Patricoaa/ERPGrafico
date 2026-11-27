@@ -550,7 +550,7 @@ def test_execute_import_skips_non_queued_import():
 
 
 @pytest.mark.django_db
-def test_select_api_key_prefers_least_used_and_skips_full():
+def test_select_api_key_prefers_least_used_without_internal_limit():
     today = date(2026, 11, 14)
     k1 = make_api_key("TEST-KEY-1")
     k2 = make_api_key("TEST-KEY-2")
@@ -571,13 +571,18 @@ def test_select_api_key_prefers_least_used_and_skips_full():
         [RCVImportAttempt(rcv_import=imp, api_key=k3, outcome=Outcome.OK)] * 2
     )
     assert rcv_service.select_api_key(today) == k4  # k4 (2) y k2 (3); k3 ahora 3
+    # Sin límite interno: una key con muchos usos sigue elegible; solo la descarta
+    # ``exhausted_until`` (lo que informa SimpleAPI).
     RCVImportAttempt.objects.bulk_create(
-        [RCVImportAttempt(rcv_import=imp, api_key=k4, outcome=Outcome.OK)] * 8
+        [RCVImportAttempt(rcv_import=imp, api_key=k, outcome=Outcome.OK) for k in (k2, k3, k4)]
+        * 50
     )
+    # k1 (10) — antes excluida por el límite de 10 — es ahora la de menor uso.
+    assert rcv_service.select_api_key(today) == k1
     RCVImportAttempt.objects.bulk_create(
-        [RCVImportAttempt(rcv_import=imp, api_key=k, outcome=Outcome.OK) for k in (k2, k3)] * 7
+        [RCVImportAttempt(rcv_import=imp, api_key=k1, outcome=Outcome.OK)] * 100
     )
-    assert rcv_service.select_api_key(today) is None
+    assert rcv_service.select_api_key(today) == k4  # k4 (52) < k2, k3 (53) < k1 (110)
 
 
 @pytest.mark.django_db

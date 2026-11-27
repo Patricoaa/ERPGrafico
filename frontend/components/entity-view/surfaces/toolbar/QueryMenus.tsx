@@ -232,6 +232,7 @@ interface ViewTabsProps {
 
 /** Predefined views as tabs (ADR-0158 §9), with «Restablecer» once the state drifts from the view. */
 export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, viewCounts }: ViewTabsProps) {
+    const single = views.length === 1
     return (
         <div className="flex flex-wrap items-center gap-x-1 border-b border-border/50">
             <div role="tablist" aria-label="Vistas" className="flex flex-wrap items-center">
@@ -239,6 +240,7 @@ export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, vie
                     const selected = view.id === activeId
                     const total = viewCounts?.[view.id]
                     const accent = CMYK_ACCENT[index % CMYK_ACCENT.length]
+                    const interactive = !single
                     return (
                         <Button
                             key={view.id}
@@ -247,13 +249,14 @@ export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, vie
                             role="tab"
                             aria-selected={selected}
                             data-state={selected ? "active" : "inactive"}
-                            onClick={() => onSelect(view.id)}
+                            onClick={interactive ? () => onSelect(view.id) : undefined}
                             className={cn(
                                 "group relative -mb-px h-control-sm rounded-none border-b-2 border-transparent bg-transparent px-3 text-xs transition-all duration-200",
                                 "hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                                 selected
                                     ? cn(accent.activeText, "font-semibold")
                                     : cn("text-foreground/60 font-medium hover:font-semibold", accent.hoverText),
+                                single && "cursor-default hover:font-semibold",
                             )}
                         >
                             {view.label}
@@ -268,7 +271,8 @@ export function ViewTabs({ views, activeId, onSelect, dirty, onReset, count, vie
                                 className={cn(
                                     "absolute bottom-[-1px] left-0 h-[2px] w-full transition-opacity duration-200",
                                     accent.bar,
-                                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                                    selected && interactive ? "opacity-100" : "opacity-0",
+                                    interactive && !selected && "group-hover:opacity-100",
                                 )}
                             />
                         </Button>

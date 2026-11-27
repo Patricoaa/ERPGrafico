@@ -128,6 +128,13 @@ export const stockMoveEntity = defineEntity<StockMove>()((f) => ({
             },
         },
         groupBy: { fields: ["date", "productName"] },
+        views: [
+            { id: "all", label: "Todos" },
+            { id: "in", label: "Entradas", filters: { direction: "IN" } },
+            { id: "out", label: "Salidas", filters: { direction: "OUT" } },
+            { id: "transfer", label: "Transferencias", filters: { direction: "TRANSFER" } },
+            { id: "adjustment", label: "Ajustes", filters: { direction: "ADJUSTMENT" } },
+        ],
     },
 }))
 
