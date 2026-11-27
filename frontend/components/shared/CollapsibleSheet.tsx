@@ -146,11 +146,10 @@ export function CollapsibleSheet({
             data-sheet-id={sheetId}
             className={cn(
                 "p-0 rounded-none! bg-card text-foreground",
-                side === "left" ? "border-r border-border/40" : "border-l border-border/40",
                 fullViewport
                     ? "top-0 bottom-0 h-[100dvh]"
                     : "top-[var(--header-height)] bottom-0 h-[calc(100dvh-var(--header-height))]",
-                (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
+                (!open || isCollapsed) ? "" : "translate-x-0",
                 allowOverflow ? "overflow-visible" : "overflow-hidden",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
                 (isHidden && !forceCollapse) && "hidden",

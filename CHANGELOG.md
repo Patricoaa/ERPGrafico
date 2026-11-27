@@ -2,12 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [0.3.204](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.203...v0.3.204) (2026-11-27)
+### [0.3.205](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.204...v0.3.205) (2026-11-27)
 
 
 ### 🐛 Bug Fixes
 
 * **shell:** solapas sin bordes, separación ni margen lateral, esquina superior derecha `md`; activa con `bg-card` como las páginas e inactiva levemente más oscura
+
+### [0.3.204](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.203...v0.3.204) (2026-11-27)
+
+
+### ✨ Features
+
+* **entity-view:** adopt CMYK accent in collection view tabs ([2c7e77f](https://github.com/Patricoaa/ERPGrafico/commit/2c7e77f0e567457659c320d8ef1d2fc18e523f7f))
+
+
+### 🐛 Bug Fixes
+
+* **ui:** remove outer border from viewport drawers ([4bf37a7](https://github.com/Patricoaa/ERPGrafico/commit/4bf37a7860be3f8b8a4a3f251fd0a519f8f1c155))
+* **workflow:** add top padding to task inbox tab bar ([46d22cf](https://github.com/Patricoaa/ERPGrafico/commit/46d22cf7af1d79bc50e4b3db8f0f828c438c3bbf))
+* **workflow:** align inbox card structure and click behavior ([87abc4d](https://github.com/Patricoaa/ERPGrafico/commit/87abc4de84630d0c691f67fc56fb2b236193afcf))
+* **workflow:** fix task card pointer and remove approval footer ([209fb98](https://github.com/Patricoaa/ERPGrafico/commit/209fb984787ee6e5239adf91375ced7db65c45e7))
+* **workflow:** improve task inbox card spacing and layout ([db1e421](https://github.com/Patricoaa/ERPGrafico/commit/db1e4213868ddb72610a64cca35603fbc5dd08b0))
 
 ### [0.3.203](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.202...v0.3.203) (2026-11-27)
 

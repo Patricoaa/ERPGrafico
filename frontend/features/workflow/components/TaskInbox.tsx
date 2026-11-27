@@ -221,7 +221,7 @@ function SectionGroup({ title, count, hint, expanded, onToggle, children, always
                     {hint && <span className="text-3xs text-muted-foreground/35 shrink-0">{hint}</span>}
                     {action}
                 </div>
-                <div className="space-y-1 px-3">{children}</div>
+                <div className="space-y-2 px-3">{children}</div>
             </div>
         )
     }
@@ -244,7 +244,7 @@ function SectionGroup({ title, count, hint, expanded, onToggle, children, always
                 </div>
             </Button>
             {expanded && (
-                <div className={cn("mt-1 space-y-1 px-3", fadeInClass({ from: "top", distance: 1, duration: 150 }))}>
+                <div className={cn("mt-1 space-y-2 px-3", fadeInClass({ from: "top", distance: 1, duration: 150 }))}>
                     {children}
                 </div>
             )}
@@ -264,9 +264,9 @@ function isNavigableNotification(n: Notification): boolean {
     return !!n.link || (typeof n.data?.label === 'string' && typeof n.data?.id === 'number')
 }
 
-function CtaBar({ children }: { children: React.ReactNode }) {
+function CtaBar({ children, onClick }: { children: React.ReactNode; onClick?: React.MouseEventHandler<HTMLDivElement> }) {
     return (
-        <div className="flex items-center gap-1 px-3 py-1.5 border-t border-border/20 bg-muted/15">
+        <div className="flex items-center gap-1 px-3 py-1.5 border-t border-border/20 bg-muted/15" onClick={onClick}>
             {children}
         </div>
     )
@@ -276,9 +276,10 @@ function CtaBar({ children }: { children: React.ReactNode }) {
 
 interface TaskInboxProps {
     onCountChange?: (counts: { total: number; approvals: number; tasks: number; notifications: number }) => void
+    onClose?: () => void
 }
 
-export function TaskInbox({ onCountChange }: TaskInboxProps) {
+export function TaskInbox({ onCountChange, onClose }: TaskInboxProps) {
     const { approvalTasks, operationalTasks, isLoading, refetch } = useTasks()
     const [actioningTask, setActioningTask] = useState<number | null>(null)
     const [activeTab, setActiveTab] = useState("all")
@@ -338,9 +339,16 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         // Notificaciones con entidad (comentarios, ADR-0111) se abren en su drawer.
         const label = n.data?.label
         const id = n.data?.id
-        if (typeof label === 'string' && typeof id === 'number') { openEntity(label, id); return }
-        if (n.link) router.push(n.link)
-    }, [router, openEntity])
+        if (typeof label === 'string' && typeof id === 'number') {
+            openEntity(label, id)
+            onClose?.()
+            return
+        }
+        if (n.link) {
+            router.push(n.link)
+            onClose?.()
+        }
+    }, [router, openEntity, onClose])
 
     const handleMarkAllRead = useCallback(async () => {
         try {
@@ -368,22 +376,31 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         // Credit POS: open customer sheet as entity drawer
         if (task.task_type === 'CREDIT_POS_REQUEST') {
             const customerId = task.data?.customer_id
-            if (customerId) openEntity('contacts.contact', Number(customerId))
+            if (customerId) {
+                openEntity('contacts.contact', Number(customerId))
+                onClose?.()
+            }
             return
         }
         const target = documentForTask(task)
-        if (target) { openEntity(target.label, target.id); return }
+        if (target) {
+            openEntity(target.label, target.id)
+            onClose?.()
+            return
+        }
         if (task.task_type === 'F29_CREATE' || task.task_type === 'F29_PAY') {
             const year = task.data?.year ?? ''; const month = task.data?.month ?? ''
             window.location.href = `/accounting?view=tax&year=${year}&month=${month}&action=${task.task_type === 'F29_PAY' ? 'pay' : 'create'}`
+            onClose?.()
             return
         }
         if (task.task_type === 'PERIOD_CLOSE') {
             window.location.href = `/accounting/periods?year=${task.data?.year ?? ''}&month=${task.data?.month ?? ''}`
+            onClose?.()
             return
         }
         toast.info("Navegación específica no configurada para este tipo de tarea")
-    }, [openEntity])
+    }, [openEntity, onClose])
 
     useEffect(() => {
         if (selectedId && !isLoading) {
@@ -449,8 +466,6 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         const cardRef = getCardRef(task)
         const primaryAmount = getPrimaryAmount(task)
         const Icon = getTaskIcon(task)
-        const hasDocument = !!documentForTask(task)
-        const canOpenCustomer = task.task_type === 'CREDIT_POS_REQUEST' && !!task.data?.customer_id
         const assigneeName = task.assigned_group_name ?? task.assigned_to_data?.username ?? null
         const createdAt = task.created_at ? relativeTime(task.created_at) : null
 
@@ -459,48 +474,67 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         return (
             <div
                 key={task.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Abrir aprobación: ${cardTitle}`}
+                onClick={() => navigateToTask(task)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        navigateToTask(task)
+                    }
+                }}
                 className={cn(
-                    "surface-item flex flex-col rounded-sm select-none overflow-hidden",
+                    "surface-item group flex items-stretch rounded-sm select-none overflow-hidden cursor-pointer transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     !isActive && "opacity-50",
                 )}
             >
-                <div className="flex items-start gap-2 p-3 pb-2">
-                    <Icon className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", iconColor)} aria-hidden />
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-1.5">
-                            <p className="text-xs font-semibold tracking-tight text-foreground leading-snug">
-                                {cardTitle}
-                            </p>
-                            {primaryAmount && (
-                                <span className="text-xs font-bold tabular-nums shrink-0 text-foreground/80 leading-snug">
-                                    {primaryAmount}
-                                </span>
-                            )}
+                <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-border/15 bg-muted/10">
+                    <Icon className={cn("h-5 w-5", iconColor)} aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1 flex flex-col">
+                    <div className="p-3 pb-2">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold tracking-tight text-foreground leading-snug">
+                                    {cardTitle}
+                                </p>
+                                {cardRef && (
+                                    <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
+                                        {cardRef}
+                                    </span>
+                                )}
+                                {primaryAmount && (
+                                    <p className="mt-1 text-xs font-bold tabular-nums text-foreground/80 leading-snug">
+                                        {primaryAmount}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="flex shrink-0 flex-col items-end gap-1 text-muted-foreground/55 transition-colors group-hover:text-foreground">
+                                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                                {createdAt && <span className="text-2xs text-muted-foreground/45">{createdAt}</span>}
+                            </div>
                         </div>
 
-                        {cardRef && (
-                            <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
-                                {cardRef}
-                            </span>
-                        )}
-
-                        {(assigneeName || createdAt) && (
-                            <p className="flex items-center gap-1 text-2xs text-muted-foreground/45 mt-1">
-                                {assigneeName && <><User className="h-2.5 w-2.5 shrink-0" aria-hidden /><span>{assigneeName}</span></>}
-                                {assigneeName && createdAt && <span aria-hidden>·</span>}
-                                {createdAt && <span>{createdAt}</span>}
-                            </p>
-                        )}
-
-                        {contextItems.length > 0 && (
-                            <dl className="flex flex-wrap gap-x-3 gap-y-0 mt-1.5">
-                                {contextItems.map(({ label, value }) => (
-                                    <div key={label} className="flex items-baseline gap-1">
-                                        <dt className="text-2xs text-muted-foreground/40 font-medium">{label}:</dt>
-                                        <dd className="text-2xs text-foreground/65 tabular-nums">{value}</dd>
-                                    </div>
-                                ))}
-                            </dl>
+                        {(assigneeName || contextItems.length > 0) && (
+                            <div className="mt-1.5 space-y-1">
+                                {assigneeName && (
+                                    <p className="flex items-center gap-1 text-2xs text-muted-foreground/45">
+                                        <User className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                                        <span>{assigneeName}</span>
+                                    </p>
+                                )}
+                                {contextItems.length > 0 && (
+                                    <dl className="flex flex-wrap gap-x-3 gap-y-0">
+                                        {contextItems.map(({ label, value }) => (
+                                            <div key={label} className="flex items-baseline gap-1">
+                                                <dt className="text-2xs text-muted-foreground/40 font-medium">{label}:</dt>
+                                                <dd className="text-2xs text-foreground/65 tabular-nums">{value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                )}
+                            </div>
                         )}
 
                         {approvalsInCurrentCycle(task) > 0 && isActive && (
@@ -511,50 +545,38 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             </p>
                         )}
                     </div>
-                </div>
 
-                {(showInline || forceOpenDoc || hasDocument || canOpenCustomer) && (
-                    <CtaBar>
-                        {showInline && (
-                            <>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="flex-1 text-3xs h-control-xs px-2 border-destructive/30 text-destructive hover:bg-destructive/10 rounded-sm font-semibold uppercase tracking-wide"
-                                    onClick={(e) => handleApprovalAction(e, task, 'REJECT')}
-                                    disabled={actioningTask === task.id}
-                                >
-                                    Rechazar
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    className="flex-1 text-3xs h-control-xs px-2 bg-success/90 hover:bg-success text-success-foreground font-semibold rounded-sm uppercase tracking-wide"
-                                    onClick={(e) => handleApprovalAction(e, task, 'APPROVE')}
-                                    disabled={actioningTask === task.id}
-                                >
-                                    Aprobar
-                                </Button>
-                            </>
-                        )}
-                        {forceOpenDoc && isActive && (
-                            <p className="text-2xs text-muted-foreground/55 flex-1 italic">
-                                Abre la OT para completar la rectificación.
-                            </p>
-                        )}
-                        {(hasDocument || canOpenCustomer) && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 px-2 text-2xs text-muted-foreground/50 hover:text-foreground gap-1 shrink-0 font-medium ml-auto"
-                                onClick={() => navigateToTask(task)}
-                                aria-label={canOpenCustomer ? "Ver ficha de cliente" : "Ver documento"}
-                            >
-                                <ExternalLink className="h-3 w-3" />
-                                {canOpenCustomer ? 'Ver cliente' : 'Ver doc.'}
-                            </Button>
-                        )}
-                    </CtaBar>
-                )}
+                    {(showInline || (forceOpenDoc && isActive)) && (
+                        <CtaBar onClick={(e) => e.stopPropagation()}>
+                            {showInline && (
+                                <>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 text-3xs h-control-xs px-2 border-destructive/30 text-destructive hover:bg-destructive/10 rounded-sm font-semibold uppercase tracking-wide"
+                                        onClick={(e) => handleApprovalAction(e, task, 'REJECT')}
+                                        disabled={actioningTask === task.id}
+                                    >
+                                        Rechazar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        className="flex-1 text-3xs h-control-xs px-2 bg-success/90 hover:bg-success text-success-foreground font-semibold rounded-sm uppercase tracking-wide"
+                                        onClick={(e) => handleApprovalAction(e, task, 'APPROVE')}
+                                        disabled={actioningTask === task.id}
+                                    >
+                                        Aprobar
+                                    </Button>
+                                </>
+                            )}
+                            {forceOpenDoc && isActive && (
+                                <p className="text-2xs text-muted-foreground/55 flex-1 italic">
+                                    Abre la OT para completar la rectificación.
+                                </p>
+                            )}
+                        </CtaBar>
+                    )}
+                </div>
             </div>
         )
     }
@@ -572,28 +594,25 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 variant="ghost"
                 onClick={() => navigateToTask(task)}
                 aria-label={`Abrir tarea: ${getCardTitle(task)}`}
-                className="surface-item group h-auto min-h-0 w-full flex flex-col items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="surface-item group h-auto min-h-0 w-full flex cursor-pointer items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-                <div className="flex items-start gap-2 p-3">
-                    <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 mt-0.5" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
+                <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-border/15 bg-muted/10">
+                    <Icon className="h-5 w-5 text-muted-foreground/50" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-foreground leading-snug">{getCardTitle(task)}</p>
-                            <span className="flex shrink-0 items-center gap-1 text-2xs font-medium text-muted-foreground/55 transition-colors group-hover:text-foreground">
-                                <ExternalLink className="h-3 w-3" aria-hidden />
-                                Abrir
-                            </span>
+                            {cardRef && (
+                                <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
+                                    {cardRef}
+                                </span>
+                            )}
                         </div>
-                        {cardRef && (
-                            <span className="inline-block mt-0.5 text-3xs text-muted-foreground/55 font-mono bg-muted/50 px-1.5 py-px rounded-sm leading-none">
-                                {cardRef}
-                            </span>
-                        )}
-                        {createdAt && (
-                            <p className="flex items-center gap-1 text-2xs text-muted-foreground/45 mt-1">
-                                {createdAt && <span>{createdAt}</span>}
-                            </p>
-                        )}
+                        <div className="flex shrink-0 flex-col items-end gap-1 text-muted-foreground/55 transition-colors group-hover:text-foreground">
+                            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                            {createdAt && <span className="text-2xs text-muted-foreground/45">{createdAt}</span>}
+                        </div>
                     </div>
                 </div>
             </Button>
@@ -605,6 +624,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const renderNotificationCard = (n: Notification) => {
         const Icon = NOTIFICATION_ICONS[n.notification_type ?? ''] ?? Bell
         const navigable = isNavigableNotification(n)
+        const createdAt = relativeTime(n.created_at)
         return (
             <Button
                 key={n.id}
@@ -613,29 +633,32 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 onClick={() => handleNotificationClick(n)}
                 aria-label={`${navigable ? 'Abrir' : 'Marcar como leído'}: ${n.title}`}
                 className={cn(
-                    "surface-item group h-auto min-h-0 w-full flex items-start justify-start gap-2 overflow-hidden rounded-sm p-3 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    "surface-item group h-auto min-h-0 w-full flex cursor-pointer items-stretch justify-start overflow-hidden rounded-sm p-0 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     !n.read && "bg-primary/[0.03]",
                 )}
             >
-                <Icon className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", n.read ? "text-muted-foreground/40" : "text-primary")} aria-hidden />
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-1.5">
-                        <p className={cn("truncate text-xs leading-snug", n.read ? "font-medium text-foreground/60" : "font-semibold text-foreground")}>
-                            {n.title}
-                        </p>
-                        <span className="shrink-0 text-3xs text-muted-foreground/40">{relativeTime(n.created_at)}</span>
-                        {!n.read && <span className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-primary" aria-label="No leído" />}
-                    </div>
-                    {n.message && (
-                        <p className="mt-0.5 line-clamp-2 whitespace-normal text-2xs text-muted-foreground/60">{n.message}</p>
-                    )}
+                <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-border/15 bg-muted/10">
+                    <Icon className={cn("h-5 w-5", n.read ? "text-muted-foreground/40" : "text-primary")} aria-hidden />
                 </div>
-                {navigable && (
-                    <ExternalLink
-                        className="h-3 w-3 shrink-0 self-center text-muted-foreground/45 transition-colors group-hover:text-foreground"
-                        aria-hidden
-                    />
-                )}
+                <div className="min-w-0 flex-1 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                                <p className={cn("truncate text-xs leading-snug", n.read ? "font-medium text-foreground/60" : "font-semibold text-foreground")}>
+                                    {n.title}
+                                </p>
+                                {!n.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-label="No leído" />}
+                            </div>
+                            {n.message && (
+                                <p className="mt-0.5 line-clamp-2 whitespace-normal text-2xs text-muted-foreground/60">{n.message}</p>
+                            )}
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1 text-muted-foreground/45 transition-colors group-hover:text-foreground">
+                            {navigable && <ExternalLink className="h-3.5 w-3.5" aria-hidden />}
+                            <span className="text-3xs text-muted-foreground/40">{createdAt}</span>
+                        </div>
+                    </div>
+                </div>
             </Button>
         )
     }
@@ -678,7 +701,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 variant="underline"
                 dense
                 stretchTabs
-                className="w-full"
+                className="w-full pt-2"
                 contentClassName="flex-1 min-h-0 bg-transparent flex flex-col overflow-hidden"
             >
                 {/* ── Todo tab ──────────────────────────────────────────────── */}
