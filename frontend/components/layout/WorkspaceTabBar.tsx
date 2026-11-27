@@ -28,10 +28,10 @@ interface WorkspaceTabBarProps {
     leading?: ReactNode
 }
 
-const TAB_BASE = "group/tab relative -mb-px flex h-9 min-w-0 shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors"
-const TAB_ACTIVE = "border-border/60 bg-background text-foreground"
-const TAB_IDLE = "border-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
-const TAB_TRIGGER = "h-full min-w-0 flex-1 justify-start gap-1.5 rounded-t-md rounded-b-none py-0 pl-2.5 pr-2 text-xs font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset focus-visible:border-transparent"
+const TAB_BASE = "group/tab relative flex h-9 min-w-0 shrink-0 items-center overflow-hidden rounded-tr-sm text-xs transition-colors"
+const TAB_ACTIVE = "bg-primary text-primary-foreground"
+const TAB_IDLE = "bg-[color-mix(in_oklch,var(--background)_92%,black)] text-muted-foreground hover:bg-[color-mix(in_oklch,var(--background)_86%,black)] hover:text-foreground"
+const TAB_TRIGGER = "h-full min-w-0 flex-1 justify-start gap-1.5 rounded-none py-0 pl-2.5 pr-2 text-xs font-normal text-inherit hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset"
 
 /**
  * Barra de trabajo: primer panel del viewport (ADR-0101, sustituye a la topbar).
@@ -76,7 +76,7 @@ export function WorkspaceTabBar({ page, breadcrumbs, actions, leading }: Workspa
                 role="tablist"
                 aria-label="Pestañas abiertas"
                 onKeyDown={onKeyDown}
-                className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto scrollbar-hide"
+                className="flex min-w-0 flex-1 items-end gap-0 overflow-x-auto scrollbar-hide"
             >
                 <div className={cn(TAB_BASE, "max-w-64", pageActive ? TAB_ACTIVE : TAB_IDLE)}>
                     <Button

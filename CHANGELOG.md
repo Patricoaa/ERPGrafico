@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.204](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.203...v0.3.204) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **shell:** solapas de la barra de trabajo sin bordes, separación ni sangrado; estado inactivo levemente más oscuro que el fondo
+
 ### [0.3.203](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.202...v0.3.203) (2026-11-27)
 
 
