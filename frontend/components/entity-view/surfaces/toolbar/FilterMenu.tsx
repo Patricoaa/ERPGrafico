@@ -59,83 +59,102 @@ interface FilterMenuProps {
     onDraft?: (draft: FilterDraft | null) => void
 }
 
+/** Imperative close/discard contract shared by the standalone menu and the «Ajustes» popover. */
+export interface FilterMenuHandle {
+    /** Close: commit a pending draft unless Escape marked it discarded. */
+    commit: () => void
+    /** Escape: drop the pending draft instead of applying it on close. */
+    discard: () => void
+}
+
 /**
- * Two-pane filter menu (ADR-0158 §5): filters on the left (search, chosen-value count), values of
+ * Two-pane filter body (ADR-0158 §5): filters on the left (search, chosen-value count), values of
  * the selected one on the right. `toggle` / `single` apply at once; `multi`, `range` and a custom
  * `date` range apply with «Aplicar» or when the menu closes; Esc discards.
  */
-export function FilterMenu({ filters, values, filterOptions, counts = null, applyMany, onDraft }: FilterMenuProps) {
-    const [open, setOpen] = React.useState(false)
+export const FilterMenuBody = React.forwardRef<FilterMenuHandle, FilterMenuProps>(function FilterMenuBody(
+    { filters, values, filterOptions, counts = null, applyMany, onDraft },
+    ref,
+) {
     const [currentKey, setCurrentKey] = React.useState<string | null>(null)
     const [find, setFind] = React.useState("")
-    const commitRef: CommitRef = React.useRef<(() => void) | null>(null)
+    const commitRef: CommitRef = React.useRef(null)
     const discard = React.useRef(false)
-
-    const active = filters.filter((f) => activeCount(f, values) > 0).length
-    const current = filters.find((f) => f.key === currentKey) ?? filters[0]
-    const shown = find ? filters.filter((f) => f.label.toLowerCase().includes(find.toLowerCase())) : filters
-
-    const onOpenChange = (next: boolean) => {
-        if (!next) {
+    React.useImperativeHandle(ref, () => ({
+        commit: () => {
             if (!discard.current) commitRef.current?.()
             discard.current = false
             commitRef.current = null
             setFind("")
-        }
-        setOpen(next)
-    }
+        },
+        discard: () => {
+            discard.current = true
+        },
+    }))
 
-    if (filters.length === 0) return null
+    const current = filters.find((f) => f.key === currentKey) ?? filters[0]
+    const shown = find ? filters.filter((f) => f.label.toLowerCase().includes(find.toLowerCase())) : filters
 
     return (
-        <Popover open={open} onOpenChange={onOpenChange}>
+        <div className="grid grid-cols-[11rem_1fr]">
+            <div className="border-r border-border/50 py-1">
+                {filters.length > 6 && (
+                    <label className="mx-2 my-1 flex h-control-xs items-center gap-1.5 rounded-sm border border-border/40 px-2 text-muted-foreground">
+                        <Search className="size-3.5" aria-hidden />
+                        <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Buscar filtro…" aria-label="Buscar filtro" className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none" />
+                    </label>
+                )}
+                <ul aria-label="Filtros" className="flex flex-col">
+                    {shown.map((filter) => {
+                        const count = activeCount(filter, values)
+                        const isCurrent = filter.key === current?.key
+                        return (
+                            <li key={filter.key}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-pressed={isCurrent}
+                                    onClick={() => {
+                                        commitRef.current?.()
+                                        commitRef.current = null
+                                        setCurrentKey(filter.key)
+                                    }}
+                                    className={cn("w-full justify-between rounded-none px-3 text-xs", isCurrent && "bg-muted font-semibold")}
+                                >
+                                    <span className="truncate">{filter.label}</span>
+                                    {count > 0 && <span className="font-mono text-3xs font-semibold tabular-nums">{count}</span>}
+                                </Button>
+                            </li>
+                        )
+                    })}
+                </ul>
+            </div>
+            <div className="flex min-h-48 min-w-0 flex-col">
+                {current && <FilterPane key={current.key} filter={current} values={values} filterOptions={filterOptions} counts={counts} applyMany={applyMany} commitRef={commitRef} onDraft={onDraft} />}
+            </div>
+        </div>
+    )
+})
+
+/** Standalone command button + popover; the compact bar renders `FilterMenuBody` inside «Ajustes». */
+export function FilterMenu(props: FilterMenuProps) {
+    const [open, setOpen] = React.useState(false)
+    const bodyRef = React.useRef<FilterMenuHandle>(null)
+    if (props.filters.length === 0) return null
+    const active = props.filters.filter((f) => activeCount(f, props.values) > 0).length
+    return (
+        <Popover
+            open={open}
+            onOpenChange={(next) => {
+                if (!next) bodyRef.current?.commit()
+                setOpen(next)
+            }}
+        >
             <PopoverTrigger asChild>
                 <CommandButton icon={ListFilter} name="Filtros" value={active > 0 ? active : undefined} valueLabel={`${active} ${active === 1 ? "activo" : "activos"}`} badge aria-expanded={open} />
             </PopoverTrigger>
-            <PopoverContent
-                align="start"
-                className="w-[min(92vw,30rem)] p-0"
-                onEscapeKeyDown={() => {
-                    discard.current = true
-                }}
-            >
-                <div className="grid grid-cols-[11rem_1fr]">
-                    <div className="border-r border-border/50 py-1">
-                        {filters.length > 6 && (
-                            <label className="mx-2 my-1 flex h-control-xs items-center gap-1.5 rounded-sm border border-border/40 px-2 text-muted-foreground">
-                                <Search className="size-3.5" aria-hidden />
-                                <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Buscar filtro…" aria-label="Buscar filtro" className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none" />
-                            </label>
-                        )}
-                        <ul aria-label="Filtros" className="flex flex-col">
-                            {shown.map((filter) => {
-                                const count = activeCount(filter, values)
-                                const isCurrent = filter.key === current?.key
-                                return (
-                                    <li key={filter.key}>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            aria-pressed={isCurrent}
-                                            onClick={() => {
-                                                commitRef.current?.()
-                                                commitRef.current = null
-                                                setCurrentKey(filter.key)
-                                            }}
-                                            className={cn("w-full justify-between rounded-none px-3 text-xs", isCurrent && "bg-muted font-semibold")}
-                                        >
-                                            <span className="truncate">{filter.label}</span>
-                                            {count > 0 && <span className="font-mono text-3xs font-semibold tabular-nums">{count}</span>}
-                                        </Button>
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
-                    <div className="flex min-h-48 min-w-0 flex-col">
-                        {current && <FilterPane key={current.key} filter={current} values={values} filterOptions={filterOptions} counts={counts} applyMany={applyMany} commitRef={commitRef} onDraft={onDraft} />}
-                    </div>
-                </div>
+            <PopoverContent align="start" className="w-[min(92vw,30rem)] p-0" onEscapeKeyDown={() => bodyRef.current?.discard()}>
+                <FilterMenuBody ref={bodyRef} {...props} />
             </PopoverContent>
         </Popover>
     )

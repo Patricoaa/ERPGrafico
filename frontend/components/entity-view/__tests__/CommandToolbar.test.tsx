@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from "vitest"
+import type { ReactNode } from "react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { RefreshCw } from "lucide-react"
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing"
-import { Collection, defineEntity, useCollectionAnalytics, useCollectionQuery, useEntityCollection } from "@/components/entity-view"
+import { Collection, defineEntity, useCollectionAnalytics, useCollectionQuery, useEntityCollection, type ToolbarExtraAction } from "@/components/entity-view"
 import { Button } from "@/components/ui/button"
 import { useAnalyticsDrillDown } from "@/components/shared"
 
@@ -56,13 +58,13 @@ function DrillProbe({ scope }: { scope: string }) {
     )
 }
 
-function Screen() {
+function Screen({ action = <Button>Nueva nota</Button>, extraActions }: { action?: ReactNode; extraActions?: readonly ToolbarExtraAction[] }) {
     const query = useCollectionQuery(noteEntity)
     const analytics = useCollectionAnalytics("resumen")
     const collection = useEntityCollection(noteEntity, { rows, rowCount: 2 }, { pagination: { mode: "none" }, sorting: query.sorting, groupBy: query.groupBy })
     return (
         <Collection.Root collection={collection} query={query} analytics={analytics} label="Notas de venta">
-            <Collection.Toolbar action={<Button>Nueva nota</Button>} />
+            <Collection.Toolbar action={action} extraActions={extraActions} />
             <Collection.View table={noteViews.table} />
             <Collection.Analytics>
                 <DrillProbe scope={analytics.scope} />
@@ -71,11 +73,27 @@ function Screen() {
     )
 }
 
-function setup(search = "") {
+function stubViewport(mobile: boolean) {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+        matches: mobile,
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+    }))
+}
+
+afterEach(() => vi.unstubAllGlobals())
+
+function setup(search = "", options?: { action?: ReactNode; extraActions?: readonly ToolbarExtraAction[]; mobile?: boolean }) {
+    window.localStorage.clear()
+    if (options?.mobile !== undefined) stubViewport(options.mobile)
     const onUrlUpdate = vi.fn<(event: UrlUpdateEvent) => void>()
     render(
         <NuqsTestingAdapter searchParams={search} onUrlUpdate={onUrlUpdate} hasMemory>
-            <Screen />
+            <Screen action={options?.action} extraActions={options?.extraActions} />
         </NuqsTestingAdapter>,
     )
     const url = () => onUrlUpdate.mock.lastCall?.[0].searchParams ?? new URLSearchParams(search)
@@ -159,6 +177,53 @@ describe("Collection command bar (ADR-0158 stage 3b)", () => {
         await user.click(within(screen.getByRole("list", { name: "Filtros aplicados" })).getByRole("button", { name: "Quitar Estado: Borrador" }))
         await user.click(await screen.findByRole("button", { name: "Restablecer" }))
         await waitFor(() => expect(url().get("status")).toBe("DRAFT"))
+    })
+})
+
+describe("Collection utility row and narrow toolbar (ADR-0158 §1–2)", () => {
+    it("keeps only the primary action after the divider and moves analytics to the top row", () => {
+        setup()
+        const bar = toolbar()
+        const buttons = within(bar).getAllByRole("button")
+        expect(buttons.at(-1)).toHaveTextContent("Nueva nota")
+        const utilities = screen.getByRole("group", { name: "Acciones de la colección" })
+        expect(within(utilities).getByRole("button", { name: "Analítica" })).toBeInTheDocument()
+        expect(within(bar).queryByRole("button", { name: "Analítica" })).toBeNull()
+    })
+
+    it("renders extra actions as ghost icon-only buttons in the top row", async () => {
+        const onClick = vi.fn()
+        const { user } = setup("", { extraActions: [{ id: "refresh", icon: RefreshCw, label: "Actualizar", onClick }] })
+        const utilities = screen.getByRole("group", { name: "Acciones de la colección" })
+        const extra = within(utilities).getByRole("button", { name: "Actualizar" })
+        expect(extra).toHaveAttribute("title", "Actualizar")
+        expect(extra).toHaveTextContent("")
+        expect(extra.querySelector("svg")).toBeInTheDocument()
+        await user.click(extra)
+        expect(onClick).toHaveBeenCalledOnce()
+    })
+
+    it("shows the total at the end of AppliedFilters, not beside the view tabs", () => {
+        setup()
+        expect(screen.getByText("2 resultados")).toBeInTheDocument()
+        expect(within(screen.getByRole("tablist", { name: "Vistas" })).queryByText("2 resultados")).toBeNull()
+    })
+
+    it("collapses the four tools into «Ajustes» with their active-change count below md", async () => {
+        const { user, url } = setup("status=DRAFT&ordering=customer&group_by=status", { mobile: true })
+        const bar = toolbar()
+        const settings = within(bar).getByRole("button", { name: /Ajustes/ })
+        expect(settings).toHaveAttribute("title", "Ajustes")
+        expect(settings).toHaveTextContent("3")
+        for (const name of [/^Filtros/, /^Ordenar/, /^Agrupar/, /^Vista/]) {
+            expect(within(bar).queryByRole("button", { name })).toBeNull()
+        }
+        expect(within(bar).getByRole("button", { name: "Nueva nota" }).parentElement).toHaveClass("basis-full")
+        await user.click(settings)
+        expect(screen.getByRole("list", { name: "Filtros" })).toBeInTheDocument()
+        await user.click(screen.getByRole("checkbox", { name: "Confirmada" }))
+        await user.click(screen.getByRole("button", { name: /^Aplicar/ }))
+        await waitFor(() => expect(url().get("status")).toContain("CONFIRMED"))
     })
 })
 

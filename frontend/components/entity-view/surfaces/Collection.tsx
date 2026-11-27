@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, Download, FileText, Kanban, LayoutGrid, Rows3 } from "lucide-react"
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, CalendarRange, ChevronDown, ChevronRight, Download, FileText, Kanban, LayoutGrid, Rows3, type LucideIcon } from "lucide-react"
 import { AnalyticsDrillDownProvider, AppliedFilters, BaseModal, BulkActionButtons, Banner, CardRail, DataTablePagination, EmptyState, EntityCard, ResultCountProvider, SelectionDock, SelectionRing, UnifiedSearchBar, bindUnifiedSearch, formatResultCount, useEmbeddedSurface, useRegisterRecordCount, type AnalyticsDrillDownFilter, type BulkAction, type CardRailTone } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -35,14 +35,16 @@ import { getValueKind, type Align, type Surface, type ValueKind } from "../core/
 import type { CollectionGroup, CollectionPaging, EntityCollection, RowDragSpec, RowDropSpec, RowTone } from "../core/use-entity-collection"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import type { Row, Table as TanstackTable } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
 import { useSavedRowFlash } from "./useSavedRowFlash"
 import type { CollectionQuery } from "./useCollectionQuery"
 import type { AnalyticsScope } from "./useCollectionAnalytics"
-import { FilterMenu, type MenuFilter } from "./toolbar/FilterMenu"
-import { DisplayMenu, GroupMenu, SortMenu, ViewTabs } from "./toolbar/QueryMenus"
+import { activeCount, FilterMenu, FilterMenuBody, type FilterMenuHandle, type MenuFilter } from "./toolbar/FilterMenu"
+import { DisplayMenu, DisplayMenuBody, GroupMenu, GroupMenuBody, SortMenu, SortMenuBody, ViewTabs } from "./toolbar/QueryMenus"
+import { SettingsMenu } from "./toolbar/SettingsMenu"
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -270,15 +272,30 @@ function useHiddenColumns(label: string | undefined): [ReadonlySet<string>, (id:
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
+export interface ToolbarExtraAction {
+    /** Stable key. */
+    id: string
+    /** Ghost icon-only button: the icon is the control. */
+    icon: LucideIcon
+    /** Tooltip and accessible name. */
+    label: string
+    onClick?: () => void
+    /** Renders an anchor instead of a button. */
+    href?: string
+    disabled?: boolean
+}
+
 export interface CollectionToolbarProps {
     /** Search/filters slot (e.g. UnifiedSearchBar). */
     children?: React.ReactNode
-    /** Primary action (e.g. create button). Wraps below the search on narrow screens instead of covering it. */
+    /** Primary action: the only control after the divider. Wraps below search on narrow screens. */
     action?: React.ReactNode
     /** Overrides the modes offered. Default: the entity's registry `viewPolicy.availableViews`. */
     views?: readonly CollectionViewMode[]
     /** Current filters, forwarded to the entity export hook (export-formats.md). */
     exportFilters?: Record<string, unknown>
+    /** Secondary actions: ghost icon buttons in the top utility row (ADR-0158 §1). */
+    extraActions?: readonly ToolbarExtraAction[]
 }
 
 const VIEW_BUTTONS = {
@@ -303,42 +320,105 @@ function policyModes(label: string | undefined): readonly CollectionViewMode[] {
     return [...new Set(available.map((view) => POLICY_TO_MODE[view]))]
 }
 
-function Toolbar({ children, action, views, exportFilters }: CollectionToolbarProps) {
-    const ctx = useCollectionContext<unknown>()
-    const allowed = views ?? policyModes(ctx.collection.entity.label)
-    const exportSpec = ctx.collection.entity.export
-    const modes = allowed
-    const resultCount = ctx.collection.status === "loading" ? null : ctx.collection.total
-    if (ctx.query) return <CommandToolbar query={ctx.query} modes={modes} action={action} exportFilters={exportFilters} resultCount={resultCount}>{children}</CommandToolbar>
+function ExtraActionButton({ action }: { action: ToolbarExtraAction }) {
+    const Icon = action.icon
+    const icon = <Icon className="size-4" aria-hidden />
+    if (action.href && !action.disabled) {
+        return (
+            <Button asChild variant="ghost" size="icon-sm">
+                <a href={action.href} aria-label={action.label} title={action.label}>
+                    {icon}
+                </a>
+            </Button>
+        )
+    }
     return (
-        <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                {children && (
-                    <div className="min-w-56 flex-1">
-                        <ResultCountProvider count={resultCount}>{children}</ResultCountProvider>
-                    </div>
-                )}
-                {action}
-            </div>
-            {ctx.hasAnalytics && (
-                <Button variant="ghost" size="icon-sm" aria-label="Analítica" title="Analítica" aria-haspopup="dialog" aria-expanded={ctx.analyticsOpen} onClick={() => ctx.setAnalyticsOpen(true)}>
+        <Button variant="ghost" size="icon-sm" aria-label={action.label} title={action.label} disabled={action.disabled} onClick={action.onClick}>
+            {icon}
+        </Button>
+    )
+}
+
+interface UtilityActionsProps {
+    hasAnalytics: boolean
+    analyticsOpen: boolean
+    onAnalyticsOpen: () => void
+    exportSpec: Entity<unknown, FieldMap<unknown>>["export"]
+    exportFilters: Record<string, unknown>
+    count: number | null
+    extraActions: readonly ToolbarExtraAction[]
+}
+
+/** Icon-only actions that used to sit after the divider, now in the top utility row (ADR-0158 §1). */
+function UtilityActions({ hasAnalytics, analyticsOpen, onAnalyticsOpen, exportSpec, exportFilters, count, extraActions }: UtilityActionsProps) {
+    return (
+        <div className="flex items-center gap-1" role="group" aria-label="Acciones de la colección">
+            {hasAnalytics && (
+                <Button variant="ghost" size="icon-sm" aria-label="Analítica" title="Analítica" aria-haspopup="dialog" aria-expanded={analyticsOpen} onClick={onAnalyticsOpen}>
                     <BarChart3 className="size-4" aria-hidden />
                 </Button>
             )}
-            {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters ?? {}} count={resultCount} />}
-            {modes.length > 1 && (
-                <div className="flex items-center gap-1" role="group" aria-label="Vista">
-                    {modes.map((mode) => {
-                        const { icon: Icon, label: viewLabel } = VIEW_BUTTONS[mode]
-                        return (
-                            <Button key={mode} variant={ctx.view === mode ? "secondary" : "ghost"} size="icon-sm" aria-label={viewLabel} aria-pressed={ctx.view === mode} onClick={() => ctx.setView(mode)}>
-                                <Icon className="size-4" aria-hidden />
-                            </Button>
-                        )
-                    })}
-                </div>
-            )}
+            {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters} count={count} />}
+            {extraActions.map((action) => <ExtraActionButton key={action.id} action={action} />)}
         </div>
+    )
+}
+
+function Toolbar({ children, action, views, exportFilters, extraActions = [] }: CollectionToolbarProps) {
+    const ctx = useCollectionContext<unknown>()
+    const allowed = views ?? policyModes(ctx.collection.entity.label)
+    const exportSpec = ctx.collection.entity.export
+    const resultCount = ctx.collection.status === "loading" ? null : ctx.collection.total
+    const hasUtilities = ctx.hasAnalytics || !!exportSpec || extraActions.length > 0
+    const utilities = (
+        <UtilityActions
+            hasAnalytics={ctx.hasAnalytics}
+            analyticsOpen={ctx.analyticsOpen}
+            onAnalyticsOpen={() => ctx.setAnalyticsOpen(true)}
+            exportSpec={exportSpec}
+            exportFilters={exportFilters ?? {}}
+            count={resultCount}
+            extraActions={extraActions}
+        />
+    )
+    // The row exists even with no tabs/actions: its bottom border keeps the two-line rhythm.
+    const topRow = (
+        <div className="flex min-h-8 items-center justify-end border-b border-border/50 px-1">
+            {hasUtilities && utilities}
+        </div>
+    )
+    if (ctx.query) {
+        return (
+            <ResultCountProvider count={resultCount}>
+                <CommandToolbar query={ctx.query} modes={allowed} action={action} resultCount={resultCount} utilities={utilities} hasUtilities={hasUtilities} topRow={topRow}>
+                    {children}
+                </CommandToolbar>
+            </ResultCountProvider>
+        )
+    }
+    return (
+        <ResultCountProvider count={resultCount}>
+            <div className="flex flex-col gap-2">
+                {topRow}
+                <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
+                    {children && <div className="min-w-56 flex-1">{children}</div>}
+                    {allowed.length > 1 && (
+                        <div className="flex items-center gap-1" role="group" aria-label="Vista">
+                            {allowed.map((mode) => {
+                                const { icon: Icon, label: viewLabel } = VIEW_BUTTONS[mode]
+                                return (
+                                    <Button key={mode} variant={ctx.view === mode ? "secondary" : "ghost"} size="icon-sm" aria-label={viewLabel} aria-pressed={ctx.view === mode} onClick={() => ctx.setView(mode)}>
+                                        <Icon className="size-4" aria-hidden />
+                                    </Button>
+                                )
+                            })}
+                        </div>
+                    )}
+                    {action && <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />}
+                    {action && <div className="basis-full md:basis-auto">{action}</div>}
+                </div>
+            </div>
+        </ResultCountProvider>
     )
 }
 
@@ -346,31 +426,82 @@ interface CommandToolbarProps {
     query: CollectionQuery<string>
     modes: readonly CollectionViewMode[]
     action?: React.ReactNode
-    exportFilters?: Record<string, unknown>
     resultCount: number | null
     children?: React.ReactNode
+    utilities: React.ReactNode
+    hasUtilities: boolean
+    topRow: React.ReactNode
 }
 
 /**
- * Command bar (ADR-0158 §1–2): view tabs, search, one icon+value button per tool, analytics, export
- * and the primary action, then the applied-filters row. Built from `useCollectionQuery`.
+ * Command bar (ADR-0158 §1–2): top utility row (view tabs + icon actions), search, one icon+value
+ * button per tool, the primary action after the divider, then the applied-filters row with the total.
+ * Below `md` the four tools collapse into one «Ajustes» popover with their active-change count.
  */
-function CommandToolbar({ query, modes, action, exportFilters, resultCount, children }: CommandToolbarProps) {
+function CommandToolbar({ query, modes, action, resultCount, children, utilities, hasUtilities, topRow }: CommandToolbarProps) {
     const ctx = useCollectionContext<unknown>()
+    const isMobile = useIsMobile()
     const { compiled, search } = query
-    const exportSpec = ctx.collection.entity.export
     const filters: MenuFilter[] = [
         ...(compiled.search.filters ?? []).filter((f): f is Exclude<typeof f, { type: "custom" }> => f.type !== "custom"),
         ...(compiled.search.dateFilters ?? []),
     ]
-    const count = resultCount === null ? null : formatResultCount(resultCount)
     const showTabs = query.views.length > 1
     const columns = ctx.view === "table" && ctx.tableColumns
         ? ctx.tableColumns.ids.map((id) => ({ id, label: fieldById(ctx.collection.entity, id).label, visible: !ctx.hiddenColumns.has(id), locked: id === ctx.tableColumns?.primary }))
         : []
+    const filterHandle = React.useRef<FilterMenuHandle>(null)
+    const filterProps = {
+        filters,
+        values: search.paramValues,
+        filterOptions: search.filterOptions,
+        counts: ctx.facets,
+        applyMany: search.applyMany,
+        onDraft: query.setDraft,
+    }
+    const sortProps = { fields: compiled.sortFields, sort: query.sort, defaultSort: compiled.defaultSort, onChange: query.setSort }
+    const groupProps = { fields: compiled.groupFields, value: query.groupBy, onChange: query.setGroupBy }
+    const displayProps = {
+        layouts: modes.map((mode) => ({ value: mode, label: VIEW_BUTTONS[mode].short, icon: VIEW_BUTTONS[mode].icon })),
+        layout: ctx.view,
+        onLayoutChange: (next: string) => ctx.setView(next as CollectionViewMode),
+        columns,
+        onColumnToggle: ctx.setColumnVisible,
+    }
+    const settingsChanges =
+        filters.reduce((total, filter) => total + activeCount(filter, search.paramValues), 0) +
+        (query.sort.length > 0 && query.sort.join(",") !== [...compiled.defaultSort].join(",") ? 1 : 0) +
+        (query.groupBy ? 1 : 0) +
+        columns.filter((column) => !column.visible && !column.locked).length +
+        (modes.length > 1 && ctx.view !== "table" ? 1 : 0)
+
+    const tabs = showTabs && (
+        <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} viewCounts={ctx.facets?.views}>
+            {hasUtilities && utilities}
+        </ViewTabs>
+    )
+    const tools = isMobile ? (
+        <SettingsMenu count={settingsChanges} onClose={() => filterHandle.current?.commit()} onEscape={() => filterHandle.current?.discard()}>
+            {filters.length > 0 && (
+                <section aria-label="Filtros" className="rounded-md border border-border/50">
+                    <FilterMenuBody ref={filterHandle} {...filterProps} />
+                </section>
+            )}
+            {compiled.sortFields.length > 0 && <section aria-label="Ordenar" className="rounded-md border border-border/50"><SortMenuBody {...sortProps} /></section>}
+            {compiled.groupFields.length > 0 && <section aria-label="Agrupar" className="rounded-md border border-border/50"><GroupMenuBody {...groupProps} onSelect={groupProps.onChange} /></section>}
+            {(displayProps.layouts.length > 1 || columns.length > 0) && <section aria-label="Vista" className="rounded-md border border-border/50"><DisplayMenuBody {...displayProps} /></section>}
+        </SettingsMenu>
+    ) : (
+        <>
+            <FilterMenu {...filterProps} />
+            <SortMenu {...sortProps} />
+            <GroupMenu {...groupProps} />
+            <DisplayMenu {...displayProps} />
+        </>
+    )
     return (
         <div className="flex flex-col gap-2">
-            {showTabs && <ViewTabs views={query.views} activeId={query.activeView?.id ?? null} onSelect={query.setView} dirty={query.isDirty} onReset={query.resetView} count={count} viewCounts={ctx.facets?.views} />}
+            {showTabs ? tabs : topRow}
             <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={`Herramientas de ${ctx.label}`}>
                 {compiled.searchBox ? (
                     <div className="min-w-56 flex-1">
@@ -379,27 +510,12 @@ function CommandToolbar({ query, modes, action, exportFilters, resultCount, chil
                 ) : (
                     <div className="flex-1" aria-hidden />
                 )}
-                <FilterMenu filters={filters} values={search.paramValues} filterOptions={search.filterOptions} counts={ctx.facets} applyMany={search.applyMany} onDraft={query.setDraft} />
-                <SortMenu fields={compiled.sortFields} sort={query.sort} defaultSort={compiled.defaultSort} onChange={query.setSort} />
-                <GroupMenu fields={compiled.groupFields} value={query.groupBy} onChange={query.setGroupBy} />
-                <DisplayMenu
-                    layouts={modes.map((mode) => ({ value: mode, label: VIEW_BUTTONS[mode].short, icon: VIEW_BUTTONS[mode].icon }))}
-                    layout={ctx.view}
-                    onLayoutChange={(next) => ctx.setView(next as CollectionViewMode)}
-                    columns={columns}
-                    onColumnToggle={ctx.setColumnVisible}
-                />
+                {tools}
                 {children}
-                {(ctx.hasAnalytics || exportSpec) && <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />}
-                {ctx.hasAnalytics && (
-                    <Button variant="ghost" size="icon-sm" aria-label="Analítica" title="Analítica" aria-haspopup="dialog" aria-expanded={ctx.analyticsOpen} onClick={() => ctx.setAnalyticsOpen(true)}>
-                        <BarChart3 className="size-4" aria-hidden />
-                    </Button>
-                )}
-                {exportSpec && <ExportMenu spec={exportSpec} filters={exportFilters ?? query.params} count={resultCount} />}
-                {action}
+                {action && <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />}
+                {action && <div className="basis-full md:basis-auto">{action}</div>}
             </div>
-            <AppliedFilters chips={search.chips} onClearAll={() => void search.clearAll()} resultCount={showTabs ? null : resultCount} />
+            <AppliedFilters chips={search.chips} onClearAll={() => void search.clearAll()} resultCount={resultCount} showCountWhenEmpty />
         </div>
     )
 }

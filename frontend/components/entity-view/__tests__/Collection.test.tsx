@@ -9,6 +9,7 @@ import {
     type CollectionSource,
 } from "@/components/entity-view"
 import { EmbeddedSurfaceProvider, Section, useResultCount } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 import type { CollectionOptions, CollectionSurfaceOptions } from "@/components/entity-view"
 
 interface Uom {
@@ -321,6 +322,24 @@ describe("Collection.Toolbar export menu and result count", () => {
         expect(screen.getByText("Exportar 2 resultados")).toBeInTheDocument()
         await user.click(screen.getByRole("menuitem", { name: "CSV" }))
         expect(run).toHaveBeenCalledWith("csv", { search: "kilo" })
+    })
+
+    it("moves utility actions out of the command row and leaves only the primary after the divider", () => {
+        function ActionHarness() {
+            const collection = useEntityCollection(exportable, { rows })
+            return (
+                <Collection.Root collection={collection} label="Unidades de medida">
+                    <Collection.Toolbar action={<Button>Nueva UOM</Button>} />
+                    <Collection.View table={exportViews.table} />
+                </Collection.Root>
+            )
+        }
+        render(<ActionHarness />)
+        const bar = screen.getByRole("toolbar")
+        expect(within(bar).queryByRole("button", { name: "Exportar" })).toBeNull()
+        expect(within(screen.getByRole("group", { name: "Acciones de la colección" })).getByRole("button", { name: "Exportar" })).toBeInTheDocument()
+        const primary = within(bar).getByRole("button", { name: "Nueva UOM" })
+        expect(primary.parentElement?.previousElementSibling).toHaveAttribute("aria-hidden", "true")
     })
 
     it("publishes the collection total to the search slot, null while loading", () => {
