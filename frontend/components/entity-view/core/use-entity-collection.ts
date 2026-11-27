@@ -2,18 +2,27 @@
 
 import * as React from "react"
 import {
-    getCoreRowModel,
-    getExpandedRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
+    createExpandedRowModel,
+    createPaginatedRowModel,
+    createSortedRowModel,
+    rowExpandingFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    sortFn_alphanumeric,
+    sortFn_basic,
+    sortFn_datetime,
+    sortFn_text,
+    tableFeatures,
+    useTable,
     type ColumnDef,
     type ExpandedState,
     type PaginationState,
+    type ReactTable,
     type Row,
+    type RowData,
     type RowSelectionState,
     type SortingState,
-    type Table,
 } from "@tanstack/react-table"
 import { groupItems } from "@/lib/group-utils"
 import type { ServerGroupState } from "@/lib/server-groups"
@@ -89,9 +98,42 @@ export interface CollectionOptions<Id extends string, T = never> {
     dnd?: CollectionDnd<T>
 }
 
+/** Selected rows keyed by row id. A `false` entry means unselected (TanStack v9 itself only stores `true`). */
+export type CollectionSelectionState = Readonly<Record<string, boolean>>
+
 export interface CollectionSelection {
-    state: RowSelectionState
+    state: CollectionSelectionState
     onChange: (next: RowSelectionState) => void
+}
+
+/**
+ * TanStack features every collection registers (v9 only exposes the APIs of registered features).
+ * Static on purpose: the row models are always present and switched off per table with
+ * `manualPagination` / `manualExpanding`, which reproduces the v8 pipeline where they were optional.
+ */
+const collectionFeatures = tableFeatures({
+    rowSortingFeature,
+    rowSelectionFeature,
+    rowExpandingFeature,
+    rowPaginationFeature,
+    sortedRowModel: createSortedRowModel(),
+    expandedRowModel: createExpandedRowModel(),
+    paginatedRowModel: createPaginatedRowModel(),
+    // The names v8's `"auto"` sorting picks from (v9 resolves only registered ones).
+    sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text, datetime: sortFn_datetime, basic: sortFn_basic },
+})
+
+/** TanStack v9 rows must be records or arrays. */
+export type CollectionRow = RowData
+
+export type CollectionFeatures = typeof collectionFeatures
+export type CollectionTable<T extends CollectionRow> = ReactTable<CollectionFeatures, T>
+export type CollectionTableRow<T extends CollectionRow> = Row<CollectionFeatures, T>
+
+function toRowSelection(state: CollectionSelectionState): RowSelectionState {
+    const out: RowSelectionState = {}
+    for (const [id, selected] of Object.entries(state)) if (selected) out[id] = true
+    return out
 }
 
 export type RowTone = "attention" | "muted" | "section" | "total"
@@ -112,10 +154,10 @@ export interface CollectionDnd<T> {
     drop?(row: T): RowDropSpec | null
 }
 
-export interface CollectionGroup<T> {
+export interface CollectionGroup<T extends CollectionRow> {
     key: string
     label: string
-    rows: Row<T>[]
+    rows: CollectionTableRow<T>[]
     /** Server grouping: rows of the whole result in this group (the loaded `rows` may be fewer). */
     count?: number
     /** Server grouping: formatted subtotals ("$ 4.215.600"). */
@@ -137,9 +179,9 @@ export const DEFAULT_MORE_STEP = 10
 
 export type CollectionStatus = "loading" | "error" | "empty" | "ready"
 
-export interface EntityCollection<T, F extends FieldMap<T>> {
+export interface EntityCollection<T extends CollectionRow, F extends FieldMap<T>> {
     entity: Entity<T, F>
-    table: Table<T>
+    table: CollectionTable<T>
     status: CollectionStatus
     isRefetching: boolean
     /** Total rows (server total when paginating on the server). */
@@ -173,6 +215,7 @@ function toSorting<Id extends string>(spec: SortSpec<Id> | readonly SortSpec<Id>
 }
 
 const EMPTY_ROWS: never[] = []
+const EMPTY_SELECTION: RowSelectionState = {}
 
 /** A server value formatted by the field's kind, with its constant options (no row to resolve the others). */
 function formatStatic<T>(def: FieldDef<T, ValueKind>, value: unknown): string {
@@ -210,7 +253,7 @@ const NO_SERVER_SORT = { mode: "server" as const, state: null, onChange: () => u
  * (table, card grid, kanban). Columns are derived from the entity fields; each surface
  * decides which ones it shows. Sorting uses each kind's semantic sort key.
  */
-export function useEntityCollection<T, F extends FieldMap<T>>(
+export function useEntityCollection<T extends CollectionRow, F extends FieldMap<T>>(
     entity: Entity<T, F>,
     source: CollectionSource<T>,
     options: CollectionOptions<FieldId<F>, NoInfer<T>> = {},
@@ -227,7 +270,7 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     const serverRows = React.useMemo(() => serverGroups?.flatMap((g) => (g.open ? g.rows : [])) ?? null, [serverGroups])
     const rows = (serverRows ?? source.rows ?? EMPTY_ROWS) as T[]
 
-    const columns = React.useMemo<ColumnDef<T>[]>(
+    const columns = React.useMemo<ColumnDef<CollectionFeatures, T>[]>(
         () =>
             entity.ids.map((id) => {
                 const def = entity.fields[id]
@@ -249,15 +292,28 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by text: see above
     const controlledSortingState = React.useMemo(() => toSorting(controlledSpec), [controlledKey])
     const sorting = sortingOption.mode === "local" ? localSorting : controlledSortingState
-    const [internalSelection, setInternalSelection] = React.useState<RowSelectionState>({})
+    const isServer = pagination.mode === "server"
+    // The internal selection remembers the rows it was made on. With server pagination every
+    // page/sort/filter brings new rows: a selection made on another page would no longer be visible,
+    // and the dock count and the bulk action targets would disagree, so it is dropped (derived, no effect).
+    // A controlled selection belongs to the screen (ADR-0159) and is never dropped.
+    const [internal, setInternal] = React.useState<{ rows: readonly T[]; selection: RowSelectionState }>(() => ({ rows, selection: {} }))
+    const internalSelection = isServer && internal.rows !== rows ? EMPTY_SELECTION : internal.selection
+    const setInternalSelection = React.useCallback(
+        (updater: RowSelectionState | ((current: RowSelectionState) => RowSelectionState)) =>
+            setInternal({ rows, selection: typeof updater === "function" ? updater(internalSelection) : updater }),
+        [rows, internalSelection],
+    )
     const controlledSelection = options.selection
-    const rowSelection = controlledSelection?.state ?? internalSelection
+    const controlledState = controlledSelection?.state
+    const controlledRowSelection = React.useMemo(() => (controlledState ? toRowSelection(controlledState) : null), [controlledState])
+    const rowSelection = controlledRowSelection ?? internalSelection
     const setRowSelection = React.useCallback(
         (updater: RowSelectionState | ((current: RowSelectionState) => RowSelectionState)) => {
-            if (!controlledSelection) return setInternalSelection(updater)
-            controlledSelection.onChange(typeof updater === "function" ? updater(controlledSelection.state) : updater)
+            if (!controlledSelection || !controlledRowSelection) return setInternalSelection(updater)
+            controlledSelection.onChange(typeof updater === "function" ? updater(controlledRowSelection) : updater)
         },
-        [controlledSelection],
+        [controlledSelection, controlledRowSelection, setInternalSelection],
     )
     const tree = entity.tree
     // `true` = every branch open (TanStack's "all expanded"); toggling a row switches to a per-row map.
@@ -268,7 +324,6 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         pageSize: pagination.mode === "client" ? pagination.pageSize ?? 20 : pagination.mode === "more" ? moreStep : 20,
     })
 
-    const isServer = pagination.mode === "server"
     // Client pages are clamped, not auto-reset: TanStack's autoResetPageIndex resets on every new
     // `rows` array, which loops with views that filter in render (`search.filterFn(rows)`). A filter
     // that shrinks the list keeps the user on the last existing page instead.
@@ -277,14 +332,8 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         () => (clientPagination.pageIndex > lastClientPage ? { ...clientPagination, pageIndex: lastClientPage } : clientPagination),
         [clientPagination, lastClientPage],
     )
-    // With server pagination every page/sort/filter brings new rows: a selection made on another
-    // page would no longer be visible, and the dock count and the bulk action targets would disagree.
-    React.useEffect(() => {
-        // Idempotent: a new empty `rows` array per render must not loop.
-        // A controlled selection belongs to the screen (ADR-0159).
-        if (isServer && !controlledSelection) setInternalSelection((current) => (Object.keys(current).length === 0 ? current : {}))
-    }, [isServer, rows, controlledSelection])
-    const table = useReactTable<T>({
+    const table = useTable<CollectionFeatures, T>({
+        features: collectionFeatures,
         data: rows,
         columns,
         state: {
@@ -301,7 +350,6 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
         ...(tree
             ? {
                 getSubRows: (row: T) => (tree.children(row) ?? undefined) as T[] | undefined,
-                getExpandedRowModel: getExpandedRowModel(),
                 onExpandedChange: setExpanded,
                 // A client page holds whole branches (children render on their parent's page). TanStack then
                 // expands inside its pagination model, so this only applies when that model exists.
@@ -324,10 +372,10 @@ export function useEntityCollection<T, F extends FieldMap<T>>(
                 setClientPagination(typeof updater === "function" ? updater(clientPage) : updater)
             }
         },
-        getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        ...(pagination.mode === "client" || pagination.mode === "more" ? { getPaginationRowModel: getPaginationRowModel() } : {}),
-        manualPagination: isServer,
+        // Only client pages slice the rows; server and unpaged collections show them all (v8 omitted the model).
+        manualPagination: pagination.mode !== "client" && pagination.mode !== "more",
+        // Without a tree there is nothing to expand (v8 omitted the expanded model).
+        manualExpanding: !tree,
         autoResetPageIndex: false,
         rowCount: isServer ? source.rowCount : undefined,
         enableRowSelection: true,

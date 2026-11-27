@@ -274,13 +274,14 @@ const { page, isLoading } = useTreasuryMovements({
 
 ### 3.2 Prop `rowCount` (nueva, MUST cuando `manualPagination`)
 
-`DataTable` MUST aceptar `rowCount?: number` y propagarla a `useReactTable({ rowCount })`. `DataTablePagination` MUST leer `table.getRowCount()` (TanStack v8 built-in), **no** `table.getFilteredRowModel().rows.length`, para el total mostrado en el footer.
+La colección con paginación en servidor MUST recibir el total en `source.rowCount`; `useEntityCollection` lo propaga a `useTable({ rowCount })` (TanStack v9, `rowPaginationFeature`). `DataTablePagination` MUST leer `table.getRowCount()`, **no** el largo de un row model, para el total mostrado en el footer.
 
-Cambios concretos requeridos (rastrear en el PR que cierre este contrato):
+Implementación vigente:
 
-- [frontend/components/shared/DataTable.tsx:103-109](../../frontend/components/shared/DataTable.tsx#L103) — añadir `rowCount?: number` al `DataTableProps`.
-- [frontend/components/shared/DataTable.tsx:196-221](../../frontend/components/shared/DataTable.tsx#L196) — pasarla a `useReactTable({ rowCount })`.
-- [frontend/components/shared/DataTablePagination.tsx:32-37](../../frontend/components/shared/DataTablePagination.tsx#L32) — reemplazar `table.getFilteredRowModel().rows.length` por `table.getRowCount()` en las dos ocurrencias.
+- [frontend/components/entity-view/core/use-entity-collection.ts](../../frontend/components/entity-view/core/use-entity-collection.ts) — `rowCount: isServer ? source.rowCount : undefined`.
+- [frontend/components/shared/DataTablePagination.tsx](../../frontend/components/shared/DataTablePagination.tsx) — `table.getRowCount()` en el texto «Mostrando … de N registros».
+
+> El `DataTable` legado que originó esta regla se retiró con ADR-0159; la regla sigue vigente sobre entity-view.
 
 ### 3.3 Cuándo NO usar `manualPagination`
 
