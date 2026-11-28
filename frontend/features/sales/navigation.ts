@@ -100,39 +100,7 @@ export const SALES_DTES_SUB_TABS: NavTabConfig[] = [
   },
 ]
 
-// ============================================
-// SUB-TABS: CONFIGURACIÓN
-// ============================================
 
-export const SALES_CONFIG_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "credit",
-    label: "Crédito",
-    href: "/sales/settings/credit",
-    iconName: "credit-card",
-    headerTitle: "Crédito",
-    headerDescription: "Políticas de crédito, límites y condiciones de pago.",
-    metadataTitle: "Crédito | ERPGrafico",
-  },
-  {
-    value: "config-pos",
-    label: "POS",
-    href: "/sales/settings/config-pos",
-    iconName: "settings",
-    headerTitle: "POS",
-    headerDescription: "Parámetros de cajas POS y métodos de pago.",
-    metadataTitle: "POS | ERPGrafico",
-  },
-  {
-    value: "dtes",
-    label: "Documentos Tributarios",
-    href: "/sales/settings/dtes",
-    iconName: "settings",
-    headerTitle: "Documentos Tributarios",
-    headerDescription: "Tipos de documentos electrónicos habilitados para ser emitidos.",
-    metadataTitle: "Documentos Tributarios | ERPGrafico",
-  },
-]
 
 // ============================================
 // TABS PRINCIPALES (nivel 1)
@@ -169,16 +137,6 @@ export const SALES_TABS: NavTabConfig[] = [
     metadataTitle: "Cartera de Créditos | ERPGrafico",
     subTabs: SALES_CREDITS_SUB_TABS,
   },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/sales/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Políticas de crédito, parámetros del POS y documentos electrónicos.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: SALES_CONFIG_SUB_TABS,
-  },
 ]
 
 // ============================================
@@ -207,7 +165,3 @@ export function getSalesDtesSubTab(value: string): NavTabConfig | undefined {
   return findTabConfig(SALES_DTES_SUB_TABS, value)
 }
 
-/** Busca sub-tab de Configuración */
-export function getSalesConfigSubTab(value: string): NavTabConfig | undefined {
-  return findTabConfig(SALES_CONFIG_SUB_TABS, value)
-}

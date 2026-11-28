@@ -33,8 +33,8 @@ class CoreConfig(AppConfig):
                     display_template="{first_name} {last_name}",
                     subtitle_template="{email}",
                     extra_info_template="{role}",
-                    list_url="/settings/users",
-                    detail_url_pattern="/settings/users/{id}",
+                    list_url="/security/users",
+                    detail_url_pattern="/security/users/{id}",
                     permission="core.view_user",
                 )
             )

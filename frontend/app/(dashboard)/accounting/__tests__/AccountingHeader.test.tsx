@@ -2,9 +2,13 @@ import { describe, expect, it, vi, beforeEach } from "vitest"
 import { render } from "@testing-library/react"
 
 let pathname = "/accounting/ledger"
+const searchParamsString = ""
 const pageHeader = vi.fn()
 
-vi.mock("next/navigation", () => ({ usePathname: () => pathname }))
+vi.mock("next/navigation", () => ({
+    usePathname: () => pathname,
+    useSearchParams: () => new URLSearchParams(searchParamsString),
+}))
 vi.mock("@/hooks/useViewModePreference", () => ({
     useViewModePreference: () => ({ getViewModeUrl: (_label: string, url: string) => url }),
 }))
@@ -15,7 +19,7 @@ vi.mock("@/components/shared", () => ({
     },
 }))
 
-import { getAccountingConfigSubTab, getRcvSubTab } from "@/features/accounting/navigation"
+import { getRcvSubTab } from "@/features/accounting/navigation"
 import { AccountingHeader } from "../AccountingHeader"
 
 function lastProps() {
@@ -47,12 +51,10 @@ describe("AccountingHeader", () => {
         expect(props.title).toBe(getRcvSubTab(sub)?.headerTitle)
     })
 
-    it("marks the RCV / SII config sub-tab as active", () => {
+    it("does not crash when visiting former config routes", () => {
         pathname = "/accounting/settings/rcv"
         render(<AccountingHeader />)
         const props = lastProps()
-        expect(props.navigation.activeValue).toBe("config")
-        expect(props.navigation.subActiveValue).toBe("rcv")
-        expect(props.title).toBe(getAccountingConfigSubTab("rcv")?.headerTitle)
+        expect(props.title).toBe("Contabilidad")
     })
 })

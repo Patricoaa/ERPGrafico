@@ -6,6 +6,7 @@ import { HR_TABS } from "@/features/hr/navigation"
 import { INVENTORY_TABS } from "@/features/inventory/navigation"
 import { PURCHASING_TABS } from "@/features/purchasing/navigation"
 import { SALES_TABS } from "@/features/sales/navigation"
+import { SECURITY_TABS } from "@/features/security/navigation"
 import { TREASURY_TABS } from "@/features/treasury/navigation"
 
 /**
@@ -67,6 +68,7 @@ const FALLBACK_TABS: Record<string, NavTabConfig[]> = {
     purchasing: PURCHASING_TABS,
     finances: FINANCES_TABS,
     hr: HR_TABS,
+    security: SECURITY_TABS,
 }
 
 /** Navegación de un módulo inactivo; `undefined` si no publica vistas. */

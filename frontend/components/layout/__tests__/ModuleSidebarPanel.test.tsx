@@ -86,7 +86,7 @@ describe("ModuleSidebarPanel", () => {
     it("lists every module as a first-level accordion with no direct link", () => {
         renderPanel()
         const nav = screen.getByRole("navigation", { name: "Módulos y vistas" })
-        const moduleLabels = ["Contabilidad", "Ventas", "Contactos", "Inventario", "Producción", "Tesorería", "Compras", "Finanzas", "RRHH"]
+        const moduleLabels = ["Contabilidad", "Ventas", "Contactos", "Inventario", "Producción", "Tesorería", "Compras", "Finanzas", "RRHH", "Seguridad"]
         for (const label of moduleLabels) {
             expect(within(nav).getByRole("button", { name: label })).toHaveAttribute("aria-expanded")
             expect(within(nav).queryByRole("link", { name: label })).toBeNull()

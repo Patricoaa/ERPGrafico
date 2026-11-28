@@ -27,6 +27,11 @@ const ProfileSettingsModal = dynamic(
     { ssr: false },
 )
 
+const GlobalSettingsModal = dynamic(
+    () => import("@/features/settings").then(m => ({ default: m.GlobalSettingsModal })),
+    { ssr: false },
+)
+
 // ADR-0109: pide el motivo si un movimiento toca una caja POS con sesión abierta
 const POSExternalReasonModal = dynamic(
     () => import("@/features/treasury").then(m => ({ default: m.POSExternalReasonModal })),
@@ -39,6 +44,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const [isInboxOpen, setIsInboxOpen] = useState(false)
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
     const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
+    const [isGlobalSettingsOpen, setIsGlobalSettingsOpen] = useState(false)
 
     const currentModuleId = pathname.split('/').filter(Boolean)[0] || 'dashboard'
 
@@ -99,6 +105,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             onInboxToggle={handleInboxToggle}
             onNavigate={onNavigate}
             onProfileOpen={() => setIsProfileSettingsOpen(true)}
+            onSettingsOpen={() => setIsGlobalSettingsOpen(true)}
         />
     )
 
@@ -167,6 +174,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
             {isProfileSettingsOpen && (
                 <ProfileSettingsModal onOpenChange={setIsProfileSettingsOpen} />
+            )}
+
+            {isGlobalSettingsOpen && (
+                <GlobalSettingsModal onOpenChange={setIsGlobalSettingsOpen} />
             )}
 
             <POSExternalReasonModal />

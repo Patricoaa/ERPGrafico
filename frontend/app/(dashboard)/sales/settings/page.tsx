@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
-export default async function SalesSettingsPage() {
-    redirect("/sales/settings/credit")
+export default function SalesSettingsPage() {
+    redirect("/sales/docs?modal=settings&tab=credit")
 }

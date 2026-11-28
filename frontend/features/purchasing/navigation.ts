@@ -45,21 +45,7 @@ export const PURCHASING_DTES_SUB_TABS: NavTabConfig[] = [
   },
 ]
 
-// ============================================
-// SUB-TABS: CONFIGURACIÓN
-// ============================================
 
-export const PURCHASING_CONFIG_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "dtes",
-    label: "Documentos Tributarios",
-    href: "/purchasing/settings/dtes",
-    iconName: "settings",
-    headerTitle: "Documentos Tributarios",
-    headerDescription: "Tipos de documentos electrónicos habilitados para ser registrados.",
-    metadataTitle: "Documentos Tributarios | ERPGrafico",
-  },
-]
 
 // ============================================
 // TABS PRINCIPALES (nivel 1)
@@ -86,16 +72,6 @@ export const PURCHASING_TABS: NavTabConfig[] = [
     metadataTitle: "Suscripciones | ERPGrafico",
     subTabs: [],
   },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/purchasing/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Parámetros de abastecimiento y documentos electrónicos de proveedores.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: PURCHASING_CONFIG_SUB_TABS,
-  },
 ]
 
 // ============================================
@@ -114,7 +90,4 @@ export function getPurchasingDtesSubTab(value: string): NavTabConfig | undefined
   return findTabConfig(PURCHASING_DTES_SUB_TABS, value)
 }
 
-/** Busca sub-tab de Configuración de Compras */
-export function getPurchasingConfigSubTab(value: string): NavTabConfig | undefined {
-  return findTabConfig(PURCHASING_CONFIG_SUB_TABS, value)
-}
+

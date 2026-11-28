@@ -105,7 +105,7 @@ Ejemplo: `SaleOrder` → `/sales/orders/123`
 | `tax.f29declaration` | `/tax/f29` | `/tax/f29/{id}` | ❌ | No |
 | `tax.accountingperiod` | `/tax/periods` | `/tax/periods/{id}` | ❌ | No |
 | `workflow.task` | `/workflow/tasks` | `/workflow/tasks/{id}` | ❌ | No |
-| `core.user` | `/settings/users` | `/settings/users/{id}` | ❌ | No |
+| `core.user` | `/security/users` | `/security/users/{id}` | ❌ | No |
 | `core.attachment` | `/files` | `/files/{id}` | ❌ | **Sí** |
 
 > **Actualización (ADR-0152, 2026-11-26):** los `detail_url_pattern` de `accounting.budget` y `hr.payroll` ya no son rutas `[id]`: `/finances/budgets/{id}` y `/hr/payrolls/{id}` redirigen a `?selected={id}` sobre la lista (el de presupuestos añade `&action=execution` para abrir el panel de ejecución). La lista canónica de presupuestos es `/finances/budgets/list` (antes `/finances/budgets`). Ver [ADR-0152](./0152-pestanas-de-registro-multiples-por-entidad.md).

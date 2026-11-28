@@ -13,6 +13,8 @@ export * from './TreasurySettingsView';
 export * from './UsersSettingsClientView';
 export * from './UnifiedAccountsView';
 export * from './VatRatesView';
+export * from './GlobalSettingsSidebar';
+export * from './GlobalSettingsModal';
 export * from './groupActions';
 export * from './payrollConceptActions';
 export * from './userActions';

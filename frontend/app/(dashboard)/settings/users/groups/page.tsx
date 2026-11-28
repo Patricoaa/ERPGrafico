@@ -1,8 +1,5 @@
-import { UsersSettingsClientView } from "@/features/settings"
+import { redirect } from "next/navigation"
 
 export default function UsersSettingsGroupsPage() {
-    return (
-        <>
-            <UsersSettingsClientView activeTab="groups" />
-        </>)
+  redirect("/security/users/groups")
 }

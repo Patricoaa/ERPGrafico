@@ -21,3 +21,4 @@ export { useEmployeeMovements, EMPLOYEE_MOVEMENTS_QUERY_KEY } from './hooks/useE
 export { useEmployeeMovementHistory } from './hooks/useEmployeeMovementHistory'
 export { useEmployeeMovementMutations } from './hooks/useEmployeeMovementMutations'
 export { employeeMovementFormSchema, type EmployeeMovementFormValues } from './schemas/employeeMovement.schema'
+export { HRSettingsModal } from './components/HRSettingsModal'
