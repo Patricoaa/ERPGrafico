@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
-export default async function TreasurySettingsPage() {
-  redirect("/treasury/settings/terminal-cobro")
+export default function TreasurySettingsPage() {
+    redirect("/treasury/operaciones/movements?modal=settings&tab=terminal-cobro")
 }

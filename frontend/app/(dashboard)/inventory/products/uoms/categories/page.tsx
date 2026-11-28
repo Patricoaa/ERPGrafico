@@ -1,7 +1,18 @@
-import { redirect } from "next/navigation"
+import type { Metadata } from "next"
+import { UoMCategoryClientView } from "@/features/inventory"
+import { ToolbarCreateButton } from "@/components/shared"
+import { getInventoryProductsSubTab } from "@/features/inventory/navigation"
+import { buildMetadataFromTab } from "@/lib/navigation-helpers"
 
-// "Categorías de Medidas" vive ahora como subtab de Configuración
-// (/inventory/settings/measure-categories). Ruta conservada como redirector.
+const tabConfig = getInventoryProductsSubTab("uoms")
+export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Categorías de Medidas | ERPGrafico" }
+
 export default function ProductsUoMCategoriesPage() {
-    redirect("/inventory/settings/measure-categories")
+  const createAction = <ToolbarCreateButton label="Nueva Categoría" href="/inventory/products/uoms/categories?modal=new" />
+
+  return (
+    <div className="flex-1 overflow-hidden flex flex-col">
+      <UoMCategoryClientView createAction={createAction} />
+    </div>
+  )
 }

@@ -60,3 +60,4 @@ export type {
 } from './components'
 export { purchaseOrderEntity, purchaseOrderViews } from './entity-view/purchaseOrder.entity'
 export { SubscriptionRecordDrawer } from './components/SubscriptionRecordDrawer'
+export { PurchasingSettingsModal } from './components/PurchasingSettingsModal'

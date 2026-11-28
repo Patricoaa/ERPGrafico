@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
-export default async function HRSettingsPage() {
-    redirect("/hr/settings/global")
+export default function HRSettingsPage() {
+    redirect("/hr/employees?modal=settings&tab=global")
 }

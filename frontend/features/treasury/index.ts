@@ -133,3 +133,4 @@ export type { StatementLineUnmatchActionsCtx } from './components/statementLineU
 export { terminalSyncRunEntity, terminalSyncRunViews, terminalSyncRunStatus, terminalSyncRunDetail, formatTerminalSyncDuration } from './entity-view/terminalSyncRun.entity'
 export { loanInstallmentEntity, loanInstallmentViews, type LoanInstallmentRow } from './entity-view/loanInstallment.entity'
 export { POSExternalReasonModal } from './components/POSExternalReasonModal'
+export { TreasurySettingsModal } from './components/TreasurySettingsModal'
