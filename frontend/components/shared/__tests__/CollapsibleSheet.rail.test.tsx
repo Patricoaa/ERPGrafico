@@ -1,5 +1,7 @@
+import { Button } from "@/components/ui/button"
 import { describe, it, expect, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { Inbox } from "lucide-react"
 import { CollapsibleSheet } from "@/components/shared"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
@@ -27,5 +29,38 @@ describe("CollapsibleSheet junto al riel de herramientas", () => {
         render(<Panel fullViewport={false} />)
         const panel = await screen.findByRole("dialog", { name: "Panel" })
         expect(panel.style.right).toBe("0px")
+    })
+
+    describe("clics en el riel con un overlay bloqueante abierto", () => {
+        function Blocking({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
+            return (
+                <GlobalModalProvider>
+                    <div data-tool-rail><Button type="button">riel</Button></div>
+                    <Button type="button">afuera</Button>
+                    <CollapsibleSheet sheetId="b" open onOpenChange={onOpenChange} tabLabel="Panel" tabIcon={Inbox} side="right" fullViewport blockingOverlay registerInStack={false}>
+                        contenido
+                    </CollapsibleSheet>
+                </GlobalModalProvider>
+            )
+        }
+
+        it("no cierran el panel: el riel decide (alternar o cambiar de herramienta)", async () => {
+            const onOpenChange = vi.fn()
+            render(<Blocking onOpenChange={onOpenChange} />)
+            await screen.findByRole("dialog", { name: "Panel" })
+            // body queda con pointer-events:none bajo un modal de Radix; el riel lo reactiva con pointer-events-auto
+            const user = userEvent.setup({ pointerEventsCheck: 0 })
+            await user.click(screen.getByText("riel"))
+            expect(onOpenChange).not.toHaveBeenCalledWith(false)
+        })
+
+        it("un clic fuera del riel y del panel sí lo cierra", async () => {
+            const onOpenChange = vi.fn()
+            render(<Blocking onOpenChange={onOpenChange} />)
+            await screen.findByRole("dialog", { name: "Panel" })
+            const user = userEvent.setup({ pointerEventsCheck: 0 })
+            await user.click(screen.getByText("afuera"))
+            expect(onOpenChange).toHaveBeenCalledWith(false)
+        })
     })
 })

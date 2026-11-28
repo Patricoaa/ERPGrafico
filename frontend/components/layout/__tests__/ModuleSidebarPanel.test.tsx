@@ -65,19 +65,18 @@ describe("ModuleSidebarPanel", () => {
         expect(screen.getByRole("link", { name: "Inicio" })).toBeInTheDocument()
     })
 
-    it("puts POS right below the inbox, with no separator between them", () => {
+    it("deja en utilidades solo el Punto de Venta: Buscar y Bandeja viven en el riel", () => {
         renderPanel()
-        const rows = [
-            screen.getByText("Buscar"),
-            screen.getByText("Bandeja de entrada"),
-            screen.getByText("Punto de Venta"),
-            screen.getByRole("button", { name: "Contabilidad" }),
-        ]
-        for (let i = 1; i < rows.length; i++) {
-            expect(rows[i - 1].compareDocumentPosition(rows[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-        }
-        const utilities = screen.getByText("Buscar").closest("div.flex.flex-col.gap-px")?.parentElement
-        expect(Array.from(utilities?.children ?? []).some(el => el.classList.contains("h-px"))).toBe(false)
+        expect(screen.queryByText("Buscar")).toBeNull()
+        expect(screen.queryByText("Bandeja de entrada")).toBeNull()
+        const pos = screen.getByText("Punto de Venta")
+        expect(pos.compareDocumentPosition(screen.getByRole("button", { name: "Contabilidad" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+
+    it("pinta la fila de herramientas móvil arriba del Punto de Venta", () => {
+        renderPanel({ toolRow: <div>fila-herramientas</div> })
+        const row = screen.getByText("fila-herramientas")
+        expect(row.compareDocumentPosition(screen.getByText("Punto de Venta")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     })
 
     it("lists every module as a first-level accordion with no direct link", () => {

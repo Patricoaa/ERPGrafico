@@ -36,6 +36,14 @@ interface CollapsibleSheetProps {
     overlayClassName?: string
 }
 
+/**
+ * Un overlay bloqueante no se cierra por interactuar con el riel de herramientas (`[data-tool-rail]`):
+ * el riel decide si alterna el panel o cambia de herramienta (spec riel 2026-11-27).
+ */
+function keepOpenOnToolRail(event: { target: EventTarget | null; preventDefault: () => void }) {
+    if (event.target instanceof Element && event.target.closest("[data-tool-rail]")) event.preventDefault()
+}
+
 export function CollapsibleSheet({
     children,
     sheetId,
@@ -158,9 +166,9 @@ export function CollapsibleSheet({
             hideOverlay={blockingOverlay ? false : hideOverlay}
             overlayClassName={overlayClassName}
             hideCloseButton={true}
-            onPointerDownOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
-            onFocusOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
-            onInteractOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
+            onPointerDownOutside={blockingOverlay ? keepOpenOnToolRail : (e) => e.preventDefault()}
+            onFocusOutside={blockingOverlay ? keepOpenOnToolRail : (e) => e.preventDefault()}
+            onInteractOutside={blockingOverlay ? keepOpenOnToolRail : (e) => e.preventDefault()}
             style={{
                 left: side === "left" ? offset : undefined,
                 // A pantalla completa, el panel derecho termina donde empieza el riel de herramientas

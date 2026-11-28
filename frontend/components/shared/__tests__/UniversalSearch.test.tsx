@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { UniversalSearch } from "@/components/shared"
 
@@ -62,6 +62,29 @@ describe("UniversalSearch", () => {
             await user.click(await screen.findByRole("option", { name: /OV-7/ }))
             expect(mocks.openEntity).toHaveBeenCalledWith("sales.saleorder", 7, undefined, undefined, { display: "OV-7" })
             expect(mocks.push).not.toHaveBeenCalled()
+        })
+    })
+
+    describe("modo controlado (un solo buscador en el shell)", () => {
+        beforeEach(() => { mocks.results = [ORDER]; mocks.openEntity.mockReset() })
+        afterEach(() => { mocks.results = [] })
+
+        it("Ctrl+K pide abrir al dueño del estado", () => {
+            const onOpenChange = vi.fn()
+            render(<UniversalSearch open={false} onOpenChange={onOpenChange} renderTrigger={() => null} />)
+            fireEvent.keyDown(document, { key: "k", ctrlKey: true })
+            expect(onOpenChange).toHaveBeenCalledWith(true)
+        })
+
+        it("avisa al abrir un resultado para cerrar el panel del riel", async () => {
+            const user = userEvent.setup()
+            const onResultOpen = vi.fn()
+            const onOpenChange = vi.fn()
+            render(<UniversalSearch open onOpenChange={onOpenChange} onResultOpen={onResultOpen} renderTrigger={() => null} />)
+            await user.type(await screen.findByRole("combobox"), "ov{Enter}")
+            expect(mocks.openEntity).toHaveBeenCalled()
+            expect(onResultOpen).toHaveBeenCalled()
+            expect(onOpenChange).toHaveBeenCalledWith(false)
         })
     })
 })

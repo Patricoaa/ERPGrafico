@@ -12,7 +12,6 @@ import { MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-regis
 import { ModuleNavTree } from "./ModuleNavTree"
 import { getFallbackModuleNavigation } from "./module-nav-fallback"
 import { SidebarNavItem } from "./SidebarNavItem"
-import { SidebarUtilityNav } from "./SidebarUtilityNav"
 import { SidebarQuickActions } from "./SidebarQuickActions"
 import { UserSidebarMenu } from "./UserSidebarMenu"
 
@@ -20,19 +19,19 @@ interface ModuleSidebarPanelProps {
     currentModuleId: string
     /** Navegación publicada por el `[Module]Header` (estable por módulo, ver DashboardShell). */
     navigation?: NavigationConfig
-    isInboxOpen?: boolean
-    onInboxToggle?: () => void
+    /** Herramientas del riel en fila: solo en el menú móvil, donde el riel se oculta. */
+    toolRow?: React.ReactNode
     onNavigate?: () => void
     onProfileOpen: () => void
     onSettingsOpen?: () => void
 }
 
 /**
- * Panel único de navegación (ADR-0162): identidad de la empresa, accesos globales,
+ * Panel único de navegación (ADR-0162): identidad de la empresa, Punto de Venta,
  * módulos como primer nivel y, bajo el activo, sus vistas. Pie con Cuenta y Configuración.
  * En móvil se renderiza dentro del `Sheet` de `DashboardShell`.
  */
-export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, onInboxToggle, onNavigate, onProfileOpen, onSettingsOpen }: ModuleSidebarPanelProps) {
+export function ModuleSidebarPanel({ currentModuleId, navigation, toolRow, onNavigate, onProfileOpen, onSettingsOpen }: ModuleSidebarPanelProps) {
     const { logo, company } = useBranding()
     const companyName = company?.trade_name || company?.name || "ERP"
     // Todos los módulos del primer nivel son acordeones sin redirección (Enmienda 1, ADR-0162).
@@ -67,9 +66,9 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, o
                 </div>
             </TooltipProvider>
 
-            {/* Utilidades globales fijas: Buscar, Bandeja, POS y Calculadora (ADR-0162) */}
+            {/* Utilidades: solo el Punto de Venta; Buscar, Calculadora y Bandeja viven en el riel derecho (spec 2026-11-27) */}
             <div className="shrink-0 bg-background/40 px-2 pt-2 flex flex-col gap-px">
-                <SidebarUtilityNav isInboxOpen={isInboxOpen} onInboxToggle={onInboxToggle} />
+                {toolRow}
                 <SidebarQuickActions />
             </div>
             <div className="h-px bg-border/60 mx-2 shrink-0" aria-hidden />

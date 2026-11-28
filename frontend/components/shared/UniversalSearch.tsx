@@ -16,10 +16,25 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface UniversalSearchProps {
     /** Disparador personalizado (p. ej. ítem "Buscar" del sidebar). Por defecto: botón ícono. */
     renderTrigger?: (open: () => void) => ReactNode
+    /** Modo controlado: el shell monta un único buscador y lo abren el riel y la fila móvil. */
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    /** Se llama al abrir un resultado (el shell cierra el panel activo del riel). */
+    onResultOpen?: () => void
 }
 
-export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
-    const [open, setOpen] = useState(false)
+export function UniversalSearch({ renderTrigger, open: openProp, onOpenChange, onResultOpen }: UniversalSearchProps = {}) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp ?? openState
+    const setOpen = (next: boolean) => {
+        if (openProp === undefined) setOpenState(next)
+        onOpenChange?.(next)
+    }
+    // El atajo global lee el valor vigente sin re-suscribirse en cada render.
+    const toggleRef = useRef<() => void>(() => {})
+    useEffect(() => {
+        toggleRef.current = () => setOpen(!open)
+    })
     const [query, setQuery] = useState("")
     const [activeIndex, setActiveIndex] = useState(0)
     const [selectedType, setSelectedType] = useState<string | null>(null)
@@ -33,7 +48,7 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "k") {
                 e.preventDefault()
-                setOpen((prev) => !prev)
+                toggleRef.current()
             }
         }
         document.addEventListener("keydown", handleKeyDown)
@@ -86,6 +101,7 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
     // El resultado se abre como pestaña de registro (ADR-0152), sin abandonar la página.
     function openResult(result: SearchResult) {
         setOpen(false)
+        onResultOpen?.()
         openEntity(result.label, result.id, undefined, undefined, { display: result.display })
     }
 

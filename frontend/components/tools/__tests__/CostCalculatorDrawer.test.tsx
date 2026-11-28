@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button"
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -22,7 +23,7 @@ vi.mock("@/features/inventory/hooks/useCategories", async (importOriginal) => ({
 vi.mock("@/components/selectors", async (importOriginal) => ({
     ...(await importOriginal<object>()),
     ProductGridPicker: ({ onProductClick }: { onProductClick: (p: unknown) => void }) => (
-        <button type="button" onClick={() => onProductClick(PRODUCT)}>agregar-papel</button>
+        <Button type="button" onClick={() => onProductClick(PRODUCT)}>agregar-papel</Button>
     ),
 }))
 
