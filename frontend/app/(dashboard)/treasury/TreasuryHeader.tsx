@@ -4,8 +4,6 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { useState, useMemo } from "react"
 import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
-import { Button } from "@/components/ui/button"
-import { Settings } from "lucide-react"
 import { useBanks } from "@/features/treasury"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
@@ -30,6 +28,7 @@ export function TreasuryHeader() {
   const { banks } = useBanks()
   const { getViewModeUrl } = useViewModePreference()
   const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const settingsAction = useMemo(() => ({ label: "Configuración de Tesorería", open: () => setIsSettingsOpen(true) }), [])
   const initialSection = searchParams.get("tab") || undefined
 
   const segments = pathname.split("/").filter(Boolean)
@@ -127,11 +126,7 @@ export function TreasuryHeader() {
         iconName={config.iconName}
         variant="minimal"
         navigation={navigation}
-        titleActions={
-          <Button variant="ghost" size="icon" className="size-control-xs" onClick={() => setIsSettingsOpen(true)} title="Configuración de Tesorería">
-            <Settings className="h-4 w-4" />
-          </Button>
-        }
+        settings={settingsAction}
       />
       {isSettingsOpen && (
         <TreasurySettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />

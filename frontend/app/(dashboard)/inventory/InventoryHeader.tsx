@@ -1,11 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
-import { Button } from "@/components/ui/button"
-import { Settings } from "lucide-react"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   INVENTORY_TABS,
@@ -26,6 +24,7 @@ export function InventoryHeader() {
   const searchParams = useSearchParams()
   const { getViewModeUrl } = useViewModePreference()
   const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const settingsAction = useMemo(() => ({ label: "Configuración de Inventario", open: () => setIsSettingsOpen(true) }), [])
   const initialSection = searchParams.get("tab") || undefined
 
   const segments = pathname.split("/").filter(Boolean)
@@ -97,11 +96,7 @@ export function InventoryHeader() {
         iconName={config.iconName}
         variant="minimal"
         navigation={navigation}
-        titleActions={
-          <Button variant="ghost" size="icon" className="size-control-xs" onClick={() => setIsSettingsOpen(true)} title="Configuración de Inventario">
-            <Settings className="h-4 w-4" />
-          </Button>
-        }
+        settings={settingsAction}
       />
       {isSettingsOpen && (
         <InventorySettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
