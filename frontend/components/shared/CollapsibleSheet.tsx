@@ -179,7 +179,8 @@ export function CollapsibleSheet({
                 // Bloqueante va por encima del ActionDock (z-100); los demás siguen en z-45
                 zIndex: blockingOverlay ? 110 : 40 + (!open || isCollapsed ? 0 : 5),
                 // If full size, use 100vw but keep offset for layering if needed
-                maxWidth: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
+                // A pantalla completa nunca más ancho que el viewport menos el riel (móvil: riel 0)
+                maxWidth: size === "full" ? '100vw' : fullViewport ? `min(${typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth}, calc(100vw - var(--tool-rail-width, 0px)))` : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 width: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 '--stack-offset': `${offset}px`
             } as CSSProperties}

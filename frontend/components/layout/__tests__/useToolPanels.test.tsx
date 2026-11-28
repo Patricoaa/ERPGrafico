@@ -21,4 +21,12 @@ describe("useToolPanels", () => {
         expect(result.current.activePanel).toBeNull()
         expect(result.current.hasOpenedCalculator).toBe(true)
     })
+
+    it("abrir el buscador cierra el panel activo para que el diálogo quede encima", () => {
+        const { result } = renderHook(() => useToolPanels())
+        act(() => result.current.togglePanel("inbox"))
+        act(() => result.current.setSearchOpen(true))
+        expect(result.current.isSearchOpen).toBe(true)
+        expect(result.current.activePanel).toBeNull()
+    })
 })

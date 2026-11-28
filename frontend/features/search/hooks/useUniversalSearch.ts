@@ -21,7 +21,8 @@ export function useUniversalSearch(query: string): {
     })
 
     return {
-        results: data ?? [],
+        // Con la consulta corta la query queda deshabilitada y TanStack seguiría mostrando el placeholder anterior
+        results: enabled ? data ?? [] : [],
         isLoading: isFetching && enabled,
     }
 }

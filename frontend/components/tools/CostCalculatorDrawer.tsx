@@ -176,7 +176,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
             blockingOverlay
             registerInStack={false}
             overlayClassName="rail-overlay"
-            className="w-[900px] max-w-[calc(100vw-var(--tool-rail-width,0px))] bg-card shadow-overlay flex flex-col"
+            className="w-[900px] bg-card shadow-overlay flex flex-col"
         >
             <div className="border-b border-border shrink-0 h-14 flex items-center px-4">
                 <PanelHeader
@@ -186,9 +186,9 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                     closeTooltip="Cerrar calculadora"
                 />
             </div>
-            <div className="flex-1 min-h-0 overflow-hidden flex">
+            <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden flex flex-col md:flex-row">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="w-[60%] flex flex-col p-4 min-h-0">
+                <div className="w-full md:w-[60%] flex flex-col p-4 min-h-[60vh] md:min-h-0">
                     <div className="surface-panel flex min-h-0 flex-1 flex-col gap-3 p-3">
                     <StepHeader
                         title="Selección de Productos"
@@ -236,7 +236,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[45%] flex flex-col p-4 min-h-0">
+                <div className="w-full md:w-[45%] flex flex-col p-4 min-h-0">
                     <SummaryPanel>
                         <SummaryPanelHeader
                             title="Tu lista"

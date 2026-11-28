@@ -25,6 +25,18 @@ describe("CollapsibleSheet junto al riel de herramientas", () => {
         expect(panel.style.right).toBe("calc(var(--tool-rail-width, 0px) + 0px)")
     })
 
+    it("a pantalla completa el ancho nunca supera el viewport menos el riel", async () => {
+        render(
+            <GlobalModalProvider>
+                <CollapsibleSheet sheetId="w" open onOpenChange={() => {}} tabLabel="Ancho" tabIcon={Inbox} side="right" fullViewport fullWidth={900} blockingOverlay registerInStack={false}>
+                    contenido
+                </CollapsibleSheet>
+            </GlobalModalProvider>
+        )
+        const panel = await screen.findByRole("dialog", { name: "Ancho" })
+        expect(panel.style.maxWidth).toBe("min(900px, calc(100vw - var(--tool-rail-width, 0px)))")
+    })
+
     it("un panel bajo la barra de trabajo no cambia su anclaje", async () => {
         render(<Panel fullViewport={false} />)
         const panel = await screen.findByRole("dialog", { name: "Panel" })

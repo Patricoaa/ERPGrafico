@@ -1410,6 +1410,17 @@ table [data-notched-field] {
 
   /* Blocking rail overlay (bandeja, calculadora): scrim above the ActionDock (ADR-0161)
      that stops at the tool rail, so the rail stays visible and clickable. */
+  /* Bajo un overlay del riel (z 110): sus selects, menús, popovers y tooltips quedan encima
+     (Radix copia el z-index del contenido a su wrapper), y el riel recupera los clics que Radix
+     le quita al body. Bajo otros modales el riel no responde. */
+  body:has([data-slot="sheet-overlay"].rail-overlay) :is([data-slot="select-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="popover-content"], [data-slot="tooltip-content"]) {
+    z-index: 120 !important;
+  }
+
+  body:has([data-slot="sheet-overlay"].rail-overlay) [data-tool-rail] {
+    pointer-events: auto;
+  }
+
   #main-content [data-slot="sheet-overlay"].rail-overlay {
     position: fixed !important;
     inset: 0 var(--tool-rail-width, 0px) 0 0 !important;

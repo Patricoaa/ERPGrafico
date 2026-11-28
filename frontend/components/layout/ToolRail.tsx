@@ -14,6 +14,8 @@ interface ToolRailProps {
     onTogglePanel: (panel: ToolPanel) => void
     onSearchOpen: () => void
     pendingTasksCount: number
+    /** Antes de abrir un diálogo desde el riel (⚙): cierra el panel activo y, en móvil, el menú. */
+    onDialogOpen?: () => void
     /** `rail`: columna derecha de 52 px (md+). `row`: fila en el menú de navegación móvil. */
     variant?: "rail" | "row"
 }
@@ -59,7 +61,7 @@ function RailButton({ label, icon: Icon, onClick, pressed, badge, tooltipSide }:
  * Riel derecho de herramientas de apoyo (spec 2026-11-27, enmienda ADR-0162): Buscar, Calculadora,
  * Bandeja y la configuración del módulo activo. Los paneles que abre se anclan a su izquierda.
  */
-export function ToolRail({ activePanel, onTogglePanel, onSearchOpen, pendingTasksCount, variant = "rail" }: ToolRailProps) {
+export function ToolRail({ activePanel, onTogglePanel, onSearchOpen, pendingTasksCount, onDialogOpen, variant = "rail" }: ToolRailProps) {
     const pathname = usePathname()
     const { moduleSettings } = useHeader()
     const currentModuleId = pathname.split("/").filter(Boolean)[0] || "dashboard"
@@ -72,11 +74,11 @@ export function ToolRail({ activePanel, onTogglePanel, onSearchOpen, pendingTask
             <div
                 role="toolbar"
                 aria-label="Herramientas"
-                // Sigue clicable bajo un overlay modal (Radix deja body con pointer-events:none)
+                // Bajo un overlay del riel sigue clicable (globals.css); bajo otros modales, no
                 data-tool-rail
                 aria-orientation={isRow ? "horizontal" : "vertical"}
                 className={cn(
-                    "pointer-events-auto flex items-center gap-1",
+                    "flex items-center gap-1",
                     isRow ? "flex-row px-2 py-1" : "w-[52px] shrink-0 h-full flex-col py-2 bg-muted/30",
                 )}
             >
@@ -99,7 +101,7 @@ export function ToolRail({ activePanel, onTogglePanel, onSearchOpen, pendingTask
                 {settings && (
                     <>
                         <div className={cn("bg-border/60", isRow ? "h-5 w-px mx-1" : "h-px w-6 my-1")} aria-hidden />
-                        <RailButton label={settings.label} icon={Settings} onClick={settings.open} tooltipSide={tooltipSide} />
+                        <RailButton label={settings.label} icon={Settings} onClick={() => { onDialogOpen?.(); settings.open() }} tooltipSide={tooltipSide} />
                     </>
                 )}
             </div>

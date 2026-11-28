@@ -42,12 +42,19 @@ describe("ToolRail", () => {
         expect(onTogglePanel).toHaveBeenCalledWith("inbox")
     })
 
-    it("muestra el ⚙ del módulo activo y abre su configuración", () => {
+    it("muestra el ⚙ del módulo activo y abre su configuración tras cerrar el panel del riel", () => {
         const open = vi.fn()
+        const onDialogOpen = vi.fn()
         mocks.moduleSettings = { moduleId: "sales", settings: { label: "Configuración de Ventas", open } }
-        renderRail()
+        renderRail({ onDialogOpen })
         fireEvent.click(screen.getByRole("button", { name: "Configuración de Ventas" }))
+        expect(onDialogOpen).toHaveBeenCalled()
         expect(open).toHaveBeenCalled()
+    })
+
+    it("no fuerza clics propios: solo los recupera bajo un overlay del riel (CSS)", () => {
+        renderRail()
+        expect(screen.getByRole("toolbar", { name: "Herramientas" })).not.toHaveClass("pointer-events-auto")
     })
 
     it("oculta el ⚙ si la configuración publicada es de otro módulo", () => {

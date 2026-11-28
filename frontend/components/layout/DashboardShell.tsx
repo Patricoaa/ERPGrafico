@@ -49,8 +49,7 @@ const POSExternalReasonModal = dynamic(
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
-    const { activePanel, hasOpenedCalculator, togglePanel, closePanel } = useToolPanels()
-    const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const { activePanel, hasOpenedCalculator, togglePanel, closePanel, isSearchOpen, setSearchOpen } = useToolPanels()
     const pendingTasksCount = usePendingTasksCount()
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
     const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
@@ -108,8 +107,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             variant={variant}
             activePanel={activePanel}
             pendingTasksCount={pendingTasksCount}
-            onSearchOpen={() => { onNavigate?.(); setIsSearchOpen(true) }}
+            onSearchOpen={() => { onNavigate?.(); setSearchOpen(true) }}
             onTogglePanel={(panel) => { onNavigate?.(); togglePanel(panel) }}
+            onDialogOpen={() => { onNavigate?.(); closePanel() }}
         />
     )
 
@@ -189,7 +189,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             {/* Único buscador universal: lo abren el riel, la fila móvil y Ctrl+K */}
             <UniversalSearch
                 open={isSearchOpen}
-                onOpenChange={setIsSearchOpen}
+                onOpenChange={setSearchOpen}
                 onResultOpen={closePanel}
                 renderTrigger={() => null}
             />

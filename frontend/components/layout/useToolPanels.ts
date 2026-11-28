@@ -16,5 +16,12 @@ export function useToolPanels() {
 
     const closePanel = useCallback(() => setActivePanel(null), [])
 
-    return { activePanel, hasOpenedCalculator, togglePanel, closePanel }
+    // Los diálogos (buscador, configuración) viven en z 50: abrir uno cierra el overlay del riel (z 110)
+    const [isSearchOpen, setIsSearchOpenState] = useState(false)
+    const setSearchOpen = useCallback((open: boolean) => {
+        if (open) setActivePanel(null)
+        setIsSearchOpenState(open)
+    }, [])
+
+    return { activePanel, hasOpenedCalculator, togglePanel, closePanel, isSearchOpen, setSearchOpen }
 }
