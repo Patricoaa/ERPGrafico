@@ -24,4 +24,4 @@ def test_universal_search_runs_full_text_on_postgres():
     results = UniversalRegistry.search("Aurora", user=user, limit=5)
 
     assert any(r["label"] == "sales.saleorder" and str(r["id"]) == str(order.pk) for r in results), results
-    assert all("detail_url" in r for r in results)
+    assert all("detail_url" not in r and "list_url" not in r for r in results)

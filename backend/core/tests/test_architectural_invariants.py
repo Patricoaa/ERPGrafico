@@ -393,6 +393,44 @@ class TestArchitecturalInvariants:
     def _is_serializer_class(self, node):
         return isinstance(node, ast.ClassDef) and node.name.endswith("Serializer")
 
+    def test_searchable_entities_have_entity_drawer(self):
+        """
+        Riel de herramientas (spec 2026-11-27): el buscador universal abre cada resultado con
+        `openEntity(label, id)`, así que toda entidad con `in_search=True` debe tener drawer
+        registrado en `ENTITY_DRAWERS` (frontend/lib/entity-drawers.tsx). Sin drawer → `in_search=False`.
+        """
+        from core.registry import UniversalRegistry
+
+        drawers_file = Path(settings.BASE_DIR).parent / "frontend" / "lib" / "entity-drawers.tsx"
+        if not drawers_file.exists():
+            pytest.skip(f"entity-drawers.tsx no encontrado: {drawers_file}")
+
+        drawer_labels = set(
+            re.findall(r"""^\s*["']([a-z_]+\.[a-z_]+)["']\s*:""", drawers_file.read_text(encoding="utf-8"), re.MULTILINE)
+        )
+        assert drawer_labels, "No se pudo parsear ENTITY_DRAWERS en entity-drawers.tsx"
+
+        missing = sorted(
+            label for label, entity in UniversalRegistry._entities.items() if entity.in_search and label not in drawer_labels
+        )
+        assert not missing, (
+            "Entidades buscables sin drawer en ENTITY_DRAWERS (registrar drawer o in_search=False):\n  "
+            + "\n  ".join(missing)
+        )
+
+    def test_entities_without_drawer_are_not_searchable(self):
+        from core.registry import UniversalRegistry
+
+        for label in (
+            "accounting.fiscalyear",
+            "contacts.partnertransaction",
+            "treasury.cardpurchasegroup",
+            "treasury.cardpurchaseinstallment",
+            "treasury.creditline",
+            "treasury.loaninstallment",
+        ):
+            assert UniversalRegistry.get(label).in_search is False, label
+
     def test_no_transaction_atomic_in_serializers(self):
         """
         ARCH-RULE-A/B: No serializer class may contain transaction.atomic.

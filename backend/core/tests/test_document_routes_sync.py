@@ -64,15 +64,13 @@ def test_every_registered_type_has_canonical_url_or_drawer():
     assert not missing, f"Tipos sin URL canónica ni ficha (el resolvedor no podría abrirlos): {missing}"
 
 
-def test_search_detail_url_uses_canonical_url():
-    from core.registry import UniversalRegistry
-
-    assert UniversalRegistry._canonical_url("sales.saledelivery", 800) == "/d/sales.saledelivery/800"
-    assert UniversalRegistry._canonical_url("sales.saleorder", 5) == "/sales/dtes/orders?selected=5"
-    assert UniversalRegistry._canonical_url("billing.invoice", 7) == "/d/billing.invoice/7"
+def test_document_url_for_uses_canonical_url():
+    assert DocumentTypeRegistry.url_for("sales.saledelivery", 800) == "/d/sales.saledelivery/800"
+    assert DocumentTypeRegistry.url_for("sales.saleorder", 5) == "/sales/dtes/orders?selected=5"
+    assert DocumentTypeRegistry.url_for("billing.invoice", 7) == "/d/billing.invoice/7"
     # Deep links canónicos: T-79 ya no valida estos patrones (ADR-0022 / ADR-0152).
-    assert UniversalRegistry._canonical_url("accounting.budget", 604) == "/finances/budgets/list?selected=604"
-    assert UniversalRegistry._canonical_url("hr.payroll", 911) == "/hr/payrolls?selected=911"
+    assert DocumentTypeRegistry.url_for("accounting.budget", 604) == "/finances/budgets/list?selected=604"
+    assert DocumentTypeRegistry.url_for("hr.payroll", 911) == "/hr/payrolls?selected=911"
 
 
 def test_payrollpayment_canonical_url_points_at_its_payroll():

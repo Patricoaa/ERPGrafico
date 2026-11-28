@@ -68,6 +68,7 @@ class AccountingConfig(AppConfig):
                 SearchableEntity(
                     model=FiscalYear,
                     label="accounting.fiscalyear",
+                    in_search=False,  # sin drawer: el buscador abre con openEntity
                     title_singular="Ejercicio Contable",
                     title_plural="Ejercicios Contables",
                     icon="calendar",
