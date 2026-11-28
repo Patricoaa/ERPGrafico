@@ -40,7 +40,7 @@ function isTestFile(filename) {
 
 /** True for files that belong to the entity-view system or are built on it. */
 function createEntityViewScope(context) {
-  const filename = context.filename || context.getFilename()
+  const filename = context.filename
   const inScopeByPath = ENTITY_VIEW_CORE.test(filename) || FEATURE_ENTITY_VIEW.test(filename)
   let importsBarrel = false
   return {
@@ -159,7 +159,7 @@ const noDeepImport = {
     },
   },
   create(context) {
-    const filename = context.filename || context.getFilename()
+    const filename = context.filename
     if (isTestFile(filename) || ENTITY_VIEW_CORE.test(filename)) return {}
     const isStory = /\.stories\.tsx?$/.test(filename)
     return {

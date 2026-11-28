@@ -28,7 +28,7 @@ const rule = {
     },
   },
   create(context) {
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     if (filename.includes('.test.') || filename.includes('.spec.')) return {};
 
     let importsStatusBadge = false;
