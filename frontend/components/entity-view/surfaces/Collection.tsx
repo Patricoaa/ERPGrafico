@@ -33,11 +33,10 @@ import {
 } from "../core/define-entity"
 import { toNumber } from "../core/formatters"
 import { getValueKind, type Align, type Surface, type ValueKind } from "../core/value-kinds"
-import type { CollectionGroup, CollectionPaging, EntityCollection, RowDragSpec, RowDropSpec, RowTone } from "../core/use-entity-collection"
+import type { CollectionGroup, CollectionPaging, CollectionRow, CollectionTable, CollectionTableRow, EntityCollection, RowDragSpec, RowDropSpec, RowTone } from "../core/use-entity-collection"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { useIsMobile } from "@/hooks/useIsMobile"
-import type { Row, Table as TanstackTable } from "@tanstack/react-table"
 import { ALIGN_FLEX, ALIGN_TEXT } from "../core/align"
 import { useEntityOpener } from "./EntityViewProvider"
 import { useSavedRowFlash } from "./useSavedRowFlash"
@@ -59,7 +58,7 @@ export type SelectionMode = "none" | "bulk" | "panel"
 /** What the surfaces read from the entity: label and fields (the literal field-id map `F` is erased). */
 type EntityRef<T> = EntityIdentity & Pick<EntitySpec<T, FieldMap<T>>, "fields" | "export" | "tree">
 
-interface CollectionContextValue<T> {
+interface CollectionContextValue<T extends CollectionRow> {
     collection: Omit<EntityCollection<T, FieldMap<T>>, "entity"> & { entity: EntityRef<T> }
     actions?: (row: T, surface: "table" | "card") => React.ReactNode
     open: (row: T) => void
@@ -95,7 +94,7 @@ interface CollectionContextValue<T> {
  */
 const CollectionContext = React.createContext<unknown>(null)
 
-function useCollectionContext<T>(): CollectionContextValue<T> {
+function useCollectionContext<T extends CollectionRow>(): CollectionContextValue<T> {
     const ctx = React.useContext(CollectionContext)
     if (ctx === null) throw new Error("entity-view: Collection.* debe usarse dentro de <Collection.Root>")
     return ctx as CollectionContextValue<T>
@@ -116,7 +115,7 @@ export const HEADER_TEXT = "text-3xs font-bold uppercase tracking-widest text-mu
 
 // ─── Root ────────────────────────────────────────────────────────────────────
 
-export interface CollectionRootProps<T, F extends FieldMap<T>> {
+export interface CollectionRootProps<T extends CollectionRow, F extends FieldMap<T>> {
     collection: EntityCollection<T, F>
     children: React.ReactNode
     /** Row actions per surface, usually `xActions.forCollection(ctx)`. Rendered outside the clickable area (AX-4). */
@@ -138,7 +137,7 @@ export interface CollectionRootProps<T, F extends FieldMap<T>> {
     label?: string
 }
 
-function Root<T, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, analytics: controlledAnalytics, query, label }: CollectionRootProps<T, F>) {
+function Root<T extends CollectionRow, F extends FieldMap<T>>({ collection, children, actions, onOpen, selection = "none", selectedId, defaultView = "table", view: controlledView, onViewChange, analytics: controlledAnalytics, query, label }: CollectionRootProps<T, F>) {
     const opener = useEntityOpener()
     // The enclosing `Section` / `Section.Scope` header shows this collection's total (ADR-0137).
     useRegisterRecordCount(collection.status === "loading" ? null : collection.total)
@@ -374,7 +373,7 @@ function UtilityActions({ hasAnalytics, analyticsOpen, onAnalyticsOpen, exportSp
 }
 
 function Toolbar({ children, action, views, exportFilters, extraActions = [] }: CollectionToolbarProps) {
-    const ctx = useCollectionContext<unknown>()
+    const ctx = useCollectionContext<CollectionRow>()
     const allowed = views ?? policyModes(ctx.collection.entity.label)
     const exportSpec = ctx.collection.entity.export
     const resultCount = ctx.collection.status === "loading" ? null : ctx.collection.total
@@ -447,7 +446,7 @@ interface CommandToolbarProps {
  * Below `md` the four tools collapse into one «Ajustes» popover with their active-change count.
  */
 function CommandToolbar({ query, modes, action, resultCount, children, utilities, hasUtilities, topRow }: CommandToolbarProps) {
-    const ctx = useCollectionContext<unknown>()
+    const ctx = useCollectionContext<CollectionRow>()
     const isMobile = useIsMobile()
     const { compiled, search } = query
     const filters: MenuFilter[] = [
@@ -604,15 +603,15 @@ function useResolvedSurface(options: CollectionSurfaceOptions, paging: Collectio
 }
 
 /** Page footer: paginator, or "Mostrar más (N restantes)" for client-paged collections. */
-function Pager<T>({ table, paging, moreStep, pager }: { table: TanstackTable<T>; paging: CollectionPaging; moreStep: number; pager: "pages" | "more" }) {
+function Pager<T extends CollectionRow>({ table, paging, moreStep, pager }: { table: CollectionTable<T>; paging: CollectionPaging; moreStep: number; pager: "pages" | "more" }) {
     if (paging === "none") return null
     if (pager === "more" && paging !== "server") return <ShowMore table={table} step={moreStep} />
     return <DataTablePagination table={table} />
 }
 
-function ShowMore<T>({ table, step }: { table: TanstackTable<T>; step: number }) {
-    const pageSize = table.getState().pagination.pageSize
-    const remaining = Math.max(0, table.getPrePaginationRowModel().rows.length - pageSize)
+function ShowMore<T extends CollectionRow>({ table, step }: { table: CollectionTable<T>; step: number }) {
+    const pageSize = table.state.pagination.pageSize
+    const remaining = Math.max(0, table.getPrePaginatedRowModel().rows.length - pageSize)
     if (remaining === 0) return null
     return (
         <div className="flex justify-center py-1">
@@ -634,7 +633,7 @@ export interface CollectionViewProps<T, Id extends string> extends CollectionSur
     onResetFilters?: () => void
 }
 
-function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription, emptyAction, onResetFilters, ...surfaceOptions }: CollectionViewProps<T, Id>) {
+function View<T extends CollectionRow, Id extends string>({ table, card, emptyTitle, emptyDescription, emptyAction, onResetFilters, ...surfaceOptions }: CollectionViewProps<T, Id>) {
     const ctx = useCollectionContext<T>()
     const { status, truncated, total, table: model, paging, isFiltered } = ctx.collection
     const resolved = useResolvedSurface(surfaceOptions, paging)
@@ -668,7 +667,7 @@ function View<T, Id extends string>({ table, card, emptyTitle, emptyDescription,
 type CollectionMessageProps = Pick<CollectionViewProps<unknown, string>, "emptyTitle" | "emptyDescription" | "emptyAction" | "onResetFilters"> & { status: "error" | "empty"; frame: "card" | "none" }
 
 function CollectionMessage({ status, frame, emptyTitle, emptyDescription, emptyAction, onResetFilters }: CollectionMessageProps) {
-    const ctx = useCollectionContext<unknown>()
+    const ctx = useCollectionContext<CollectionRow>()
     const { refetch, isFiltered, entity } = ctx.collection
     const noun = ctx.label.toLowerCase()
     return (
@@ -715,10 +714,10 @@ export interface BulkChoice<T> {
 }
 
 /** Floating dock with the selected rows' actions (`selection="bulk"`); hidden while nothing is selected. */
-function BulkBar<T>({ actions = [], choice }: CollectionBulkBarProps<T>) {
+function BulkBar<T extends CollectionRow>({ actions = [], choice }: CollectionBulkBarProps<T>) {
     const ctx = useCollectionContext<T>()
     const { table } = ctx.collection
-    const rowSelection = table.getState().rowSelection
+    const rowSelection = table.state.rowSelection
     // `getCoreRowModel()` is memoized by TanStack and changes with the data: after a refetch the
     // actions receive the fresh rows, not the objects that were selected.
     const coreRows = table.getCoreRowModel()
@@ -760,7 +759,7 @@ function BulkBar<T>({ actions = [], choice }: CollectionBulkBarProps<T>) {
  * analytics only while the modal is open (`useCollectionAnalytics().open`).
  */
 function Analytics({ children }: { children: React.ReactNode }) {
-    const ctx = useCollectionContext<unknown>()
+    const ctx = useCollectionContext<CollectionRow>()
     const { query, setAnalyticsOpen } = ctx
     // Drill-down (ADR-0158 §11): the clicked category becomes a collection filter and the modal closes.
     // Both writes go through nuqs, so they land as one URL update.
@@ -796,7 +795,7 @@ function Analytics({ children }: { children: React.ReactNode }) {
  * widens it inside the modal only.
  */
 function AnalyticsScopeStrip({ query }: { query: CollectionQuery<string> }) {
-    const ctx = useCollectionContext<unknown>()
+    const ctx = useCollectionContext<CollectionRow>()
     const scope = ctx.analyticsScope
     const all = scope?.value === "all"
     const chips = query.search.chips.filter((chip) => chip.variant !== "group")
@@ -834,7 +833,7 @@ function SortIcon({ dir }: { dir: false | "asc" | "desc" }) {
 const ARIA_SORT = { asc: "ascending", desc: "descending" } as const
 
 /** Indent + fold toggle of a tree row (first column). Leaves keep the toggle's width so siblings align. */
-function TreeCell<T>({ row, label, children }: { row: Row<T>; label: string; children: React.ReactNode }) {
+function TreeCell<T extends CollectionRow>({ row, label, children }: { row: CollectionTableRow<T>; label: string; children: React.ReactNode }) {
     const canExpand = row.getCanExpand()
     const isExpanded = row.getIsExpanded()
     return (
@@ -908,7 +907,7 @@ function DndRow({ drag, drop, className, style, ...props }: RowShellProps) {
  * expandable rows: TanStack's own check also wants every leaf in the per-row map, which hand-expanding
  * parents never adds, so its label would stick on "Expandir todo".
  */
-function TreeToggleAll<T>({ table }: { table: EntityCollection<T, FieldMap<T>>["table"] }) {
+function TreeToggleAll<T extends CollectionRow>({ table }: { table: EntityCollection<T, FieldMap<T>>["table"] }) {
     const all = table.getIsAllRowsExpanded() || table.getCoreRowModel().flatRows.filter((r) => r.getCanExpand()).every((r) => r.getIsExpanded())
     return (
         <Button
@@ -925,7 +924,7 @@ function TreeToggleAll<T>({ table }: { table: EntityCollection<T, FieldMap<T>>["
     )
 }
 
-function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { layout: TableLayout<Id> } & CollectionSurfaceOptions) {
+function TableSurface<T extends CollectionRow, Id extends string>({ layout, ...surfaceOptions }: { layout: TableLayout<Id> } & CollectionSurfaceOptions) {
     const ctx = useCollectionContext<T>()
     const { table, status, isRefetching, total, groups, paging, moreStep } = ctx.collection
     const { embedded, frame, pager, maxHeight, stickyHeader } = useResolvedSurface(surfaceOptions, paging)
@@ -956,14 +955,14 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
     const treeColumn = cols[0]?.id
     const colSpan = cols.length + (isBulk ? 1 : 0) + (hasActions ? 1 : 0)
     const { rowTone, openable, dnd } = ctx.collection
-    const renderRow = (row: Row<T>, index: number) => {
+    const renderRow = (row: CollectionTableRow<T>, index: number) => {
         const isSelected = ctx.selectedId === row.id || row.getIsSelected()
         const isFlashing = ctx.flashId === row.id
         const tone = rowTone?.(row.original) ?? null
         const opens = ctx.canOpen && (openable?.(row.original) ?? true)
         const trProps: React.ComponentPropsWithoutRef<"tr"> & DataAttributes = {
             // Grouped and tree rows are not a flat sequence of the total: no row index.
-            "aria-rowindex": groups || isTree ? undefined : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + index + 2,
+            "aria-rowindex": groups || isTree ? undefined : table.state.pagination.pageIndex * table.state.pagination.pageSize + index + 2,
             "aria-selected": ctx.selection !== "none" ? isSelected : undefined,
             "data-saved-flash": isFlashing || undefined,
             "data-tone": tone ?? undefined,
@@ -1141,7 +1140,7 @@ function TableSurface<T, Id extends string>({ layout, ...surfaceOptions }: { lay
  * Group header: label, count and subtotal. A server group (ADR-0158 §7) folds and shows the count
  * of the whole result, not only the loaded rows.
  */
-function GroupHeading<T>({ group }: { group: CollectionGroup<T> }) {
+function GroupHeading<T extends CollectionRow>({ group }: { group: CollectionGroup<T> }) {
     const count = group.count ?? group.rows.length
     const text = (
         <>
@@ -1166,7 +1165,7 @@ function GroupHeading<T>({ group }: { group: CollectionGroup<T> }) {
 }
 
 /** Under an open server group: its loading / error state and «Mostrar más». */
-function GroupFooter<T>({ group, as, colSpan }: { group: CollectionGroup<T>; as: "row" | "block"; colSpan?: number }) {
+function GroupFooter<T extends CollectionRow>({ group, as, colSpan }: { group: CollectionGroup<T>; as: "row" | "block"; colSpan?: number }) {
     let content: React.ReactNode = null
     if (group.isLoading) content = <Skeleton className="h-3 w-32" aria-label={`Cargando ${group.label}`} />
     else if (group.isError) content = <span className="text-xs text-destructive">No se pudieron cargar las filas de este grupo</span>
@@ -1260,7 +1259,7 @@ const GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-[repeat(2,
 /** Catalog grids (media on top) are denser: 4 or 5 columns by the width of the grid itself (container queries). */
 const CATALOG_GRID_CLASS = "grid grid-cols-[minmax(0,1fr)] gap-3 @md:grid-cols-[repeat(2,minmax(0,1fr))] @2xl:grid-cols-[repeat(3,minmax(0,1fr))] @4xl:grid-cols-[repeat(4,minmax(0,1fr))] @7xl:grid-cols-[repeat(5,minmax(0,1fr))]"
 
-function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: CardLayout<T, Id> } & CollectionSurfaceOptions) {
+function Grid<T extends CollectionRow, Id extends string>({ layout, ...surfaceOptions }: { layout: CardLayout<T, Id> } & CollectionSurfaceOptions) {
     const ctx = useCollectionContext<T>()
     const { table, status, groups, paging, moreStep } = ctx.collection
     const { pager, maxHeight } = useResolvedSurface(surfaceOptions, paging)
@@ -1274,7 +1273,7 @@ function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: Car
     const footerDef = React.useMemo(() => (layout.footer ? fieldById(entity, layout.footer.value) : null), [layout.footer, entity])
     const trailingDefs = React.useMemo(() => (layout.trailing ?? []).map((id) => ({ id, def: fieldById(entity, id) })), [layout.trailing, entity])
 
-    const renderCard = (row: Row<T>) => {
+    const renderCard = (row: CollectionTableRow<T>) => {
         const data = row.original
         const opens = ctx.canOpen && (ctx.collection.openable?.(data) ?? true)
         const media = layout.media
@@ -1450,7 +1449,7 @@ function Grid<T, Id extends string>({ layout, ...surfaceOptions }: { layout: Car
 
         // Count of cards matching page size or filling the grid neatly
         const skeletonCount = (() => {
-            const pageSize = table.getState().pagination?.pageSize
+            const pageSize = table.state.pagination?.pageSize
             if (pageSize && pageSize > 0) {
                 return Math.min(pageSize, isCatalog ? 15 : 12)
             }

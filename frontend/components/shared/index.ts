@@ -112,9 +112,6 @@ export type FilterState = Record<string, string>
 // Toolbar styles (shared typography & layout tokens)
 export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX, SEG_INPUT, TOOLBAR_ICON_BTN, TOOLBAR_MENU_ITEM, TAB_TOOLBAR_TRIGGER } from './search-styles';
 
-// Segmentation table context (for dynamic multi-select filters in UnifiedSearchBar)
-export { useSegmentationTable } from './SegmentationTableContext';
-
 // Unified Search (reemplaza SmartSearch + Segmentation + GroupBy)
 export { UnifiedSearchBar, bindUnifiedSearch, useUnifiedSearch, AppliedFilters, ResultCountProvider, useResultCount, formatResultCount } from './UnifiedSearchBar';
 export type {

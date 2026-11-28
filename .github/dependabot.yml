@@ -12,10 +12,6 @@ updates:
       # One PR for all minor/patch bumps; majors arrive one by one to review their changelog.
       npm-minor-patch:
         update-types: [minor, patch]
-    ignore:
-      # Migración planificada en #311 (837 errores de tipos en entity-view y DataTable).
-      - dependency-name: "@tanstack/react-table"
-        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: pip
     directory: /backend

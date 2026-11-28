@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronDown, ChevronLeftIcon, ChevronRightIcon, ChevronsLeft, ChevronsRight } from "lucide-react"
-import { type Table } from "@tanstack/react-table"
+import type { PaginationState } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,21 +14,34 @@ import {
 import { cn } from "@/lib/utils"
 import { SEG_TRIGGER, SEG_INACTIVE, SEG_DROPDOWN_ITEM } from './search-styles'
 
-interface DataTablePaginationProps<TData> {
-    table: Table<TData>
+/** The slice of a TanStack table (with `rowPaginationFeature`) the paginator reads and drives. */
+export interface PaginatedTable {
+    readonly state: { readonly pagination: PaginationState }
+    getRowCount: () => number
+    getPageCount: () => number
+    getCanPreviousPage: () => boolean
+    getCanNextPage: () => boolean
+    previousPage: () => void
+    nextPage: () => void
+    setPageIndex: (pageIndex: number) => void
+    setPageSize: (pageSize: number) => void
+}
+
+interface DataTablePaginationProps {
+    table: PaginatedTable
     pageSizeOptions?: number[]
 }
 
-export function DataTablePagination<TData>({
+export function DataTablePagination({
     table,
     pageSizeOptions = [10, 20, 50, 100, 500],
-}: DataTablePaginationProps<TData>) {
+}: DataTablePaginationProps) {
     return (
         <div className="flex items-center justify-between px-1.5">
             <div className="flex-1 text-xs font-medium text-muted-foreground">
-                Mostrando {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} a{" "}
+                Mostrando {table.state.pagination.pageIndex * table.state.pagination.pageSize + 1} a{" "}
                 {Math.min(
-                    (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                    (table.state.pagination.pageIndex + 1) * table.state.pagination.pageSize,
                     table.getRowCount()
                 )}{" "}
                 de {table.getRowCount()} registros
@@ -43,13 +56,13 @@ export function DataTablePagination<TData>({
                                 size="sm"
                                 className={cn(SEG_TRIGGER, SEG_INACTIVE, "cursor-pointer border-none bg-transparent hover:bg-transparent")}
                             >
-                                <span>{table.getState().pagination.pageSize}</span>
+                                <span>{table.state.pagination.pageSize}</span>
                                 <ChevronDown className="h-3 w-3" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-[70px] min-w-0 p-1">
                             <DropdownMenuRadioGroup
-                                value={`${table.getState().pagination.pageSize}`}
+                                value={`${table.state.pagination.pageSize}`}
                                 onValueChange={(value) => table.setPageSize(Number(value))}
                             >
                                 {pageSizeOptions.map((pageSize) => (
@@ -62,7 +75,7 @@ export function DataTablePagination<TData>({
                     </DropdownMenu>
                 </div>
                 <div className="flex w-[100px] items-center justify-center text-xs font-medium text-muted-foreground">
-                    Página {table.getState().pagination.pageIndex + 1} de{" "}
+                    Página {table.state.pagination.pageIndex + 1} de{" "}
                     {table.getPageCount()}
                 </div>
                 <div className="flex items-center gap-0.5">
