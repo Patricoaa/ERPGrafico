@@ -94,42 +94,11 @@ export function SettingsHeader() {
                     description: "Configure la información fiscal, logotipos y presencia de su organización.", 
                     iconName: "building-2" 
                 }
-            case 'users':
-                if (subActiveValue === 'groups') {
-                    return { 
-                        title: "Grupos y Equipos", 
-                        description: "Organice a sus colaboradores por departamentos o funciones específicas.", 
-                        iconName: "user-plus" 
-                    }
-                }
-                return { 
-                    title: "Usuarios y Permisos", 
-                    description: "Gestione el acceso al sistema, roles y políticas de seguridad.", 
-                    iconName: "shield-check" 
-                }
-            case 'audit':
-                return { 
-                    title: "Registro de Auditoría", 
-                    description: "Trazabilidad completa de acciones y cambios realizados en el sistema.", 
-                    iconName: "history" 
-                }
             case 'accounts':
                 return {
                     title: "Cuentas Contables",
                     description: "Configure las cuentas contables por defecto de cada módulo del sistema.",
                     iconName: "book-open"
-                }
-            case 'jobs':
-                return {
-                    title: "Procesos en Segundo Plano",
-                    description: "Gestión de importaciones, exportaciones y reportes asíncronos.",
-                    iconName: "server-cog"
-                }
-            case 'debug':
-                return {
-                    title: "Depuración",
-                    description: "Herramientas solo para desarrollo, como el reloj del servidor.",
-                    iconName: "bug"
                 }
             case 'workflow':
                 if (subActiveValue === 'tasks') return { title: "Tareas Automáticas", description: "Configuración de responsables y disparadores de tareas.", iconName: "list-todo" }

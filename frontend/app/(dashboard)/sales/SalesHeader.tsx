@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
@@ -24,8 +24,10 @@ const SalesSettingsModal = dynamic(
 
 export function SalesHeader() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { getViewModeUrl } = useViewModePreference()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const initialSection = searchParams.get("tab") || undefined
 
   const segments = pathname.split("/").filter(Boolean)
   const currentSegment = segments[1] || "docs"
@@ -117,7 +119,7 @@ export function SalesHeader() {
         }
       />
       {isSettingsOpen && (
-        <SalesSettingsModal onOpenChange={setIsSettingsOpen} />
+        <SalesSettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
       )}
     </>
   )

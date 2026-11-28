@@ -8,29 +8,7 @@ import type { NavTabConfig } from "@/lib/navigation-types"
  */
 
 // ============================================
-// SUB-TABS: CONFIGURACIÓN
-// ============================================
 
-export const ACCOUNTING_CONFIG_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "vat-rates",
-    label: "Tasas de IVA",
-    href: "/accounting/settings/vat-rates",
-    iconName: "percent",
-    headerTitle: "Tasas de IVA",
-    headerDescription: "Configuración de tasas de IVA y retenciones aplicables.",
-    metadataTitle: "Tasas de IVA | ERPGrafico",
-  },
-  {
-    value: "rcv",
-    label: "RCV / SII",
-    href: "/accounting/settings/rcv",
-    iconName: "file-spreadsheet",
-    headerTitle: "RCV / SII",
-    headerDescription: "Credenciales del SII, API keys de SimpleAPI y programación de la importación del RCV.",
-    metadataTitle: "RCV / SII | ERPGrafico",
-  },
-]
 
 // ============================================
 // SUB-TABS: REGISTRO DE COMPRAS Y VENTAS
@@ -142,12 +120,7 @@ export function getRcvSubTab(value: string): NavTabConfig | undefined {
 export function resolveAccountingNav(pathname: string): { activeValue: string; subActiveValue: string | undefined } {
   const segments = pathname.split("/").filter(Boolean)
   const currentSegment = segments[1] || "ledger"
-  if (currentSegment === "settings") return { activeValue: "config", subActiveValue: segments[2] || "vat-rates" }
   if (currentSegment === "rcv") return { activeValue: "rcv", subActiveValue: segments[2] || "purchases" }
   return { activeValue: currentSegment, subActiveValue: undefined }
 }
 
-/** Busca sub-tab de Configuración */
-export function getAccountingConfigSubTab(value: string): NavTabConfig | undefined {
-  return findTabConfig(ACCOUNTING_CONFIG_SUB_TABS, value)
-}

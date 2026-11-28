@@ -110,21 +110,7 @@ export const INVENTORY_OPERATIONS_SUB_TABS: NavTabConfig[] = [
   },
 ]
 
-// ============================================
-// SUB-TABS: CONFIGURACIÓN
-// ============================================
 
-export const INVENTORY_CONFIG_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "valuation",
-    label: "Valorización",
-    href: "/inventory/settings",
-    iconName: "package",
-    headerTitle: "Valorización",
-    headerDescription: "Métodos de valoración de inventario y configuración de costos.",
-    metadataTitle: "Valorización | ERPGrafico",
-  },
-]
 
 // ============================================
 // TABS PRINCIPALES (nivel 1)
@@ -179,7 +165,3 @@ export function getInventoryOperationsSubTab(value: string): NavTabConfig | unde
   return findTabConfig(INVENTORY_OPERATIONS_SUB_TABS, value)
 }
 
-/** Busca sub-tab de Configuración */
-export function getInventoryConfigSubTab(value: string): NavTabConfig | undefined {
-  return findSubTabConfig(INVENTORY_TABS, "config", value)
-}

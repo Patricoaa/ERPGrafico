@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -22,8 +22,10 @@ const HRSettingsModal = dynamic(
 
 export function HRHeader() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { getViewModeUrl } = useViewModePreference()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const initialSection = searchParams.get("tab") || undefined
 
   const segments = pathname.split("/").filter(Boolean)
   const currentSegment = segments[1] || "employees"
@@ -88,7 +90,7 @@ export function HRHeader() {
         }
       />
       {isSettingsOpen && (
-        <HRSettingsModal onOpenChange={setIsSettingsOpen} />
+        <HRSettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
       )}
     </>
   )

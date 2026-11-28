@@ -32,30 +32,7 @@ export const HR_PAYROLLS_SUB_TABS: NavTabConfig[] = [
   },
 ]
 
-// ============================================
-// SUB-TABS: CONFIGURACIÓN
-// ============================================
 
-export const HR_CONFIG_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "global",
-    label: "Globales",
-    href: "/hr/settings/global",
-    iconName: "settings-2",
-    headerTitle: "Globales",
-    headerDescription: "Configuración general de RRHH, parámetros de la empresa y económicos.",
-    metadataTitle: "Globales | ERPGrafico",
-  },
-  {
-    value: "previsional",
-    label: "Previsión",
-    href: "/hr/settings/previsional",
-    iconName: "loader-2",
-    headerTitle: "Previsión",
-    headerDescription: "Configuración de instituciones previsionales, salud y seguros.",
-    metadataTitle: "Previsión | ERPGrafico",
-  },
-]
 
 // ============================================
 // TABS PRINCIPALES (nivel 1)
@@ -120,7 +97,4 @@ export function getHRPayrollsSubTab(value: string): NavTabConfig | undefined {
   return findSubTabConfig(HR_TABS, "payrolls", value)
 }
 
-/** Busca sub-tab de Configuración */
-export function getHRConfigSubTab(value: string): NavTabConfig | undefined {
-  return findSubTabConfig(HR_TABS, "config", value)
-}
+

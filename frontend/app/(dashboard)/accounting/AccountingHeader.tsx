@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -23,8 +23,10 @@ const AccountingSettingsModal = dynamic(
 
 export function AccountingHeader() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { getViewModeUrl } = useViewModePreference()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const initialSection = searchParams.get("tab") || undefined
 
   const { activeValue, subActiveValue } = resolveAccountingNav(pathname)
 
@@ -82,7 +84,7 @@ export function AccountingHeader() {
         }
       />
       {isSettingsOpen && (
-        <AccountingSettingsModal onOpenChange={setIsSettingsOpen} />
+        <AccountingSettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
       )}
     </>
   )

@@ -1,11 +1,5 @@
-import type { Metadata } from "next"
-import { HRSettingsView } from "@/features/settings"
-import { getHRConfigSubTab } from "@/features/hr/navigation"
-import { buildMetadataFromTab } from "@/lib/navigation-helpers"
+import { redirect } from "next/navigation"
 
-const tabConfig = getHRConfigSubTab("previsional")
-export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Previsión | ERPGrafico" }
-
-export default async function HRSettingsPrevisionalPage() {
-  return <HRSettingsView activeTab="previsional" />
+export default function HRSettingsPrevisionalPage() {
+    redirect("/hr/employees?modal=settings&tab=previsional")
 }

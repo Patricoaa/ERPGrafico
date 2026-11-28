@@ -1,11 +1,5 @@
-import type { Metadata } from "next"
-import { TreasurySettingsView } from "@/features/settings"
-import { getTreasuryConfigSubTab } from "@/features/treasury/navigation"
-import { buildMetadataFromTab } from "@/lib/navigation-helpers"
+import { redirect } from "next/navigation"
 
-const tabConfig = getTreasuryConfigSubTab("terminal-cobro")
-export const metadata: Metadata = tabConfig ? buildMetadataFromTab(tabConfig) : { title: "Configuración del terminal de cobro | ERPGrafico" }
-
-export default async function TreasuryTerminalSettingsPage() {
-  return <TreasurySettingsView />
+export default function TreasurySettingsTerminalCobroPage() {
+    redirect("/treasury/operaciones/movements?modal=settings&tab=terminal-cobro")
 }

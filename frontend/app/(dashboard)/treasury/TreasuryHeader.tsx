@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useState, useMemo } from "react"
 import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
@@ -26,9 +26,11 @@ const TreasurySettingsModal = dynamic(
 
 export function TreasuryHeader() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { banks } = useBanks()
   const { getViewModeUrl } = useViewModePreference()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const initialSection = searchParams.get("tab") || undefined
 
   const segments = pathname.split("/").filter(Boolean)
   const currentSegment = segments[1] || "operaciones"
@@ -132,7 +134,7 @@ export function TreasuryHeader() {
         }
       />
       {isSettingsOpen && (
-        <TreasurySettingsModal onOpenChange={setIsSettingsOpen} />
+        <TreasurySettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
       )}
     </>
   )
