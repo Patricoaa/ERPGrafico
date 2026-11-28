@@ -19,7 +19,7 @@ COPY rust_ext/src ./rust_ext/src
 RUN cd rust_ext && maturin build --release --out /build/wheels
 
 # ── Target: production ───────────────────────────────────
-FROM python:3.12-slim AS production
+FROM python:3.13-slim AS production
 
 WORKDIR /app
 
@@ -85,7 +85,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8100} config.asgi:application"]
 
 # ── Target: development ──────────────────────────────────
-FROM python:3.12-slim AS development
+FROM python:3.13-slim AS development
 
 WORKDIR /app
 
