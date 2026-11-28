@@ -5,7 +5,6 @@ import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 import { ModuleSidebarPanel } from "../ModuleSidebarPanel"
 
 const mocks = vi.hoisted(() => ({
-    openTool: vi.fn(),
     can: vi.fn((permission: string | null) => permission !== "__deny__"),
     pathname: "/sales/docs",
 }))
@@ -21,7 +20,7 @@ vi.mock("@/contexts/AuthContext", () => ({
     useAuth: () => ({ user: { username: "pato" }, can: mocks.can, logout: vi.fn() }),
 }))
 vi.mock("@/components/providers/GlobalModalProvider", () => ({
-    useGlobalModals: () => ({ openTool: mocks.openTool, tabs: [] }),
+    useGlobalModals: () => ({ tabs: [] }),
 }))
 vi.mock("@/features/notifications/hooks/useNotifications", () => ({ useNotifications: () => {} }))
 vi.mock("@/features/workflow", () => ({ getTasks: () => Promise.resolve([]) }))
@@ -56,7 +55,6 @@ const renderPanel = (props: Partial<React.ComponentProps<typeof ModuleSidebarPan
 describe("ModuleSidebarPanel", () => {
     beforeEach(() => {
         mocks.can.mockImplementation(() => true)
-        mocks.openTool.mockReset()
         mocks.pathname = "/sales/docs"
     })
 
@@ -67,13 +65,12 @@ describe("ModuleSidebarPanel", () => {
         expect(screen.getByRole("link", { name: "Inicio" })).toBeInTheDocument()
     })
 
-    it("puts POS and the cost calculator right below the inbox, with no separator between them", () => {
+    it("puts POS right below the inbox, with no separator between them", () => {
         renderPanel()
         const rows = [
             screen.getByText("Buscar"),
             screen.getByText("Bandeja de entrada"),
             screen.getByText("Punto de Venta"),
-            screen.getByText("Calculadora de Costos"),
             screen.getByRole("button", { name: "Contabilidad" }),
         ]
         for (let i = 1; i < rows.length; i++) {
@@ -132,10 +129,9 @@ describe("ModuleSidebarPanel", () => {
         expect(screen.getByRole("button", { name: "Contabilidad" })).toBeInTheDocument()
     })
 
-    it("opens the cost calculator and keeps Configuración and Cuenta in the footer", () => {
+    it("ya no lista la calculadora (vive en el riel) y mantiene Configuración y Cuenta en el pie", () => {
         renderPanel()
-        fireEvent.click(screen.getByText("Calculadora de Costos"))
-        expect(mocks.openTool).toHaveBeenCalledWith("cost-calculator")
+        expect(screen.queryByText("Calculadora de Costos")).toBeNull()
         expect(screen.getByRole("link", { name: "Configuración" })).toHaveAttribute("href", "/settings")
         const cuenta = screen.getByRole("button", { name: /Cuenta/ })
         expect(cuenta).toBeInTheDocument()
