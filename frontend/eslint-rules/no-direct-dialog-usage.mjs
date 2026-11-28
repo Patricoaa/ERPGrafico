@@ -41,8 +41,8 @@ const ALLOWLIST = new Set([
 ]);
 
 function createRule(context) {
-    const filename = context.getFilename();
-    const relativePath = filename.replace(context.getCwd() + '/', '');
+    const filename = context.filename;
+    const relativePath = filename.replace(context.cwd + '/', '');
 
     // Skip if file is in allowlist
     if (ALLOWLIST.has(relativePath)) {
