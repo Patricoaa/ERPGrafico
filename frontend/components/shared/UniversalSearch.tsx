@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState, useMemo, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
     ArrowRight,
@@ -13,7 +12,8 @@ import {
 import { DynamicIcon, Badge, SheetCloseButton } from "@/components/shared"
 import { Dialog, DialogContent, DialogTitle, DialogPortal, DialogOverlay } from "@/components/ui/dialog"
 import { useDebounce } from "@/hooks/useDebounce"
-import { useUniversalSearch } from "@/features/search"
+import { useUniversalSearch, type SearchResult } from "@/features/search"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
@@ -33,7 +33,7 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
     const debouncedQuery = useDebounce(query, 200)
     const { results, isLoading } = useUniversalSearch(debouncedQuery)
     const { logo, company } = useBranding()
-    const router = useRouter()
+    const { openEntity } = useGlobalModals()
     const inputRef = useRef<HTMLInputElement>(null)
 
     const getInitials = () => {
@@ -99,9 +99,10 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
         requestAnimationFrame(() => setActiveIndex(0))
     }, [filteredResults, selectedType])
 
-    function navigate(url: string) {
+    // El resultado se abre como pestaña de registro (ADR-0152), sin abandonar la página.
+    function openResult(result: SearchResult) {
         setOpen(false)
-        router.push(url)
+        openEntity(result.label, result.id, undefined, undefined, { display: result.display })
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {
@@ -112,7 +113,7 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
             e.preventDefault()
             setActiveIndex((i) => Math.max(i - 1, 0))
         } else if (e.key === "Enter" && filteredResults[activeIndex]) {
-            navigate(filteredResults[activeIndex].detail_url)
+            openResult(filteredResults[activeIndex])
         } else if (e.key === "Escape") {
             if (query) {
                 setQuery("")
@@ -283,7 +284,7 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
                                         role="option"
                                         aria-selected={index === activeIndex}
                                         onMouseEnter={() => setActiveIndex(index)}
-                                        onClick={() => navigate(result.detail_url)}
+                                        onClick={() => openResult(result)}
                                         className={cn(
                                             "group flex cursor-pointer items-center gap-4 px-4 py-3 transition-all",
                                             index === activeIndex
