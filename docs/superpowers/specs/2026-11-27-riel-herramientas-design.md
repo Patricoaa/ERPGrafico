@@ -102,15 +102,20 @@ eliminó ADR-0162 y se leería como navegación).
 - Nuevo: elegir un resultado cierra el buscador y llama
   `openEntity(result.label, result.id, undefined, undefined, { display: result.display })` → abre el registro
   como pestaña con el drawer de `ENTITY_DRAWERS` (mismo camino que una fila de lista, ADR-0152).
-- `detail_url` y `list_url` se eliminan del endpoint `/core/search/` (backend `core/registry.py` /
-  `core/api/search.py`), de `SearchResult` y de sus tests.
-- Las 6 entidades buscables sin drawer registrado salen del registro buscable del backend (elegido por el
-  usuario frente a abrir el registro padre o crearles drawer): `accounting.fiscalyear`,
-  `contacts.partnertransaction`, `treasury.cardpurchasegroup`, `treasury.cardpurchaseinstallment`,
-  `treasury.creditline`, `treasury.loaninstallment`.
-- Test de contrato en frontend: todo label buscable tiene entrada en `ENTITY_DRAWERS`. *Decisión del builder:*
-  la lista de labels buscables se fija en un snapshot verificado también por un test backend (mismo listado),
-  para que agregar una entidad buscable sin drawer rompa CI en ambos lados.
+- `detail_url` y `list_url` se eliminan de la respuesta de `/core/search/` (`UniversalRegistry.search` en
+  `core/registry.py`), de `SearchResult` y de sus tests.
+- Las 6 entidades buscables sin drawer salen de la búsqueda universal (elegido por el usuario frente a abrir el
+  registro padre o crearles drawer): `accounting.fiscalyear`, `contacts.partnertransaction`,
+  `treasury.cardpurchasegroup`, `treasury.cardpurchaseinstallment`, `treasury.creditline`,
+  `treasury.loaninstallment`. *Decisión del builder:* **no** se desregistran de `UniversalRegistry` (lo usan
+  también `core/documents/*` y `accounting/models.py` para relaciones y documento origen); `SearchableEntity`
+  gana `in_search: bool = True` y estas 6 se registran con `in_search=False`, que `UniversalRegistry.search`
+  excluye.
+- `list_url` / `detail_url_pattern` siguen en `SearchableEntity` (los usan otros consumidores); solo salen
+  de la respuesta de búsqueda.
+- Contrato: test backend en `test_architectural_invariants.py` (mismo patrón que lee
+  `searchableEntityRoutes.ts`): todo label con `in_search=True` es clave de `ENTITY_DRAWERS` en
+  `frontend/lib/entity-drawers.tsx`. Agregar una entidad buscable sin drawer rompe CI.
 
 ### Sidebar resultante
 
