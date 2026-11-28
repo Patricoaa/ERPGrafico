@@ -36,6 +36,16 @@ Aplica sobre los puntos 2, 3 y 4 de la Decisión:
 3. **Bandeja y POS contiguas.** Se elimina el separador entre `SidebarUtilityNav` y `SidebarQuickActions`. El separador bajo el bloque de utilidades, antes de los módulos, se mantiene.
 4. **Cuenta como fila simple.** La fila de Cuenta se alinea con el resto de ítems de navegación: sin chevron, etiqueta a la izquierda y blobatar del mismo tamaño que los iconos (`h-4 w-4`). El dropdown de Perfil/Cerrar Sesión no cambia.
 
+### Enmienda 2 (2026-11-27) — herramientas de apoyo al riel derecho
+
+Aplica sobre los puntos 3 y 4 de la Decisión y el punto 3 de la Enmienda 1. Spec: `docs/superpowers/specs/2026-11-27-riel-herramientas-design.md`.
+
+1. **Riel derecho de herramientas.** `ToolRail` (52 px, solo íconos, visible desde `md`) se monta en `DashboardShell` a la derecha del área de trabajo. Orden: **Buscar** (Ctrl+K) · **Calculadora de Costos** · **Bandeja de entrada** (insignia de pendientes) · ⚙ **configuración del módulo activo**. En móvil el riel se oculta y la misma botonera se pinta como fila (`variant="row"`) arriba del bloque de utilidades del `Sheet` de navegación.
+2. **El sidebar queda para navegar.** El bloque de utilidades conserva solo el **Punto de Venta** (central). `SidebarUtilityNav` se elimina; el conteo de pendientes pasa a `usePendingTasksCount` (`@/features/workflow`). Configuración global y Cuenta siguen al pie.
+3. **Paneles anclados al riel.** Bandeja y Calculadora son overlays bloqueantes (`CollapsibleSheet` `fullViewport` + `blockingOverlay`, scrim `.rail-overlay`) cuyo borde derecho termina en el riel (`--tool-rail-width`: 0 en móvil, 52 px desde `md`). El riel sigue visible y clicable (`[data-tool-rail]`, `pointer-events-auto`): un clic en él no cierra el overlay; el riel alterna el panel activo o cambia de herramienta.
+4. **⚙ del módulo.** Los `[Module]Header` dejan el botón ⚙ de `titleActions` y publican `settings: { label, open }` vía `PageHeader` → `HeaderProvider.moduleSettings`, que sobrevive a headers anidados sin `settings` y se descarta al cambiar de módulo. El modal y `?modal=settings` siguen en cada header.
+5. **Un solo buscador.** `DashboardShell` monta un único `UniversalSearch` controlado; lo abren el riel, la fila móvil y Ctrl+K. Elegir un resultado lo abre con `openEntity` (pestaña de registro, ADR-0152) y cierra el panel activo del riel; ya no navega a una URL armada por el backend.
+
 ## Consecuencias
 
 ### Positivas
@@ -63,4 +73,5 @@ Aplica sobre los puntos 2, 3 y 4 de la Decisión:
 - `frontend/components/layout/ModuleNavTree.tsx`
 - `frontend/components/layout/module-nav-fallback.ts`
 - `frontend/components/layout/SidebarQuickActions.tsx`
+- `frontend/components/layout/ToolRail.tsx` (Enmienda 2)
 - `frontend/components/layout/UserSidebarMenu.tsx`
