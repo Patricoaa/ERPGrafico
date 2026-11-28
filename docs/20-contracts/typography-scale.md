@@ -120,7 +120,7 @@ Equivalencias canónicas (el rango micro es exclusivo para chrome denso; desde A
 
 ## Escala del chrome del shell (ADR-0079)
 
-Roles tipográficos de los consumidores del shell (`DashboardShell`, `ModuleSidebarPanel`, `SidebarNavItem`, `SidebarUtilityNav`, `PanelHeader`). Referencia de estructura: [module-layout-navigation.md §2.1](./module-layout-navigation.md) (ADR-0162).
+Roles tipográficos de los consumidores del shell (`DashboardShell`, `ModuleSidebarPanel`, `SidebarNavItem`, `ToolRail`, `PanelHeader`). Referencia de estructura: [module-layout-navigation.md §2.1](./module-layout-navigation.md) (ADR-0162).
 
 | Rol | Componente (archivo) | Tipografía | Tracking | Transform |
 |-----|----------------------|------------|----------|-----------|
@@ -130,8 +130,7 @@ Roles tipográficos de los consumidores del shell (`DashboardShell`, `ModuleSide
 | Panel — nombre de la empresa (fallback del logo) | `ModuleSidebarPanel.tsx` | `text-sm font-semibold` | `tracking-tight` | normal |
 | Panel — tooltip del nombre de empresa | `ModuleSidebarPanel.tsx` | `text-xs font-semibold` | normal | normal |
 | Panel — ítem de navegación (L0/L1/L2) | `SidebarNavItem.tsx` | `text-xs` | normal | normal |
-| Panel — atajo `kbd` (Ctrl K) | `SidebarUtilityNav.tsx` | `text-3xs` | normal | normal |
-| Panel — badge de conteo | `SidebarUtilityNav.tsx` | `text-4xs font-medium` | normal | normal |
+| Riel — badge de conteo (Bandeja) | `ToolRail.tsx` | `text-4xs font-medium` | normal | normal |
 | Panel lateral — título | `PanelHeader.tsx` | `text-sm font-semibold` | `tracking-tight` | normal |
 | Panel lateral — subtítulo | `PanelHeader.tsx` | `text-xs font-medium text-muted-foreground` | normal | normal |
 

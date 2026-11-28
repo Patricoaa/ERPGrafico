@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
@@ -12,8 +12,6 @@ import {
   getSalesCreditsSubTab,
   getSalesDtesSubTab,
 } from "@/features/sales/navigation"
-import { Button } from "@/components/ui/button"
-import { Settings } from "lucide-react"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
 
@@ -27,6 +25,7 @@ export function SalesHeader() {
   const searchParams = useSearchParams()
   const { getViewModeUrl } = useViewModePreference()
   const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const settingsAction = useMemo(() => ({ label: "Configuración de Ventas", open: () => setIsSettingsOpen(true) }), [])
   const initialSection = searchParams.get("tab") || undefined
 
   const segments = pathname.split("/").filter(Boolean)
@@ -112,11 +111,7 @@ export function SalesHeader() {
         iconName={config.iconName}
         variant="minimal"
         navigation={navigation}
-        titleActions={
-          <Button variant="ghost" size="icon" className="size-control-xs" onClick={() => setIsSettingsOpen(true)} title="Configuración de Ventas">
-            <Settings className="h-4 w-4" />
-          </Button>
-        }
+        settings={settingsAction}
       />
       {isSettingsOpen && (
         <SalesSettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />

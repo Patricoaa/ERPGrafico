@@ -42,6 +42,9 @@ class SearchableEntity:
     extra_info_template: str = ""  # e.g. '{status}'
     permission: str | None = None  # Django permission codename, e.g. 'sales.view_saleorder'
     extra_filters: dict[str, Any] = field(default_factory=dict)
+    # False = registrada (relaciones, documento origen) pero fuera del buscador universal:
+    # el buscador abre resultados con openEntity y la entidad no tiene drawer (spec 2026-11-27).
+    in_search: bool = True
 
 
 class _DotAccessor:
@@ -164,6 +167,8 @@ class UniversalRegistry:
         best_prefix_len = 0
 
         for label, entity in cls._entities.items():
+            if not entity.in_search:
+                continue
             # Extract constant prefix (e.g., "OV-{number}" -> "OV-")
             m = re.match(r"^([^{]+)\{", entity.short_display_template)
             if not m:
@@ -202,7 +207,7 @@ class UniversalRegistry:
         allowed_labels = [
             label
             for label, entity in cls._entities.items()
-            if not entity.permission or user.has_perm(entity.permission)
+            if entity.in_search and (not entity.permission or user.has_perm(entity.permission))
         ]
 
         if not cls._entities:
@@ -282,9 +287,6 @@ class UniversalRegistry:
                     "display": idx.title,
                     "subtitle": idx.subtitle,
                     "extra_info": idx.extra_info,
-                    "list_url": entity.list_url,
-                    # ADR-0080 (GAP-08): URL canónica del registro documental, siempre con ruta
-                    "detail_url": cls._canonical_url(idx.entity_label, idx.object_id),
                 }
             )
 
@@ -315,20 +317,12 @@ class UniversalRegistry:
                             "display": idx.title,
                             "subtitle": idx.subtitle,
                             "extra_info": idx.extra_info,
-                            "list_url": entity.list_url,
-                            "detail_url": cls._canonical_url(idx.entity_label, idx.object_id),
                         }
                     )
                     if len(final_results) >= limit:
                         break
 
         return final_results
-
-    @staticmethod
-    def _canonical_url(label: str, object_id) -> str:
-        from core.documents.types import DocumentTypeRegistry
-
-        return DocumentTypeRegistry.url_for(label, object_id)
 
     @classmethod
     def _build_fts_query(cls, entity: SearchableEntity, query: str) -> models.QuerySet[Any]:

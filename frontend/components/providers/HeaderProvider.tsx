@@ -34,6 +34,12 @@ export interface NavigationConfig {
     breadcrumbs?: { label: string; href?: string }[]
 }
 
+/** Configuración del módulo: el riel derecho la abre (spec riel de herramientas 2026-11-27). */
+export interface ModuleSettingsAction {
+    label: string
+    open: () => void
+}
+
 export interface HeaderConfig {
     title: string
     description?: string
@@ -49,6 +55,13 @@ export interface HeaderConfig {
     }
     children?: React.ReactNode
     navigation?: NavigationConfig
+    settings?: ModuleSettingsAction
+}
+
+/** Configuración publicada por el header del módulo + segmento raíz de la ruta donde se publicó. */
+export interface ModuleSettings {
+    moduleId: string
+    settings: ModuleSettingsAction
 }
 
 /** Navegación del módulo + segmento raíz de la ruta donde se publicó. */
@@ -65,6 +78,8 @@ interface HeaderContextType {
      * (p. ej. solo para titleActions) no vacía el sidebar (ADR-0079).
      */
     moduleNavigation: ModuleNavigation | null
+    /** Igual que `moduleNavigation`: sobrevive a PageHeaders anidados sin `settings`; se descarta al cambiar de módulo. */
+    moduleSettings: ModuleSettings | null
     setHeader: (config: HeaderConfig | null) => void
     clearHeader: () => void
 }
@@ -74,14 +89,21 @@ const HeaderContext = createContext<HeaderContextType | undefined>(undefined)
 export function HeaderProvider({ children }: { children: React.ReactNode }) {
     const [config, setConfig] = useState<HeaderConfig | null>(null)
     const [moduleNavigation, setModuleNavigation] = useState<ModuleNavigation | null>(null)
+    const [moduleSettings, setModuleSettings] = useState<ModuleSettings | null>(null)
 
     const setHeader = useCallback((newConfig: HeaderConfig | null) => {
         setConfig(newConfig)
+        // setHeader corre en efectos (cliente, tras el commit de la navegación)
+        const moduleId = window.location.pathname.split('/').filter(Boolean)[0] || 'dashboard'
         const navigation = newConfig?.navigation
         if (navigation) {
-            // setHeader corre en efectos (cliente, tras el commit de la navegación)
-            const moduleId = window.location.pathname.split('/').filter(Boolean)[0] || 'dashboard'
             setModuleNavigation({ moduleId, navigation })
+        }
+        const settings = newConfig?.settings
+        if (settings) {
+            setModuleSettings({ moduleId, settings })
+        } else if (newConfig) {
+            setModuleSettings(prev => (prev && prev.moduleId !== moduleId ? null : prev))
         }
     }, [])
 
@@ -95,9 +117,10 @@ export function HeaderProvider({ children }: { children: React.ReactNode }) {
     const value = useMemo(() => ({
         config,
         moduleNavigation,
+        moduleSettings,
         setHeader,
         clearHeader
-    }), [config, moduleNavigation, setHeader, clearHeader])
+    }), [config, moduleNavigation, moduleSettings, setHeader, clearHeader])
 
     return (
         <HeaderContext.Provider value={value}>

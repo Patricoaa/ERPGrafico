@@ -20,7 +20,6 @@
 /** @type {Record<string, number>} */
 export const NO_UNSAFE_BASELINE = {
     "components/shared/StatusBadge.tsx": 1,
-    "components/shared/UniversalSearch.tsx": 1,
     "features/billing/api/billingApi.ts": 1,
     "features/contacts/api/partnersApi.ts": 11,
     "features/credits/api/creditsApi.ts": 10,

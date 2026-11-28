@@ -173,6 +173,7 @@ class TreasuryConfig(AppConfig):
                 SearchableEntity(
                     model=CardPurchaseGroup,
                     label="treasury.cardpurchasegroup",
+                    in_search=False,  # sin drawer: el buscador abre con openEntity
                     title_singular="Compra en Cuotas",
                     title_plural="Compras en Cuotas",
                     icon="shopping-cart",
@@ -190,6 +191,7 @@ class TreasuryConfig(AppConfig):
                 SearchableEntity(
                     model=CardPurchaseInstallment,
                     label="treasury.cardpurchaseinstallment",
+                    in_search=False,  # sin drawer: el buscador abre con openEntity
                     title_singular="Cuota de Compra TC",
                     title_plural="Cuotas de Compra TC",
                     icon="calendar",
@@ -207,6 +209,7 @@ class TreasuryConfig(AppConfig):
                 SearchableEntity(
                     model=LoanInstallment,
                     label="treasury.loaninstallment",
+                    in_search=False,  # sin drawer: el buscador abre con openEntity
                     title_singular="Cuota de Crédito",
                     title_plural="Cuotas de Crédito",
                     icon="calendar",
@@ -224,6 +227,7 @@ class TreasuryConfig(AppConfig):
                 SearchableEntity(
                     model=CreditLine,
                     label="treasury.creditline",
+                    in_search=False,  # sin drawer: el buscador abre con openEntity
                     title_singular="Línea de Crédito",
                     title_plural="Líneas de Crédito",
                     icon="scroll-text",

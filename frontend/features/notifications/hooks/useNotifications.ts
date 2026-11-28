@@ -70,7 +70,7 @@ function getBackoffDelay(attempt: number): number {
  * - JWT auth via query parameter (industry standard for WS)
  * - Exponential backoff reconnection (1s → 30s cap, max 10 retries)
  * - Graceful degradation: if WS is unavailable, polling fallback in
- *   SidebarUtilityNav.tsx (2min interval) continues working independently
+ *   usePendingTasksCount (features/workflow, 2min interval) continues working independently
  * - Feature flag: set NEXT_PUBLIC_WS_ENABLED=false to disable entirely
  */
 export function useNotifications(onNotification?: (notification: NotificationPayload) => void) {

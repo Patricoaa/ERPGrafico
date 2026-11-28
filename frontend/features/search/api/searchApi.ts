@@ -10,8 +10,6 @@ export interface SearchResult {
     display: string
     subtitle?: string
     extra_info?: string
-    list_url: string
-    detail_url: string
 }
 
 export interface SearchResponse {

@@ -13,13 +13,21 @@ import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import { PrepressPanel, fadeInClass } from '@/components/shared'
+import { PrepressPanel, UniversalSearch, fadeInClass } from '@/components/shared'
+import { usePendingTasksCount } from "@/features/workflow"
+import { ToolRail } from "./ToolRail"
+import { useToolPanels } from "./useToolPanels"
 import { Menu } from "lucide-react"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
     () => import("@/features/workflow/components/TaskInboxSidebar").then(m => ({ default: m.TaskInboxSidebar })),
     { ssr: false }
+)
+
+const CostCalculatorDrawer = dynamic(
+    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
+    { ssr: false },
 )
 
 const ProfileSettingsModal = dynamic(
@@ -41,7 +49,8 @@ const POSExternalReasonModal = dynamic(
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
-    const [isInboxOpen, setIsInboxOpen] = useState(false)
+    const { activePanel, hasOpenedCalculator, togglePanel, closePanel, isSearchOpen, setSearchOpen } = useToolPanels()
+    const pendingTasksCount = usePendingTasksCount()
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
     const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
     const [isGlobalSettingsOpen, setIsGlobalSettingsOpen] = useState(false)
@@ -58,10 +67,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     // La bandeja es un overlay bloqueante: no publica `data-inbox-open` ni desplaza
     // el contenido ni el ActionDock (ADR-0161). La repulsión sigue vigente para los
     // drawers de entidad, gestionada por GlobalModalProvider.
-
-    const handleInboxToggle = () => {
-        setIsInboxOpen(prev => !prev)
-    }
 
     // Estado, acciones y controles de la vista: viven en el extremo derecho de la barra de trabajo.
     const pageActions = config ? (
@@ -97,12 +102,22 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         </div>
     ) : null
 
-    const sidebar = (onNavigate?: () => void) => (
+    const toolRail = (variant: "rail" | "row", onNavigate?: () => void) => (
+        <ToolRail
+            variant={variant}
+            activePanel={activePanel}
+            pendingTasksCount={pendingTasksCount}
+            onSearchOpen={() => { onNavigate?.(); setSearchOpen(true) }}
+            onTogglePanel={(panel) => { onNavigate?.(); togglePanel(panel) }}
+            onDialogOpen={() => { onNavigate?.(); closePanel() }}
+        />
+    )
+
+    const sidebar = (onNavigate?: () => void, toolRow?: React.ReactNode) => (
         <ModuleSidebarPanel
             currentModuleId={currentModuleId}
             navigation={nav}
-            isInboxOpen={isInboxOpen}
-            onInboxToggle={handleInboxToggle}
+            toolRow={toolRow}
             onNavigate={onNavigate}
             onProfileOpen={() => setIsProfileSettingsOpen(true)}
             onSettingsOpen={() => setIsGlobalSettingsOpen(true)}
@@ -120,7 +135,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             <Sheet open={isMobileNavOpen} onOpenChange={setIsMobileNavOpen}>
                 <SheetContent side="left" hideCloseButton className="w-56 max-w-[90vw] p-0">
                     <SheetTitle className="sr-only">Navegación</SheetTitle>
-                    {sidebar(() => setIsMobileNavOpen(false))}
+                    {sidebar(() => setIsMobileNavOpen(false), toolRail("row", () => setIsMobileNavOpen(false)))}
                 </SheetContent>
             </Sheet>
 
@@ -166,11 +181,32 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 </div>
             </div>
 
-            {/* Task Inbox: overlay derecho a pantalla completa (ADR-0161) */}
-            <TaskInboxSidebar
-                isOpen={isInboxOpen}
-                onClose={() => setIsInboxOpen(false)}
+            {/* ── RIEL DE HERRAMIENTAS (spec 2026-11-27): sus paneles se anclan a su izquierda ── */}
+            <aside className="hidden md:flex h-full shrink-0 z-40" aria-label="Herramientas">
+                {toolRail("rail")}
+            </aside>
+
+            {/* Único buscador universal: lo abren el riel, la fila móvil y Ctrl+K */}
+            <UniversalSearch
+                open={isSearchOpen}
+                onOpenChange={setSearchOpen}
+                onResultOpen={closePanel}
+                renderTrigger={() => null}
             />
+
+            {/* Task Inbox: overlay derecho junto al riel (ADR-0161) */}
+            <TaskInboxSidebar
+                isOpen={activePanel === "inbox"}
+                onClose={closePanel}
+            />
+
+            {/* Calculadora: overlay derecho junto al riel; montada tras la primera apertura para conservar lo cargado */}
+            {hasOpenedCalculator && (
+                <CostCalculatorDrawer
+                    open={activePanel === "calculator"}
+                    onOpenChange={(open) => { if (!open) closePanel() }}
+                />
+            )}
 
             {isProfileSettingsOpen && (
                 <ProfileSettingsModal onOpenChange={setIsProfileSettingsOpen} />

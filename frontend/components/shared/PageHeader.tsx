@@ -46,6 +46,8 @@ interface PageHeaderProps {
     children?: React.ReactNode
     /** Navigation config for dropdown tabs in the header bar */
     navigation?: NavigationConfig
+    /** Configuración del módulo; la abre el ⚙ del riel derecho. Memoizar en el header. */
+    settings?: ModuleSettingsAction
 }
 
 /**
@@ -54,7 +56,7 @@ interface PageHeaderProps {
  * Renders NO DOM heading — the in-content page title (H1) is owned by PageSectionHeader (ADR-0073).
  * Supports loading states, status indicators, and right-side actions.
  */
-import { useHeader } from "@/components/providers/HeaderProvider"
+import { useHeader, type ModuleSettingsAction } from "@/components/providers/HeaderProvider"
 import { useEffect } from "react"
 
 export function PageHeader({ 
@@ -66,7 +68,8 @@ export function PageHeader({
     isLoading,
     status,
     children,
-    navigation 
+    navigation,
+    settings
 }: PageHeaderProps) {
     const { setHeader, clearHeader } = useHeader()
 
@@ -81,7 +84,8 @@ export function PageHeader({
             isLoading,
             status,
             children,
-            navigation
+            navigation,
+            settings
         })
 
         return () => {
@@ -97,6 +101,7 @@ export function PageHeader({
         status, 
         children, 
         navigation,
+        settings,
         setHeader,
         clearHeader
     ])

@@ -34,14 +34,10 @@ vi.mock("@/lib/entity-drawers", () => {
     return { ENTITY_DRAWERS: drawers, hasEntityDrawer: (label: string) => label in drawers }
 })
 
-// La calculadora real trae medio ERP: aquí solo importa que se monte con `open` según la pestaña activa.
-vi.mock("@/components/tools/CostCalculatorDrawer", () => ({
-    CostCalculatorDrawer: ({ open }: { open: boolean }) => <span>calculadora:{open ? "abierta" : "oculta"}</span>,
-}))
 
 /** Botones que disparan las acciones del provider y lista las pestañas con su estado. */
 function Controls() {
-    const { openEntity, openTool, closeEntity, setEntityDisplay, tabs, activateTab, closeTab, showPage } = useGlobalModals()
+    const { openEntity, closeEntity, setEntityDisplay, tabs, activateTab, closeTab, showPage } = useGlobalModals()
     return (
         <div>
             <Button onClick={() => openEntity("sales.saledelivery", 1, undefined, undefined, { display: "DES-1" })}>abrir-despacho</Button>
@@ -49,7 +45,6 @@ function Controls() {
             <Button onClick={() => openEntity("sales.saleorder", 42, undefined, undefined, { display: "OV-42" })}>abrir-ov</Button>
             <Button onClick={() => openEntity("inventory.stockmove", 8, undefined, undefined, { display: "MOV-8" })}>abrir-move-8</Button>
             <Button onClick={() => openEntity("inventory.stockmove", 9, undefined, undefined, { display: "MOV-7" })}>abrir-move-9-mismo-titulo</Button>
-            <Button onClick={() => openTool("cost-calculator")}>abrir-calculadora</Button>
             <Button onClick={() => setEntityDisplay("sales.saleorder", 42, "OV-000042")}>nombrar-ov</Button>
             <Button onClick={closeEntity}>cerrar-todo</Button>
             <Button onClick={showPage}>ver-pagina</Button>
@@ -198,27 +193,20 @@ describe("GlobalModalProvider workspace tabs", () => {
         expect(screen.getByText("tab:OV-000042*")).toBeInTheDocument()
     })
 
-    it("opens the cost calculator as a tool tab that keeps living while another tab is active", async () => {
-        setup()
-        click("abrir-despacho")
-        click("abrir-calculadora")
-        expect(await screen.findByText("calculadora:abierta")).toBeInTheDocument()
-        click("tab:DES-1")
-        expect(await screen.findByText("calculadora:oculta")).toBeInTheDocument()
-        expect(screen.getByText("open:sales.saledelivery:1")).toBeInTheDocument()
-        click("cerrar:Calculadora de Costos")
-        expect(screen.queryByText(/calculadora:/)).toBeNull()
+    it("no expone herramientas como pestañas: la calculadora vive en el riel", () => {
+        function Probe() { return <span data-testid="keys">{Object.keys(useGlobalModals()).join(",")}</span> }
+        render(<GlobalModalProvider><Probe /></GlobalModalProvider>)
+        expect(screen.getByTestId("keys").textContent).toContain("openEntity")
+        expect(screen.getByTestId("keys").textContent).not.toContain("openTool")
     })
 
     it("closes every tab when the page changes", () => {
         const { rerender } = setup()
         click("abrir-despacho")
-        click("abrir-calculadora")
         nav.pathname = "/inventory/products"
         rerender(<GlobalModalProvider><Controls /></GlobalModalProvider>)
         expect(screen.queryAllByText(/^tab:/)).toHaveLength(0)
         expect(screen.queryByText(/open:/)).toBeNull()
-        expect(screen.queryByText(/calculadora:/)).toBeNull()
     })
 
     it("closeEntity clears every tab", () => {

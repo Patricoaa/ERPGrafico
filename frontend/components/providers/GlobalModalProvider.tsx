@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
-import { ArrowLeftRight, Calculator, FilePlus2, type LucideIcon } from "lucide-react"
+import { ArrowLeftRight, FilePlus2, type LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 import { formatEntityDisplay, getEntityMetadata, type EntityLabel } from "@/lib/entity-registry"
@@ -19,13 +19,6 @@ interface OpenEntityState {
     segmenter?: React.ReactNode
     /** Texto de la pestaña (p. ej. display_id). */
     display?: string
-}
-
-/** Herramientas que abren como pestaña propia (ADR-0101). */
-export type ToolTabId = "cost-calculator"
-
-const TOOL_TABS: Record<ToolTabId, { title: string; icon: LucideIcon }> = {
-    "cost-calculator": { title: "Calculadora de Costos", icon: Calculator },
 }
 
 /**
@@ -49,16 +42,14 @@ export interface NoteTabState {
     display?: string
 }
 
-/** Pestaña efímera del espacio de trabajo: un documento (`entity`), una herramienta (`tool`), un drawer de la página (`panel`), una mesa de conciliación (`workbench`) o una nota en emisión (`note`). */
+/** Pestaña efímera del espacio de trabajo: un documento (`entity`), un drawer de la página (`panel`), una mesa de conciliación (`workbench`) o una nota en emisión (`note`). */
 type WorkspaceTab =
     | ({ type: "entity" } & OpenEntityState)
-    | { type: "tool"; tool: ToolTabId }
     | ({ type: "panel" } & PanelTabState)
     | { type: "workbench"; statementId: number; display?: string }
     | ({ type: "note" } & NoteTabState)
 
 const entityKey = (label: string, id: number) => `${label}:${id}`
-const toolKey = (tool: ToolTabId) => `tool:${tool}`
 const workbenchKey = (statementId: number) => `workbench:${statementId}`
 const noteKey = ({ invoiceId, noteType }: Pick<NoteTabState, "invoiceId" | "noteType">) => `note:${noteType}:${invoiceId}`
 /** Clave de la pestaña de un drawer de la página (la usa `useEntityPanelTab` para saber si está activa). */
@@ -66,7 +57,6 @@ export const panelTabKey = ({ label, id, variant }: Pick<PanelTabState, "label" 
 const panelKey = panelTabKey
 const tabKey = (tab: WorkspaceTab) => {
     if (tab.type === "entity") return entityKey(tab.label, tab.id)
-    if (tab.type === "tool") return toolKey(tab.tool)
     if (tab.type === "workbench") return workbenchKey(tab.statementId)
     if (tab.type === "note") return noteKey(tab)
     return panelKey(tab)
@@ -128,11 +118,6 @@ const ReconciliationWorkbenchTab = dynamic(
     { ssr: false },
 )
 
-const CostCalculatorDrawer = dynamic(
-    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
-    { ssr: false },
-)
-
 function entityTabLabel(entity: OpenEntityState): string {
     if (entity.display) return entity.display
     const data = (entity.data && typeof entity.data === 'object' ? entity.data : {}) as Record<string, unknown>
@@ -150,9 +135,6 @@ function tabView(tab: WorkspaceTab, active: boolean, pageModuleId: string | unde
     if (tab.type === "workbench") {
         const title = tab.display ?? "Mesa de conciliación"
         return { key: workbenchKey(tab.statementId), kind: "tool", title, description: `Mesa de conciliación ${title}`, icon: ArrowLeftRight, active }
-    }
-    if (tab.type === "tool") {
-        return { key: toolKey(tab.tool), kind: "tool", title: TOOL_TABS[tab.tool].title, description: TOOL_TABS[tab.tool].title, icon: TOOL_TABS[tab.tool].icon, active }
     }
     const metadata = getEntityMetadata(tab.label)
     const documentModule = getEntityModule(tab.label)
@@ -193,7 +175,6 @@ interface GlobalModalActionsContextType {
     /** Cierra todas las pestañas (documentos y herramientas). */
     closeEntity: () => void
     /** Abre una herramienta (p. ej. la calculadora) como pestaña. */
-    openTool: (tool: ToolTabId) => void
     /**
      * Abre la mesa de conciliación de una cartola como pestaña propia del espacio de trabajo (o activa
      * la existente). Es la vía canónica: nunca un drawer ni una página nueva.
@@ -490,11 +471,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         }
     }, [addTab, removeTab, panelClosers, live, markSaved])
 
-    const openTool = useCallback((tool: ToolTabId) => {
-        if (live.activeKey === toolKey(tool)) return
-        runGuarded(() => addTab({ type: "tool", tool }))
-    }, [runGuarded, live, addTab])
-
     const openWorkbench = useCallback((statementId: number, display?: string) => {
         if (live.activeKey === workbenchKey(statementId)) return
         runGuarded(() => addTab({ type: "workbench", statementId, display }))
@@ -581,7 +557,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const actionsValue = useMemo(() => ({
         openEntity,
         closeEntity,
-        openTool,
         openWorkbench,
         openNoteWizard,
         registerPanelTab,
@@ -594,7 +569,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         requestLeave,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openTool, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openWorkbench, openNoteWizard, registerPanelTab, activateTab, showPage, closeTab, setEntityDisplay, registry, runGuarded, requestLeave, registerSheet, unregisterSheet])
 
     const tabViews = useMemo(
         () => disambiguateTitles(tabs.map(tab => tabView(tab, tabKey(tab) === activeKey, pageModuleId))),
@@ -606,7 +581,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         [tabs],
     )
 
-    const hasEntityTab = tabs.some(tab => tab.type !== "tool")
+    const hasEntityTab = tabs.length > 0
 
     const stateValue = useMemo(() => ({
         isSubModalActive: hasEntityTab,
@@ -676,10 +651,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         return null
     }
 
-    // Las herramientas viven mientras su pestaña exista: así conservan su estado al cambiar de pestaña.
-    const hasCalculatorTab = tabs.some(tab => tab.type === "tool" && tab.tool === "cost-calculator")
-
-    // Igual que las herramientas: la nota en emisión vive mientras su pestaña exista (conserva lo ingresado).
+    // La nota en emisión vive mientras su pestaña exista (conserva lo ingresado).
     const noteTabs = tabs.filter((tab): tab is Extract<WorkspaceTab, { type: "note" }> => tab.type === "note")
 
     return (
@@ -702,12 +674,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                             />
                         )
                     })}
-                    {hasCalculatorTab && (
-                        <CostCalculatorDrawer
-                            open={activeKey === toolKey("cost-calculator")}
-                            onOpenChange={handleDrawerOpenChange}
-                        />
-                    )}
                 </PersistentPanelContext.Provider>
             </ErrorBoundary>
             <UnsavedChangesDialog

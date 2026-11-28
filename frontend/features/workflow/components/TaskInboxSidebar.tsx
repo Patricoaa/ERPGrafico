@@ -28,7 +28,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             fullViewport
             blockingOverlay
             registerInStack={false}
-            overlayClassName="inbox-overlay"
+            overlayClassName="rail-overlay"
             className="w-[360px] max-w-[360px] bg-card shadow-overlay"
         >
             {/* Header — same height as entity drawers (h-14 = 56 px) */}

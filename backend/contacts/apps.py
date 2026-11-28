@@ -49,6 +49,7 @@ class ContactsConfig(AppConfig):
                 SearchableEntity(
                     model=PartnerTransaction,
                     label="contacts.partnertransaction",
+                    in_search=False,  # sin drawer: el buscador abre con openEntity
                     title_singular="Transacción de Socio",
                     title_plural="Transacciones de Socios",
                     icon="arrow-left-right",

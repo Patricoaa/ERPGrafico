@@ -36,6 +36,14 @@ interface CollapsibleSheetProps {
     overlayClassName?: string
 }
 
+/**
+ * Un overlay bloqueante no se cierra por interactuar con el riel de herramientas (`[data-tool-rail]`):
+ * el riel decide si alterna el panel o cambia de herramienta (spec riel 2026-11-27).
+ */
+function keepOpenOnToolRail(event: { target: EventTarget | null; preventDefault: () => void }) {
+    if (event.target instanceof Element && event.target.closest("[data-tool-rail]")) event.preventDefault()
+}
+
 export function CollapsibleSheet({
     children,
     sheetId,
@@ -158,19 +166,21 @@ export function CollapsibleSheet({
             hideOverlay={blockingOverlay ? false : hideOverlay}
             overlayClassName={overlayClassName}
             hideCloseButton={true}
-            onPointerDownOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
-            onFocusOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
-            onInteractOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
+            onPointerDownOutside={blockingOverlay ? keepOpenOnToolRail : (e) => e.preventDefault()}
+            onFocusOutside={blockingOverlay ? keepOpenOnToolRail : (e) => e.preventDefault()}
+            onInteractOutside={blockingOverlay ? keepOpenOnToolRail : (e) => e.preventDefault()}
             style={{
                 left: side === "left" ? offset : undefined,
-                right: side === "left" ? 'auto' : offset,
+                // A pantalla completa, el panel derecho termina donde empieza el riel de herramientas
+                right: side === "left" ? 'auto' : (fullViewport ? `calc(var(--tool-rail-width, 0px) + ${offset}px)` : offset),
                 transform: (!open || isCollapsed)
                     ? (side === "left" ? `translateX(-100%)` : `translateX(100%)`)
                     : 'translateX(0)',
                 // Bloqueante va por encima del ActionDock (z-100); los demás siguen en z-45
                 zIndex: blockingOverlay ? 110 : 40 + (!open || isCollapsed ? 0 : 5),
                 // If full size, use 100vw but keep offset for layering if needed
-                maxWidth: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
+                // A pantalla completa nunca más ancho que el viewport menos el riel (móvil: riel 0)
+                maxWidth: size === "full" ? '100vw' : fullViewport ? `min(${typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth}, calc(100vw - var(--tool-rail-width, 0px)))` : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 width: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 '--stack-offset': `${offset}px`
             } as CSSProperties}

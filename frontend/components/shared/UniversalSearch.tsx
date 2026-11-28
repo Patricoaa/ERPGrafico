@@ -2,72 +2,75 @@
 
 import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState, useMemo, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import {
-    ArrowRight,
-    CornerDownLeft,
-    Loader2,
-    Search,
-} from "lucide-react"
-import { DynamicIcon, Badge, SheetCloseButton } from "@/components/shared"
-import { Dialog, DialogContent, DialogTitle, DialogPortal, DialogOverlay } from "@/components/ui/dialog"
+import { Search } from "lucide-react"
+import { DynamicIcon, SheetCloseButton } from "@/components/shared"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useDebounce } from "@/hooks/useDebounce"
-import { useUniversalSearch } from "@/features/search"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useUniversalSearch, type SearchResult } from "@/features/search"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useBranding } from "@/contexts/BrandingProvider"
 
 interface UniversalSearchProps {
     /** Disparador personalizado (p. ej. ítem "Buscar" del sidebar). Por defecto: botón ícono. */
     renderTrigger?: (open: () => void) => ReactNode
+    /** Modo controlado: el shell monta un único buscador y lo abren el riel y la fila móvil. */
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    /** Se llama al abrir un resultado (el shell cierra el panel activo del riel). */
+    onResultOpen?: () => void
 }
 
-export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
-    const [open, setOpen] = useState(false)
+export function UniversalSearch({ renderTrigger, open: openProp, onOpenChange, onResultOpen }: UniversalSearchProps = {}) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp ?? openState
+    const setOpen = (next: boolean) => {
+        if (openProp === undefined) setOpenState(next)
+        onOpenChange?.(next)
+    }
+    // El atajo global lee el valor vigente sin re-suscribirse en cada render.
+    const toggleRef = useRef<() => void>(() => {})
+    useEffect(() => {
+        toggleRef.current = () => setOpen(!open)
+    })
     const [query, setQuery] = useState("")
     const [activeIndex, setActiveIndex] = useState(0)
     const [selectedType, setSelectedType] = useState<string | null>(null)
     const debouncedQuery = useDebounce(query, 200)
     const { results, isLoading } = useUniversalSearch(debouncedQuery)
-    const { logo, company } = useBranding()
-    const router = useRouter()
+    const { openEntity } = useGlobalModals()
     const inputRef = useRef<HTMLInputElement>(null)
-
-    const getInitials = () => {
-        const companyName = company?.trade_name || company?.name
-        if (companyName) {
-            return companyName.substring(0, 2).toUpperCase()
-        }
-        return "ERP"
-    }
 
     // keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "k") {
                 e.preventDefault()
-                setOpen((prev) => !prev)
+                toggleRef.current()
             }
         }
         document.addEventListener("keydown", handleKeyDown)
         return () => document.removeEventListener("keydown", handleKeyDown)
     }, [])
 
-    if (open && query !== "") {
-        setQuery("")
+    // Cada apertura parte limpia. Se ajusta solo en la transición cerrado → abierto:
+    // limpiar mientras está abierto borraba cada tecla apenas se escribía.
+    const [prevOpen, setPrevOpen] = useState(open)
+    if (open !== prevOpen) {
+        setPrevOpen(open)
+        if (open) {
+            setQuery("")
+            setActiveIndex(0)
+            setSelectedType(null)
+        }
     }
 
     useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                setActiveIndex(0)
-                setSelectedType(null)
-            })
-            setTimeout(() => inputRef.current?.focus(), 50)
-        }
+        if (!open) return
+        const id = setTimeout(() => inputRef.current?.focus(), 50)
+        return () => clearTimeout(id)
     }, [open])
 
     // Derived data: unique types for segmenters
@@ -95,9 +98,11 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
         requestAnimationFrame(() => setActiveIndex(0))
     }, [filteredResults, selectedType])
 
-    function navigate(url: string) {
+    // El resultado se abre como pestaña de registro (ADR-0152), sin abandonar la página.
+    function openResult(result: SearchResult) {
         setOpen(false)
-        router.push(url)
+        onResultOpen?.()
+        openEntity(result.label, result.id, undefined, undefined, { display: result.display })
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {
@@ -108,7 +113,7 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
             e.preventDefault()
             setActiveIndex((i) => Math.max(i - 1, 0))
         } else if (e.key === "Enter" && filteredResults[activeIndex]) {
-            navigate(filteredResults[activeIndex].detail_url)
+            openResult(filteredResults[activeIndex])
         } else if (e.key === "Escape") {
             if (query) {
                 setQuery("")
@@ -117,6 +122,8 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
             }
         }
     }
+
+    const ALL = "__all__"
 
     return (
         <>
@@ -127,234 +134,131 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
                     type="button"
                     onClick={() => setOpen(true)}
                     aria-label="Búsqueda universal (Ctrl+K)"
-                    className="group h-control-sm w-8 rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="size-control-sm text-muted-foreground hover:text-foreground"
                 >
-                    <Search className="h-4 w-4 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
+                    <Search className="size-4" aria-hidden />
                 </Button>
             )}
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogPortal>
-                    <DialogOverlay className="bg-overlay/40 backdrop-blur-md" />
-                    <DialogContent
-                        size="md"
-                        showCloseButton={false}
-                        className="gap-0 overflow-hidden border-none p-0 shadow-overlay backdrop-blur-3xl dark:bg-overlay/95"
-                        aria-label="Búsqueda universal"
-                    >
-                        <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
+                <DialogContent
+                    size="md"
+                    showCloseButton={false}
+                    className="gap-0 overflow-hidden p-0"
+                    aria-label="Búsqueda universal"
+                >
+                    <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
 
-                        {/* Progress Bar Loader */}
-                        {isLoading && (
-                            <div className="absolute top-0 left-0 h-[2px] w-full overflow-hidden bg-primary/20">
-                                <div className="h-full bg-primary animate-pulse w-full" />
-                            </div>
-                        )}
+                    {/* Campo de búsqueda */}
+                    <div className="flex h-14 items-center gap-2 border-b border-border px-4">
+                        <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        <input
+                            ref={inputRef}
+                            role="combobox"
+                            aria-expanded={filteredResults.length > 0}
+                            aria-controls="search-results"
+                            aria-activedescendant={filteredResults[activeIndex] ? `search-result-${activeIndex}` : undefined}
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Busca por número, nombre, RUT o código…"
+                            className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                            autoComplete="off"
+                            spellCheck={false}
+                        />
+                        <SheetCloseButton onClick={() => setOpen(false)} label="Cerrar búsqueda" />
+                    </div>
 
-                        {/* Search Input Area */}
-                        <div className="relative flex items-center border-b border-border px-4 py-3">
-                            <Search className="mr-2 size-4 shrink-0 text-muted-foreground/40" aria-hidden />
-                            <input
-                                ref={inputRef}
-                                role="combobox"
-                                aria-expanded={filteredResults.length > 0}
-                                aria-controls="search-results"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Busca por número, nombre, RUT o código..."
-                                className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/30"
-                                autoComplete="off"
-                                spellCheck={false}
-                            />
-                            {isLoading ? (
-                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                                    <Loader2 className="size-4 animate-spin text-primary" />
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-1">
-                                    <SheetCloseButton
-                                        onClick={() => setOpen(false)}
-                                        label="Cerrar búsqueda"
-                                        className="hover:bg-accent"
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Segmenters (Tabs) - Horizontal Scrollable */}
-                        {results.length > 0 && (
-                            <div className="flex items-center border-b border-border bg-overlay/20 px-4 py-2">
-                                <div className="flex w-full items-center gap-2 overflow-x-auto flex-nowrap scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
-                                    <Button
-                                        variant={!selectedType ? "default" : "ghost"}
-                                        onClick={() => setSelectedType(null)}
-                                        className={cn(
-                                            "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-3xs uppercase tracking-widest transition-all",
-                                            !selectedType
-                                                ? ""
-                                                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                                        )}
-                                    >
-                                        Todos
-                                    </Button>
-                                    {entityTypes.map((type) => (
-                                        <Button
-                                            key={type.label}
-                                            variant={selectedType === type.label ? "default" : "ghost"}
-                                            onClick={() => setSelectedType(type.label)}
-                                            className={cn(
-                                                "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-3xs uppercase tracking-widest transition-all",
-                                                selectedType === type.label
-                                                    ? ""
-                                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                                            )}
-                                        >
-                                            {type.icon && <DynamicIcon name={type.icon} className="size-3" />}
-                                            {type.title_plural}
-                                        </Button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Results List - Fixed Height for 5 items (5 * 64px = 320px) */}
-                        <ScrollArea className="h-[300px]">
-                            <ul
-                                id="search-results"
-                                role="listbox"
-                                className="divide-y divide-border/40"
+                    {/* Filtro por tipo de entidad */}
+                    {entityTypes.length > 1 && (
+                        <div className="overflow-x-auto border-b border-border px-4 py-2 [scrollbar-width:none]">
+                            <ToggleGroup
+                                type="single"
+                                size="sm"
+                                value={selectedType ?? ALL}
+                                onValueChange={(v) => { if (v) setSelectedType(v === ALL ? null : v) }}
+                                aria-label="Filtrar por tipo"
+                                className="w-max"
                             >
-                                {isLoading && (
-                                    <>
-                                        {[...Array(5)].map((_, i) => (
-                                            <li key={i} className="flex items-center gap-4 px-4 py-3">
-                                                <Skeleton className="size-10 rounded-full" />
-                                                <div className="flex-1 space-y-2">
-                                                    <Skeleton className="h-4 w-[40%]" />
-                                                    <Skeleton className="h-3 w-[20%]" />
-                                                </div>
-                                                <Skeleton className="h-6 w-20 rounded-full" />
-                                            </li>
-                                        ))}
-                                    </>
-                                )}
-
-                                {!isLoading && filteredResults.length === 0 && debouncedQuery.length >= 2 && (
-                                    <li className="flex h-full flex-col items-center justify-center py-12 text-center">
-                                        <div className="mb-3 rounded-full bg-muted/20 p-4">
-                                            <Search className="size-6 text-muted-foreground/30" />
-                                        </div>
-                                        <p className="text-sm font-medium text-foreground">
-                                            No se encontraron coincidencias
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Intenta con términos más generales
-                                        </p>
-                                    </li>
-                                )}
-
-                                {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
-                                    <li className="flex flex-col items-center justify-center py-16 text-center">
-                                        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-primary/5 shadow-floating overflow-hidden">
-                                            <div className="absolute inset-0 animate-pulse rounded-md bg-primary/5 blur-lg" />
-                                            {logo ? (
-                                                <Image src={logo} alt="Logo" fill className="object-cover" />
-                                            ) : (
-                                                <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-2xl font-black tracking-tighter text-transparent">
-                                                    {getInitials()}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="max-w-[280px] text-xs text-muted-foreground">
-                                            Ingresa un número de documento, nombre de cliente o código de producto para comenzar.
-                                        </p>
-                                    </li>
-                                )}
-
-                                {filteredResults.map((result, index) => (
-                                    <li
-                                        key={`${result.label}-${result.id}`}
-                                        id={`search-result-${index}`}
-                                        role="option"
-                                        aria-selected={index === activeIndex}
-                                        onMouseEnter={() => setActiveIndex(index)}
-                                        onClick={() => navigate(result.detail_url)}
-                                        className={cn(
-                                            "group flex cursor-pointer items-center gap-4 px-4 py-3 transition-all",
-                                            index === activeIndex
-                                                ? "bg-accent"
-                                                : "hover:bg-accent"
-                                        )}
-                                    >
-                                        <div className="relative">
-                                            <Avatar className="size-10 border border-border transition-transform group-hover:scale-105">
-                                                <AvatarFallback className="bg-muted/50 text-xs font-semibold">
-                                                    <DynamicIcon name={result.icon} className="size-4" />
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            {index === activeIndex && (
-                                                <div className="absolute -left-1 top-1/2 h-4 w-1 -translate-y-1/2 rounded-full bg-primary" />
-                                            )}
-                                        </div>
-
-                                        <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                                            <div className="flex items-center gap-2">
-                                                <span className="truncate font-semibold text-foreground">
-                                                    {result.display}
-                                                </span>
-                                                {result.extra_info && (
-                                                    <Badge intent="primary" size="xs" className="hidden sm:flex">
-                                                        {result.extra_info}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <span className="truncate text-xs text-muted-foreground">
-                                                {result.subtitle || result.title}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            <span className="hidden text-3xs uppercase tracking-widest text-muted-foreground/40 sm:block">
-                                                {result.title}
-                                            </span>
-                                            <ArrowRight className={cn(
-                                                "size-4 text-muted-foreground/20 transition-all",
-                                                index === activeIndex && "translate-x-1 text-primary"
-                                            )} />
-                                        </div>
-                                    </li>
+                                <ToggleGroupItem value={ALL} className="text-xs">Todos</ToggleGroupItem>
+                                {entityTypes.map((type) => (
+                                    <ToggleGroupItem key={type.label} value={type.label} className="gap-1.5 text-xs">
+                                        {type.icon && <DynamicIcon name={type.icon} className="size-3.5" />}
+                                        {type.title_plural}
+                                    </ToggleGroupItem>
                                 ))}
-                            </ul>
-                        </ScrollArea>
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between border-t border-border bg-overlay/40 px-4 py-2 text-3xs">
-                            <div className="flex items-center gap-4 text-muted-foreground">
-                                <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-muted px-1 py-0.5 text-4xs font-medium text-foreground">↑↓</kbd>
-                                    Navegar
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-muted px-1 py-0.5 text-4xs font-medium text-foreground flex items-center justify-center w-5">
-                                        <CornerDownLeft className="size-2.5" />
-                                    </kbd>
-                                    Seleccionar
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-muted px-2 py-0.5 text-4xs font-medium text-foreground">⌘K</kbd>
-                                    Cerrar
-                                </span>
-                            </div>
-
-                            {filteredResults.length > 0 && (
-                                <div className="text-muted-foreground">
-                                    <span className="text-foreground">{filteredResults.length}</span> resultados encontrados
-                                </div>
-                            )}
+                            </ToggleGroup>
                         </div>
-                    </DialogContent>
-                </DialogPortal>
+                    )}
+
+                    {/* Resultados */}
+                    <ScrollArea className="h-[320px]">
+                        <ul id="search-results" role="listbox" aria-label="Resultados" className="flex flex-col p-1">
+                            {isLoading && [...Array<undefined>(6)].map((_, i) => (
+                                <li key={i} className="flex h-12 items-center gap-3 px-3">
+                                    <Skeleton className="size-4 rounded-sm" />
+                                    <div className="flex-1 space-y-1.5">
+                                        <Skeleton className="h-3.5 w-2/5" />
+                                        <Skeleton className="h-3 w-1/4" />
+                                    </div>
+                                </li>
+                            ))}
+
+                            {!isLoading && filteredResults.length === 0 && (
+                                <li className="flex flex-col items-center justify-center gap-1 px-6 py-16 text-center">
+                                    {debouncedQuery.length >= 2 ? (
+                                        <>
+                                            <p className="text-sm font-medium text-foreground">Sin coincidencias</p>
+                                            <p className="text-xs text-muted-foreground">Prueba con un término más general.</p>
+                                        </>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground">
+                                            Escribe un número de documento, nombre de contacto o código de producto.
+                                        </p>
+                                    )}
+                                </li>
+                            )}
+
+                            {!isLoading && filteredResults.map((result, index) => (
+                                <li
+                                    key={`${result.label}-${result.id}`}
+                                    id={`search-result-${index}`}
+                                    role="option"
+                                    aria-selected={index === activeIndex}
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                    onClick={() => openResult(result)}
+                                    className={cn(
+                                        "flex h-12 cursor-pointer items-center gap-3 rounded-sm px-3",
+                                        index === activeIndex && "bg-accent text-accent-foreground",
+                                    )}
+                                >
+                                    <DynamicIcon name={result.icon} className="size-4 shrink-0 text-muted-foreground" />
+                                    <div className="flex min-w-0 flex-1 flex-col">
+                                        <span className="truncate text-sm font-medium text-foreground">{result.display}</span>
+                                        {(result.subtitle || result.extra_info) && (
+                                            <span className="truncate text-xs text-muted-foreground">
+                                                {[result.subtitle, result.extra_info].filter(Boolean).join(" · ")}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">{result.title}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </ScrollArea>
+
+                    {/* Atajos */}
+                    <div className="flex h-9 items-center justify-between border-t border-border px-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-1.5"><kbd className="rounded-sm bg-muted px-1 font-sans">↑↓</kbd>Navegar</span>
+                            <span className="flex items-center gap-1.5"><kbd className="rounded-sm bg-muted px-1 font-sans">↵</kbd>Abrir</span>
+                            <span className="flex items-center gap-1.5"><kbd className="rounded-sm bg-muted px-1 font-sans">Esc</kbd>Cerrar</span>
+                        </div>
+                        {filteredResults.length > 0 && (
+                            <span>{filteredResults.length} resultados</span>
+                        )}
+                    </div>
+                </DialogContent>
             </Dialog>
         </>
     )

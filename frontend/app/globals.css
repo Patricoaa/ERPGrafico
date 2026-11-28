@@ -257,6 +257,12 @@
   [data-input="auto"] { --k-input: 1.125; --hit-min: 3rem; --hit-role-min: 3rem; }
 }
 [data-input="mouse"] { --k-input: 1; --hit-min: 2.5rem; --hit-role-min: 0px; }
+/* Riel derecho de herramientas: visible desde md (48rem); los overlays derechos se anclan a él.
+   En móvil el riel se oculta y su ancho es 0. */
+:root { --tool-rail-width: 0px; }
+@media (min-width: 48rem) {
+  :root { --tool-rail-width: 52px; }
+}
 :root,
 [data-density],
 [data-input] {
@@ -1402,12 +1408,24 @@ table [data-notched-field] {
     padding-right: 0 !important;
   }
 
-  /* Blocking inbox overlay: viewport-wide scrim above the ActionDock (ADR-0161) */
-  #main-content [data-slot="sheet-overlay"].inbox-overlay {
+  /* Blocking rail overlay (bandeja, calculadora): scrim above the ActionDock (ADR-0161)
+     that stops at the tool rail, so the rail stays visible and clickable. */
+  /* Bajo un overlay del riel (z 110): sus selects, menús, popovers y tooltips quedan encima
+     (Radix copia el z-index del contenido a su wrapper), y el riel recupera los clics que Radix
+     le quita al body. Bajo otros modales el riel no responde. */
+  body:has([data-slot="sheet-overlay"].rail-overlay) :is([data-slot="select-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="popover-content"], [data-slot="tooltip-content"]) {
+    z-index: 120 !important;
+  }
+
+  body:has([data-slot="sheet-overlay"].rail-overlay) [data-tool-rail] {
+    pointer-events: auto;
+  }
+
+  #main-content [data-slot="sheet-overlay"].rail-overlay {
     position: fixed !important;
-    inset: 0 !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
+    inset: 0 var(--tool-rail-width, 0px) 0 0 !important;
+    width: calc(100vw - var(--tool-rail-width, 0px)) !important;
+    max-width: calc(100vw - var(--tool-rail-width, 0px)) !important;
     padding: 0 !important;
     z-index: 105 !important;
   }
@@ -1432,7 +1450,7 @@ table [data-notched-field] {
   }
 
   /* Same specificity as the gentle scrim, declared later: the blocking inbox wins. */
-  #main-content:has([data-slot="sheet-overlay"].inbox-overlay) > div:first-child {
+  #main-content:has([data-slot="sheet-overlay"].rail-overlay) > div:first-child {
     filter: blur(6px) brightness(0.65);
   }
 

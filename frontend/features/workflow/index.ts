@@ -4,4 +4,5 @@ export { getTask, completeTask, rejectTask, getTasks, getNotifications, getUnrea
 export type { Task, TaskEvent, TaskAttachment, TaskDecisionResult, Notification, ApprovalPolicy, ApprovalPolicyPayload } from './api/workflowApi'
 
 export { useApprovalPolicies } from './hooks/useWorkflowQueries'
+export { usePendingTasksCount } from './hooks/usePendingTasksCount'
 export { useSaveApprovalPolicy, useDeleteApprovalPolicy, useCompleteTask, useRejectTask } from './hooks/useWorkflowMutations'
