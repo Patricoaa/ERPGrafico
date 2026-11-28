@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.217](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.216...v0.3.217) (2026-11-28)
+
+
+### 💅 Styling
+
+* **search:** buscador universal con piezas del sistema ([1a4206d](https://github.com/Patricoaa/ERPGrafico/commit/1a4206d9dcfba1a7a18d53c2e3b9579ddfc9c490))
+
+
+### ⚙️ Refactors
+
+* **tools:** calculadora de costos como drawer overlay, fuera de pestañas ([3dee16e](https://github.com/Patricoaa/ERPGrafico/commit/3dee16e789de7d841dfcfb816d00444f590acfb4))
+
+
+### ✨ Features
+
+* **layout:** headers de módulo publican su configuración ([4c9ac84](https://github.com/Patricoaa/ERPGrafico/commit/4c9ac8459486a8a2b04c4dd8e2df839e99ae34e7))
+* **layout:** overlays derechos se anclan junto al riel ([01663e6](https://github.com/Patricoaa/ERPGrafico/commit/01663e6f5eaccf30b867f3442efe70aefe2f8035))
+* **layout:** riel derecho de herramientas ([9383b54](https://github.com/Patricoaa/ERPGrafico/commit/9383b54223a81a72a712f64aca41e15c85565c0b))
+* **search:** abrir resultados como pestaña de registro ([cafd233](https://github.com/Patricoaa/ERPGrafico/commit/cafd233306534a26766e6ca457e0b905efee0783))
+* **search:** búsqueda universal sin URLs y limitada a entidades con drawer ([9155185](https://github.com/Patricoaa/ERPGrafico/commit/9155185e1cab26dc30368f04ac4676e8a49f3d74))
+
+
+### 📚 Documentation
+
+* **plan:** riel derecho de herramientas ([1298b72](https://github.com/Patricoaa/ERPGrafico/commit/1298b7271e0209eb57dccd4b0dd785d1a6bde645))
+* riel de herramientas (enmiendas ADR-0162/0101, contratos) ([545ee2b](https://github.com/Patricoaa/ERPGrafico/commit/545ee2bf3c0f0ac5d485f8c4dbfa90df87c50a26))
+* **spec:** aclara anclaje de overlays junto al riel ([d6adce8](https://github.com/Patricoaa/ERPGrafico/commit/d6adce8c8580b4c1945c2ab82e6f1d6da028a5f0))
+* **spec:** buscador abre resultados con openEntity ([69b97ec](https://github.com/Patricoaa/ERPGrafico/commit/69b97ece1a0cf1c4026d1ed49eef60a1af340168))
+* **spec:** riel derecho de herramientas ([20dbcc7](https://github.com/Patricoaa/ERPGrafico/commit/20dbcc7178e085cd2b136b243d879b1554e98133))
+
+
+### 🐛 Bug Fixes
+
+* **layout:** capas y clics del riel bajo sus overlays; buscador sin resultados viejos ([eb5578b](https://github.com/Patricoaa/ERPGrafico/commit/eb5578bf4c12d0ea278c70883f3958835eb9a86f))
+* **search:** el buscador universal no borra lo que se escribe ([47a896a](https://github.com/Patricoaa/ERPGrafico/commit/47a896abedcc89db65df386121a7b9450888193f))
+
+
+### 🚀 Maintenance
+
+* **deps:** bump lucide-react from 0.562.0 to 1.79.0 in /frontend ([#371](https://github.com/Patricoaa/ERPGrafico/issues/371)) ([dd9b321](https://github.com/Patricoaa/ERPGrafico/commit/dd9b3217eb4d5bf696596cd2b19227b9e442e92d))
+
 ### [0.3.216](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.215...v0.3.216) (2026-11-28)
 
 
