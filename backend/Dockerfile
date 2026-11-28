@@ -1,5 +1,5 @@
 # ── Stage: Rust builder (PyO3 native extension) ──────
-FROM rust:1.99-slim-bookworm AS rust-builder
+FROM rust:1.100-slim-bookworm AS rust-builder
 
 WORKDIR /build
 
