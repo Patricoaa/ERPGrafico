@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.213](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.212...v0.3.213) (2026-11-28)
+
+
+### 🚀 Maintenance
+
+* **deps:** migra @tanstack/react-table 8 → 9 ([#311](https://github.com/Patricoaa/ERPGrafico/issues/311)) ([d90aad0](https://github.com/Patricoaa/ERPGrafico/commit/d90aad0b0912ea5dace711edda552953817abb59))
+
 ### [0.3.212](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.211...v0.3.212) (2026-11-27)
 
 
