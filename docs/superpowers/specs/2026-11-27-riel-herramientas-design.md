@@ -58,8 +58,10 @@ eliminó ADR-0162 y se leería como navegación).
 ### Anclaje de paneles derechos
 
 - Variable CSS `--tool-rail-width: 52px` (0 en móvil). Todos los paneles derechos (`CollapsibleSheet` side
-  right, drawers de entidad, bandeja, calculadora) suman esa base a su offset `right`, de modo que se abren a
-  la izquierda del riel. El overlay bloqueante tampoco cubre el riel. *Decisión del builder:* aplicar en
+  right, drawers de entidad, bandeja, calculadora) suman esa base a su offset `right`: siguen siendo overlays
+  sobre el contenido, pero su borde derecho termina donde empieza el riel. El overlay bloqueante tampoco cubre
+  el riel, que queda visible y clicable (cambiar de herramienta con un clic, estilo VS Code/Figma; elegido
+  por el usuario frente a un overlay que cubra también el riel). *Decisión del builder:* aplicar en
   `getSheetOffset` / estilos de `CollapsibleSheet` para no tocar cada panel.
 
 ### Calculadora
