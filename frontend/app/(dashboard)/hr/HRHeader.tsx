@@ -84,7 +84,7 @@ export function HRHeader() {
         variant="minimal"
         navigation={navigation}
         titleActions={
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsSettingsOpen(true)} title="Configuración de RRHH">
+          <Button variant="ghost" size="icon" className="size-control-xs" onClick={() => setIsSettingsOpen(true)} title="Configuración de RRHH">
             <Settings className="h-4 w-4" />
           </Button>
         }

@@ -200,7 +200,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `tax.f29declaration` | `/tax/f29` | `/tax/f29/{id}` | ✅ | No |
 | `tax.accountingperiod` | `/tax/periods` | `/tax/periods/{id}` | ✅ | No |
 | `workflow.task` | `/workflow/tasks` | `/workflow/tasks/{id}` | ✅ | No |
-| `core.user` | `/settings/users` | `/settings/users/{id}` | ✅ | No |
+| `core.user` | `/security/users` | `/security/users/{id}` | ✅ | No |
 | `core.attachment` | `/files` | `/files/{id}` | ✅ | **Sí** |
 
 ### 7.4 Shell `EntityDetailPage` — eliminado (T-95)
