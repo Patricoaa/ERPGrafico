@@ -2,9 +2,13 @@ import { describe, expect, it, vi, beforeEach } from "vitest"
 import { render } from "@testing-library/react"
 
 let pathname = "/accounting/ledger"
+let searchParamsString = ""
 const pageHeader = vi.fn()
 
-vi.mock("next/navigation", () => ({ usePathname: () => pathname }))
+vi.mock("next/navigation", () => ({
+    usePathname: () => pathname,
+    useSearchParams: () => new URLSearchParams(searchParamsString),
+}))
 vi.mock("@/hooks/useViewModePreference", () => ({
     useViewModePreference: () => ({ getViewModeUrl: (_label: string, url: string) => url }),
 }))
