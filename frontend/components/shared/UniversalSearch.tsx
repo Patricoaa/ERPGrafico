@@ -56,18 +56,22 @@ export function UniversalSearch({ renderTrigger }: UniversalSearchProps = {}) {
         return () => document.removeEventListener("keydown", handleKeyDown)
     }, [])
 
-    if (open && query !== "") {
-        setQuery("")
+    // Cada apertura parte limpia. Se ajusta solo en la transición cerrado → abierto:
+    // limpiar mientras está abierto borraba cada tecla apenas se escribía.
+    const [prevOpen, setPrevOpen] = useState(open)
+    if (open !== prevOpen) {
+        setPrevOpen(open)
+        if (open) {
+            setQuery("")
+            setActiveIndex(0)
+            setSelectedType(null)
+        }
     }
 
     useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                setActiveIndex(0)
-                setSelectedType(null)
-            })
-            setTimeout(() => inputRef.current?.focus(), 50)
-        }
+        if (!open) return
+        const id = setTimeout(() => inputRef.current?.focus(), 50)
+        return () => clearTimeout(id)
     }, [open])
 
     // Derived data: unique types for segmenters
