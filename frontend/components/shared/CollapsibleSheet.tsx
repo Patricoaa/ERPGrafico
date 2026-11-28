@@ -163,7 +163,8 @@ export function CollapsibleSheet({
             onInteractOutside={blockingOverlay ? undefined : (e) => e.preventDefault()}
             style={{
                 left: side === "left" ? offset : undefined,
-                right: side === "left" ? 'auto' : offset,
+                // A pantalla completa, el panel derecho termina donde empieza el riel de herramientas
+                right: side === "left" ? 'auto' : (fullViewport ? `calc(var(--tool-rail-width, 0px) + ${offset}px)` : offset),
                 transform: (!open || isCollapsed)
                     ? (side === "left" ? `translateX(-100%)` : `translateX(100%)`)
                     : 'translateX(0)',
