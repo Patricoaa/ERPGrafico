@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.216](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.215...v0.3.216) (2026-11-28)
+
+
+### 🚀 Maintenance
+
+* **deps:** bump python from 3.12-slim to 3.13-slim in /backend ([#365](https://github.com/Patricoaa/ERPGrafico/issues/365)) ([8a6d73b](https://github.com/Patricoaa/ERPGrafico/commit/8a6d73bb1cf9507be2393a1c1aa7d89775f3e9d5))
+* **deps:** bump rust in /backend ([#366](https://github.com/Patricoaa/ERPGrafico/issues/366)) ([464d6bc](https://github.com/Patricoaa/ERPGrafico/commit/464d6bcdb791bd5a44eb9d91379fc77a8c0c6604))
+* **deps:** bump the npm-minor-patch group across 1 directory with 2 updates ([#367](https://github.com/Patricoaa/ERPGrafico/issues/367)) ([f918811](https://github.com/Patricoaa/ERPGrafico/commit/f918811ce771e5bc8bb89bd31cb095f7aeb18457))
+
 ### [0.3.215](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.214...v0.3.215) (2026-11-28)
 
 
