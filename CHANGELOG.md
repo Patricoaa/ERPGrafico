@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.214](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.213...v0.3.214) (2026-11-28)
+
+
+### 🚀 Maintenance
+
+* **deps-dev:** eslint 9 → 10 ([ea277c5](https://github.com/Patricoaa/ERPGrafico/commit/ea277c53f668569e8085c5e433e86f2609580311)), closes [#370](https://github.com/Patricoaa/ERPGrafico/issues/370)
+
 ### [0.3.213](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.212...v0.3.213) (2026-11-28)
 
 
