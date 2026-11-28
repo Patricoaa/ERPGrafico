@@ -50,3 +50,4 @@ export { useSingleProduct } from './hooks/useProductSearch'
 export { useInventoryDocuments, useInventoryDocument, useInventoryDocumentMutations, INVENTORY_DOCUMENTS_QUERY_KEY } from './hooks/useInventoryDocuments'
 export { useInventoryCounts, useInventoryCount, useInventoryCountMutations, INVENTORY_COUNTS_QUERY_KEY } from './hooks/useInventoryCounts'
 
+export { InventorySettingsModal } from './components/InventorySettingsModal'

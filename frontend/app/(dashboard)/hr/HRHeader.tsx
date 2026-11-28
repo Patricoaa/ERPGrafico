@@ -1,31 +1,43 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { useState } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { Settings } from "lucide-react"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   HR_TABS,
   getHRTab,
-  getHRConfigSubTab,
+  getHRPayrollsSubTab,
 } from "@/features/hr/navigation"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
 
+const HRSettingsModal = dynamic(
+  () => import("@/features/hr").then(m => ({ default: m.HRSettingsModal })),
+  { ssr: false },
+)
+
 export function HRHeader() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { getViewModeUrl } = useViewModePreference()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const initialSection = searchParams.get("tab") || undefined
 
-  // Determine active view from pathname
   const segments = pathname.split("/").filter(Boolean)
   const currentSegment = segments[1] || "employees"
 
-  const activeValue = currentSegment === "settings" ? "config" : currentSegment
-  const subActiveValue = currentSegment === "settings" ? (segments[2] || "global") : undefined
+  const activeValue = currentSegment
+  const subActiveValue = (() => {
+    if (activeValue === "payrolls") return segments[2] || "payrolls"
+    return undefined
+  })()
 
-  // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("hr")
 
-  // Build navigation from canonical config
   const tabs = HR_TABS.map((tab) => ({
     value: tab.value,
     label: tab.label,
@@ -47,32 +59,39 @@ export function HRHeader() {
     subActiveValue,
   }
 
-  // Get header config from canonical navigation
   const getHeaderConfig = () => {
     const mainTab = getHRTab(activeValue)
     if (!mainTab) {
       return { title: moduleConfig?.headerTitle ?? "Recursos Humanos", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "users" as const }
     }
 
-    // Sub-tabs handling (config)
-    if (activeValue === "config" && subActiveValue) {
-      const subTab = getHRConfigSubTab(subActiveValue)
+    if (activeValue === "payrolls" && subActiveValue) {
+      const subTab = getHRPayrollsSubTab(subActiveValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    // Default: main tab header
     return buildHeaderConfigFromTab(mainTab)
   }
 
   const config = getHeaderConfig()
 
   return (
-    <PageHeader
-      title={config.title}
-      description={config.description}
-      iconName={config.iconName}
-      variant="minimal"
-      navigation={navigation}
-    />
+    <>
+      <PageHeader
+        title={config.title}
+        description={config.description}
+        iconName={config.iconName}
+        variant="minimal"
+        navigation={navigation}
+        titleActions={
+          <Button variant="ghost" size="icon" className="size-control-xs" onClick={() => setIsSettingsOpen(true)} title="Configuración de RRHH">
+            <Settings className="h-4 w-4" />
+          </Button>
+        }
+      />
+      {isSettingsOpen && (
+        <HRSettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
+      )}
+    </>
   )
 }

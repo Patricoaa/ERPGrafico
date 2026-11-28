@@ -22,6 +22,15 @@ export const INVENTORY_PRODUCTS_SUB_TABS: NavTabConfig[] = [
     metadataTitle: "Catálogo de Productos | ERPGrafico",
   },
   {
+    value: "categories",
+    label: "Categorías de Productos",
+    href: "/inventory/products/categories",
+    iconName: getEntityIconName("inventory.category") ?? "folder-tree",
+    headerTitle: "Categorías de Productos",
+    headerDescription: "Organización y clasificación jerárquica del catálogo general.",
+    metadataTitle: "Categorías de Productos | ERPGrafico",
+  },
+  {
     value: "uoms",
     label: "Unidades de Medida",
     href: "/inventory/products/uoms/units",
@@ -101,39 +110,7 @@ export const INVENTORY_OPERATIONS_SUB_TABS: NavTabConfig[] = [
   },
 ]
 
-// ============================================
-// SUB-TABS: CONFIGURACIÓN
-// ============================================
 
-export const INVENTORY_CONFIG_SUB_TABS: NavTabConfig[] = [
-  {
-    value: "valuation",
-    label: "Valorización",
-    href: "/inventory/settings",
-    iconName: "package",
-    headerTitle: "Valorización",
-    headerDescription: "Métodos de valoración de inventario y configuración de costos.",
-    metadataTitle: "Valorización | ERPGrafico",
-  },
-  {
-    value: "categories",
-    label: "Categorías de Productos",
-    href: "/inventory/settings/categories",
-    iconName: getEntityIconName("inventory.category") ?? "folder-tree",
-    headerTitle: "Categorías de Productos",
-    headerDescription: "Organización y clasificación jerárquica del catálogo general.",
-    metadataTitle: "Categorías de Productos | ERPGrafico",
-  },
-  {
-    value: "measure-categories",
-    label: "Categorías de Medidas",
-    href: "/inventory/settings/measure-categories",
-    iconName: getEntityIconName("inventory.uomcategory") ?? "scale",
-    headerTitle: "Categorías de Medidas",
-    headerDescription: "Clasificación de magnitudes compatibles (peso, volumen, longitud).",
-    metadataTitle: "Categorías de Medidas | ERPGrafico",
-  },
-]
 
 // ============================================
 // TABS PRINCIPALES (nivel 1)
@@ -159,16 +136,6 @@ export const INVENTORY_TABS: NavTabConfig[] = [
     headerDescription: "Almacenes, recepciones, entregas, ajustes y conteos.",
     metadataTitle: "Operaciones | ERPGrafico",
     subTabs: INVENTORY_OPERATIONS_SUB_TABS,
-  },
-  {
-    value: "config",
-    label: "Configuración",
-    href: "/inventory/settings",
-    iconName: "settings",
-    headerTitle: "Configuración",
-    headerDescription: "Parámetros generales del módulo de inventario.",
-    metadataTitle: "Configuración | ERPGrafico",
-    subTabs: INVENTORY_CONFIG_SUB_TABS,
   },
 ]
 
@@ -198,7 +165,3 @@ export function getInventoryOperationsSubTab(value: string): NavTabConfig | unde
   return findTabConfig(INVENTORY_OPERATIONS_SUB_TABS, value)
 }
 
-/** Busca sub-tab de Configuración */
-export function getInventoryConfigSubTab(value: string): NavTabConfig | undefined {
-  return findSubTabConfig(INVENTORY_TABS, "config", value)
-}

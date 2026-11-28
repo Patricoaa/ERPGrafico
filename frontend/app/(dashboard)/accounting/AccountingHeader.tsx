@@ -1,28 +1,37 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { useState } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { Settings } from "lucide-react"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
   ACCOUNTING_TABS,
   getAccountingTab,
-  getAccountingConfigSubTab,
   getRcvSubTab,
   resolveAccountingNav,
 } from "@/features/accounting/navigation"
 import { buildHeaderConfigFromTab } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
 
+const AccountingSettingsModal = dynamic(
+  () => import("@/features/accounting").then(m => ({ default: m.AccountingSettingsModal })),
+  { ssr: false },
+)
+
 export function AccountingHeader() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { getViewModeUrl } = useViewModePreference()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const initialSection = searchParams.get("tab") || undefined
 
   const { activeValue, subActiveValue } = resolveAccountingNav(pathname)
 
-  // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("accounting")
 
-  // Build navigation from canonical config
   const tabs = ACCOUNTING_TABS.map((tab) => ({
     value: tab.value,
     label: tab.label,
@@ -44,17 +53,10 @@ export function AccountingHeader() {
     subActiveValue,
   }
 
-  // Get header config from canonical navigation
   const getHeaderConfig = () => {
     const mainTab = getAccountingTab(activeValue)
     if (!mainTab) {
       return { title: moduleConfig?.headerTitle ?? "Contabilidad", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "calculator" as const }
-    }
-
-    // Sub-tabs handling (config)
-    if (activeValue === "config" && subActiveValue) {
-      const subTab = getAccountingConfigSubTab(subActiveValue)
-      if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
     if (activeValue === "rcv" && subActiveValue) {
@@ -62,19 +64,28 @@ export function AccountingHeader() {
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    // Default: main tab header
     return buildHeaderConfigFromTab(mainTab)
   }
 
   const config = getHeaderConfig()
 
   return (
-    <PageHeader
-      title={config.title}
-      description={config.description}
-      iconName={config.iconName}
-      variant="minimal"
-      navigation={navigation}
-    />
+    <>
+      <PageHeader
+        title={config.title}
+        description={config.description}
+        iconName={config.iconName}
+        variant="minimal"
+        navigation={navigation}
+        titleActions={
+          <Button variant="ghost" size="icon" className="size-control-xs" onClick={() => setIsSettingsOpen(true)} title="Configuración de Contabilidad">
+            <Settings className="h-4 w-4" />
+          </Button>
+        }
+      />
+      {isSettingsOpen && (
+        <AccountingSettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
+      )}
+    </>
   )
 }

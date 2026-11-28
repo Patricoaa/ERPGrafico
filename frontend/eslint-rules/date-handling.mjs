@@ -45,7 +45,7 @@ const noDateOnlyCtor = {
     },
   },
   create(context) {
-    if (skip(context.filename ?? context.getFilename())) return {}
+    if (skip(context.filename)) return {}
     return {
       NewExpression(node) {
         if (node.callee.type !== 'Identifier' || node.callee.name !== 'Date' || node.arguments.length !== 1) return
@@ -74,7 +74,7 @@ const noAdhocDateFormat = {
     },
   },
   create(context) {
-    if (skip(context.filename ?? context.getFilename())) return {}
+    if (skip(context.filename)) return {}
     return {
       "CallExpression[callee.property.name=/^toLocale(Date|Time)String$/]"(node) {
         context.report({ node, messageId: 'format', data: { what: `.${node.callee.property.name}()` } })

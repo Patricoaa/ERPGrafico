@@ -1,8 +1,11 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import { useMemo } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
+import { useState, useMemo } from "react"
+import dynamic from "next/dynamic"
 import { PageHeader } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { Settings } from "lucide-react"
 import { useBanks } from "@/features/treasury"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 import {
@@ -11,16 +14,23 @@ import {
   getTreasuryTab,
   getOperacionesSubTab,
   getTerminalCobroSubTab,
-  getTreasuryConfigSubTab,
   getBankSubView,
 } from "@/features/treasury/navigation"
 import { buildHeaderConfigFromTab, overrideHeaderConfig } from "@/lib/navigation-helpers"
 import { getModuleHeaderConfig } from "@/lib/module-registry"
 
+const TreasurySettingsModal = dynamic(
+  () => import("@/features/treasury").then(m => ({ default: m.TreasurySettingsModal })),
+  { ssr: false },
+)
+
 export function TreasuryHeader() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { banks } = useBanks()
   const { getViewModeUrl } = useViewModePreference()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(searchParams.get("modal") === "settings")
+  const initialSection = searchParams.get("tab") || undefined
 
   const segments = pathname.split("/").filter(Boolean)
   const currentSegment = segments[1] || "operaciones"
@@ -29,7 +39,6 @@ export function TreasuryHeader() {
     operaciones: "operaciones",
     "bank-center": "bank-center",
     "terminal-cobro": "terminal-cobro",
-    settings: "config",
   }
 
   const activeValue = segmentToTab[currentSegment] || "operaciones"
@@ -37,7 +46,6 @@ export function TreasuryHeader() {
   const subActiveValue = useMemo(() => {
     if (activeValue === "operaciones") return segments[2] || "movements"
     if (activeValue === "terminal-cobro") return segments[2] || "providers"
-    if (activeValue === "config") return segments[2] || "terminal-cobro"
     if (activeValue === "bank-center") {
       const bankIdSegment = segments[2]
       if (bankIdSegment && !isNaN(Number(bankIdSegment))) return `bank-${bankIdSegment}`
@@ -49,10 +57,8 @@ export function TreasuryHeader() {
 
   const bankSubTabs = useMemo(() => buildBankSubTabs(banks), [banks])
 
-  // Module config from centralized registry
   const moduleConfig = getModuleHeaderConfig("treasury")
 
-  // Build navigation from canonical config (fuente única: buildTreasuryTabs)
   const tabs = useMemo(() => buildTreasuryTabs(banks), [banks])
 
   const navigation = {
@@ -63,14 +69,12 @@ export function TreasuryHeader() {
     subActiveValue,
   }
 
-  // Get header config from canonical navigation
   const getHeaderConfig = () => {
     const mainTab = getTreasuryTab(activeValue)
     if (!mainTab) {
       return { title: moduleConfig?.headerTitle ?? "Tesorería", description: moduleConfig?.headerDescription ?? "", iconName: moduleConfig?.iconName ?? "banknote" as const }
     }
 
-    // Sub-tabs handling
     if (activeValue === "operaciones" && subActiveValue) {
       const subTab = getOperacionesSubTab(subActiveValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
@@ -81,29 +85,20 @@ export function TreasuryHeader() {
       if (subTab) return buildHeaderConfigFromTab(subTab)
     }
 
-    if (activeValue === "config" && subActiveValue) {
-      const subTab = getTreasuryConfigSubTab(subActiveValue)
-      if (subTab) return buildHeaderConfigFromTab(subTab)
-    }
-
     if (activeValue === "bank-center" && subActiveValue) {
       const bankIdSegment = segments[2]
       const isBankRoute = !!bankIdSegment && !isNaN(Number(bankIdSegment))
 
-      // Gestión de Bancos es un elemento directo de Centro de Bancos.
       if (subActiveValue === "banks") {
         const banksTab = bankSubTabs.find((tab) => tab.value === "banks")
         if (banksTab) return buildHeaderConfigFromTab(banksTab)
       }
 
-      // En rutas de banco la sub-vista va tras el id; en las agregadas,
-      // "cards" agrupa /cards/unbilled y /cards/statements.
       const subViewValue = isBankRoute
         ? (segments[3] || "overview")
         : (segments[2] || "banks")
       const bankTab = getBankSubView(bankSubTabs, subActiveValue, subViewValue)
       if (bankTab) {
-        // Para banco específico, el título puede ser dinámico (nombre del banco)
         if (isBankRoute) {
           const selectedBank = banks.find((b) => b.id === Number(bankIdSegment))
           const base = buildHeaderConfigFromTab(bankTab)
@@ -113,26 +108,34 @@ export function TreasuryHeader() {
         }
         return buildHeaderConfigFromTab(bankTab)
       }
-      // Fallback: tab "all" o banco no encontrado
       const allTab = bankSubTabs.find((t) => t.value === "all")
       const subTab = allTab?.subTabs?.find((st) => st.value === subViewValue)
       if (subTab) return buildHeaderConfigFromTab(subTab)
       return buildHeaderConfigFromTab(allTab!)
     }
 
-    // Default: main tab header
     return buildHeaderConfigFromTab(mainTab)
   }
 
   const config = getHeaderConfig()
 
   return (
-    <PageHeader
-      title={config.title}
-      description={config.description}
-      iconName={config.iconName}
-      variant="minimal"
-      navigation={navigation}
-    />
+    <>
+      <PageHeader
+        title={config.title}
+        description={config.description}
+        iconName={config.iconName}
+        variant="minimal"
+        navigation={navigation}
+        titleActions={
+          <Button variant="ghost" size="icon" className="size-control-xs" onClick={() => setIsSettingsOpen(true)} title="Configuración de Tesorería">
+            <Settings className="h-4 w-4" />
+          </Button>
+        }
+      />
+      {isSettingsOpen && (
+        <TreasurySettingsModal onOpenChange={setIsSettingsOpen} initialSection={initialSection} />
+      )}
+    </>
   )
 }

@@ -1,8 +1,5 @@
-import { UsersSettingsClientView } from "@/features/settings"
+import { redirect } from "next/navigation"
 
 export default function UsersSettingsPage() {
-    return (
-        <>
-            <UsersSettingsClientView activeTab="users" />
-        </>)
+  redirect("/security/users")
 }

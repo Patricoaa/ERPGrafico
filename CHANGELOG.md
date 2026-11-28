@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.215](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.214...v0.3.215) (2026-11-28)
+
+
+### ✨ Features
+
+* **ux:** settings as modals — security module, GlobalSettingsModal, 6 per-module modals ([#372](https://github.com/Patricoaa/ERPGrafico/issues/372)) ([c1f247b](https://github.com/Patricoaa/ERPGrafico/commit/c1f247b44005ea3ac70e2de13f9cb577a720c1ca))
+
+### [0.3.214](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.213...v0.3.214) (2026-11-28)
+
+
+### 🚀 Maintenance
+
+* **deps-dev:** eslint 9 → 10 ([ea277c5](https://github.com/Patricoaa/ERPGrafico/commit/ea277c53f668569e8085c5e433e86f2609580311)), closes [#370](https://github.com/Patricoaa/ERPGrafico/issues/370)
+
 ### [0.3.213](https://github.com/Patricoaa/ERPGrafico/compare/v0.3.212...v0.3.213) (2026-11-28)
 
 

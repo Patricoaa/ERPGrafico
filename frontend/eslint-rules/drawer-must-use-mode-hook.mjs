@@ -16,7 +16,7 @@ const rule = {
         },
     },
     create(context) {
-        const filename = context.filename || context.getFilename();
+        const filename = context.filename;
         if (!filename.endsWith('Drawer.tsx')) {
             return {};
         }
@@ -25,7 +25,7 @@ const rule = {
             VariableDeclarator(node) {
                 if (node.id.type === 'Identifier' && (node.id.name === 'mode' || node.id.name === 'isView' || node.id.name === 'isEdit' || node.id.name === 'isCreate')) {
                     if (node.init && node.init.type !== 'CallExpression' && node.init.type !== 'MemberExpression' && node.init.type !== 'Identifier' && node.init.type !== 'Literal') {
-                        const sourceCode = context.sourceCode || context.getSourceCode();
+                        const sourceCode = context.sourceCode;
                         const text = sourceCode.getText(node.init);
                         if (text.includes('modeProp') || text.includes('initialData') || text.includes('??') || text.includes('?')) {
                             context.report({ node, messageId: 'useHook' });

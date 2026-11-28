@@ -21,14 +21,14 @@ const settingsModules: ModuleGridItem[] = [
         icon: ShieldCheck, 
         label: "Usuarios y Permisos", 
         description: "Gestión de accesos y roles",
-        url: "/settings/users"
+        url: "/security/users"
     },
     { 
         id: "audit", 
         icon: History, 
         label: "Auditoría", 
         description: "Logs y actividad del sistema",
-        url: "/settings/audit"
+        url: "/security/audit"
     },
     { 
         id: "workflow", 
@@ -49,7 +49,7 @@ const settingsModules: ModuleGridItem[] = [
         icon: ServerCog,
         label: "Procesos",
         description: "Importaciones y reportes",
-        url: "/settings/jobs"
+        url: "/security/jobs"
     },
 ]
 
@@ -58,7 +58,7 @@ const debugModule: ModuleGridItem = {
     icon: Bug,
     label: "Depuración",
     description: "Reloj del servidor para pruebas",
-    url: "/settings/debug"
+    url: "/security/debug"
 }
 
 export default function SettingsPageClient() {

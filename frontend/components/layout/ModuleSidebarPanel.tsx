@@ -24,6 +24,7 @@ interface ModuleSidebarPanelProps {
     onInboxToggle?: () => void
     onNavigate?: () => void
     onProfileOpen: () => void
+    onSettingsOpen?: () => void
 }
 
 /**
@@ -31,7 +32,7 @@ interface ModuleSidebarPanelProps {
  * módulos como primer nivel y, bajo el activo, sus vistas. Pie con Cuenta y Configuración.
  * En móvil se renderiza dentro del `Sheet` de `DashboardShell`.
  */
-export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, onInboxToggle, onNavigate, onProfileOpen }: ModuleSidebarPanelProps) {
+export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, onInboxToggle, onNavigate, onProfileOpen, onSettingsOpen }: ModuleSidebarPanelProps) {
     const { logo, company } = useBranding()
     const companyName = company?.trade_name || company?.name || "ERP"
     // Todos los módulos del primer nivel son acordeones sin redirección (Enmienda 1, ADR-0162).
@@ -114,7 +115,13 @@ export function ModuleSidebarPanel({ currentModuleId, navigation, isInboxOpen, o
                         href="/settings"
                         icon={Settings}
                         isActive={currentModuleId === "settings"}
-                        onClick={onNavigate}
+                        onClick={(e) => {
+                            if (onSettingsOpen) {
+                                e.preventDefault()
+                                onSettingsOpen()
+                            }
+                            onNavigate?.()
+                        }}
                     />
                 </Can>
                 <UserSidebarMenu variant="row" onProfileOpen={onProfileOpen} onNavigate={onNavigate} />

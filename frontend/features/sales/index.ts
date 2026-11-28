@@ -47,3 +47,4 @@ export type {
     DeliveryStatus,
 } from './types'
 
+export { SalesSettingsModal } from './components/SalesSettingsModal'

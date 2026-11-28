@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default function AccountingSettingsPage() {
-    redirect("/accounting/settings/vat-rates")
+    redirect("/accounting/ledger?modal=settings&tab=vat-rates")
 }
